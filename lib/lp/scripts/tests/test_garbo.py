@@ -877,13 +877,20 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self._test_AnswerContactPruner(
             AccountStatus.SUSPENDED, SEVEN_DAYS_AGO)
 
+    def test_AnswerContactPruner_deceased_accounts(self):
+        # Answer contacts with an account marked as deceased at least seven
+        # days ago should be pruned.
+        self._test_AnswerContactPruner(AccountStatus.DECEASED, SEVEN_DAYS_AGO)
+
     def test_AnswerContactPruner_doesnt_prune_recently_changed_accounts(self):
-        # Answer contacts which are suspended or deactivated inside the
-        # minimum time interval are not pruned.
+        # Answer contacts which are deactivated, suspended, or deceased
+        # inside the minimum time interval are not pruned.
         self._test_AnswerContactPruner(
             AccountStatus.DEACTIVATED, None, expected_count=1)
         self._test_AnswerContactPruner(
             AccountStatus.SUSPENDED, ONE_DAY_AGO, expected_count=1)
+        self._test_AnswerContactPruner(
+            AccountStatus.DECEASED, ONE_DAY_AGO, expected_count=1)
 
     def test_BranchJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.

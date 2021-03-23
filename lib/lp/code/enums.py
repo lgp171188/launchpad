@@ -1079,7 +1079,7 @@ class CodeReviewVote(DBEnumeratedType):
                   'NEEDS_INFO',
                   'ABSTAIN',
                   'DISAPPROVE',
-                  'RESUBMIT',
+                  'NEEDS_RESUBMITTING',
                   )
 
     DISAPPROVE = DBItem(1, """
@@ -1101,8 +1101,8 @@ class CodeReviewVote(DBEnumeratedType):
         Reviewer wants the proposed merge to happen.
         """)
 
-    RESUBMIT = DBItem(4, """
-        Resubmit
+    NEEDS_RESUBMITTING = DBItem(4, """
+        Needs Resubmitting
 
         Reviewer thinks that the idea might be sound but the implementation
         needs significant rework.

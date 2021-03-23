@@ -860,7 +860,8 @@ class DecoratedCodeReviewVoteReference:
         CodeReviewVote.ABSTAIN: CodeReviewVote.ABSTAIN.title,
         CodeReviewVote.NEEDS_INFO: CodeReviewVote.NEEDS_INFO.title,
         CodeReviewVote.NEEDS_FIXING: CodeReviewVote.NEEDS_FIXING.title,
-        CodeReviewVote.RESUBMIT: CodeReviewVote.RESUBMIT.title,
+        CodeReviewVote.NEEDS_RESUBMITTING: (
+            CodeReviewVote.NEEDS_RESUBMITTING.title),
         }
 
     def __init__(self, context, user, users_vote):

@@ -117,7 +117,7 @@ class MockBuilderFactory(BaseBuilderFactory):
 
 class TestBuilderInteractor(TestCase):
 
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestBuilderInteractor, self).setUp()
@@ -354,7 +354,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
     """BuilderInteractor tests that need a DB."""
 
     layer = ZopelessDatabaseLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def test_getBuildBehaviour_idle(self):
         """An idle builder has no build behaviour."""
@@ -699,7 +699,7 @@ class TestSlaveTimeouts(TestCase):
     # as required.
 
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=10)
+        timeout=30)
 
     def setUp(self):
         super(TestSlaveTimeouts, self).setUp()
@@ -746,7 +746,7 @@ class TestSlaveConnectionTimeouts(TestCase):
     # The timeouts in test_connection_timeout are relative to the artificial
     # Clock rather than to true wallclock time, so it's not a problem for
     # this timeout to be shorter than them.
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestSlaveConnectionTimeouts, self).setUp()
