@@ -216,6 +216,23 @@ class IGitRepositoryView(IHasRecipes):
     shortened_path = Attribute(
         "The shortest reasonable version of the path to this repository.")
 
+    pack_count = exported(Int(
+        title=_("Pack count"), readonly=True, required=False,
+        description=_("The number of packs for this repository.")))
+
+    loose_object_count = exported(Int(
+        title=_("Loose object count"), readonly=True, required=False,
+        description=_("The number of loose objects for this repository.")))
+
+    date_last_repacked = exported(Datetime(
+        title=_("Date last repacked"), readonly=True, required=False,
+        description=_("The date that this repository was last repacked.")))
+
+    date_last_scanned = exported(Datetime(
+        title=_("Date last scanned"), readonly=True, required=False,
+        description=_("The date when pack statistics were last updated "
+                      "for this repository.")))
+
     def getClonedFrom():
         """Returns from which repository the given repo is a clone from."""
 

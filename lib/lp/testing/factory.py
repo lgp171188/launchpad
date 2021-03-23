@@ -675,7 +675,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         removeSecurityProxy(email).status = email_address_status
 
-        once_active = (AccountStatus.DEACTIVATED, AccountStatus.SUSPENDED)
+        once_active = (
+            AccountStatus.DEACTIVATED, AccountStatus.SUSPENDED,
+            AccountStatus.DECEASED)
         if account_status:
             if account_status in once_active:
                 removeSecurityProxy(person.account).status = (

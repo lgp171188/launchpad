@@ -86,10 +86,7 @@ from lp.services.webapp.authorization import (
     available_with_permission,
     check_permission,
     )
-from lp.snappy.interfaces.snap import (
-    ISnap,
-    ISnapSet,
-    )
+from lp.snappy.interfaces.snap import ISnapSet
 
 
 @implementer(ISharingService)
@@ -859,12 +856,6 @@ class SharingService:
         # Revoke access to artifacts for the specified grantee.
         getUtility(IAccessArtifactGrantSource).revokeByArtifact(
             artifacts_to_delete, [grantee])
-
-        # XXX: Pappacena 2021-02-05: snaps should not trigger this job,
-        # since we do not have a "SnapSubscription" yet.
-        artifacts = [i for i in artifacts if not ISnap.providedBy(i)]
-        if not artifacts:
-            return
 
         # XXX: Pappacena 2021-03-09: OCI recipes should not trigger this job,
         # since we do not have a "OCIRecipeSubscription" yet.

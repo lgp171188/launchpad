@@ -1356,18 +1356,15 @@ class TestSnapVisibility(TestCaseWithFactory):
             AccessArtifactGrant.abstract_artifact_id == AccessArtifact.id,
             *conditions)
 
-    def getSnapSubscription(self, snap, person):
-        return removeSecurityProxy(snap)._getSubscription(person)
-
     def test_only_owner_can_grant_access(self):
         owner = self.factory.makePerson()
         snap = self.factory.makeSnap(
             registrant=owner, owner=owner, private=True)
         other_person = self.factory.makePerson()
-        with person_logged_in(owner):
-            snap.subscribe(other_person, owner)
         with person_logged_in(other_person):
             self.assertRaises(Unauthorized, getattr, snap, 'subscribe')
+        with person_logged_in(owner):
+            snap.subscribe(other_person, owner)
 
     def test_private_is_invisible_by_default(self):
         owner = self.factory.makePerson()
@@ -1395,20 +1392,18 @@ class TestSnapVisibility(TestCaseWithFactory):
         with person_logged_in(owner):
             self.assertFalse(snap.visibleByUser(person))
             snap.subscribe(person, snap.owner)
-            self.assertThat(
-                self.getSnapSubscription(snap, person),
-                MatchesStructure(
-                    person=Equals(person),
-                    snap=Equals(snap),
-                    subscribed_by=Equals(snap.owner),
-                    date_created=IsInstance(datetime)))
+            self.assertThat(snap.getSubscription(person), MatchesStructure(
+                person=Equals(person),
+                snap=Equals(snap),
+                subscribed_by=Equals(snap.owner),
+                date_created=IsInstance(datetime)))
             # Calling again should be a no-op.
             snap.subscribe(person, snap.owner)
             self.assertTrue(snap.visibleByUser(person))
 
             snap.unsubscribe(person, snap.owner)
             self.assertFalse(snap.visibleByUser(person))
-            self.assertIsNone(self.getSnapSubscription(snap, person))
+            self.assertIsNone(snap.getSubscription(person))
 
     def test_snap_owner_can_unsubscribe_anyone(self):
         person = self.factory.makePerson()
@@ -1432,7 +1427,7 @@ class TestSnapVisibility(TestCaseWithFactory):
             snap.subscribe(another_user, snap.owner)
             self.assertEqual(1, self.getSnapGrants(snap, another_user).count())
             self.assertThat(
-                self.getSnapSubscription(snap, another_user),
+                snap.getSubscription(another_user),
                 MatchesStructure(
                     person=Equals(another_user),
                     snap=Equals(snap),
@@ -1442,7 +1437,7 @@ class TestSnapVisibility(TestCaseWithFactory):
             snap.information_type = InformationType.PUBLIC
             self.assertEqual(0, self.getSnapGrants(snap, another_user).count())
             self.assertThat(
-                self.getSnapSubscription(snap, another_user),
+                snap.getSubscription(another_user),
                 MatchesStructure(
                     person=Equals(another_user),
                     snap=Equals(snap),
@@ -1472,7 +1467,7 @@ class TestSnapVisibility(TestCaseWithFactory):
             self.assertTrue(snap.visibleByUser(another_person))
             self.assertEqual(2, self.getSnapGrants(snap).count())
             self.assertThat(
-                self.getSnapSubscription(snap, another_person),
+                snap.getSubscription(another_person),
                 MatchesStructure(
                     person=Equals(another_person),
                     snap=Equals(snap),
@@ -1483,7 +1478,7 @@ class TestSnapVisibility(TestCaseWithFactory):
             self.assertTrue(snap.visibleByUser(another_person))
             self.assertEqual(2, self.getSnapGrants(snap).count())
             self.assertThat(
-                self.getSnapSubscription(snap, another_person),
+                snap.getSubscription(another_person),
                 MatchesStructure(
                     person=Equals(another_person),
                     snap=Equals(snap),
@@ -1688,6 +1683,22 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertFalse(
             getUtility(ISnapSet).exists(self.factory.makePerson(), snap.name))
         self.assertFalse(getUtility(ISnapSet).exists(snap.owner, "different"))
+
+    def test_getByPillarAndName(self):
+        owner = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        project_snap = self.factory.makeSnap(
+            name='proj-snap', owner=owner, registrant=owner, project=project)
+        no_project_snap = self.factory.makeSnap(
+            name='no-proj-snap', owner=owner, registrant=owner)
+
+        snap_set = getUtility(ISnapSet)
+        self.assertEqual(
+            project_snap,
+            snap_set.getByPillarAndName(owner, project, 'proj-snap'))
+        self.assertEqual(
+            no_project_snap,
+            snap_set.getByPillarAndName(owner, None, 'no-proj-snap'))
 
     def test_findByOwner(self):
         # ISnapSet.findByOwner returns all Snaps with the given owner.
@@ -2217,6 +2228,13 @@ class TestSnapSet(TestCaseWithFactory):
             self.assertRaises(
                 CannotFetchSnapcraftYaml,
                 getUtility(ISnapSet).getSnapcraftYaml, snap)
+
+    def test_getSnapcraftYaml_emoji(self):
+        self.useFixture(GitHostingFixture(blob="summary: \U0001f680\n"))
+        [git_ref] = self.factory.makeGitRefs()
+        self.assertEqual(
+            {"summary": "\U0001f680"},
+            getUtility(ISnapSet).getSnapcraftYaml(git_ref))
 
     def test__findStaleSnaps(self):
         # Stale; not built automatically.
@@ -2882,9 +2900,13 @@ class TestSnapWebservice(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch(
             owner=self.person,
             information_type=InformationType.PRIVATESECURITY)
+        project = self.factory.makeProduct(
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, branch=branch,
-            private=True)
+            project=project, information_type=InformationType.PROPRIETARY)
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         with person_logged_in(self.person):
             snap_url = api_url(snap)
@@ -2892,9 +2914,9 @@ class TestSnapWebservice(TestCaseWithFactory):
         admin_webservice = webservice_for_person(
             admin, permission=OAuthPermission.WRITE_PRIVATE)
         admin_webservice.default_api_version = "devel"
-        response = admin_webservice.patch(
-            snap_url, "application/json",
-            json.dumps({"information_type": 'Public'}))
+        data = json.dumps({"information_type": 'Public'})
+        content_type = "application/json"
+        response = admin_webservice.patch(snap_url, content_type, data)
         self.assertEqual(400, response.status)
         self.assertEqual(
             b"Snap recipe contains private information and cannot be public.",
@@ -3034,8 +3056,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
 
         # Anonymous requests can only see public snaps.
@@ -3068,16 +3089,16 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = webservice.named_get(
             "/+snaps", "findByOwner", owner=person_urls[0],
             api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:2],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByOwner", owner=person_urls[1],
             api_version="devel")
         self.assertEqual(200, response.status)

@@ -2208,6 +2208,8 @@ class IPersonSet(Interface):
             database was updated.
         :raises AccountSuspendedError: if the account associated with the
             identifier has been suspended.
+        :raises AccountDeceasedError: if the account associated with the
+            identifier belongs to a deceased user.
         """
 
     @call_with(user=REQUEST_USER)
