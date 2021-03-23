@@ -24,7 +24,7 @@ from lp.testing.keyserver.web import GREETING
 class TestInProcessKeyServerFixture(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=10)
+        timeout=30)
 
     @defer.inlineCallbacks
     def test_url(self):

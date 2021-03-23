@@ -48,6 +48,7 @@ from lp.registry.interfaces.pillar import IPillar
 from lp.registry.interfaces.product import IProduct
 from lp.snappy.interfaces.snap import ISnap
 
+
 # XXX 2012-02-24 wallyworld bug 939910
 # Need to export for version 'beta' even though we only want to use it in
 # version 'devel'
@@ -188,7 +189,7 @@ class ISharingService(IService):
     def getSharedOCIRecipes(pillar, person, user):
         """Return the OCI recipes shared between the pillar and person.
 
-        :param user: the user making the request. Only OCI recipes visible 
+        :param user: the user making the request. Only OCI recipes visible
             to the user will be included in the result.
         :return: a collection of OCI recipes.
         """
@@ -357,7 +358,7 @@ class ISharingService(IService):
             required=False),
         ocirecipes=List(
             Reference(schema=IOCIRecipe),
-            title=_('Snap recipes'), required=False))
+            title=_('OCI recipes'), required=False))
     @operation_for_version('devel')
     def revokeAccessGrants(pillar, grantee, user, bugs=None, branches=None,
                            gitrepositories=None, snaps=None,
@@ -372,7 +373,7 @@ class ISharingService(IService):
         :param gitrepositories: the Git repositories for which to revoke access
         :param snaps: The snap recipes for which to revoke access
         :param specifications: the specifications for which to revoke access
-        :param snaps: The OCI recipes for which to revoke access
+        :param ocirecipes: The OCI recipes for which to revoke access
         """
 
     @export_write_operation()
@@ -392,7 +393,7 @@ class ISharingService(IService):
             Reference(schema=ISnap),
             title=_('Snap recipes'), required=False),
         ocirecipes=List(
-            Reference(schema=ISnap),
+            Reference(schema=IOCIRecipe),
             title=_('OCI recipes'), required=False)
     )
     @operation_for_version('devel')

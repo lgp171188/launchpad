@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad XMLRPC faults."""
@@ -18,6 +18,7 @@ __all__ = [
     'FileBugGotProductAndDistro',
     'FileBugMissingProductOrDistribution',
     'GitRepositoryNotFound',
+    'InactiveAccount',
     'InvalidBranchIdentifier',
     'InvalidBranchName',
     'InvalidBranchUniqueName',
@@ -508,3 +509,13 @@ class Unauthorized(LaunchpadFault):
 
     def __init__(self, message="Authorisation required."):
         LaunchpadFault.__init__(self, message=message)
+
+
+class InactiveAccount(LaunchpadFault):
+    """The requested Launchpad account is inactive."""
+
+    error_code = 420
+    msg_template = 'Inactive account: %(person_name)s'
+
+    def __init__(self, person_name):
+        LaunchpadFault.__init__(self, person_name=person_name)

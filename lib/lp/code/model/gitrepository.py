@@ -196,7 +196,10 @@ from lp.services.database.stormexpr import (
     Values,
     )
 from lp.services.features import getFeatureFlag
-from lp.services.identity.interfaces.account import IAccountSet
+from lp.services.identity.interfaces.account import (
+    AccountStatus,
+    IAccountSet,
+    )
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.macaroons.interfaces import IMacaroonIssuer
@@ -2059,7 +2062,10 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
                 caveat_value)
         except LookupError:
             return False
-        ok = IPerson.providedBy(user) and user.account == account
+        ok = (
+            IPerson.providedBy(user) and
+            user.account_status == AccountStatus.ACTIVE and
+            user.account == account)
         if ok:
             verified.user = user
         return ok

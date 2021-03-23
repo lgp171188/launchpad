@@ -51,6 +51,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeBuildAlreadyPending,
     OCIRecipeBuildRequestStatus,
     OCIRecipeNotOwner,
+    OCIRecipePrivacyMismatch,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
@@ -60,6 +61,11 @@ from lp.oci.interfaces.ociregistrycredentials import (
 from lp.oci.tests.helpers import (
     MatchesOCIRegistryCredentials,
     OCIConfigHelperMixin,
+    )
+from lp.registry.enums import (
+    BranchSharingPolicy,
+    PersonVisibility,
+    TeamMembershipPolicy,
     )
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactSource,
@@ -791,6 +797,42 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         project = self.factory.makeOCIProject(pillar=distribution)
         recipe = self.factory.makeOCIRecipe(oci_project=project)
         self.assertEqual(recipe.name, recipe.image_name)
+
+    def test_public_recipe_should_not_be_linked_to_private_content(self):
+        login_admin()
+        private_team = self.factory.makeTeam(
+            visibility=PersonVisibility.PRIVATE,
+            membership_policy=TeamMembershipPolicy.MODERATED)
+        owner = self.factory.makePerson(member_of=[private_team])
+        pillar = self.factory.makeProduct(
+            owner=private_team, registrant=owner,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        oci_project = self.factory.makeOCIProject(
+            registrant=owner, pillar=pillar)
+
+        [private_git_ref] = self.factory.makeGitRefs(
+            target=pillar, owner=owner,
+            information_type=InformationType.PROPRIETARY)
+
+        private_recipe = self.factory.makeOCIRecipe(
+            owner=private_team, registrant=owner,
+            oci_project=oci_project, git_ref=private_git_ref,
+            information_type=InformationType.PROPRIETARY)
+        public_recipe = self.factory.makeOCIRecipe()
+
+        # Should not be able to make the recipe PUBLIC if it's linked to
+        self.assertRaises(
+            OCIRecipePrivacyMismatch, setattr,
+            private_recipe, 'information_type', InformationType.PUBLIC)
+        # We should not be able to link public recipe to a private repo.
+        self.assertRaises(
+            OCIRecipePrivacyMismatch, setattr,
+            public_recipe, 'git_ref', private_git_ref)
+        # We should not be able to link public recipe to a private owner.
+        self.assertRaises(
+            OCIRecipePrivacyMismatch, setattr,
+            public_recipe, 'owner', private_team)
 
 
 class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
