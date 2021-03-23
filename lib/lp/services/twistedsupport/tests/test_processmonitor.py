@@ -356,7 +356,7 @@ class TestProcessMonitorProtocolWithTimeout(ProcessTestsMixin, TestCase):
 class TestRunProcessWithTimeout(TestCase):
     """Tests for `run_process_with_timeout`."""
 
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def test_run_process_with_timeout_invalid_args(self):
         # `run_process_with_timeout` expects the process 'args' to be a
