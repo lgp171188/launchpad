@@ -865,7 +865,7 @@ class SharingService:
 
         # Create a job to remove subscriptions for artifacts the grantee can no
         # longer see.
-        return getUtility(IRemoveArtifactSubscriptionsJobSource).create(
+        getUtility(IRemoveArtifactSubscriptionsJobSource).create(
             user, artifacts, grantee=grantee, pillar=pillar)
 
     def ensureAccessGrants(self, grantees, user, bugs=None, branches=None,

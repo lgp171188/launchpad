@@ -26,13 +26,11 @@
   <div metal:fill-slot="main">
 
     <div id="observer-summary">
-      <p>
-        <tal:is-team condition="view/person/is_team">
-          <tal:members>3</tal:members> team members can view these bugs,
-          Bazaar branches, Git repositories, Snaps, OCI recipes and blueprints.
-        </tal:is-team>
-        Shared with <tal:name replace="view/person/displayname">grantee</tal:name>:
-      </p>
+      <tal:is-team condition="view/person/is_team">
+        <tal:members>3</tal:members> team members can view these bugs,
+        Bazaar branches, Git repositories, Snaps, OCI recipes and blueprints.
+      </tal:is-team>
+      Shared with <tal:name replace="view/person/displayname">grantee</tal:name>
       <ul class="listing">
         <li tal:condition="view/shared_bugs_count">
           <span tal:replace="view/shared_bugs_count" /> Bugs
@@ -62,7 +60,8 @@
       <thead>
         <tr>
           <th colspan="2" width="">
-            Subscribed Bug Report, Bazaar Branch, Git Repository, or Blueprint
+            Subscribed Bug Report, Bazaar Branch, Git Repository, Snaps, OCI
+             recipes or Blueprint
           </th>
           <th>
             Information Type
@@ -73,7 +72,7 @@
           <tr>
               <td colspan="3">
                   There are no shared bugs, Bazaar branches, Git repositories,
-                  or blueprints.
+                  Snaps, OCI recipes or blueprints.
               </td>
           </tr>
       </tbody>
