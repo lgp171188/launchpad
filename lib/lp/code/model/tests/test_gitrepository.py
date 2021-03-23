@@ -152,6 +152,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features.testing import FeatureFixture
+from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import JobRunner
@@ -3899,6 +3900,39 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             hosting_fixture.repackRepository.calls)
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
 
+    def test_repack_data(self):
+        owner_db = self.factory.makePerson(name="person")
+        project_db = self.factory.makeProduct(name="project")
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, target=project_db, name="repository")
+        webservice = webservice_for_person(
+            repository_db.owner, permission=OAuthPermission.READ_PUBLIC)
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository_db)
+        repository = webservice.get(repository_url).jsonBody()
+        self.assertThat(repository, ContainsDict({
+            'loose_object_count': Is(None),
+            'pack_count': Is(None),
+            'date_last_repacked': Is(None),
+            'date_last_scanned': Is(None),
+            }))
+
+        repository_db = removeSecurityProxy(repository_db)
+        repository_db.loose_object_count = 45
+        repository_db.pack_count = 523
+        repository_db.date_last_repacked = UTC_NOW
+        repository_db.date_last_scanned = UTC_NOW
+
+        repository = webservice.get(repository_url).jsonBody()
+
+        self.assertThat(repository, ContainsDict({
+            'loose_object_count': Equals(45),
+            'pack_count': Equals(523),
+            'date_last_repacked': Equals(UTC_NOW),
+            'date_last_scanned': Equals(UTC_NOW),
+            }))
+
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")
         project_db = self.factory.makeProduct(name="project")
@@ -4711,6 +4745,21 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
             ["Caveat check for 'lp.principal.openid-identifier %s' failed." %
              identifier],
             issuer, macaroon, repository, user=self.factory.makePerson())
+
+    def test_verifyMacaroon_inactive_account(self):
+        repository = self.factory.makeGitRepository()
+        issuer = getUtility(IMacaroonIssuer, "git-repository")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
+        naked_account = removeSecurityProxy(repository.owner).account
+        identifier = naked_account.openid_identifiers.any().identifier
+        with admin_logged_in():
+            repository.owner.setAccountStatus(
+                AccountStatus.SUSPENDED, None, "Bye")
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.principal.openid-identifier %s' failed." %
+             identifier],
+            issuer, macaroon, repository, user=repository.owner)
 
     def test_verifyMacaroon_closed_account(self):
         # A closed account no longer has an OpenID identifier, so the

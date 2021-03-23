@@ -677,27 +677,28 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         snap = removeSecurityProxy(self.factory.makeSnap(
             owner=duplicate, registrant=duplicate,
             name=u'foo', private=True))
+
         with admin_logged_in():
             # Owner should have being subscribed automatically on creation.
             self.assertTrue(snap.visibleByUser(duplicate))
-            self.assertThat(snap._getSubscription(duplicate), MatchesStructure(
+            self.assertThat(snap.getSubscription(duplicate), MatchesStructure(
                 snap=Equals(snap),
                 person=Equals(duplicate)
             ))
             self.assertFalse(snap.visibleByUser(mergee))
-            self.assertIsNone(snap._getSubscription(mergee))
+            self.assertIsNone(snap.getSubscription(mergee))
 
         self._do_premerge(duplicate, mergee)
         login_person(mergee)
         duplicate, mergee = self._do_merge(duplicate, mergee)
 
         self.assertTrue(snap.visibleByUser(mergee))
-        self.assertThat(snap._getSubscription(mergee), MatchesStructure(
+        self.assertThat(snap.getSubscription(mergee), MatchesStructure(
             snap=Equals(snap),
             person=Equals(mergee)
         ))
         self.assertFalse(snap.visibleByUser(duplicate))
-        self.assertIsNone(snap._getSubscription(duplicate))
+        self.assertIsNone(snap.getSubscription(duplicate))
 
     def test_merge_moves_oci_recipes(self):
         # When person/teams are merged, oci recipes owned by the from

@@ -68,7 +68,7 @@ from lp.testing.script import run_script
 class TestSyncSigningKeysScript(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestSyncSigningKeysScript, self).setUp()
@@ -576,10 +576,9 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def setUpArchiveKey(self, archive, secret_key_path):
-        with InProcessKeyServerFixture() as keyserver:
-            yield keyserver.start()
-            yield IArchiveGPGSigningKey(archive).setSigningKey(
-                secret_key_path, async_keyserver=True)
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        yield IArchiveGPGSigningKey(archive).setSigningKey(
+            secret_key_path, async_keyserver=True)
 
     @defer.inlineCallbacks
     def test_injectGPG(self):

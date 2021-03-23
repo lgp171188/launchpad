@@ -191,7 +191,7 @@ class FakeMethodCallLog(FakeMethod):
 class TestSigningHelpers(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestSigningHelpers, self).setUp()
@@ -231,11 +231,10 @@ class TestSigningHelpers(TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def setUpArchiveKey(self):
-        with InProcessKeyServerFixture() as keyserver:
-            yield keyserver.start()
-            key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-            yield IArchiveGPGSigningKey(self.archive).setSigningKey(
-                key_path, async_keyserver=True)
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
+        yield IArchiveGPGSigningKey(self.archive).setSigningKey(
+            key_path, async_keyserver=True)
 
     def setUpUefiKeys(self, create=True, series=None):
         if not series:
