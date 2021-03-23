@@ -69,7 +69,7 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
         class TestSomething(TestCase):
 
             run_tests_with = AsynchronousDeferredRunTest.make_factory(
-                timeout=10)
+                timeout=30)
 
             @defer.inlineCallbacks
             def setUp(self):

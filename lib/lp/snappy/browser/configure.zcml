@@ -1,4 +1,4 @@
-<!-- Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -11,8 +11,7 @@
     <facet facet="overview">
         <browser:url
             for="lp.snappy.interfaces.snap.ISnap"
-            path_expression="string:+snap/${name}"
-            attribute_to_parent="owner" />
+            urldata="lp.snappy.browser.snap.SnapURL" />
         <browser:defaultView
             for="lp.snappy.interfaces.snap.ISnap"
             name="+index" />
@@ -36,6 +35,45 @@
             permission="launchpad.View"
             name="+portlet-privacy"
             template="../templates/snap-portlet-privacy.pt"/>
+        <browser:page
+            for="lp.snappy.interfaces.snap.ISnap"
+            permission="launchpad.View"
+            name="+portlet-subscribers"
+            template="../templates/snap-portlet-subscribers.pt"/>
+        <browser:page
+            for="lp.snappy.interfaces.snap.ISnap"
+            class="lp.snappy.browser.snapsubscription.SnapPortletSubscribersContent"
+            permission="launchpad.View"
+            name="+snap-portlet-subscriber-content"
+            template="../templates/snap-portlet-subscribers-content.pt"/>
+
+        <browser:defaultView
+            for="lp.snappy.interfaces.snapsubscription.ISnapSubscription"
+            name="+index"/>
+        <browser:page
+            for="lp.snappy.interfaces.snapsubscription.ISnapSubscription"
+            class="lp.snappy.browser.snapsubscription.SnapSubscriptionEditView"
+            permission="launchpad.Edit"
+            name="+index"
+            template="../templates/snapsubscription-edit.pt"/>
+        <browser:page
+            for="lp.snappy.interfaces.snap.ISnap"
+            class="lp.snappy.browser.snapsubscription.SnapSubscriptionAddView"
+            permission="launchpad.AnyPerson"
+            name="+subscribe"
+            template="../../app/templates/generic-edit.pt"/>
+        <browser:page
+            for="lp.snappy.interfaces.snap.ISnap"
+            class="lp.snappy.browser.snapsubscription.SnapSubscriptionAddOtherView"
+            permission="launchpad.AnyPerson"
+            name="+addsubscriber"
+            template="../../app/templates/generic-edit.pt"/>
+        <browser:url
+            for="lp.snappy.interfaces.snapsubscription.ISnapSubscription"
+            path_expression="string:+subscription/${person/name}"
+            attribute_to_parent="snap"
+            rootsite="code"/>
+
         <browser:page
             for="lp.code.interfaces.branch.IBranch"
             class="lp.snappy.browser.snap.SnapAddView"

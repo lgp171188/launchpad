@@ -2065,8 +2065,9 @@ class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
     def test_shows_no_recipe(self):
         """Should shows correct message when there are no visible recipes."""
         # Create a private OCI recipe that should not be shown.
+        owner = self.factory.makePerson()
         self.factory.makeOCIRecipe(
-            oci_project=self.oci_project,
+            owner=owner, registrant=owner, oci_project=self.oci_project,
             information_type=InformationType.PRIVATESECURITY)
         browser = self.getViewBrowser(
             self.oci_project, "+recipes", user=self.person)

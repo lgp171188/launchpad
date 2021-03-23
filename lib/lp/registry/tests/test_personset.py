@@ -46,6 +46,7 @@ from lp.services.database.sqlbase import (
     )
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
+    AccountDeceasedError,
     AccountStatus,
     AccountSuspendedError,
     IAccountSet,
@@ -637,6 +638,16 @@ class TestPersonSetGetOrCreateByOpenIDIdentifier(TestCaseWithFactory):
         self.assertRaises(
             AccountSuspendedError, self.callGetOrCreate, openid_ident)
 
+    def test_existing_deceased_account(self):
+        # An existing account belonging to a deceased user will raise an
+        # exception.
+        person = self.factory.makePerson(account_status=AccountStatus.DECEASED)
+        openid_ident = removeSecurityProxy(
+            person.account).openid_identifiers.any().identifier
+
+        self.assertRaises(
+            AccountDeceasedError, self.callGetOrCreate, openid_ident)
+
     def test_no_account_or_email(self):
         # An identifier can be used to create an account (it is assumed
         # to be already authenticated with SSO).
@@ -784,6 +795,18 @@ class TestPersonSetGetOrCreateSoftwareCenterCustomer(TestCaseWithFactory):
         with person_logged_in(self.sca):
             self.assertRaises(
                 NameAlreadyTaken,
+                getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer,
+                self.sca, u'somebody', 'somebody@example.com', 'Example')
+
+    def test_fails_if_account_is_deceased(self):
+        # Accounts belonging to deceased users cannot be returned.
+        somebody = self.factory.makePerson()
+        make_openid_identifier(somebody.account, u'somebody')
+        with admin_logged_in():
+            somebody.setAccountStatus(AccountStatus.DECEASED, None, "RIP")
+        with person_logged_in(self.sca):
+            self.assertRaises(
+                AccountDeceasedError,
                 getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer,
                 self.sca, u'somebody', 'somebody@example.com', 'Example')
 

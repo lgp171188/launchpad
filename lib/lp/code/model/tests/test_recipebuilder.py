@@ -164,7 +164,7 @@ class TestRecipeBuilder(TestRecipeBuilderBase):
 
 class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
 
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def _setBuilderConfig(self):
         """Setup a temporary builder config."""

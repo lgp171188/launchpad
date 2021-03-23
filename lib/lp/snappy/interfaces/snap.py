@@ -571,9 +571,23 @@ class ISnapView(Interface):
         # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
+    subscriptions = CollectionField(
+        title=_("SnapSubscriptions associated with this snap recipe."),
+        readonly=True,
+        value_type=Reference(Interface))
+
     subscribers = CollectionField(
         title=_("Persons subscribed to this snap recipe."),
         readonly=True, value_type=Reference(IPerson))
+
+    def getSubscription(person):
+        """Returns the person's snap subscription for this snap recipe."""
+
+    def hasSubscription(person):
+        """Is this person subscribed to the snap recipe?"""
+
+    def userCanBeSubscribed(person):
+        """Checks if the given person can be subscribed to this snap recipe."""
 
     def visibleByUser(user):
         """Can the specified user see this snap recipe?"""
@@ -583,6 +597,9 @@ class ISnapView(Interface):
 
         If the user is a Launchpad admin, any type is acceptable.
         """
+
+    def unsubscribe(person, unsubscribed_by):
+        """Unsubscribe a person from this snap recipe."""
 
 
 class ISnapEdit(IWebhookTarget):
@@ -887,9 +904,6 @@ class ISnapAdminAttributes(Interface):
     def subscribe(person, subscribed_by):
         """Subscribe a person to this snap recipe."""
 
-    def unsubscribe(person, unsubscribed_by):
-        """Unsubscribe a person to this snap recipe."""
-
 
 # XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
 # generation working.  Individual attributes must set their version to
@@ -950,6 +964,9 @@ class ISnapSet(Interface):
     @operation_for_version("devel")
     def getByName(owner, name):
         """Return the appropriate `ISnap` for the given objects."""
+
+    def getByPillarAndName(owner, pillar, name):
+        """Returns the appropriate `ISnap` for the given pillar and name."""
 
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True))
