@@ -27,19 +27,32 @@
 
     <div id="observer-summary">
       <p>
-      <tal:bugs replace="view/shared_bugs_count">0</tal:bugs> bugs,
-      <tal:branches replace="view/shared_branches_count">0</tal:branches> Bazaar branches,
-      <tal:gitrepositories replace="view/shared_gitrepositories_count">0</tal:gitrepositories> Git repositories,
-      and  <tal:specifications
-      replace="view/shared_specifications_count">0</tal:specifications>
-      blueprints shared with <tal:name replace="view/person/displayname">
-      grantee</tal:name>.<br />
-
-      <tal:is-team condition="view/person/is_team">
-        <tal:members>3</tal:members> team members can view these bugs,
-        Bazaar branches, Git repositories, and blueprints.
-      </tal:is-team>
+        <tal:is-team condition="view/person/is_team">
+          <tal:members>3</tal:members> team members can view these bugs,
+          Bazaar branches, Git repositories, Snaps, OCI recipes and blueprints.
+        </tal:is-team>
+        Shared with <tal:name replace="view/person/displayname">grantee</tal:name>:
       </p>
+      <ul class="listing">
+        <li tal:condition="view/shared_bugs_count">
+          <span tal:replace="view/shared_bugs_count" /> Bugs
+        </li>
+        <li tal:condition="view/shared_branches_count">
+          <span tal:replace="view/shared_branches_count" /> Bazaar branches
+        </li>
+        <li tal:condition="view/shared_gitrepositories_count">
+          <span tal:replace="view/shared_gitrepositories_count" /> Git repositories
+        </li>
+        <li tal:condition="view/shared_ocirecipe_count">
+          <span tal:replace="view/shared_ocirecipe_count" /> OCI recipes
+        </li>
+        <li tal:condition="view/shared_snaps_count">
+          <span tal:replace="view/shared_snaps_count" /> Snap recipes
+        </li>
+        <li tal:condition="view/shared_specifications_count">
+          <span tal:replace="view/shared_specifications_count" /> Blueprints
+        </li>
+      </ul>
     </div>
 
     <table id="shared-table" class="listing sortable">
