@@ -3900,7 +3900,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             hosting_fixture.repackRepository.calls)
         self.assertEqual(1, hosting_fixture.repackRepository.call_count)
 
-    def test_getRepackData(self):
+    def test_repack_data(self):
         owner_db = self.factory.makePerson(name="person")
         project_db = self.factory.makeProduct(name="project")
         repository_db = self.factory.makeGitRepository(
@@ -3912,26 +3912,25 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             repository_url = api_url(repository_db)
         repository = webservice.get(repository_url).jsonBody()
         self.assertThat(repository, ContainsDict({
-            'loose_object_count': Equals(None),
-            'pack_count': Equals(None),
-            'date_last_repacked': Equals(None),
-            'date_last_scanned': Equals(None),
+            'loose_object_count': Is(None),
+            'pack_count': Is(None),
+            'date_last_repacked': Is(None),
+            'date_last_scanned': Is(None),
             }))
 
-        utc_now = UTC_NOW
         repository_db = removeSecurityProxy(repository_db)
         repository_db.loose_object_count = 45
         repository_db.pack_count = 523
-        repository_db.date_last_repacked = utc_now
-        repository_db.date_last_scanned = utc_now
+        repository_db.date_last_repacked = UTC_NOW
+        repository_db.date_last_scanned = UTC_NOW
 
         repository = webservice.get(repository_url).jsonBody()
 
         self.assertThat(repository, ContainsDict({
             'loose_object_count': Equals(45),
             'pack_count': Equals(523),
-            'date_last_repacked': Equals(utc_now),
-            'date_last_scanned': Equals(utc_now),
+            'date_last_repacked': Equals(UTC_NOW),
+            'date_last_scanned': Equals(UTC_NOW),
             }))
 
     def test_urls(self):
