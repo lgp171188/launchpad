@@ -105,7 +105,9 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactSource,
     )
 from lp.registry.interfaces.distribution import IDistributionSet
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
+    IPerson,
     IPersonSet,
     validate_public_person,
     )
@@ -874,6 +876,14 @@ class OCIRecipeSet:
             OCIRecipe,
             OCIRecipe.oci_project == oci_project,
             get_ocirecipe_privacy_filter(visible_by_user))
+
+    def findByContext(self, context, visible_by_user):
+        if IPerson.providedBy(context):
+            return self.findByOwner(context).find(
+                get_ocirecipe_privacy_filter(visible_by_user))
+        if IOCIProject.providedBy(context):
+            return self.findByOCIProject(context, visible_by_user)
+        raise NotImplementedError("Unknown OCI recipe context: %s" % context)
 
     def findByGitRepository(self, repository, paths=None):
         """See `IOCIRecipeSet`."""

@@ -217,7 +217,7 @@ class OCIProjectRecipesView(LaunchpadView):
 
     @property
     def recipes(self):
-        recipes = getUtility(IOCIRecipeSet).findByOCIProject(
+        recipes = getUtility(IOCIRecipeSet).findByContext(
             self.context, visible_by_user=self.user)
         return recipes.order_by('name')
 

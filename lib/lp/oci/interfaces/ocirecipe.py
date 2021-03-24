@@ -555,6 +555,9 @@ class IOCIRecipeSet(Interface):
     def findByOCIProject(oci_project, visible_by_user=None):
         """Return all OCI recipes with the given `oci_project`."""
 
+    def findByContext(context, visible_by_user=None):
+        """Returns all OCI recipes for a given context."""
+
     def preloadDataForOCIRecipes(recipes, user):
         """Load the data related to a list of OCI Recipes."""
 
