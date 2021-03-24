@@ -3523,7 +3523,7 @@ class OCIRecipeSubscriptionEdit(AuthorizationBase):
                 user.in_admin)
 
 
-class SnapSubscriptionView(AuthorizationBase):
+class OCIRecipeSubscriptionView(AuthorizationBase):
     permission = 'launchpad.View'
     usedfor = IOCIRecipeSubscription
 
