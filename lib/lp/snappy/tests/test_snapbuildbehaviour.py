@@ -700,6 +700,67 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         self.assertNotIn("channels", args)
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_primary(self):
+        # If the build is configured to use the primary archive as its
+        # source, then by default it uses the release, security, and updates
+        # pockets.
+        job = self.makeJob()
+        expected_archives = [
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_primary_non_default_pocket(self):
+        # If the build is configured to use the primary archive as its
+        # source, and it uses a non-default pocket, then it uses the
+        # corresponding expanded pockets in the primary archive.
+        job = self.makeJob(pocket=PackagePublishingPocket.SECURITY)
+        expected_archives = [
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_ppa(self):
+        # If the build is configured to use a PPA as its source, then by
+        # default it uses the release pocket in its source PPA, and the
+        # release, security, and updates pockets in the primary archive.
+        archive = self.factory.makeArchive()
+        job = self.makeJob(archive=archive)
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            distroarchseries=job.build.distro_series.architectures[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        primary = job.build.distribution.main_archive
+        expected_archives = [
+            "deb %s %s main" % (
+                archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_disallow_internet(self):
         # If external network access is not allowed for the snap,
         # extraBuildArgs does not dispatch a proxy token.

@@ -514,6 +514,23 @@ class TestAsyncOCIRecipeBuildBehaviour(
         }))
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_archives(self):
+        # The build uses the release, security, and updates pockets in the
+        # primary archive.
+        job = self.makeJob()
+        expected_archives = [
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
     def test_composeBuildRequest_proxy_url_set(self):
         [ref] = self.factory.makeGitRefs()
         job = self.makeJob(git_ref=ref)
