@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import unicode_literals
@@ -463,6 +463,49 @@ class TestPersonIndexView(BrowserTestCase):
         login(ANONYMOUS)
         markup = self.get_markup(view, person)
         self.assertNotEqual('', markup)
+        self.assertThat(markup, Not(link_match))
+
+    def test_show_oci_recipes_link(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        person = self.factory.makePerson()
+        # Creates a recipe, so the link appears.
+        self.factory.makeOCIRecipe(owner=person, registrant=person)
+        view = create_initialized_view(person, '+index', principal=person)
+        with person_logged_in(person):
+            markup = self.get_markup(view, person)
+        expected_url = 'http://launchpad.test/~%s/+oci-recipes' % person.name
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCI recipes link', 'a',
+                attrs={
+                    'href': expected_url},
+                text='OCI recipes'))
+        self.assertThat(markup, link_match)
+
+        login(ANONYMOUS)
+        markup = self.get_markup(view, person)
+        self.assertThat(markup, link_match)
+
+    def test_hides_oci_recipes_link_if_user_doesnt_have_oci_recipes(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        person = self.factory.makePerson()
+        # Creates a recipe from another user, just to make sure it will not
+        # interfere.
+        self.factory.makeOCIRecipe()
+        view = create_initialized_view(person, '+index', principal=person)
+        with person_logged_in(person):
+            markup = self.get_markup(view, person)
+        expected_url = 'http://launchpad.test/~%s/+oci-recipes' % person.name
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCI recipes link', 'a',
+                attrs={
+                    'href': expected_url},
+                text='OCI recipes'))
+        self.assertThat(markup, Not(link_match))
+
+        login(ANONYMOUS)
+        markup = self.get_markup(view, person)
         self.assertThat(markup, Not(link_match))
 
     def test_ppas_query_count(self):

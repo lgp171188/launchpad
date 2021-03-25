@@ -204,7 +204,9 @@ class OCIRecipeContextMenu(ContextMenu):
 
 
 class OCIProjectRecipesView(LaunchpadView):
-    """Default view for the list of OCI recipes of an OCI project."""
+    """Default view for the list of OCI recipes of a context (OCI project
+    or Person).
+    """
     page_title = 'Recipes'
 
     @property
