@@ -1768,7 +1768,8 @@ class TestSnapSet(TestCaseWithFactory):
 
     def test_findByProject(self):
         # ISnapSet.findByProject returns all Snaps based on branches or
-        # repositories for the given project.
+        # repositories for the given project, and snaps associated directly
+        # to the project.
         projects = [self.factory.makeProduct() for i in range(2)]
         snaps = []
         for project in projects:
@@ -1776,14 +1777,15 @@ class TestSnapSet(TestCaseWithFactory):
                 branch=self.factory.makeProductBranch(product=project)))
             [ref] = self.factory.makeGitRefs(target=project)
             snaps.append(self.factory.makeSnap(git_ref=ref))
+            snaps.append(self.factory.makeSnap(project=project))
         snaps.append(self.factory.makeSnap(
             branch=self.factory.makePersonalBranch()))
         [ref] = self.factory.makeGitRefs(target=None)
         snaps.append(self.factory.makeSnap(git_ref=ref))
         snap_set = getUtility(ISnapSet)
-        self.assertContentEqual(snaps[:2], snap_set.findByProject(projects[0]))
+        self.assertContentEqual(snaps[:3], snap_set.findByProject(projects[0]))
         self.assertContentEqual(
-            snaps[2:4], snap_set.findByProject(projects[1]))
+            snaps[3:6], snap_set.findByProject(projects[1]))
 
     def test_findByBranch(self):
         # ISnapSet.findByBranch returns all Snaps with the given Bazaar branch.
