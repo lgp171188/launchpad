@@ -2071,7 +2071,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # The notify call creates a GitRefScanJob.
         repository = self.factory.makeGitRepository()
         self.assertIsNone(self.assertDoesNotFault(
-            None, "notify", repository.getInternalPath()))
+            None, "notify",
+            repository.getInternalPath(),
+            {'loose_object_count': 5, 'pack_count': 2},
+            {'uid': repository.owner.id}))
         job_source = getUtility(IGitRefScanJobSource)
         [job] = list(job_source.iterReady())
         self.assertEqual(repository, job.repository)
@@ -2079,7 +2082,11 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_notify_missing_repository(self):
         # A notify call on a non-existent repository returns a fault and
         # does not create a job.
-        self.assertFault(faults.NotFound, None, "notify", "10000")
+        requester_owner = self.factory.makePerson()
+
+        self.assertFault(faults.NotFound, None, "notify", "10000",
+                         {'loose_object_count': 5, 'pack_count': 2},
+                         {'uid': requester_owner.id})
         job_source = getUtility(IGitRefScanJobSource)
         self.assertEqual([], list(job_source.iterReady()))
 
@@ -2089,7 +2096,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             repository = self.factory.makeGitRepository(
                 information_type=InformationType.PRIVATESECURITY)
             path = repository.getInternalPath()
-        self.assertIsNone(self.assertDoesNotFault(None, "notify", path))
+            self.assertIsNone(self.assertDoesNotFault(
+                None, "notify", path,
+                {'loose_object_count': 5, 'pack_count': 2},
+                {'uid': repository.owner.id}))
         job_source = getUtility(IGitRefScanJobSource)
         [job] = list(job_source.iterReady())
         self.assertEqual(repository, job.repository)

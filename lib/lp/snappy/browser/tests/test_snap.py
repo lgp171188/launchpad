@@ -622,9 +622,7 @@ class TestSnapAddView(BaseTestSnapView):
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
         parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
-            urlsplit(
-                canonical_url(snap, rootsite="code") +
-                "/+authorize/+login")[:3],
+            urlsplit(canonical_url(snap) + "/+authorize/+login")[:3],
             parsed_location[:3])
         expected_args = {
             "discharge_macaroon_action": ["field.actions.complete"],
@@ -767,8 +765,8 @@ class TestSnapAdminView(BaseTestSnapView):
     def test_admin_snap(self):
         # Admins can change require_virtualized, privacy, and allow_internet.
         login("admin@canonical.com")
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         login_person(self.person)
         project = self.factory.makeProduct(name="my-project")
         with person_logged_in(project.owner):
@@ -782,7 +780,7 @@ class TestSnapAdminView(BaseTestSnapView):
         self.factory.makeAccessPolicy(
             pillar=project, type=InformationType.PRIVATESECURITY)
         private = InformationType.PRIVATESECURITY.name
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = "my-project"
         browser.getControl("Require virtualized builders").selected = False
@@ -790,7 +788,7 @@ class TestSnapAdminView(BaseTestSnapView):
         browser.getControl("Allow external network access").selected = False
         browser.getControl("Update snap package").click()
 
-        login_person(self.person)
+        login_admin()
         self.assertEqual(project, snap.project)
         self.assertFalse(snap.require_virtualized)
         self.assertTrue(snap.private)
@@ -800,10 +798,10 @@ class TestSnapAdminView(BaseTestSnapView):
         # Cannot make snap private if it doesn't have a project associated.
         login_person(self.person)
         snap = self.factory.makeSnap(registrant=self.person)
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         private = InformationType.PRIVATESECURITY.name
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name='field.project').value = None
         browser.getControl(name="field.information_type").value = private
@@ -826,10 +824,10 @@ class TestSnapAdminView(BaseTestSnapView):
             information_type=InformationType.PRIVATESECURITY)
         # Note that only LP admins or, in this case, commercial_admins
         # can reach this snap because it's owned by a private team.
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         public = InformationType.PUBLIC.name
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
         browser.getControl(name="field.information_type").value = public
         browser.getControl("Update snap package").click()
@@ -1657,6 +1655,15 @@ class TestSnapView(BaseTestSnapView):
                         "snap breadcrumb", "li",
                         text=re.compile(r"\ssnap-name\s")))))
 
+    def test_snap_with_project_pillar_url(self):
+        project = self.factory.makeProduct()
+        snap = self.factory.makeSnap(project=project)
+        browser = self.getViewBrowser(snap)
+        with admin_logged_in():
+            expected_url = 'http://launchpad.test/~{}/{}/+snap/{}'.format(
+                snap.owner.name, project.name, snap.name)
+        self.assertEqual(expected_url, browser.url)
+
     def test_index_bzr(self):
         branch = self.factory.makePersonalBranch(
             owner=self.person, name="snap-branch")
@@ -1732,7 +1739,7 @@ class TestSnapView(BaseTestSnapView):
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: &lt;Redacted&gt;
+            Source: &lt;redacted&gt;
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request
@@ -1767,7 +1774,7 @@ class TestSnapView(BaseTestSnapView):
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: &lt;Redacted&gt;
+            Source: &lt;redacted&gt;
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request

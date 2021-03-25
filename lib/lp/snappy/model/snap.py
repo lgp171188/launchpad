@@ -27,6 +27,7 @@ from storm.expr import (
     And,
     Coalesce,
     Desc,
+    Exists,
     Join,
     LeftJoin,
     Not,
@@ -72,6 +73,7 @@ from lp.app.errors import (
     SubscriptionPrivacyViolation,
     UserCannotUnsubscribePerson,
     )
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.app.interfaces.services import IService
 from lp.buildmaster.enums import BuildStatus
@@ -1212,6 +1214,8 @@ class Snap(Storm, WebhookTargetMixin):
     def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
         """See `ISnap`."""
         subscription = self.getSubscription(person)
+        if subscription is None:
+            return
         if (not ignore_permissions
                 and not subscription.canBeUnsubscribedByUser(unsubscribed_by)):
             raise UserCannotUnsubscribePerson(
@@ -1221,11 +1225,8 @@ class Snap(Storm, WebhookTargetMixin):
         artifact = getUtility(IAccessArtifactSource).find([self])
         getUtility(IAccessArtifactGrantSource).revokeByArtifact(
             artifact, [person])
-        # It should never be None, since we always create a SnapSubscription
-        # on Snap.subscribe. But just in case...
-        if subscription is not None:
-            store = Store.of(subscription)
-            store.remove(subscription)
+        store = Store.of(subscription)
+        store.remove(subscription)
         IStore(self).flush()
 
     def _reconcileAccess(self):
@@ -1427,6 +1428,18 @@ class SnapSet:
         if snap is None:
             raise NoSuchSnap(name)
         return snap
+
+    def getByPillarAndName(self, owner, pillar, name):
+        conditions = [Snap.owner == owner, Snap.name == name]
+        if pillar is None:
+            # If we start supporting more pillars, remember to add the
+            # conditions here.
+            conditions.append(Snap.project == None)
+        elif IProduct.providedBy(pillar):
+            conditions.append(Snap.project == pillar)
+        else:
+            raise NotImplementedError("Unknown pillar for snap: %s" % pillar)
+        return IStore(Snap).find(Snap, *conditions).one()
 
     def _getSnapsFromCollection(self, collection, owner=None,
                                 visible_by_user=None):
@@ -1724,35 +1737,18 @@ class SnapStoreSecretsEncryptedContainer(NaClEncryptedContainerBase):
 
 
 def get_snap_privacy_filter(user):
-    """Returns the filter for all private Snaps that the given user is
-    subscribed to (that is, has access without being directly an owner).
+    """Returns the filter for all Snaps that the given user has access to,
+    including private snaps where the user has proper permission.
 
     :param user: An IPerson, or a class attribute that references an IPerson
                  in the database.
     :return: A storm condition.
     """
-    try:
-        roles = IPersonRoles(user)
-    except TypeError:
-        # If we cannot adapt `user` to IPersonRoles, continue with creating
-        # the clause and skip the check for commercial admins.
-        # By doing this, we keep this function compatible with
-        # `user` as a class property. For example we can use it like
-        # get_snap_privacy_filter(SnapSubscription.person_id) and use the
-        # resulting clause to filter SnapSubscription objects based on its
-        # snap user's grants.
-        pass
-    else:
-        if roles.in_admin or roles.in_commercial_admin:
-            return True
-
     # XXX pappacena 2021-02-12: Once we do the migration to back fill
     # information_type, we should be able to change this.
     private_snap = SQL(
-        "CASE information_type"
-        "    WHEN NULL THEN private"
-        "    ELSE information_type NOT IN ?"
-        "END", params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
+        "COALESCE(information_type NOT IN ?, private)",
+        params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
     if user is None:
         return private_snap == False
 
@@ -1777,4 +1773,13 @@ def get_snap_privacy_filter(user):
                 where=(TeamParticipation.person == user)
             )), False)
 
-    return Or(private_snap == False, artifact_grant_query, policy_grant_query)
+    admin_team_id = getUtility(ILaunchpadCelebrities).admin.id
+    user_is_admin = Exists(Select(
+        TeamParticipation.personID,
+        tables=[TeamParticipation],
+        where=And(
+            TeamParticipation.teamID == admin_team_id,
+            TeamParticipation.person == user)))
+    return Or(
+        private_snap == False, artifact_grant_query, policy_grant_query,
+        user_is_admin)

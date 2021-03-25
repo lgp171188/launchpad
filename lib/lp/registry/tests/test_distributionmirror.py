@@ -20,7 +20,6 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.distributionmirror import DistributionMirror
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.mail import stub
-from lp.services.webapp.authorization import check_permission
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.testing import (
     login,

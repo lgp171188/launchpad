@@ -61,7 +61,6 @@ from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
-from lp.services.encoding import guess as ensure_unicode
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.messages.interfaces.message import (
     IDirectEmailAuthorization,
@@ -332,7 +331,7 @@ class MessageSet:
                 if not create_missing_persons:
                     raise UnknownSender(from_addrs[0][1])
                 # autocreate a person
-                sendername = ensure_unicode(from_addrs[0][0].strip())
+                sendername = six.ensure_text(from_addrs[0][0].strip())
                 senderemail = from_addrs[0][1].lower().strip()
                 # XXX: Guilherme Salgado 2006-08-31 bug=62344:
                 # It's hard to define what rationale to use here, and to

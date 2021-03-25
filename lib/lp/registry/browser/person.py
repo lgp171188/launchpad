@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person-related view classes."""
@@ -192,7 +192,6 @@ from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
     )
-from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.ssh import (
     ISSHKeySet,
     SSHKeyAdditionError,
@@ -647,7 +646,11 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
     @stepthrough('+snap')
     def traverse_snap(self, name):
         """Traverse to this person's snap packages."""
-        return getUtility(ISnapSet).getByName(self.context, name)
+        snap = getUtility(ISnapSet).getByPillarAndName(
+            self.context, None, name)
+        if snap is None:
+            raise NotFoundError(name)
+        return snap
 
 
 class PersonSetNavigation(Navigation):
@@ -1350,6 +1353,12 @@ class PersonAccountAdministerView(LaunchpadFormView):
             self.request.response.addInfoNotification(
                 u'The account "%s" is now deactivated. The user can log in '
                 u'to reactivate it.' % self.context.displayname)
+        elif data['status'] == AccountStatus.DECEASED:
+            # Deliberately leave the email address in place so that it can't
+            # easily be claimed by somebody else.
+            self.request.response.addInfoNotification(
+                u'The account "%s" has been marked as having belonged to a '
+                u'deceased user.' % self.context.displayname)
         self.context.setStatus(data['status'], self.user, data['comment'])
 
 

@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = ['StatsdClient']
 
+import re
 
 from statsd import StatsClient
 from zope.interface import implementer
@@ -40,16 +41,40 @@ class StatsdClient:
             self._client = None
 
     def reload(self):
+        """See `IStatsdClient`."""
         self._make_client()
+
+    def _escapeMeasurement(self, measurement):
+        # Escape a measurement name for the InfluxDB line protocol:
+        #   https://docs.influxdata.com/influxdb/cloud/reference/syntax/\
+        #       line-protocol/
+        return re.sub(r"([, \\])", r"\\\1", measurement)
+
+    def _escapeTag(self, tag):
+        # Escape a tag key or value for the InfluxDB line protocol:
+        #   https://docs.influxdata.com/influxdb/cloud/reference/syntax/\
+        #       line-protocol/
+        return re.sub(r"([,= \\])", r"\\\1", tag)
+
+    def composeMetric(self, name, labels):
+        """See `IStatsdClient`."""
+        if labels is None:
+            labels = {}
+        elements = [self._escapeMeasurement(name)]
+        for key, value in sorted(labels.items()):
+            elements.append("{}={}".format(
+                self._escapeTag(key), self._escapeTag(str(value))))
+        return ",".join(elements)
 
     def __getattr__(self, name):
         if self._client is not None:
             wrapped = getattr(self._client, name)
             if name in ("timer", "timing", "incr", "decr", "gauge", "set"):
                 def wrapper(stat, *args, **kwargs):
+                    labels = kwargs.pop("labels", None) or {}
+                    labels["env"] = config.statsd.environment
                     return wrapped(
-                        "%s,env=%s" % (stat, config.statsd.environment),
-                        *args, **kwargs)
+                        self.composeMetric(stat, labels), *args, **kwargs)
 
                 return wrapper
             else:

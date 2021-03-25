@@ -19,7 +19,6 @@ from zope.interface import implementer
 from lp.app.errors import NotFoundError
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
-from lp.services.helpers import ensure_unicode
 from lp.soyuz.interfaces.binarypackagename import (
     IBinaryPackageName,
     IBinaryPackageNameSet,
@@ -57,10 +56,10 @@ class BinaryPackageNameSet:
 
     def queryByName(self, name):
         return IStore(BinaryPackageName).find(
-            BinaryPackageName, name=ensure_unicode(name)).one()
+            BinaryPackageName, name=six.ensure_text(name, 'ASCII')).one()
 
     def new(self, name):
-        return BinaryPackageName(name=ensure_unicode(name))
+        return BinaryPackageName(name=six.ensure_text(name, 'ASCII'))
 
     def ensure(self, name):
         """Ensure that the given BinaryPackageName exists, creating it
@@ -68,7 +67,7 @@ class BinaryPackageNameSet:
 
         Returns the BinaryPackageName
         """
-        name = ensure_unicode(name)
+        name = six.ensure_text(name, 'ASCII')
         try:
             return self[name]
         except NotFoundError:

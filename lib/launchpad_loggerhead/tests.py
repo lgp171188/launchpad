@@ -73,7 +73,7 @@ class TestLogout(TestCase):
         app = session_scribbler(app, self)
         app = HTTPExceptionHandler(app)
         app = SessionHandler(app, SESSION_VAR, SECRET)
-        self.cookie_name = app.cookie_handler.cookie_name
+        self.cookie_name = app.cookie_name
         self.browser = Browser(wsgi_app=app)
         self.browser.open(
             config.codehosting.secure_codebrowse_root + '+login')
@@ -95,10 +95,7 @@ class TestLogout(TestCase):
         self.assertEqual(
             self.browser.url, allvhosts.configs['mainsite'].rooturl)
 
-        # The session cookie still exists, because of how
-        # paste.auth.cookie works (see
-        # http://trac.pythonpaste.org/pythonpaste/ticket/139 ) but the user
-        # does in fact have an empty session now.
+        # The user has an empty session now.
         self.browser.open(
             config.codehosting.secure_codebrowse_root + 'favicon.ico')
         self.assertEqual(self.session, {})
@@ -206,3 +203,24 @@ class TestWSGI(TestCaseWithFactory):
         self.assertEqual(
             versioninfo.revision,
             response.headers['X-Launchpad-Revision'])
+
+    def test_vary_header_present(self):
+        db_branch, _ = self.create_branch_and_tree()
+        branch_url = "http://127.0.0.1:%d/%s" % (
+            config.codebrowse.port, db_branch.unique_name)
+        response = requests.get(branch_url)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual('Cookie, Authorization', response.headers['Vary'])
+
+    def test_security_headers_present(self):
+        db_branch, _ = self.create_branch_and_tree()
+        branch_url = "http://127.0.0.1:%d/%s" % (
+            config.codebrowse.port, db_branch.unique_name)
+        response = requests.get(branch_url)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            "frame-ancestors 'self';",
+            response.headers['Content-Security-Policy'])
+        self.assertEqual('SAMEORIGIN', response.headers['X-Frame-Options'])
+        self.assertEqual('nosniff', response.headers['X-Content-Type-Options'])
+        self.assertEqual('1; mode=block', response.headers['X-XSS-Protection'])

@@ -185,10 +185,7 @@ from lp.services.database.stormexpr import (
     fti_search,
     RegexpMatch,
     )
-from lp.services.helpers import (
-    ensure_unicode,
-    shortlist,
-    )
+from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
@@ -1191,7 +1188,7 @@ class ProductReleaseVocabulary(SQLObjectVocabularyBase):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         objs = self._table.select(
             AND(
                 Milestone.q.id == ProductRelease.q.milestoneID,
@@ -1248,7 +1245,7 @@ class ProductSeriesVocabulary(SQLObjectVocabularyBase):
             return self.emptySelectResults()
         user = getUtility(ILaunchBag).user
         privacy_filter = ProductSet.getProductPrivacyFilter(user)
-        query = ensure_unicode(query).lower().strip('/')
+        query = six.ensure_text(query).lower().strip('/')
         # If there is a slash splitting the product and productseries
         # names, they must both match. If there is no slash, we don't
         # know whether it is matching the product or the productseries
@@ -1582,7 +1579,7 @@ class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         objs = self._table.select(
                 AND(
                     Distribution.q.id == DistroSeries.q.distributionID,
@@ -1991,7 +1988,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         results = IStore(self._table).find(
             self._table,
             Or(

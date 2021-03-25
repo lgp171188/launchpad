@@ -10,7 +10,7 @@ __all__ = [
     'SnapPortletSubscribersContent'
 ]
 
-from zope.component._api import getUtility
+from zope.component import getUtility
 from zope.formlib.form import action
 from zope.security.interfaces import ForbiddenAttribute
 
@@ -84,13 +84,13 @@ class SnapSubscriptionEditView(RedirectToSnapMixin, LaunchpadEditFormView):
     @property
     def page_title(self):
         return (
-            "Edit subscription to Snap recipe %s" %
+            "Edit subscription to snap recipe %s" %
             self.snap.displayname)
 
     @property
     def label(self):
         return (
-            "Edit subscription to Snap recipe for %s" %
+            "Edit subscription to snap recipe for %s" %
             self.person.displayname)
 
     def initialize(self):
@@ -103,7 +103,7 @@ class SnapSubscriptionEditView(RedirectToSnapMixin, LaunchpadEditFormView):
         """Unsubscribe the team from the Snap recipe."""
         self.snap.unsubscribe(self.person, self.user)
         self.request.response.addNotification(
-            "%s has been unsubscribed from this Snap recipe."
+            "%s has been unsubscribed from this snap recipe."
             % self.person.displayname)
 
 
@@ -120,7 +120,7 @@ class _SnapSubscriptionCreationView(RedirectToSnapMixin, LaunchpadFormView):
 
 class SnapSubscriptionAddView(_SnapSubscriptionCreationView):
 
-    page_title = label = "Subscribe to Snap recipe"
+    page_title = label = "Subscribe to snap recipe"
 
     @action("Subscribe")
     def subscribe(self, action, data):
@@ -128,12 +128,12 @@ class SnapSubscriptionAddView(_SnapSubscriptionCreationView):
         # subscribed before continuing.
         if self.context.hasSubscription(self.user):
             self.request.response.addNotification(
-                "You are already subscribed to this Snap recipe.")
+                "You are already subscribed to this snap recipe.")
         else:
             self.context.subscribe(self.user, self.user)
 
             self.request.response.addNotification(
-                "You have subscribed to this Snap recipe.")
+                "You have subscribed to this snap recipe.")
 
 
 class SnapSubscriptionAddOtherView(_SnapSubscriptionCreationView):
@@ -146,7 +146,7 @@ class SnapSubscriptionAddOtherView(_SnapSubscriptionCreationView):
     # is never considered subscribed.
     user_is_subscribed = False
 
-    page_title = label = "Subscribe to Snap recipe"
+    page_title = label = "Subscribe to snap recipe"
 
     def validate(self, data):
         if "person" in data:
@@ -157,24 +157,19 @@ class SnapSubscriptionAddOtherView(_SnapSubscriptionCreationView):
                 self.setFieldError(
                     "person",
                     "Open and delegated teams cannot be subscribed to "
-                    "private Snap recipes.")
+                    "private snap recipes.")
 
     @action("Subscribe", name="subscribe_action")
     def subscribe_action(self, action, data):
-        """Subscribe the specified user to the Snap recipe.
-
-        The user must be a member of a team in order to subscribe that team
-        to the Snap recipe. Launchpad Admins are special and they can
-        subscribe any team.
-        """
+        """Subscribe the specified user to the Snap recipe."""
         person = data["person"]
         subscription = self.context.getSubscription(person)
         if subscription is None:
             self.context.subscribe(person, self.user)
             self.request.response.addNotification(
-                "%s has been subscribed to this Snap recipe." %
+                "%s has been subscribed to this snap recipe." %
                 person.displayname)
         else:
             self.request.response.addNotification(
-                "%s was already subscribed to this Snap recipe with." %
+                "%s was already subscribed to this snap recipe." %
                 person.displayname)

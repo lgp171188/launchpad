@@ -572,9 +572,8 @@ class ISnapView(Interface):
         value_type=Reference(schema=Interface), readonly=True)))
 
     subscriptions = CollectionField(
-        title=_("SnapSubscriptions associated with this repository."),
+        title=_("SnapSubscriptions associated with this snap recipe."),
         readonly=True,
-        # Really IGitSubscription, patched in _schema_circular_imports.py.
         value_type=Reference(Interface))
 
     subscribers = CollectionField(
@@ -600,7 +599,7 @@ class ISnapView(Interface):
         """
 
     def unsubscribe(person, unsubscribed_by):
-        """Unsubscribe a person to this snap recipe."""
+        """Unsubscribe a person from this snap recipe."""
 
 
 class ISnapEdit(IWebhookTarget):
@@ -967,6 +966,9 @@ class ISnapSet(Interface):
     @operation_for_version("devel")
     def getByName(owner, name):
         """Return the appropriate `ISnap` for the given objects."""
+
+    def getByPillarAndName(owner, pillar, name):
+        """Returns the appropriate `ISnap` for the given pillar and name."""
 
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True))

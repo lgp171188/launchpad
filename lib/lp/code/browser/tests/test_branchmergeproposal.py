@@ -1609,7 +1609,9 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         self.assertFalse(view.pending_diff)
         git_api = GitAPI(None, None)
         self.assertIsNone(
-            git_api.notify(bmp.source_git_repository.getInternalPath()))
+            git_api.notify(bmp.source_git_repository.getInternalPath(),
+                           {'loose_object_count': 5, 'pack_count': 2},
+                           {'uid': bmp.source_git_repository.owner.id}))
         self.assertTrue(view.pending_diff)
 
     def test_description_is_meta_description(self):

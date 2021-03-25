@@ -39,7 +39,6 @@ Ave, Cambridge, MA 02139, USA.
 from __future__ import absolute_import, print_function
 
 import compiler
-from compiler import ast
 from compiler.visitor import ASTVisitor
 import getopt
 import linecache

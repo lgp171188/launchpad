@@ -546,7 +546,7 @@ class DistributionMirror(SQLBase):
         """See IDistributionMirror"""
         paths = []
         for series in self.distribution.series:
-            for pocket, suffix in pocketsuffix.items():
+            for pocket, suffix in sorted(pocketsuffix.items()):
                 for component in series.components:
                     for arch_series in series.architectures:
                         # Skip unsupported series and unofficial architectures
@@ -568,7 +568,7 @@ class DistributionMirror(SQLBase):
         """See IDistributionMirror"""
         paths = []
         for series in self.distribution.series:
-            for pocket, suffix in pocketsuffix.items():
+            for pocket, suffix in sorted(pocketsuffix.items()):
                 for component in series.components:
                     # Skip sources for series which are obsolete and ones
                     # which were not on the mirror on its last probe.

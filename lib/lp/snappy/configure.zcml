@@ -45,10 +45,12 @@
     <!-- SnapSubscription -->
 
     <class class="lp.snappy.model.snapsubscription.SnapSubscription">
-      <allow interface="lp.snappy.interfaces.snapsubscription.ISnapSubscription"/>
       <require
-          permission="zope.Public"
-          set_schema="lp.snappy.interfaces.snapsubscription.ISnapSubscription"/>
+        permission="launchpad.View"
+        interface="lp.snappy.interfaces.snapsubscription.ISnapSubscription"/>
+      <require
+        permission="launchpad.Edit"
+        set_schema="lp.snappy.interfaces.snapsubscription.ISnapSubscription"/>
     </class>
 
     <!-- SnapBuildRequest -->

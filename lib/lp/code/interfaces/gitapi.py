@@ -50,7 +50,7 @@ class IGitAPI(Interface):
                 this repository, otherwise False.
         """
 
-    def notify(translated_path, statistics=None, auth_params=None):
+    def notify(translated_path, statistics, auth_params):
         """Notify of a change to the repository at 'translated_path'.
 
         :param translated_path: The translated path to the repository.  (We

@@ -28,7 +28,10 @@ from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.formlib.widget import CustomWidgetFactory
-from zope.interface import Interface
+from zope.interface import (
+    implementer,
+    Interface,
+    )
 from zope.schema import (
     Choice,
     Dict,
@@ -62,6 +65,7 @@ from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.gitref import IGitRef
 from lp.registry.enums import VCSType
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
@@ -83,6 +87,7 @@ from lp.services.webapp.breadcrumb import (
     Breadcrumb,
     NameBreadcrumb,
     )
+from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.services.webapp.url import urlappend
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.widgets.snaparchive import SnapArchiveWidget
@@ -112,6 +117,27 @@ from lp.snappy.interfaces.snapstoreclient import (
 from lp.soyuz.browser.archive import EnableProcessorsMixin
 from lp.soyuz.browser.build import get_build_by_id_str
 from lp.soyuz.interfaces.archive import IArchive
+
+
+@implementer(ICanonicalUrlData)
+class SnapURL:
+    """Snap URL creation rules."""
+    rootsite = 'mainsite'
+
+    def __init__(self, snap):
+        self.snap = snap
+
+    @property
+    def inside(self):
+        owner = self.snap.owner
+        project = self.snap.project
+        if project is None:
+            return owner
+        return getUtility(IPersonProductFactory).create(owner, project)
+
+    @property
+    def path(self):
+        return "+snap/%s" % self.snap.name
 
 
 class SnapNavigation(WebhookTargetNavigationMixin, Navigation):
@@ -274,15 +300,13 @@ class SnapContextMenu(ContextMenu):
             url = "+subscription/%s" % self.user.name
             text = "Edit your subscription"
             icon = "edit"
-        elif self.context.userCanBeSubscribed(self.user):
+        else:
             url = "+subscribe"
             text = "Subscribe yourself"
             icon = "add"
-        else:
-            return None
         return Link(url, text, icon=icon)
 
-    @enabled_with_permission("launchpad.Edit")
+    @enabled_with_permission("launchpad.AnyPerson")
     def add_subscriber(self):
         text = "Subscribe someone else"
         return Link("+addsubscriber", text, icon="add")
@@ -851,7 +875,7 @@ class SnapAdminView(BaseSnapEditView):
         if 'project' in data:
             project = data.pop('project')
             self.context.setProject(project)
-        super(BaseSnapEditView, self).updateContextFromData(
+        super(SnapAdminView, self).updateContextFromData(
             data, context, notify_modified)
 
 
@@ -963,7 +987,7 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
         if 'project' in data:
             project = data.pop('project')
             self.context.setProject(project)
-        super(BaseSnapEditView, self).updateContextFromData(
+        super(SnapEditView, self).updateContextFromData(
             data, context, notify_modified)
 
 

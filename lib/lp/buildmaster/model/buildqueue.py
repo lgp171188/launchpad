@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -209,6 +209,7 @@ class BuildQueue(StormBase):
 
     def reset(self):
         """See `IBuildQueue`."""
+        self.specific_build.emitMetric("reset")
         builder = self.builder
         self.builder = None
         self.status = BuildQueueStatus.WAITING

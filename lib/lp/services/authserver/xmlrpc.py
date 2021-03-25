@@ -25,6 +25,7 @@ from lp.services.authserver.interfaces import (
     IAuthServer,
     IAuthServerApplication,
     )
+from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
@@ -45,6 +46,8 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
         person = getUtility(IPersonSet).getByName(name)
         if person is None:
             return faults.NoSuchPersonWithName(name)
+        if person.account_status != AccountStatus.ACTIVE:
+            return faults.InactiveAccount(name)
         return {
             'id': person.id,
             'name': person.name,
