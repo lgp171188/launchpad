@@ -61,11 +61,13 @@ from lp.app.widgets.itemswidgets import (
     )
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
+from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.gitref import IGitRef
 from lp.registry.enums import VCSType
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
@@ -164,6 +166,29 @@ class SnapNavigation(WebhookTargetNavigationMixin, Navigation):
             return self.context.getSubscription(person)
 
 
+class SnapFormMixin:
+    def validateVCSWidgets(self, cls, data):
+        """Validates if VCS sub-widgets."""
+        # Set widgets as required or optional depending on the vcs field.
+        vcs = data.get('vcs')
+        if vcs == VCSType.BZR:
+            self.widgets['branch'].context.required = True
+            self.widgets['git_ref'].context.required = False
+        elif vcs == VCSType.GIT:
+            self.widgets['branch'].context.required = False
+            self.widgets['git_ref'].context.required = True
+        else:
+            raise AssertionError("Unknown branch type %s" % vcs)
+
+    def setUpVCSWidgets(self):
+        widget = self.widgets.get('vcs')
+        if widget is not None:
+            current_value = widget._getFormValue()
+            self.vcs_bzr_radio, self.vcs_git_radio = [
+                render_radio_widget_part(widget, value, current_value)
+                for value in (VCSType.BZR, VCSType.GIT)]
+
+
 class SnapInformationTypeMixin:
     def getPossibleInformationTypes(self, snap, user):
         """Get the information types to display on the edit form.
@@ -183,7 +208,10 @@ class SnapInformationTypeMixin:
         information types will be calculated based on the project.
         """
         info_type = data.get('information_type')
-        project = data.get('project')
+        if IProduct.providedBy(self.context):
+            project = self.context
+        else:
+            project = data.get('project')
         if info_type is None and project is None:
             # Nothing to validate here. Move on.
             return
@@ -497,28 +525,17 @@ class SnapAuthorizeMixin:
             log_oops(e, self.request)
 
 
-class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
-                  SnapInformationTypeMixin):
+class SnapAddView(SnapAuthorizeMixin, EnableProcessorsMixin,
+                  SnapInformationTypeMixin, SnapFormMixin, LaunchpadFormView):
     """View for creating snap packages."""
 
     page_title = label = 'Create a new snap package'
 
     schema = ISnapEditSchema
-    field_names = [
-        'owner',
-        'name',
-        'project',
-        'information_type',
-        'store_distro_series',
-        'build_source_tarball',
-        'auto_build',
-        'auto_build_archive',
-        'auto_build_pocket',
-        'auto_build_channels',
-        'store_upload',
-        'store_name',
-        'store_channels',
-        ]
+
+    custom_widget_vcs = LaunchpadRadioWidget
+    custom_widget_git_ref = CustomWidgetFactory(
+        GitRefWidget, allow_external=True)
     custom_widget_store_distro_series = LaunchpadRadioWidget
     custom_widget_auto_build_archive = SnapArchiveWidget
     custom_widget_auto_build_pocket = LaunchpadDropdownWidget
@@ -528,6 +545,26 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
     help_links = {
         "auto_build_pocket": "/+help-snappy/snap-build-pocket.html",
         }
+
+    @property
+    def field_names(self):
+        fields = ['owner', 'name']
+        if self.is_project_context:
+            fields += ['vcs', 'branch', 'git_ref']
+        else:
+            fields += ['project']
+        return fields + [
+            'information_type',
+            'store_distro_series',
+            'build_source_tarball',
+            'auto_build',
+            'auto_build_archive',
+            'auto_build_pocket',
+            'auto_build_channels',
+            'store_upload',
+            'store_name',
+            'store_channels',
+            ]
 
     def initialize(self):
         """See `LaunchpadView`."""
@@ -539,6 +576,10 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
             if (IInformationType.providedBy(self.context) and
                 self.context.information_type in PRIVATE_INFORMATION_TYPES):
                 raise SnapPrivateFeatureDisabled
+
+    @property
+    def is_project_context(self):
+        return IProduct.providedBy(self.context)
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
@@ -553,6 +594,15 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
         """See `LaunchpadFormView`."""
         super(SnapAddView, self).setUpWidgets()
         self.widgets['processors'].widget_class = 'processors'
+        if self.is_project_context:
+            # If we are on Project:+new-snap page, we know which information
+            # types the project supports. Let's filter out the ones that are
+            # not supported.
+            types = getUtility(ISnapSet).getPossibleSnapInformationTypes(
+                    self.context)
+            info_type_widget = self.widgets['information_type']
+            info_type_widget.vocabulary = InformationTypeVocabulary(types)
+            self.setUpVCSWidgets()
 
     @property
     def cancel_url(self):
@@ -561,7 +611,7 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
     @property
     def initial_values(self):
         store_name = None
-        if self.has_snappy_distro_series:
+        if self.has_snappy_distro_series and not self.is_project_context:
             # Try to extract Snap store name from snapcraft.yaml file.
             try:
                 snapcraft_data = getUtility(ISnapSet).getSnapcraftYaml(
@@ -606,6 +656,9 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
 
     def validate_widgets(self, data, names=None):
         """See `LaunchpadFormView`."""
+        if self.widgets.get('vcs') is not None:
+            super(SnapAddView, self).validate_widgets(data, ['vcs'])
+            self.validateVCSWidgets(SnapAddView, data)
         if self.widgets.get('auto_build') is not None:
             # Set widgets as required or optional depending on the
             # auto_build field.
@@ -625,9 +678,17 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
     @action('Create snap package', name='create')
     def create_action(self, action, data):
         if IGitRef.providedBy(self.context):
-            kwargs = {'git_ref': self.context}
+            kwargs = {'git_ref': self.context, 'project': data['project']}
+        elif IBranch.providedBy(self.context):
+            kwargs = {'branch': self.context, 'project': data['project']}
+        elif self.is_project_context:
+            if data['vcs'] == VCSType.GIT:
+                kwargs = {'git_ref': data['git_ref']}
+            else:
+                kwargs = {'branch': data['branch']}
+            kwargs['project'] = self.context
         else:
-            kwargs = {'branch': self.context}
+            raise NotImplementedError("Unknown context for snap creation.")
         if not data.get('auto_build', False):
             data['auto_build_archive'] = None
             data['auto_build_pocket'] = None
@@ -639,7 +700,6 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
             auto_build_pocket=data['auto_build_pocket'],
             auto_build_channels=data['auto_build_channels'],
             information_type=data['information_type'],
-            project=data['project'],
             processors=data['processors'],
             build_source_tarball=data['build_source_tarball'],
             store_upload=data['store_upload'],
@@ -664,8 +724,8 @@ class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
         self.validateInformationType(data)
 
 
-class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
-                       SnapInformationTypeMixin):
+class BaseSnapEditView(SnapAuthorizeMixin, SnapInformationTypeMixin,
+                       SnapFormMixin, LaunchpadEditFormView):
 
     schema = ISnapEditSchema
 
@@ -675,13 +735,8 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
 
     def setUpWidgets(self, context=None):
         """See `LaunchpadFormView`."""
-        super(BaseSnapEditView, self).setUpWidgets(context=None)
-        widget = self.widgets.get('vcs')
-        if widget is not None:
-            current_value = widget._getFormValue()
-            self.vcs_bzr_radio, self.vcs_git_radio = [
-                render_radio_widget_part(widget, value, current_value)
-                for value in (VCSType.BZR, VCSType.GIT)]
+        super(BaseSnapEditView, self).setUpWidgets()
+        self.setUpVCSWidgets()
 
     @property
     def has_snappy_distro_series(self):
@@ -690,18 +745,8 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
     def validate_widgets(self, data, names=None):
         """See `LaunchpadFormView`."""
         if self.widgets.get('vcs') is not None:
-            # Set widgets as required or optional depending on the vcs
-            # field.
             super(BaseSnapEditView, self).validate_widgets(data, ['vcs'])
-            vcs = data.get('vcs')
-            if vcs == VCSType.BZR:
-                self.widgets['branch'].context.required = True
-                self.widgets['git_ref'].context.required = False
-            elif vcs == VCSType.GIT:
-                self.widgets['branch'].context.required = False
-                self.widgets['git_ref'].context.required = True
-            else:
-                raise AssertionError("Unknown branch type %s" % vcs)
+            self.validateVCSWidgets(BaseSnapEditView, data)
         if self.widgets.get('auto_build') is not None:
             # Set widgets as required or optional depending on the
             # auto_build field.
@@ -746,7 +791,6 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
                         'information_type' if editing_info_type else 'git_ref',
                         'A public snap cannot have a private repository.')
         self.validateInformationType(data, snap=self.context)
-
 
     def _needStoreReauth(self, data):
         """Does this change require reauthorizing to the store?"""
