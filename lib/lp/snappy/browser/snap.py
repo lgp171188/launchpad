@@ -164,6 +164,49 @@ class SnapNavigation(WebhookTargetNavigationMixin, Navigation):
             return self.context.getSubscription(person)
 
 
+class SnapInformationTypeMixin:
+    def getPossibleInformationTypes(self, snap, user):
+        """Get the information types to display on the edit form.
+
+        We display a customised set of information types: anything allowed
+        by the repository's model, plus the current type.
+        """
+        allowed_types = set(snap.getAllowedInformationTypes(user))
+        allowed_types.add(snap.information_type)
+        return allowed_types
+
+    def validateInformationType(self, data, snap=None):
+        """Validates the information_type and project on data dictionary.
+
+        The possible information types are defined by the given `snap`.
+        When creating a new snap, `snap` should be None and the possible
+        information types will be calculated based on the project.
+        """
+        info_type = data.get('information_type')
+        project = data.get('project')
+        if info_type is None and project is None:
+            # Nothing to validate here. Move on.
+            return
+        if project is None and info_type in PRIVATE_INFORMATION_TYPES:
+            self.setFieldError(
+                'information_type',
+                'Private snap recipes must be associated with a project.')
+        elif project is not None:
+            if snap is None:
+                snap_set = getUtility(ISnapSet)
+                possible_types = snap_set.getPossibleSnapInformationTypes(
+                    project)
+            else:
+                possible_types = self.getPossibleInformationTypes(
+                    snap, self.user)
+            if info_type not in possible_types:
+                msg = ('Project %s only accepts the following information '
+                       'types: %s.')
+                msg %= (project.name,
+                        ", ".join(i.title for i in possible_types))
+                self.setFieldError('information_type', msg)
+
+
 class SnapBreadcrumb(NameBreadcrumb):
 
     @property
@@ -454,8 +497,8 @@ class SnapAuthorizeMixin:
             log_oops(e, self.request)
 
 
-class SnapAddView(
-        LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin):
+class SnapAddView(LaunchpadFormView, SnapAuthorizeMixin, EnableProcessorsMixin,
+                  SnapInformationTypeMixin):
     """View for creating snap packages."""
 
     page_title = label = 'Create a new snap package'
@@ -464,6 +507,8 @@ class SnapAddView(
     field_names = [
         'owner',
         'name',
+        'project',
+        'information_type',
         'store_distro_series',
         'build_source_tarball',
         'auto_build',
@@ -583,12 +628,6 @@ class SnapAddView(
             kwargs = {'git_ref': self.context}
         else:
             kwargs = {'branch': self.context}
-        # XXX pappacena 2021-03-01: We should consider the pillar's branch
-        # sharing policy when setting the information_type.
-        # Once we move the information_type and pillar edition from the
-        # admin view to the create/edit views, we should change this.
-        information_type = getUtility(ISnapSet).getSnapSuggestedPrivacy(
-            data['owner'], **kwargs)
         if not data.get('auto_build', False):
             data['auto_build_archive'] = None
             data['auto_build_pocket'] = None
@@ -599,7 +638,8 @@ class SnapAddView(
             auto_build_archive=data['auto_build_archive'],
             auto_build_pocket=data['auto_build_pocket'],
             auto_build_channels=data['auto_build_channels'],
-            information_type=information_type,
+            information_type=data['information_type'],
+            project=data['project'],
             processors=data['processors'],
             build_source_tarball=data['build_source_tarball'],
             store_upload=data['store_upload'],
@@ -621,29 +661,21 @@ class SnapAddView(
                     'name',
                     'There is already a snap package owned by %s with this '
                     'name.' % owner.displayname)
+        self.validateInformationType(data)
 
 
-class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
+class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin,
+                       SnapInformationTypeMixin):
 
     schema = ISnapEditSchema
-
-    def getInformationTypesToShow(self):
-        """Get the information types to display on the edit form.
-
-        We display a customised set of information types: anything allowed
-        by the repository's model, plus the current type.
-        """
-        allowed_types = set(self.context.getAllowedInformationTypes(self.user))
-        allowed_types.add(self.context.information_type)
-        return allowed_types
 
     @property
     def cancel_url(self):
         return canonical_url(self.context)
 
-    def setUpWidgets(self):
+    def setUpWidgets(self, context=None):
         """See `LaunchpadFormView`."""
-        super(BaseSnapEditView, self).setUpWidgets()
+        super(BaseSnapEditView, self).setUpWidgets(context=None)
         widget = self.widgets.get('vcs')
         if widget is not None:
             current_value = widget._getFormValue()
@@ -713,13 +745,8 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
                     self.setFieldError(
                         'information_type' if editing_info_type else 'git_ref',
                         'A public snap cannot have a private repository.')
-        else:
-            # Requirements for private snaps.
-            project = data.get('project', self.context.project)
-            if project is None:
-                msg = ('Private snap recipes must be associated '
-                       'with a project.')
-                self.setFieldError('project', msg)
+        self.validateInformationType(data, snap=self.context)
+
 
     def _needStoreReauth(self, data):
         """Does this change require reauthorizing to the store?"""
@@ -791,11 +818,6 @@ class SnapAdminView(BaseSnapEditView):
     field_names = [
         'project', 'information_type', 'require_virtualized', 'allow_internet']
 
-    # See `setUpWidgets` method.
-    custom_widget_information_type = CustomWidgetFactory(
-        LaunchpadRadioWidgetWithDescription,
-        vocabulary=InformationTypeVocabulary(types=[]))
-
     @property
     def initial_values(self):
         """Set initial values for the form."""
@@ -804,22 +826,6 @@ class SnapAdminView(BaseSnapEditView):
         # property has a fallback to check "private" property. This should
         # be removed once we back fill snap.information_type.
         return {'information_type': self.context.information_type}
-
-    def setUpWidgets(self):
-        super(SnapAdminView, self).setUpWidgets()
-        info_type_widget = self.widgets['information_type']
-        info_type_widget.vocabulary = InformationTypeVocabulary(
-            types=self.getInformationTypesToShow())
-
-    def validate(self, data):
-        super(SnapAdminView, self).validate(data)
-        # BaseSnapEditView.validate checks the rules for 'private' in
-        # combination with other attributes.
-        if data.get('information_type', None) in PRIVATE_INFORMATION_TYPES:
-            if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
-                self.setFieldError(
-                    'information_type',
-                    'You do not have permission to create private snaps.')
 
     def updateContextFromData(self, data, context=None, notify_modified=True):
         if 'project' in data:
@@ -841,6 +847,8 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
     field_names = [
         'owner',
         'name',
+        'project',
+        'information_type',
         'store_distro_series',
         'vcs',
         'branch',
@@ -862,6 +870,10 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
     custom_widget_auto_build_pocket = LaunchpadDropdownWidget
     custom_widget_auto_build_channels = SnapBuildChannelsWidget
     custom_widget_store_channels = StoreChannelsWidget
+    # See `setUpWidgets` method.
+    custom_widget_information_type = CustomWidgetFactory(
+        LaunchpadRadioWidgetWithDescription,
+        vocabulary=InformationTypeVocabulary(types=[]))
 
     help_links = {
         "auto_build_pocket": "/+help-snappy/snap-build-pocket.html",
@@ -876,6 +888,12 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
             "architectures are restricted and may only be enabled or "
             "disabled by administrators.")
 
+    def setUpWidgets(self, context=None):
+        super(SnapEditView, self).setUpWidgets(context)
+        info_type_widget = self.widgets['information_type']
+        info_type_widget.vocabulary = InformationTypeVocabulary(
+            types=self.getPossibleInformationTypes(self.context, self.user))
+
     @property
     def initial_values(self):
         initial_values = {}
@@ -886,6 +904,11 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
         if self.context.auto_build_pocket is None:
             initial_values['auto_build_pocket'] = (
                 PackagePublishingPocket.UPDATES)
+        # XXX pappacena 2021-02-12: Until we back fill information_type
+        # database column, it will be NULL, but snap.information_type
+        # property has a fallback to check "private" property. This should
+        # be removed once we back fill snap.information_type.
+        initial_values['information_type'] = self.context.information_type
         return initial_values
 
     def validate(self, data):
@@ -915,6 +938,13 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
                         # This processor is restricted and currently
                         # enabled. Leave it untouched.
                         data['processors'].append(processor)
+
+    def updateContextFromData(self, data, context=None, notify_modified=True):
+        if 'project' in data:
+            project = data.pop('project')
+            self.context.setProject(project)
+        super(SnapEditView, self).updateContextFromData(
+            data, context, notify_modified)
 
 
 class SnapAuthorizeView(LaunchpadEditFormView):
