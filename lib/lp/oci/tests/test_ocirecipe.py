@@ -600,10 +600,14 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         for recipe in oci_proj1_recipes + oci_proj2_recipes:
             self.assertFalse(recipe.official)
 
+        # Cache permissions.
+        oci_project1.setOfficialRecipeStatus
+
         # Set official for project1 and make sure nothing else got changed.
         with StormStatementRecorder() as recorder:
             oci_project1.setOfficialRecipeStatus(oci_proj1_recipes[0], True)
-            self.assertEqual(1, recorder.count)
+            Store.of(oci_project1).flush()
+        self.assertEqual(1, recorder.count)
 
         self.assertTrue(oci_project2.getOfficialRecipes().is_empty())
         self.assertEqual(
@@ -615,7 +619,8 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         # Set back no recipe as official.
         with StormStatementRecorder() as recorder:
             oci_project1.setOfficialRecipeStatus(oci_proj1_recipes[0], False)
-            self.assertEqual(0, recorder.count)
+            Store.of(oci_project1).flush()
+        self.assertEqual(1, recorder.count)
 
         for recipe in oci_proj1_recipes + oci_proj2_recipes:
             self.assertFalse(recipe.official)
