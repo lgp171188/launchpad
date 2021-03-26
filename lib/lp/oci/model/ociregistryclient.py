@@ -258,7 +258,8 @@ class OCIRegistryClient:
         tags = []
         if recipe.is_valid_branch_format:
             tags.append("{}_{}".format(recipe.git_ref.name, "edge"))
-        tags.append("edge")
+        else:
+            tags.append("edge")
         return tags
 
     @classmethod
