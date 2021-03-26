@@ -1,0 +1,154 @@
+# Copyright 2021 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""Test the repack_git_repositories script."""
+import threading
+from wsgiref.simple_server import (
+    make_server,
+    WSGIRequestHandler,
+    )
+
+import transaction
+from zope.security.proxy import removeSecurityProxy
+
+from lp.services.config import config
+from lp.services.config.fixture import (
+    ConfigFixture,
+    ConfigUseFixture,
+    )
+from lp.testing import TestCaseWithFactory
+from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
+
+
+class SilentWSGIRequestHandler(WSGIRequestHandler):
+    """A request handler that doesn't log requests."""
+
+    def log_message(self, fmt, *args):
+        pass
+
+
+class FakeTurnipApplication:
+    """A WSGI application that provides a fake turnip endpoint."""
+
+    def __init__(self):
+        self.contents = []
+
+    def __call__(self, environ, start_response):
+        self.contents.append(environ['PATH_INFO'])
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return [b'']
+
+
+class FakeTurnipServer(threading.Thread):
+    """Thread that runs a fake turnip server."""
+
+    def __init__(self):
+        super(FakeTurnipServer, self).__init__()
+        self.name = 'FakeTurnipServer'
+        self.app = FakeTurnipApplication()
+        self.server = make_server(
+            'localhost', 0, self.app, handler_class=SilentWSGIRequestHandler)
+
+    def run(self):
+        self.server.serve_forever()
+
+    def getURL(self):
+        host, port = self.server.server_address
+        return 'http://%s:%d/' % (host, port)
+
+    def stop(self):
+        self.server.shutdown()
+
+
+class TestRequestGitRepack(TestCaseWithFactory):
+
+    layer = ZopelessAppServerLayer
+
+    def setUp(self):
+        super(TestRequestGitRepack, self).setUp()
+
+    def runScript_no_Turnip(self):
+        transaction.commit()
+
+        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        self.assertIn(
+            'An error occurred while requesting repository repack',
+            err)
+        self.assertIn(
+            'Failed to repack Git repository 1', err)
+        self.assertIn(
+            'Requested 0 automatic git repository '
+            'repacks out of the 1 qualifying for repack.', err)
+        transaction.commit()
+
+    def runScript_with_Turnip(self):
+        transaction.commit()
+        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        self.assertIn(
+            'Requested 1 automatic git repository repacks '
+            'out of the 1 qualifying for repack.', err)
+        transaction.commit()
+
+    def makeTurnipServer(self):
+        self.turnip_server = FakeTurnipServer()
+        config_name = self.factory.getUniqueString()
+        config_fixture = self.useFixture(ConfigFixture(
+            config_name, config.instance_name))
+        setting_lines = [
+            '[codehosting]',
+            'internal_git_api_endpoint: %s' % self.turnip_server.getURL(),
+            ]
+        config_fixture.add_section('\n' + '\n'.join(setting_lines))
+        self.useFixture(ConfigUseFixture(config_name))
+        self.turnip_server.start()
+        self.addCleanup(self.turnip_server.stop)
+        return self.turnip_server
+
+    def test_auto_repack_without_Turnip(self):
+        repo = self.factory.makeGitRepository()
+        repo = removeSecurityProxy(repo)
+        repo.loose_object_count = 7000
+        repo.pack_count = 43
+
+        # Do not start the fake turnip server here
+        # to test if the RequestGitRepack will catch and
+        # log correctly the failure to establish
+        # a connection to Turnip
+        self.runScript_no_Turnip()
+        self.assertIsNone(repo.date_last_repacked)
+
+    def test_auto_repack_with_Turnip_one_repo(self):
+        # Test repack works when only one repository
+        # qualifies for a repack
+        repo = self.factory.makeGitRepository()
+        repo = removeSecurityProxy(repo)
+        repo.loose_object_count = 7000
+        repo.pack_count = 43
+        transaction.commit()
+
+        self.makeTurnipServer()
+
+        self.runScript_with_Turnip()
+
+        self.assertIsNotNone(repo.date_last_repacked)
+
+    def test_auto_repack_with_Turnip_multiple_repos(self):
+        # Test repack works when 10 repositories
+        # qualifies for a repack
+        repo = []
+        for i in range(10):
+            repo.append(self.factory.makeGitRepository())
+            repo[i] = removeSecurityProxy(repo[i])
+            repo[i].loose_object_count = 7000
+            repo[i].pack_count = 43
+        transaction.commit()
+
+        self.makeTurnipServer()
+
+        self.runScript_with_Turnip()
+
+        for i in range(10):
+            self.assertIsNotNone(repo[i].date_last_repacked)
+            self.assertEqual("/repo/%s/repack" % repo[i].getInternalPath(),
+                             self.turnip_server.app.contents[i])
