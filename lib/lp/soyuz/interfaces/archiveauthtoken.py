@@ -96,11 +96,12 @@ class IArchiveAuthTokenSet(Interface):
         :return: An object conforming to `IArchiveAuthToken`.
         """
 
-    def getByArchive(archive, valid=False):
+    def getByArchive(archive, with_current_subscription=False):
         """Retrieve all the tokens for an archive.
 
         :param archive: The context archive.
-        :param valid: If True, only return valid tokens.
+        :param with_current_subscription: If True, only return tokens
+            associated with a current subscription.
         :return: A result set containing `IArchiveAuthToken`s.
         """
 

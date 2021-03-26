@@ -87,7 +87,7 @@ class ArchiveAuthTokenSet:
         return IStore(ArchiveAuthToken).find(
             ArchiveAuthToken, ArchiveAuthToken.token == token).one()
 
-    def getByArchive(self, archive, valid=False):
+    def getByArchive(self, archive, with_current_subscription=False):
         """See `IArchiveAuthTokenSet`."""
         # Circular import.
         from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
@@ -96,7 +96,7 @@ class ArchiveAuthTokenSet:
             ArchiveAuthToken.archive == archive,
             ArchiveAuthToken.date_deactivated == None,
             ]
-        if valid:
+        if with_current_subscription:
             clauses.extend([
                 ArchiveAuthToken.archive_id == ArchiveSubscriber.archive_id,
                 ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT,
@@ -107,16 +107,18 @@ class ArchiveAuthTokenSet:
 
     def getActiveTokenForArchiveAndPerson(self, archive, person):
         """See `IArchiveAuthTokenSet`."""
-        return self.getByArchive(archive, valid=True).find(
-            ArchiveAuthToken.person == person).one()
+        return self.getByArchive(
+            archive, with_current_subscription=True).find(
+                ArchiveAuthToken.person == person).one()
 
     def getActiveTokenForArchiveAndPersonName(self, archive, person_name):
         """See `IArchiveAuthTokenSet`."""
         # Circular import.
         from lp.registry.model.person import Person
-        return self.getByArchive(archive, valid=True).find(
-            ArchiveAuthToken.person == Person.id,
-            Person.name == person_name).one()
+        return self.getByArchive(
+            archive, with_current_subscription=True).find(
+                ArchiveAuthToken.person == Person.id,
+                Person.name == person_name).one()
 
     def getActiveNamedTokenForArchive(self, archive, name):
         """See `IArchiveAuthTokenSet`."""
