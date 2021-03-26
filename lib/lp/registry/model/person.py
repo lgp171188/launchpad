@@ -3243,8 +3243,8 @@ class PersonSet:
             user_id = user.id
         cur = cursor()
         cur.execute(
-            "SELECT is_blacklisted_name(%(name)s, %(user_id)s)" % sqlvalues(
-                name=name, user_id=user_id))
+            "SELECT is_blacklisted_name(%(name)s, %(user_id)s)",
+            {"name": name, "user_id": user_id})
         return bool(cur.fetchone()[0])
 
     def getTopContributors(self, limit=50):

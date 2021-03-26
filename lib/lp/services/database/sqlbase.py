@@ -368,14 +368,19 @@ def quote(x):
 def sqlvalues(*values, **kwvalues):
     """Return a tuple of converted sql values for each value in some_tuple.
 
-    This safely quotes strings, or gives representations of dbschema items,
-    for example.
+    This safely quotes strings (except for '%'!), or gives representations
+    of dbschema items, for example.
 
     Use it when constructing a string for use in a SELECT.  Always use
     %s as the replacement marker.
 
       ('SELECT foo from Foo where bar = %s and baz = %s'
        % sqlvalues(BugTaskSeverity.CRITICAL, 'foo'))
+
+    This is DEPRECATED in favour of passing parameters to SQL statements
+    using the second parameter to `cursor.execute` (normally via the Storm
+    query compiler), because it does not deal with escaping '%' characters
+    in strings.
 
     >>> sqlvalues()
     Traceback (most recent call last):

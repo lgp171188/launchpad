@@ -33,8 +33,10 @@ from storm.expr import (
     Coalesce,
     Desc,
     Exists,
+    Func,
     Join,
     LeftJoin,
+    Lower,
     Not,
     Or,
     Select,
@@ -1171,8 +1173,7 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def getMilestone(self, name):
         """See `IProduct`."""
-        return Milestone.selectOne("""
-            product = %s AND name = %s""" % sqlvalues(self.id, name))
+        return IStore(Milestone).find(Milestone, product=self, name=name).one()
 
     def getBugSummaryContextWhereClause(self):
         """See BugTargetBase."""
@@ -1859,12 +1860,12 @@ class ProductSet:
             conditions.append(Product.active == active)
 
         if search_text is not None and search_text.strip() != '':
-            conditions.append(SQL('''
-                Product.fti @@ ftq(%(text)s) OR
-                Product.name = %(text)s OR
-                strpos(lower(Product.license_info), %(text)s) > 0 OR
-                strpos(lower(Product.reviewer_whiteboard), %(text)s) > 0
-                ''' % sqlvalues(text=search_text.lower())))
+            text = search_text.lower()
+            conditions.append(Or(
+                fti_search(Product, text),
+                Product.name == text,
+                Func("strpos", Lower(Product.license_info), text) > 0,
+                Func("strpos", Lower(Product.reviewer_whiteboard), text) > 0))
 
         def dateToDatetime(date):
             """Convert a datetime.date to a datetime.datetime
