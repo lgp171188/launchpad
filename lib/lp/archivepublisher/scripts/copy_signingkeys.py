@@ -43,7 +43,7 @@ class CopySigningKeysScript(LaunchpadScript):
             help="Report what would be done, but don't actually copy keys.")
 
         self.parser.add_option(
-            "-o", "--overwrite", action="store_true", default=False,
+            "--overwrite", action="store_true", default=False,
             help="Overwrite existing keys when executing the copy.")
 
     def getArchive(self, reference):
