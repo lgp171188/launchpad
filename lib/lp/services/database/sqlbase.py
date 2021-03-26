@@ -20,7 +20,6 @@ __all__ = [
     'ISOLATION_LEVEL_REPEATABLE_READ',
     'ISOLATION_LEVEL_SERIALIZABLE',
     'quote',
-    'quote_like',
     'quoteIdentifier',
     'quote_identifier',
     'reset_store',
@@ -41,7 +40,6 @@ from psycopg2.extensions import (
     ISOLATION_LEVEL_SERIALIZABLE,
     )
 import pytz
-import six
 from sqlobject.sqlbuilder import sqlrepr
 import storm
 from storm.databases.postgres import compile as postgres_compile
@@ -71,7 +69,6 @@ from lp.services.database.interfaces import (
     IStoreSelector,
     MAIN_STORE,
     )
-from lp.services.helpers import backslashreplace
 from lp.services.propertycache import clear_property_cache
 
 # Default we want for scripts, and the PostgreSQL default. Note psycopg1 will
@@ -302,7 +299,9 @@ def get_transaction_timestamp(store):
 
 def quote(x):
     r"""Quote a variable ready for inclusion into an SQL statement.
-    Note that you should use quote_like to create a LIKE comparison.
+
+    >>> import six
+    >>> from lp.services.helpers import backslashreplace
 
     Basic SQL quoting works
 
@@ -364,45 +363,6 @@ def quote(x):
         # /does/ know how to handle.
         x = list(x)
     return sqlrepr(x, 'postgres')
-
-
-def quote_like(x):
-    r"""Quote a variable ready for inclusion in a SQL statement's LIKE clause
-
-    XXX: StuartBishop 2004-11-24:
-    Including the single quotes was a stupid decision.
-
-    To correctly generate a SELECT using a LIKE comparision, we need
-    to make use of the SQL string concatination operator '||' and the
-    quote_like method to ensure that any characters with special meaning
-    to the LIKE operator are correctly escaped.
-
-    >>> "SELECT * FROM mytable WHERE mycol LIKE '%%' || %s || '%%'" \
-    ...     % quote_like('%')
-    "SELECT * FROM mytable WHERE mycol LIKE '%' || E'\\\\%' || '%'"
-
-    Note that we need 2 backslashes to quote, as per the docs on
-    the LIKE operator. This is because, unless overridden, the LIKE
-    operator uses the same escape character as the SQL parser.
-
-    >>> quote_like('100%')
-    "E'100\\\\%'"
-    >>> quote_like('foobar_alpha1')
-    "E'foobar\\\\_alpha1'"
-    >>> quote_like('hello')
-    "E'hello'"
-
-    Only strings are supported by this method.
-
-    >>> quote_like(1)
-    Traceback (most recent call last):
-        [...]
-    TypeError: Not a string (<... 'int'>)
-
-    """
-    if not isinstance(x, six.string_types):
-        raise TypeError('Not a string (%s)' % type(x))
-    return quote(x.replace('%', r'\%').replace('_', r'\_'))
 
 
 def sqlvalues(*values, **kwvalues):

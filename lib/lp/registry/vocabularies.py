@@ -176,13 +176,12 @@ from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
-    quote,
-    quote_like,
     SQLBase,
     sqlvalues,
     )
 from lp.services.database.stormexpr import (
     fti_search,
+    rank_by_fti,
     RegexpMatch,
     )
 from lp.services.helpers import shortlist
@@ -310,23 +309,25 @@ class ProductVocabulary(SQLObjectVocabularyBase):
         if query is None or an empty string.
         """
         if query:
-            like_query = query.lower()
-            like_query = "'%%%%' || %s || '%%%%'" % quote_like(like_query)
-            fti_query = quote(query)
+            query = six.ensure_text(query)
             if vocab_filter is None:
                 vocab_filter = []
             where_clause = And(
-                SQL(
-                    "active = 't' AND (name LIKE %s OR fti @@ ftq(%s))" % (
-                        like_query, fti_query)),
+                self._table.active,
+                Or(
+                    self._table.name.contains_string(query.lower()),
+                    fti_search(self._table, query)),
                 ProductSet.getProductPrivacyFilter(
                     getUtility(ILaunchBag).user), *vocab_filter)
-            order_by = SQL(
-                '(CASE name WHEN %s THEN 1 '
-                ' ELSE ts_rank(fti, ftq(%s)) END) DESC, displayname, name'
-                % (fti_query, fti_query))
+            order_by = (
+                Case(
+                    cases=((query, -1),),
+                    expression=self._table.name,
+                    default=rank_by_fti(self._table, query)),
+                self._table.display_name,
+                self._table.name)
             return IStore(Product).find(self._table, where_clause).order_by(
-                order_by).config(limit=100)
+                *order_by).config(limit=100)
 
         return self.emptySelectResults()
 
@@ -368,12 +369,13 @@ class ProjectGroupVocabulary(SQLObjectVocabularyBase):
         if query is None or an empty string.
         """
         if query:
-            like_query = query.lower()
-            like_query = "'%%' || %s || '%%'" % quote_like(like_query)
-            fti_query = quote(query)
-            sql = "active = 't' AND (name LIKE %s OR fti @@ ftq(%s))" % (
-                    like_query, fti_query)
-            return self._table.select(sql)
+            query = six.ensure_text(query)
+            return IStore(self._table).find(
+                self._table,
+                self._table.active,
+                Or(
+                    self._table.name.contains_string(query.lower()),
+                    fti_search(self._table, query)))
         return self.emptySelectResults()
 
 
@@ -1526,12 +1528,12 @@ class DistributionVocabulary(NamedSQLObjectVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = query.lower()
-        like_query = "'%%' || %s || '%%'" % quote_like(query)
-        kw = {}
+        rows = IStore(self._table).find(
+            self._table,
+            self._table.name.contains_string(six.ensure_text(query).lower()))
         if self._orderBy:
-            kw['orderBy'] = self._orderBy
-        return self._table.select("name LIKE %s" % like_query, **kw)
+            rows = rows.order_by(self._orderBy)
+        return rows
 
 
 class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
