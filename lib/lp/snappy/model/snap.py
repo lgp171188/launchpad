@@ -1389,20 +1389,9 @@ class SnapSet:
 
         return snap
 
-    def getSnapSuggestedPrivacy(self, owner, branch=None, git_ref=None):
+    def getPossibleSnapInformationTypes(self, project):
         """See `ISnapSet`."""
-        # Public snaps with private sources are not allowed.
-        source = branch or git_ref
-        if source is not None and source.private:
-            return source.information_type
-
-        # Public snaps owned by private teams are not allowed.
-        if owner is not None and owner.private:
-            return InformationType.PROPRIETARY
-
-        # XXX pappacena 2021-03-02: We need to consider the pillar's branch
-        # sharing policy here instead of suggesting PUBLIC.
-        return InformationType.PUBLIC
+        return BRANCH_POLICY_ALLOWED_TYPES[project.branch_sharing_policy]
 
     def isValidInformationType(self, information_type, owner, branch=None,
                                git_ref=None):
@@ -1501,9 +1490,14 @@ class SnapSet:
                 collection.visibleByUser(visible_by_user),
                 visible_by_user=visible_by_user)
 
+        snaps_for_project = IStore(Snap).find(
+            Snap,
+            Snap.project == project,
+            get_snap_privacy_filter(visible_by_user))
         bzr_collection = removeSecurityProxy(IBranchCollection(project))
         git_collection = removeSecurityProxy(IGitCollection(project))
-        return _getSnaps(bzr_collection).union(_getSnaps(git_collection))
+        return snaps_for_project.union(
+            _getSnaps(bzr_collection)).union(_getSnaps(git_collection))
 
     def findByBranch(self, branch, visible_by_user=None):
         """See `ISnapSet`."""
