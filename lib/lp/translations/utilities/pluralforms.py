@@ -49,7 +49,7 @@ def make_friendly_plural_forms(expression, expected_forms):
 
     return [
         {'form': form, 'examples': examples}
-        for (form, examples) in six.iteritems(forms)
+        for (form, examples) in sorted(six.iteritems(forms))
         ]
 
 

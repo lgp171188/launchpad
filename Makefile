@@ -23,7 +23,7 @@ PIP_ENV := LC_ALL=C.UTF-8
 # be reviewed/merged/deployed.
 PIP_NO_INDEX := 1
 PIP_ENV += PIP_NO_INDEX=$(PIP_NO_INDEX)
-PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheelhouse/ file://$(WD)/download-cache/dist/"
+PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheels/ file://$(WD)/download-cache/dist/"
 
 VIRTUALENV := $(PIP_ENV) virtualenv
 PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
@@ -261,11 +261,11 @@ requirements/combined.txt: \
 # dependencies without also building a useless wheel of Launchpad itself;
 # fortunately that doesn't take too long, and we just remove it afterwards.
 build_wheels: $(PIP_BIN) requirements/combined.txt
-	$(RM) -r wheelhouse
+	$(RM) -r wheelhouse wheels
 	$(SHHH) $(PIP) wheel \
 		-c requirements/setup.txt -c requirements/combined.txt \
-		-w wheelhouse .
-	$(RM) wheelhouse/lp-[0-9]*.whl
+		-w wheels .
+	$(RM) wheels/lp-[0-9]*.whl
 	$(MAKE) clean_pip
 
 # Compatibility
@@ -284,7 +284,7 @@ $(PY): download-cache requirements/combined.txt setup.py
 	$(VIRTUALENV) \
 		--python=$(PYTHON) --never-download \
 		--extra-search-dir=$(WD)/download-cache/dist/ \
-		--extra-search-dir=$(WD)/wheelhouse/ \
+		--extra-search-dir=$(WD)/wheels/ \
 		env
 	ln -sfn env/bin bin
 	$(SHHH) $(PIP) install -r requirements/setup.txt
@@ -428,7 +428,7 @@ lxc-clean: clean_js clean_pip clean_logs
 	# it does everything expected from a clean target.  When the
 	# referenced bug is fixed, this target may be reunited with
 	# the 'clean' target.
-	$(RM) -r env wheelhouse
+	$(RM) -r env wheelhouse wheels
 	$(RM) requirements/combined.txt
 	$(RM) -r $(LP_BUILT_JS_ROOT)/*
 	$(RM) -r $(CODEHOSTING_ROOT)/*
@@ -489,6 +489,7 @@ copy-apache-config: codehosting-dir
 		base=local-launchpad; \
 	fi; \
 	sed -e 's,%BRANCH_REWRITE%,$(shell pwd)/scripts/branch-rewrite.py,' \
+		-e 's,%WSGI_ARCHIVE_AUTH%,$(shell pwd)/scripts/wsgi-archive-auth.py,' \
 		-e 's,%LISTEN_ADDRESS%,$(LISTEN_ADDRESS),' \
 		configs/$(LPCONFIG)/local-launchpad-apache > \
 		/etc/apache2/sites-available/$$base

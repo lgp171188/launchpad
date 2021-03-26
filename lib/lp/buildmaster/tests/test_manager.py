@@ -72,6 +72,7 @@ from lp.buildmaster.tests.test_interactor import (
     MockBuilderFactory,
     )
 from lp.registry.interfaces.distribution import IDistributionSet
+from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.services.statsd.tests import StatsMixin
@@ -537,7 +538,11 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         transaction.commit()
 
         yield scanner.singleCycle()
-        self.assertEqual(1, self.stats_client.incr.call_count)
+        self.assertEqual(2, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls([
+            mock.call("build.reset,arch=386,env=test,job_type=PACKAGEBUILD"),
+            mock.call("builders.judged_failed,build=False,env=test"),
+            ])
 
     @defer.inlineCallbacks
     def test_fail_to_resume_leaves_it_dirty(self):

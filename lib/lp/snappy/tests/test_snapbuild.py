@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build features."""
@@ -36,7 +36,10 @@ from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.registry.enums import PersonVisibility
+from lp.registry.enums import (
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
@@ -172,6 +175,7 @@ class TestSnapBuild(TestCaseWithFactory):
         # A SnapBuild is private iff its Snap and archive are.
         self.assertFalse(self.build.is_private)
         private_team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
             visibility=PersonVisibility.PRIVATE)
         with person_logged_in(private_team.teamowner):
             build = self.factory.makeSnapBuild(
@@ -775,6 +779,7 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
     def test_private_snap(self):
         # A SnapBuild with a private Snap is private.
         db_team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
             owner=self.person, visibility=PersonVisibility.PRIVATE)
         with person_logged_in(self.person):
             db_build = self.factory.makeSnapBuild(
@@ -784,7 +789,8 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
             self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
         unpriv_webservice.default_api_version = "devel"
         logout()
-        self.assertEqual(200, self.webservice.get(build_url).status)
+        response = self.webservice.get(build_url)
+        self.assertEqual(200, response.status)
         # 404 since we aren't allowed to know that the private team exists.
         self.assertEqual(404, unpriv_webservice.get(build_url).status)
 

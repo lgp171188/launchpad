@@ -196,7 +196,10 @@ from lp.services.database.stormexpr import (
     Values,
     )
 from lp.services.features import getFeatureFlag
-from lp.services.identity.interfaces.account import IAccountSet
+from lp.services.identity.interfaces.account import (
+    AccountStatus,
+    IAccountSet,
+    )
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.macaroons.interfaces import IMacaroonIssuer
@@ -489,6 +492,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     def repackRepository(self):
         getUtility(IGitHostingClient).repackRepository(self.getInternalPath())
+        self.date_last_repacked = UTC_NOW
 
     @property
     def namespace(self):
@@ -1002,7 +1006,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             subscription.review_level = code_review_level
         # Grant the subscriber access if they can't see the repository.
         service = getUtility(IService, "sharing")
-        _, _, repositories, _ = service.getVisibleArtifacts(
+        _, _, repositories, _, _ = service.getVisibleArtifacts(
             person, gitrepositories=[self], ignore_permissions=True)
         if not repositories:
             service.ensureAccessGrants(
@@ -2059,7 +2063,10 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
                 caveat_value)
         except LookupError:
             return False
-        ok = IPerson.providedBy(user) and user.account == account
+        ok = (
+            IPerson.providedBy(user) and
+            user.account_status == AccountStatus.ACTIVE and
+            user.account == account)
         if ok:
             verified.user = user
         return ok

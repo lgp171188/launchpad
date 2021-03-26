@@ -129,7 +129,7 @@ python-memcached==1.58
 # lp1 Fix normalization of non-ASCII query strings on Python 2.
 python-openid2==3.2+lp1
 python-swiftclient==3.8.1
-PyYAML==3.10
+PyYAML==5.3.1
 rabbitfixture==0.5.0
 requests-file==1.4.3
 requests-toolbelt==0.9.1
@@ -189,5 +189,5 @@ zope.server==4.0.2
 zope.session==4.3.0+lp1
 zope.testbrowser==5.5.1
 # lp:~launchpad-committers/zope.testrunner:launchpad
-zope.testrunner==5.2+lp2
+zope.testrunner==5.3.0+lp1
 zope.vocabularyregistry==1.1.1

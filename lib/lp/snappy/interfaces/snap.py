@@ -571,6 +571,24 @@ class ISnapView(Interface):
         # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
         value_type=Reference(schema=Interface), readonly=True)))
 
+    subscriptions = CollectionField(
+        title=_("SnapSubscriptions associated with this snap recipe."),
+        readonly=True,
+        value_type=Reference(Interface))
+
+    subscribers = CollectionField(
+        title=_("Persons subscribed to this snap recipe."),
+        readonly=True, value_type=Reference(IPerson))
+
+    def getSubscription(person):
+        """Returns the person's snap subscription for this snap recipe."""
+
+    def hasSubscription(person):
+        """Is this person subscribed to the snap recipe?"""
+
+    def userCanBeSubscribed(person):
+        """Checks if the given person can be subscribed to this snap recipe."""
+
     def visibleByUser(user):
         """Can the specified user see this snap recipe?"""
 
@@ -579,6 +597,9 @@ class ISnapView(Interface):
 
         If the user is a Launchpad admin, any type is acceptable.
         """
+
+    def unsubscribe(person, unsubscribed_by):
+        """Unsubscribe a person from this snap recipe."""
 
 
 class ISnapEdit(IWebhookTarget):
@@ -685,6 +706,16 @@ class ISnapEditableAttributes(IHasOwner):
         title=_('The project that this Snap is associated with'),
         schema=IProduct, vocabulary='Product',
         required=False, readonly=False)
+
+    private = exported(Bool(
+        title=_("Private"), required=False, readonly=False,
+        description=_("Whether or not this snap is private.")))
+
+    information_type = exported(Choice(
+        title=_("Information type"), vocabulary=InformationType,
+        required=True, readonly=False, default=InformationType.PUBLIC,
+        description=_(
+            "The type of information contained in this Snap recipe.")))
 
     distro_series = exported(Reference(
         IDistroSeries, title=_("Distro Series"),
@@ -852,16 +883,6 @@ class ISnapAdminAttributes(Interface):
     These attributes need launchpad.View to see, and launchpad.Admin to change.
     """
 
-    private = exported(Bool(
-        title=_("Private"), required=False, readonly=False,
-        description=_("Whether or not this snap is private.")))
-
-    information_type = exported(Choice(
-        title=_("Information type"), vocabulary=InformationType,
-        required=True, readonly=False, default=InformationType.PUBLIC,
-        description=_(
-            "The type of information contained in this Snap recipe.")))
-
     require_virtualized = exported(Bool(
         title=_("Require virtualized builders"), required=True, readonly=False,
         description=_("Only build this snap package on virtual builders.")))
@@ -882,9 +903,6 @@ class ISnapAdminAttributes(Interface):
 
     def subscribe(person, subscribed_by):
         """Subscribe a person to this snap recipe."""
-
-    def unsubscribe(person, unsubscribed_by):
-        """Unsubscribe a person to this snap recipe."""
 
 
 # XXX cjwatson 2015-07-17 bug=760849: "beta" is a lie to get WADL
@@ -928,8 +946,10 @@ class ISnapSet(Interface):
     def exists(owner, name):
         """Check to see if a matching snap exists."""
 
-    def getSnapSuggestedPrivacy(owner, branch=None, git_ref=None):
-        """Which privacy a Snap should have based on its creation params."""
+    def getPossibleSnapInformationTypes(project):
+        """Returns the list of possible InformationTypes for snaps based on
+        the given project.
+        """
 
     def findByIds(snap_ids):
         """Return all snap packages with the given ids."""
@@ -946,6 +966,9 @@ class ISnapSet(Interface):
     @operation_for_version("devel")
     def getByName(owner, name):
         """Return the appropriate `ISnap` for the given objects."""
+
+    def getByPillarAndName(owner, pillar, name):
+        """Returns the appropriate `ISnap` for the given pillar and name."""
 
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True))

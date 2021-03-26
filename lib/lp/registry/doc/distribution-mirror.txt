@@ -430,10 +430,6 @@ IDistributionMirror.
     dists/breezy-autotest/restricted/binary-i386/Packages.gz
     dists/breezy-autotest/universe/binary-i386/Packages.gz
     dists/breezy-autotest/multiverse/binary-i386/Packages.gz
-    dists/breezy-autotest-backports/main/binary-i386/Packages.gz
-    dists/breezy-autotest-backports/restricted/binary-i386/Packages.gz
-    dists/breezy-autotest-backports/universe/binary-i386/Packages.gz
-    dists/breezy-autotest-backports/multiverse/binary-i386/Packages.gz
     dists/breezy-autotest-security/main/binary-i386/Packages.gz
     dists/breezy-autotest-security/restricted/binary-i386/Packages.gz
     dists/breezy-autotest-security/universe/binary-i386/Packages.gz
@@ -446,26 +442,30 @@ IDistributionMirror.
     dists/breezy-autotest-proposed/restricted/binary-i386/Packages.gz
     dists/breezy-autotest-proposed/universe/binary-i386/Packages.gz
     dists/breezy-autotest-proposed/multiverse/binary-i386/Packages.gz
+    dists/breezy-autotest-backports/main/binary-i386/Packages.gz
+    dists/breezy-autotest-backports/restricted/binary-i386/Packages.gz
+    dists/breezy-autotest-backports/universe/binary-i386/Packages.gz
+    dists/breezy-autotest-backports/multiverse/binary-i386/Packages.gz
     dists/hoary/main/binary-i386/Packages.gz
     dists/hoary/restricted/binary-i386/Packages.gz
-    dists/hoary-backports/main/binary-i386/Packages.gz
-    dists/hoary-backports/restricted/binary-i386/Packages.gz
     dists/hoary-security/main/binary-i386/Packages.gz
     dists/hoary-security/restricted/binary-i386/Packages.gz
     dists/hoary-updates/main/binary-i386/Packages.gz
     dists/hoary-updates/restricted/binary-i386/Packages.gz
     dists/hoary-proposed/main/binary-i386/Packages.gz
     dists/hoary-proposed/restricted/binary-i386/Packages.gz
+    dists/hoary-backports/main/binary-i386/Packages.gz
+    dists/hoary-backports/restricted/binary-i386/Packages.gz
     dists/warty/main/binary-i386/Packages.gz
     dists/warty/universe/binary-i386/Packages.gz
-    dists/warty-backports/main/binary-i386/Packages.gz
-    dists/warty-backports/universe/binary-i386/Packages.gz
     dists/warty-security/main/binary-i386/Packages.gz
     dists/warty-security/universe/binary-i386/Packages.gz
     dists/warty-updates/main/binary-i386/Packages.gz
     dists/warty-updates/universe/binary-i386/Packages.gz
     dists/warty-proposed/main/binary-i386/Packages.gz
     dists/warty-proposed/universe/binary-i386/Packages.gz
+    dists/warty-backports/main/binary-i386/Packages.gz
+    dists/warty-backports/universe/binary-i386/Packages.gz
 
     >>> warty.status = SeriesStatus.OBSOLETE
 
@@ -476,10 +476,6 @@ IDistributionMirror.
     dists/breezy-autotest/restricted/source/Sources.gz
     dists/breezy-autotest/universe/source/Sources.gz
     dists/breezy-autotest/multiverse/source/Sources.gz
-    dists/breezy-autotest-backports/main/source/Sources.gz
-    dists/breezy-autotest-backports/restricted/source/Sources.gz
-    dists/breezy-autotest-backports/universe/source/Sources.gz
-    dists/breezy-autotest-backports/multiverse/source/Sources.gz
     dists/breezy-autotest-security/main/source/Sources.gz
     dists/breezy-autotest-security/restricted/source/Sources.gz
     dists/breezy-autotest-security/universe/source/Sources.gz
@@ -492,16 +488,20 @@ IDistributionMirror.
     dists/breezy-autotest-proposed/restricted/source/Sources.gz
     dists/breezy-autotest-proposed/universe/source/Sources.gz
     dists/breezy-autotest-proposed/multiverse/source/Sources.gz
+    dists/breezy-autotest-backports/main/source/Sources.gz
+    dists/breezy-autotest-backports/restricted/source/Sources.gz
+    dists/breezy-autotest-backports/universe/source/Sources.gz
+    dists/breezy-autotest-backports/multiverse/source/Sources.gz
     dists/hoary/main/source/Sources.gz
     dists/hoary/restricted/source/Sources.gz
-    dists/hoary-backports/main/source/Sources.gz
-    dists/hoary-backports/restricted/source/Sources.gz
     dists/hoary-security/main/source/Sources.gz
     dists/hoary-security/restricted/source/Sources.gz
     dists/hoary-updates/main/source/Sources.gz
     dists/hoary-updates/restricted/source/Sources.gz
     dists/hoary-proposed/main/source/Sources.gz
     dists/hoary-proposed/restricted/source/Sources.gz
+    dists/hoary-backports/main/source/Sources.gz
+    dists/hoary-backports/restricted/source/Sources.gz
     dists/warty-security/main/source/Sources.gz
     dists/warty-updates/main/source/Sources.gz
 

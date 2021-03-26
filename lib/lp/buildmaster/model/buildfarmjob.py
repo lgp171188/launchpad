@@ -1,4 +1,4 @@
-# Copyright 2009-2013 Canonical Ltd.  This software is licensed under
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under
 # the GNU Affero General Public License version 3 (see the file
 # LICENSE).
 
@@ -24,6 +24,7 @@ from storm.locals import (
     Storm,
     )
 from storm.store import Store
+from zope.component import getUtility
 from zope.interface import (
     implementer,
     provider,
@@ -49,6 +50,7 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 
 VALID_STATUS_TRANSITIONS = {
@@ -177,6 +179,19 @@ class BuildFarmJobMixin:
         """See `IBuildFarmJob`."""
         self.log = log
 
+    def emitMetric(self, metric_name, **extra):
+        """See `IBuildFarmJob`."""
+        labels = {"job_type": self.job_type.name}
+        if self.processor is not None:
+            labels["arch"] = self.processor.name
+        if self.builder is not None:
+            labels.update({
+                "builder_name": self.builder.name,
+                "virtualized": str(self.builder.virtualized),
+                })
+        labels.update(extra)
+        getUtility(IStatsdClient).incr("build.%s" % metric_name, labels=labels)
+
     def updateStatus(self, status, builder=None, slave_status=None,
                      date_started=None, date_finished=None,
                      force_invalid_transition=False):
@@ -218,6 +233,7 @@ class BuildFarmJobMixin:
             # the duration spent building locally.
             self.build_farm_job.date_finished = self.date_finished = (
                 date_finished or datetime.datetime.now(pytz.UTC))
+            self.emitMetric("finished", status=status.name)
 
     def gotFailure(self):
         """See `IBuildFarmJob`."""

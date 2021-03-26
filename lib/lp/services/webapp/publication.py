@@ -495,10 +495,12 @@ class LaunchpadBrowserPublication(
                 publication_thread_duration)
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
-            'publication_duration,success=True,pageid={}'.format(
-                self._prepPageIDForMetrics(
-                    request._orig_env.get('launchpad.pageid'))),
-            publication_duration * 1000)
+            'publication_duration', publication_duration * 1000,
+            labels={
+                'success': True,
+                'pageid': self._prepPageIDForMetrics(
+                    request._orig_env.get('launchpad.pageid')),
+                })
 
         # Calculate SQL statement statistics.
         sql_statements = da.get_request_statements()
@@ -611,9 +613,11 @@ class LaunchpadBrowserPublication(
                 'launchpad.traversalthreadduration', traversal_thread_duration)
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
-            'traversal_duration,success=True,pageid={}'.format(
-                self._prepPageIDForMetrics(pageid)),
-            traversal_duration * 1000)
+            'traversal_duration', traversal_duration * 1000,
+            labels={
+                'success': True,
+                'pageid': self._prepPageIDForMetrics(pageid),
+                })
 
     def _maybePlacefullyAuthenticate(self, request, ob):
         """ This should never be called because we've excised it in
@@ -649,10 +653,12 @@ class LaunchpadBrowserPublication(
                     publication_thread_duration)
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
-                'publication_duration,success=False,pageid={}'.format(
-                    self._prepPageIDForMetrics(
-                        request._orig_env.get('launchpad.pageid'))),
-                publication_duration * 1000)
+                'publication_duration', publication_duration * 1000,
+                labels={
+                    'success': False,
+                    'pageid': self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid')),
+                    })
         elif (hasattr(request, '_traversal_start') and
               ('launchpad.traversalduration' not in orig_env)):
             # The traversal process has been started but hasn't completed.
@@ -667,10 +673,12 @@ class LaunchpadBrowserPublication(
                     traversal_thread_duration)
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
-                'traversal_duration,success=False,pageid={}'.format(
-                    self._prepPageIDForMetrics(
-                        request._orig_env.get('launchpad.pageid'))
-                ), traversal_duration * 1000)
+                'traversal_duration', traversal_duration * 1000,
+                labels={
+                    'success': False,
+                    'pageid': self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid')),
+                    })
         else:
             # The exception wasn't raised in the middle of the traversal nor
             # the publication, so there's nothing we need to do here.

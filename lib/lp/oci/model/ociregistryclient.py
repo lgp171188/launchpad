@@ -104,12 +104,13 @@ class OCIRegistryClient:
         before=before_log(log, logging.INFO),
         retry=retry_if_exception_type(ConnectionError),
         stop=stop_after_attempt(5))
-    def _upload(cls, digest, push_rule, fileobj, http_client):
+    def _upload(cls, digest, push_rule, fileobj, length, http_client):
         """Upload a blob to the registry, using a given digest.
 
         :param digest: The digest to store the file under.
         :param push_rule: `OCIPushRule` to use for the URL and credentials.
         :param fileobj: An object that looks like a buffer.
+        :param length: The length of the blob in bytes.
 
         :raises BlobUploadFailed: if the registry does not accept the blob.
         """
@@ -137,6 +138,7 @@ class OCIRegistryClient:
                 post_location,
                 params=query_parsed,
                 data=fileobj,
+                headers={"Content-Length": str(length)},
                 method="PUT")
         except HTTPError as http_error:
             put_response = http_error.response
@@ -160,13 +162,22 @@ class OCIRegistryClient:
         """
         lfa.open()
         try:
-            un_zipped = tarfile.open(fileobj=lfa, mode='r|gz')
-            for tarinfo in un_zipped:
-                if tarinfo.name != 'layer.tar':
-                    continue
-                fileobj = un_zipped.extractfile(tarinfo)
-                cls._upload(digest, push_rule, fileobj, http_client)
-                return tarinfo.size
+            with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
+                for tarinfo in un_zipped:
+                    if tarinfo.name != 'layer.tar':
+                        continue
+                    fileobj = un_zipped.extractfile(tarinfo)
+                    # XXX Work around requests handling of objects that have
+                    # fileno, but error on access in python3:
+                    # https://github.com/psf/requests/pull/5239
+                    fileobj.len = tarinfo.size
+                    try:
+                        cls._upload(
+                            digest, push_rule, fileobj, tarinfo.size,
+                            http_client)
+                    finally:
+                        fileobj.close()
+                    return tarinfo.size
         finally:
             lfa.close()
 
@@ -247,7 +258,8 @@ class OCIRegistryClient:
         tags = []
         if recipe.is_valid_branch_format:
             tags.append("{}_{}".format(recipe.git_ref.name, "edge"))
-        tags.append("edge")
+        else:
+            tags.append("edge")
         return tags
 
     @classmethod
@@ -328,6 +340,7 @@ class OCIRegistryClient:
                 "sha256:{}".format(config_sha),
                 push_rule,
                 BytesIO(config_json),
+                len(config_json),
                 http_client)
 
             # Build the registry manifest from the image manifest
@@ -425,13 +438,19 @@ class OCIRegistryClient:
         for build in uploaded_builds:
             build_manifest = build_request.uploaded_manifests.get(build.id)
             if not build_manifest:
+                log.info(
+                    "No build manifest found for build {}".format(build.id))
                 continue
+            log.info("Build manifest found for build {}".format(build.id))
             digest = build_manifest["digest"]
             size = build_manifest["size"]
             arch = build.processor.name
 
             manifest = get_manifest_for_architecture(manifests, arch)
             if manifest is None:
+                log.info(
+                    "Appending multi-arch manifest for build {} "
+                    "with arch {}".format(build.id, arch))
                 manifest = {
                     "mediaType": ("application/"
                                   "vnd.docker.distribution.manifest.v2+json"),
@@ -441,6 +460,9 @@ class OCIRegistryClient:
                 }
                 manifests.append(manifest)
             else:
+                log.info(
+                    "Updating multi-arch manifest for build {} "
+                    "with arch {}".format(build.id, arch))
                 manifest["digest"] = digest
                 manifest["size"] = size
                 manifest["platform"]["architecture"] = arch
@@ -477,13 +499,19 @@ class OCIRegistryClient:
             return
         for push_rule in build_request.recipe.push_rules:
             for tag in cls._calculateTags(build_request.recipe):
-                http_client = RegistryHTTPClient.getInstance(push_rule)
-                multi_manifest_content = cls.makeMultiArchManifest(
-                    http_client, push_rule, build_request, uploaded_builds,
-                    tag)
-                cls._uploadRegistryManifest(
-                    http_client, multi_manifest_content, push_rule, tag,
-                    build=None)
+                try:
+                    http_client = RegistryHTTPClient.getInstance(push_rule)
+                    multi_manifest_content = cls.makeMultiArchManifest(
+                        http_client, push_rule, build_request, uploaded_builds,
+                        tag)
+                    cls._uploadRegistryManifest(
+                        http_client, multi_manifest_content, push_rule, tag,
+                        build=None)
+                except Exception:
+                    log.exception(
+                        "Exception in uploading manifest for OCI build "
+                        "request {} with tag {}".format(build_request.id, tag))
+                    raise
 
 
 class OCIRegistryAuthenticationError(Exception):

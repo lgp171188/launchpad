@@ -133,7 +133,6 @@
 
 <VirtualHost %LISTEN_ADDRESS%:80>
   ServerName ppa.launchpad.test
-  ServerAlias private-ppa.launchpad.test
   LogLevel debug
 
   DocumentRoot /var/tmp/ppa
@@ -146,8 +145,36 @@
       Deny from all
       Allow from 127.0.0.0/255.0.0.0
     </IfVersion>
-    AllowOverride AuthConfig
+    AllowOverride None
     Options Indexes
+  </Directory>
+</VirtualHost>
+
+<VirtualHost %LISTEN_ADDRESS%:80>
+  ServerName private-ppa.launchpad.test
+  LogLevel debug
+
+  DocumentRoot /var/tmp/ppa
+  <Directory /var/tmp/ppa/>
+    <IfVersion >= 2.4>
+      <RequireAll>
+        Require ip 127.0.0.0/255.0.0.0
+        Require valid-user
+      </RequireAll>
+    </IfVersion>
+    <IfVersion < 2.4>
+      Order Deny,Allow
+      Deny from all
+      Allow from 127.0.0.0/255.0.0.0
+      Require valid-user
+      Satisfy All
+    </IfVersion>
+    AllowOverride None
+    Options Indexes
+    AuthType Basic
+    AuthName "Token Required"
+    AuthBasicProvider wsgi
+    WSGIAuthUserScript %WSGI_ARCHIVE_AUTH% application-group=lp
   </Directory>
 </VirtualHost>
 

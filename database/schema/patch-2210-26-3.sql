@@ -15,7 +15,7 @@ COMMENT ON COLUMN OCIRecipe.information_type IS
 
 CREATE TABLE OCIRecipeSubscription (
     id serial PRIMARY KEY,
-    ocirecipe integer NOT NULL REFERENCES OCIRecipe(id),
+    recipe integer NOT NULL REFERENCES OCIRecipe(id),
     person integer NOT NULL REFERENCES Person(id),
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
     subscribed_by integer NOT NULL REFERENCES Person(id)
@@ -24,15 +24,15 @@ CREATE TABLE OCIRecipeSubscription (
 COMMENT ON TABLE OCIRecipeSubscription IS 'Person subscription for OCI recipe.';
 COMMENT ON COLUMN OCIRecipeSubscription.person IS
     'The person who subscribed to the OCI recipe.';
-COMMENT ON COLUMN OCIRecipeSubscription.ocirecipe IS
+COMMENT ON COLUMN OCIRecipeSubscription.recipe IS
     'The OCI recipe to which the person subscribed.';
 COMMENT ON COLUMN OCIRecipeSubscription.date_created IS
     'When the subscription was created.';
 COMMENT ON COLUMN OCIRecipeSubscription.subscribed_by IS
     'The person performing the action of subscribing someone to the OCI recipe.';
 
-CREATE UNIQUE INDEX ocirecipesubscription__person_ocirecipe__key
-    ON OCIRecipeSubscription(ocirecipe, person);
+CREATE UNIQUE INDEX ocirecipesubscription__recipe__person__key
+    ON OCIRecipeSubscription(recipe, person);
 
 CREATE INDEX ocirecipesubscription__person__idx
     ON OCIRecipeSubscription(person);
