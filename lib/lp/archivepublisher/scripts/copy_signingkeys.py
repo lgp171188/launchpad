@@ -42,6 +42,10 @@ class CopySigningKeysScript(LaunchpadScript):
             "-n", "--dry-run", action="store_true", default=False,
             help="Report what would be done, but don't actually copy keys.")
 
+        self.parser.add_option(
+            "--overwrite", action="store_true", default=False,
+            help="Overwrite existing keys when executing the copy.")
+
     def getArchive(self, reference):
         archive = getUtility(IArchiveSet).getByReference(reference)
         if archive is None:
@@ -78,7 +82,8 @@ class CopySigningKeysScript(LaunchpadScript):
         self.key_types = self.getKeyTypes(self.options.key_type)
         self.series = self.getSeries(self.options.series)
 
-    def copy(self, from_archive, to_archive, key_type, series=None):
+    def copy(self, from_archive, to_archive, key_type, series=None,
+             overwrite=False):
         series_name = series.name if series else None
         from_archive_signing_key = getUtility(IArchiveSigningKeySet).get(
             key_type, from_archive, series, exact_match=True)
@@ -90,10 +95,17 @@ class CopySigningKeysScript(LaunchpadScript):
         to_archive_signing_key = getUtility(IArchiveSigningKeySet).get(
             key_type, to_archive, series, exact_match=True)
         if to_archive_signing_key is not None:
+            if not overwrite:
+                # If it already exists and we do not force overwrite,
+                # abort this signing key copy.
+                self.logger.warning(
+                    "%s signing key for %s / %s already exists",
+                    key_type, to_archive.reference, series_name)
+                return
             self.logger.warning(
-                "%s signing key for %s / %s already exists",
+                "%s signing key for %s / %s being overwritten",
                 key_type, to_archive.reference, series_name)
-            return
+            to_archive_signing_key.destroySelf()
         self.logger.info(
             "Copying %s signing key %s from %s / %s to %s / %s",
             key_type, from_archive_signing_key.signing_key.fingerprint,
@@ -107,7 +119,7 @@ class CopySigningKeysScript(LaunchpadScript):
         for key_type in self.key_types:
             self.copy(
                 self.from_archive, self.to_archive, key_type,
-                series=self.series)
+                series=self.series, overwrite=self.options.overwrite)
         if self.options.dry_run:
             self.logger.info("Dry run requested.  Not committing changes.")
             transaction.abort()
