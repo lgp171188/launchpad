@@ -418,6 +418,19 @@
 
         <!-- string:${id} because id is an int -->
 
+    <!-- Close Account Celery Job -->
+    <class
+        class="lp.registry.model.closeaccount.CloseAccountJobObject">
+        <allow
+            interface="lp.registry.model.closeaccount.ICloseAccountJob"/>
+    </class>
+
+    <securedutility
+        component="lp.registry.model.closeaccount.CloseAccountJob"
+        provides="lp.registry.model.closeaccount.ICloseAccountJobSource">
+        <allow interface="lp.registry.model.closeaccount.ICloseAccountJobSource" />
+    </securedutility>
+
     <class
         class="lp.registry.model.person.IrcID">
         <allow
