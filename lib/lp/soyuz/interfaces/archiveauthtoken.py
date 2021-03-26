@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """ArchiveAuthToken interface."""
@@ -96,23 +96,34 @@ class IArchiveAuthTokenSet(Interface):
         :return: An object conforming to `IArchiveAuthToken`.
         """
 
-    def getByArchive(archive):
+    def getByArchive(archive, with_current_subscription=False):
         """Retrieve all the tokens for an archive.
 
         :param archive: The context archive.
+        :param with_current_subscription: If True, only return tokens
+            associated with a current subscription.
         :return: A result set containing `IArchiveAuthToken`s.
         """
 
     def getActiveTokenForArchiveAndPerson(archive, person):
-        """Retrieve an active token for the given archive and person.
+        """Retrieve a valid active token for the given archive and person.
 
         :param archive: The archive to which the token corresponds.
         :param person: The person to which the token corresponds.
         :return: An `IArchiveAuthToken` or None.
         """
 
+    def getActiveTokenForArchiveAndPersonName(archive, person_name):
+        """Retrieve a valid active token for the given archive and person name.
+
+        :param archive: The archive to which the token corresponds.
+        :param person_name: The name of the person to which the token
+            corresponds.
+        :return: An `IArchiveAuthToken` or None.
+        """
+
     def getActiveNamedTokenForArchive(archive, name):
-        """Retrieve an active named token for the given archive and name.
+        """Retrieve a valid active named token for the given archive and name.
 
         :param archive: The archive to which the token corresponds.
         :param name: The name of a named authorization token.
@@ -120,9 +131,9 @@ class IArchiveAuthTokenSet(Interface):
         """
 
     def getActiveNamedTokensForArchive(archive, names=None):
-        """Retrieve a subset of active named tokens for the given archive if
-        `names` is specified, or all active named tokens for the archive if
-        `names` is null.
+        """Retrieve a subset of valid active named tokens for the given
+        archive if `names` is specified, or all valid active named tokens
+        for the archive if `names` is null.
 
         :param archive: The archive to which the tokens correspond.
         :param names: An optional list of token names.
