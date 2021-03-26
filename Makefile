@@ -489,6 +489,7 @@ copy-apache-config: codehosting-dir
 		base=local-launchpad; \
 	fi; \
 	sed -e 's,%BRANCH_REWRITE%,$(shell pwd)/scripts/branch-rewrite.py,' \
+		-e 's,%WSGI_ARCHIVE_AUTH%,$(shell pwd)/scripts/wsgi-archive-auth.py,' \
 		-e 's,%LISTEN_ADDRESS%,$(LISTEN_ADDRESS),' \
 		configs/$(LPCONFIG)/local-launchpad-apache > \
 		/etc/apache2/sites-available/$$base

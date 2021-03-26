@@ -306,6 +306,42 @@ class TestCopySigningKeysScript(TestCaseWithFactory):
                 MatchesStructure.byEquality(
                     archive=archives[1], earliest_distro_series=None,
                     key_type=SigningKeyType.UEFI, signing_key=signing_keys[1]),
+            ))
+
+    def test_copy_forced_overwrite(self):
+        archives = [self.factory.makeArchive() for _ in range(2)]
+        signing_keys = [
+            self.factory.makeSigningKey(key_type=SigningKeyType.UEFI)
+            for _ in range(2)]
+        for archive, signing_key in zip(archives, signing_keys):
+            self.factory.makeArchiveSigningKey(
+                archive=archive, signing_key=signing_key)
+        script = self.makeScript(
+            test_args=["--key-type", "UEFI", "--overwrite"],
+            archives=archives[:2])
+        script.main()
+
+        expected_log = [
+            "WARNING UEFI signing key for %s / None being overwritten" % (
+                archives[1].reference),
+            "INFO Copying UEFI signing key %s from %s / %s to %s / %s" % (
+                signing_keys[0].fingerprint,
+                archives[0].reference, None,
+                archives[1].reference, None),
+            ]
+        self.assertEqual(
+            expected_log, script.logger.content.as_text().splitlines())
+        self.assertThat(
+            self.findKeys(archives),
+            MatchesSetwise(
+                # First archive keeps its signing keys.
+                MatchesStructure.byEquality(
+                    archive=archives[0], earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
+                # Second archive uses the same signing_key from first archive.
+                MatchesStructure.byEquality(
+                    archive=archives[1], earliest_distro_series=None,
+                    key_type=SigningKeyType.UEFI, signing_key=signing_keys[0]),
                 ))
 
     def runScript(self, args=None):
