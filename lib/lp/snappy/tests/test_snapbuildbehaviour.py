@@ -761,6 +761,42 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         self.assertEqual(expected_archives, extra_args["archives"])
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_ppa_with_archive_dependencies(self):
+        # If the build is configured to use a PPA as its source, and it has
+        # archive dependencies, then they are honoured.
+        archive = self.factory.makeArchive()
+        lower_archive = self.factory.makeArchive(
+            distribution=archive.distribution)
+        job = self.makeJob(archive=archive)
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            distroarchseries=job.build.distro_series.architectures[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=lower_archive,
+            distroarchseries=job.build.distro_series.architectures[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        primary = job.build.distribution.main_archive
+        archive.addArchiveDependency(
+            lower_archive, PackagePublishingPocket.RELEASE)
+        archive.addArchiveDependency(primary, PackagePublishingPocket.SECURITY)
+        expected_archives = [
+            "deb %s %s main" % (
+                archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main" % (
+                lower_archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_disallow_internet(self):
         # If external network access is not allowed for the snap,
         # extraBuildArgs does not dispatch a proxy token.

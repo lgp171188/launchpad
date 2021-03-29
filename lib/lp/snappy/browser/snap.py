@@ -104,7 +104,10 @@ from lp.snappy.interfaces.snap import (
     SNAP_PRIVATE_FEATURE_FLAG,
     SnapPrivateFeatureDisabled,
     )
-from lp.snappy.interfaces.snapbuild import ISnapBuildSet
+from lp.snappy.interfaces.snapbuild import (
+    ISnapBuild,
+    ISnapBuildSet,
+    )
 from lp.snappy.interfaces.snappyseries import (
     ISnappyDistroSeriesSet,
     ISnappySeriesSet,
@@ -345,11 +348,8 @@ class SnapRequestBuildsView(LaunchpadFormView):
                 'If you do not explicitly select any architectures, then the '
                 'snap package will be built for all architectures allowed by '
                 'its configuration.'))
-        pocket = Choice(
-            title='Pocket', vocabulary=PackagePublishingPocket, required=True,
-            description=(
-                'The package stream within the source distribution series to '
-                'use when building the snap package.'))
+        pocket = copy_field(
+            ISnapBuild['pocket'], title='Pocket', readonly=False)
         channels = Dict(
             title='Source snap channels', key_type=TextLine(), required=True,
             description=ISnap['auto_build_channels'].description)

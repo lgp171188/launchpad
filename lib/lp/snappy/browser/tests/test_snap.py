@@ -1962,8 +1962,10 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Proposed
             Backports
             \(\?\)
-            The package stream within the source distribution series to use
-            when building the snap package.
+            The package stream within the source archive and distribution
+            series to use when building the snap package.  If the source
+            archive is a PPA, then the PPA's archive dependencies will be
+            used to select the pocket in the distribution's primary archive.
             Source snap channels:
             core
             core18

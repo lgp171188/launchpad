@@ -800,8 +800,11 @@ class ISnapEditableAttributes(IHasOwner):
         title=_("Pocket for automatic builds"),
         vocabulary=PackagePublishingPocket, required=False, readonly=False,
         description=_(
-            "The package stream within the source distribution series to use "
-            "when building the snap package.")))
+            "The package stream within the source archive and distribution "
+            "series to use when building the snap package.  If the source "
+            "archive is a PPA, then the PPA's archive dependencies will be "
+            "used to select the pocket in the distribution's primary "
+            "archive.")))
 
     auto_build_channels = exported(Dict(
         title=_("Source snap channels for automatic builds"),
