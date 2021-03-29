@@ -67,7 +67,7 @@ class RepackTunableLoop(TunableLoop):
             except CannotRepackRepository as e:
                 self.logger.error(
                     'An error occurred while requesting repository repack %s'
-                    % e.message)
+                    % e.args[0])
                 continue
             except TransactionRollbackError as error:
                 self.logger.error(
