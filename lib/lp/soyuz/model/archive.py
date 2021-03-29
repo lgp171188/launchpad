@@ -2593,16 +2593,16 @@ class ArchiveSet:
     def getPPAByDistributionAndOwnerName(self, distribution, person_name,
                                          ppa_name):
         """See `IArchiveSet`"""
-        query = """
-            Archive.purpose = %s AND
-            Archive.distribution = %s AND
-            Person.id = Archive.owner AND
-            Archive.name = %s AND
-            Person.name = %s
-        """ % sqlvalues(
-                ArchivePurpose.PPA, distribution, ppa_name, person_name)
+        # Circular import.
+        from lp.registry.model.person import Person
 
-        return Archive.selectOne(query, clauseTables=['Person'])
+        return IStore(Archive).find(
+            Archive,
+            Archive.purpose == ArchivePurpose.PPA,
+            Archive.distribution == distribution,
+            Archive.owner == Person.id,
+            Archive.name == ppa_name,
+            Person.name == person_name).one()
 
     def _getDefaultArchiveNameByPurpose(self, purpose):
         """Return the default for a archive in a given purpose.
@@ -2641,11 +2641,11 @@ class ArchiveSet:
 
     def getByDistroAndName(self, distribution, name):
         """See `IArchiveSet`."""
-        return Archive.selectOne("""
-            Archive.distribution = %s AND
-            Archive.name = %s AND
-            Archive.purpose != %s
-            """ % sqlvalues(distribution, name, ArchivePurpose.PPA))
+        return IStore(Archive).find(
+            Archive,
+            Archive.distribution == distribution,
+            Archive.name == name,
+            Archive.purpose != ArchivePurpose.PPA).one()
 
     def _getDefaultDisplayname(self, name, owner, distribution, purpose):
         """See `IArchive`."""
@@ -2697,9 +2697,8 @@ class ArchiveSet:
         # For non-PPA archives we enforce unique names within the context of a
         # distribution.
         if purpose != ArchivePurpose.PPA:
-            archive = Archive.selectOne(
-                "Archive.distribution = %s AND Archive.name = %s" %
-                sqlvalues(distribution, name))
+            archive = IStore(Archive).find(
+                Archive, distribution=distribution, name=name).one()
             if archive is not None:
                 raise AssertionError(
                     "archive '%s' exists already in '%s'." %

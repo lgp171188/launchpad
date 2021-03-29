@@ -19,6 +19,7 @@ import six
 from storm.base import Storm
 from storm.expr import (
     And,
+    Cast,
     Count,
     In,
     Join,
@@ -82,8 +83,8 @@ from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import quote
 from lp.services.database.stormexpr import (
+    Array,
     ArrayAgg,
     ArrayContains,
     ArrayIntersects,
@@ -927,8 +928,7 @@ def _calculate_tag_query(conditions, tags):
         # space as, effectively, NULL.  This is safe because a
         # single space is not an acceptable tag.  Again, the
         # clearest alternative is defining a custom Postgres aggregator.
-        tags_array = "ARRAY[%s,' ']::TEXT[]" % ",".join(
-            quote(tag) for tag in tags)
+        tags_array = Cast(Array(tuple(tags) + (u" ",)), "text[]")
         # Now let's build the select itself.
         second_select = Select(
             BugSubscriptionFilter.id,
@@ -944,7 +944,7 @@ def _calculate_tag_query(conditions, tags):
                 # The list of tags should be a superset of the filter tags to
                 # be included.
                 ArrayContains(
-                    SQL(tags_array),
+                    tags_array,
                     # This next line gives us an array of the tags that the
                     # filter wants to include.  Notice that it includes the
                     # empty string when the condition does not match, per the
@@ -957,7 +957,7 @@ def _calculate_tag_query(conditions, tags):
                 # tags that the filter wants to exclude.
                 Not(
                     ArrayIntersects(
-                        SQL(tags_array),
+                        tags_array,
                         # This next line gives us an array of the tags
                         # that the filter wants to exclude.  We do not bother
                         # with the empty string, and therefore allow NULLs

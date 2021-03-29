@@ -1517,7 +1517,7 @@ class DistributionVocabulary(NamedSQLObjectVocabulary):
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
-        obj = Distribution.selectOne("name=%s" % sqlvalues(token))
+        obj = IStore(Distribution).find(Distribution, name=token).one()
         if obj is None:
             raise LookupError(token)
         else:
@@ -1565,12 +1565,11 @@ class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
         except ValueError:
             raise LookupError(token)
 
-        obj = DistroSeries.selectOne('''
-                    Distribution.id = DistroSeries.distribution AND
-                    Distribution.name = %s AND
-                    DistroSeries.name = %s
-                    ''' % sqlvalues(distroname, distroseriesname),
-                    clauseTables=['Distribution'])
+        obj = IStore(DistroSeries).find(
+            DistroSeries,
+            DistroSeries.distribution == Distribution.id,
+            Distribution.name == distroname,
+            DistroSeries.name == distroseriesname).one()
         if obj is None:
             raise LookupError(token)
         else:
