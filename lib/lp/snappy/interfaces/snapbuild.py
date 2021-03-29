@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap package build interfaces."""
@@ -60,6 +60,7 @@ from lp.snappy.interfaces.snap import (
     ISnap,
     ISnapBuildRequest,
     )
+from lp.snappy.interfaces.snapbase import ISnapBase
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
@@ -163,6 +164,11 @@ class ISnapBuildView(IPackageBuild):
     pocket = exported(Choice(
         title=_("The pocket for which to build."),
         vocabulary=PackagePublishingPocket, required=True, readonly=True))
+
+    snap_base = exported(Reference(
+        ISnapBase,
+        title=_("The snap base to use for this build."),
+        required=False, readonly=True))
 
     channels = exported(Dict(
         title=_("Source snap channels to use for this build."),
@@ -355,7 +361,8 @@ class ISnapBuildSet(ISpecificBuildFarmJobSource):
     """Utility for `ISnapBuild`."""
 
     def new(requester, snap, archive, distro_arch_series, pocket,
-            date_created=DEFAULT):
+            snap_base=None, channels=None, date_created=DEFAULT,
+            store_upload_metadata=None, build_request=None):
         """Create an `ISnapBuild`."""
 
     def preloadBuildsData(builds):

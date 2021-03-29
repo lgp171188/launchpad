@@ -776,7 +776,7 @@ class Snap(Storm, WebhookTargetMixin):
             raise SnapBuildArchiveOwnerMismatch()
 
     def requestBuild(self, requester, archive, distro_arch_series, pocket,
-                     channels=None, build_request=None):
+                     snap_base=None, channels=None, build_request=None):
         """See `ISnap`."""
         self._checkRequestBuild(requester, archive)
         if not self._isArchitectureAllowed(distro_arch_series, pocket):
@@ -800,7 +800,8 @@ class Snap(Storm, WebhookTargetMixin):
 
         build = getUtility(ISnapBuildSet).new(
             requester, self, archive, distro_arch_series, pocket,
-            channels=channels, build_request=build_request)
+            snap_base=snap_base, channels=channels,
+            build_request=build_request)
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
         return build
@@ -916,7 +917,8 @@ class Snap(Storm, WebhookTargetMixin):
             try:
                 build = self.requestBuild(
                     requester, archive, supported_arches[arch], pocket,
-                    channels, build_request=build_request)
+                    snap_base=snap_base, channels=channels,
+                    build_request=build_request)
                 if logger is not None:
                     logger.debug(
                         " - %s/%s/%s: Build requested.",

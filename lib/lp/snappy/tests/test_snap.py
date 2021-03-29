@@ -243,12 +243,15 @@ class TestSnap(TestCaseWithFactory):
             snap.owner, snap.distro_series.main_archive, distroarchseries,
             PackagePublishingPocket.UPDATES)
         self.assertTrue(ISnapBuild.providedBy(build))
-        self.assertEqual(snap.owner, build.requester)
-        self.assertEqual(snap.distro_series.main_archive, build.archive)
-        self.assertEqual(distroarchseries, build.distro_arch_series)
-        self.assertEqual(PackagePublishingPocket.UPDATES, build.pocket)
-        self.assertIsNone(build.channels)
-        self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
+        self.assertThat(build, MatchesStructure(
+            requester=Equals(snap.owner),
+            archive=Equals(snap.distro_series.main_archive),
+            distro_arch_series=Equals(distroarchseries),
+            pocket=Equals(PackagePublishingPocket.UPDATES),
+            snap_base=Is(None),
+            channels=Is(None),
+            status=Equals(BuildStatus.NEEDSBUILD),
+            ))
         store = Store.of(build)
         store.flush()
         build_queue = store.find(
@@ -291,6 +294,20 @@ class TestSnap(TestCaseWithFactory):
         queue_record = build.buildqueue_record
         queue_record.score()
         self.assertEqual(2610, queue_record.lastscore)
+
+    def test_requestBuild_snap_base(self):
+        # requestBuild can select a snap base.
+        processor = self.factory.makeProcessor(supports_virtualized=True)
+        distroarchseries = self.makeBuildableDistroArchSeries(
+            processor=processor)
+        snap = self.factory.makeSnap(
+            distroseries=distroarchseries.distroseries, processors=[processor])
+        with admin_logged_in():
+            snap_base = self.factory.makeSnapBase()
+        build = snap.requestBuild(
+            snap.owner, snap.distro_series.main_archive, distroarchseries,
+            PackagePublishingPocket.UPDATES, snap_base=snap_base)
+        self.assertEqual(snap_base, build.snap_base)
 
     def test_requestBuild_channels(self):
         # requestBuild can select non-default channels.
@@ -655,8 +672,8 @@ class TestSnap(TestCaseWithFactory):
             snap, snap.owner.teamowner, distro.main_archive,
             PackagePublishingPocket.RELEASE, {"snapcraft": "edge"})
 
-    def assertRequestedBuildsMatch(self, builds, job, arch_tags, channels,
-                                   distro_series=None):
+    def assertRequestedBuildsMatch(self, builds, job, arch_tags, snap_base,
+                                   channels, distro_series=None):
         if distro_series is None:
             distro_series = job.snap.distro_series
         self.assertThat(builds, MatchesSetwise(
@@ -666,6 +683,7 @@ class TestSnap(TestCaseWithFactory):
                 archive=Equals(job.archive),
                 distro_arch_series=Equals(distro_series[arch_tag]),
                 pocket=Equals(job.pocket),
+                snap_base=Equals(snap_base),
                 channels=Equals(channels))
               for arch_tag in arch_tags)))
 
@@ -687,7 +705,8 @@ class TestSnap(TestCaseWithFactory):
                 job.requester, job.archive, job.pocket,
                 channels=removeSecurityProxy(job.channels),
                 build_request=job.build_request)
-        self.assertRequestedBuildsMatch(builds, job, ["sparc"], job.channels)
+        self.assertRequestedBuildsMatch(
+            builds, job, ["sparc"], None, job.channels)
 
     def test_requestBuildsFromJob_no_explicit_architectures(self):
         # If the snap doesn't specify any architectures,
@@ -704,7 +723,7 @@ class TestSnap(TestCaseWithFactory):
                 channels=removeSecurityProxy(job.channels),
                 build_request=job.build_request)
         self.assertRequestedBuildsMatch(
-            builds, job, ["mips64el", "riscv64"], job.channels)
+            builds, job, ["mips64el", "riscv64"], None, job.channels)
 
     def test_requestBuildsFromJob_architectures_parameter(self):
         # If an explicit set of architectures was given as a parameter,
@@ -722,7 +741,7 @@ class TestSnap(TestCaseWithFactory):
                 architectures={"avr", "riscv64"},
                 build_request=job.build_request)
         self.assertRequestedBuildsMatch(
-            builds, job, ["avr", "riscv64"], job.channels)
+            builds, job, ["avr", "riscv64"], None, job.channels)
 
     def test_requestBuildsFromJob_no_distroseries_explicit_base(self):
         # If the snap doesn't specify a distroseries but has an explicit
@@ -752,8 +771,8 @@ class TestSnap(TestCaseWithFactory):
                 job.requester, job.archive, job.pocket,
                 build_request=job.build_request)
         self.assertRequestedBuildsMatch(
-            builds, job, ["mips64el", "riscv64"], snap_base.build_channels,
-            distro_series=snap_base.distro_series)
+            builds, job, ["mips64el", "riscv64"], snap_base,
+            snap_base.build_channels, distro_series=snap_base.distro_series)
 
     def test_requestBuildsFromJob_no_distroseries_no_explicit_base(self):
         # If the snap doesn't specify a distroseries and has no explicit
@@ -783,8 +802,8 @@ class TestSnap(TestCaseWithFactory):
                 job.requester, job.archive, job.pocket,
                 build_request=job.build_request)
         self.assertRequestedBuildsMatch(
-            builds, job, ["mips64el", "riscv64"], snap_base.build_channels,
-            distro_series=snap_base.distro_series)
+            builds, job, ["mips64el", "riscv64"], snap_base,
+            snap_base.build_channels, distro_series=snap_base.distro_series)
 
     def test_requestBuildsFromJob_no_distroseries_no_default_base(self):
         # If the snap doesn't specify a distroseries and has an explicit
@@ -822,7 +841,7 @@ class TestSnap(TestCaseWithFactory):
                 removeSecurityProxy(job.channels),
                 build_request=job.build_request)
         self.assertRequestedBuildsMatch(
-            builds, job, ["mips64el", "riscv64"], job.channels)
+            builds, job, ["mips64el", "riscv64"], None, job.channels)
 
     def test_requestBuildsFromJob_triggers_webhooks(self):
         # requestBuildsFromJob triggers webhooks, and the payload includes a

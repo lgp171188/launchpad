@@ -110,6 +110,7 @@ from lp.services.fields import (
     URIField,
     )
 from lp.services.webhooks.interfaces import IWebhookTarget
+from lp.snappy.interfaces.snapbase import ISnapBase
 from lp.snappy.interfaces.snappyseries import (
     ISnappyDistroSeries,
     ISnappySeries,
@@ -408,6 +409,7 @@ class ISnapView(Interface):
         archive=Reference(schema=IArchive),
         distro_arch_series=Reference(schema=IDistroArchSeries),
         pocket=Choice(vocabulary=PackagePublishingPocket),
+        snap_base=Reference(schema=ISnapBase),
         channels=Dict(
             title=_("Source snap channels to use for this build."),
             description=_(
@@ -419,13 +421,14 @@ class ISnapView(Interface):
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def requestBuild(requester, archive, distro_arch_series, pocket,
-                     channels=None, build_request=None):
+                     snap_base=None, channels=None, build_request=None):
         """Request that the snap package be built.
 
         :param requester: The person requesting the build.
         :param archive: The IArchive to associate the build with.
         :param distro_arch_series: The architecture to build for.
         :param pocket: The pocket that should be targeted.
+        :param snap_base: The `ISnapBase` to use for this build.
         :param channels: A dictionary mapping snap names to channels to use
             for this build.
         :param build_request: The `ISnapBuildRequest` job being processed,
