@@ -198,7 +198,9 @@
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
         <browser:navigation
             module="lp.snappy.browser.snapbase"
-            classes="SnapBaseSetNavigation" />
+            classes="
+                SnapBaseNavigation
+                SnapBaseSetNavigation" />
 
         <browser:page
             for="*"

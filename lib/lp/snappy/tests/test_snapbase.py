@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test bases for snaps."""
@@ -11,6 +11,9 @@ from testtools.matchers import (
     ContainsDict,
     Equals,
     Is,
+    MatchesListwise,
+    MatchesRegex,
+    MatchesStructure,
     )
 from zope.component import (
     getAdapter,
@@ -18,6 +21,7 @@ from zope.component import (
     )
 
 from lp.app.interfaces.security import IAuthorization
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.snappy.interfaces.snapbase import (
     CannotDeleteSnapBase,
@@ -25,6 +29,7 @@ from lp.snappy.interfaces.snapbase import (
     ISnapBaseSet,
     NoSuchSnapBase,
     )
+from lp.soyuz.interfaces.component import IComponentSet
 from lp.testing import (
     api_url,
     celebrity_logged_in,
@@ -256,6 +261,112 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         with person_logged_in(person):
             self.assertEqual(
                 snap_bases[1], getUtility(ISnapBaseSet).getDefault())
+
+    def test_addArchiveDependency_unpriv(self):
+        # An unprivileged user cannot add an archive dependency.
+        person = self.factory.makePerson()
+        with celebrity_logged_in("registry_experts"):
+            snap_base = self.factory.makeSnapBase()
+            archive = self.factory.makeArchive()
+            snap_base_url = api_url(snap_base)
+            archive_url = api_url(archive)
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(
+            snap_base_url, "addArchiveDependency",
+            dependency=archive_url, pocket="Release", component="main")
+        self.assertThat(response, MatchesStructure(
+            status=Equals(401),
+            body=MatchesRegex(br".*addArchiveDependency.*launchpad.Edit.*")))
+
+    def test_addArchiveDependency(self):
+        # A registry expert can add an archive dependency.
+        person = self.factory.makeRegistryExpert()
+        with person_logged_in(person):
+            snap_base = self.factory.makeSnapBase()
+            archive = self.factory.makeArchive()
+            snap_base_url = api_url(snap_base)
+            archive_url = api_url(archive)
+            self.assertEqual([], list(snap_base.dependencies))
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(
+            snap_base_url, "addArchiveDependency",
+            dependency=archive_url, pocket="Release", component="main")
+        self.assertEqual(201, response.status)
+        with person_logged_in(person):
+            self.assertThat(list(snap_base.dependencies), MatchesListwise([
+                MatchesStructure(
+                    archive=Is(None),
+                    snap_base=Equals(snap_base),
+                    dependency=Equals(archive),
+                    pocket=Equals(PackagePublishingPocket.RELEASE),
+                    component=Equals(getUtility(IComponentSet)["main"]),
+                    component_name=Equals("main"),
+                    title=Equals(archive.displayname),
+                    ),
+                ]))
+
+    def test_addArchiveDependency_invalid(self):
+        # Invalid requests generate a BadRequest error.
+        person = self.factory.makeRegistryExpert()
+        with person_logged_in(person):
+            snap_base = self.factory.makeSnapBase()
+            archive = self.factory.makeArchive()
+            snap_base.addArchiveDependency(
+                archive, PackagePublishingPocket.RELEASE)
+            snap_base_url = api_url(snap_base)
+            archive_url = api_url(archive)
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(
+            snap_base_url, "addArchiveDependency",
+            dependency=archive_url, pocket="Release", component="main")
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=400, body=b"This dependency is already registered."))
+
+    def test_removeArchiveDependency_unpriv(self):
+        # An unprivileged user cannot remove an archive dependency.
+        person = self.factory.makePerson()
+        with celebrity_logged_in("registry_experts"):
+            snap_base = self.factory.makeSnapBase()
+            archive = self.factory.makeArchive()
+            snap_base.addArchiveDependency(
+                archive, PackagePublishingPocket.RELEASE)
+            snap_base_url = api_url(snap_base)
+            archive_url = api_url(archive)
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(
+            snap_base_url, "removeArchiveDependency", dependency=archive_url)
+        self.assertThat(response, MatchesStructure(
+            status=Equals(401),
+            body=MatchesRegex(
+                br".*removeArchiveDependency.*launchpad.Edit.*")))
+
+    def test_removeArchiveDependency(self):
+        # A registry expert can remove an archive dependency.
+        person = self.factory.makeRegistryExpert()
+        with person_logged_in(person):
+            snap_base = self.factory.makeSnapBase()
+            archive = self.factory.makeArchive()
+            snap_base.addArchiveDependency(
+                archive, PackagePublishingPocket.RELEASE)
+            snap_base_url = api_url(snap_base)
+            archive_url = api_url(archive)
+            self.assertNotEqual([], list(snap_base.dependencies))
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(
+            snap_base_url, "removeArchiveDependency", dependency=archive_url)
+        self.assertEqual(200, response.status)
+        with person_logged_in(person):
+            self.assertEqual([], list(snap_base.dependencies))
 
     def test_collection(self):
         # lp.snap_bases is a collection of all SnapBases.
