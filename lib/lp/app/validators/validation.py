@@ -91,6 +91,9 @@ def validate_oci_branch_name(branch_name):
     if len(split) < 2:
         return False
     app_version = split[0:-1]
+    # tags should be valid, but have a / in the name, which is invalid
+    if app_version[0].startswith('refs/tags/'):
+        app_version[0] = app_version[0][len('refs/tags/'):]
     ubuntu_version = split[-1]
     # 20.04 format
     ubuntu_match = re.match("\d{2}\.\d{2}", ubuntu_version)
@@ -101,6 +104,7 @@ def validate_oci_branch_name(branch_name):
         if risk in app_version:
             return False
     # no '/' as they're a delimiter
-    if '/' in app_version:
-        return False
+    for segment in app_version:
+        if '/' in segment:
+            return False
     return True
