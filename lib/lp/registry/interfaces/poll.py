@@ -1,7 +1,8 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
+    'CannotCreatePoll',
     'IPoll',
     'IPollSet',
     'IPollSubset',
@@ -26,7 +27,9 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+from lazr.restful.declarations import error_status
 import pytz
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -110,6 +113,11 @@ class PollStatus:
     CLOSED = 'closed'
     NOT_YET_OPENED = 'not-yet-opened'
     ALL = frozenset([OPEN, CLOSED, NOT_YET_OPENED])
+
+
+@error_status(http_client.FORBIDDEN)
+class CannotCreatePoll(Exception):
+    pass
 
 
 class IPoll(Interface):
