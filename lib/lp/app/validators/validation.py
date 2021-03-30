@@ -86,14 +86,16 @@ def validate_new_team_email(email):
 
 def validate_oci_branch_name(branch_name):
     """Check that a git ref name matches appversion-ubuntuversion."""
+    # Remove components to just get the branch/tag name
+    if branch_name.startswith('refs/tags/'):
+        branch_name = branch_name[len('refs/tags/'):]
+    elif branch_name.startswith('refs/heads/'):
+        branch_name = branch_name[len('refs/heads/'):]
     split = branch_name.split('-')
     # if we've not got at least two components
     if len(split) < 2:
         return False
     app_version = split[0:-1]
-    # tags should be valid, but have a / in the name, which is invalid
-    if app_version[0].startswith('refs/tags/'):
-        app_version[0] = app_version[0][len('refs/tags/'):]
     ubuntu_version = split[-1]
     # 20.04 format
     ubuntu_match = re.match("\d{2}\.\d{2}", ubuntu_version)
