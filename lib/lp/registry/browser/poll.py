@@ -411,12 +411,6 @@ class PollAddView(LaunchpadFormView):
 
     page_title = 'New poll'
 
-    def __init__(self, context, request):
-        if not check_permission("launchpad.AnyLegitimatePerson", context):
-            raise CannotCreatePoll(
-                "You do not have permission to create polls.")
-        super(PollAddView, self).__init__(context, request)
-
     @property
     def cancel_url(self):
         """See `LaunchpadFormView`."""

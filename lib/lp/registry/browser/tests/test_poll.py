@@ -13,6 +13,7 @@ from datetime import (
     )
 import os
 
+from fixtures import FakeLogger
 import pytz
 
 from lp.registry.interfaces.poll import (
@@ -64,11 +65,23 @@ class TestPollAddView(BrowserTestCase):
 
     def test_new_user(self):
         # A brand new user cannot create polls.
+        self.useFixture(FakeLogger())
         new_person = self.factory.makePerson()
         team = self.factory.makeTeam(owner=new_person)
+        now = datetime.now(pytz.UTC)
+        browser = self.getViewBrowser(
+            team, view_name="+newpoll", user=new_person)
+        browser.getControl("The unique name of this poll").value = "colour"
+        browser.getControl("The title of this poll").value = "Favourite Colour"
+        browser.getControl("The date and time when this poll opens").value = (
+            str(now + timedelta(days=1)))
+        browser.getControl("The date and time when this poll closes").value = (
+            str(now + timedelta(days=2)))
+        browser.getControl(
+            "The proposition that is going to be voted").value = (
+                "What is your favourite colour?")
         self.assertRaises(
-            CannotCreatePoll,
-            self.getViewBrowser, team, view_name="+newpoll", user=new_person)
+            CannotCreatePoll, browser.getControl("Continue").click)
 
     def test_legitimate_user(self):
         # A user with some kind of track record can create polls.

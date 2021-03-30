@@ -667,6 +667,27 @@ class TestTeamMenu(TestCaseWithFactory):
         link = menu.configure_mailing_list()
         self.assertEqual('Configure mailing list', link.text)
 
+    def test_TeamOverviewMenu_new_user_without_add_poll(self):
+        # A brand new user does not see the add_poll link.
+        self.pushConfig(
+            'launchpad', min_legitimate_karma=5, min_legitimate_account_age=5)
+        login_person(self.team.teamowner)
+        menu = TeamOverviewMenu(self.team)
+        self.assertNotIn(
+            'add_poll',
+            [link.name for link in menu.iterlinks() if link.enabled])
+
+    def test_TeamOverviewMenu_legitimate_user_with_add_poll(self):
+        # A user with some kind of track record sees the add_poll link.
+        self.pushConfig(
+            'launchpad', min_legitimate_karma=5, min_legitimate_account_age=5)
+        team = self.factory.makeTeam(owner=self.factory.makePerson(karma=10))
+        login_person(team.teamowner)
+        menu = TeamOverviewMenu(team)
+        self.assertIn(
+            'add_poll',
+            [link.name for link in menu.iterlinks() if link.enabled])
+
 
 class TestMailingListArchiveView(TestCaseWithFactory):
 
