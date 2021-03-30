@@ -418,6 +418,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertThat(result, MatchesListwise(
             [Equals("v1.0-20.04_edge")]))
 
+    def test_calculateTags_valid_tag(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/tags/v1.0-20.04"])
+        self.build.recipe.git_ref = git_ref
+        result = self.client._calculateTags(self.build.recipe)
+        self.assertThat(result, MatchesListwise(
+            [Equals("v1.0-20.04_edge")]))
+
     def test_build_registry_manifest(self):
         self._makeFiles()
         preloaded_data = self.client._preloadFiles(

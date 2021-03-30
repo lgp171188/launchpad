@@ -257,7 +257,11 @@ class OCIRegistryClient:
         """
         tags = []
         if recipe.is_valid_branch_format:
-            tags.append("{}_{}".format(recipe.git_ref.name, "edge"))
+            ref_name = recipe.git_ref.name
+            # lp:1921865, account for tags in the correct format
+            if ref_name.startswith("refs/tags/"):
+                ref_name = ref_name[len("refs/tags/"):]
+            tags.append("{}_{}".format(ref_name, "edge"))
         else:
             tags.append("edge")
         return tags
