@@ -16,7 +16,10 @@ class TestOCIBranchValidator(TestCase):
 
     layer = BaseLayer
 
-    def test_validate_oci_branch_name_simple(self):
+    def test_validate_oci_branch_name_with_leading_slash(self):
+        self.assertFalse(validate_oci_branch_name('/refs/heads/v2.1.0-20.04'))
+
+    def test_validate_oci_branch_name_full(self):
         self.assertTrue(validate_oci_branch_name('refs/heads/v2.1.0-20.04'))
 
     def test_validate_oci_branch_name_just_branch_name(self):
