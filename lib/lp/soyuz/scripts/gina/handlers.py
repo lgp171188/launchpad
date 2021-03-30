@@ -29,6 +29,11 @@ from sqlobject import (
     SQLObjectMoreThanOneResultError,
     SQLObjectNotFound,
     )
+from storm.exceptions import NotOneError
+from storm.expr import (
+    Cast,
+    Desc,
+    )
 from zope.component import getUtility
 
 from lp.archivepublisher.diskpool import poolify
@@ -46,10 +51,7 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    quote,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import quote
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.scripts import log
 from lp.soyuz.enums import (
@@ -561,26 +563,19 @@ class SourcePackageHandler:
 
         # Check here to see if this release has ever been published in
         # the distribution, no matter what status.
-        query = """
-                SourcePackageRelease.sourcepackagename = %s AND
-                SourcePackageRelease.version::text = %s AND
-                SourcePackagePublishingHistory.sourcepackagerelease =
-                    SourcePackageRelease.id AND
-                SourcePackagePublishingHistory.distroseries =
-                    DistroSeries.id AND
-                SourcePackagePublishingHistory.archive = %s AND
-                SourcePackagePublishingHistory.sourcepackagename = %s AND
-                DistroSeries.distribution = %s
-                """ % sqlvalues(sourcepackagename, version,
-                                distroseries.main_archive,
-                                sourcepackagename,
-                                distroseries.distribution)
-        ret = SourcePackageRelease.select(query,
-            clauseTables=['SourcePackagePublishingHistory', 'DistroSeries'],
-            orderBy=["-SourcePackagePublishingHistory.datecreated"])
-        if not ret:
-            return None
-        return ret[0]
+        SPR = SourcePackageRelease
+        SPPH = SourcePackagePublishingHistory
+        rows = IStore(SPR).find(
+            SPR,
+            SPR.sourcepackagename == sourcepackagename,
+            Cast(SPR.version, "text") == version,
+            SPPH.sourcepackagerelease == SPR.id,
+            SPPH.distroseries == DistroSeries.id,
+            SPPH.archive == distroseries.main_archive,
+            SPPH.sourcepackagename == sourcepackagename,
+            DistroSeries.distribution == distroseries.distribution)
+        return rows.order_by(
+            Desc(SourcePackagePublishingHistory.datecreated)).first()
 
     def createSourcePackageRelease(self, src, distroseries):
         """Create a SourcePackagerelease and db dependencies if needed.
@@ -749,37 +744,33 @@ class BinaryPackageHandler:
         version = binarypackagedata.version
         architecture = binarypackagedata.architecture
 
-        clauseTables = ["BinaryPackageRelease", "DistroSeries",
-                        "DistroArchSeries", "BinaryPackageBuild",
-                        "BinaryPackagePublishingHistory"]
         distroseries = distroarchseries.distroseries
 
         # When looking for binaries, we need to remember that they are
         # shared between distribution releases, so match on the
         # distribution and the architecture tag of the distroarchseries
         # they were built for
-        query = (
-            "BinaryPackagePublishingHistory.archive = %s AND "
-            "BinaryPackagePublishingHistory.binarypackagename = %s AND "
-            "BinaryPackageRelease.id ="
-            " BinaryPackagePublishingHistory.binarypackagerelease AND "
-            "BinaryPackageRelease.binarypackagename=%s AND "
-            "BinaryPackageRelease.version::text = %s AND "
-            "BinaryPackageRelease.build = BinaryPackageBuild.id AND "
-            "BinaryPackageBuild.distro_arch_series = DistroArchSeries.id AND "
-            "DistroArchSeries.distroseries = DistroSeries.id AND "
-            "DistroSeries.distribution = %s" %
-            sqlvalues(distroseries.main_archive, binaryname, binaryname,
-                      version, distroseries.distribution))
+        BPR = BinaryPackageRelease
+        BPPH = BinaryPackagePublishingHistory
+        BPB = BinaryPackageBuild
+        clauses = [
+            BPPH.archive == distroseries.main_archive,
+            BPPH.binarypackagename == binaryname,
+            BPPH.binarypackagerelease == BPR.id,
+            BPR.binarypackagename == binaryname,
+            Cast(BPR.version, "text") == version,
+            BPR.build == BPB.id,
+            BPB.distro_arch_series == DistroArchSeries.id,
+            DistroArchSeries.distroseries == DistroSeries.id,
+            DistroSeries.distribution == distroseries.distribution,
+            ]
 
         if architecture != "all":
-            query += ("AND DistroArchSeries.architecturetag = %s" %
-                      quote(architecture))
+            clauses.append(DistroArchSeries.architecturetag == architecture)
 
         try:
-            bpr = BinaryPackageRelease.selectOne(
-                query, clauseTables=clauseTables, distinct=True)
-        except SQLObjectMoreThanOneResultError:
+            bpr = IStore(BPR).find(BPR, *clauses).config(distinct=True).one()
+        except NotOneError:
             # XXX kiko 2005-10-27: Untested
             raise MultiplePackageReleaseError("Found more than one "
                     "entry for %s (%s) for %s in %s" %

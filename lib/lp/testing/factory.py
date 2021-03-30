@@ -837,7 +837,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return getUtility(IPollSet).new(
             team, name, title, proposition, dateopens, datecloses,
             PollSecrecy.SECRET, allowspoilt=True,
-            poll_type=poll_type)
+            poll_type=poll_type, check_permissions=False)
 
     def makeTranslationGroup(self, owner=None, name=None, title=None,
                              summary=None, url=None):

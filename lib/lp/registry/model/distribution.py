@@ -874,10 +874,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def getMilestone(self, name):
         """See `IDistribution`."""
-        return Milestone.selectOne("""
-            distribution = %s AND
-            name = %s
-            """ % sqlvalues(self.id, name))
+        return Store.of(self).find(
+            Milestone, distribution=self, name=name).one()
 
     def getOCIProject(self, name):
         oci_project = getUtility(IOCIProjectSet).getByPillarAndName(
