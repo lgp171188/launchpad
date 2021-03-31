@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI Project implementation."""
@@ -10,6 +10,8 @@ __all__ = [
     'OCIProject',
     'OCIProjectSet',
     ]
+
+from collections import defaultdict
 
 import pytz
 import six
@@ -42,6 +44,7 @@ from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.accesspolicy import reconcile_access_for_artifacts
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.ociprojectseries import OCIProjectSeries
 from lp.registry.model.person import Person
@@ -115,6 +118,11 @@ class OCIProject(BugTargetBase, StormBase):
 
     @pillar.setter
     def pillar(self, pillar):
+        """See `IBugTarget`."""
+        # We need to reconcile access for all OCI recipes from this OCI
+        # project if we are moving from one pillar to another.
+        needs_reconcile_access = (
+                self.pillar is not None and self.pillar != pillar)
         if IDistribution.providedBy(pillar):
             self.distribution = pillar
             self.project = None
@@ -125,6 +133,8 @@ class OCIProject(BugTargetBase, StormBase):
             raise ValueError(
                 'The target of an OCIProject must be either an IDistribution '
                 'or IProduct instance.')
+        if needs_reconcile_access:
+            self._reconcileAccess()
 
     @property
     def display_name(self):
@@ -134,6 +144,19 @@ class OCIProject(BugTargetBase, StormBase):
 
     bugtargetname = display_name
     bugtargetdisplayname = display_name
+
+    def _reconcileAccess(self):
+        """Reconcile access for all OCI recipes of this project."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        rs = IStore(OCIRecipe).find(
+            OCIRecipe,
+            OCIRecipe.oci_project == self)
+        recipes_per_info_type = defaultdict(set)
+        for recipe in rs:
+            recipes_per_info_type[recipe.information_type].add(recipe)
+        for information_type, recipes in recipes_per_info_type.items():
+            reconcile_access_for_artifacts(
+                recipes, information_type, [self.pillar])
 
     def newRecipe(self, name, registrant, owner, git_ref,
                   build_file, description=None, build_daily=False,

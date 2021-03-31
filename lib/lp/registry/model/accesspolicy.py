@@ -11,10 +11,11 @@ __all__ = [
     'AccessPolicyArtifact',
     'AccessPolicyGrant',
     'AccessPolicyGrantFlat',
-    'reconcile_access_for_artifact',
+    'reconcile_access_for_artifacts',
     ]
 
 from collections import defaultdict
+from itertools import product
 
 import pytz
 from storm.expr import (
@@ -57,14 +58,14 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 
 
-def reconcile_access_for_artifact(artifact, information_type, pillars,
-                                  wanted_links=None):
+def reconcile_access_for_artifacts(artifacts, information_type, pillars,
+                                   wanted_links=None):
     if information_type in PUBLIC_INFORMATION_TYPES:
         # If it's public we can delete all the access information.
         # IAccessArtifactSource handles the cascade.
-        getUtility(IAccessArtifactSource).delete([artifact])
+        getUtility(IAccessArtifactSource).delete(artifacts)
         return
-    [abstract_artifact] = getUtility(IAccessArtifactSource).ensure([artifact])
+    abstract_artifacts = getUtility(IAccessArtifactSource).ensure(artifacts)
     aps = getUtility(IAccessPolicySource).find(
         (pillar, information_type) for pillar in pillars)
     missing_pillars = set(pillars) - set([ap.pillar for ap in aps])
@@ -77,11 +78,11 @@ def reconcile_access_for_artifact(artifact, information_type, pillars,
     # Now determine the existing and desired links, and make them
     # match. The caller may have provided the wanted_links.
     apasource = getUtility(IAccessPolicyArtifactSource)
-    wanted_links = (wanted_links
-                    or set((abstract_artifact, policy) for policy in aps))
+    wanted_links = (
+            wanted_links or set(product(abstract_artifacts, aps)))
     existing_links = set([
         (apa.abstract_artifact, apa.policy)
-        for apa in apasource.findByArtifact([abstract_artifact])])
+        for apa in apasource.findByArtifact(abstract_artifacts)])
     apasource.create(wanted_links - existing_links)
     apasource.delete(existing_links - wanted_links)
 
