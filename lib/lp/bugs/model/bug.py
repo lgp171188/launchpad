@@ -189,7 +189,7 @@ from lp.registry.interfaces.sharingjob import (
     IRemoveArtifactSubscriptionsJobSource,
     )
 from lp.registry.interfaces.sourcepackage import ISourcePackage
-from lp.registry.model.accesspolicy import reconcile_access_for_artifact
+from lp.registry.model.accesspolicy import reconcile_access_for_artifacts
 from lp.registry.model.person import (
     Person,
     person_sort_key,
@@ -875,8 +875,8 @@ class Bug(SQLBase, InformationTypeMixin):
         # there is at least one bugtask for which access can be checked.
         if self.default_bugtask:
             service = getUtility(IService, 'sharing')
-            bugs, _, _, _, _ = service.getVisibleArtifacts(
-                person, bugs=[self], ignore_permissions=True)
+            bugs = service.getVisibleArtifacts(
+                person, bugs=[self], ignore_permissions=True)["bugs"]
             if not bugs:
                 service.ensureAccessGrants(
                     [person], subscribed_by, bugs=[self],
@@ -1819,8 +1819,8 @@ class Bug(SQLBase, InformationTypeMixin):
         if information_type in PRIVATE_INFORMATION_TYPES:
             service = getUtility(IService, 'sharing')
             for person in (who, self.owner):
-                bugs, _, _, _, _ = service.getVisibleArtifacts(
-                    person, bugs=[self], ignore_permissions=True)
+                bugs = service.getVisibleArtifacts(
+                    person, bugs=[self], ignore_permissions=True)["bugs"]
                 if not bugs:
                     # subscribe() isn't sufficient if a subscription
                     # already exists, as it will do nothing even if
@@ -2122,7 +2122,7 @@ class Bug(SQLBase, InformationTypeMixin):
             BugSubscription.person == person).is_empty()
 
     def _reconcileAccess(self):
-        # reconcile_access_for_artifact will only use the pillar list if
+        # reconcile_access_for_artifacts will only use the pillar list if
         # the information type is private. But affected_pillars iterates
         # over the tasks immediately, which is needless expense for
         # public bugs.
@@ -2130,8 +2130,8 @@ class Bug(SQLBase, InformationTypeMixin):
             pillars = self.affected_pillars
         else:
             pillars = []
-        reconcile_access_for_artifact(
-            self, self.information_type, pillars)
+        reconcile_access_for_artifacts(
+            [self], self.information_type, pillars)
 
     def _attachments_query(self):
         """Helper for the attachments* properties."""

@@ -19,9 +19,14 @@ import six
 from storm.databases.postgres import JSON
 from storm.expr import (
     And,
+    Coalesce,
     Desc,
+    Exists,
+    Join,
     Not,
+    Or,
     Select,
+    SQL,
     )
 from storm.locals import (
     Bool,
@@ -44,8 +49,17 @@ from zope.security.proxy import (
     removeSecurityProxy,
     )
 
+from lp.app.enums import (
+    InformationType,
+    PUBLIC_INFORMATION_TYPES,
+    )
+from lp.app.errors import (
+    SubscriptionPrivacyViolation,
+    UserCannotUnsubscribePerson,
+    )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
+from lp.app.interfaces.services import IService
 from lp.app.validators.validation import validate_oci_branch_name
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
@@ -70,6 +84,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeBuildAlreadyPending,
     OCIRecipeFeatureDisabled,
     OCIRecipeNotOwner,
+    OCIRecipePrivacyMismatch,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
@@ -82,24 +97,42 @@ from lp.oci.model.ocipushrule import (
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.oci.model.ocirecipejob import OCIRecipeJob
+from lp.oci.model.ocirecipesubscription import OCIRecipeSubscription
+from lp.registry.errors import PrivatePersonLinkageError
+from lp.registry.interfaces.accesspolicy import (
+    IAccessArtifactGrantSource,
+    IAccessArtifactSource,
+    )
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.person import (
+    IPersonSet,
+    validate_public_person,
+    )
 from lp.registry.interfaces.role import IPersonRoles
+from lp.registry.model.accesspolicy import (
+    AccessPolicyGrant,
+    reconcile_access_for_artifacts,
+    )
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
 from lp.registry.model.series import ACTIVE_STATUSES
+from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
 from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
 from lp.services.database.stormexpr import (
+    Array,
+    ArrayAgg,
+    ArrayIntersects,
     Greatest,
     NullsLast,
     )
@@ -138,8 +171,33 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
 
-    owner_id = Int(name='owner', allow_none=False)
+    def _validate_owner(self, attr, value):
+        if not self.private:
+            try:
+                validate_public_person(self, attr, value)
+            except PrivatePersonLinkageError:
+                raise OCIRecipePrivacyMismatch(
+                    "A public OCI recipe cannot have a private owner.")
+        return value
+
+    owner_id = Int(name='owner', allow_none=False, validator=_validate_owner)
     owner = Reference(owner_id, 'Person.id')
+
+    def _valid_information_type(self, attr, value):
+        if value not in PUBLIC_INFORMATION_TYPES:
+            return value
+        # If the OCI recipe is public, it cannot be associated with private
+        # repo or owner.
+        if self.git_ref is not None and self.git_ref.private:
+            raise OCIRecipePrivacyMismatch
+        if self.owner is not None and self.owner.private:
+            raise OCIRecipePrivacyMismatch
+        return value
+
+    _information_type = DBEnum(
+        enum=InformationType, default=InformationType.PUBLIC,
+        name="information_type",
+        validator=_valid_information_type)
 
     oci_project_id = Int(name='oci_project', allow_none=False)
     oci_project = Reference(oci_project_id, "OCIProject.id")
@@ -151,7 +209,16 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     # oci_project.setOfficialRecipe method.
     _official = Bool(name="official", default=False)
 
-    git_repository_id = Int(name="git_repository", allow_none=True)
+    def _validate_git_repository(self, attr, value):
+        if not self.private and value is not None:
+            if IStore(GitRepository).get(GitRepository, value).private:
+                raise OCIRecipePrivacyMismatch(
+                    "A public OCI recipe cannot have a private repository.")
+        return value
+
+    git_repository_id = Int(
+        name="git_repository", allow_none=True,
+        validator=_validate_git_repository)
     git_repository = Reference(git_repository_id, "GitRepository.id")
     git_path = Unicode(name="git_path", allow_none=True)
     build_file = Unicode(name="build_file", allow_none=False)
@@ -171,14 +238,15 @@ class OCIRecipe(Storm, WebhookTargetMixin):
                  description=None, official=False, require_virtualized=True,
                  build_file=None, build_daily=False, date_created=DEFAULT,
                  allow_internet=True, build_args=None, build_path=None,
-                 image_name=None):
+                 image_name=None, information_type=InformationType.PUBLIC):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
+        self._information_type = information_type
+        self.oci_project = oci_project
         self.name = name
         self.registrant = registrant
         self.owner = owner
-        self.oci_project = oci_project
         self.description = description
         self.build_file = build_file
         self._official = official
@@ -196,6 +264,27 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         return "<OCIRecipe ~%s/%s/+oci/%s/+recipe/%s>" % (
             self.owner.name, self.oci_project.pillar.name,
             self.oci_project.name, self.name)
+
+    @property
+    def information_type(self):
+        if self._information_type is None:
+            return InformationType.PUBLIC
+        return self._information_type
+
+    @information_type.setter
+    def information_type(self, information_type):
+        if information_type == self._information_type:
+            return
+        self._information_type = information_type
+        self._reconcileAccess()
+
+    @property
+    def private(self):
+        return self.information_type not in PUBLIC_INFORMATION_TYPES
+
+    @property
+    def pillar(self):
+        return self.oci_project.pillar
 
     @property
     def valid_webhook_event_types(self):
@@ -220,11 +309,103 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self._build_args = {k: six.text_type(v)
                             for k, v in (value or {}).items()}
 
+    def _reconcileAccess(self):
+        """Reconcile the OCI recipe's sharing information.
+
+        Takes the privacy and pillar and makes the related AccessArtifact
+        and AccessPolicyArtifacts match.
+        """
+        reconcile_access_for_artifacts([self], self.information_type,
+                                       [self.pillar])
+
+    def visibleByUser(self, user):
+        """See `IOCIRecipe`."""
+        if self.information_type in PUBLIC_INFORMATION_TYPES:
+            return True
+        if user is None:
+            return False
+        store = IStore(self)
+        return not store.find(
+            OCIRecipe,
+            OCIRecipe.id == self.id,
+            get_ocirecipe_privacy_filter(user)).is_empty()
+
+    def getSubscription(self, person):
+        """See `IOCIRecipe`."""
+        if person is None:
+            return None
+        return Store.of(self).find(
+            OCIRecipeSubscription,
+            OCIRecipeSubscription.person == person,
+            OCIRecipeSubscription.recipe == self).one()
+
+    def userCanBeSubscribed(self, person):
+        """Checks if the given person can subscribe to this OCI recipe."""
+        return not (
+            self.private and
+            person.is_team and
+            person.anyone_can_join())
+
+    @property
+    def subscribers(self):
+        return Store.of(self).find(
+            Person,
+            OCIRecipeSubscription.person_id == Person.id,
+            OCIRecipeSubscription.recipe == self)
+
+    def subscribe(self, person, subscribed_by, ignore_permissions=False):
+        """See `IOCIRecipe`."""
+        if not self.userCanBeSubscribed(person):
+            raise SubscriptionPrivacyViolation(
+                "Open and delegated teams cannot be subscribed to private "
+                "OCI recipes.")
+        subscription = self.getSubscription(person)
+        if subscription is None:
+            subscription = OCIRecipeSubscription(
+                person=person, recipe=self, subscribed_by=subscribed_by)
+            Store.of(subscription).flush()
+        service = getUtility(IService, "sharing")
+        ocirecipes = service.getVisibleArtifacts(
+            person, ocirecipes=[self], ignore_permissions=True)["ocirecipes"]
+        if not ocirecipes:
+            service.ensureAccessGrants(
+                [person], subscribed_by, ocirecipes=[self],
+                ignore_permissions=ignore_permissions)
+
+    def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
+        """See `IOCIRecipe`."""
+        subscription = self.getSubscription(person)
+        if subscription is None:
+            return
+        if (not ignore_permissions
+                and not subscription.canBeUnsubscribedByUser(unsubscribed_by)):
+            raise UserCannotUnsubscribePerson(
+                '%s does not have permission to unsubscribe %s.' % (
+                    unsubscribed_by.displayname,
+                    person.displayname))
+        artifact = getUtility(IAccessArtifactSource).find([self])
+        getUtility(IAccessArtifactGrantSource).revokeByArtifact(
+            artifact, [person])
+        store = Store.of(subscription)
+        store.remove(subscription)
+        IStore(self).flush()
+
+    def _deleteAccessGrants(self):
+        """Delete access grants for this snap recipe prior to deleting it."""
+        getUtility(IAccessArtifactSource).delete([self])
+
+    def _deleteOCIRecipeSubscriptions(self):
+        subscriptions = Store.of(self).find(
+            OCIRecipeSubscription, OCIRecipeSubscription.recipe == self)
+        subscriptions.remove()
+
     def destroySelf(self):
         """See `IOCIRecipe`."""
         # XXX twom 2019-11-26 This needs to expand as more build artifacts
         # are added
         store = IStore(OCIRecipe)
+        self._deleteOCIRecipeSubscriptions()
+        self._deleteAccessGrants()
         store.find(OCIRecipeArch, OCIRecipeArch.recipe == self).remove()
         buildqueue_records = store.find(
             BuildQueue,
@@ -609,7 +790,7 @@ class OCIRecipeSet:
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
             allow_internet=True, build_args=None, build_path=None,
-            image_name=None):
+            image_name=None, information_type=InformationType.PUBLIC):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -634,8 +815,14 @@ class OCIRecipeSet:
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
             official, require_virtualized, build_file, build_daily,
-            date_created, allow_internet, build_args, build_path, image_name)
+            date_created, allow_internet, build_args, build_path, image_name,
+            information_type)
         store.add(oci_recipe)
+        oci_recipe._reconcileAccess()
+
+        # Automatically subscribe the owner to the OCI recipe.
+        oci_recipe.subscribe(oci_recipe.owner, registrant,
+                             ignore_permissions=True)
 
         if processors is None:
             processors = [
@@ -655,6 +842,13 @@ class OCIRecipeSet:
     def exists(self, owner, oci_project, name):
         """See `IOCIRecipeSet`."""
         return self._getByName(owner, oci_project, name) is not None
+
+    def findByIds(self, ocirecipe_ids, visible_by_user=None):
+        """See `IOCIRecipeSet`."""
+        clauses = [OCIRecipe.id.is_in(ocirecipe_ids)]
+        if visible_by_user is not None:
+            clauses.append(get_ocirecipe_privacy_filter(visible_by_user))
+        return IStore(OCIRecipe).find(OCIRecipe, *clauses)
 
     def getByName(self, owner, oci_project, name):
         """See `IOCIRecipeSet`."""
@@ -772,3 +966,52 @@ class OCIRecipeBuildRequest:
 
     def __hash__(self):
         return hash((self.__class__, self.id))
+
+
+def get_ocirecipe_privacy_filter(user):
+    """Returns the filter for all OCI recipes that the given user has access
+    to, including private OCI recipes where the user has proper permission.
+
+    :param user: An IPerson, or a class attribute that references an IPerson
+                 in the database.
+    :return: A storm condition.
+    """
+    # XXX pappacena 2021-03-11: Once we do the migration to back fill
+    # information_type, we should be able to change this.
+    private_recipe = SQL(
+        "COALESCE(information_type NOT IN ?, false)",
+        params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
+    if user is None:
+        return private_recipe == False
+
+    artifact_grant_query = Coalesce(
+        ArrayIntersects(
+            SQL("%s.access_grants" % OCIRecipe.__storm_table__),
+            Select(
+                ArrayAgg(TeamParticipation.teamID),
+                tables=TeamParticipation,
+                where=(TeamParticipation.person == user)
+            )), False)
+
+    policy_grant_query = Coalesce(
+        ArrayIntersects(
+            Array(SQL("%s.access_policy" % OCIRecipe.__storm_table__)),
+            Select(
+                ArrayAgg(AccessPolicyGrant.policy_id),
+                tables=(AccessPolicyGrant,
+                        Join(TeamParticipation,
+                             TeamParticipation.teamID ==
+                             AccessPolicyGrant.grantee_id)),
+                where=(TeamParticipation.person == user)
+            )), False)
+
+    admin_team_id = getUtility(ILaunchpadCelebrities).admin.id
+    user_is_admin = Exists(Select(
+        TeamParticipation.personID,
+        tables=[TeamParticipation],
+        where=And(
+            TeamParticipation.teamID == admin_team_id,
+            TeamParticipation.person == user)))
+    return Or(
+        private_recipe == False, artifact_grant_query, policy_grant_query,
+        user_is_admin)

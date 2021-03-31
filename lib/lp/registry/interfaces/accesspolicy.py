@@ -1,4 +1,4 @@
-# Copyright 2011-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for pillar and artifact access policies."""
@@ -38,6 +38,7 @@ class IAccessArtifact(Interface):
     gitrepository_id = Attribute("gitrepository_id")
     snap_id = Attribute("snap_id")
     specification_id = Attribute("specification_id")
+    ocirecipe_id = Attribute("ocirecipe_id")
 
 
 class IAccessArtifactGrant(Interface):

@@ -492,8 +492,8 @@ class SpecificationTests(TestCaseWithFactory):
                 product=product, information_type=InformationType.PROPRIETARY)
             spec.subscribe(user, subscribed_by=owner)
             service = getUtility(IService, 'sharing')
-            _, _, _, _, shared_specs = service.getVisibleArtifacts(
-                user, specifications=[spec])
+            shared_specs = service.getVisibleArtifacts(
+                user, specifications=[spec])["specifications"]
             self.assertEqual([spec], shared_specs)
             # The spec is also returned by getSharedSpecifications(),
             # which lists only specifications for which the use has
@@ -509,8 +509,8 @@ class SpecificationTests(TestCaseWithFactory):
             service.sharePillarInformation(
                 product, user_2, owner, permissions)
             spec.subscribe(user_2, subscribed_by=owner)
-            _, _, _, _, shared_specs = service.getVisibleArtifacts(
-                user_2, specifications=[spec])
+            shared_specs = service.getVisibleArtifacts(
+                user_2, specifications=[spec])["specifications"]
             self.assertEqual([spec], shared_specs)
             self.assertEqual(
                 [], service.getSharedSpecifications(product, user_2, owner))
@@ -529,8 +529,8 @@ class SpecificationTests(TestCaseWithFactory):
             spec.subscribe(user, subscribed_by=owner)
             spec.unsubscribe(user, unsubscribed_by=owner)
             service = getUtility(IService, 'sharing')
-            _, _, _, _, shared_specs = service.getVisibleArtifacts(
-                user, specifications=[spec])
+            shared_specs = service.getVisibleArtifacts(
+                user, specifications=[spec])["specifications"]
             self.assertEqual([], shared_specs)
 
     def test_notificationRecipientAddresses_filters_based_on_sharing(self):

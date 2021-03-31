@@ -132,7 +132,7 @@ from lp.registry.interfaces.role import (
     )
 from lp.registry.model.accesspolicy import (
     AccessPolicyGrant,
-    reconcile_access_for_artifact,
+    reconcile_access_for_artifacts,
     )
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
@@ -1204,8 +1204,8 @@ class Snap(Storm, WebhookTargetMixin):
                 person=person, snap=self, subscribed_by=subscribed_by)
             Store.of(subscription).flush()
         service = getUtility(IService, "sharing")
-        _, _, _, snaps, _ = service.getVisibleArtifacts(
-            person, snaps=[self], ignore_permissions=True)
+        snaps = service.getVisibleArtifacts(
+            person, snaps=[self], ignore_permissions=True)["snaps"]
         if not snaps:
             service.ensureAccessGrants(
                 [person], subscribed_by, snaps=[self],
@@ -1238,7 +1238,7 @@ class Snap(Storm, WebhookTargetMixin):
         if self.project is None:
             return
         pillars = [self.project]
-        reconcile_access_for_artifact(self, self.information_type, pillars)
+        reconcile_access_for_artifacts([self], self.information_type, pillars)
 
     def setProject(self, project):
         self.project = project

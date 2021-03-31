@@ -20,6 +20,7 @@ __all__ = [
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeFeatureDisabled',
     'OCIRecipeNotOwner',
+    'OCIRecipePrivacyMismatch',
     'OCI_RECIPE_ALLOW_CREATE',
     'OCI_RECIPE_BUILD_DISTRIBUTION',
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
@@ -61,6 +62,7 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
@@ -71,6 +73,7 @@ from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import (
@@ -139,6 +142,16 @@ class CannotModifyOCIRecipeProcessor(Exception):
     def __init__(self, processor):
         super(CannotModifyOCIRecipeProcessor, self).__init__(
             self._fmt % {'processor': processor.name})
+
+
+@error_status(http_client.BAD_REQUEST)
+class OCIRecipePrivacyMismatch(Exception):
+    """OCI recipe privacy does not match its content."""
+
+    def __init__(self, message=None):
+        super(OCIRecipePrivacyMismatch, self).__init__(
+            message or
+            "OCI recipe contains private information and cannot be public.")
 
 
 @exported_as_webservice_entry(
@@ -228,6 +241,8 @@ class IOCIRecipeView(Interface):
         description=_("True if this recipe is official for its OCI project."),
         readonly=True)
 
+    pillar = Attribute('The pillar of this OCI recipe.')
+
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(
         processors=List(
@@ -291,6 +306,10 @@ class IOCIRecipeView(Interface):
         description=_("Use the credentials on a Distribution for "
                       "registry upload"))
 
+    subscribers = CollectionField(
+        title=_("Persons subscribed to this snap recipe."),
+        readonly=True, value_type=Reference(IPerson))
+
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
 
@@ -325,6 +344,18 @@ class IOCIRecipeView(Interface):
     def getBuildRequest(job_id):
         """Get an OCIRecipeBuildRequest object for the given job_id.
         """
+
+    def visibleByUser(user):
+        """Can the specified user see this snap recipe?"""
+
+    def getSubscription(person):
+        """Returns the OCIRecipeSubscription for the given user."""
+
+    def subscribe(person, subscribed_by):
+        """Subscribe a person to this snap recipe."""
+
+    def unsubscribe(person, unsubscribed_by):
+        """Unsubscribe a person to this snap recipe."""
 
 
 class IOCIRecipeEdit(IWebhookTarget):
@@ -379,6 +410,12 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         vocabulary="AllUserTeamsParticipationPlusSelf",
         description=_("The owner of this OCI recipe."),
         readonly=False))
+
+    information_type = exported(Choice(
+        title=_("Information type"), vocabulary=InformationType,
+        required=True, readonly=False, default=InformationType.PUBLIC,
+        description=_(
+            "The type of information contained in this OCI recipe.")))
 
     oci_project = exported(Reference(
         IOCIProject,
@@ -492,11 +529,15 @@ class IOCIRecipeSet(Interface):
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
-            allow_internet=True, build_args=None):
+            allow_internet=True, build_args=None,
+            information_type=InformationType.PUBLIC):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):
         """Check to see if an existing OCI Recipe exists."""
+
+    def findByIds(ocirecipe_ids, visible_by_user=None):
+        """Returns the OCI recipes with the given IDs."""
 
     def getByName(owner, oci_project, name):
         """Return the appropriate `OCIRecipe` for the given objects."""

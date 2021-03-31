@@ -275,9 +275,9 @@ class GitSubscriptionEditView(LaunchpadEditFormView):
         # If the subscriber can no longer see the repository, redirect them
         # away.
         service = getUtility(IService, "sharing")
-        _, _, repositories, _, _ = service.getVisibleArtifacts(
+        repositories = service.getVisibleArtifacts(
             self.person, gitrepositories=[self.repository],
-            ignore_permissions=True)
+            ignore_permissions=True)["gitrepositories"]
         if not repositories:
             url = canonical_url(self.repository.target)
         return url

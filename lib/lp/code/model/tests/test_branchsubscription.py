@@ -134,8 +134,8 @@ class TestBranchSubscriptions(TestCaseWithFactory):
                 None, CodeReviewNotificationLevel.NOEMAIL, owner)
             # The stacked on branch should be visible.
             service = getUtility(IService, 'sharing')
-            _, visible_branches, _, _, _ = service.getVisibleArtifacts(
-                grantee, branches=[private_stacked_on_branch])
+            visible_branches = service.getVisibleArtifacts(
+                grantee, branches=[private_stacked_on_branch])["branches"]
             self.assertContentEqual(
                 [private_stacked_on_branch], visible_branches)
             self.assertIn(
@@ -162,8 +162,8 @@ class TestBranchSubscriptions(TestCaseWithFactory):
                 grantee, BranchSubscriptionNotificationLevel.NOEMAIL,
                 None, CodeReviewNotificationLevel.NOEMAIL, owner)
             # The stacked on branch should not be visible.
-            _, visible_branches, _, _, _ = service.getVisibleArtifacts(
-                grantee, branches=[private_stacked_on_branch])
+            visible_branches = service.getVisibleArtifacts(
+                grantee, branches=[private_stacked_on_branch])["branches"]
             self.assertContentEqual([], visible_branches)
             self.assertIn(
                 grantee, branch.subscribers)
