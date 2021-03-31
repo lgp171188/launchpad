@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the OCI Registry client."""
@@ -1045,7 +1045,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         instance = RegistryHTTPClient.getInstance(push_rule)
         self.assertEqual(AWSRegistryHTTPClient, type(instance))
-        self.assertFalse(instance.should_use_aws_extra_model)
+        self.assertFalse(instance.is_public_ecr)
         self.assertIsInstance(instance, RegistryHTTPClient)
 
     @responses.activate
@@ -1066,7 +1066,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         instance = RegistryHTTPClient.getInstance(push_rule)
         self.assertEqual(AWSRegistryBearerTokenClient, type(instance))
-        self.assertTrue(instance.should_use_aws_extra_model)
+        self.assertTrue(instance.is_public_ecr)
         self.assertIsInstance(instance, RegistryHTTPClient)
 
     @responses.activate
@@ -1336,26 +1336,58 @@ class TestAWSAuthenticator(OCIConfigHelperMixin, TestCaseWithFactory):
             auth.push_rule = push_rule
             self.assertRaises(OCIRegistryAuthenticationError, auth._getRegion)
 
-    def test_should_use_extra_model(self):
+    def test_should_use_public_ecr_boto_model(self):
         self.setConfig({
             OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.example.com'})
+        boto_client_mock = self.useFixture(
+            MockPatch('lp.oci.model.ociregistryclient.boto3.client')).mock
         cred = self.factory.makeOCIRegistryCredentials(
-            url="https://myregistry.bearertoken.example.com")
+            url="https://myregistry.bearertoken.example.com",
+            credentials=dict(
+                region='us-east-1', username='user1', password='passwd1'))
         push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
 
         with admin_logged_in():
             auth = AWSAuthenticatorMixin()
             auth.push_rule = push_rule
-            self.assertTrue(auth.should_use_aws_extra_model)
+            self.assertTrue(auth.is_public_ecr)
 
-    def test_should_not_use_extra_model(self):
+            client = auth._getBotoClient()
+            self.assertEqual(boto_client_mock.return_value, client)
+            self.assertEqual(1, boto_client_mock.call_count)
+            call = boto_client_mock.call_args
+            self.assertEqual(
+                mock.call(
+                    'ecr-public', config=mock.ANY,
+                    region_name='us-east-1', aws_secret_access_key='passwd1',
+                    aws_access_key_id='user1'), call)
+            self.assertThat(
+                call[1]['config'], MatchesStructure.byEquality(proxies=None))
+
+    def test_should_not_use_public_ecr_boto_model(self):
         self.setConfig({
             OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.example.com'})
+        boto_client_mock = self.useFixture(
+            MockPatch('lp.oci.model.ociregistryclient.boto3.client')).mock
         cred = self.factory.makeOCIRegistryCredentials(
-            url="https://123456789.dkr.ecr.sa-west-1.amazonaws.com")
+            url="https://123456789.dkr.ecr.sa-west-1.amazonaws.com",
+            credentials=dict(
+                region='us-east-1', username='user1', password='passwd1'))
         push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
 
         with admin_logged_in():
             auth = AWSAuthenticatorMixin()
             auth.push_rule = push_rule
-            self.assertFalse(auth.should_use_aws_extra_model)
+            self.assertFalse(auth.is_public_ecr)
+
+            client = auth._getBotoClient()
+            self.assertEqual(boto_client_mock.return_value, client)
+            self.assertEqual(1, boto_client_mock.call_count)
+            call = boto_client_mock.call_args
+            self.assertEqual(
+                mock.call(
+                    'ecr', config=mock.ANY, region_name='us-east-1',
+                    aws_secret_access_key='passwd1',
+                    aws_access_key_id='user1'), call)
+            self.assertThat(
+                call[1]['config'], MatchesStructure.byEquality(proxies=None))

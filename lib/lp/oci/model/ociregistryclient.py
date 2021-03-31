@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Client for talking to an OCI registry."""
@@ -59,8 +59,6 @@ proxy_urlfetch = partial(urlfetch, use_proxy=True)
 
 
 OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG = 'oci.push.aws.bearer_token_domains'
-OCI_AWS_BOT_EXTRA_MODEL_PATH = 'oci.push.aws.boto.extra_paths'
-OCI_AWS_BOT_EXTRA_MODEL_NAME = 'oci.push.aws.boto.extra_model_name'
 
 
 def is_aws_bearer_token_domain(domain):
@@ -68,7 +66,9 @@ def is_aws_bearer_token_domain(domain):
     instead of basic auth."""
     domains = getFeatureFlag(OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG)
     if not domains:
-        return False
+        # We know that public ECR default domain is bearer token. If the
+        # flag is not set, force it.
+        domains = 'public.ecr.aws'
     return any(domain.endswith(i) for i in domains.split())
 
 
@@ -680,23 +680,13 @@ class AWSAuthenticatorMixin:
 
     def _getBotoClient(self):
         params = self._getClientParameters()
-        if not self.should_use_aws_extra_model:
-            return boto3.client('ecr', **params)
-        model_path = getFeatureFlag(OCI_AWS_BOT_EXTRA_MODEL_PATH)
-        model_name = getFeatureFlag(OCI_AWS_BOT_EXTRA_MODEL_NAME)
-        if not model_path or not model_name:
-            log.warning(
-                "%s or %s feature rules are not set. Using default model." %
-                (OCI_AWS_BOT_EXTRA_MODEL_PATH, OCI_AWS_BOT_EXTRA_MODEL_NAME))
-            return boto3.client('ecr', **params)
-        session = boto3.Session()
-        session._loader.search_paths.extend([model_path])
-        return session.client(model_name, **params)
+        client_type = 'ecr-public' if self.is_public_ecr else 'ecr'
+        return boto3.client(client_type, **params)
 
     @property
-    def should_use_aws_extra_model(self):
-        """Returns True if the given registry domain requires extra boto API
-        model.
+    def is_public_ecr(self):
+        """Returns True if the given registry domain is a public ECR. False
+        otherwise.
         """
         domain = urlparse(self.push_rule.registry_url).netloc
         return is_aws_bearer_token_domain(domain)
