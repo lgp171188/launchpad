@@ -1204,8 +1204,8 @@ class Snap(Storm, WebhookTargetMixin):
                 person=person, snap=self, subscribed_by=subscribed_by)
             Store.of(subscription).flush()
         service = getUtility(IService, "sharing")
-        _, _, _, snaps, _ = service.getVisibleArtifacts(
-            person, snaps=[self], ignore_permissions=True)
+        snaps = service.getVisibleArtifacts(
+            person, snaps=[self], ignore_permissions=True)["snaps"]
         if not snaps:
             service.ensureAccessGrants(
                 [person], subscribed_by, snaps=[self],

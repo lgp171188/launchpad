@@ -424,7 +424,9 @@ class TestAsyncOCIRecipeBuildBehaviour(
         [ref] = self.factory.makeGitRefs()
         ref.repository.transitionToInformationType(
             InformationType.PRIVATESECURITY, ref.repository.owner)
+        owner = self.factory.makePerson()
         recipe = self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner,
             information_type=InformationType.USERDATA)
         job = self.makeJob(git_ref=ref, recipe=recipe)
         expected_archives, expected_trusted_keys = (

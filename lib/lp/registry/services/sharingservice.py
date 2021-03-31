@@ -39,7 +39,10 @@ from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.gitcollection import IAllGitRepositories
-from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipe,
+    IOCIRecipeSet,
+    )
 from lp.oci.model.ocirecipe import OCIRecipe
 from lp.registry.enums import (
     BranchSharingPolicy,
@@ -357,6 +360,7 @@ class SharingService:
         branch_ids = []
         gitrepository_ids = []
         snap_ids = []
+        ocirecipes_ids = []
         for bug in bugs or []:
             if (not ignore_permissions
                 and not check_permission('launchpad.View', bug)):
@@ -381,6 +385,11 @@ class SharingService:
             if (not ignore_permissions
                 and not check_permission('launchpad.View', spec)):
                 raise Unauthorized
+        for ocirecipe in ocirecipes or []:
+            if (not ignore_permissions
+                and not check_permission('launchpad.View', ocirecipe)):
+                raise Unauthorized
+            ocirecipes_ids.append(ocirecipe.id)
 
         # Load the bugs.
         visible_bugs = []
@@ -421,9 +430,19 @@ class SharingService:
                 spec for spec in specifications
                 if spec.id in visible_private_spec_ids or not spec.private]
 
-        return (
-            visible_bugs, visible_branches, visible_gitrepositories,
-            visible_snaps, visible_specs)
+        # Load the OCI recipes.
+        visible_ocirecipes = []
+        if ocirecipes:
+            visible_ocirecipes = list(getUtility(IOCIRecipeSet).findByIds(
+                ocirecipes_ids, visible_by_user=person))
+
+        return {
+            "bugs": visible_bugs,
+            "branches": visible_branches,
+            "gitrepositories": visible_gitrepositories,
+            "snaps": visible_snaps,
+            "specifications": visible_specs,
+            "ocirecipes": visible_ocirecipes}
 
     def getInvisibleArtifacts(self, person, bugs=None, branches=None,
                               gitrepositories=None):
