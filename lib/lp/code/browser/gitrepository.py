@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository views."""
@@ -1376,8 +1376,6 @@ class GitRepositoryDeletionView(LaunchpadFormView):
 
         Uses display_deletion_requirements as its source data.
         """
-        if self.context.status == GitRepositoryStatus.CREATING:
-            return False
         return len([item for item, action, reason, allowed in
             self.display_deletion_requirements if not allowed]) == 0
 
@@ -1420,8 +1418,6 @@ class GitRepositoryDeletionView(LaunchpadFormView):
 
     @property
     def warning_message(self):
-        if self.context.status == GitRepositoryStatus.CREATING:
-            return "This repository is being created and cannot be deleted."
         return None
 
 
