@@ -439,15 +439,22 @@ class PillarPersonSharingView(LaunchpadView):
     def _loadSharedArtifacts(self):
         # As a concrete can by linked via more than one policy, we use sets to
         # filter out dupes.
-        (self.bugtasks, self.branches, self.gitrepositories, self.snaps,
-         self.specifications) = (
-            self.sharing_service.getSharedArtifacts(
-                self.pillar, self.person, self.user))
+        artifacts = self.sharing_service.getSharedArtifacts(
+                self.pillar, self.person, self.user)
+        self.bugtasks = artifacts["bugtasks"]
+        self.branches = artifacts["branches"]
+        self.gitrepositories = artifacts["gitrepositories"]
+        self.snaps = artifacts["snaps"]
+        self.specifications = artifacts["specifications"]
+        self.ocirecipes = artifacts["ocirecipes"]
+
         bug_ids = set([bugtask.bug.id for bugtask in self.bugtasks])
         self.shared_bugs_count = len(bug_ids)
         self.shared_branches_count = len(self.branches)
         self.shared_gitrepositories_count = len(self.gitrepositories)
+        self.shared_snaps_count = len(self.snaps)
         self.shared_specifications_count = len(self.specifications)
+        self.shared_ocirecipe_count = len(self.ocirecipes)
 
     def _build_specification_template_data(self, specs, request):
         spec_data = []

@@ -25,6 +25,7 @@ from lp.code.enums import (
     )
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -41,11 +42,11 @@ from lp.registry.interfaces.accesspolicy import (
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.services.sharingservice import SharingService
-from lp.services.features.testing import FeatureFixture
 from lp.services.job.tests import block_on_job
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.services.webapp.publisher import canonical_url
+from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     admin_logged_in,
     login,
@@ -64,7 +65,7 @@ from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import LaunchpadWebServiceCaller
 
 
-class TestSharingService(TestCaseWithFactory):
+class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
     """Tests for the SharingService."""
 
     layer = CeleryJobLayer
@@ -72,9 +73,12 @@ class TestSharingService(TestCaseWithFactory):
     def setUp(self):
         super(TestSharingService, self).setUp()
         self.service = getUtility(IService, 'sharing')
-        self.useFixture(FeatureFixture({
+        # Set test flags and configurations for Snaps and OCI.
+        flags = SNAP_TESTING_FLAGS.copy()
+        flags.update({
             'jobs.celery.enabled_classes': 'RemoveArtifactSubscriptionsJob',
-        }))
+        })
+        self.setConfig(feature_flags=flags)
 
     def _makeGranteeData(self, grantee, policy_permissions,
                         shared_artifact_types):
@@ -1414,12 +1418,27 @@ class TestSharingService(TestCaseWithFactory):
                 target=product, owner=product.owner,
                 information_type=InformationType.USERDATA)
             gitrepositories.append(gitrepository)
+        snaps = []
+        for x in range(0, 10):
+            snap = self.factory.makeSnap(
+                project=product, owner=product.owner, registrant=product.owner,
+                information_type=InformationType.USERDATA)
+            snaps.append(snap)
         specs = []
         for x in range(0, 10):
             spec = self.factory.makeSpecification(
                 product=product, owner=product.owner,
                 information_type=InformationType.PROPRIETARY)
             specs.append(spec)
+        ocirecipes = []
+        for x in range(0, 10):
+            ociproject = self.factory.makeOCIProject(
+                pillar=product, registrant=product.owner)
+            ocirecipe = self.factory.makeOCIRecipe(
+                oci_project=ociproject, owner=product.owner,
+                registrant=product.owner,
+                information_type=InformationType.USERDATA)
+            ocirecipes.append(ocirecipe)
 
         # Grant access to grantee as well as the person who will be doing the
         # query. The person who will be doing the query is not granted access
@@ -1442,8 +1461,12 @@ class TestSharingService(TestCaseWithFactory):
         for i, gitrepository in enumerate(gitrepositories):
             grant_access(gitrepository, i == 9)
         getUtility(IService, 'sharing').ensureAccessGrants(
+            [grantee], product.owner, snaps=snaps[:9])
+        getUtility(IService, 'sharing').ensureAccessGrants(
             [grantee], product.owner, specifications=specs[:9])
-        return bug_tasks, branches, gitrepositories, specs
+        getUtility(IService, 'sharing').ensureAccessGrants(
+            [grantee], product.owner, ocirecipes=ocirecipes[:9])
+        return bug_tasks, branches, gitrepositories, snaps, specs, ocirecipes
 
     def test_getSharedArtifacts(self):
         # Test the getSharedArtifacts method.
@@ -1454,17 +1477,24 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        bug_tasks, branches, gitrepositories, specs = (
+        bug_tasks, branches, gitrepositories, snaps, specs, ocirecipes = (
             self.create_shared_artifacts(product, grantee, user))
 
         # Check the results.
-        (shared_bugtasks, shared_branches, shared_gitrepositories,
-         shared_snaps, shared_specs) = (
-            self.service.getSharedArtifacts(product, grantee, user))
+        artifacts = self.service.getSharedArtifacts(product, grantee, user)
+        shared_bugtasks = artifacts["bugtasks"]
+        shared_branches = artifacts["branches"]
+        shared_gitrepositories = artifacts["gitrepositories"]
+        shared_snaps = artifacts["snaps"]
+        shared_specs = artifacts["specifications"]
+        shared_ocirecipes = artifacts["ocirecipes"]
+
         self.assertContentEqual(bug_tasks[:9], shared_bugtasks)
         self.assertContentEqual(branches[:9], shared_branches)
         self.assertContentEqual(gitrepositories[:9], shared_gitrepositories)
+        self.assertContentEqual(snaps[:9], shared_snaps)
         self.assertContentEqual(specs[:9], shared_specs)
+        self.assertContentEqual(ocirecipes[:9], shared_ocirecipes)
 
     def _assert_getSharedProjects(self, product, who=None):
         # Test that 'who' can query the shared products for a grantee.
@@ -1603,7 +1633,7 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        bug_tasks, _, _, _ = self.create_shared_artifacts(
+        bug_tasks, _, _, _, _, _ = self.create_shared_artifacts(
             product, grantee, user)
 
         # Check the results.
@@ -1619,7 +1649,7 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, branches, _, _ = self.create_shared_artifacts(
+        _, branches, _, _, _, _ = self.create_shared_artifacts(
             product, grantee, user)
 
         # Check the results.
@@ -1636,13 +1666,30 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, _, gitrepositories, _ = self.create_shared_artifacts(
+        _, _, gitrepositories, _, _, _ = self.create_shared_artifacts(
             product, grantee, user)
 
         # Check the results.
         shared_gitrepositories = self.service.getSharedGitRepositories(
             product, grantee, user)
         self.assertContentEqual(gitrepositories[:9], shared_gitrepositories)
+
+    def test_getSharedSnaps(self):
+        # Test the getSharedSnaps method.
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            owner=owner, specification_sharing_policy=(
+            SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY))
+        login_person(owner)
+        grantee = self.factory.makePerson()
+        user = self.factory.makePerson()
+        _, _, _, snaps, _, _ = self.create_shared_artifacts(
+            product, grantee, user)
+
+        # Check the results.
+        shared_snaps = self.service.getSharedSnaps(
+            product, grantee, user)
+        self.assertContentEqual(snaps[:9], shared_snaps)
 
     def test_getSharedSpecifications(self):
         # Test the getSharedSpecifications method.
@@ -1653,13 +1700,30 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, _, _, specifications = self.create_shared_artifacts(
+        _, _, _, _, specifications, _ = self.create_shared_artifacts(
             product, grantee, user)
 
         # Check the results.
         shared_specifications = self.service.getSharedSpecifications(
             product, grantee, user)
         self.assertContentEqual(specifications[:9], shared_specifications)
+
+    def test_getSharedOCIRecipes(self):
+        # Test the getSharedSnaps method.
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            owner=owner, specification_sharing_policy=(
+            SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY))
+        login_person(owner)
+        grantee = self.factory.makePerson()
+        user = self.factory.makePerson()
+        _, _, _, _, _, ocirecipes = self.create_shared_artifacts(
+            product, grantee, user)
+
+        # Check the results.
+        shared_ocirecipes = self.service.getSharedOCIRecipes(
+            product, grantee, user)
+        self.assertContentEqual(ocirecipes[:9], shared_ocirecipes)
 
     def test_getPeopleWithAccessBugs(self):
         # Test the getPeopleWithoutAccess method with bugs.

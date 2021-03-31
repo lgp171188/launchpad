@@ -39,6 +39,8 @@ from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.gitcollection import IAllGitRepositories
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.model.ocirecipe import OCIRecipe
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -198,13 +200,15 @@ class SharingService:
     @available_with_permission('launchpad.Driver', 'pillar')
     def getSharedArtifacts(self, pillar, person, user, include_bugs=True,
                            include_branches=True, include_gitrepositories=True,
-                           include_snaps=True, include_specifications=True):
+                           include_snaps=True, include_specifications=True,
+                           include_ocirecipes=True):
         """See `ISharingService`."""
         bug_ids = set()
         branch_ids = set()
         gitrepository_ids = set()
         snap_ids = set()
         specification_ids = set()
+        ocirecipe_ids = set()
         for artifact in self.getArtifactGrantsForPersonOnPillar(
             pillar, person):
             if artifact.bug_id and include_bugs:
@@ -217,6 +221,8 @@ class SharingService:
                 snap_ids.add(artifact.snap_id)
             elif artifact.specification_id and include_specifications:
                 specification_ids.add(artifact.specification_id)
+            elif artifact.ocirecipe_id and include_ocirecipes:
+                ocirecipe_ids.add(artifact.ocirecipe_id)
 
         # Load the bugs.
         bugtasks = []
@@ -245,48 +251,68 @@ class SharingService:
         specifications = []
         if specification_ids:
             specifications = load(Specification, specification_ids)
+        ocirecipes = []
+        if ocirecipe_ids:
+            ocirecipes = load(OCIRecipe, ocirecipe_ids)
 
-        return bugtasks, branches, gitrepositories, snaps, specifications
+        return {"bugtasks": bugtasks, "branches": branches,
+                "gitrepositories": gitrepositories, "snaps": snaps,
+                "specifications": specifications, "ocirecipes": ocirecipes}
 
     @available_with_permission('launchpad.Driver', 'pillar')
     def getSharedBugs(self, pillar, person, user):
         """See `ISharingService`."""
-        bugtasks, _, _, _, _ = self.getSharedArtifacts(
+        artifacts = self.getSharedArtifacts(
             pillar, person, user, include_branches=False,
-            include_gitrepositories=False, include_specifications=False)
-        return bugtasks
+            include_gitrepositories=False,
+            include_specifications=False, include_snaps=False,
+            include_ocirecipes=False)
+        return artifacts["bugtasks"]
 
     @available_with_permission('launchpad.Driver', 'pillar')
     def getSharedBranches(self, pillar, person, user):
         """See `ISharingService`."""
-        _, branches, _, _, _ = self.getSharedArtifacts(
+        artifacts = self.getSharedArtifacts(
             pillar, person, user, include_bugs=False,
-            include_gitrepositories=False, include_specifications=False)
-        return branches
+            include_gitrepositories=False, include_specifications=False,
+            include_snaps=False, include_ocirecipes=False)
+        return artifacts["branches"]
 
     @available_with_permission('launchpad.Driver', 'pillar')
     def getSharedGitRepositories(self, pillar, person, user):
         """See `ISharingService`."""
-        _, _, gitrepositories, _, _ = self.getSharedArtifacts(
+        artifacts = self.getSharedArtifacts(
             pillar, person, user, include_bugs=False, include_branches=False,
-            include_specifications=False)
-        return gitrepositories
+            include_specifications=False, include_snaps=False,
+            include_ocirecipes=False)
+        return artifacts["gitrepositories"]
 
     @available_with_permission('launchpad.Driver', 'pillar')
     def getSharedSnaps(self, pillar, person, user):
         """See `ISharingService`."""
-        _, _, _, snaps, _ = self.getSharedArtifacts(
+        artifacts = self.getSharedArtifacts(
             pillar, person, user, include_bugs=False, include_branches=False,
-            include_gitrepositories=False)
-        return snaps
+            include_gitrepositories=False, include_specifications=False,
+            include_ocirecipes=False)
+        return artifacts["snaps"]
 
     @available_with_permission('launchpad.Driver', 'pillar')
     def getSharedSpecifications(self, pillar, person, user):
         """See `ISharingService`."""
-        _, _, _, _, specifications = self.getSharedArtifacts(
+        artifacts = self.getSharedArtifacts(
             pillar, person, user, include_bugs=False, include_branches=False,
-            include_gitrepositories=False)
-        return specifications
+            include_gitrepositories=False, include_snaps=False,
+            include_ocirecipes=False)
+        return artifacts["specifications"]
+
+    @available_with_permission('launchpad.Driver', 'pillar')
+    def getSharedOCIRecipes(self, pillar, person, user):
+        """See `ISharingService`."""
+        artifacts = self.getSharedArtifacts(
+            pillar, person, user, include_bugs=False, include_branches=False,
+            include_gitrepositories=False, include_snaps=False,
+            include_specifications=False)
+        return artifacts["ocirecipes"]
 
     def _getVisiblePrivateSpecificationIDs(self, person, specifications):
         store = Store.of(specifications[0])
@@ -324,7 +350,8 @@ class SharingService:
 
     def getVisibleArtifacts(self, person, bugs=None, branches=None,
                             gitrepositories=None, snaps=None,
-                            specifications=None, ignore_permissions=False):
+                            specifications=None, ignore_permissions=False,
+                            ocirecipes=None):
         """See `ISharingService`."""
         bug_ids = []
         branch_ids = []
@@ -781,11 +808,11 @@ class SharingService:
     @available_with_permission('launchpad.Edit', 'pillar')
     def revokeAccessGrants(self, pillar, grantee, user, bugs=None,
                            branches=None, gitrepositories=None, snaps=None,
-                           specifications=None):
+                           specifications=None, ocirecipes=None):
         """See `ISharingService`."""
 
         if (not bugs and not branches and not gitrepositories and not snaps and
-            not specifications):
+            not specifications and not ocirecipes):
             raise ValueError(
                 "Either bugs, branches, gitrepositories, or specifications "
                 "must be specified")
@@ -801,6 +828,8 @@ class SharingService:
             artifacts.extend(snaps)
         if specifications:
             artifacts.extend(specifications)
+        if ocirecipes:
+            artifacts.extend(ocirecipes)
         # Find the access artifacts associated with the bugs, branches, Git
         # repositories, and specifications.
         accessartifact_source = getUtility(IAccessArtifactSource)
@@ -809,6 +838,12 @@ class SharingService:
         getUtility(IAccessArtifactGrantSource).revokeByArtifact(
             artifacts_to_delete, [grantee])
 
+        # XXX: Pappacena 2021-03-09: OCI recipes should not trigger this job,
+        # since we do not have a "OCIRecipeSubscription" yet.
+        artifacts = [i for i in artifacts if not IOCIRecipe.providedBy(i)]
+        if not artifacts:
+            return
+
         # Create a job to remove subscriptions for artifacts the grantee can no
         # longer see.
         return getUtility(IRemoveArtifactSubscriptionsJobSource).create(
@@ -816,7 +851,8 @@ class SharingService:
 
     def ensureAccessGrants(self, grantees, user, bugs=None, branches=None,
                            gitrepositories=None, snaps=None,
-                           specifications=None, ignore_permissions=False):
+                           specifications=None, ocirecipes=None,
+                           ignore_permissions=False):
         """See `ISharingService`."""
 
         artifacts = []
@@ -830,6 +866,8 @@ class SharingService:
             artifacts.extend(snaps)
         if specifications:
             artifacts.extend(specifications)
+        if ocirecipes:
+            artifacts.extend(ocirecipes)
         if not ignore_permissions:
             # The user needs to have launchpad.Edit permission on all supplied
             # bugs and branches or else we raise an Unauthorized exception.

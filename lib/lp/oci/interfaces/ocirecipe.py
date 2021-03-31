@@ -20,6 +20,7 @@ __all__ = [
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeFeatureDisabled',
     'OCIRecipeNotOwner',
+    'OCIRecipePrivacyMismatch',
     'OCI_RECIPE_ALLOW_CREATE',
     'OCI_RECIPE_BUILD_DISTRIBUTION',
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
@@ -61,6 +62,7 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
@@ -139,6 +141,16 @@ class CannotModifyOCIRecipeProcessor(Exception):
     def __init__(self, processor):
         super(CannotModifyOCIRecipeProcessor, self).__init__(
             self._fmt % {'processor': processor.name})
+
+
+@error_status(http_client.BAD_REQUEST)
+class OCIRecipePrivacyMismatch(Exception):
+    """OCI recipe privacy does not match its content."""
+
+    def __init__(self, message=None):
+        super(OCIRecipePrivacyMismatch, self).__init__(
+            message or
+            "OCI recipe contains private information and cannot be public.")
 
 
 @exported_as_webservice_entry(
@@ -227,6 +239,8 @@ class IOCIRecipeView(Interface):
         required=False,
         description=_("True if this recipe is official for its OCI project."),
         readonly=True)
+
+    pillar = Attribute('The pillar of this OCI recipe.')
 
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(
@@ -380,6 +394,12 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         description=_("The owner of this OCI recipe."),
         readonly=False))
 
+    information_type = exported(Choice(
+        title=_("Information type"), vocabulary=InformationType,
+        required=True, readonly=False, default=InformationType.PUBLIC,
+        description=_(
+            "The type of information contained in this OCI recipe.")))
+
     oci_project = exported(Reference(
         IOCIProject,
         title=_("OCI project"),
@@ -492,7 +512,8 @@ class IOCIRecipeSet(Interface):
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
-            allow_internet=True, build_args=None):
+            allow_internet=True, build_args=None,
+            information_type=InformationType.PUBLIC):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):
