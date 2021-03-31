@@ -686,7 +686,7 @@ class AWSAuthenticatorMixin:
     @property
     def is_public_ecr(self):
         """Returns True if the given registry domain is a public ECR. False
-        otherwhise.
+        otherwise.
         """
         domain = urlparse(self.push_rule.registry_url).netloc
         return is_aws_bearer_token_domain(domain)
