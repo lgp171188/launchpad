@@ -103,7 +103,7 @@ class ArchiveAuthTokenSet:
                 ArchiveSubscriber.subscriber_id == TeamParticipation.teamID,
                 TeamParticipation.personID == ArchiveAuthToken.person_id,
                 ])
-        return store.find(ArchiveAuthToken, *clauses)
+        return store.find(ArchiveAuthToken, *clauses).config(distinct=True)
 
     def getActiveTokenForArchiveAndPerson(self, archive, person):
         """See `IArchiveAuthTokenSet`."""
