@@ -21,7 +21,7 @@ New tokens are created using IArchive.newAuthToken() but this is only
 possible if there is already a valid subscription for the user for
 that archive.
 
-Create Brad, and his team:
+Create Brad, and his teams:
 
     >>> login("admin@canonical.com")
     >>> bradsmith = factory.makePerson(
@@ -29,6 +29,8 @@ Create Brad, and his team:
     ...     email="brad@example.com")
     >>> teambrad = factory.makeTeam(
     ...     owner=bradsmith, displayname="Team Brad", name='teambrad')
+    >>> teambrad2 = factory.makeTeam(
+    ...     owner=bradsmith, displayname="Team Brad 2", name='teambrad2')
 
 Create a subscription for Team Brad to joe's archive:
 
@@ -168,6 +170,19 @@ Tokens are only returned if they match a current subscription:
 
     >>> removeSecurityProxy(subscription_to_joe_private_ppa).status = (
     ...     ArchiveSubscriberStatus.CURRENT)
+
+Retrieving tokens works even if the user is subscribed to the archive via
+multiple paths:
+
+    >>> _ = login_person(joe)
+    >>> _ = joe_private_ppa.newSubscription(teambrad2, joe)
+    >>> login("brad@example.com")
+    >>> print(token_set.getActiveTokenForArchiveAndPerson(
+    ...     new_token.archive, new_token.person).token)
+    testtoken
+    >>> print(token_set.getActiveTokenForArchiveAndPersonName(
+    ...     new_token.archive, "bradsmith").token)
+    testtoken
 
 
 == Amending Tokens ==
