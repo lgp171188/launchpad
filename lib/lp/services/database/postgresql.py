@@ -127,6 +127,96 @@ def listReferences(cur, table, column, indirect=True, _state=None):
     return _state
 
 
+def listIndexes(cur, table, column, only_unique=False):
+    '''Return a list of indexes on `table` that include the `column`
+
+    `cur` must be an open DB-API cursor.
+
+    Returns [ (column, [...]) ]. The column passed in will always be
+    included in the tuple.
+
+    Simple indexes
+
+    >>> print(_py3ish_repr(listIndexes(cur, 'b', 'aid')))
+    [('aid',)]
+    >>> print(_py3ish_repr(listIndexes(cur, 'a', 'name')))
+    [('name',)]
+
+    Primary keys are indexes too
+
+    >>> print(_py3ish_repr(listIndexes(cur, 'a', 'aid')))
+    [('aid',)]
+
+    Compound indexes
+
+    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'aid')))
+    [('aid', 'bid')]
+    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'bid')))
+    [('aid', 'bid')]
+    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'name')))
+    [('name', 'description')]
+    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'description')))
+    [('name', 'description')]
+
+    And any combination
+
+    >>> l = listIndexes(cur, 'd', 'aid')
+    >>> l.sort()
+    >>> print(_py3ish_repr(l))
+    [('aid',), ('aid', 'bid')]
+
+    If there are no indexes using the secified column
+
+    >>> listIndexes(cur, 'a', 'selfref')
+    []
+
+    '''
+
+    # Retrieve the attributes for the table
+    attributes = {}
+    sql = '''
+        SELECT
+            a.attnum,
+            a.attname
+        FROM
+            pg_class AS t JOIN pg_attribute AS a ON t.oid = a.attrelid
+        WHERE
+            t.relname = %(table)s
+            AND a.attnum > 0
+        '''
+    cur.execute(sql, dict(table=table))
+    for num, name in cur.fetchall():
+        attributes[int(num)] = name
+
+    # Initialize our return value
+    rv = []
+
+    # Retrieve the indexes.
+    sql = '''
+        SELECT
+            i.indkey
+        FROM
+            pg_class AS t JOIN pg_index AS i ON i.indrelid = t.oid
+        WHERE
+            t.relname = %(table)s
+        '''
+    if only_unique:
+        sql += ' AND i.indisunique = true'
+    cur.execute(sql, dict(table=table))
+    for indkey, in cur.fetchall():
+        # We have a space separated list of integer keys into the attribute
+        # mapping. Ignore the 0's, as they indicate a function and we don't
+        # handle them.
+        keys = [
+            attributes[int(key)]
+                for key in indkey.split()
+                    if int(key) > 0
+            ]
+        if column in keys:
+            rv.append(tuple(keys))
+    return rv
+
+
 def listUniques(cur, table, column):
     '''Return a list of unique indexes on `table` that include the `column`
 
@@ -163,51 +253,15 @@ def listUniques(cur, table, column):
 
     >>> listUniques(cur, 'a', 'selfref')
     []
+    >>> listUniques(cur, 'a', 'name')
+    []
+    >>> listUniques(cur, 'c', 'name')
+    []
+    >>> listUniques(cur, 'c', 'description')
+    []
 
     '''
-
-    # Retrieve the attributes for the table
-    attributes = {}
-    sql = '''
-        SELECT
-            a.attnum,
-            a.attname
-        FROM
-            pg_class AS t JOIN pg_attribute AS a ON t.oid = a.attrelid
-        WHERE
-            t.relname = %(table)s
-            AND a.attnum > 0
-        '''
-    cur.execute(sql, dict(table=table))
-    for num, name in cur.fetchall():
-        attributes[int(num)] = name
-
-    # Initialize our return value
-    rv = []
-
-    # Retrive the UNIQUE indexes.
-    sql = '''
-        SELECT
-            i.indkey
-        FROM
-            pg_class AS t JOIN pg_index AS i ON i.indrelid = t.oid
-        WHERE
-            i.indisunique = true
-            AND t.relname = %(table)s
-        '''
-    cur.execute(sql, dict(table=table))
-    for indkey, in cur.fetchall():
-        # We have a space separated list of integer keys into the attribute
-        # mapping. Ignore the 0's, as they indicate a function and we don't
-        # handle them.
-        keys = [
-            attributes[int(key)]
-                for key in indkey.split()
-                    if int(key) > 0
-            ]
-        if column in keys:
-            rv.append(tuple(keys))
-    return rv
+    return listIndexes(cur, table, column, only_unique=True)
 
 
 def listSequences(cur):
