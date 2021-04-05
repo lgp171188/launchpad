@@ -250,7 +250,7 @@ class SharingService:
         snaps = []
         if snap_ids:
             all_snaps = getUtility(ISnapSet)
-            snaps = all_snaps.findByIds(snap_ids)
+            snaps = list(all_snaps.findByIds(snap_ids))
         specifications = []
         if specification_ids:
             specifications = load(Specification, specification_ids)
