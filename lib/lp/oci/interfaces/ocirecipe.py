@@ -243,7 +243,7 @@ class IOCIRecipeView(Interface):
 
     private = Bool(
         title=_("Is this OCI recipe private?"),
-        required=False, readonly=True,
+        required=True, readonly=True,
         description=_("True if this recipe is private. False otherwise."))
 
     pillar = Attribute('The pillar of this OCI recipe.')
