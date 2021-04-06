@@ -34,6 +34,7 @@ from zope.security.proxy import removeSecurityProxy
 from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.browser.tales import GitRepositoryFormatterAPI
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -1239,6 +1240,49 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Successfully built 30 minutes ago 386
             """ % (oci_project_name, oci_project_display, build_path),
             self.getMainText(build.recipe))
+
+    def test_index_for_subscriber_without_git_repo_access(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        oci_project_name = oci_project.name
+        oci_project_display = oci_project.display_name
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="recipe-repository",
+            paths=["refs/heads/master"],
+            information_type=InformationType.PRIVATESECURITY)
+        recipe = self.makeOCIRecipe(
+            oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
+            information_type=InformationType.PRIVATESECURITY)
+        with admin_logged_in():
+            build_path = recipe.build_path
+            build = self.makeBuild(
+                recipe=recipe, status=BuildStatus.FULLYBUILT,
+                duration=timedelta(minutes=30))
+
+        # Subscribe a user.
+        subscriber = self.factory.makePerson()
+        with person_logged_in(self.person):
+            recipe.subscribe(subscriber, self.person)
+
+        main_text = self.getMainText(build.recipe, user=subscriber)
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            %s OCI project
+            recipe-name
+            .*
+            OCI recipe information
+            Owner: Test Person
+            OCI project: %s
+            Source: &lt;redacted&gt;
+            Build file path: Dockerfile
+            Build context directory: %s
+            Build schedule: Built on request
+            Official recipe:
+            No
+            Latest builds
+            Status When complete Architecture
+            Successfully built 30 minutes ago 386
+            """ % (oci_project_name, oci_project_display, build_path),
+            main_text)
 
     def test_index_success_with_buildlog(self):
         # The build log is shown if it is there.

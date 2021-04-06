@@ -306,6 +306,10 @@ class IOCIRecipeView(Interface):
         description=_("Use the credentials on a Distribution for "
                       "registry upload"))
 
+    subscriptions = CollectionField(
+        title=_("OCIRecipeSubscriptions associated with this OCI recipe."),
+        readonly=True, value_type=Reference(Interface))
+
     subscribers = CollectionField(
         title=_("Persons subscribed to this snap recipe."),
         readonly=True, value_type=Reference(IPerson))
@@ -344,6 +348,9 @@ class IOCIRecipeView(Interface):
     def getBuildRequest(job_id):
         """Get an OCIRecipeBuildRequest object for the given job_id.
         """
+
+    def userCanBeSubscribed(user):
+        """Checks if a user can be subscribed to the current OCI recipe."""
 
     def visibleByUser(user):
         """Can the specified user see this snap recipe?"""
