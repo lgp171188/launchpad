@@ -14,6 +14,7 @@ from pymacaroons import Macaroon
 import pytz
 from simplejson import dumps
 from testtools.matchers import (
+    Equals,
     MatchesListwise,
     MatchesStructure,
     )
@@ -70,7 +71,6 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     )
 from lp.testing.pages import webservice_for_person
-from lp.xmlrpc import faults
 from lp.xmlrpc.interfaces import IPrivateApplication
 
 
@@ -954,17 +954,24 @@ class TestBinaryPackageBuildMacaroonIssuer(
                 caveat_id="lp.principal.binary-package-build %s" % build.id),
             ]))
 
-    def test_issueMacaroon_not_via_authserver(self):
+    def test_issueMacaroon_via_authserver(self):
         build = self.factory.makeBinaryPackageBuild(
             archive=self.factory.makeArchive(private=True))
         private_root = getUtility(IPrivateApplication)
         authserver = AuthServerAPIView(private_root.authserver, TestRequest())
-        self.assertEqual(
-            faults.PermissionDenied(),
+        macaroon = Macaroon.deserialize(
             authserver.issueMacaroon(
-                "binary-package-build", "BinaryPackageBuild", build))
+                "binary-package-build", "BinaryPackageBuild", build.id))
+        self.assertThat(macaroon, MatchesStructure(
+            location=Equals("launchpad.test"),
+            identifier=Equals("binary-package-build"),
+            caveats=MatchesListwise([
+                MatchesStructure.byEquality(
+                    caveat_id=(
+                        "lp.principal.binary-package-build %s" % build.id)),
+                ])))
 
-    def test_verifyMacaroon_good(self):
+    def test_verifyMacaroon_good_file(self):
         build = self.factory.makeBinaryPackageBuild(
             archive=self.factory.makeArchive(private=True))
         sprf = self.factory.makeSourcePackageReleaseFile(
