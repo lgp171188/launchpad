@@ -77,7 +77,7 @@
           <th>Date created</th>
         </tr>
 
-        <tr tal:repeat="recipe context/getOfficialRecipes">
+        <tr tal:repeat="recipe view/official_recipes">
           <td>
             <a tal:content="recipe/name"
                 tal:attributes="href recipe/fmt:url" />

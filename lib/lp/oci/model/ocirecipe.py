@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'get_ocirecipe_privacy_filter',
     'OCIRecipe',
     'OCIRecipeBuildRequest',
     'OCIRecipeSet',
@@ -345,6 +346,12 @@ class OCIRecipe(Storm, WebhookTargetMixin):
             self.private and
             person.is_team and
             person.anyone_can_join())
+
+    @property
+    def subscriptions(self):
+        return Store.of(self).find(
+            OCIRecipeSubscription,
+            OCIRecipeSubscription.recipe == self)
 
     @property
     def subscribers(self):
@@ -861,10 +868,12 @@ class OCIRecipeSet:
         """See `IOCIRecipeSet`."""
         return IStore(OCIRecipe).find(OCIRecipe, OCIRecipe.owner == owner)
 
-    def findByOCIProject(self, oci_project):
+    def findByOCIProject(self, oci_project, visible_by_user=None):
         """See `IOCIRecipeSet`."""
         return IStore(OCIRecipe).find(
-            OCIRecipe, OCIRecipe.oci_project == oci_project)
+            OCIRecipe,
+            OCIRecipe.oci_project == oci_project,
+            get_ocirecipe_privacy_filter(visible_by_user))
 
     def findByGitRepository(self, repository, paths=None):
         """See `IOCIRecipeSet`."""

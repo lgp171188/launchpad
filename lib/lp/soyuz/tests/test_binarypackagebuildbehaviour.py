@@ -362,6 +362,87 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         self.assertTrue(extra_args['arch_indep'])
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_proposed(self):
+        # A build in the primary archive's proposed pocket uses the release,
+        # security, updates, and proposed pockets in the primary archive.
+        builder = self.factory.makeBuilder()
+        build = self.factory.makeBinaryPackageBuild(
+            pocket=PackagePublishingPocket.PROPOSED)
+        for component_name in ("main", "universe"):
+            self.factory.makeComponentSelection(
+                build.distro_series, component_name)
+        behaviour = IBuildFarmJobBehaviour(build)
+        behaviour.setBuilder(builder, None)
+        expected_archives = [
+            "deb %s %s main universe" % (
+                build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-proposed main universe" % (
+                build.archive.archive_url, build.distro_series.name),
+            ]
+        extra_args = yield behaviour.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_backports(self):
+        # A build in the primary archive's backports pocket uses the
+        # release, security, updates, and backports pockets in the primary
+        # archive.
+        builder = self.factory.makeBuilder()
+        build = self.factory.makeBinaryPackageBuild(
+            pocket=PackagePublishingPocket.BACKPORTS)
+        for component_name in ("main", "universe"):
+            self.factory.makeComponentSelection(
+                build.distro_series, component_name)
+        behaviour = IBuildFarmJobBehaviour(build)
+        behaviour.setBuilder(builder, None)
+        expected_archives = [
+            "deb %s %s main universe" % (
+                build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                build.archive.archive_url, build.distro_series.name),
+            "deb %s %s-backports main universe" % (
+                build.archive.archive_url, build.distro_series.name),
+            ]
+        extra_args = yield behaviour.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_ppa(self):
+        # A build in a PPA uses the release pocket in the PPA and, by
+        # default, the release, security, and updates pockets in the primary
+        # archive.
+        archive = self.factory.makeArchive()
+        builder = self.factory.makeBuilder()
+        build = self.factory.makeBinaryPackageBuild(archive=archive)
+        for component_name in ("main", "universe"):
+            self.factory.makeComponentSelection(
+                build.distro_series, component_name)
+        self.factory.makeBinaryPackagePublishingHistory(
+            distroarchseries=build.distro_arch_series, pocket=build.pocket,
+            archive=archive, status=PackagePublishingStatus.PUBLISHED)
+        behaviour = IBuildFarmJobBehaviour(build)
+        behaviour.setBuilder(builder, None)
+        primary = build.distribution.main_archive
+        expected_archives = [
+            "deb %s %s main" % (
+                archive.archive_url, build.distro_series.name),
+            "deb %s %s main universe" % (
+                primary.archive_url, build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                primary.archive_url, build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                primary.archive_url, build.distro_series.name),
+            ]
+        extra_args = yield behaviour.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_archive_trusted_keys(self):
         # If the archive has a signing key, extraBuildArgs sends it.
         yield self.useFixture(InProcessKeyServerFixture()).start()

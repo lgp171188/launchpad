@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test OCI project views."""
@@ -14,6 +14,7 @@ from datetime import datetime
 import pytz
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.ociproject import (
     OCI_PROJECT_ALLOW_CREATE,
@@ -111,6 +112,51 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             Name: oci-name
             """, self.getMainText(oci_project))
 
+    def test_hides_recipes_link_if_no_recipe_is_present(self):
+        oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        browser = self.getViewBrowser(oci_project)
+        actions = extract_text(
+            find_tag_by_id(browser.contents, 'global-actions'))
+        expected_links = ["Create OCI recipe"]
+        self.assertEqual("\n".join(expected_links), actions)
+
+    def test_shows_recipes_link_if_public_recipe_is_present(self):
+        oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        self.factory.makeOCIRecipe(oci_project=oci_project)
+        browser = self.getViewBrowser(oci_project)
+        actions = extract_text(
+            find_tag_by_id(browser.contents, 'global-actions'))
+        expected_links = ["Create OCI recipe", "View all recipes"]
+        self.assertEqual("\n".join(expected_links), actions)
+
+    def test_hides_recipes_link_if_only_non_visible_recipe_exists(self):
+        oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        owner = self.factory.makePerson()
+        self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner, oci_project=oci_project,
+            information_type=InformationType.PRIVATESECURITY)
+        another_user = self.factory.makePerson()
+        browser = self.getViewBrowser(oci_project, user=another_user)
+        actions = extract_text(
+            find_tag_by_id(browser.contents, 'global-actions'))
+        expected_links = ["Create OCI recipe"]
+        self.assertEqual("\n".join(expected_links), actions)
+
+    def test_shows_recipes_link_if_user_has_access_to_private_recipe(self):
+        oci_project = self.factory.makeOCIProject(ociprojectname="oci-name")
+        owner = self.factory.makePerson()
+        recipe = self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner, oci_project=oci_project,
+            information_type=InformationType.PRIVATESECURITY)
+        another_user = self.factory.makePerson()
+        with admin_logged_in():
+            recipe.subscribe(another_user, recipe.owner)
+        browser = self.getViewBrowser(oci_project, user=another_user)
+        actions = extract_text(
+            find_tag_by_id(browser.contents, 'global-actions'))
+        expected_links = ["Create OCI recipe", "View all recipes"]
+        self.assertEqual("\n".join(expected_links), actions)
+
     def test_git_repo_hint(self):
         owner = self.factory.makePerson(name="a-usr")
         pillar = self.factory.makeProduct(name="a-pillar")
@@ -188,6 +234,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             pillar=distribution, ociprojectname="oci-name")
         self.factory.makeOCIRecipe(oci_project=oci_project, official=False)
         self.factory.makeOCIRecipe(oci_project=oci_project, official=False)
+
         browser = self.getViewBrowser(
             oci_project, view_name="+index", user=distribution.owner)
         self.assertNotIn("Official recipes", browser.contents)
@@ -198,10 +245,52 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             "There are no recipes registered for this OCI project.",
             browser.contents)
 
+    def test_shows_private_recipes_with_proper_grants(self):
+        distribution = self.factory.makeDistribution(displayname="My Distro")
+        oci_project = self.factory.makeOCIProject(
+            pillar=distribution, ociprojectname="oci-name")
+        owner = self.factory.makePerson()
+        official_recipe = self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner,
+            oci_project=oci_project, official=True,
+            information_type=InformationType.PRIVATESECURITY)
+        unofficial_recipe = self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner,
+            oci_project=oci_project, official=False,
+            information_type=InformationType.PRIVATESECURITY)
+
+        granted_user = self.factory.makePerson()
+        with admin_logged_in():
+            unofficial_recipe.subscribe(granted_user, official_recipe.owner)
+            official_recipe.subscribe(granted_user, official_recipe.owner)
+            official_recipe_url = canonical_url(
+                official_recipe, force_local_path=True)
+        browser = self.getViewBrowser(oci_project, user=granted_user)
+
+        self.assertIn(
+            "There is <strong>1</strong> unofficial recipe.", browser.contents)
+        self.assertIn("<h3>Official recipes</h3>", browser.contents)
+
+        recipes_tag = find_tag_by_id(browser.contents, 'mirrors_list')
+        rows = recipes_tag.find_all('tr')
+        self.assertEqual(2, len(rows), 'We should have a header and 1 row')
+        self.assertIn(official_recipe_url, str(rows[1]))
+
     def test_shows_no_recipes(self):
         distribution = self.factory.makeDistribution(displayname="My Distro")
         oci_project = self.factory.makeOCIProject(
             pillar=distribution, ociprojectname="oci-name")
+
+        # Make sure we don't include private recipes that the visitor
+        # doesn't have access to.
+        owner = self.factory.makePerson()
+        self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner, oci_project=oci_project,
+            information_type=InformationType.PRIVATESECURITY)
+        self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner, oci_project=oci_project,
+            official=True, information_type=InformationType.PRIVATESECURITY)
+
         browser = self.getViewBrowser(
             oci_project, view_name="+index", user=distribution.owner)
         self.assertNotIn("Official recipes", browser.contents)

@@ -241,6 +241,11 @@ class IOCIRecipeView(Interface):
         description=_("True if this recipe is official for its OCI project."),
         readonly=True)
 
+    private = Bool(
+        title=_("Is this OCI recipe private?"),
+        required=True, readonly=True,
+        description=_("True if this recipe is private. False otherwise."))
+
     pillar = Attribute('The pillar of this OCI recipe.')
 
     @call_with(check_permissions=True, user=REQUEST_USER)
@@ -306,6 +311,10 @@ class IOCIRecipeView(Interface):
         description=_("Use the credentials on a Distribution for "
                       "registry upload"))
 
+    subscriptions = CollectionField(
+        title=_("OCIRecipeSubscriptions associated with this OCI recipe."),
+        readonly=True, value_type=Reference(Interface))
+
     subscribers = CollectionField(
         title=_("Persons subscribed to this snap recipe."),
         readonly=True, value_type=Reference(IPerson))
@@ -344,6 +353,9 @@ class IOCIRecipeView(Interface):
     def getBuildRequest(job_id):
         """Get an OCIRecipeBuildRequest object for the given job_id.
         """
+
+    def userCanBeSubscribed(user):
+        """Checks if a user can be subscribed to the current OCI recipe."""
 
     def visibleByUser(user):
         """Can the specified user see this snap recipe?"""
@@ -545,7 +557,7 @@ class IOCIRecipeSet(Interface):
     def findByOwner(owner):
         """Return all OCI Recipes with the given `owner`."""
 
-    def findByOCIProject(oci_project):
+    def findByOCIProject(oci_project, visible_by_user=None):
         """Return all OCI recipes with the given `oci_project`."""
 
     def preloadDataForOCIRecipes(recipes, user):

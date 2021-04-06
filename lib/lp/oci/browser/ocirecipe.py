@@ -42,6 +42,7 @@ from zope.schema import (
     TextLine,
     ValidationError,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp.app.browser.launchpadform import (
     action,
@@ -76,6 +77,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     OCIRegistryCredentialsAlreadyExist,
     user_can_edit_credentials_for_owner,
     )
+from lp.registry.interfaces.person import IPersonSet
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -121,6 +123,13 @@ class OCIRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
         id = int(id)
         return getUtility(IOCIPushRuleSet).getByID(id)
 
+    @stepthrough("+subscription")
+    def traverse_subscription(self, name):
+        """Traverses to an `IOCIRecipeSubscription`."""
+        person = getUtility(IPersonSet).getByName(name)
+        if person is not None:
+            return self.context.getSubscription(person)
+
 
 class OCIRecipeBreadcrumb(NameBreadcrumb):
 
@@ -164,7 +173,8 @@ class OCIRecipeContextMenu(ContextMenu):
 
     facet = 'overview'
 
-    links = ('request_builds', 'edit_push_rules')
+    links = ('request_builds', 'edit_push_rules',
+             'add_subscriber', 'subscription')
 
     @enabled_with_permission('launchpad.Edit')
     def request_builds(self):
@@ -174,6 +184,23 @@ class OCIRecipeContextMenu(ContextMenu):
     def edit_push_rules(self):
         return Link(
             '+edit-push-rules', 'Edit push rules', icon='edit')
+
+    @enabled_with_permission("launchpad.AnyPerson")
+    def subscription(self):
+        if self.context.getSubscription(self.user) is not None:
+            url = "+subscription/%s" % self.user.name
+            text = "Edit your subscription"
+            icon = "edit"
+        else:
+            url = "+subscribe"
+            text = "Subscribe yourself"
+            icon = "add"
+        return Link(url, text, icon=icon)
+
+    @enabled_with_permission("launchpad.AnyPerson")
+    def add_subscriber(self):
+        text = "Subscribe someone else"
+        return Link("+addsubscriber", text, icon="add")
 
 
 class OCIProjectRecipesView(LaunchpadView):
@@ -190,7 +217,8 @@ class OCIProjectRecipesView(LaunchpadView):
 
     @property
     def recipes(self):
-        recipes = getUtility(IOCIRecipeSet).findByOCIProject(self.context)
+        recipes = getUtility(IOCIRecipeSet).findByOCIProject(
+            self.context, visible_by_user=self.user)
         return recipes.order_by('name')
 
     @property
@@ -210,6 +238,10 @@ class OCIProjectRecipesView(LaunchpadView):
 
 class OCIRecipeView(LaunchpadView):
     """Default view of an OCI recipe."""
+
+    @property
+    def private(self):
+        return self.context.private
 
     @cachedproperty
     def builds(self):
@@ -231,6 +263,13 @@ class OCIRecipeView(LaunchpadView):
     @property
     def has_push_rules(self):
         return len(self.push_rules) > 0
+
+    @property
+    def user_can_see_source(self):
+        try:
+            return self.context.git_ref.repository.visibleByUser(self.user)
+        except Unauthorized:
+            return False
 
     @property
     def person_picker(self):
@@ -921,6 +960,10 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
 class BaseOCIRecipeEditView(LaunchpadEditFormView):
 
     schema = IOCIRecipeEditSchema
+
+    @property
+    def private(self):
+        return self.context.private
 
     @property
     def cancel_url(self):

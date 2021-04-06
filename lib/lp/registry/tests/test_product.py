@@ -829,7 +829,7 @@ class TestProduct(TestCaseWithFactory):
         'launchpad.LimitedView': set((
             'bugtargetdisplayname', 'display_name', 'displayname', 'drivers',
             'enable_bug_expiration', 'getBugTaskWeightFunction',
-            'getSpecification',
+            'getOCIProject', 'getSpecification',
             'icon', 'logo', 'name', 'official_answers', 'official_anything',
             'official_blueprints', 'official_codehosting', 'official_malone',
             'owner', 'parent_subscription_target', 'pillar', 'projectgroup',
@@ -865,7 +865,7 @@ class TestProduct(TestCaseWithFactory):
             'getEffectiveTranslationPermission', 'getExternalBugTracker',
             'getFAQ', 'getFirstEntryToImport', 'getLinkedBugWatches',
             'getMergeProposals', 'getMilestone', 'getMilestonesAndReleases',
-            'getOCIProject', 'getQuestion', 'getQuestionLanguages',
+            'getQuestion', 'getQuestionLanguages',
             'getPackage', 'getRelease', 'getSeries', 'getSubscription',
             'getSubscriptions', 'getSupportedLanguages', 'getTimeline',
             'getTopContributors', 'getTopContributorsGroupedByCategory',
