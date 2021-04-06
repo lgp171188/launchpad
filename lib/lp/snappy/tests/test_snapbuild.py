@@ -40,6 +40,7 @@ from lp.registry.enums import (
     PersonVisibility,
     TeamMembershipPolicy,
     )
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
@@ -936,7 +937,7 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
                     caveat_id="lp.snap-build %s" % build.id),
                 ])))
 
-    def test_verifyMacaroon_good(self):
+    def test_verifyMacaroon_good_repository(self):
         [ref] = self.factory.makeGitRefs(
             information_type=InformationType.USERDATA)
         build = self.factory.makeSnapBuild(
@@ -946,6 +947,30 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
             getUtility(IMacaroonIssuer, "snap-build"))
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(issuer, macaroon, ref.repository)
+
+    def test_verifyMacaroon_good_direct_archive(self):
+        build = self.factory.makeSnapBuild(
+            snap=self.factory.makeSnap(private=True),
+            archive=self.factory.makeArchive(private=True))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "snap-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, build.archive)
+
+    def test_verifyMacaroon_good_indirect_archive(self):
+        build = self.factory.makeSnapBuild(
+            snap=self.factory.makeSnap(private=True),
+            archive=self.factory.makeArchive(private=True))
+        dependency = self.factory.makeArchive(
+            distribution=build.archive.distribution, private=True)
+        build.archive.addArchiveDependency(
+            dependency, PackagePublishingPocket.RELEASE)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "snap-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, dependency)
 
     def test_verifyMacaroon_good_no_context(self):
         [ref] = self.factory.makeGitRefs(
@@ -1060,3 +1085,17 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         self.assertMacaroonDoesNotVerify(
             ["Caveat check for 'lp.snap-build %s' failed." % build.id],
             issuer, macaroon, other_repository)
+
+    def test_verifyMacaroon_wrong_archive(self):
+        build = self.factory.makeSnapBuild(
+            snap=self.factory.makeSnap(private=True),
+            archive=self.factory.makeArchive(private=True))
+        other_archive = self.factory.makeArchive(
+            distribution=build.archive.distribution, private=True)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "snap-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.snap-build %s' failed." % build.id],
+            issuer, macaroon, other_archive)
