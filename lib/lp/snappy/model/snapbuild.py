@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -157,6 +157,8 @@ class SnapBuild(PackageBuildMixin, Storm):
 
     pocket = DBEnum(enum=PackagePublishingPocket, allow_none=False)
 
+    snap_base_id = Int(name='snap_base', allow_none=True)
+    snap_base = Reference(snap_base_id, 'SnapBase.id')
     channels = JSON('channels', allow_none=True)
 
     processor_id = Int(name='processor', allow_none=False)
@@ -190,8 +192,9 @@ class SnapBuild(PackageBuildMixin, Storm):
     store_upload_metadata = JSON('store_upload_json_data', allow_none=True)
 
     def __init__(self, build_farm_job, requester, snap, archive,
-                 distro_arch_series, pocket, channels, processor, virtualized,
-                 date_created, store_upload_metadata=None, build_request=None):
+                 distro_arch_series, pocket, snap_base, channels,
+                 processor, virtualized, date_created,
+                 store_upload_metadata=None, build_request=None):
         """Construct a `SnapBuild`."""
         super(SnapBuild, self).__init__()
         self.build_farm_job = build_farm_job
@@ -200,6 +203,7 @@ class SnapBuild(PackageBuildMixin, Storm):
         self.archive = archive
         self.distro_arch_series = distro_arch_series
         self.pocket = pocket
+        self.snap_base = snap_base
         self.channels = channels
         self.processor = processor
         self.virtualized = virtualized
@@ -560,7 +564,7 @@ class SnapBuild(PackageBuildMixin, Storm):
 class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def new(self, requester, snap, archive, distro_arch_series, pocket,
-            channels=None, date_created=DEFAULT,
+            snap_base=None, channels=None, date_created=DEFAULT,
             store_upload_metadata=None, build_request=None):
         """See `ISnapBuildSet`."""
         store = IMasterStore(SnapBuild)
@@ -569,7 +573,7 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
             archive)
         snapbuild = SnapBuild(
             build_farm_job, requester, snap, archive, distro_arch_series,
-            pocket, channels, distro_arch_series.processor,
+            pocket, snap_base, channels, distro_arch_series.processor,
             not distro_arch_series.processor.supports_nonvirtualized
             or snap.require_virtualized or archive.require_virtualized,
             date_created, store_upload_metadata=store_upload_metadata,
