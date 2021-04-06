@@ -1455,6 +1455,7 @@ attributes.
     pocket: 'Release'
     resource_type_link: 'http://.../#archive_dependency'
     self_link: 'http://.../~cprov/+archive/ubuntu/ppa/+dependency/1'
+    snap_base_link: None
     title: 'Primary Archive for Ubuntu Linux - RELEASE (main, universe)'
 
 Asking for an archive on which there is no dependency returns None.
