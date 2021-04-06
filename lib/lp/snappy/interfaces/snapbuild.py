@@ -163,6 +163,12 @@ class ISnapBuildView(IPackageBuild):
 
     pocket = exported(Choice(
         title=_("The pocket for which to build."),
+        description=(
+            "The package stream within the source archive and distribution "
+            "series to use when building the snap package.  If the source "
+            "archive is a PPA, then the PPA's archive dependencies will be "
+            "used to select the pocket in the distribution's primary "
+            "archive."),
         vocabulary=PackagePublishingPocket, required=True, readonly=True))
 
     snap_base = exported(Reference(
