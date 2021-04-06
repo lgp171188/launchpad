@@ -20,8 +20,12 @@ def setUp(test):
     cur.execute("""
         CREATE TABLE A (
             aid     serial PRIMARY KEY,
-            selfref integer CONSTRAINT a_selfref_fk REFERENCES A(aid)
+            selfref integer CONSTRAINT a_selfref_fk REFERENCES A(aid),
+            name    text
             )
+        """)
+    cur.execute("""
+        CREATE INDEX a__name__idx ON A(name)
         """)
     cur.execute("""
         CREATE TABLE B (
@@ -35,8 +39,13 @@ def setUp(test):
             cid integer PRIMARY KEY,
             aid integer CONSTRAINT c_aid_fk REFERENCES B(aid),
             bid integer CONSTRAINT c_bid_fk REFERENCES B(bid),
-            CONSTRAINT c_aid_bid_key UNIQUE (aid, bid)
+            CONSTRAINT c_aid_bid_key UNIQUE (aid, bid),
+            name text,
+            description text
             )
+        """)
+    cur.execute("""
+        CREATE INDEX c__name__description__idx ON C(name, description)
         """)
     cur.execute("""
         CREATE TABLE D (
