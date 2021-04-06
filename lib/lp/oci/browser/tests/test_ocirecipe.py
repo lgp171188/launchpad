@@ -2011,14 +2011,21 @@ class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
             pillar=self.distroseries.distribution,
             ociprojectname="oci-project-name")
 
-    def makeRecipes(self, count=1):
+    def makeRecipes(self, count=1, **kwargs):
         with person_logged_in(self.person):
             owner = self.factory.makePerson()
             return [self.factory.makeOCIRecipe(
-                registrant=owner, owner=owner, oci_project=self.oci_project)
+                registrant=owner, owner=owner, oci_project=self.oci_project,
+                **kwargs)
                 for _ in range(count)]
 
     def test_shows_no_recipe(self):
+        """Should shows correct message when there are no visible recipes."""
+        # Create a private OCI recipe that should not be shown.
+        owner = self.factory.makePerson()
+        self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner, oci_project=self.oci_project,
+            information_type=InformationType.PRIVATESECURITY)
         browser = self.getViewBrowser(
             self.oci_project, "+recipes", user=self.person)
         main_text = extract_text(find_main_content(browser.contents))
@@ -2031,10 +2038,17 @@ class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
     def test_paginates_recipes(self):
         batch_size = 5
         self.pushConfig("launchpad", default_batch_size=batch_size)
-        recipes = self.makeRecipes(10)
+        # We will create 1 private recipe with proper permission in the
+        # list, and 9 others. This way, we should have 10 recipes in the list.
+        [private_recipe] = self.makeRecipes(
+            1, information_type=InformationType.PRIVATESECURITY)
+        with admin_logged_in():
+            private_recipe.subscribe(self.person, private_recipe.owner)
+        recipes = self.makeRecipes(9)
+        recipes.append(private_recipe)
+
         browser = self.getViewBrowser(
             self.oci_project, "+recipes", user=self.person)
-
         main_text = extract_text(find_main_content(browser.contents))
         no_wrap_main_text = main_text.replace('\n', ' ')
         with person_logged_in(self.person):

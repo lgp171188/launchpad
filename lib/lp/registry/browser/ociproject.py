@@ -17,9 +17,7 @@ __all__ = [
 
 from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
-from zope.formlib import form
 from zope.interface import implementer
-from zope.schema import Choice
 
 from lp.app.browser.launchpadform import (
     action,
@@ -199,7 +197,7 @@ class OCIProjectNavigationMenu(NavigationMenu):
 
     def view_recipes(self):
         enabled = not getUtility(IOCIRecipeSet).findByOCIProject(
-            self.context).is_empty()
+            self.context, visible_by_user=self.user).is_empty()
         return Link(
             '+recipes', 'View all recipes', icon='info', enabled=enabled)
 
@@ -219,7 +217,7 @@ class OCIProjectContextMenu(ContextMenu):
 
     def view_recipes(self):
         enabled = not getUtility(IOCIRecipeSet).findByOCIProject(
-            self.context).is_empty()
+            self.context, visible_by_user=self.user).is_empty()
         return Link(
             '+recipes', 'View all recipes', icon='info', enabled=enabled)
 
@@ -237,13 +235,19 @@ class OCIProjectIndexView(LaunchpadView):
     def git_ssh_hostname(self):
         return urlsplit(config.codehosting.git_ssh_root).hostname
 
+    @property
+    def official_recipes(self):
+        return self.context.getOfficialRecipes(visible_by_user=self.user)
+
     @cachedproperty
     def official_recipe_count(self):
-        return self.context.getOfficialRecipes().count()
+        return self.context.getOfficialRecipes(
+            visible_by_user=self.user).count()
 
     @cachedproperty
     def other_recipe_count(self):
-        return self.context.getUnofficialRecipes().count()
+        return self.context.getUnofficialRecipes(
+            visible_by_user=self.user).count()
 
 
 class OCIProjectEditView(LaunchpadEditFormView):

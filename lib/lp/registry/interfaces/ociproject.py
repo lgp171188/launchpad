@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI Project interfaces."""
@@ -86,19 +86,19 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getSeriesByName(name):
         """Get an OCIProjectSeries for this OCIProject by series' name."""
 
-    def getRecipeByNameAndOwner(recipe_name, owner_name):
+    def getRecipeByNameAndOwner(recipe_name, owner_name, visible_by_user=None):
         """Returns the exact match search for recipe_name AND owner_name."""
 
-    def getRecipes():
+    def getRecipes(visible_by_user=None):
         """Returns the set of OCI recipes for this project."""
 
-    def searchRecipes(query):
+    def searchRecipes(query, visible_by_user=None):
         """Searches for recipes in this OCI project."""
 
-    def getOfficialRecipes():
+    def getOfficialRecipes(visible_by_user=None):
         """Gets the official recipes for this OCI project."""
 
-    def getUnofficialRecipes():
+    def getUnofficialRecipes(visible_by_user=None):
         """Gets the unofficial recipes for this OCI project."""
 
     def getDefaultGitRepository(person):
