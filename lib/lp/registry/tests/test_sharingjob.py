@@ -16,6 +16,10 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     )
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_PRIVATE_FEATURE_FLAG,
+    )
 from lp.registry.enums import SpecificationSharingPolicy
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
@@ -148,6 +152,21 @@ class SharingJobDerivedTestCase(TestCaseWithFactory):
             'for requestor=%s, specification_ids=[%d]>'
             % (requestor.name, specification.id), repr(job))
 
+    def test_repr_ocirecipe(self):
+        features = {
+            OCI_RECIPE_ALLOW_CREATE: 'on',
+            OCI_RECIPE_PRIVATE_FEATURE_FLAG: 'on'
+        }
+        self.useFixture(FeatureFixture(features))
+        requestor = self.factory.makePerson()
+        recipe = self.factory.makeOCIRecipe()
+        job = getUtility(IRemoveArtifactSubscriptionsJobSource).create(
+            requestor, artifacts=[recipe])
+        self.assertEqual(
+            '<REMOVE_ARTIFACT_SUBSCRIPTIONS job reconciling subscriptions '
+            'for ocirecipe_ids=[%d], requestor=%s>'
+            % (recipe.id, requestor.name), repr(job))
+
     def test_create_success(self):
         # Create an instance of SharingJobDerived that delegates to SharingJob.
         self.assertIs(True, ISharingJobSource.providedBy(SharingJobDerived))
@@ -254,6 +273,8 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
     def setUp(self):
         features = {
             'jobs.celery.enabled_classes': 'RemoveArtifactSubscriptionsJob',
+            OCI_RECIPE_ALLOW_CREATE: 'on',
+            OCI_RECIPE_PRIVATE_FEATURE_FLAG: 'on'
         }
         features.update(SNAP_TESTING_FLAGS)
         self.useFixture(FeatureFixture(features))
@@ -334,6 +355,10 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
         specification = self.factory.makeSpecification(
             owner=owner, product=product,
             information_type=InformationType.PROPRIETARY)
+        ocirecipe = self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner,
+            oci_project=self.factory.makeOCIProject(pillar=product),
+            information_type=InformationType.USERDATA)
 
         # The artifact grantees will not lose access when the job is run.
         artifact_indirect_grantee = self.factory.makePerson()
@@ -349,6 +374,7 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             BranchSubscriptionNotificationLevel.NOEMAIL, None,
             CodeReviewNotificationLevel.NOEMAIL, owner)
         snap.subscribe(artifact_indirect_grantee, owner)
+        ocirecipe.subscribe(artifact_indirect_grantee, owner)
         # Subscribing somebody to a specification does not automatically
         # create an artifact grant.
         spec_artifact = self.factory.makeAccessArtifact(specification)
@@ -358,9 +384,9 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             specification.subscribe(artifact_indirect_grantee, owner)
 
         # pick one of the concrete artifacts (bug, branch, Git repository,
-        # snap, or spec) and subscribe the teams and persons.
+        # snap, spec or ocirecipe) and subscribe the teams and persons.
         concrete_artifact, get_pillars, get_subscribers = configure_test(
-            bug, branch, gitrepository, snap, specification,
+            bug, branch, gitrepository, snap, specification, ocirecipe,
             policy_team_grantee, policy_indirect_grantee,
             artifact_team_grantee, owner)
 
@@ -396,6 +422,7 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
         self.assertIn(artifact_indirect_grantee, branch.subscribers)
         self.assertIn(artifact_indirect_grantee, gitrepository.subscribers)
         self.assertIn(artifact_indirect_grantee, snap.subscribers)
+        self.assertIn(artifact_indirect_grantee, ocirecipe.subscribers)
         self.assertIn(artifact_indirect_grantee,
                       removeSecurityProxy(specification).subscribers)
 
@@ -409,8 +436,9 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
                 concrete_artifact).getDirectSubscribers()
 
         def configure_test(bug, branch, gitrepository, snap, specification,
-                           policy_team_grantee, policy_indirect_grantee,
-                           artifact_team_grantee, owner):
+                           ocirecipe, policy_team_grantee,
+                           policy_indirect_grantee, artifact_team_grantee,
+                           owner):
             concrete_artifact = bug
             bug.subscribe(policy_team_grantee, owner)
             bug.subscribe(policy_indirect_grantee, owner)
@@ -429,8 +457,9 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             return concrete_artifact.subscribers
 
         def configure_test(bug, branch, gitrepository, snap, specification,
-                           policy_team_grantee, policy_indirect_grantee,
-                           artifact_team_grantee, owner):
+                           ocirecipe, policy_team_grantee,
+                           policy_indirect_grantee, artifact_team_grantee,
+                           owner):
             concrete_artifact = branch
             branch.subscribe(
                 policy_team_grantee,
@@ -458,8 +487,9 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             return concrete_artifact.subscribers
 
         def configure_test(bug, branch, gitrepository, snap, specification,
-                           policy_team_grantee, policy_indirect_grantee,
-                           artifact_team_grantee, owner):
+                           ocirecipe, policy_team_grantee,
+                           policy_indirect_grantee, artifact_team_grantee,
+                           owner):
             concrete_artifact = gitrepository
             gitrepository.subscribe(
                 policy_team_grantee,
@@ -487,8 +517,9 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             return concrete_artifact.subscribers
 
         def configure_test(bug, branch, gitrepository, snap, specification,
-                           policy_team_grantee, policy_indirect_grantee,
-                           artifact_team_grantee, owner):
+                           ocirecipe, policy_team_grantee,
+                           policy_indirect_grantee, artifact_team_grantee,
+                           owner):
             concrete_artifact = snap
             snap.subscribe(policy_team_grantee, owner)
             snap.subscribe(policy_indirect_grantee, owner)
@@ -507,8 +538,9 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             return concrete_artifact.subscribers
 
         def configure_test(bug, branch, gitrepository, snap, specification,
-                           policy_team_grantee, policy_indirect_grantee,
-                           artifact_team_grantee, owner):
+                           ocirecipe, policy_team_grantee,
+                           policy_indirect_grantee, artifact_team_grantee,
+                           owner):
             naked_spec = removeSecurityProxy(specification)
             naked_spec.subscribe(policy_team_grantee, owner)
             naked_spec.subscribe(policy_indirect_grantee, owner)
@@ -517,6 +549,27 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
                 spec_artifact, artifact_team_grantee)
             naked_spec.subscribe(artifact_team_grantee, owner)
             return naked_spec, get_pillars, get_subscribers
+
+        self._assert_artifact_change_unsubscribes(
+            change_callback, configure_test)
+
+    def _assert_ocirecipe_change_unsubscribes(self, change_callback):
+
+        def get_pillars(concrete_artifact):
+            return [concrete_artifact.oci_project.project]
+
+        def get_subscribers(concrete_artifact):
+            return concrete_artifact.subscribers
+
+        def configure_test(bug, branch, gitrepository, snap, specification,
+                           ocirecipe,  policy_team_grantee,
+                           policy_indirect_grantee, artifact_team_grantee,
+                           owner):
+            concrete_artifact = ocirecipe
+            ocirecipe.subscribe(policy_team_grantee, owner)
+            ocirecipe.subscribe(policy_indirect_grantee, owner)
+            ocirecipe.subscribe(artifact_team_grantee, owner)
+            return concrete_artifact, get_pillars, get_subscribers
 
         self._assert_artifact_change_unsubscribes(
             change_callback, configure_test)
@@ -548,6 +601,13 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
                 InformationType.EMBARGOED)
 
         self._assert_specification_change_unsubscribes(change_information_type)
+
+    def test_change_information_type_ocirecipe(self):
+        def change_information_type(ocirecipe):
+            removeSecurityProxy(ocirecipe).information_type = (
+                InformationType.PRIVATESECURITY)
+
+        self._assert_ocirecipe_change_unsubscribes(change_information_type)
 
     def test_change_information_type(self):
         # Changing the information type of a bug unsubscribes users who can no

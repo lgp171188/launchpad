@@ -39,10 +39,7 @@ from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.gitcollection import IAllGitRepositories
-from lp.oci.interfaces.ocirecipe import (
-    IOCIRecipe,
-    IOCIRecipeSet,
-    )
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.model.ocirecipe import OCIRecipe
 from lp.registry.enums import (
     BranchSharingPolicy,
@@ -856,12 +853,6 @@ class SharingService:
         # Revoke access to artifacts for the specified grantee.
         getUtility(IAccessArtifactGrantSource).revokeByArtifact(
             artifacts_to_delete, [grantee])
-
-        # XXX: Pappacena 2021-03-09: OCI recipes should not trigger this job,
-        # since we do not have a "OCIRecipeSubscription" yet.
-        artifacts = [i for i in artifacts if not IOCIRecipe.providedBy(i)]
-        if not artifacts:
-            return
 
         # Create a job to remove subscriptions for artifacts the grantee can no
         # longer see.

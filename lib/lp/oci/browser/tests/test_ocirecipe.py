@@ -89,6 +89,7 @@ from lp.testing.matchers import (
 from lp.testing.pages import (
     extract_text,
     find_main_content,
+    find_tag_by_id,
     find_tags_by_class,
     )
 from lp.testing.publication import test_traverse
@@ -598,6 +599,19 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             MatchesStructure.byEquality(optionValue=name, disabled=True)
             for name in disabled])
         self.assertThat(processors_control.controls, MatchesSetwise(*matchers))
+
+    def test_edit_private_recipe_shows_banner(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            information_type=InformationType.USERDATA)
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        banners = find_tags_by_class(
+            browser.contents, "private_banner_container")
+        self.assertEqual(1, len(banners))
+        self.assertEqual(
+            'The information on this page is private.',
+            extract_text(banners[0]))
 
     def test_edit_recipe(self):
         oci_project = self.factory.makeOCIProject()
@@ -1187,6 +1201,9 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         build = self.makeBuild(
             recipe=recipe, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
+
+        browser = self.getViewBrowser(build.recipe)
+        login_person(self.person)
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
             %s OCI project
             recipe-name
@@ -1204,7 +1221,33 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Status When complete Architecture
             Successfully built 30 minutes ago 386
             """ % (oci_project_name, oci_project_display, recipe.build_path),
-            self.getMainText(build.recipe))
+            extract_text(find_main_content(browser.contents)))
+
+        # Check portlet on side menu.
+        privacy_tag = find_tag_by_id(browser.contents, "privacy")
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            "This OCI recipe contains Public information",
+            extract_text(privacy_tag))
+
+    def test_index_for_private_recipe_shows_banner(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            information_type=InformationType.USERDATA)
+        browser = self.getViewBrowser(recipe, user=self.person)
+
+        # Check top banner.
+        banners = find_tags_by_class(
+            browser.contents, "private_banner_container")
+        self.assertEqual(1, len(banners))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            'The information on this page is private.',
+            extract_text(banners[0]))
+
+        # Check portlet on side menu.
+        privacy_tag = find_tag_by_id(browser.contents, "privacy")
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            "This OCI recipe contains Private information",
+            extract_text(privacy_tag))
 
     def test_index_with_build_args(self):
         oci_project = self.factory.makeOCIProject(

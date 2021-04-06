@@ -27,6 +27,12 @@
             for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
             class="lp.oci.browser.ocirecipe.OCIRecipeView"
             permission="launchpad.View"
+            name="+portlet-privacy"
+            template="../templates/ocirecipe-portlet-privacy.pt"/>
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeView"
+            permission="launchpad.View"
             name="+index"
             template="../templates/ocirecipe-index.pt" />
         <browser:page
