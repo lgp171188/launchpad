@@ -307,7 +307,7 @@ class IOCIRecipeView(Interface):
                       "registry upload"))
 
     subscriptions = CollectionField(
-        title=_("OCIRecipeSubscriptions associated with this snap recipe."),
+        title=_("OCIRecipeSubscriptions associated with this OCI recipe."),
         readonly=True, value_type=Reference(Interface))
 
     subscribers = CollectionField(

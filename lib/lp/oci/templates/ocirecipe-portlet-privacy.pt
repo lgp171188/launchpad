@@ -3,14 +3,11 @@
   xmlns:metal="http://xml.zope.org/namespaces/metal"
   xmlns:i18n="http://xml.zope.org/namespaces/i18n"
   id="privacy"
-  tal:attributes="
-    class python: path('context/private') and 'portlet private' or 'portlet public'
-  "
->
-    <span tal:attributes="class python: path('context/private') and 'sprite private' or 'sprite public'"
-      >This OCI recipe contains <strong
-        tal:content="python: path('context/private') and 'Private' or 'Public'"
-      ></strong> information</span>
+  tal:attributes="class python: 'portlet private' if context.private else 'portlet public'">
+    <span tal:attributes="class python: 'sprite private' if context.private else 'sprite public'">
+        This OCI recipe contains
+        <strong tal:content="python: 'Private' if context.private else 'Public'" />
+        information</span>
 </div>
 
 
