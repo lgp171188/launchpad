@@ -235,7 +235,7 @@ class OCIProjectIndexView(LaunchpadView):
     def git_ssh_hostname(self):
         return urlsplit(config.codehosting.git_ssh_root).hostname
 
-    @cachedproperty
+    @property
     def official_recipes(self):
         return self.context.getOfficialRecipes(visible_by_user=self.user)
 
