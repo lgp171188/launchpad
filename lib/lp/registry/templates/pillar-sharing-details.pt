@@ -28,12 +28,13 @@
     <div id="observer-summary">
       <tal:is-team condition="view/person/is_team">
         <tal:members>3</tal:members> team members can view these bugs,
-        Bazaar branches, Git repositories, Snaps, OCI recipes and blueprints.
+        Bazaar branches, Git repositories, snaps recipes, OCI recipes and
+        blueprints.
       </tal:is-team>
       Shared with <tal:name replace="view/person/displayname">grantee</tal:name>
       <ul class="listing">
         <li tal:condition="view/shared_bugs_count">
-          <span tal:replace="view/shared_bugs_count" /> Bugs
+          <span tal:replace="view/shared_bugs_count" /> bugs
         </li>
         <li tal:condition="view/shared_branches_count">
           <span tal:replace="view/shared_branches_count" /> Bazaar branches
@@ -45,10 +46,10 @@
           <span tal:replace="view/shared_ocirecipe_count" /> OCI recipes
         </li>
         <li tal:condition="view/shared_snaps_count">
-          <span tal:replace="view/shared_snaps_count" /> Snap recipes
+          <span tal:replace="view/shared_snaps_count" /> snap recipes
         </li>
         <li tal:condition="view/shared_specifications_count">
-          <span tal:replace="view/shared_specifications_count" /> Blueprints
+          <span tal:replace="view/shared_specifications_count" /> blueprints
         </li>
       </ul>
     </div>
@@ -72,7 +73,7 @@
           <tr>
               <td colspan="3">
                   There are no shared bugs, Bazaar branches, Git repositories,
-                  Snaps, OCI recipes or blueprints.
+                  snap recipes, OCI recipes or blueprints.
               </td>
           </tr>
       </tbody>
