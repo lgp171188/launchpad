@@ -354,6 +354,12 @@ class IOCIRecipeView(Interface):
         """Get an OCIRecipeBuildRequest object for the given job_id.
         """
 
+    def getAllowedInformationTypes(user):
+        """Get a list of acceptable `InformationType`s for this OCI recipe.
+
+        If the user is a Launchpad admin, any type is acceptable.
+        """
+
     def userCanBeSubscribed(user):
         """Checks if a user can be subscribed to the current OCI recipe."""
 

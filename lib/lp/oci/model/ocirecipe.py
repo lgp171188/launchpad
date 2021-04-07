@@ -319,6 +319,10 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         reconcile_access_for_artifacts([self], self.information_type,
                                        [self.pillar])
 
+    def getAllowedInformationTypes(self, user):
+        """See `IOCIRecipe`."""
+        return self.oci_project.getAllowedInformationTypes(user)
+
     def visibleByUser(self, user):
         """See `IOCIRecipe`."""
         if self.information_type in PUBLIC_INFORMATION_TYPES:
