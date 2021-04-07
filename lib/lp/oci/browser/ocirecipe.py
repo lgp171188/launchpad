@@ -56,7 +56,11 @@ from lp.app.browser.tales import (
     )
 from lp.app.errors import UnexpectedFormData
 from lp.app.validators.validation import validate_oci_branch_name
-from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
+from lp.app.vocabularies import InformationTypeVocabulary
+from lp.app.widgets.itemswidgets import (
+    LabeledMultiCheckBoxWidget,
+    LaunchpadRadioWidgetWithDescription,
+    )
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.oci.interfaces.ocipushrule import (
@@ -744,6 +748,7 @@ class IOCIRecipeEditSchema(Interface):
     use_template(IOCIRecipe, include=[
         "name",
         "owner",
+        "information_type",
         "description",
         "git_ref",
         "build_file",
@@ -759,6 +764,26 @@ class OCIRecipeFormMixin:
     """Mixin with common processing for both edit and add views."""
     custom_widget_build_args = CustomWidgetFactory(
         TextAreaWidget, height=5, width=100)
+
+    custom_widget_information_type = CustomWidgetFactory(
+        LaunchpadRadioWidgetWithDescription,
+        vocabulary=InformationTypeVocabulary(types=[]))
+
+    def setUpInformationTypeWidget(self):
+        info_type_widget = self.widgets['information_type']
+        info_type_widget.vocabulary = InformationTypeVocabulary(
+            types=self.getInformationTypesToShow())
+
+    def getInformationTypesToShow(self):
+        """Get the information types to display on the edit form.
+
+        We display a customised set of information types: anything allowed
+        by the OCI recipe's model, plus the current type.
+        """
+        allowed_types = set(self.context.getAllowedInformationTypes(self.user))
+        if IOCIRecipe.providedBy(self.context):
+            allowed_types.add(self.context.information_type)
+        return allowed_types
 
     def createBuildArgsField(self):
         """Create a form field for OCIRecipe.build_args attribute."""
@@ -833,6 +858,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
     field_names = (
         "name",
         "owner",
+        "information_type",
         "description",
         "git_ref",
         "build_file",
@@ -898,6 +924,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeAddView, self).setUpWidgets()
+        self.setUpInformationTypeWidget()
         self.widgets["processors"].widget_class = "processors"
         self.setUpGitRefWidget()
         # disable the official recipe button if the user doesn't have
@@ -1017,6 +1044,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
     field_names = (
         "owner",
         "name",
+        "information_type",
         "description",
         "git_ref",
         "build_file",
@@ -1056,6 +1084,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeEditView, self).setUpWidgets()
+        self.setUpInformationTypeWidget()
         self.setUpGitRefWidget()
         # disable the official recipe button if the user doesn't have
         # permissions to change it

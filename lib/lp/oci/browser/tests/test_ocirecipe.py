@@ -57,6 +57,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.enums import BranchSharingPolicy
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -230,6 +231,31 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.assertThat(
             "Official recipe:\nNo",
             MatchesTagText(content, "official-recipe"))
+
+    def test_create_new_available_information_types(self):
+        public_pillar = self.factory.makeProduct(owner=self.person)
+        private_pillar = self.factory.makeProduct(
+            owner=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        public_oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=public_pillar)
+        private_oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=private_pillar)
+
+        # Public pillar.
+        browser = self.getViewBrowser(
+            public_oci_project, view_name="+new-recipe", user=self.person)
+        self.assertContentEqual(
+            ['PUBLIC', 'PUBLICSECURITY', 'PRIVATESECURITY', 'USERDATA'],
+            browser.getControl(name="field.information_type").options)
+
+        # Proprietary pillar.
+        browser = self.getViewBrowser(
+            private_oci_project, view_name="+new-recipe", user=self.person)
+        self.assertContentEqual(
+            ['PROPRIETARY'],
+            browser.getControl(name="field.information_type").options)
 
     def test_create_new_recipe_invalid_format(self):
         oci_project = self.factory.makeOCIProject()
@@ -600,18 +626,21 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             for name in disabled])
         self.assertThat(processors_control.controls, MatchesSetwise(*matchers))
 
-    def test_edit_private_recipe_shows_banner(self):
-        recipe = self.factory.makeOCIRecipe(
-            registrant=self.person, owner=self.person,
-            information_type=InformationType.USERDATA)
-        browser = self.getViewBrowser(recipe, user=self.person)
-        browser.getLink("Edit OCI recipe").click()
+    def assertShowsPrivateBanner(self, browser):
         banners = find_tags_by_class(
             browser.contents, "private_banner_container")
         self.assertEqual(1, len(banners))
         self.assertEqual(
             'The information on this page is private.',
             extract_text(banners[0]))
+
+    def test_edit_private_recipe_shows_banner(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            information_type=InformationType.USERDATA)
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        self.assertShowsPrivateBanner(browser)
 
     def test_edit_recipe(self):
         oci_project = self.factory.makeOCIProject()
@@ -676,6 +705,44 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl(name="field.git_ref.path").value = new_git_ref.path
         browser.getControl("Update OCI recipe").click()
         self.assertIn("Branch does not match format", browser.contents)
+
+    def test_edit_can_make_recipe_private(self):
+        pillar = self.factory.makeProduct(
+            owner=self.person,
+            information_type=InformationType.PUBLIC,
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=pillar)
+        [git_ref] = self.factory.makeGitRefs(
+            owner=self.person,
+            paths=['refs/heads/v2.0-20.04'])
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project, git_ref=git_ref,
+            information_type=InformationType.PUBLIC)
+
+        browser = self.getViewBrowser(recipe, '+edit', user=self.person)
+
+        # Make sure we are showing all available information types:
+        info_type_field = browser.getControl(name="field.information_type")
+        self.assertContentEqual([
+            'PUBLIC', 'PUBLICSECURITY', 'PRIVATESECURITY', 'USERDATA',
+            'PROPRIETARY'],
+            info_type_field.options)
+
+        info_type_field.value = InformationType.PROPRIETARY.name
+        browser.getControl("Update OCI recipe").click()
+        self.assertShowsPrivateBanner(browser)
+
+    def test_edit_recipe_on_public_pillar_information_types(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person)
+        browser = self.getViewBrowser(recipe, '+edit', user=self.person)
+
+        info_type_field = browser.getControl(name="field.information_type")
+        self.assertContentEqual(
+            ['PUBLIC', 'PUBLICSECURITY', 'PRIVATESECURITY', 'USERDATA'],
+            info_type_field.options)
 
     def test_edit_recipe_sets_date_last_modified(self):
         # Editing an OCI recipe sets the date_last_modified property.
