@@ -391,19 +391,23 @@ class PillarSharingViewTestMixin:
         self.useFixture(FeatureFixture({
             SNAP_PRIVATE_FEATURE_FLAG: 'on',
             OCI_RECIPE_ALLOW_CREATE: 'on'}))
-        totals = {"oci_recipes": 1, "snaps": 0}
+        person = self.factory.makePerson()
         items = [
             self.factory.makeOCIRecipe(
                 owner=self.owner, registrant=self.owner,
                 information_type=InformationType.USERDATA,
                 oci_project=self.factory.makeOCIProject(pillar=self.pillar))]
+        expected_text = """
+        Shared with %s:
+        1 OCI recipes
+        """ % person.displayname
+
         if self.pillar_type == 'product':
-            totals["snaps"] = 1
             items.append(self.factory.makeSnap(
                 information_type=InformationType.USERDATA,
                 owner=self.owner, registrant=self.owner, project=self.pillar))
+            expected_text += "\n1 snap recipes"
 
-        person = self.factory.makePerson()
         with person_logged_in(self.owner):
             for item in items:
                 item.subscribe(person, self.owner)
@@ -414,13 +418,9 @@ class PillarSharingViewTestMixin:
         browser = self.getUserBrowser(user=self.owner, url=url)
         content = extract_text(
             find_tag_by_id(browser.contents, "observer-summary"))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
-            0 bugs,
-            0 Bazaar branches,
-            0 Git repositories,
-            %(snaps)s snaps,
-            and 0 blueprints shared
-            """ % totals, content)
+
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            expected_text, content)
 
 
 class TestProductSharingView(PillarSharingViewTestMixin,
