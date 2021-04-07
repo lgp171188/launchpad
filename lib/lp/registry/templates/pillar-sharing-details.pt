@@ -31,7 +31,7 @@
         Bazaar branches, Git repositories, snaps recipes, OCI recipes and
         blueprints.
       </tal:is-team>
-      Shared with <tal:name replace="view/person/displayname">grantee</tal:name>
+      Shared with <tal:name replace="view/person/displayname">grantee</tal:name>:
       <ul class="listing">
         <li tal:condition="view/shared_bugs_count">
           <span tal:replace="view/shared_bugs_count" /> bugs

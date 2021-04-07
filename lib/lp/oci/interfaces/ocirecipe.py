@@ -243,7 +243,7 @@ class IOCIRecipeView(Interface):
 
     private = Bool(
         title=_("Is this OCI recipe private?"),
-        required=False, readonly=True,
+        required=True, readonly=True,
         description=_("True if this recipe is private. False otherwise."))
 
     pillar = Attribute('The pillar of this OCI recipe.')
@@ -312,7 +312,7 @@ class IOCIRecipeView(Interface):
                       "registry upload"))
 
     subscriptions = CollectionField(
-        title=_("OCIRecipeSubscriptions associated with this snap recipe."),
+        title=_("OCIRecipeSubscriptions associated with this OCI recipe."),
         readonly=True, value_type=Reference(Interface))
 
     subscribers = CollectionField(

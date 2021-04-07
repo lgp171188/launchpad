@@ -492,6 +492,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     def repackRepository(self):
         getUtility(IGitHostingClient).repackRepository(self.getInternalPath())
+        self.date_last_repacked = UTC_NOW
 
     @property
     def namespace(self):

@@ -87,6 +87,12 @@
             name="+new-snap"
             template="../templates/snap-new.pt" />
         <browser:page
+            for="lp.registry.interfaces.product.IProduct"
+            class="lp.snappy.browser.snap.SnapAddView"
+            permission="launchpad.AnyPerson"
+            name="+new-snap"
+            template="../templates/snap-new.pt" />
+        <browser:page
             for="lp.snappy.interfaces.snap.ISnap"
             class="lp.snappy.browser.snap.SnapRequestBuildsView"
             permission="launchpad.Edit"
@@ -192,7 +198,9 @@
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
         <browser:navigation
             module="lp.snappy.browser.snapbase"
-            classes="SnapBaseSetNavigation" />
+            classes="
+                SnapBaseNavigation
+                SnapBaseSetNavigation" />
 
         <browser:page
             for="*"

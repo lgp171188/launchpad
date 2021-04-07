@@ -1541,11 +1541,13 @@ class TeamMenuMixin(PPANavigationMenuMixIn, CommonMenuLinks):
         text = 'Show polls'
         return Link(target, text, icon='info')
 
-    @enabled_with_permission('launchpad.Edit')
     def add_poll(self):
         target = '+newpoll'
         text = 'Create a poll'
-        return Link(target, text, icon='add')
+        enabled = (
+            check_permission('launchpad.Edit', self.context) and
+            check_permission('launchpad.AnyLegitimatePerson', self.context))
+        return Link(target, text, icon='add', enabled=enabled)
 
     @enabled_with_permission('launchpad.Edit')
     def editemail(self):

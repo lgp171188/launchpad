@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for signing keys stored at the signing service."""
@@ -125,6 +125,9 @@ class IArchiveSigningKey(Interface):
     signing_key = Reference(
         ISigningKey, title=_("Signing key"), required=True, readonly=True,
         description=_("Which signing key should be used by this archive"))
+
+    def destroySelf():
+        """Removes the ArchiveSigningKey from the database."""
 
 
 class IArchiveSigningKeySet(Interface):

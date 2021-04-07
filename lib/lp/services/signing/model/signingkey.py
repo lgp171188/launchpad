@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes to manage signing keys stored at the signing service."""
@@ -176,6 +176,9 @@ class ArchiveSigningKey(StormBase):
         self.signing_key = signing_key
         self.key_type = signing_key.key_type
         self.earliest_distro_series = earliest_distro_series
+
+    def destroySelf(self):
+        IStore(self).remove(self)
 
 
 @implementer(IArchiveSigningKeySet)

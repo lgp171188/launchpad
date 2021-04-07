@@ -837,7 +837,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return getUtility(IPollSet).new(
             team, name, title, proposition, dateopens, datecloses,
             PollSecrecy.SECRET, allowspoilt=True,
-            poll_type=poll_type)
+            poll_type=poll_type, check_permissions=False)
 
     def makeTranslationGroup(self, owner=None, name=None, title=None,
                              summary=None, url=None):
@@ -4831,9 +4831,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeSnapBuild(self, requester=None, registrant=None, snap=None,
                       archive=None, distroarchseries=None, pocket=None,
-                      channels=None, date_created=DEFAULT, build_request=None,
-                      status=BuildStatus.NEEDSBUILD, builder=None,
-                      duration=None, **kwargs):
+                      snap_base=None, channels=None, date_created=DEFAULT,
+                      build_request=None, status=BuildStatus.NEEDSBUILD,
+                      builder=None, duration=None, **kwargs):
         """Make a new SnapBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -4861,7 +4861,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             pocket = PackagePublishingPocket.UPDATES
         snapbuild = getUtility(ISnapBuildSet).new(
             requester, snap, archive, distroarchseries, pocket,
-            channels=channels, date_created=date_created,
+            snap_base=snap_base, channels=channels, date_created=date_created,
             build_request=build_request)
         if duration is not None:
             removeSecurityProxy(snapbuild).updateStatus(

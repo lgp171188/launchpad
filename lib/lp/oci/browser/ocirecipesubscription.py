@@ -10,7 +10,6 @@ __all__ = [
     'OCIRecipePortletSubscribersContent'
 ]
 
-from lp.oci.interfaces.ocirecipesubscription import IOCIRecipeSubscription
 from zope.component import getUtility
 from zope.formlib.form import action
 from zope.security.interfaces import ForbiddenAttribute
@@ -19,6 +18,7 @@ from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
+from lp.oci.interfaces.ocirecipesubscription import IOCIRecipeSubscription
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.webapp import (
     canonical_url,

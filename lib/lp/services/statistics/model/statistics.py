@@ -33,7 +33,6 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
     SQLBase,
-    sqlvalues,
     )
 from lp.services.statistics.interfaces.statistic import (
     ILaunchpadStatistic,

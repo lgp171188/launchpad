@@ -3465,7 +3465,9 @@ class ViewOCIRecipeBuildRequest(DelegatedAuthorization):
 
 
 class ViewOCIRecipe(AnonymousAuthorization):
-    """Anyone can view an `IOCIRecipe`."""
+    """Anyone can view public `IOCIRecipe`, but only subscribers can view
+    private ones.
+    """
     usedfor = IOCIRecipe
 
     def checkUnauthenticated(self):

@@ -298,7 +298,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def is_valid_branch_format(self):
-        return validate_oci_branch_name(self.git_ref.name)
+        return validate_oci_branch_name(self.git_ref.path)
 
     @property
     def build_args(self):
