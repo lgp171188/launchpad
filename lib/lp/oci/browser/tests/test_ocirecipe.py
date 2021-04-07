@@ -2103,9 +2103,9 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                     "region": Equals("new_region1")}))
 
 
-class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
+class TestOCIRecipeListingView(BaseTestOCIRecipeView):
     def setUp(self):
-        super(TestOCIProjectRecipesView, self).setUp()
+        super(TestOCIRecipeListingView, self).setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
@@ -2128,6 +2128,30 @@ class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
                 registrant=owner, owner=owner, oci_project=self.oci_project,
                 **kwargs)
                 for _ in range(count)]
+
+    def test_oci_recipe_list_for_person(self):
+        owner = self.factory.makePerson(name="recipe-owner")
+        for i in range(2):
+            self.factory.makeOCIRecipe(
+                name="my-oci-recipe-%s" % i, owner=owner, registrant=owner)
+
+        # This recipe should not be present.
+        someone_else = self.factory.makePerson()
+        self.factory.makeOCIRecipe(owner=someone_else, registrant=someone_else)
+
+        # self.person now visits ~owner/+oci-recipes page.
+        browser = self.getViewBrowser(owner, "+oci-recipes", user=self.person)
+        main_text = extract_text(find_main_content(browser.contents))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
+            OCI recipes for recipe-owner
+            There are 2 recipes registered for recipe-owner.
+            Name             Owner          Source   Build file   Date created
+            my-oci-recipe-0  Recipe-owner   .*
+            my-oci-recipe-1  Recipe-owner   .*
+            1 .* 2 of 2 results
+            First .* Previous .* Next .* Last
+            """, main_text)
 
     def test_shows_no_recipe(self):
         """Should shows correct message when there are no visible recipes."""

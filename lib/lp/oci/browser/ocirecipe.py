@@ -207,8 +207,10 @@ class OCIRecipeContextMenu(ContextMenu):
         return Link("+addsubscriber", text, icon="add")
 
 
-class OCIProjectRecipesView(LaunchpadView):
-    """Default view for the list of OCI recipes of an OCI project."""
+class OCIRecipeListingView(LaunchpadView):
+    """Default view for the list of OCI recipes of a context (OCI project
+    or Person).
+    """
     page_title = 'Recipes'
 
     @property
@@ -221,7 +223,7 @@ class OCIProjectRecipesView(LaunchpadView):
 
     @property
     def recipes(self):
-        recipes = getUtility(IOCIRecipeSet).findByOCIProject(
+        recipes = getUtility(IOCIRecipeSet).findByContext(
             self.context, visible_by_user=self.user)
         return recipes.order_by('name')
 
