@@ -1993,9 +1993,9 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                     "region": Equals("new_region1")}))
 
 
-class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
+class TestOCIRecipeListingView(BaseTestOCIRecipeView):
     def setUp(self):
-        super(TestOCIProjectRecipesView, self).setUp()
+        super(TestOCIRecipeListingView, self).setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")

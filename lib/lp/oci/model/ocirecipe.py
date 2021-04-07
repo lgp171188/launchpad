@@ -881,9 +881,11 @@ class OCIRecipeSet:
         if IPerson.providedBy(context):
             return self.findByOwner(context).find(
                 get_ocirecipe_privacy_filter(visible_by_user))
-        if IOCIProject.providedBy(context):
+        elif IOCIProject.providedBy(context):
             return self.findByOCIProject(context, visible_by_user)
-        raise NotImplementedError("Unknown OCI recipe context: %s" % context)
+        else:
+            raise NotImplementedError(
+                "Unknown OCI recipe context: %s" % context)
 
     def findByGitRepository(self, repository, paths=None):
         """See `IOCIRecipeSet`."""

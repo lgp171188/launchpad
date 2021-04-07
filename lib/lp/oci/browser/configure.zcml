@@ -31,16 +31,16 @@
             template="../templates/ocirecipe-index.pt" />
         <browser:page
             for="lp.registry.interfaces.ociproject.IOCIProject"
-            class="lp.oci.browser.ocirecipe.OCIProjectRecipesView"
+            class="lp.oci.browser.ocirecipe.OCIRecipeListingView"
             permission="launchpad.View"
             name="+recipes"
-            template="../templates/ociproject-recipes.pt" />
+            template="../templates/ocirecipe-listing.pt" />
         <browser:page
             for="lp.registry.interfaces.person.IPerson"
-            class="lp.oci.browser.ocirecipe.OCIProjectRecipesView"
+            class="lp.oci.browser.ocirecipe.OCIRecipeListingView"
             permission="launchpad.View"
             name="+oci-recipes"
-            template="../templates/ociproject-recipes.pt" />
+            template="../templates/ocirecipe-listing.pt" />
         <browser:page
             for="lp.registry.interfaces.ociproject.IOCIProject"
             class="lp.oci.browser.ocirecipe.OCIRecipeAddView"

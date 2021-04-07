@@ -203,7 +203,7 @@ class OCIRecipeContextMenu(ContextMenu):
         return Link("+addsubscriber", text, icon="add")
 
 
-class OCIProjectRecipesView(LaunchpadView):
+class OCIRecipeListingView(LaunchpadView):
     """Default view for the list of OCI recipes of a context (OCI project
     or Person).
     """
