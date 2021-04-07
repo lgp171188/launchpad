@@ -1443,11 +1443,11 @@ First we create four copy archives for ubuntu:
 
     >>> copy_owner1 = factory.makePerson(name="copy-owner1")
     >>> copy_owner2 = factory.makePerson(name="copy-owner2")
-    >>> copy = factory.makeCopyArchiveLocation(
+    >>> ultimate_copy = factory.makeCopyArchiveLocation(
     ...     distribution=ubuntu, name="ultimate-copy", owner=copy_owner1)
-    >>> copy = factory.makeCopyArchiveLocation(
+    >>> fine_copy = factory.makeCopyArchiveLocation(
     ...     distribution=ubuntu, name="fine-copy", owner=copy_owner2)
-    >>> copy = factory.makeCopyArchiveLocation(
+    >>> true_copy = factory.makeCopyArchiveLocation(
     ...     distribution=ubuntu, name="true-copy", owner=copy_owner2,
     ...     enabled=False)
 
@@ -1575,6 +1575,27 @@ of juergen that is disabled.
     Name             Owner         Private  Enabled
     fine-copy        copy-owner2   False    True
     true-copy        copy-owner2   False    False
+    ultimate-copy    copy-owner1   False    True
+
+A separate argument allows excluding archives that have never had any
+publications, allowing jobs to skip over trivial cases.
+
+    >>> ubuntu_copy_archives = archive_set.getArchivesForDistribution(
+    ...     ubuntu, purposes=[ArchivePurpose.COPY], user=copy_owner2,
+    ...     exclude_pristine=True)
+    >>> print_archive_names(ubuntu_copy_archives)
+    Name             Owner         Private  Enabled
+
+    >>> _ = factory.makeSourcePackagePublishingHistory(
+    ...     archive=removeSecurityProxy(fine_copy).archive)
+    >>> _ = factory.makeSourcePackagePublishingHistory(
+    ...     archive=removeSecurityProxy(ultimate_copy).archive)
+    >>> ubuntu_copy_archives = archive_set.getArchivesForDistribution(
+    ...     ubuntu, purposes=[ArchivePurpose.COPY], user=copy_owner2,
+    ...     exclude_pristine=True)
+    >>> print_archive_names(ubuntu_copy_archives)
+    Name             Owner         Private  Enabled
+    fine-copy        copy-owner2   False    True
     ultimate-copy    copy-owner1   False    True
 
 
