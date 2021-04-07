@@ -715,7 +715,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             registrant=self.person, pillar=pillar)
         [git_ref] = self.factory.makeGitRefs(
             owner=self.person,
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person,
             oci_project=oci_project, git_ref=git_ref,
