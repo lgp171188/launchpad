@@ -171,9 +171,13 @@ class SnapBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             args["channels"] = removeSecurityProxy(channels)
             tools_source = None
             tools_fingerprint = None
+        archive_dependencies = list(build.archive.dependencies)
+        if build.snap_base is not None:
+            archive_dependencies.extend(build.snap_base.dependencies)
         args["archives"], args["trusted_keys"] = (
             yield get_sources_list_for_building(
                 build, build.distro_arch_series, None,
+                archive_dependencies=archive_dependencies,
                 tools_source=tools_source, tools_fingerprint=tools_fingerprint,
                 logger=logger))
         if build.snap.branch is not None:

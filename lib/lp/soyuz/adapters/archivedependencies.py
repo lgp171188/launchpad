@@ -153,8 +153,9 @@ def get_primary_current_component(archive, distroseries, sourcepackagename):
 
 
 def expand_dependencies(archive, distro_arch_series, pocket, component,
-                        source_package_name, tools_source=None,
-                        tools_fingerprint=None, logger=None):
+                        source_package_name, archive_dependencies,
+                        tools_source=None, tools_fingerprint=None,
+                        logger=None):
     """Return the set of dependency archives, pockets and components.
 
     :param archive: the context `IArchive`.
@@ -162,6 +163,8 @@ def expand_dependencies(archive, distro_arch_series, pocket, component,
     :param pocket: the context `PackagePublishingPocket`.
     :param component: the context `IComponent`.
     :param source_package_name: A source package name (as text)
+    :param archive_dependencies: a sequence of `IArchiveDependency` objects
+        to use as additional user-selected archive dependencies.
     :param tools_source: if not None, a sources.list entry to use as an
         additional dependency for build tools, just before the default
         primary archive.
@@ -185,7 +188,7 @@ def expand_dependencies(archive, distro_arch_series, pocket, component,
     primary_component = get_primary_current_component(
         archive, distro_series, source_package_name)
     # Consider user-selected archive dependencies.
-    for archive_dependency in archive.dependencies:
+    for archive_dependency in archive_dependencies:
         # When the dependency component is undefined, we should use
         # the component where the source is published in the primary
         # archive.
@@ -216,8 +219,9 @@ def expand_dependencies(archive, distro_arch_series, pocket, component,
 
     # Consider primary archive dependency override. Add the default
     # primary archive dependencies if it's not present.
-    if archive.getArchiveDependency(
-        archive.distribution.main_archive) is None:
+    if not any(
+            archive_dependency.dependency == archive.distribution.main_archive
+            for archive_dependency in archive_dependencies):
         primary_dependencies = _get_default_primary_dependencies(
             archive, distro_arch_series, component, pocket)
         deps.extend(primary_dependencies)
@@ -247,6 +251,7 @@ def expand_dependencies(archive, distro_arch_series, pocket, component,
 
 @defer.inlineCallbacks
 def get_sources_list_for_building(build, distroarchseries, sourcepackagename,
+                                  archive_dependencies=None,
                                   tools_source=None, tools_fingerprint=None,
                                   logger=None):
     """Return sources.list entries and keys required to build the given item.
@@ -262,6 +267,9 @@ def get_sources_list_for_building(build, distroarchseries, sourcepackagename,
     :param build: a context `IBuild`.
     :param distroarchseries: A `IDistroArchSeries`
     :param sourcepackagename: A source package name (as text)
+    :param archive_dependencies: a sequence of `IArchiveDependency` objects
+        to use as additional user-selected archive dependencies.  If None,
+        use the dependencies of the build's archive.
     :param tools_source: if not None, a sources.list entry to use as an
         additional dependency for build tools, just before the default
         primary archive.
@@ -272,9 +280,11 @@ def get_sources_list_for_building(build, distroarchseries, sourcepackagename,
         sources.list entries (lines) and a list of base64-encoded public
         keys.
     """
+    if archive_dependencies is None:
+        archive_dependencies = build.archive.dependencies
     deps = expand_dependencies(
         build.archive, distroarchseries, build.pocket,
-        build.current_component, sourcepackagename,
+        build.current_component, sourcepackagename, archive_dependencies,
         tools_source=tools_source, tools_fingerprint=tools_fingerprint,
         logger=logger)
     sources_list_lines, trusted_keys = (
