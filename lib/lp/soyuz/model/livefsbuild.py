@@ -11,12 +11,15 @@ from datetime import timedelta
 
 import pytz
 from storm.locals import (
+    And,
     Bool,
     DateTime,
     Desc,
     Int,
     JSON,
+    Or,
     Reference,
+    Select,
     Store,
     Storm,
     Unicode,
@@ -24,6 +27,7 @@ from storm.locals import (
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import (
@@ -50,7 +54,14 @@ from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
+    NO_USER,
+    )
+from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.webapp.snapshot import notify_modified
+from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.livefs import (
     LIVEFS_FEATURE_FLAG,
@@ -63,6 +74,7 @@ from lp.soyuz.interfaces.livefsbuild import (
     )
 from lp.soyuz.mail.livefsbuild import LiveFSBuildMailer
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archivedependency import ArchiveDependency
 
 
 @implementer(ILiveFSFile)
@@ -406,3 +418,72 @@ class LiveFSBuildSet(SpecificBuildFarmJobSourceMixin):
             LiveFSBuild, LiveFSBuild.build_farm_job_id.is_in(
                 bfj.id for bfj in build_farm_jobs))
         return DecoratedResultSet(rows, pre_iter_hook=self.preloadBuildsData)
+
+
+@implementer(IMacaroonIssuer)
+class LiveFSBuildMacaroonIssuer(MacaroonIssuerBase):
+
+    identifier = "livefs-build"
+    issuable_via_authserver = True
+
+    @property
+    def _primary_caveat_name(self):
+        """See `MacaroonIssuerBase`."""
+        # The "lp.principal" prefix indicates that this caveat constrains
+        # the macaroon to access only resources that should be accessible
+        # when acting on behalf of the named build, rather than to access
+        # the named build directly.
+        return "lp.principal.livefs-build"
+
+    def checkIssuingContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For issuing, the context is an `ILiveFSBuild`.
+        """
+        if not ILiveFSBuild.providedBy(context):
+            raise BadMacaroonContext(context)
+        if not removeSecurityProxy(context).is_private:
+            raise BadMacaroonContext(
+                context, "Refusing to issue macaroon for public build.")
+        return removeSecurityProxy(context).id
+
+    def checkVerificationContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if not IArchive.providedBy(context):
+            raise BadMacaroonContext(context)
+        return context
+
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, user=None,
+                            **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For verification, the context is an `IArchive`.  We check that the
+        archive is needed to build the `ILiveFSBuild` that is the context of
+        the macaroon, and that the context build is currently building.
+        """
+        # Live filesystem builds only support free-floating macaroons for
+        # Git authentication, not ones bound to a user.
+        if user:
+            return False
+        verified.user = NO_USER
+
+        try:
+            build_id = int(caveat_value)
+        except ValueError:
+            return False
+        clauses = [
+            LiveFSBuild.id == build_id,
+            LiveFSBuild.status == BuildStatus.BUILDING,
+            ]
+        if IArchive.providedBy(context):
+            clauses.append(
+                Or(
+                    LiveFSBuild.archive == context,
+                    LiveFSBuild.archive_id.is_in(Select(
+                        Archive.id,
+                        where=And(
+                            ArchiveDependency.archive == Archive.id,
+                            ArchiveDependency.dependency == context)))))
+        else:
+            return False
+        return not IStore(LiveFSBuild).find(LiveFSBuild, *clauses).is_empty()

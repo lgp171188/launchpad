@@ -13,6 +13,7 @@ from datetime import (
     )
 
 from fixtures import FakeLogger
+from pymacaroons import Macaroon
 import pytz
 from six.moves.urllib.parse import urlsplit
 from six.moves.urllib.request import urlopen
@@ -20,9 +21,11 @@ from testtools.matchers import (
     ContainsDict,
     Equals,
     MatchesDict,
+    MatchesListwise,
     MatchesStructure,
     )
 from zope.component import getUtility
+from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
@@ -35,9 +38,16 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.enums import PersonVisibility
+from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
+    )
+from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
@@ -66,6 +76,7 @@ from lp.testing.layers import (
     )
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.pages import webservice_for_person
+from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestLiveFSBuildFeatureFlag(TestCaseWithFactory):
@@ -584,3 +595,146 @@ class TestLiveFSBuildWebservice(TestCaseWithFactory):
             resp = self.webservice.get(path)
             self.assertEqual(303, resp.status)
             urlopen(resp.getheader('Location')).close()
+
+
+class TestLiveFSBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
+    """Test LiveFSBuild macaroon issuing and verification."""
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super(TestLiveFSBuildMacaroonIssuer, self).setUp()
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+
+    def test_issueMacaroon_refuses_public_snap(self):
+        build = self.factory.makeLiveFSBuild()
+        issuer = getUtility(IMacaroonIssuer, "livefs-build")
+        self.assertRaises(
+            BadMacaroonContext, removeSecurityProxy(issuer).issueMacaroon,
+            build)
+
+    def test_issueMacaroon_good(self):
+        livefs = self.factory.makeLiveFS()
+        archive = self.factory.makeArchive(owner=livefs.owner, private=True)
+        build = self.factory.makeLiveFSBuild(livefs=livefs, archive=archive)
+        issuer = getUtility(IMacaroonIssuer, "livefs-build")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
+        self.assertThat(macaroon, MatchesStructure(
+            location=Equals("launchpad.test"),
+            identifier=Equals("livefs-build"),
+            caveats=MatchesListwise([
+                MatchesStructure.byEquality(
+                    caveat_id="lp.principal.livefs-build %s" % build.id),
+                ])))
+
+    def test_issueMacaroon_via_authserver(self):
+        livefs = self.factory.makeLiveFS()
+        archive = self.factory.makeArchive(owner=livefs.owner, private=True)
+        build = self.factory.makeLiveFSBuild(livefs=livefs, archive=archive)
+        private_root = getUtility(IPrivateApplication)
+        authserver = AuthServerAPIView(private_root.authserver, TestRequest())
+        macaroon = Macaroon.deserialize(
+            authserver.issueMacaroon("livefs-build", "LiveFSBuild", build.id))
+        self.assertThat(macaroon, MatchesStructure(
+            location=Equals("launchpad.test"),
+            identifier=Equals("livefs-build"),
+            caveats=MatchesListwise([
+                MatchesStructure.byEquality(
+                    caveat_id="lp.principal.livefs-build %s" % build.id),
+                ])))
+
+    def test_verifyMacaroon_good_direct_archive(self):
+        livefs = self.factory.makeLiveFS()
+        archive = self.factory.makeArchive(owner=livefs.owner, private=True)
+        build = self.factory.makeLiveFSBuild(livefs=livefs, archive=archive)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "livefs-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, archive)
+
+    def test_verifyMacaroon_good_indirect_archive(self):
+        livefs = self.factory.makeLiveFS()
+        archive = self.factory.makeArchive(owner=livefs.owner, private=True)
+        build = self.factory.makeLiveFSBuild(livefs=livefs, archive=archive)
+        dependency = self.factory.makeArchive(
+            distribution=build.archive.distribution, private=True)
+        archive.addArchiveDependency(
+            dependency, PackagePublishingPocket.RELEASE)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "livefs-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, dependency)
+
+    def test_verifyMacaroon_wrong_location(self):
+        livefs = self.factory.makeLiveFS()
+        archive = self.factory.makeArchive(owner=livefs.owner, private=True)
+        build = self.factory.makeLiveFSBuild(livefs=livefs, archive=archive)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "livefs-build"))
+        macaroon = Macaroon(
+            location="another-location", key=issuer._root_secret)
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer, macaroon, archive)
+
+    def test_verifyMacaroon_wrong_key(self):
+        livefs = self.factory.makeLiveFS()
+        archive = self.factory.makeArchive(owner=livefs.owner, private=True)
+        build = self.factory.makeLiveFSBuild(livefs=livefs, archive=archive)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "livefs-build"))
+        macaroon = Macaroon(
+            location=config.vhost.mainsite.hostname, key="another-secret")
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"], issuer, macaroon, archive)
+
+    def test_verifyMacaroon_not_building(self):
+        livefs = self.factory.makeLiveFS()
+        archive = self.factory.makeArchive(owner=livefs.owner, private=True)
+        build = self.factory.makeLiveFSBuild(livefs=livefs, archive=archive)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "livefs-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.principal.livefs-build %s' failed." %
+                build.id],
+            issuer, macaroon, archive)
+
+    def test_verifyMacaroon_wrong_build(self):
+        livefs = self.factory.makeLiveFS()
+        archive = self.factory.makeArchive(owner=livefs.owner, private=True)
+        build = self.factory.makeLiveFSBuild(livefs=livefs, archive=archive)
+        build.updateStatus(BuildStatus.BUILDING)
+        other_build = self.factory.makeLiveFSBuild(
+            livefs=livefs,
+            archive=self.factory.makeArchive(
+                owner=livefs.owner, private=True))
+        other_build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "livefs-build"))
+        macaroon = issuer.issueMacaroon(other_build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.principal.livefs-build %s' failed." %
+                other_build.id],
+            issuer, macaroon, archive)
+
+    def test_verifyMacaroon_wrong_archive(self):
+        livefs = self.factory.makeLiveFS()
+        archive = self.factory.makeArchive(owner=livefs.owner, private=True)
+        build = self.factory.makeLiveFSBuild(livefs=livefs, archive=archive)
+        other_archive = self.factory.makeArchive(
+            distribution=archive.distribution, private=True)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "livefs-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.principal.livefs-build %s' failed." %
+                build.id],
+            issuer, macaroon, other_archive)

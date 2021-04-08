@@ -1067,6 +1067,14 @@
         <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"/>
     </securedutility>
 
+    <!-- LiveFSBuildMacaroonIssuer -->
+    <securedutility
+        class="lp.soyuz.model.livefsbuild.LiveFSBuildMacaroonIssuer"
+        provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
+        name="livefs-build">
+        <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
+    </securedutility>
+
     <!-- LiveFSBuildBehaviour -->
     <adapter
         for=".interfaces.livefsbuild.ILiveFSBuild"
