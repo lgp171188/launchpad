@@ -105,6 +105,12 @@
     </securedutility>
 
     <securedutility
+        component=".model.persontransferjob.PersonCloseAccountJob"
+        provides=".interfaces.persontransferjob.IPersonCloseAccountJobSource">
+      <allow interface=".interfaces.persontransferjob.IPersonCloseAccountJobSource"/>
+    </securedutility>
+
+    <securedutility
         component=".model.persontransferjob.TeamInvitationNotificationJob"
         provides=".interfaces.persontransferjob.ITeamInvitationNotificationJobSource">
       <allow interface=".interfaces.persontransferjob.ITeamInvitationNotificationJobSource"/>
@@ -417,19 +423,6 @@
         </securedutility>
 
         <!-- string:${id} because id is an int -->
-
-    <!-- Close Account Celery Job -->
-    <class
-        class="lp.registry.model.closeaccount.CloseAccountJobObject">
-        <allow
-            interface="lp.registry.model.closeaccount.ICloseAccountJob"/>
-    </class>
-
-    <securedutility
-        component="lp.registry.model.closeaccount.CloseAccountJob"
-        provides="lp.registry.model.closeaccount.ICloseAccountJobSource">
-        <allow interface="lp.registry.model.closeaccount.ICloseAccountJobSource" />
-    </securedutility>
 
     <class
         class="lp.registry.model.person.IrcID">

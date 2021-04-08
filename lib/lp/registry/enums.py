@@ -380,6 +380,11 @@ class PersonTransferJobType(DBEnumeratedType):
         Notify team admins that a member renewed their own membership.
         """)
 
+    CLOSE_ACCOUNT = DBItem(7, """Close account.
+
+        Close account for a given username.
+        """)
+
 
 class ProductJobType(DBEnumeratedType):
     """Values that IProductJob.job_type can take."""
