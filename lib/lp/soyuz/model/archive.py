@@ -2895,7 +2895,8 @@ class ArchiveSet:
 
     def getArchivesForDistribution(self, distribution, name=None,
                                    purposes=None, user=None,
-                                   exclude_disabled=True):
+                                   exclude_disabled=True,
+                                   exclude_pristine=False):
         """See `IArchiveSet`."""
         extra_exprs = []
 
@@ -2948,10 +2949,14 @@ class ArchiveSet:
         if exclude_disabled:
             extra_exprs.append(Archive._enabled == True)
 
+        if exclude_pristine:
+            extra_exprs.append(
+                SourcePackagePublishingHistory.archive == Archive.id)
+
         query = Store.of(distribution).find(
             Archive,
             Archive.distribution == distribution,
-            *extra_exprs)
+            *extra_exprs).config(distinct=True)
 
         return query.order_by(Archive.name)
 

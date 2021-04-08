@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functional tests for process-death-row.py script.
@@ -23,6 +23,7 @@ import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.archivepublisher.scripts.processdeathrow import DeathRowProcessor
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
@@ -174,6 +175,25 @@ class TestProcessDeathRow(TestCaseWithFactory):
             self.assertTrue(
                 spph.dateremoved is None,
                 "ID %s -> removed" % (spph.id))
+
+    def test_getTargetArchives_ppa(self):
+        """With --ppa, getTargetArchives returns all non-empty PPAs."""
+        ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
+        cprov_archive = getUtility(IPersonSet).getByName("cprov").archive
+        mark_archive = getUtility(IPersonSet).getByName("mark").archive
+        self.factory.makeArchive(distribution=ubuntutest)
+        script = DeathRowProcessor(test_args=["-d", "ubuntutest", "--ppa"])
+        self.assertContentEqual(
+            [cprov_archive, mark_archive],
+            script.getTargetArchives(ubuntutest))
+
+    def test_getTargetArchives_main(self):
+        """Without --ppa, getTargetArchives returns main archives."""
+        ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
+        script = DeathRowProcessor(test_args=["-d", "ubuntutest"])
+        self.assertContentEqual(
+            ubuntutest.all_distro_archives,
+            script.getTargetArchives(ubuntutest))
 
     def testDryRun(self):
         """Test we don't delete the file or change the db in dry run mode."""

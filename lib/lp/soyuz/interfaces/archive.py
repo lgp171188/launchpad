@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Archive interfaces."""
@@ -2445,7 +2445,7 @@ class IArchiveSet(Interface):
         """
 
     def getArchivesForDistribution(distribution, name=None, purposes=None,
-        user=None, exclude_disabled=True):
+        user=None, exclude_disabled=True, exclude_pristine=False):
         """Return a list of all the archives for a distribution.
 
         This will return all the archives for the given distribution, with
@@ -2461,6 +2461,8 @@ class IArchiveSet(Interface):
             has permission. If it is not supplied, only public archives
             will be returned.
         :param exclude_disabled: Whether to exclude disabled archives.
+        :param exclude_pristine: Whether to exclude archives that have never
+            had any publications.
 
         :return: A queryset of all the archives for the given
             distribution matching the given params.
