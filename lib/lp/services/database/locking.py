@@ -44,11 +44,6 @@ class LockType(DBEnumeratedType):
         Package copy.
         """)
 
-    CLOSE_ACCOUNT = DBItem(3, """Close account.
-
-        Close account.
-        """)
-
 
 @contextmanager
 def try_advisory_lock(lock_type, lock_id, store):

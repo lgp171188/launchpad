@@ -13,11 +13,14 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.answers.enums import QuestionStatus
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.persontransferjob import (
     IPersonCloseAccountJobSource,
     )
 from lp.registry.model.persontransferjob import PersonCloseAccountJob
+from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import (
@@ -28,10 +31,12 @@ from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.job.tests import block_on_job
-from lp.services.log.logger import BufferLogger
+from lp.services.log.logger import BufferLogger, DevNullLogger
 from lp.services.scripts import log
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
+from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
@@ -131,6 +136,99 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
             job.run()
 
         self.assertAccountRemoved(account_id, person_id)
+
+    def test_retains_audit_trail(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+        branch_subscription = self.factory.makeBranchSubscription(
+            subscribed_by=person)
+        snap = self.factory.makeSnap()
+        snap_build = self.factory.makeSnapBuild(requester=person, snap=snap)
+        specification = self.factory.makeSpecification(drafter=person)
+        job = PersonCloseAccountJob.create(person.name)
+        logger = BufferLogger()
+        with log.use(logger),\
+                dbuser(config.IPersonCloseAccountJobSource.dbuser):
+            job.run()
+        self.assertAccountRemoved(account_id, person_id)
+        self.assertEqual(person, branch_subscription.subscribed_by)
+        self.assertEqual(person, snap_build.requester)
+        self.assertEqual(person, specification.drafter)
+
+    def test_solves_questions_in_non_final_states(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+        questions = []
+        for status in (
+                QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
+                QuestionStatus.ANSWERED):
+            question = self.factory.makeQuestion(owner=person)
+            question.addComment(person, "comment")
+            removeSecurityProxy(question).status = status
+            questions.append(question)
+        job = PersonCloseAccountJob.create(person.name)
+        logger = BufferLogger()
+        with log.use(logger),\
+                dbuser(config.IPersonCloseAccountJobSource.dbuser):
+            job.run()
+        self.assertAccountRemoved(account_id, person_id)
+        for question in questions:
+            self.assertEqual(QuestionStatus.SOLVED, question.status)
+            self.assertEqual(
+                'Closed by Launchpad due to owner requesting account removal',
+                question.whiteboard)
+
+    def test_skips_questions_in_final_states(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+        questions = {}
+        for status in (
+                QuestionStatus.SOLVED, QuestionStatus.EXPIRED,
+                QuestionStatus.INVALID):
+            question = self.factory.makeQuestion(owner=person)
+            question.addComment(person, "comment")
+            removeSecurityProxy(question).status = status
+            questions[status] = question
+        job = PersonCloseAccountJob.create(person.name)
+        logger = BufferLogger()
+        with log.use(logger),\
+                dbuser(config.IPersonCloseAccountJobSource.dbuser):
+            job.run()
+        self.assertAccountRemoved(account_id, person_id)
+        for question_status, question in questions.items():
+            self.assertEqual(question_status, question.status)
+            self.assertIsNone(question.whiteboard)
+
+    def test_handles_packaging_references(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+        self.factory.makeGPGKey(person)
+        publisher = SoyuzTestPublisher()
+        publisher.person = person
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        spph = publisher.getPubSource(
+            status=PackagePublishingStatus.PUBLISHED,
+            distroseries=ubuntu.currentseries,
+            maintainer=person, creator=person)
+        with dbuser('garbo_frequently'):
+            job = PopulateLatestPersonSourcePackageReleaseCache(
+                DevNullLogger())
+            while not job.isDone():
+                job(chunk_size=100)
+        self.assertTrue(person.hasMaintainedPackages())
+        job = PersonCloseAccountJob.create(person.name)
+        logger = BufferLogger()
+        with log.use(logger),\
+                dbuser(config.IPersonCloseAccountJobSource.dbuser):
+            job.run()
+        self.assertAccountRemoved(account_id, person_id)
+        self.assertEqual(person, spph.package_maintainer)
+        self.assertEqual(person, spph.package_creator)
+        self.assertFalse(person.hasMaintainedPackages())
 
     def test_handles_login_token(self):
         person = self.factory.makePerson(name=u'delete-me')
