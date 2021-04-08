@@ -11,7 +11,6 @@ __all__ = [
     ]
 
 from datetime import datetime
-import transaction
 
 from lazr.delegates import delegate_to
 import pytz
@@ -29,6 +28,7 @@ from storm.locals import (
     Reference,
     Unicode,
     )
+import transaction
 from zope.component import getUtility
 from zope.interface import (
     implementer,

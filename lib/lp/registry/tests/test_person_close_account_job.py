@@ -5,9 +5,11 @@
 
 __metaclass__ = type
 
-import six
+from testtools.matchers import (
+    Not,
+    StartsWith,
+    )
 import transaction
-from testtools.matchers import StartsWith, Not
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -18,7 +20,10 @@ from lp.registry.interfaces.persontransferjob import (
 from lp.registry.model.persontransferjob import PersonCloseAccountJob
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
-from lp.services.identity.interfaces.account import IAccountSet, AccountStatus
+from lp.services.identity.interfaces.account import (
+    AccountStatus,
+    IAccountSet,
+    )
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
@@ -98,17 +103,34 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         job = PersonCloseAccountJob.create(u'delete-me')
-
         logger = BufferLogger()
-        with log.use(logger), dbuser(config.IPersonCloseAccountJobSource.dbuser):
+        with log.use(logger),\
+                dbuser(config.IPersonCloseAccountJobSource.dbuser):
             job.run()
-
-        self.assertTrue({u'ERROR User delete-me is still referenced by 1 product.owner values',
-                         u'ERROR User delete-me is still referenced by 1 productseries.owner values',
-                         u'ERROR PersonCloseAccountJob User delete-me is still referenced'
-                         }.issubset(logger.getLogBuffer().splitlines()))
+        error_message = (
+            {u'ERROR User delete-me is still '
+             u'referenced by 1 product.owner values',
+             u'ERROR User delete-me is still '
+             u'referenced by 1 productseries.owner values',
+             u'ERROR PersonCloseAccountJob User delete-me is still referenced'
+             })
+        self.assertTrue(
+            error_message.issubset(logger.getLogBuffer().splitlines()))
 
         self.assertNotRemoved(account_id, person_id)
+
+    def test_unactivated(self):
+        person = self.factory.makePerson(
+            account_status=AccountStatus.NOACCOUNT)
+        person_id = person.id
+        account_id = person.account.id
+        job = PersonCloseAccountJob.create(person.guessedemails[0].email)
+        logger = BufferLogger()
+        with log.use(logger),\
+                dbuser(config.IPersonCloseAccountJobSource.dbuser):
+            job.run()
+
+        self.assertAccountRemoved(account_id, person_id)
 
     def test_handles_login_token(self):
         person = self.factory.makePerson(name=u'delete-me')
