@@ -218,10 +218,13 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     @property
     def retry_delay(self):
         dithering_secs = int(random.random() * 60)
-        # Adds some random seconds between 0 and 60 to minimize the
-        # likelihood of synchronized retries holding locks on the database
-        # at the same time.
-        return timedelta(minutes=10, seconds=dithering_secs)
+        delays = (10, 15, 20, 30)
+        try:
+            return timedelta(
+                minutes=delays[self.attempt_count - 1],
+                seconds=dithering_secs)
+        except IndexError:
+            return timedelta(minutes=10, seconds=dithering_secs)
 
     # Ideally we'd just override Job._set_status or similar, but
     # lazr.delegates makes that difficult, so we use this to override all
