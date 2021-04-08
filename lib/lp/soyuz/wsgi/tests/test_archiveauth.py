@@ -16,6 +16,7 @@ from fixtures import MonkeyPatch
 import transaction
 
 from lp.services.config import config
+from lp.services.config.fixture import ConfigFixture
 from lp.services.memcache.testing import MemcacheFixture
 from lp.soyuz.wsgi import archiveauth
 from lp.testing import TestCaseWithFactory
@@ -37,6 +38,7 @@ class TestWSGIArchiveAuth(TestCaseWithFactory):
         self.useFixture(MonkeyPatch(
             "lp.soyuz.wsgi.archiveauth._memcache_client",
             self.memcache_fixture))
+        self.addCleanup(config.setInstance, config.instance_name)
 
     def test_get_archive_reference_short_url(self):
         self.assertIsNone(archiveauth._get_archive_reference(
@@ -130,6 +132,20 @@ class TestWSGIArchiveAuth(TestCaseWithFactory):
             False,
             archiveauth.check_password(
                 {"SCRIPT_NAME": archive_path}, username, password))
+
+    def test_check_password_sets_config_instance(self):
+        test_instance_name = self.factory.getUniqueUnicode()
+        self.assertNotEqual(test_instance_name, config.instance_name)
+        self.useFixture(
+            ConfigFixture(test_instance_name, config.instance_name))
+        archive, archive_path, username, password = self.makeArchiveAndToken()
+        self.assertIs(
+            True,
+            archiveauth.check_password(
+                {"mod_wsgi.application_group": test_instance_name,
+                 "SCRIPT_NAME": archive_path},
+                username, password))
+        self.assertEqual(test_instance_name, config.instance_name)
 
     def test_script(self):
         _, archive_path, username, password = self.makeArchiveAndToken()

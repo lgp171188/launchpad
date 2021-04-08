@@ -55,6 +55,18 @@ _memcache_client = memcache_client_factory(timeline=False)
 
 
 def check_password(environ, user, password):
+    # We have almost no viable ways to set the config instance name.
+    # Normally it's set in LPCONFIG in the process environment, but we can't
+    # control that for mod_wsgi, and Apache SetEnv directives are
+    # intentionally not passed through to the WSGI environment.  However, we
+    # *can* control the application group via the application-group option
+    # to WSGIAuthUserScript, and overloading that as the config instance
+    # name actually makes a certain amount of sense, so use that if it's
+    # available.
+    application_group = environ.get("mod_wsgi.application_group")
+    if application_group:
+        config.setInstance(application_group)
+
     archive_reference = _get_archive_reference(environ)
     if archive_reference is None:
         return None
