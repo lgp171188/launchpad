@@ -1538,6 +1538,17 @@ if requested:
     true-copy        copy-owner2   False    False
     ultimate-copy    copy-owner1   False    True
 
+Passing `check_permissions=False` skips the user permission checks:
+
+    >>> ubuntu_copy_archives = archive_set.getArchivesForDistribution(
+    ...     ubuntu, purposes=[ArchivePurpose.COPY], check_permissions=False)
+    >>> print_archive_names(ubuntu_copy_archives)
+    Name             Owner         Private  Enabled
+    fine-copy        copy-owner2   False    True
+    my-copy-archive  me-copy       True     True
+    team-archive     t1            True     True
+    ultimate-copy    copy-owner1   False    True
+
 If exclude_disabled is set to True no disabled archives will be
 included:
 

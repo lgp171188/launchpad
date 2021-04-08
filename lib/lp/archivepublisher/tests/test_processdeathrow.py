@@ -181,10 +181,16 @@ class TestProcessDeathRow(TestCaseWithFactory):
         ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
         cprov_archive = getUtility(IPersonSet).getByName("cprov").archive
         mark_archive = getUtility(IPersonSet).getByName("mark").archive
+        # Private PPAs are included too.
+        private_archive = self.factory.makeArchive(
+            distribution=ubuntutest, private=True)
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=private_archive)
+        # Empty PPAs are skipped.
         self.factory.makeArchive(distribution=ubuntutest)
         script = DeathRowProcessor(test_args=["-d", "ubuntutest", "--ppa"])
         self.assertContentEqual(
-            [cprov_archive, mark_archive],
+            [cprov_archive, mark_archive, private_archive],
             script.getTargetArchives(ubuntutest))
 
     def test_getTargetArchives_main(self):

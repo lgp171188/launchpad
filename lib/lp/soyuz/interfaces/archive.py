@@ -2445,7 +2445,9 @@ class IArchiveSet(Interface):
         """
 
     def getArchivesForDistribution(distribution, name=None, purposes=None,
-        user=None, exclude_disabled=True, exclude_pristine=False):
+                                   check_permissions=True, user=None,
+                                   exclude_disabled=True,
+                                   exclude_pristine=False):
         """Return a list of all the archives for a distribution.
 
         This will return all the archives for the given distribution, with
@@ -2456,10 +2458,14 @@ class IArchiveSet(Interface):
             the results to only those archives with this name.
         :param purposes: An optional archive purpose or list of purposes with
             which to filter the results.
+        :param check_permissions: If False, return both public and private
+            archives regardless of user permission checks. This is intended
+            for use by internal scripts.
         :param user: An optional `IPerson` who is requesting the archives,
             which is used to include private archives for which the user
             has permission. If it is not supplied, only public archives
-            will be returned.
+            will be returned. These checks are skipped if
+            `check_permissions` is False.
         :param exclude_disabled: Whether to exclude disabled archives.
         :param exclude_pristine: Whether to exclude archives that have never
             had any publications.

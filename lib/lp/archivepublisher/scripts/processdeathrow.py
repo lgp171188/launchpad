@@ -49,7 +49,7 @@ class DeathRowProcessor(PublisherScript):
         if self.options.ppa:
             return getUtility(IArchiveSet).getArchivesForDistribution(
                 distribution, purposes=[ArchivePurpose.PPA],
-                exclude_pristine=True)
+                check_permissions=False, exclude_pristine=True)
         else:
             return distribution.all_distro_archives
 
