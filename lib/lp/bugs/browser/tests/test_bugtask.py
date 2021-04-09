@@ -1120,7 +1120,7 @@ class TestBugTaskDeleteView(TestCaseWithFactory):
             view.request.response.getHeader('content-type'), 'text/html')
         table = find_tag_by_id(result_html, 'affected-software')
         self.assertIsNotNone(table)
-        [row] = table.tbody.findAll('tr', {'class': 'highlight'})
+        [row] = table.tbody.find_all('tr', {'class': 'highlight'})
         target_link = row.find('a', {'class': 'sprite product'})
         self.assertIn(
             bug.default_bugtask.bugtargetdisplayname, target_link)

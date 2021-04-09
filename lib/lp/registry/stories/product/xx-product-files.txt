@@ -261,7 +261,7 @@ user to see.
 
     >>> anon_browser.open('http://launchpad.test/firefox/+download')
     >>> content = find_main_content(anon_browser.contents)
-    >>> for tr in  content.findAll('table')[1].findAll('tr'):
+    >>> for tr in content.find_all('table')[1].find_all('tr'):
     ...     print(extract_text(tr))
     File                 Description      Downloads
     bar.txt (md5)        Bar installer    -
@@ -275,7 +275,7 @@ an admin can also delete a release file.
     >>> checkbox = admin_browser.getControl(name='checkbox_0')
     >>> checkbox.value = checkbox.options
     >>> table = find_tag_by_id(admin_browser.contents, 'downloads')
-    >>> for tr in table.findAll('tr'):
+    >>> for tr in table.find_all('tr'):
     ...     print(extract_text(tr))
     File                Description    Downloads      Delete
     bar.txt (md5)       Bar installer  -
@@ -286,7 +286,7 @@ an admin can also delete a release file.
     >>> print_feedback_messages(admin_browser.contents)
     1 file has been deleted.
     >>> table = find_tag_by_id(admin_browser.contents, 'downloads')
-    >>> for tr in table.findAll('tr'):
+    >>> for tr in table.find_all('tr'):
     ...     print(extract_text(tr))
     File                Description    Downloads     Delete
     foo.txt (md5, sig)  Foo installer  -
@@ -386,9 +386,9 @@ are listed within series in reverse chronological order, except
     >>> firefox_owner.url
     'http://launchpad.test/firefox/+download'
     >>> content = find_main_content(firefox_owner.contents)
-    >>> rows = content.findAll('tr')
+    >>> rows = content.find_all('tr')
     >>> for row in rows[1:]:
-    ...     a_list = row.findAll('a')
+    ...     a_list = row.find_all('a')
     ...     if len(a_list) > 0:
     ...        print(a_list[0].string)
     firefox_0.9.2.orig.tar.gz
@@ -447,9 +447,9 @@ Ensure the file is no longer listed.
     >>> firefox_owner.url
     'http://launchpad.test/firefox/+download'
     >>> content = find_main_content(firefox_owner.contents)
-    >>> rows = content.findAll('tr')
+    >>> rows = content.find_all('tr')
     >>> for row in rows[1:]:
-    ...     a_list = row.findAll('a')
+    ...     a_list = row.find_all('a')
     ...     if len(a_list) > 0:
     ...        print(a_list[0].string)
     firefox_0.9.2.orig.tar.gz
@@ -466,7 +466,7 @@ Non-administrators do not have the delete option.
 
     >>> non_owner.open('http://launchpad.test/firefox/trunk/0.9')
     >>> table = find_tag_by_id(non_owner.contents, 'downloads')
-    >>> for tr in table.findAll('tr'):
+    >>> for tr in table.find_all('tr'):
     ...     print(extract_text(tr))
     File             Description     Downloads
     foo09.txt (md5)  Foo09 installer -
@@ -485,7 +485,7 @@ so it is not shown.
 
     >>> firefox_owner.open('http://launchpad.test/firefox/trunk/0.9')
     >>> table = find_tag_by_id(firefox_owner.contents, 'downloads')
-    >>> for tr in table.findAll('tr'):
+    >>> for tr in table.find_all('tr'):
     ...     print(extract_text(tr))
     File             Description     Downloads  Delete
     foo09.txt (md5)  Foo09 installer -

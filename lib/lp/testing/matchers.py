@@ -432,7 +432,7 @@ class MatchesTagText(Matcher):
     def match(self, matchee):
         # Here to avoid circular dependancies.
         from lp.testing.pages import extract_text
-        widgets = self.soup_content.findAll(id=self.tag_id)
+        widgets = self.soup_content.find_all(id=self.tag_id)
         if len(widgets) == 0:
             return MissingElement(self.tag_id, self.soup_content)
         elif len(widgets) > 1:
@@ -456,13 +456,13 @@ class MatchesPickerText(Matcher):
     def match(self, matchee):
         # Here to avoid circular dependancies.
         from lp.testing.pages import extract_text
-        widgets = self.soup_content.findAll(id=self.widget_id)
+        widgets = self.soup_content.find_all(id=self.widget_id)
         if len(widgets) == 0:
             return MissingElement(self.widget_id, self.soup_content)
         elif len(widgets) > 1:
             return MultipleElements(self.widget_id, self.soup_content)
         widget = widgets[0]
-        text = widget.findAll(attrs={'class': 'yui3-activator-data-box'})[0]
+        text = widget.find_all(attrs={'class': 'yui3-activator-data-box'})[0]
         text_matcher = DocTestMatches(extract_text(text))
         return text_matcher.match(matchee)
 

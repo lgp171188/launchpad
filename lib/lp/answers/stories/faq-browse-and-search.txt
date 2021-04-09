@@ -72,7 +72,7 @@ a pop-up:
     >>> browser.getLink('First').click()
     >>> faq_link = find_main_content(browser.contents).find(
     ...     'a', text=re.compile('How can I play MP3/Divx/DVDs'))
-    >>> print(faq_link.findParent('li')['title'])
+    >>> print(faq_link.find_parent('li')['title'])
     Playing many common formats such as DVIX, MP3, DVD, or Flash ...
 
 She clicks on FAQ's title to display the complete FAQ content:
@@ -136,7 +136,7 @@ Following the link will show the questions results:
     Questions : Ubuntu
 
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Installation of Java Runtime Environment for Mozilla
 

@@ -166,7 +166,7 @@ based on the subscription change we have made above.
 
     >>> subscribers = find_tags_by_class(browser.contents, 'subscriber')
     >>> for subscriber in subscribers:
-    ...     a_tags = subscriber.findAll('a')
+    ...     a_tags = subscriber.find_all('a')
     ...     img = a_tags[0].find('img')
     ...     print(img['src'], end=' ')
     ...     print(a_tags[1].string)
@@ -191,7 +191,7 @@ based on the subscription change we have made above.
 
     >>> subscribers = find_tags_by_class(browser.contents, 'subscriber')
     >>> for subscriber in subscribers:
-    ...     a_tags = subscriber.findAll('a')
+    ...     a_tags = subscriber.find_all('a')
     ...     img = a_tags[0].find('img')
     ...     print(img['src'], end=' ')
     ...     print(a_tags[1].string)
@@ -324,7 +324,7 @@ not.
     ...   "http://blueprints.launchpad.test/firefox/+spec/svg-support")
     >>> subscribers = find_tags_by_class(browser.contents, 'subscriber')
     >>> for subscriber in subscribers:
-    ...     a_tags = subscriber.findAll('a')
+    ...     a_tags = subscriber.find_all('a')
     ...     img = a_tags[0].find('img')
     ...     print(img['src'], end=' ')
     ...     print(a_tags[1].string)

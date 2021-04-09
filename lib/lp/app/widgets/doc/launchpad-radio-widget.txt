@@ -24,7 +24,7 @@ The widget is rendered as a collection of labels with the radio
 buttons inside.
 
     >>> html = BeautifulSoup(radio_widget())
-    >>> for label in html.findAll('label'):
+    >>> for label in html.find_all('label'):
     ...     print(label.decode_contents(formatter='html'))
     <input checked="checked" class="radioType" id="field.branch_type.0"
            name="field.branch_type" type="radio" value="HOSTED"/>&nbsp;Hosted

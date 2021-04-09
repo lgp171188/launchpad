@@ -24,7 +24,7 @@ key registered, directions are shown.
     >>> def print_coc_directions(content):
     ...     ol = content.find('ol')
     ...     if ol is not None:
-    ...         for index, li in enumerate(ol.findAll('li')):
+    ...         for index, li in enumerate(ol.find_all('li')):
     ...             print('%s. %s' % ((index+1), extract_text(li)))
     >>> user = factory.makePerson()
     >>> ignored = login_person(user)

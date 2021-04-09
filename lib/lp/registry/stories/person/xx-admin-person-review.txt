@@ -61,7 +61,7 @@ The +reviewaccount page displays account information that is normally
 hidden from the UI.
 
     >>> content = find_main_content(expert_browser.contents)
-    >>> for tr in content.find(id='summary').findAll('tr'):
+    >>> for tr in content.find(id='summary').find_all('tr'):
     ...     print(extract_text(tr))
     Created: 2005-06-06
     Creation reason: Created by the owner themselves, coming from Launchpad.

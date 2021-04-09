@@ -110,7 +110,7 @@ class TestQuestionRepresentation(TestCaseWithFactory):
         """Find the question title field in an XHTML document fragment."""
         soup = BeautifulSoup(response.body)
         dt = soup.find('dt', text="title")
-        dd = dt.findNextSibling('dd')
+        dd = dt.find_next_sibling('dd')
         return str(dd.contents.pop())
 
     def test_top_level_question_get(self):

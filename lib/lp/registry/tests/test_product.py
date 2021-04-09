@@ -1437,9 +1437,9 @@ class TestProductFiles(TestCase):
             [u"Your file 'foo\xa5.txt' has been uploaded."])
         firefox_owner.open('http://launchpad.test/firefox/+download')
         content = find_main_content(firefox_owner.contents)
-        rows = content.findAll('tr')
+        rows = content.find_all('tr')
 
-        a_list = rows[-1].findAll('a')
+        a_list = rows[-1].find_all('a')
         # 1st row
         a_element = a_list[0]
         self.assertEqual(

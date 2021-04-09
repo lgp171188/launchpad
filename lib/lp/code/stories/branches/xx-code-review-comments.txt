@@ -115,7 +115,7 @@ are also displayed in the new proposal.
     Posted in a previous version of this proposal #
     >>> details = find_tags_by_class(
     ...     anon_browser.contents, 'boardCommentDetails')[0]
-    >>> links = details.findAll('a')
+    >>> links = details.find_all('a')
     >>> print(links[1]['href'] == merge_proposal_path)
     True
 
@@ -270,7 +270,7 @@ rendered with the following 'data-' attributes:
     ...     result = {}
     ...     comments = find_tags_by_class(contents, 'boardCommentDetails')
     ...     for comment in comments:
-    ...         tds = comment.findAll('td')
+    ...         tds = comment.find_all('td')
     ...         if len(tds) == 0:
     ...            continue
     ...         td = tds[0]

@@ -33,7 +33,7 @@ projects' pages in Launchpad. The "project of the day" is listed separately.
     GNOME
 
     >>> featured_list = featured.find('', 'featured-projects-list')
-    >>> for link in featured_list.findAll('a'):
+    >>> for link in featured_list.find_all('a'):
     ...     print(extract_text(link))
     Gnome Applets
     Bazaar
@@ -100,7 +100,7 @@ is now at index '4' and is therefore displayed as the top project:
     Gentoo
 
     >>> featured_list = featured.find('', 'featured-projects-list')
-    >>> for link in featured_list.findAll('a'):
+    >>> for link in featured_list.find_all('a'):
     ...     print(extract_text(link))
     Apache
     Gnome Applets
@@ -128,7 +128,7 @@ that Apache has been removed:
 
     >>> anon_browser.open('http://launchpad.test/')
     >>> featured = find_tag_by_id(anon_browser.contents, 'homepage-featured')
-    >>> for link in featured.findAll('a'):
+    >>> for link in featured.find_all('a'):
     ...     print(extract_text(link))
     GNOME
     Gnome Applets

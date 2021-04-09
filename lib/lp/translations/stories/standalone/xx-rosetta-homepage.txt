@@ -40,13 +40,13 @@ translated projects.
 
     >>> middle_column = find_tags_by_class(
     ...     browser.contents, 'three column middle')[0]
-    >>> heading = middle_column.findAll('h2')[0]
+    >>> heading = middle_column.find_all('h2')[0]
     >>> print(extract_text(heading))
     Translatable projects
-    >>> for project in middle_column.findAll('span'):
+    >>> for project in middle_column.find_all('span'):
     ...     print(extract_text(project))
     Evolution
-    >>> print(extract_text(middle_column.findAll('div')[0]))
+    >>> print(extract_text(middle_column.find_all('div')[0]))
     » List all translatable projects...
 
 The translation front page list of the user's translatable languages.
@@ -63,5 +63,5 @@ in the right column.
     ...
     Change your preferred languages...
 
-    >>> right_column.findAll('a')[-1]
+    >>> right_column.find_all('a')[-1]
     <a href="/+editmylanguages"...Change your preferred languages...

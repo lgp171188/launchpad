@@ -110,7 +110,7 @@ class TestBugDescriptionRepresentation(TestCaseWithFactory):
         """Find the bug description field in an XHTML document fragment."""
         soup = BeautifulSoup(response.body)
         dt = soup.find('dt', text="description")
-        dd = dt.findNextSibling('dd')
+        dd = dt.find_next_sibling('dd')
         return str(dd.contents.pop())
 
     def test_GET_xhtml_representation(self):

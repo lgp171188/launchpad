@@ -169,8 +169,8 @@ followed by a link to edit the subscription.
 
     >>> subscriptions = find_tag_by_id(
     ...     admin_browser.contents, 'structural-subscriptions')
-    >>> for subscription in subscriptions.findAll("li"):
-    ...     structure_link, modify_link = subscription.findAll("a")[:2]
+    >>> for subscription in subscriptions.find_all("li"):
+    ...     structure_link, modify_link = subscription.find_all("a")[:2]
     ...     print("%s <%s>" % (
     ...         extract_text(structure_link), structure_link.get("href")))
     ...     print("--> %s" % modify_link.get("href"))
@@ -186,7 +186,7 @@ permission to modify those subscriptions.
     ...     "http://launchpad.test/~name16/+structural-subscriptions")
     >>> subscriptions = find_tag_by_id(
     ...     subscriber_browser.contents, 'structural-subscriptions')
-    >>> for subscription in subscriptions.findAll("li"):
+    >>> for subscription in subscriptions.find_all("li"):
     ...     structure_link = subscription.find("a")
     ...     print("%s <%s>" % (
     ...         extract_text(structure_link), structure_link.get("href")))
@@ -220,7 +220,7 @@ subscription filter.
     >>> def show_create_links(browser):
     ...     subscriptions = find_tag_by_id(
     ...         browser.contents, 'structural-subscriptions')
-    ...     for subscription in subscriptions.findAll("li"):
+    ...     for subscription in subscriptions.find_all("li"):
     ...         structure_link = subscription.find("a")
     ...         print(extract_text(structure_link))
     ...         create_text = subscription.find(text=re.compile("Create"))
@@ -272,7 +272,7 @@ filters are shown with a message stating that there is no filtering.
     ...         "+me/+structural-subscriptions")
     ...     subscriptions = find_tag_by_id(
     ...         nigel_browser.contents, 'structural-subscriptions')
-    ...     for subscription in subscriptions.findAll("li"):
+    ...     for subscription in subscriptions.find_all("li"):
     ...         print(extract_text(subscription.p))
     ...         if subscription.dl is not None:
     ...             print(extract_text(subscription.dl))

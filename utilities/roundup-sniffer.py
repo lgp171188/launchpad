@@ -113,7 +113,7 @@ class MplayerStatusSniffer(RoundupSniffer):
         soup = BeautifulSoup(page)
         return tuple(
             node.string for node in
-            soup.find('th', text='Status').findNext('td').findAll('span'))
+            soup.find('th', text='Status').find_next('td').find_all('span'))
 
 
 def get_distinct(things, fields):

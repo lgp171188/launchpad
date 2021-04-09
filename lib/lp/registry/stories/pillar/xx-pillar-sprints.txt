@@ -6,7 +6,7 @@ all events relevant to that pillar.
     >>> import re
     >>> def print_sprints(contents):
     ...     maincontent = find_tag_by_id(contents, 'maincontent')
-    ...     for link in maincontent.findAll('a'):
+    ...     for link in maincontent.find_all('a'):
     ...         if re.search('/sprints/[a-z0-9]', link['href']) is not None:
     ...             print(link.decode_contents())
 

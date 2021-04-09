@@ -388,7 +388,7 @@ class CodeImportNewView(CodeImportBaseView, CodeImportNameValidationMixin):
         # Extract the radio buttons from the rcs_type widget, so we can
         # display them separately in the form.
         soup = BeautifulSoup(self.widgets['rcs_type']())
-        fields = soup.findAll('input')
+        fields = soup.find_all('input')
         [cvs_button, svn_button, git_button, bzr_button,
             empty_marker] = [
                 field for field in fields

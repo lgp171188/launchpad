@@ -18,7 +18,7 @@ This page directs users to SourcePackage translations pages.
 
 The focus' two templates are shown.
 
-    >>> template_names = content.findAll('h2')
+    >>> template_names = content.find_all('h2')
     >>> for name in template_names:
     ...     print(extract_text(name))
     Template "evolution-2.2" in Ubuntu Hoary package "evolution"
@@ -27,7 +27,7 @@ The focus' two templates are shown.
 
 Other series are also listed.
 
-    >>> for other in content.find(id='distroseries-list').findAll('li'):
+    >>> for other in content.find(id='distroseries-list').find_all('li'):
     ...     print(extract_text(other))
     Breezy Badger Autotest (6.6.6)
     Grumpy (5.10)

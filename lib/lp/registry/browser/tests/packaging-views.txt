@@ -273,7 +273,7 @@ instead.)
 
     # There are links to the +remove-packaging page.
     >>> table = find_tag_by_id(view.render(), 'packages-hotter')
-    >>> for link in table.findAll('a'):
+    >>> for link in table.find_all('a'):
     ...     if '+remove-packaging' in link['href']:
     ...         print(link['href'])
     http://launchpad.test/ubuntu/grumpy/+source/hot/+remove-packaging

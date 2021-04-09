@@ -17,7 +17,7 @@ The attachment is now visible on the bug page.
     >>> user_browser.open('http://launchpad.test/bugs/2')
     >>> attachment_portlet = find_portlet(
     ...     user_browser.contents, 'Bug attachments')
-    >>> for li in attachment_portlet.findAll('li', 'download-attachment'):
+    >>> for li in attachment_portlet.find_all('li', 'download-attachment'):
     ...     print(li.a.decode_contents())
     Great deal
 

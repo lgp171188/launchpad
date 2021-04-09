@@ -19,10 +19,10 @@ If no title is entered, the user is asked to supply one.
 
     >>> top_portlet = first_tag_by_class(
     ...     user_browser.contents, 'top-portlet')
-    >>> for message in top_portlet.findAll(attrs={'class': 'error message'}):
+    >>> for message in top_portlet.find_all(attrs={'class': 'error message'}):
     ...     print(message.decode_contents())
     There is 1 error.
-    >>> for message in top_portlet.findAll(
+    >>> for message in top_portlet.find_all(
     ...         lambda node: node.attrs.get('class') == ['message']):
     ...     print(message.decode_contents())
     Required input is missing.

@@ -9,7 +9,7 @@ A quick helper function to list the subscribed people.
     ...     if subscriptions == None:
     ...         print(subscriptions)
     ...         return
-    ...     for subscriber in subscriptions.findAll('div'):
+    ...     for subscriber in subscriptions.find_all('div'):
     ...         print(extract_text(subscriber.decode_contents()))
 
 Another to print the informational message.

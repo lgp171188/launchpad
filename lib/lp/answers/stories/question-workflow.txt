@@ -22,7 +22,7 @@ the Firefox product which was filed by 'Sample Person'.
 
     >>> def  find_last_comment(contents):
     ...     soup = find_main_content(contents)
-    ...     return soup.findAll('div', 'boardCommentBody')[-1]
+    ...     return soup.find_all('div', 'boardCommentBody')[-1]
 
     >>> def print_last_comment(contents):
     ...     print(extract_text(find_last_comment(contents)))
@@ -179,7 +179,7 @@ When the owner comes back on the question page, they will now see a new
     >>> owner_browser.open(
     ...     'http://launchpad.test/firefox/+question/2')
     >>> soup = find_main_content(owner_browser.contents)
-    >>> soup.findAll('div', 'boardComment')[-1].find('input', type='submit')
+    >>> soup.find_all('div', 'boardComment')[-1].find('input', type='submit')
     <input name="field.actions.confirm" type="submit"
      value="This Solved My Problem"/>
 
@@ -214,7 +214,7 @@ confirmation message was appended to the question discussion:
 The confirmed answer is also highlighted.
 
     >>> soup = find_main_content(owner_browser.contents)
-    >>> bestAnswer = soup.findAll('div', 'boardComment')[-2]
+    >>> bestAnswer = soup.find_all('div', 'boardComment')[-2]
     >>> print(bestAnswer.find('img'))
     <img ... src="/@@/favourite-yes" ... title="Marked as best answer"/>
 
@@ -285,7 +285,7 @@ This also removes the highlighting from the previous answer and sets the
 answerer back to None.
 
     >>> soup = find_main_content(owner_browser.contents)
-    >>> bestAnswer = soup.findAll('div', 'boardComment')[-4]
+    >>> bestAnswer = soup.find_all('div', 'boardComment')[-4]
     >>> bestAnswer.find('strong') is None
     True
 
@@ -332,7 +332,7 @@ A message is displayed to the user confirming that the question is
 solved and suggesting that the user choose an answer that helped the
 question owner to solve their problem.
 
-    >>> for message in soup.findAll('div', 'informational message'):
+    >>> for message in soup.find_all('div', 'informational message'):
     ...     print(extract_text(message))
     Your question is solved. If a particular message helped you solve the
     problem, use the 'This solved my problem' button.
@@ -382,15 +382,15 @@ It lists all the actions performed through workflow on the question:
 
     >>> soup = find_main_content(anon_browser.contents)
     >>> action_listing = soup.find('table', 'listing')
-    >>> for header in action_listing.findAll('th'):
+    >>> for header in action_listing.find_all('th'):
     ...     print(header.decode_contents())
     When
     Who
     Action
     New State
 
-    >>> for row in action_listing.find('tbody').findAll('tr'):
-    ...     cells = row.findAll('td')
+    >>> for row in action_listing.find('tbody').find_all('tr'):
+    ...     cells = row.find_all('td')
     ...     who = extract_text(cells[1].find('a'))
     ...     action = cells[2].decode_contents()
     ...     new_status = cells[3].decode_contents()
@@ -435,7 +435,7 @@ choosing an answer that helped him solve his problem.
     Status: Solved ...
 
     >>> content = find_main_content(carlos_browser.contents)
-    >>> messages = content.findAll('div', 'informational message')
+    >>> messages = content.find_all('div', 'informational message')
     >>> messages
     []
 

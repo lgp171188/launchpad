@@ -33,7 +33,7 @@ Listing languages with translations is best checked with a helper method.
     ...     print("%-25s %13s %13s" % (
     ...         "Language", "Untranslated", "Unreviewed"))
     ...     for row in language_rows:
-    ...         cols = row.findAll('td')
+    ...         cols = row.find_all('td')
     ...         language = extract_text(cols[0])
     ...         untranslated = extract_link_info(cols[2])
     ...         unreviewed = extract_link_info(cols[3])
@@ -50,7 +50,7 @@ being set up for translation.
     Series trunk : Translations : Frobnicator
 
     >>> main_content = find_main_content(anon_browser.contents)
-    >>> print(extract_text(main_content.findAll('h1')[0]))
+    >>> print(extract_text(main_content.find_all('h1')[0]))
     Translation status by language
 
     >>> print_language_stats(anon_browser)
@@ -59,7 +59,7 @@ being set up for translation.
 Explanation is shown to indicate that there are no translations for
 this series.
 
-    >>> print(extract_text(main_content.findAll('p')[0]))
+    >>> print(extract_text(main_content.find_all('p')[0]))
     There are no translations for this release series.
 
 Administrator will also see instructions on how to set up a project for
@@ -67,8 +67,8 @@ translation.
 
     >>> admin_browser.open(frobnicator_trunk_url)
     >>> main_content = find_main_content(admin_browser.contents)
-    >>> paragraphs = main_content.findAll('p')
-    >>> print(extract_text(main_content.findAll('p')[1]))
+    >>> paragraphs = main_content.find_all('p')
+    >>> print(extract_text(main_content.find_all('p')[1]))
     To start translating your project...
 
 With one translatable template (with fake stats for 10 messages), a listing

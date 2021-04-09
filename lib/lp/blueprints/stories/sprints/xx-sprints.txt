@@ -266,7 +266,7 @@ We should be able to see the workload of a sprint:
 We should be able to see the spec assignment table of a sprint:
 
     >>> mainarea = find_main_content(anon_browser.contents)
-    >>> for header in mainarea.findAll('th'):
+    >>> for header in mainarea.find_all('th'):
     ...     print(header.decode_contents())
     Priority
     Name
@@ -381,7 +381,7 @@ Now, Sample Person should be listed as an attendee.
     >>> def print_attendees(sprint_page):
     ...     """Print the attendees listed in the attendees portlet."""
     ...     attendees_portlet = find_portlet(sprint_page, 'Attendees')
-    ...     for li in attendees_portlet.findAll('ul')[0].findAll('li'):
+    ...     for li in attendees_portlet.find_all('ul')[0].find_all('li'):
     ...         print(li.a.string)
 
     >>> print_attendees(browser.contents)

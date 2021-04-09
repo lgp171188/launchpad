@@ -59,7 +59,7 @@ description.
     >>> import re
 
     >>> page_soup = find_main_content(user_browser.contents)
-    >>> field_labels = page_soup.findAll(
+    >>> field_labels = page_soup.find_all(
     ...     'label', text=re.compile('Further information'))
     >>> for field_label in field_labels:
     ...     print(extract_text(field_label.parent))
