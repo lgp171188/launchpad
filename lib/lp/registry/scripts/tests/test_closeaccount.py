@@ -344,6 +344,17 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertEqual(person, bug.owner)
         self.assertEqual(person, bugtask.owner)
 
+    def test_skips_bug_watch_owner(self):
+        person = self.factory.makePerson()
+        self.factory.makeBugWatch(owner=person)
+        self.factory.makeBugWatch(owner=person)
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+
     def test_handles_bug_affects_person(self):
         person = self.factory.makePerson()
         bug = self.factory.makeBug()
