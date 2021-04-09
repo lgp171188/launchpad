@@ -2912,7 +2912,7 @@ class ViewPersonalArchiveSubscription(DelegatedAuthorization):
 class ViewArchiveSubscriber(DelegatedAuthorization):
     """Restrict viewing of archive subscribers.
 
-    The user should be the subscriber, have edit privilege to the
+    The user should be the subscriber, have append privilege to the
     archive or be an admin.
     """
     permission = "launchpad.View"
