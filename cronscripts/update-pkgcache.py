@@ -101,7 +101,7 @@ class PackageCacheUpdater(LaunchpadCronScript):
                 'Updating %s PPAs' % distribution.name)
             archives = getUtility(IArchiveSet).getArchivesForDistribution(
                 distribution, purposes=[ArchivePurpose.PPA],
-                exclude_pristine=True)
+                check_permissions=False, exclude_pristine=True)
             for archive in archives:
                 self.updateDistributionCache(distribution, archive)
                 archive.updateArchiveCache()
