@@ -1100,7 +1100,8 @@ class Archive(SQLBase):
                           source_package_name, dep_name):
         """See `IArchive`."""
         deps = expand_dependencies(
-            self, distro_arch_series, pocket, component, source_package_name)
+            self, distro_arch_series, pocket, component, source_package_name,
+            self.dependencies)
         archive_clause = Or([And(
             BinaryPackagePublishingHistory.archiveID == archive.id,
             BinaryPackagePublishingHistory.pocket == pocket,
