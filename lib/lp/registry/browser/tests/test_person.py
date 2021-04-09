@@ -479,7 +479,7 @@ class TestPersonIndexView(BrowserTestCase):
                 'OCI recipes link', 'a',
                 attrs={
                     'href': expected_url},
-                text='OCI recipes'))
+                text='View OCI recipes'))
         self.assertThat(markup, link_match)
 
         login(ANONYMOUS)
@@ -501,7 +501,7 @@ class TestPersonIndexView(BrowserTestCase):
                 'OCI recipes link', 'a',
                 attrs={
                     'href': expected_url},
-                text='OCI recipes'))
+                text='View OCI recipes'))
         self.assertThat(markup, Not(link_match))
 
         login(ANONYMOUS)
