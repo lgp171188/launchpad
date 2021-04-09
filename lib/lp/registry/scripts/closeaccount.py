@@ -111,6 +111,7 @@ def close_account(username, log):
         ('bugnomination', 'owner'),
         ('bugtask', 'owner'),
         ('bugsubscription', 'subscribed_by'),
+        ('bugwatch', 'owner'),
         ('codeimport', 'owner'),
         ('codeimport', 'registrant'),
         ('codeimportjob', 'requesting_user'),

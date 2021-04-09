@@ -1100,7 +1100,8 @@ class Archive(SQLBase):
                           source_package_name, dep_name):
         """See `IArchive`."""
         deps = expand_dependencies(
-            self, distro_arch_series, pocket, component, source_package_name)
+            self, distro_arch_series, pocket, component, source_package_name,
+            self.dependencies)
         archive_clause = Or([And(
             BinaryPackagePublishingHistory.archiveID == archive.id,
             BinaryPackagePublishingHistory.pocket == pocket,
@@ -2894,7 +2895,8 @@ class ArchiveSet:
             Archive._private == True, Archive.purpose == ArchivePurpose.PPA)
 
     def getArchivesForDistribution(self, distribution, name=None,
-                                   purposes=None, user=None,
+                                   purposes=None,
+                                   check_permissions=True, user=None,
                                    exclude_disabled=True,
                                    exclude_pristine=False):
         """See `IArchiveSet`."""
@@ -2914,7 +2916,9 @@ class ArchiveSet:
         public_archive = And(Archive._private == False,
                              Archive._enabled == True)
 
-        if user is not None:
+        if not check_permissions:
+            pass
+        elif user is not None:
             admins = getUtility(ILaunchpadCelebrities).admin
             if not user.inTeam(admins):
                 # Enforce privacy-awareness for logged-in, non-admin users,

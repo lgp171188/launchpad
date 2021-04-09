@@ -101,6 +101,7 @@ from lp.soyuz.adapters.archivedependencies import (
     )
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.archive import ArchiveDisabled
+from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.tests.soyuz import Base64KeyMatches
 from lp.testing import (
     TestCase,
@@ -795,6 +796,93 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         with dbuser(config.builddmaster.dbuser):
             extra_args = yield job.extraBuildArgs()
         self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_snap_base_with_archive_dependencies(self):
+        # If the build is using a snap base that has archive dependencies,
+        # extraBuildArgs sends them.
+        snap_base = self.factory.makeSnapBase()
+        job = self.makeJob(snap_base=snap_base)
+        dependency = self.factory.makeArchive(
+            distribution=job.archive.distribution)
+        snap_base.addArchiveDependency(
+            dependency, PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"])
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=dependency, distroarchseries=job.build.distro_arch_series,
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        expected_archives = [
+            "deb %s %s main" % (
+                dependency.archive_url, job.build.distro_series.name),
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_ppa_and_snap_base_with_archive_dependencies(self):
+        # If the build is using a PPA and a snap base that both have archive
+        # dependencies, extraBuildArgs sends them all.
+        snap_base = self.factory.makeSnapBase()
+        upper_archive = self.factory.makeArchive()
+        lower_archive = self.factory.makeArchive(
+            distribution=upper_archive.distribution)
+        snap_base_archive = self.factory.makeArchive(
+            distribution=upper_archive.distribution)
+        job = self.makeJob(archive=upper_archive, snap_base=snap_base)
+        primary = job.build.distribution.main_archive
+        for archive in (upper_archive, lower_archive, snap_base_archive):
+            self.factory.makeBinaryPackagePublishingHistory(
+                archive=archive, distroarchseries=job.build.distro_arch_series,
+                pocket=PackagePublishingPocket.RELEASE,
+                status=PackagePublishingStatus.PUBLISHED)
+        upper_archive.addArchiveDependency(
+            lower_archive, PackagePublishingPocket.RELEASE)
+        snap_base.addArchiveDependency(
+            snap_base_archive, PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"])
+        expected_archives = [
+            "deb %s %s main" % (
+                upper_archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main" % (
+                lower_archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main" % (
+                snap_base_archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_snap_base_without_archive_dependencies(self):
+        # If the build is using a snap base that does not have archive
+        # dependencies, extraBuildArgs only sends the base archive.
+        snap_base = self.factory.makeSnapBase()
+        job = self.makeJob(snap_base=snap_base)
+        expected_archives = [
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, args["archives"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_disallow_internet(self):
