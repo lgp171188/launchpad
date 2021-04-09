@@ -1,4 +1,4 @@
-# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -16,6 +16,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.registry.browser.team import (
     TeamIndexMenu,
     TeamMailingListArchiveView,
@@ -35,6 +36,7 @@ from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
     )
+from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.escaping import html_escape
@@ -935,6 +937,54 @@ class TestTeamIndexView(TestCaseWithFactory):
         markup = self.get_markup(view, team)
         self.assertNotEqual('', markup)
         self.assertThat(markup, Not(link_match))
+
+    def test_show_oci_recipes_link(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        member = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=member, members=[member])
+
+        # Creates a recipe, so the link appears.
+        self.factory.makeOCIRecipe(owner=team, registrant=member)
+        with person_logged_in(member):
+            expected_url = 'http://launchpad.test/~%s/+oci-recipes' % team.name
+            team_url = canonical_url(team)
+        browser = self.getUserBrowser(team_url, user=member)
+
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCI recipes link', 'a',
+                attrs={
+                    'href': expected_url},
+                text='View OCI recipes'))
+        self.assertThat(browser.contents, link_match)
+
+        browser = self.getUserBrowser(team_url, user=None)
+        self.assertThat(browser.contents, link_match)
+
+    def test_hides_oci_recipes_link_if_user_doesnt_have_oci_recipes(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        member = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=member, members=[member])
+
+        # Creates a recipe from another user, just to make sure it will not
+        # interfere.
+        self.factory.makeOCIRecipe()
+
+        with person_logged_in(member):
+            expected_url = 'http://launchpad.test/~%s/+oci-recipes' % team.name
+            team_url = canonical_url(team)
+        browser = self.getUserBrowser(team_url, user=member)
+
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCI recipes link', 'a',
+                attrs={
+                    'href': expected_url},
+                text='View OCI recipes'))
+        self.assertThat(browser.contents, Not(link_match))
+
+        browser = self.getUserBrowser(team_url, user=None)
+        self.assertThat(browser.contents, Not(link_match))
 
 
 class TestPersonIndexVisibilityView(TestCaseWithFactory):

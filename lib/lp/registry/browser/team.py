@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -94,6 +94,7 @@ from lp.app.widgets.itemswidgets import (
 from lp.app.widgets.owner import HiddenUserWidget
 from lp.app.widgets.popup import PersonPickerWidget
 from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
+from lp.oci.browser.hasocirecipes import HasOCIRecipesMenuMixin
 from lp.registry.browser.branding import BrandingChangeView
 from lp.registry.browser.mailinglists import enabled_with_active_mailing_list
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
@@ -1623,7 +1624,7 @@ class TeamMenuMixin(PPANavigationMenuMixIn, CommonMenuLinks):
 
 
 class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin,
-                       HasSnapsMenuMixin):
+                       HasSnapsMenuMixin, HasOCIRecipesMenuMixin):
 
     usedfor = ITeam
     facet = 'overview'
@@ -1653,6 +1654,7 @@ class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin,
         'related_software_summary',
         'view_recipes',
         'view_snaps',
+        'view_oci_recipes',
         'subscriptions',
         'structural_subscriptions',
         'upcomingwork',
