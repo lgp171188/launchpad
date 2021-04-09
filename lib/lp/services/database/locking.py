@@ -44,6 +44,12 @@ class LockType(DBEnumeratedType):
         Package copy.
         """)
 
+    REGISTRY_UPLOAD = DBItem(3, """OCI Registry upload.
+
+        OCI Registry upload.
+        """
+    )
+
 
 @contextmanager
 def try_advisory_lock(lock_type, lock_id, store):
