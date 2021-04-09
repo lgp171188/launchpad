@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 #
 # This script will set up a brand new Ubuntu machine as a LP developer
@@ -188,6 +188,12 @@ fi
 sudo a2enmod headers > /dev/null
 if [ $? -ne 0 ]; then
   echo "ERROR: Unable to enable headers module in Apache2"
+  exit 1
+fi
+
+sudo a2enmod wsgi > /dev/null
+if [ $? -ne 0 ]; then
+  echo "ERROR: Unable to enable wsgi module in Apache2"
   exit 1
 fi
 

@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Update the interface schema values due to circular imports.
@@ -167,6 +167,7 @@ from lp.services.worlddata.interfaces.language import (
     ILanguage,
     ILanguageSet,
     )
+from lp.snappy.interfaces.snapbase import ISnapBase
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.archivedependency import IArchiveDependency
 from lp.soyuz.interfaces.archivepermission import IArchivePermission
@@ -417,6 +418,9 @@ patch_plain_parameter_type(
     IArchive, '_addArchiveDependency', 'dependency', IArchive)
 patch_entry_return_type(
     IArchive, '_addArchiveDependency', IArchiveDependency)
+
+# IArchiveDependency
+patch_reference_property(IArchiveDependency, 'snap_base', ISnapBase)
 
 # IBuildFarmJob
 patch_reference_property(IBuildFarmJob, 'buildqueue_record', IBuildQueue)

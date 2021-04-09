@@ -20,6 +20,7 @@ from zope.traversing.browser.absoluteurl import absoluteURL
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.services import IService
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -29,8 +30,10 @@ from lp.registry.interfaces.accesspolicy import IAccessPolicyGrantFlatSource
 from lp.registry.model.pillar import PillarPerson
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import StormRangeFactoryError
 from lp.services.webapp.publisher import canonical_url
+from lp.snappy.interfaces.snap import SNAP_PRIVATE_FEATURE_FLAG
 from lp.testing import (
     admin_logged_in,
     login_person,
@@ -43,7 +46,11 @@ from lp.testing import (
     )
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import setupBrowserForUser
+from lp.testing.pages import (
+    extract_text,
+    find_tag_by_id,
+    setupBrowserForUser,
+    )
 from lp.testing.views import (
     create_initialized_view,
     create_view,
@@ -378,6 +385,41 @@ class PillarSharingViewTestMixin:
             self.assertIn(
                 team_name,
                 [grantee['name'] for grantee in cache.objects['grantee_data']])
+
+    def test_pillar_person_sharing(self):
+        self.useFixture(FeatureFixture({
+            SNAP_PRIVATE_FEATURE_FLAG: 'on',
+            OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        totals = {"oci_recipes": 1, "snaps": 0}
+        items = [
+            self.factory.makeOCIRecipe(
+                owner=self.owner, registrant=self.owner,
+                information_type=InformationType.USERDATA,
+                oci_project=self.factory.makeOCIProject(pillar=self.pillar))]
+        if self.pillar_type == 'product':
+            totals["snaps"] = 1
+            items.append(self.factory.makeSnap(
+                information_type=InformationType.USERDATA,
+                owner=self.owner, registrant=self.owner, project=self.pillar))
+
+        person = self.factory.makePerson()
+        with person_logged_in(self.owner):
+            for item in items:
+                item.subscribe(person, self.owner)
+
+        pillarperson = PillarPerson(self.pillar, person)
+        url = 'http://launchpad.test/%s/+sharing/%s' % (
+            pillarperson.pillar.name, pillarperson.person.name)
+        browser = self.getUserBrowser(user=self.owner, url=url)
+        content = extract_text(
+            find_tag_by_id(browser.contents, "observer-summary"))
+        self.assertTextMatchesExpressionIgnoreWhitespace("""
+            0 bugs,
+            0 Bazaar branches,
+            0 Git repositories,
+            %(snaps)s snaps,
+            and 0 blueprints shared
+            """ % totals, content)
 
 
 class TestProductSharingView(PillarSharingViewTestMixin,

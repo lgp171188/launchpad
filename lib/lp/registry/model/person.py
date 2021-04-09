@@ -58,6 +58,7 @@ from storm.expr import (
     Alias,
     And,
     Coalesce,
+    Column,
     Desc,
     Exists,
     In,
@@ -68,6 +69,7 @@ from storm.expr import (
     Or,
     Select,
     SQL,
+    Table,
     Union,
     Upper,
     With,
@@ -3243,8 +3245,8 @@ class PersonSet:
             user_id = user.id
         cur = cursor()
         cur.execute(
-            "SELECT is_blacklisted_name(%(name)s, %(user_id)s)" % sqlvalues(
-                name=name, user_id=user_id))
+            "SELECT is_blacklisted_name(%(name)s, %(user_id)s)",
+            {"name": name, "user_id": user_id})
         return bool(cur.fetchone()[0])
 
     def getTopContributors(self, limit=50):
@@ -3912,8 +3914,8 @@ class PersonSet:
         """Lookup all members of the team with optional precaching.
 
         :param store: Provide ability to specify the store.
-        :param origin: List of storm tables and joins. This list will be
-            appended to. The Person table is required.
+        :param origin: List of storm tables and joins. The Person table is
+            required.
         :param conditions: Storm conditions for tables in origin.
         :param need_karma: The karma attribute will be cached.
         :param need_ubuntu_coc: The is_ubuntu_coc_signer attribute will be
@@ -3928,6 +3930,17 @@ class PersonSet:
         """
         if store is None:
             store = IStore(Person)
+        # The conditions we've been given are almost certainly more
+        # selective that anything PostgreSQL might guess at.  Use a CTE to
+        # ensure that it looks at them first.
+        store = store.with_(With(
+            'RelevantPerson',
+            Select(Person.id, where=conditions, tables=origin)))
+        relevant_person = Table('RelevantPerson')
+        origin = [
+            Person,
+            Join(relevant_person, Column('id', relevant_person) == Person.id),
+            ]
         columns = [Person]
         decorators = []
         if need_karma or need_api:
@@ -3999,10 +4012,10 @@ class PersonSet:
         if len(columns) == 1:
             column = columns[0]
             # Return a simple ResultSet
-            return store.using(*origin).find(column, conditions)
+            return store.using(*origin).find(column)
         # Adapt the result into a cached Person.
         columns = tuple(columns)
-        raw_result = store.using(*origin).find(columns, conditions)
+        raw_result = store.using(*origin).find(columns)
         if need_api:
             # Collections exported on the API need to be sorted in order to
             # provide stable batching.  In some ways Person.name might make

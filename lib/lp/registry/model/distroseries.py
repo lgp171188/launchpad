@@ -1180,7 +1180,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
         find_spec = (
             DistroSeriesPackageCache,
             BinaryPackageName,
-            SQL('ts_rank(fti, ftq(%s)) AS rank' % sqlvalues(text)))
+            SQL('ts_rank(fti, ftq(?)) AS rank', params=(text,)))
         origin = [
             DistroSeriesPackageCache,
             Join(

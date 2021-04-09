@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database class for table ArchiveAuthToken."""
@@ -21,8 +21,10 @@ from storm.locals import (
 from storm.store import Store
 from zope.interface import implementer
 
+from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
+from lp.soyuz.enums import ArchiveSubscriberStatus
 from lp.soyuz.interfaces.archiveauthtoken import (
     IArchiveAuthToken,
     IArchiveAuthTokenSet,
@@ -85,18 +87,38 @@ class ArchiveAuthTokenSet:
         return IStore(ArchiveAuthToken).find(
             ArchiveAuthToken, ArchiveAuthToken.token == token).one()
 
-    def getByArchive(self, archive):
+    def getByArchive(self, archive, with_current_subscription=False):
         """See `IArchiveAuthTokenSet`."""
+        # Circular import.
+        from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
         store = Store.of(archive)
-        return store.find(
-            ArchiveAuthToken,
+        clauses = [
             ArchiveAuthToken.archive == archive,
-            ArchiveAuthToken.date_deactivated == None)
+            ArchiveAuthToken.date_deactivated == None,
+            ]
+        if with_current_subscription:
+            clauses.extend([
+                ArchiveAuthToken.archive_id == ArchiveSubscriber.archive_id,
+                ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT,
+                ArchiveSubscriber.subscriber_id == TeamParticipation.teamID,
+                TeamParticipation.personID == ArchiveAuthToken.person_id,
+                ])
+        return store.find(ArchiveAuthToken, *clauses).config(distinct=True)
 
     def getActiveTokenForArchiveAndPerson(self, archive, person):
         """See `IArchiveAuthTokenSet`."""
-        return self.getByArchive(archive).find(
-            ArchiveAuthToken.person == person).one()
+        return self.getByArchive(
+            archive, with_current_subscription=True).find(
+                ArchiveAuthToken.person == person).one()
+
+    def getActiveTokenForArchiveAndPersonName(self, archive, person_name):
+        """See `IArchiveAuthTokenSet`."""
+        # Circular import.
+        from lp.registry.model.person import Person
+        return self.getByArchive(
+            archive, with_current_subscription=True).find(
+                ArchiveAuthToken.person == Person.id,
+                Person.name == person_name).one()
 
     def getActiveNamedTokenForArchive(self, archive, name):
         """See `IArchiveAuthTokenSet`."""

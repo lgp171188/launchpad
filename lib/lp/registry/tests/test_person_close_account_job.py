@@ -52,6 +52,7 @@ from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
 from lp.soyuz.enums import PackagePublishingStatus, ArchiveSubscriberStatus
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import TestCaseWithFactory, login_celebrity
 from lp.testing.dbuser import dbuser
@@ -336,7 +337,15 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
         self.assertEqual(now, subscription.date_cancelled)
         self.assertEqual(
             ArchiveSubscriberStatus.CURRENT, other_subscription.status)
-        self.assertIsNotNone(ppa.getAuthToken(person))
+        # The token remains, but is no longer valid since the subscription
+        # has been cancelled.
+        self.assertIsNotNone(
+            IStore(ArchiveAuthToken).find(
+                ArchiveAuthToken,
+                ArchiveAuthToken.archive == ppa,
+                ArchiveAuthToken.date_deactivated == None,
+                ArchiveAuthToken.person == person).one())
+        self.assertIsNone(ppa.getAuthToken(person))
 
     def test_handles_hardware_submissions(self):
         # Launchpad used to support hardware submissions.  This is in the

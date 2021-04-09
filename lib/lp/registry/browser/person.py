@@ -139,7 +139,10 @@ from lp.code.errors import InvalidNamespace
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
 from lp.code.interfaces.gitlookup import IGitTraverser
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
-from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipe,
+    IOCIRecipeSet,
+    )
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
@@ -774,6 +777,13 @@ class CommonMenuLinks:
         enabled = user_can_edit_credentials_for_owner(self.context, self.user)
         return Link(target, text, enabled=enabled, icon='info')
 
+    def oci_recipes(self):
+        target = '+oci-recipes'
+        text = 'OCI recipes'
+        enabled = not getUtility(IOCIRecipeSet).findByContext(
+            self.context, visible_by_user=self.user).is_empty()
+        return Link(target, text, enabled=enabled, icon='info')
+
 
 class PersonMenuMixin(CommonMenuLinks):
 
@@ -838,6 +848,7 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         'ppa',
         'oauth_tokens',
         'oci_registry_credentials',
+        'oci_recipes',
         'related_software_summary',
         'view_recipes',
         'view_snaps',

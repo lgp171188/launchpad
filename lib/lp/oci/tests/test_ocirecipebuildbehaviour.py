@@ -424,7 +424,11 @@ class TestAsyncOCIRecipeBuildBehaviour(
         [ref] = self.factory.makeGitRefs()
         ref.repository.transitionToInformationType(
             InformationType.PRIVATESECURITY, ref.repository.owner)
-        job = self.makeJob(git_ref=ref)
+        owner = self.factory.makePerson()
+        recipe = self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner,
+            information_type=InformationType.USERDATA)
+        job = self.makeJob(git_ref=ref, recipe=recipe)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
@@ -512,6 +516,23 @@ class TestAsyncOCIRecipeBuildBehaviour(
                 "build_urls": Equals({"i386": canonical_url(job.build)})
             })
         }))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archives(self):
+        # The build uses the release, security, and updates pockets in the
+        # primary archive.
+        job = self.makeJob()
+        expected_archives = [
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_proxy_url_set(self):

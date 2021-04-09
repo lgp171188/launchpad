@@ -110,6 +110,7 @@ from lp.services.fields import (
     URIField,
     )
 from lp.services.webhooks.interfaces import IWebhookTarget
+from lp.snappy.interfaces.snapbase import ISnapBase
 from lp.snappy.interfaces.snappyseries import (
     ISnappyDistroSeries,
     ISnappySeries,
@@ -408,6 +409,7 @@ class ISnapView(Interface):
         archive=Reference(schema=IArchive),
         distro_arch_series=Reference(schema=IDistroArchSeries),
         pocket=Choice(vocabulary=PackagePublishingPocket),
+        snap_base=Reference(schema=ISnapBase),
         channels=Dict(
             title=_("Source snap channels to use for this build."),
             description=_(
@@ -419,13 +421,14 @@ class ISnapView(Interface):
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def requestBuild(requester, archive, distro_arch_series, pocket,
-                     channels=None, build_request=None):
+                     snap_base=None, channels=None, build_request=None):
         """Request that the snap package be built.
 
         :param requester: The person requesting the build.
         :param archive: The IArchive to associate the build with.
         :param distro_arch_series: The architecture to build for.
         :param pocket: The pocket that should be targeted.
+        :param snap_base: The `ISnapBase` to use for this build.
         :param channels: A dictionary mapping snap names to channels to use
             for this build.
         :param build_request: The `ISnapBuildRequest` job being processed,
@@ -707,6 +710,16 @@ class ISnapEditableAttributes(IHasOwner):
         schema=IProduct, vocabulary='Product',
         required=False, readonly=False)
 
+    private = exported(Bool(
+        title=_("Private"), required=False, readonly=False,
+        description=_("Whether or not this snap is private.")))
+
+    information_type = exported(Choice(
+        title=_("Information type"), vocabulary=InformationType,
+        required=True, readonly=False, default=InformationType.PUBLIC,
+        description=_(
+            "The type of information contained in this Snap recipe.")))
+
     distro_series = exported(Reference(
         IDistroSeries, title=_("Distro Series"),
         required=False, readonly=False,
@@ -800,8 +813,11 @@ class ISnapEditableAttributes(IHasOwner):
         title=_("Pocket for automatic builds"),
         vocabulary=PackagePublishingPocket, required=False, readonly=False,
         description=_(
-            "The package stream within the source distribution series to use "
-            "when building the snap package.")))
+            "The package stream within the source archive and distribution "
+            "series to use when building the snap package.  If the source "
+            "archive is a PPA, then the PPA's archive dependencies will be "
+            "used to select the pocket in the distribution's primary "
+            "archive.")))
 
     auto_build_channels = exported(Dict(
         title=_("Source snap channels for automatic builds"),
@@ -873,16 +889,6 @@ class ISnapAdminAttributes(Interface):
     These attributes need launchpad.View to see, and launchpad.Admin to change.
     """
 
-    private = exported(Bool(
-        title=_("Private"), required=False, readonly=False,
-        description=_("Whether or not this snap is private.")))
-
-    information_type = exported(Choice(
-        title=_("Information type"), vocabulary=InformationType,
-        required=True, readonly=False, default=InformationType.PUBLIC,
-        description=_(
-            "The type of information contained in this Snap recipe.")))
-
     require_virtualized = exported(Bool(
         title=_("Require virtualized builders"), required=True, readonly=False,
         description=_("Only build this snap package on virtual builders.")))
@@ -946,8 +952,10 @@ class ISnapSet(Interface):
     def exists(owner, name):
         """Check to see if a matching snap exists."""
 
-    def getSnapSuggestedPrivacy(owner, branch=None, git_ref=None):
-        """Which privacy a Snap should have based on its creation params."""
+    def getPossibleSnapInformationTypes(project):
+        """Returns the list of possible InformationTypes for snaps based on
+        the given project.
+        """
 
     def findByIds(snap_ids):
         """Return all snap packages with the given ids."""

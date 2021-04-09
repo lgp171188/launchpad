@@ -173,7 +173,7 @@ from lp.registry.interfaces.sharingjob import (
     )
 from lp.registry.model.accesspolicy import (
     AccessPolicyGrant,
-    reconcile_access_for_artifact,
+    reconcile_access_for_artifacts,
     )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
@@ -492,6 +492,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     def repackRepository(self):
         getUtility(IGitHostingClient).repackRepository(self.getInternalPath())
+        self.date_last_repacked = UTC_NOW
 
     @property
     def namespace(self):
@@ -618,8 +619,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             # works, so only work for projects for now.
             if self.project is not None:
                 pillars = [self.project]
-        reconcile_access_for_artifact(
-            self, self.information_type, pillars, wanted_links)
+        reconcile_access_for_artifacts(
+            [self], self.information_type, pillars, wanted_links)
 
     @property
     def refs(self):
@@ -1005,8 +1006,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             subscription.review_level = code_review_level
         # Grant the subscriber access if they can't see the repository.
         service = getUtility(IService, "sharing")
-        _, _, repositories, _, _ = service.getVisibleArtifacts(
-            person, gitrepositories=[self], ignore_permissions=True)
+        repositories = service.getVisibleArtifacts(
+            person, gitrepositories=[self],
+            ignore_permissions=True)["gitrepositories"]
         if not repositories:
             service.ensureAccessGrants(
                 [person], subscribed_by, gitrepositories=[self],

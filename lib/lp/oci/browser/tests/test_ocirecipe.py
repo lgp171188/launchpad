@@ -34,6 +34,7 @@ from zope.security.proxy import removeSecurityProxy
 from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.browser.tales import GitRepositoryFormatterAPI
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -56,6 +57,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.enums import BranchSharingPolicy
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -88,6 +90,7 @@ from lp.testing.matchers import (
 from lp.testing.pages import (
     extract_text,
     find_main_content,
+    find_tag_by_id,
     find_tags_by_class,
     )
 from lp.testing.publication import test_traverse
@@ -192,7 +195,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         oci_project = self.factory.makeOCIProject()
         oci_project_display = oci_project.display_name
         [git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
         source_display = git_ref.display_name
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
@@ -229,10 +232,35 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             "Official recipe:\nNo",
             MatchesTagText(content, "official-recipe"))
 
+    def test_create_new_available_information_types(self):
+        public_pillar = self.factory.makeProduct(owner=self.person)
+        private_pillar = self.factory.makeProduct(
+            owner=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        public_oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=public_pillar)
+        private_oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=private_pillar)
+
+        # Public pillar.
+        browser = self.getViewBrowser(
+            public_oci_project, view_name="+new-recipe", user=self.person)
+        self.assertContentEqual(
+            ['PUBLIC', 'PUBLICSECURITY', 'PRIVATESECURITY', 'USERDATA'],
+            browser.getControl(name="field.information_type").options)
+
+        # Proprietary pillar.
+        browser = self.getViewBrowser(
+            private_oci_project, view_name="+new-recipe", user=self.person)
+        self.assertContentEqual(
+            ['PROPRIETARY'],
+            browser.getControl(name="field.information_type").options)
+
     def test_create_new_recipe_invalid_format(self):
         oci_project = self.factory.makeOCIProject()
         [git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/invalid'])
+            paths=['refs/heads/invalid'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -246,7 +274,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
     def test_create_new_recipe_with_build_args(self):
         oci_project = self.factory.makeOCIProject()
         [git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -270,7 +298,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         with person_logged_in(oci_project.distribution.owner):
             oci_project.distribution.oci_registry_credentials = credentials
         [git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -330,7 +358,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.setUpDistroSeries()
         oci_project = self.factory.makeOCIProject(pillar=self.distribution)
         [git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         processors = browser.getControl(name="field.processors")
@@ -400,7 +428,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             oci_project_admin=self.person)
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         [git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -424,12 +452,12 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         # do it once
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         [git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
 
         # and then do it again
         oci_project2 = self.factory.makeOCIProject(pillar=distribution)
         [git_ref2] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v3.0-20.04'])
+            paths=['refs/heads/v3.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -474,7 +502,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             oci_project_admin=distro_owner)
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         [git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -494,7 +522,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
     def test_create_recipe_doesnt_override_gitref_errors(self):
         oci_project = self.factory.makeOCIProject()
         [git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
@@ -598,6 +626,22 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             for name in disabled])
         self.assertThat(processors_control.controls, MatchesSetwise(*matchers))
 
+    def assertShowsPrivateBanner(self, browser):
+        banners = find_tags_by_class(
+            browser.contents, "private_banner_container")
+        self.assertEqual(1, len(banners))
+        self.assertEqual(
+            'The information on this page is private.',
+            extract_text(banners[0]))
+
+    def test_edit_private_recipe_shows_banner(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            information_type=InformationType.USERDATA)
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        self.assertShowsPrivateBanner(browser)
+
     def test_edit_recipe(self):
         oci_project = self.factory.makeOCIProject()
         oci_project_display = oci_project.display_name
@@ -608,7 +652,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
         [new_git_ref] = self.factory.makeGitRefs(
-            paths=['/refs/heads/v2.0-20.04'])
+            paths=['refs/heads/v2.0-20.04'])
         self.factory.makeOCIPushRule(recipe=recipe)
 
         browser = self.getViewBrowser(recipe, user=self.person)
@@ -653,7 +697,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
         [new_git_ref] = self.factory.makeGitRefs(
-            repository=repository, paths=['/refs/heads/invalid'])
+            repository=repository, paths=['refs/heads/invalid'])
         self.factory.makeOCIPushRule(recipe=recipe)
 
         browser = self.getViewBrowser(recipe, user=self.person)
@@ -661,6 +705,44 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl(name="field.git_ref.path").value = new_git_ref.path
         browser.getControl("Update OCI recipe").click()
         self.assertIn("Branch does not match format", browser.contents)
+
+    def test_edit_can_make_recipe_private(self):
+        pillar = self.factory.makeProduct(
+            owner=self.person,
+            information_type=InformationType.PUBLIC,
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=pillar)
+        [git_ref] = self.factory.makeGitRefs(
+            owner=self.person,
+            paths=['refs/heads/v2.0-20.04'])
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project, git_ref=git_ref,
+            information_type=InformationType.PUBLIC)
+
+        browser = self.getViewBrowser(recipe, '+edit', user=self.person)
+
+        # Make sure we are showing all available information types:
+        info_type_field = browser.getControl(name="field.information_type")
+        self.assertContentEqual([
+            'PUBLIC', 'PUBLICSECURITY', 'PRIVATESECURITY', 'USERDATA',
+            'PROPRIETARY'],
+            info_type_field.options)
+
+        info_type_field.value = InformationType.PROPRIETARY.name
+        browser.getControl("Update OCI recipe").click()
+        self.assertShowsPrivateBanner(browser)
+
+    def test_edit_recipe_on_public_pillar_information_types(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person)
+        browser = self.getViewBrowser(recipe, '+edit', user=self.person)
+
+        info_type_field = browser.getControl(name="field.information_type")
+        self.assertContentEqual(
+            ['PUBLIC', 'PUBLICSECURITY', 'PRIVATESECURITY', 'USERDATA'],
+            info_type_field.options)
 
     def test_edit_recipe_sets_date_last_modified(self):
         # Editing an OCI recipe sets the date_last_modified property.
@@ -1186,6 +1268,9 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         build = self.makeBuild(
             recipe=recipe, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
+
+        browser = self.getViewBrowser(build.recipe)
+        login_person(self.person)
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
             %s OCI project
             recipe-name
@@ -1203,7 +1288,33 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Status When complete Architecture
             Successfully built 30 minutes ago 386
             """ % (oci_project_name, oci_project_display, recipe.build_path),
-            self.getMainText(build.recipe))
+            extract_text(find_main_content(browser.contents)))
+
+        # Check portlet on side menu.
+        privacy_tag = find_tag_by_id(browser.contents, "privacy")
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            "This OCI recipe contains Public information",
+            extract_text(privacy_tag))
+
+    def test_index_for_private_recipe_shows_banner(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            information_type=InformationType.USERDATA)
+        browser = self.getViewBrowser(recipe, user=self.person)
+
+        # Check top banner.
+        banners = find_tags_by_class(
+            browser.contents, "private_banner_container")
+        self.assertEqual(1, len(banners))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            'The information on this page is private.',
+            extract_text(banners[0]))
+
+        # Check portlet on side menu.
+        privacy_tag = find_tag_by_id(browser.contents, "privacy")
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            "This OCI recipe contains Private information",
+            extract_text(privacy_tag))
 
     def test_index_with_build_args(self):
         oci_project = self.factory.makeOCIProject(
@@ -1239,6 +1350,49 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Successfully built 30 minutes ago 386
             """ % (oci_project_name, oci_project_display, build_path),
             self.getMainText(build.recipe))
+
+    def test_index_for_subscriber_without_git_repo_access(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        oci_project_name = oci_project.name
+        oci_project_display = oci_project.display_name
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="recipe-repository",
+            paths=["refs/heads/master"],
+            information_type=InformationType.PRIVATESECURITY)
+        recipe = self.makeOCIRecipe(
+            oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
+            information_type=InformationType.PRIVATESECURITY)
+        with admin_logged_in():
+            build_path = recipe.build_path
+            build = self.makeBuild(
+                recipe=recipe, status=BuildStatus.FULLYBUILT,
+                duration=timedelta(minutes=30))
+
+        # Subscribe a user.
+        subscriber = self.factory.makePerson()
+        with person_logged_in(self.person):
+            recipe.subscribe(subscriber, self.person)
+
+        main_text = self.getMainText(build.recipe, user=subscriber)
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            %s OCI project
+            recipe-name
+            .*
+            OCI recipe information
+            Owner: Test Person
+            OCI project: %s
+            Source: &lt;redacted&gt;
+            Build file path: Dockerfile
+            Build context directory: %s
+            Build schedule: Built on request
+            Official recipe:
+            No
+            Latest builds
+            Status When complete Architecture
+            Successfully built 30 minutes ago 386
+            """ % (oci_project_name, oci_project_display, build_path),
+            main_text)
 
     def test_index_success_with_buildlog(self):
         # The build log is shown if it is there.
@@ -1949,9 +2103,9 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                     "region": Equals("new_region1")}))
 
 
-class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
+class TestOCIRecipeListingView(BaseTestOCIRecipeView):
     def setUp(self):
-        super(TestOCIProjectRecipesView, self).setUp()
+        super(TestOCIRecipeListingView, self).setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
@@ -1967,14 +2121,45 @@ class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
             pillar=self.distroseries.distribution,
             ociprojectname="oci-project-name")
 
-    def makeRecipes(self, count=1):
+    def makeRecipes(self, count=1, **kwargs):
         with person_logged_in(self.person):
             owner = self.factory.makePerson()
             return [self.factory.makeOCIRecipe(
-                registrant=owner, owner=owner, oci_project=self.oci_project)
+                registrant=owner, owner=owner, oci_project=self.oci_project,
+                **kwargs)
                 for _ in range(count)]
 
+    def test_oci_recipe_list_for_person(self):
+        owner = self.factory.makePerson(name="recipe-owner")
+        for i in range(2):
+            self.factory.makeOCIRecipe(
+                name="my-oci-recipe-%s" % i, owner=owner, registrant=owner)
+
+        # This recipe should not be present.
+        someone_else = self.factory.makePerson()
+        self.factory.makeOCIRecipe(owner=someone_else, registrant=someone_else)
+
+        # self.person now visits ~owner/+oci-recipes page.
+        browser = self.getViewBrowser(owner, "+oci-recipes", user=self.person)
+        main_text = extract_text(find_main_content(browser.contents))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
+            OCI recipes for recipe-owner
+            There are 2 recipes registered for recipe-owner.
+            Name             Owner          Source   Build file   Date created
+            my-oci-recipe-0  Recipe-owner   .*
+            my-oci-recipe-1  Recipe-owner   .*
+            1 .* 2 of 2 results
+            First .* Previous .* Next .* Last
+            """, main_text)
+
     def test_shows_no_recipe(self):
+        """Should shows correct message when there are no visible recipes."""
+        # Create a private OCI recipe that should not be shown.
+        owner = self.factory.makePerson()
+        self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner, oci_project=self.oci_project,
+            information_type=InformationType.PRIVATESECURITY)
         browser = self.getViewBrowser(
             self.oci_project, "+recipes", user=self.person)
         main_text = extract_text(find_main_content(browser.contents))
@@ -1987,10 +2172,17 @@ class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
     def test_paginates_recipes(self):
         batch_size = 5
         self.pushConfig("launchpad", default_batch_size=batch_size)
-        recipes = self.makeRecipes(10)
+        # We will create 1 private recipe with proper permission in the
+        # list, and 9 others. This way, we should have 10 recipes in the list.
+        [private_recipe] = self.makeRecipes(
+            1, information_type=InformationType.PRIVATESECURITY)
+        with admin_logged_in():
+            private_recipe.subscribe(self.person, private_recipe.owner)
+        recipes = self.makeRecipes(9)
+        recipes.append(private_recipe)
+
         browser = self.getViewBrowser(
             self.oci_project, "+recipes", user=self.person)
-
         main_text = extract_text(find_main_content(browser.contents))
         no_wrap_main_text = main_text.replace('\n', ' ')
         with person_logged_in(self.person):

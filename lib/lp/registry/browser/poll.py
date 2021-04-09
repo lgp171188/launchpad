@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -36,6 +36,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.registry.browser.person import PersonView
 from lp.registry.interfaces.poll import (
+    CannotCreatePoll,
     IPoll,
     IPollOption,
     IPollOptionSet,
@@ -55,6 +56,7 @@ from lp.services.webapp import (
     NavigationMenu,
     stepthrough,
     )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import TitleBreadcrumb
 
 

@@ -755,8 +755,9 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             # Grant the subscriber access if they can't see the
             # specification.
             service = getUtility(IService, 'sharing')
-            _, _, _, _, shared_specs = service.getVisibleArtifacts(
-                person, specifications=[self], ignore_permissions=True)
+            shared_specs = service.getVisibleArtifacts(
+                person, specifications=[self],
+                ignore_permissions=True)["specifications"]
             if not shared_specs:
                 service.ensureAccessGrants(
                     [person], subscribed_by, specifications=[self])
@@ -922,14 +923,14 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         """See ISpecification."""
         # avoid circular imports.
         from lp.registry.model.accesspolicy import (
-            reconcile_access_for_artifact,
+            reconcile_access_for_artifacts,
             )
         if self.information_type == information_type:
             return False
         if information_type not in self.getAllowedInformationTypes(who):
             raise CannotChangeInformationType("Forbidden by project policy.")
         self.information_type = information_type
-        reconcile_access_for_artifact(self, information_type, [self.target])
+        reconcile_access_for_artifacts([self], information_type, [self.target])
         if (information_type in PRIVATE_INFORMATION_TYPES and
                 not self.subscribers.is_empty()):
             # Grant the subscribers access if they do not have a

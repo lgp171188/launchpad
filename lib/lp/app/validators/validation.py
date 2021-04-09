@@ -86,6 +86,11 @@ def validate_new_team_email(email):
 
 def validate_oci_branch_name(branch_name):
     """Check that a git ref name matches appversion-ubuntuversion."""
+    # Remove components to just get the branch/tag name
+    if branch_name.startswith('refs/tags/'):
+        branch_name = branch_name[len('refs/tags/'):]
+    elif branch_name.startswith('refs/heads/'):
+        branch_name = branch_name[len('refs/heads/'):]
     split = branch_name.split('-')
     # if we've not got at least two components
     if len(split) < 2:
@@ -101,6 +106,7 @@ def validate_oci_branch_name(branch_name):
         if risk in app_version:
             return False
     # no '/' as they're a delimiter
-    if '/' in app_version:
-        return False
+    for segment in app_version:
+        if '/' in segment:
+            return False
     return True

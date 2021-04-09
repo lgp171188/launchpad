@@ -42,6 +42,7 @@ from zope.schema import (
     TextLine,
     ValidationError,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp.app.browser.launchpadform import (
     action,
@@ -55,7 +56,11 @@ from lp.app.browser.tales import (
     )
 from lp.app.errors import UnexpectedFormData
 from lp.app.validators.validation import validate_oci_branch_name
-from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
+from lp.app.vocabularies import InformationTypeVocabulary
+from lp.app.widgets.itemswidgets import (
+    LabeledMultiCheckBoxWidget,
+    LaunchpadRadioWidgetWithDescription,
+    )
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.oci.interfaces.ocipushrule import (
@@ -76,6 +81,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     OCIRegistryCredentialsAlreadyExist,
     user_can_edit_credentials_for_owner,
     )
+from lp.registry.interfaces.person import IPersonSet
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -121,6 +127,13 @@ class OCIRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
         id = int(id)
         return getUtility(IOCIPushRuleSet).getByID(id)
 
+    @stepthrough("+subscription")
+    def traverse_subscription(self, name):
+        """Traverses to an `IOCIRecipeSubscription`."""
+        person = getUtility(IPersonSet).getByName(name)
+        if person is not None:
+            return self.context.getSubscription(person)
+
 
 class OCIRecipeBreadcrumb(NameBreadcrumb):
 
@@ -164,7 +177,8 @@ class OCIRecipeContextMenu(ContextMenu):
 
     facet = 'overview'
 
-    links = ('request_builds', 'edit_push_rules')
+    links = ('request_builds', 'edit_push_rules',
+             'add_subscriber', 'subscription')
 
     @enabled_with_permission('launchpad.Edit')
     def request_builds(self):
@@ -175,9 +189,28 @@ class OCIRecipeContextMenu(ContextMenu):
         return Link(
             '+edit-push-rules', 'Edit push rules', icon='edit')
 
+    @enabled_with_permission("launchpad.AnyPerson")
+    def subscription(self):
+        if self.context.getSubscription(self.user) is not None:
+            url = "+subscription/%s" % self.user.name
+            text = "Edit your subscription"
+            icon = "edit"
+        else:
+            url = "+subscribe"
+            text = "Subscribe yourself"
+            icon = "add"
+        return Link(url, text, icon=icon)
 
-class OCIProjectRecipesView(LaunchpadView):
-    """Default view for the list of OCI recipes of an OCI project."""
+    @enabled_with_permission("launchpad.AnyPerson")
+    def add_subscriber(self):
+        text = "Subscribe someone else"
+        return Link("+addsubscriber", text, icon="add")
+
+
+class OCIRecipeListingView(LaunchpadView):
+    """Default view for the list of OCI recipes of a context (OCI project
+    or Person).
+    """
     page_title = 'Recipes'
 
     @property
@@ -190,7 +223,8 @@ class OCIProjectRecipesView(LaunchpadView):
 
     @property
     def recipes(self):
-        recipes = getUtility(IOCIRecipeSet).findByOCIProject(self.context)
+        recipes = getUtility(IOCIRecipeSet).findByContext(
+            self.context, visible_by_user=self.user)
         return recipes.order_by('name')
 
     @property
@@ -210,6 +244,10 @@ class OCIProjectRecipesView(LaunchpadView):
 
 class OCIRecipeView(LaunchpadView):
     """Default view of an OCI recipe."""
+
+    @property
+    def private(self):
+        return self.context.private
 
     @cachedproperty
     def builds(self):
@@ -231,6 +269,13 @@ class OCIRecipeView(LaunchpadView):
     @property
     def has_push_rules(self):
         return len(self.push_rules) > 0
+
+    @property
+    def user_can_see_source(self):
+        try:
+            return self.context.git_ref.repository.visibleByUser(self.user)
+        except Unauthorized:
+            return False
 
     @property
     def person_picker(self):
@@ -705,6 +750,7 @@ class IOCIRecipeEditSchema(Interface):
     use_template(IOCIRecipe, include=[
         "name",
         "owner",
+        "information_type",
         "description",
         "git_ref",
         "build_file",
@@ -720,6 +766,26 @@ class OCIRecipeFormMixin:
     """Mixin with common processing for both edit and add views."""
     custom_widget_build_args = CustomWidgetFactory(
         TextAreaWidget, height=5, width=100)
+
+    custom_widget_information_type = CustomWidgetFactory(
+        LaunchpadRadioWidgetWithDescription,
+        vocabulary=InformationTypeVocabulary(types=[]))
+
+    def setUpInformationTypeWidget(self):
+        info_type_widget = self.widgets['information_type']
+        info_type_widget.vocabulary = InformationTypeVocabulary(
+            types=self.getInformationTypesToShow())
+
+    def getInformationTypesToShow(self):
+        """Get the information types to display on the edit form.
+
+        We display a customised set of information types: anything allowed
+        by the OCI recipe's model, plus the current type.
+        """
+        allowed_types = set(self.context.getAllowedInformationTypes(self.user))
+        if IOCIRecipe.providedBy(self.context):
+            allowed_types.add(self.context.information_type)
+        return allowed_types
 
     def createBuildArgsField(self):
         """Create a form field for OCIRecipe.build_args attribute."""
@@ -794,6 +860,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
     field_names = (
         "name",
         "owner",
+        "information_type",
         "description",
         "git_ref",
         "build_file",
@@ -859,6 +926,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeAddView, self).setUpWidgets()
+        self.setUpInformationTypeWidget()
         self.widgets["processors"].widget_class = "processors"
         self.setUpGitRefWidget()
         # disable the official recipe button if the user doesn't have
@@ -923,6 +991,10 @@ class BaseOCIRecipeEditView(LaunchpadEditFormView):
     schema = IOCIRecipeEditSchema
 
     @property
+    def private(self):
+        return self.context.private
+
+    @property
     def cancel_url(self):
         """See `LaunchpadFormView`."""
         return canonical_url(self.context)
@@ -974,6 +1046,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
     field_names = (
         "owner",
         "name",
+        "information_type",
         "description",
         "git_ref",
         "build_file",
@@ -1013,6 +1086,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
         super(OCIRecipeEditView, self).setUpWidgets()
+        self.setUpInformationTypeWidget()
         self.setUpGitRefWidget()
         # disable the official recipe button if the user doesn't have
         # permissions to change it

@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Content classes for the 'home pages' of the subsystems of Launchpad."""
@@ -62,12 +62,19 @@ from lp.services.webapp.interfaces import (
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webservice.interfaces import IWebServiceApplication
 from lp.services.worlddata.interfaces.language import ILanguageSet
+from lp.soyuz.interfaces.archiveapi import IArchiveApplication
 from lp.testopenid.interfaces.server import ITestOpenIDApplication
 from lp.translations.interfaces.translationgroup import ITranslationGroupSet
 from lp.translations.interfaces.translations import IRosettaApplication
 from lp.translations.interfaces.translationsoverview import (
     ITranslationsOverview,
     )
+
+
+@implementer(IArchiveApplication)
+class ArchiveApplication:
+
+    title = "Archive API"
 
 
 @implementer(ICodehostingApplication)

@@ -837,7 +837,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return getUtility(IPollSet).new(
             team, name, title, proposition, dateopens, datecloses,
             PollSecrecy.SECRET, allowspoilt=True,
-            poll_type=poll_type)
+            poll_type=poll_type, check_permissions=False)
 
     def makeTranslationGroup(self, owner=None, name=None, title=None,
                              summary=None, url=None):
@@ -4831,9 +4831,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeSnapBuild(self, requester=None, registrant=None, snap=None,
                       archive=None, distroarchseries=None, pocket=None,
-                      channels=None, date_created=DEFAULT, build_request=None,
-                      status=BuildStatus.NEEDSBUILD, builder=None,
-                      duration=None, **kwargs):
+                      snap_base=None, channels=None, date_created=DEFAULT,
+                      build_request=None, status=BuildStatus.NEEDSBUILD,
+                      builder=None, duration=None, **kwargs):
         """Make a new SnapBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -4861,7 +4861,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             pocket = PackagePublishingPocket.UPDATES
         snapbuild = getUtility(ISnapBuildSet).new(
             requester, snap, archive, distroarchseries, pocket,
-            channels=channels, date_created=date_created,
+            snap_base=snap_base, channels=channels, date_created=date_created,
             build_request=build_request)
         if duration is not None:
             removeSecurityProxy(snapbuild).updateStatus(
@@ -4970,7 +4970,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                       oci_project=None, git_ref=None, description=None,
                       official=False, require_virtualized=True,
                       build_file=None, date_created=DEFAULT,
-                      allow_internet=True, build_args=None, build_path=None):
+                      allow_internet=True, build_args=None, build_path=None,
+                      information_type=InformationType.PUBLIC):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -5003,7 +5004,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             require_virtualized=require_virtualized,
             date_created=date_created,
             allow_internet=allow_internet,
-            build_args=build_args)
+            build_args=build_args,
+            information_type=information_type)
 
     def makeOCIRecipeArch(self, recipe=None, processor=None):
         """Make a new OCIRecipeArch."""
