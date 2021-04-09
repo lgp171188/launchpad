@@ -1,5 +1,7 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -14,6 +16,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.registry.browser.team import (
     TeamIndexMenu,
     TeamMailingListArchiveView,
@@ -33,12 +36,14 @@ from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
     )
+from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.publisher import canonical_url
 from lp.soyuz.enums import ArchiveStatus
 from lp.testing import (
+    admin_logged_in,
     ANONYMOUS,
     login,
     login_celebrity,
@@ -664,6 +669,27 @@ class TestTeamMenu(TestCaseWithFactory):
         link = menu.configure_mailing_list()
         self.assertEqual('Configure mailing list', link.text)
 
+    def test_TeamOverviewMenu_new_user_without_add_poll(self):
+        # A brand new user does not see the add_poll link.
+        self.pushConfig(
+            'launchpad', min_legitimate_karma=5, min_legitimate_account_age=5)
+        login_person(self.team.teamowner)
+        menu = TeamOverviewMenu(self.team)
+        self.assertNotIn(
+            'add_poll',
+            [link.name for link in menu.iterlinks() if link.enabled])
+
+    def test_TeamOverviewMenu_legitimate_user_with_add_poll(self):
+        # A user with some kind of track record sees the add_poll link.
+        self.pushConfig(
+            'launchpad', min_legitimate_karma=5, min_legitimate_account_age=5)
+        team = self.factory.makeTeam(owner=self.factory.makePerson(karma=10))
+        login_person(team.teamowner)
+        menu = TeamOverviewMenu(team)
+        self.assertIn(
+            'add_poll',
+            [link.name for link in menu.iterlinks() if link.enabled])
+
 
 class TestMailingListArchiveView(TestCaseWithFactory):
 
@@ -912,6 +938,54 @@ class TestTeamIndexView(TestCaseWithFactory):
         self.assertNotEqual('', markup)
         self.assertThat(markup, Not(link_match))
 
+    def test_show_oci_recipes_link(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        member = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=member, members=[member])
+
+        # Creates a recipe, so the link appears.
+        self.factory.makeOCIRecipe(owner=team, registrant=member)
+        with person_logged_in(member):
+            expected_url = 'http://launchpad.test/~%s/+oci-recipes' % team.name
+            team_url = canonical_url(team)
+        browser = self.getUserBrowser(team_url, user=member)
+
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCI recipes link', 'a',
+                attrs={
+                    'href': expected_url},
+                text='View OCI recipes'))
+        self.assertThat(browser.contents, link_match)
+
+        browser = self.getUserBrowser(team_url, user=None)
+        self.assertThat(browser.contents, link_match)
+
+    def test_hides_oci_recipes_link_if_user_doesnt_have_oci_recipes(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        member = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=member, members=[member])
+
+        # Creates a recipe from another user, just to make sure it will not
+        # interfere.
+        self.factory.makeOCIRecipe()
+
+        with person_logged_in(member):
+            expected_url = 'http://launchpad.test/~%s/+oci-recipes' % team.name
+            team_url = canonical_url(team)
+        browser = self.getUserBrowser(team_url, user=member)
+
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCI recipes link', 'a',
+                attrs={
+                    'href': expected_url},
+                text='View OCI recipes'))
+        self.assertThat(browser.contents, Not(link_match))
+
+        browser = self.getUserBrowser(team_url, user=None)
+        self.assertThat(browser.contents, Not(link_match))
+
 
 class TestPersonIndexVisibilityView(TestCaseWithFactory):
 
@@ -967,3 +1041,29 @@ class TestPersonIndexVisibilityView(TestCaseWithFactory):
             'private team link', 'a',
             attrs={'href': '/~private-team', 'class': 'sprite team private'},
             text='Private Team'))
+
+
+class TestTeamContactAddressView(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_team_change_contact_address_to_existing_address(self):
+        # Test that the error message about changing email to an existing
+        # one doesn't break when there are non-ASCII characters in the message.
+        someone_email = "someone@canonical.com"
+        someone = self.factory.makePerson(
+            displayname="Unicode Person \xc9", email=someone_email)
+        someone_url = canonical_url(someone)
+        team = self.factory.makeTeam(email="team@canonical.com")
+        with admin_logged_in():
+            form = {
+                'field.contact_method': 'EXTERNAL_ADDRESS',
+                'field.contact_address': 'someone@canonical.com',
+                'field.actions.change': 'Change',
+            }
+            view = create_initialized_view(team, '+contactaddress', form=form)
+            expected_msg = (
+                '%s is already registered in Launchpad and is associated '
+                'with <a href="%s">Unicode Person \xc9</a>.')
+            expected_msg %= (someone_email, someone_url)
+            self.assertEqual([expected_msg], view.errors)

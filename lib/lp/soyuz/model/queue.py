@@ -76,7 +76,6 @@ from lp.services.database.stormexpr import (
     Array,
     ArrayContains,
     )
-from lp.services.features import getFeatureFlag
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import (
     LibraryFileAlias,
@@ -537,7 +536,7 @@ class PackageUpload(SQLBase):
         [pub_source] = self.realiseUpload()
         builds = pub_source.createMissingBuilds(logger=logger)
         self._validateBuildsForSource(pub_source.sourcepackagerelease, builds)
-        with open(changesfile_path, 'r') as changesfile_object:
+        with open(changesfile_path, 'rb') as changesfile_object:
             close_bugs_for_queue_item(
                 self, changesfile_object=changesfile_object)
         self._giveKarma()
@@ -891,12 +890,7 @@ class PackageUpload(SQLBase):
         if hasattr(changes_file_object, "seek"):
             changes_file_object.seek(0)
 
-        changes = parse_tagfile_content(changes_content)
-
-        # Leaving the PGP signature on a package uploaded
-        # leaves the possibility of someone hijacking the notification
-        # and uploading to any archive as the signer.
-        return changes, strip_pgp_signature(changes_content).splitlines(True)
+        return parse_tagfile_content(changes_content)
 
     def findSourcePublication(self):
         """Find the `SourcePackagePublishingHistory` for this build."""
@@ -937,9 +931,12 @@ class PackageUpload(SQLBase):
             PackageUploadStatus.ACCEPTED: 'accepted',
             PackageUploadStatus.DONE: 'accepted',
             }
-        changes, changes_lines = self._getChangesDict(changes_file_object)
+        changes = self._getChangesDict(changes_file_object)
         if changes_file_object is not None:
-            changesfile_content = changes_file_object.read()
+            # Strip any PGP signature so that the .changes file attached to
+            # the notification can't be used to reupload to another archive.
+            changesfile_content = strip_pgp_signature(
+                changes_file_object.read())
         else:
             changesfile_content = 'No changes file content available.'
         blamee = self.findPersonToNotify()

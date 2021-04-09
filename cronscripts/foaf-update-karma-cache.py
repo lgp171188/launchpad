@@ -237,7 +237,7 @@ class KarmaCacheUpdater(LaunchpadCronScript):
         largest_total = max(points_per_category.values())
 
         scaling = {}
-        for category, points in points_per_category.items():
+        for category, points in sorted(points_per_category.items()):
             if points == 0:
                 scaling[category] = 1
             else:

@@ -21,13 +21,15 @@ link and cannot access the +delete page.
     0.9.2 "One (secure) Tree Hill" : Mozilla Firefox
 
     >>> user_browser.getLink(url='/firefox/trunk/0.9.2/+delete')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.open('http://launchpad.test/firefox/trunk/0.9.2/+delete')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Salgado has the necessary rights, so he sees the link and the +delete page.
 
@@ -41,7 +43,7 @@ The 0.9.2 release has some files associated with it. Salgado reads that
 they will be deleted too.
 
     >>> text = extract_text(find_main_content(salgados_browser.contents))
-    >>> print(text.encode('ASCII', 'backslashreplace'))
+    >>> print(backslashreplace(text))
     Delete Mozilla Firefox 0.9.2 \u201cOne (secure) Tree Hill\u201d
     ...
     Are you sure you want to delete the 0.9.2 release of

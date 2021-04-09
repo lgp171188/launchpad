@@ -27,7 +27,7 @@ On success, resolve_lp_path returns a dict containing a single key,
 
     >>> results = public_codehosting_api.resolve_lp_path(
     ...     '~vcs-imports/evolution/main')
-    >>> print(results.keys())
+    >>> print(list(results))
     ['urls']
 
 

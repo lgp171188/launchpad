@@ -67,9 +67,10 @@ If the status isn't something that our SourceForge ExternalBugTracker can
 understand an UnknownRemoteStatusError will be raised.
 
     >>> sourceforge.convertRemoteStatus('eggs').title
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnknownRemoteStatusError: eggs
+    lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: eggs
 
 
 == Initialization ==
@@ -95,9 +96,10 @@ resolution, to demonstrate this:
 
     >>> with sourceforge.responses():
     ...     sourceforge.initializeRemoteBugDB([0])
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnparsableBugData: Remote bug 0 does not define a status.
+    lp.bugs.externalbugtracker.base.UnparsableBugData: Remote bug 0 does not define a status.
 
 Some SourceForge bugs are marked private. Although we can't import a
 status from them, we don't raise an error when trying to initialize the
@@ -128,9 +130,10 @@ Trying to access the remote status of a private bug, however, will raise
 a PrivateRemoteBug error.
 
     >>> sourceforge.getRemoteStatus(99)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    PrivateRemoteBug: Bug 99 on http://example.com is private.
+    lp.bugs.externalbugtracker.base.PrivateRemoteBug: Bug 99 on http://example.com is private.
 
 
 == Updating Bug Watches ==
@@ -212,9 +215,11 @@ been checked.
 
     >>> transaction.commit()
 
+    >>> from operator import attrgetter
     >>> with sourceforge.responses(trace_calls=True):
     ...     bug_watch_updater.updateBugWatches(
-    ...         sourceforge, sorted(example_bug_tracker.watches))
+    ...         sourceforge,
+    ...         sorted(example_bug_tracker.watches, key=attrgetter('id')))
     INFO Updating 1 watches for 1 bugs on http://bugs.some.where
     GET http://bugs.some.where/support/tracker.php?aid=1722251
 
@@ -273,9 +278,10 @@ If you try to get the remote product of a bug that doesn't exist you'll
 get a BugNotFound error.
 
     >>> print(sourceforge.getRemoteProduct(999999999))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugNotFound: 999999999
+    lp.bugs.externalbugtracker.base.BugNotFound: 999999999
 
 If SourceForge can't find the group_id and atid for the bug (for example
 if the bug is private), getRemoteProduct() will return None.

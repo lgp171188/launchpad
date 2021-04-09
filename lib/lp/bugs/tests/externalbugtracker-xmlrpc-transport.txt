@@ -89,10 +89,10 @@ If an error occurs trying to make the request, an
     ...     requests_mock.add(
     ...         'POST', 'http://www.example.com/xmlrpc', status=500)
     ...     transport.request('www.example.com', 'xmlrpc', request_body)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ProtocolError: <ProtocolError for http://www.example.com/xmlrpc: 500
-    Internal Server Error>
+    xmlrpc.client.ProtocolError: <ProtocolError for http://www.example.com/xmlrpc: 500 Internal Server Error>
 
 If the transport encounters a redirect response it will make its request
 to the location indicated in that response rather than the original

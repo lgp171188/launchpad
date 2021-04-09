@@ -1,11 +1,10 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation classes for a Person."""
 
 __metaclass__ = type
 __all__ = [
-    'AlreadyConvertedException',
     'get_person_visibility_terms',
     'get_recipients',
     'generate_nick',
@@ -59,6 +58,7 @@ from storm.expr import (
     Alias,
     And,
     Coalesce,
+    Column,
     Desc,
     Exists,
     In,
@@ -69,6 +69,7 @@ from storm.expr import (
     Or,
     Select,
     SQL,
+    Table,
     Union,
     Upper,
     With,
@@ -187,6 +188,7 @@ from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
 from lp.registry.interfaces.person import (
+    AlreadyConvertedException,
     ImmutableVisibilityError,
     IPerson,
     IPersonSet,
@@ -261,11 +263,12 @@ from lp.services.database.sqlbase import (
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import (
-    ensure_unicode,
+    backslashreplace,
     shortlist,
     )
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
+    AccountDeceasedError,
     AccountStatus,
     AccountSuspendedError,
     IAccount,
@@ -327,10 +330,6 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.translations.model.hastranslationimports import (
     HasTranslationImportsMixin,
     )
-
-
-class AlreadyConvertedException(Exception):
-    """Raised when an attempt to claim a team that has been claimed."""
 
 
 @implementer(IJoinTeamEvent)
@@ -547,7 +546,7 @@ class Person(
                      storm_validator=_validate_name)
 
     def __repr__(self):
-        displayname = self.displayname.encode('ASCII', 'backslashreplace')
+        displayname = backslashreplace(self.displayname)
         return '<Person at 0x%x %s (%s)>' % (id(self), self.name, displayname)
 
     display_name = StringCol(dbName='displayname', notNull=True)
@@ -851,7 +850,8 @@ class Person(
         if SpecificationFilter.SUBSCRIBER in filter:
             role_clauses.append(
                 Specification.id.is_in(
-                    Select(SpecificationSubscription.specificationID,
+                    Select(
+                        SpecificationSubscription.specification_id,
                         [SpecificationSubscription.person == self])))
 
         clauses = [Or(*role_clauses)]
@@ -2351,6 +2351,7 @@ class Person(
             ('productseries', 'owner'),
             ('sharingjob', 'grantee'),
             ('signedcodeofconduct', 'owner'),
+            ('snapbuild', 'requester'),
             ('specificationsubscription', 'person'),
             ('sshkey', 'person'),
             ('structuralsubscription', 'subscriber'),
@@ -3244,8 +3245,8 @@ class PersonSet:
             user_id = user.id
         cur = cursor()
         cur.execute(
-            "SELECT is_blacklisted_name(%(name)s, %(user_id)s)" % sqlvalues(
-            name=name.encode('UTF-8'), user_id=user_id))
+            "SELECT is_blacklisted_name(%(name)s, %(user_id)s)",
+            {"name": name, "user_id": user_id})
         return bool(cur.fetchone()[0])
 
     def getTopContributors(self, limit=50):
@@ -3377,6 +3378,10 @@ class PersonSet:
             elif status == AccountStatus.SUSPENDED:
                 raise AccountSuspendedError(
                     "The account matching the identifier is suspended.")
+            elif status == AccountStatus.DECEASED:
+                raise AccountDeceasedError(
+                    "The account matching the identifier belongs to a "
+                    "deceased user.")
             elif not trust_email and status != AccountStatus.NOACCOUNT:
                 # If the email address is not completely trustworthy
                 # (ie. it comes from SCA) and the account has already
@@ -3654,7 +3659,7 @@ class PersonSet:
             Person.teamowner != None,
             Person.merged == None,
             EmailAddress.person == Person.id,
-            EmailAddress.email.lower().startswith(ensure_unicode(text)))
+            EmailAddress.email.lower().startswith(text))
         return team_email_query
 
     def _teamNameQuery(self, text):
@@ -3665,14 +3670,13 @@ class PersonSet:
             fti_search(Person, text))
         return team_name_query
 
-    def find(self, text=""):
+    def find(self, text=u""):
         """See `IPersonSet`."""
         if not text:
             # Return an empty result set.
             return EmptyResultSet()
 
         orderBy = Person._sortingColumnsForSetOperations
-        text = ensure_unicode(text)
         lower_case_text = text.lower()
         # Teams may not have email addresses, so we need to either use a LEFT
         # OUTER JOIN or do a UNION between four queries. Using a UNION makes
@@ -3714,11 +3718,10 @@ class PersonSet:
         return results.order_by(orderBy)
 
     def findPerson(
-            self, text="", exclude_inactive_accounts=True,
+            self, text=u"", exclude_inactive_accounts=True,
             must_have_email=False, created_after=None, created_before=None):
         """See `IPersonSet`."""
         orderBy = Person._sortingColumnsForSetOperations
-        text = ensure_unicode(text)
         store = IStore(Person)
         base_query = And(
             Person.teamowner == None,
@@ -3766,10 +3769,9 @@ class PersonSet:
         combined_results = email_results.union(name_results)
         return combined_results.order_by(orderBy)
 
-    def findTeam(self, text="", preload_for_api=False):
+    def findTeam(self, text=u"", preload_for_api=False):
         """See `IPersonSet`."""
         orderBy = Person._sortingColumnsForSetOperations
-        text = ensure_unicode(text)
         # Teams may not have email addresses, so we need to either use a LEFT
         # OUTER JOIN or do a UNION between two queries. Using a UNION makes
         # it a lot faster than with a LEFT OUTER JOIN.
@@ -3804,8 +3806,7 @@ class PersonSet:
         if not emails:
             return EmptyResultSet()
         addresses = [
-            ensure_unicode(address.lower().strip())
-            for address in emails]
+            six.ensure_text(address).lower().strip() for address in emails]
         hidden_query = True
         filter_query = True
         if not include_hidden:
@@ -3913,8 +3914,8 @@ class PersonSet:
         """Lookup all members of the team with optional precaching.
 
         :param store: Provide ability to specify the store.
-        :param origin: List of storm tables and joins. This list will be
-            appended to. The Person table is required.
+        :param origin: List of storm tables and joins. The Person table is
+            required.
         :param conditions: Storm conditions for tables in origin.
         :param need_karma: The karma attribute will be cached.
         :param need_ubuntu_coc: The is_ubuntu_coc_signer attribute will be
@@ -3929,6 +3930,17 @@ class PersonSet:
         """
         if store is None:
             store = IStore(Person)
+        # The conditions we've been given are almost certainly more
+        # selective that anything PostgreSQL might guess at.  Use a CTE to
+        # ensure that it looks at them first.
+        store = store.with_(With(
+            'RelevantPerson',
+            Select(Person.id, where=conditions, tables=origin)))
+        relevant_person = Table('RelevantPerson')
+        origin = [
+            Person,
+            Join(relevant_person, Column('id', relevant_person) == Person.id),
+            ]
         columns = [Person]
         decorators = []
         if need_karma or need_api:
@@ -4000,10 +4012,10 @@ class PersonSet:
         if len(columns) == 1:
             column = columns[0]
             # Return a simple ResultSet
-            return store.using(*origin).find(column, conditions)
+            return store.using(*origin).find(column)
         # Adapt the result into a cached Person.
         columns = tuple(columns)
-        raw_result = store.using(*origin).find(columns, conditions)
+        raw_result = store.using(*origin).find(columns)
         if need_api:
             # Collections exported on the API need to be sorted in order to
             # provide stable batching.  In some ways Person.name might make
@@ -4102,8 +4114,8 @@ class SSHKey(SQLBase):
 
     def getFullKeyText(self):
         try:
-            ssh_keytype = getNS(base64.b64decode(self.keytext))[0].decode(
-                'ascii')
+            key_blob = base64.b64decode(self.keytext.encode('UTF-8'))
+            ssh_keytype = getNS(key_blob)[0].decode('ascii')
         except Exception:
             # We didn't always validate keys, so there might be some that
             # can't be loaded this way.
@@ -4131,11 +4143,12 @@ class SSHKeySet:
 
         if check_key:
             try:
-                key = Key.fromString(sshkey)
+                key = Key.fromString(sshkey.encode("UTF-8"))
             except Exception as e:
                 raise SSHKeyAdditionError(key=sshkey, exception=e)
-            if kind != key.sshType():
-                raise SSHKeyAdditionError(type_mismatch=(kind, key.sshType()))
+            keydatatype = six.ensure_str(key.sshType())
+            if kind != keydatatype:
+                raise SSHKeyAdditionError(type_mismatch=(kind, keydatatype))
 
         if send_notification:
             person.security_field_changed(
@@ -4195,10 +4208,6 @@ class WikiName(SQLBase, HasOwnerMixin):
 
 @implementer(IWikiNameSet)
 class WikiNameSet:
-
-    def getByWikiAndName(self, wiki, wikiname):
-        """See `IWikiNameSet`."""
-        return WikiName.selectOneBy(wiki=wiki, wikiname=wikiname)
 
     def get(self, id):
         """See `IWikiNameSet`."""

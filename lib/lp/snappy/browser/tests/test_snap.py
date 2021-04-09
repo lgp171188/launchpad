@@ -1,4 +1,8 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package views."""
@@ -52,11 +56,16 @@ from lp.code.tests.helpers import (
     BranchHostingFixture,
     GitHostingFixture,
     )
-from lp.registry.enums import PersonVisibility
+from lp.registry.enums import (
+    BranchSharingPolicy,
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import get_property_cache
@@ -77,10 +86,12 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
+from lp.snappy.model.snap import Snap
 from lp.testing import (
     admin_logged_in,
     BrowserTestCase,
     login,
+    login_admin,
     login_person,
     person_logged_in,
     TestCaseWithFactory,
@@ -328,6 +339,49 @@ class TestSnapAddView(BaseTestSnapView):
             "the store.\nEdit snap package",
             MatchesTagText(content, "store_upload"))
 
+    def test_create_new_snap_project(self):
+        self.useFixture(GitHostingFixture(blob=b""))
+        project = self.factory.makeProduct()
+        [git_ref] = self.factory.makeGitRefs()
+        source_display = git_ref.display_name
+        browser = self.getViewBrowser(
+            project, view_name="+new-snap", user=self.person)
+        browser.getControl(name="field.name").value = "snap-name"
+        browser.getControl(name="field.vcs").value = "GIT"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.shortened_path)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        browser.getControl("Create snap package").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("snap-name", extract_text(content.h1))
+        self.assertThat(
+            "Test Person", MatchesPickerText(content, "edit-owner"))
+        self.assertThat(
+            "Distribution series:\n%s\nEdit snap package" %
+            self.distroseries.fullseriesname,
+            MatchesTagText(content, "distro_series"))
+        self.assertThat(
+            "Source:\n%s\nEdit snap package" % source_display,
+            MatchesTagText(content, "source"))
+        self.assertThat(
+            "Build source tarball:\nNo\nEdit snap package",
+            MatchesTagText(content, "build_source_tarball"))
+        self.assertThat(
+            "Build schedule:\n(?)\nBuilt on request\nEdit snap package\n",
+            MatchesTagText(content, "auto_build"))
+        self.assertThat(
+            "Source archive for automatic builds:\n\nEdit snap package\n",
+            MatchesTagText(content, "auto_build_archive"))
+        self.assertThat(
+            "Pocket for automatic builds:\n\nEdit snap package",
+            MatchesTagText(content, "auto_build_pocket"))
+        self.assertIsNone(find_tag_by_id(content, "auto_build_channels"))
+        self.assertThat(
+            "Builds of this snap package are not automatically uploaded to "
+            "the store.\nEdit snap package",
+            MatchesTagText(content, "store_upload"))
+
     def test_create_new_snap_users_teams_as_owner_options(self):
         # Teams that the user is in are options for the snap package owner.
         self.useFixture(BranchHostingFixture(blob=b""))
@@ -375,26 +429,92 @@ class TestSnapAddView(BaseTestSnapView):
             browser.getLink("Create snap package")
 
     def test_create_new_snap_private(self):
-        # Private teams will automatically create private snaps.
-        self.useFixture(BranchHostingFixture(blob=b""))
+        # Creates a private snap for a private project.
         login_person(self.person)
-        self.factory.makeTeam(
-            name='super-private', owner=self.person,
-            visibility=PersonVisibility.PRIVATE)
-        branch = self.factory.makeAnyBranch()
+        self.factory.makeProduct(
+            name='private-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        [git_ref] = self.factory.makeGitRefs()
 
         browser = self.getViewBrowser(
-            branch, view_name="+new-snap", user=self.person)
+            git_ref, view_name="+new-snap", user=self.person)
         browser.getControl(name="field.name").value = "private-snap"
-        browser.getControl("Owner").value = ['super-private']
+        browser.getControl(name="field.information_type").value = "PROPRIETARY"
+        browser.getControl(name="field.project").value = "private-project"
         browser.getControl("Create snap package").click()
 
         content = find_main_content(browser.contents)
         self.assertEqual("private-snap", extract_text(content.h1))
         self.assertEqual(
             'This snap contains Private information',
-            extract_text(find_tag_by_id(browser.contents, "privacy"))
-        )
+            extract_text(find_tag_by_id(browser.contents, "privacy")))
+        login_admin()
+        snap = getUtility(ISnapSet).getByName(self.person, 'private-snap')
+        self.assertEqual(
+            InformationType.PROPRIETARY, snap.information_type)
+
+    def test_create_new_snap_private_without_project_fails(self):
+        # It should not not be possible to create a private snap with
+        # information_type not matching project's branch_sharing_policy.
+        login_person(self.person)
+        [git_ref] = self.factory.makeGitRefs()
+
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-snap", user=self.person)
+        browser.getControl(name="field.name").value = "private-snap"
+        browser.getControl(name="field.information_type").value = "PROPRIETARY"
+        browser.getControl("Create snap package").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("Create a new snap package", extract_text(content.h1))
+        messages = find_tags_by_class(browser.contents, "message")
+        self.assertEqual(2, len(messages))
+        top_msg, field_msg = messages
+        self.assertEqual(
+            'There is 1 error.', extract_text(top_msg))
+        self.assertEqual(
+            'Private snap recipes must be associated with a project.',
+            extract_text(field_msg))
+        login_admin()
+        snap = IStore(Snap).find(Snap, Snap.name == 'private-snap').one()
+        self.assertIsNone(snap)
+
+    def test_create_new_snap_private_with_invalid_information_type_fails(self):
+        # It should not not be possible to create a private snap without
+        # setting a project.
+        login_person(self.person)
+        # The project is proprietary, with branch policy beign proprietary
+        # too. We can only create proprietary snaps.
+        self.factory.makeProduct(
+            name='private-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        [git_ref] = self.factory.makeGitRefs()
+
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-snap", user=self.person)
+        browser.getControl(name="field.name").value = "private-snap"
+        browser.getControl(name="field.information_type").value = "PUBLIC"
+        browser.getControl(name="field.project").value = "private-project"
+        browser.getControl("Create snap package").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("Create a new snap package", extract_text(content.h1))
+        messages = find_tags_by_class(browser.contents, "message")
+        self.assertEqual(2, len(messages))
+        top_msg, field_msg = messages
+        self.assertEqual(
+            'There is 1 error.', extract_text(top_msg))
+        expected_msg = (
+            'Project private-project only accepts the following information '
+            'types: Proprietary.')
+        self.assertEqual(expected_msg, extract_text(field_msg))
+        login_admin()
+        snap = IStore(Snap).find(Snap, Snap.name == 'private-snap').one()
+        self.assertIsNone(snap)
 
     def test_create_new_snap_build_source_tarball(self):
         # We can create a new snap and ask for it to build a source tarball.
@@ -497,13 +617,12 @@ class TestSnapAddView(BaseTestSnapView):
                 }],
             "permissions": ["package_upload"],
             }
-        self.assertEqual(expected_body, json.loads(call.request.body))
+        self.assertEqual(
+            expected_body, json.loads(call.request.body.decode("UTF-8")))
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
         parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
-            urlsplit(
-                canonical_url(snap, rootsite="code") +
-                "/+authorize/+login")[:3],
+            urlsplit(canonical_url(snap) + "/+authorize/+login")[:3],
             parsed_location[:3])
         expected_args = {
             "discharge_macaroon_action": ["field.actions.complete"],
@@ -646,40 +765,71 @@ class TestSnapAdminView(BaseTestSnapView):
     def test_admin_snap(self):
         # Admins can change require_virtualized, privacy, and allow_internet.
         login("admin@canonical.com")
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
         login_person(self.person)
+        project = self.factory.makeProduct(name="my-project")
+        with person_logged_in(project.owner):
+            project.information_type = InformationType.PROPRIETARY
         snap = self.factory.makeSnap(registrant=self.person)
         self.assertTrue(snap.require_virtualized)
+        self.assertIsNone(snap.project)
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
 
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        self.factory.makeAccessPolicy(
+            pillar=project, type=InformationType.PRIVATESECURITY)
+        private = InformationType.PRIVATESECURITY.name
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
+        browser.getControl(name='field.project').value = "my-project"
         browser.getControl("Require virtualized builders").selected = False
-        browser.getControl("Private").selected = True
+        browser.getControl(name="field.information_type").value = private
         browser.getControl("Allow external network access").selected = False
         browser.getControl("Update snap package").click()
 
-        login_person(self.person)
+        login_admin()
+        self.assertEqual(project, snap.project)
         self.assertFalse(snap.require_virtualized)
         self.assertTrue(snap.private)
         self.assertFalse(snap.allow_internet)
+
+    def test_admin_snap_private_without_project(self):
+        # Cannot make snap private if it doesn't have a project associated.
+        login_person(self.person)
+        snap = self.factory.makeSnap(registrant=self.person)
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
+        private = InformationType.PRIVATESECURITY.name
+        browser = self.getViewBrowser(snap, user=admin)
+        browser.getLink("Administer snap package").click()
+        browser.getControl(name='field.project').value = None
+        browser.getControl(name="field.information_type").value = private
+        browser.getControl("Update snap package").click()
+        self.assertEqual(
+            'Private snap recipes must be associated with a project.',
+            extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
     def test_admin_snap_privacy_mismatch(self):
         # Cannot make snap public if it still contains private information.
         login_person(self.person)
         team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
             owner=self.person, visibility=PersonVisibility.PRIVATE)
+        project = self.factory.makeProduct(
+            information_type=InformationType.PUBLIC,
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
         snap = self.factory.makeSnap(
-            registrant=self.person, owner=team, private=True)
+            registrant=self.person, owner=team, project=project,
+            information_type=InformationType.PRIVATESECURITY)
         # Note that only LP admins or, in this case, commercial_admins
         # can reach this snap because it's owned by a private team.
-        commercial_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).commercial_admin])
-        browser = self.getViewBrowser(snap, user=commercial_admin)
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin])
+        public = InformationType.PUBLIC.name
+        browser = self.getViewBrowser(snap, user=admin)
         browser.getLink("Administer snap package").click()
-        browser.getControl("Private").selected = False
+        browser.getControl(name="field.information_type").value = public
         browser.getControl("Update snap package").click()
         self.assertEqual(
             'A public snap cannot have a private owner.',
@@ -733,9 +883,9 @@ class TestSnapEditView(BaseTestSnapView):
         browser.getControl(name="field.store_distro_series").value = [
             "ubuntu/%s/%s" % (new_series.name, new_snappy_series.name)]
         browser.getControl("Git", index=0).click()
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             new_git_ref.repository.identity)
-        browser.getControl("Git branch").value = new_git_ref.path
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
         browser.getControl("Build source tarball").selected = True
         browser.getControl(
             "Automatically build when branch changes").selected = True
@@ -894,6 +1044,92 @@ class TestSnapEditView(BaseTestSnapView):
             "name.",
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
+    def test_edit_snap_project_and_info_type(self):
+        series = self.factory.makeUbuntuDistroSeries()
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                usable_distro_series=[series])
+        login_person(self.person)
+        initial_project = self.factory.makeProduct(
+            name='initial-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PUBLIC,
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person, project=initial_project,
+            distroseries=series, store_series=snappy_series,
+            information_type=InformationType.PUBLIC)
+        final_project = self.factory.makeProduct(
+            name='final-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        browser = self.getViewBrowser(snap, user=self.person)
+        browser.getLink("Edit snap package").click()
+        browser.getControl(name="field.project").value = "final-project"
+        browser.getControl(name="field.information_type").value = "PROPRIETARY"
+        browser.getControl("Update snap package").click()
+        login_admin()
+        self.assertEqual(canonical_url(snap), browser.url)
+        snap = IStore(Snap).find(Snap, Snap.name == snap.name).one()
+        self.assertEqual(final_project, snap.project)
+        self.assertEqual(InformationType.PROPRIETARY, snap.information_type)
+
+    def test_edit_snap_private_without_project(self):
+        series = self.factory.makeUbuntuDistroSeries()
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                usable_distro_series=[series])
+        login_person(self.person)
+        private_project = self.factory.makeProduct(
+            name='private-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        snap = self.factory.makeSnap(
+            name='foo-snap', registrant=self.person, owner=self.person,
+            distroseries=series, store_series=snappy_series,
+            information_type=InformationType.PROPRIETARY,
+            project=private_project)
+        browser = self.getViewBrowser(snap, user=self.person)
+        browser.getLink("Edit snap package").click()
+        browser.getControl(name="field.project").value = ''
+        browser.getControl(name="field.information_type").value = (
+            "PROPRIETARY")
+        browser.getControl("Update snap package").click()
+
+        messages = find_tags_by_class(browser.contents, "message")
+        self.assertEqual(2, len(messages))
+        top_msg, field_msg = messages
+        self.assertEqual(
+            'There is 1 error.', extract_text(top_msg))
+        self.assertEqual(
+            'Private snap recipes must be associated with a project.',
+            extract_text(field_msg))
+
+    def test_edit_snap_private_information_type_matches_project(self):
+        series = self.factory.makeUbuntuDistroSeries()
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                usable_distro_series=[series])
+        login_person(self.person)
+        private_project = self.factory.makeProduct(
+            name='private-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        snap = self.factory.makeSnap(
+            name='foo-snap', registrant=self.person, owner=self.person,
+            distroseries=series, store_series=snappy_series,
+            information_type=InformationType.PROPRIETARY,
+            project=private_project)
+        browser = self.getViewBrowser(snap, user=self.person)
+        browser.getLink("Edit snap package").click()
+
+        # Make sure we are only showing valid information type options:
+        info_type_selector = browser.getControl(name="field.information_type")
+        self.assertEqual(['PROPRIETARY'], info_type_selector.options)
+
     def test_edit_public_snap_private_owner(self):
         series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
@@ -952,8 +1188,9 @@ class TestSnapEditView(BaseTestSnapView):
         private_ref_path = private_ref.path
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
-        browser.getControl("Git repository").value = private_ref_identity
-        browser.getControl("Git branch").value = private_ref_path
+        browser.getControl(name="field.git_ref.repository").value = (
+            private_ref_identity)
+        browser.getControl(name="field.git_ref.path").value = private_ref_path
         browser.getControl("Update snap package").click()
         self.assertEqual(
             "A public snap cannot have a private repository.",
@@ -973,8 +1210,9 @@ class TestSnapEditView(BaseTestSnapView):
             git_ref=old_ref, store_series=snappy_series)
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
-        browser.getControl("Git repository").value = new_repository_url
-        browser.getControl("Git branch").value = new_path
+        browser.getControl(
+            name="field.git_ref.repository").value = new_repository_url
+        browser.getControl(name="field.git_ref.path").value = new_path
         browser.getControl("Update snap package").click()
         login_person(self.person)
         content = find_main_content(browser.contents)
@@ -1195,7 +1433,8 @@ class TestSnapEditView(BaseTestSnapView):
             "packages": [{"name": "two", "series": self.snappyseries.name}],
             "permissions": ["package_upload"],
             }
-        self.assertEqual(expected_body, json.loads(call.request.body))
+        self.assertEqual(
+            expected_body, json.loads(call.request.body.decode("UTF-8")))
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
         parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
@@ -1260,7 +1499,8 @@ class TestSnapAuthorizeView(BaseTestSnapView):
                     }],
                 "permissions": ["package_upload"],
                 }
-            self.assertEqual(expected_body, json.loads(call.request.body))
+            self.assertEqual(
+                expected_body, json.loads(call.request.body.decode("UTF-8")))
             self.assertEqual(
                 {"root": root_macaroon_raw}, self.snap.store_secrets)
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
@@ -1415,6 +1655,15 @@ class TestSnapView(BaseTestSnapView):
                         "snap breadcrumb", "li",
                         text=re.compile(r"\ssnap-name\s")))))
 
+    def test_snap_with_project_pillar_url(self):
+        project = self.factory.makeProduct()
+        snap = self.factory.makeSnap(project=project)
+        browser = self.getViewBrowser(snap)
+        with admin_logged_in():
+            expected_url = 'http://launchpad.test/~{}/{}/+snap/{}'.format(
+                snap.owner.name, project.name, snap.name)
+        self.assertEqual(expected_url, browser.url)
+
     def test_index_bzr(self):
         branch = self.factory.makePersonalBranch(
             owner=self.person, name="snap-branch")
@@ -1422,13 +1671,13 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             snap=snap, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Snap packages snap-name
             .*
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: lp://dev/~test-person/\\+junk/snap-branch
+            Source: lp://dev/~test-person/\+junk/snap-branch
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request
@@ -1450,13 +1699,13 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             snap=snap, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Snap packages snap-name
             .*
             Snap package information
             Owner: Test Person
             Distribution series: Ubuntu Shiny
-            Source: ~test-person/\\+git/snap-repository:master
+            Source: ~test-person/\+git/snap-repository:master
             Build source tarball: No
             Build schedule: \(\?\)
             Built on request
@@ -1470,6 +1719,74 @@ class TestSnapView(BaseTestSnapView):
             Primary Archive for Ubuntu Linux
             """, self.getMainText(build.snap))
 
+    def test_index_for_subscriber_without_git_repo_access(self):
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="snap-repository",
+            paths=["refs/heads/master"],
+            information_type=InformationType.PRIVATESECURITY)
+        snap = self.makeSnap(git_ref=ref, private=True)
+        with admin_logged_in():
+            self.makeBuild(
+                snap=snap, status=BuildStatus.FULLYBUILT,
+                duration=timedelta(minutes=30))
+
+        subscriber = self.factory.makePerson()
+        with person_logged_in(self.person):
+            snap.subscribe(subscriber, self.person)
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+            Snap packages snap-name
+            .*
+            Snap package information
+            Owner: Test Person
+            Distribution series: Ubuntu Shiny
+            Source: &lt;redacted&gt;
+            Build source tarball: No
+            Build schedule: \(\?\)
+            Built on request
+            Source archive for automatic builds:
+            Pocket for automatic builds:
+            Builds of this snap package are not automatically uploaded to
+            the store.
+            Latest builds
+            Status When complete Architecture Archive
+            Successfully built 30 minutes ago i386
+            Primary Archive for Ubuntu Linux
+            """, self.getMainText(snap, user=subscriber))
+
+    def test_index_for_subscriber_without_archive_access(self):
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="snap-repository",
+            paths=["refs/heads/master"],
+            information_type=InformationType.PRIVATESECURITY)
+        snap = self.makeSnap(git_ref=ref, private=True)
+        with admin_logged_in():
+            archive = self.factory.makeArchive(private=True)
+            self.makeBuild(
+                snap=snap, status=BuildStatus.FULLYBUILT, archive=archive,
+                duration=timedelta(minutes=30))
+
+        subscriber = self.factory.makePerson()
+        with person_logged_in(self.person):
+            snap.subscribe(subscriber, self.person)
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+            Snap packages snap-name
+            .*
+            Snap package information
+            Owner: Test Person
+            Distribution series: Ubuntu Shiny
+            Source: &lt;redacted&gt;
+            Build source tarball: No
+            Build schedule: \(\?\)
+            Built on request
+            Source archive for automatic builds:
+            Pocket for automatic builds:
+            Builds of this snap package are not automatically uploaded to
+            the store.
+            Latest builds
+            Status When complete Architecture Archive
+            This snap package has not been built yet.
+            """, self.getMainText(snap, user=subscriber))
+
     def test_index_git_url(self):
         ref = self.factory.makeGitRefRemote(
             repository_url="https://git.example.org/foo",
@@ -1478,7 +1795,7 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             snap=snap, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Snap packages snap-name
             .*
             Snap package information
@@ -1512,7 +1829,7 @@ class TestSnapView(BaseTestSnapView):
         build = self.makeBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=30))
         build.setLog(self.factory.makeLibraryFileAlias())
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Successfully built 30 minutes ago buildlog \(.*\) i386
@@ -1539,7 +1856,7 @@ class TestSnapView(BaseTestSnapView):
         # A pending build is listed as such.
         build = self.makeBuild()
         build.queueBuild()
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Needs building in .* \(estimated\) i386
@@ -1571,7 +1888,7 @@ class TestSnapView(BaseTestSnapView):
         job.job._status = JobStatus.FAILED
         job.job.date_finished = datetime.now(pytz.UTC) - timedelta(hours=1)
         job.error_message = "Boom"
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Failed build request 1 hour ago \(Boom\)
@@ -1759,7 +2076,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
 
     def test_request_builds_page(self):
         # The +request-builds page is sane.
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Request builds for snap-name
             Snap packages
             snap-name
@@ -1767,7 +2084,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Source archive:
             Primary Archive for Ubuntu Linux
             PPA
-            \(Find\u2026\)
+            \(Find…\)
             Architectures:
             amd64
             i386
@@ -1781,8 +2098,10 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Proposed
             Backports
             \(\?\)
-            The package stream within the source distribution series to use
-            when building the snap package.
+            The package stream within the source archive and distribution
+            series to use when building the snap package.  If the source
+            archive is a PPA, then the PPA's archive dependencies will be
+            used to select the pocket in the distribution's primary archive.
             Source snap channels:
             core
             core18

@@ -32,7 +32,7 @@ class TestBuildInfoFile(PackageUploadFileTestCase):
     def makeBuildInfoFile(self, filename, buildinfo, component_and_section,
                           priority_name, package, version, changes):
         path, md5, sha1, size = self.writeUploadFile(
-            filename, buildinfo.dump())
+            filename, buildinfo.dump().encode("UTF-8"))
         return BuildInfoFile(
             path, {"MD5": md5}, size, component_and_section, priority_name,
             package, version, changes, self.policy, self.logger)
@@ -63,7 +63,7 @@ class TestBuildInfoFile(PackageUploadFileTestCase):
             self.createChangesFile("foo_0.1-1_source.changes", changes))
         lfa = buildinfofile.storeInDatabase()
         self.layer.txn.commit()
-        self.assertEqual(buildinfo.dump(), lfa.read())
+        self.assertEqual(buildinfo.dump().encode('UTF-8'), lfa.read())
 
     def test_checkBuild(self):
         das = self.factory.makeDistroArchSeries(

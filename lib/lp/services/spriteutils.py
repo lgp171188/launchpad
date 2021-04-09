@@ -6,12 +6,15 @@
 
 """Library to create sprites."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 __all__ = [
     'SpriteUtil',
     ]
 
+import json
 import os
 import re
 import sys
@@ -19,7 +22,6 @@ from textwrap import dedent
 
 import cssutils
 from PIL import Image
-import simplejson
 
 
 class SpriteUtil:
@@ -160,8 +162,10 @@ class SpriteUtil:
             try:
                 sprite_images[sprite['filename']] = Image.open(abs_filename)
             except IOError:
-                print >> sys.stderr, "Error opening '%s' for %s css rule" % (
-                    abs_filename, sprite['rule'].selectorText)
+                print(
+                    "Error opening '%s' for %s css rule" % (
+                        abs_filename, sprite['rule'].selectorText),
+                    file=sys.stderr)
                 raise
             width, height = sprite_images[sprite['filename']].size
             max_sprite_width = max(width, max_sprite_width)
@@ -194,8 +198,9 @@ class SpriteUtil:
                         position[0] = x_position
                         combined_image.paste(sprite_image, tuple(position))
             except:
-                print >> sys.stderr, (
-                    "Error with image file %s" % sprite['filename'])
+                print(
+                    "Error with image file %s" % sprite['filename'],
+                    file=sys.stderr)
                 raise
             # This is the position of the combined image on an HTML
             # element. Therefore, it subtracts the position of the
@@ -218,18 +223,18 @@ class SpriteUtil:
         changes to the css template without recreating the combined
         image file.
         """
-        fp = open(filename, 'w')
-        fp.write(self.EDIT_WARNING)
-        simplejson.dump(self.positions, fp=fp, indent=4)
+        with open(filename, 'w') as fp:
+            fp.write(self.EDIT_WARNING)
+            json.dump(self.positions, fp=fp, indent=4, sort_keys=True)
 
     def loadPositioning(self, filename):
         """Load file with the positions of sprites in the combined image."""
         with open(filename) as f:
-            json = f.read()
+            text = f.read()
         # Remove comments from the beginning of the file.
-        start = json.index('{')
-        json = json[start:]
-        self.positions = simplejson.loads(json)
+        start = text.index('{')
+        text = text[start:]
+        self.positions = json.loads(text)
 
     def saveConvertedCSS(self, css_file, combined_image_url_path):
         """Generate new css from the template and the positioning info.

@@ -52,9 +52,10 @@ Other users (apart from Karl) can't see that page.
 
     >>> user_browser.open('http://launchpad.test/~karl/+expiringmembership/'
     ...                   'ubuntu-mirror-admins')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 If we change the team's renewal policy it still won't be possible for
 the user to renew that membership because it's not about to expire.
@@ -117,7 +118,7 @@ Karl then renews his membership.
     'http://launchpad.test/~karl'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Membership renewed until ...
 
 Karl can't renew it again, since it's now not set to expire soon.
@@ -169,7 +170,7 @@ now renew the membership.
     'http://launchpad.test/~landscape-developers'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Membership renewed until ...
 
 If the user double clicks or goes back to a cached version of the page
@@ -184,7 +185,7 @@ provided no information as to whether the membership was renewed.
     'http://launchpad.test/~landscape-developers'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Membership renewed until ...
 
 When the page is loaded again, there is no form since the membership
@@ -201,6 +202,7 @@ Any user who's not an admin of landscape-developers can't even see that page.
 
     >>> user_browser.open('http://launchpad.test/~landscape-developers'
     ...                   '/+expiringmembership/ubuntu-mirror-admins')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...

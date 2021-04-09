@@ -1,4 +1,4 @@
-# Copyright 2012-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for sharing service."""
@@ -35,6 +35,7 @@ from lp.blueprints.interfaces.specification import ISpecification
 from lp.bugs.interfaces.bug import IBug
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -45,6 +46,7 @@ from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pillar import IPillar
 from lp.registry.interfaces.product import IProduct
+from lp.snappy.interfaces.snap import ISnap
 
 
 # XXX 2012-02-24 wallyworld bug 939910
@@ -161,6 +163,14 @@ class ISharingService(IService):
         :return: a collection of Git repositories.
         """
 
+    def getSharedSnaps(pillar, person, user):
+        """Return the Snap recipes shared between the pillar and person.
+
+        :param user: the user making the request. Only Snap recipes visible
+            to the user will be included in the result.
+        :return: a collection of OCI recipes.
+        """
+
     @export_read_operation()
     @call_with(user=REQUEST_USER)
     @operation_parameters(
@@ -176,8 +186,17 @@ class ISharingService(IService):
         :return: a collection of specifications.
         """
 
+    def getSharedOCIRecipes(pillar, person, user):
+        """Return the OCI recipes shared between the pillar and person.
+
+        :param user: the user making the request. Only OCI recipes visible
+            to the user will be included in the result.
+        :return: a collection of OCI recipes.
+        """
+
     def getVisibleArtifacts(person, bugs=None, branches=None,
-                            gitrepositories=None, specifications=None):
+                            gitrepositories=None, snaps=None,
+                            specifications=None, ocirecipes=None):
         """Return the artifacts shared with person.
 
         Given lists of artifacts, return those a person has access to either
@@ -188,8 +207,11 @@ class ISharingService(IService):
         :param branches: the branches to check for which a person has access.
         :param gitrepositories: the Git repositories to check for which a
             person has access.
+        :param snaps: the snap recipes to check for which a person has access.
         :param specifications: the specifications to check for which a
             person has access.
+        :param ocirecipes: the OCI recipes to check for which a person
+            has access.
         :return: a collection of artifacts the person can see.
         """
 
@@ -328,12 +350,19 @@ class ISharingService(IService):
         gitrepositories=List(
             Reference(schema=IGitRepository),
             title=_('Git repositories'), required=False),
+        snaps=List(
+            Reference(schema=ISnap),
+            title=_('Snap recipes'), required=False),
         specifications=List(
             Reference(schema=ISpecification), title=_('Specifications'),
-            required=False))
+            required=False),
+        ocirecipes=List(
+            Reference(schema=IOCIRecipe),
+            title=_('OCI recipes'), required=False))
     @operation_for_version('devel')
     def revokeAccessGrants(pillar, grantee, user, bugs=None, branches=None,
-                           gitrepositories=None, specifications=None):
+                           gitrepositories=None, snaps=None,
+                           specifications=None, ocirecipes=None):
         """Remove a grantee's access to the specified artifacts.
 
         :param pillar: the pillar from which to remove access
@@ -342,7 +371,9 @@ class ISharingService(IService):
         :param bugs: the bugs for which to revoke access
         :param branches: the branches for which to revoke access
         :param gitrepositories: the Git repositories for which to revoke access
+        :param snaps: The snap recipes for which to revoke access
         :param specifications: the specifications for which to revoke access
+        :param ocirecipes: The OCI recipes for which to revoke access
         """
 
     @export_write_operation()
@@ -357,10 +388,18 @@ class ISharingService(IService):
             Reference(schema=IBranch), title=_('Branches'), required=False),
         gitrepositories=List(
             Reference(schema=IGitRepository),
-            title=_('Git repositories'), required=False))
+            title=_('Git repositories'), required=False),
+        snaps=List(
+            Reference(schema=ISnap),
+            title=_('Snap recipes'), required=False),
+        ocirecipes=List(
+            Reference(schema=IOCIRecipe),
+            title=_('OCI recipes'), required=False)
+    )
     @operation_for_version('devel')
     def ensureAccessGrants(grantees, user, bugs=None, branches=None,
-                           gitrepositories=None, specifications=None):
+                           gitrepositories=None, snaps=None,
+                           specifications=None, ocirecipes=None):
         """Ensure a grantee has an access grant to the specified artifacts.
 
         :param grantees: the people or teams for whom to grant access
@@ -368,7 +407,9 @@ class ISharingService(IService):
         :param bugs: the bugs for which to grant access
         :param branches: the branches for which to grant access
         :param gitrepositories: the Git repositories for which to grant access
+        :param snaps: the snap recipes for which to grant access
         :param specifications: the specifications for which to grant access
+        :param ocirecipes: the OCI recipes for which to grant access
         """
 
     @export_write_operation()

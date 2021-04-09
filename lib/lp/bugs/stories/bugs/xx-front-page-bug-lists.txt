@@ -47,8 +47,8 @@ to the bug target and to the bug reporter's page.
 
     >>> def print_bugs_links(bug_row):
     ...     print("%s: %s" % (
-    ...         bug_row.span.a.renderContents().strip(),
-    ...         bug_row.a.renderContents()))
+    ...         bug_row.span.a.decode_contents().strip(),
+    ...         bug_row.a.decode_contents()))
     ...     print(bug_row.a['href'])
     ...     print(bug_row.span.a['href'])
     >>> for li in reported_bugs('li'):

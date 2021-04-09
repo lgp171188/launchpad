@@ -1,10 +1,12 @@
-# Copyright 2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 __all__ = [
     'MemcacheFixture',
     ]
+
+import time as _time
 
 import fixtures
 
@@ -22,10 +24,20 @@ class MemcacheFixture(fixtures.Fixture):
         self.useFixture(ZopeUtilityFixture(self, IMemcacheClient))
 
     def get(self, key):
-        return self._cache.get(key)
+        value, expiry_time = self._cache.get(key, (None, None))
+        if expiry_time and _time.time() >= expiry_time:
+            self.delete(key)
+            return None
+        else:
+            return value
 
-    def set(self, key, val):
-        self._cache[key] = val
+    def set(self, key, val, time=0):
+        # memcached accepts either delta-seconds from the current time or
+        # absolute epoch-seconds, and tells them apart using a magic
+        # threshold.  See memcached/memcached.c:realtime.
+        if time and time <= 60 * 60 * 24 * 30:
+            time = _time.time() + time
+        self._cache[key] = (val, time)
         return 1
 
     def delete(self, key):

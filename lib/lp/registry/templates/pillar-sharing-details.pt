@@ -30,6 +30,7 @@
       <tal:bugs replace="view/shared_bugs_count">0</tal:bugs> bugs,
       <tal:branches replace="view/shared_branches_count">0</tal:branches> Bazaar branches,
       <tal:gitrepositories replace="view/shared_gitrepositories_count">0</tal:gitrepositories> Git repositories,
+      <tal:snaps replace="view/shared_snaps_count">0</tal:snaps> snaps,
       and  <tal:specifications
       replace="view/shared_specifications_count">0</tal:specifications>
       blueprints shared with <tal:name replace="view/person/displayname">

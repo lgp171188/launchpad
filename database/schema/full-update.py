@@ -165,7 +165,7 @@ def main():
 
         master_disabled = not controller.enable_master()
         if master_disabled:
-            log.warn("Outage ongoing until pgbouncer bounced.")
+            log.warning("Outage ongoing until pgbouncer bounced.")
             return 96
         else:
             log.info("Outage complete. %s", datetime.now() - outage_start)
@@ -188,7 +188,7 @@ def main():
         if slaves_disabled:
             slaves_disabled = not controller.enable_slaves()
             if slaves_disabled:
-                log.warn(
+                log.warning(
                     "Failed to enable slave databases in pgbouncer. "
                     "Now running in master-only mode.")
 

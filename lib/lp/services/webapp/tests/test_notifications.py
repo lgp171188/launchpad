@@ -3,8 +3,11 @@
 
 """Module docstring goes here."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
+import __future__
 from doctest import DocTestSuite
 import unittest
 
@@ -57,7 +60,7 @@ class MockHTTPApplicationResponse:
         """Just report the redirection to the doctest"""
         if status is None:
             status = 302
-        print '%d: %s' % (status, location)
+        print('%d: %s' % (status, location))
 
 
 def adaptNotificationRequestToResponse(request):
@@ -84,6 +87,8 @@ def setUp(test):
         lambda x: mock_browser_request, (INotificationRequest,),
         IBrowserRequest)
 
+    for future_item in 'absolute_import', 'print_function':
+        test.globs[future_item] = getattr(__future__, future_item)
     test.globs['MockResponse'] = MockHTTPApplicationResponse
     test.globs['structured'] = structured
 

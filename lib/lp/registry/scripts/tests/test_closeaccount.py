@@ -25,11 +25,17 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.publishing import Publisher
 from lp.bugs.model.bugsummary import BugSummary
-from lp.code.enums import TargetRevisionControlSystems
+from lp.code.enums import (
+    CodeImportResultStatus,
+    TargetRevisionControlSystems,
+    )
+from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.teammembership import ITeamMembershipSet
 from lp.registry.scripts.closeaccount import CloseAccountScript
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_caches,
     get_transaction_timestamp,
@@ -39,6 +45,8 @@ from lp.services.identity.interfaces.account import (
     IAccountSet,
     )
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
+from lp.services.job.interfaces.job import JobType
+from lp.services.job.model.job import Job
 from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
@@ -51,8 +59,12 @@ from lp.soyuz.enums import (
     PackagePublishingStatus,
     )
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    login_celebrity,
+    TestCaseWithFactory,
+    )
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.pofiletranslator import IPOFileTranslatorSet
@@ -332,6 +344,17 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertEqual(person, bug.owner)
         self.assertEqual(person, bugtask.owner)
 
+    def test_skips_bug_watch_owner(self):
+        person = self.factory.makePerson()
+        self.factory.makeBugWatch(owner=person)
+        self.factory.makeBugWatch(owner=person)
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+
     def test_handles_bug_affects_person(self):
         person = self.factory.makePerson()
         bug = self.factory.makeBug()
@@ -397,7 +420,15 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertEqual(now, subscription.date_cancelled)
         self.assertEqual(
             ArchiveSubscriberStatus.CURRENT, other_subscription.status)
-        self.assertIsNotNone(ppa.getAuthToken(person))
+        # The token remains, but is no longer valid since the subscription
+        # has been cancelled.
+        self.assertIsNotNone(
+            IStore(ArchiveAuthToken).find(
+                ArchiveAuthToken,
+                ArchiveAuthToken.archive == ppa,
+                ArchiveAuthToken.date_deactivated == None,
+                ArchiveAuthToken.person == person).one())
+        self.assertIsNone(ppa.getAuthToken(person))
 
     def test_handles_hardware_submissions(self):
         # Launchpad used to support hardware submissions.  This is in the
@@ -436,18 +467,25 @@ class TestCloseAccount(TestCaseWithFactory):
                  date_created, keys[1], self.factory.makePerson().id,
                  raw_submissions[1].id, system_fingerprint_ids[1]))]
         with dbuser('hwdb-submission-processor'):
+            vendor_name_id = store.execute("""
+                INSERT INTO HWVendorName (name) VALUES (?) RETURNING id
+                """, (self.factory.getUniqueUnicode(),)).get_one()[0]
+            vendor_id = store.execute("""
+                INSERT INTO HWVendorID (bus, vendor_id_for_bus, vendor_name)
+                VALUES (1, '0x0001', ?)
+                RETURNING id
+                """, (vendor_name_id,)).get_one()[0]
+            device_id = store.execute("""
+                INSERT INTO HWDevice
+                    (bus_vendor_id, bus_product_id, variant, name, submissions)
+                VALUES (?, '0x0002', NULL, ?, 1)
+                RETURNING id
+                """, (vendor_id, self.factory.getUniqueUnicode())).get_one()[0]
             device_driver_link_id = store.execute("""
-                SELECT HWDeviceDriverLink.id
-                FROM HWDeviceDriverLink, HWDevice, HWVendorID
-                WHERE
-                    HWVendorID.bus = 1
-                    AND HWVendorID.vendor_id_for_bus = '0x10de'
-                    AND HWDevice.bus_vendor_id = HWVendorID.id
-                    AND HWDevice.bus_product_id = '0x0455'
-                    AND HWDevice.variant IS NULL
-                    AND HWDeviceDriverLink.device = HWDevice.id
-                    AND HWDeviceDriverLink.driver IS NULL
-                """).get_one()[0]
+                INSERT INTO HWDeviceDriverLink (device, driver)
+                VALUES (?, NULL)
+                RETURNING id
+                """, (device_id,)).get_one()[0]
             parent_submission_device_id = store.execute("""
                 INSERT INTO HWSubmissionDevice
                     (device_driver_link, submission, parent, hal_device_id)
@@ -601,6 +639,112 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, code_imports[0].registrant)
         self.assertEqual(person, code_imports[1].registrant)
+
+    def test_skips_import_job_requester(self):
+        self.useFixture(GitHostingFixture())
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[person])
+        code_imports = [
+            self.factory.makeCodeImport(
+                registrant=person, target_rcs_type=target_rcs_type, owner=team)
+            for target_rcs_type in (
+                TargetRevisionControlSystems.BZR,
+                TargetRevisionControlSystems.GIT)]
+
+        for code_import in code_imports:
+            getUtility(ICodeImportJobWorkflow).requestJob(
+                code_import.import_job, person)
+            self.assertEqual(person, code_import.import_job.requesting_user)
+            result = self.factory.makeCodeImportResult(
+                code_import=code_import,
+                requesting_user=person,
+                result_status=CodeImportResultStatus.SUCCESS)
+            person_id = person.id
+            account_id = person.account.id
+            script = self.makeScript([six.ensure_str(person.name)])
+            with dbuser('launchpad'):
+                self.runScript(script)
+            self.assertRemoved(account_id, person_id)
+            self.assertEqual(person, code_import.registrant)
+            self.assertEqual(person, result.requesting_user)
+            self.assertEqual(person, code_import.import_job.requesting_user)
+
+    def test_skip_requester_package_diff_job(self):
+        person = self.factory.makePerson()
+        ppa = self.factory.makeArchive(owner=person)
+        other_person = self.factory.makePerson()
+        from_spr = self.factory.makeSourcePackageRelease(archive=ppa)
+        to_spr = self.factory.makeSourcePackageRelease(archive=ppa)
+        from_spr.requestDiffTo(ppa.owner, to_spr)
+        job = IStore(Job).find(
+            Job, Job.base_job_type == JobType.GENERATE_PACKAGE_DIFF).order_by(
+                Job.id).last()
+        # XXX ilasc 2021-02-23: deleting the ppa in this test by running the
+        # Publisher here results in the "Can't delete non-trivial PPAs
+        # for user" exception. So we just point to another owner here
+        # to simulate ppa owner removal during deletion. The deletion was
+        # successfully performed on the account removal that triggered addition
+        # of skipping the requester on job in dogfood so we need to come back
+        # and fix this test setup as deletion at this point should work.
+        removeSecurityProxy(ppa).owner = other_person
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertEqual(person, job.requester)
+
+    def test_skips_specification_owner(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+        specification = self.factory.makeSpecification(owner=person)
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertEqual(person, specification.owner)
+
+    def test_skips_teammembership_last_changed_by(self):
+        targetteam = self.factory.makeTeam(name='target')
+        member = self.factory.makePerson()
+        login_celebrity('admin')
+        targetteam.addMember(member, targetteam.teamowner)
+        membershipset = getUtility(ITeamMembershipSet)
+        membershipset.deactivateActiveMemberships(
+            targetteam, comment='test', reviewer=member)
+        membership = membershipset.getByPersonAndTeam(member, targetteam)
+        self.assertEqual(member, membership.last_changed_by)
+
+        person_id = member.id
+        account_id = member.account.id
+        script = self.makeScript([six.ensure_str(member.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+
+    def test_skips_teamowner_merged(self):
+        person = self.factory.makePerson()
+        merged_person = self.factory.makePerson()
+        owned_team1 = self.factory.makeTeam(name='target', owner=person)
+        removeSecurityProxy(owned_team1).merged = merged_person
+        owned_team2 = self.factory.makeTeam(name='target2', owner=person)
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+
+        # Closing account fails as the user still owns team2
+        with dbuser('launchpad'):
+            self.assertRaises(
+                LaunchpadScriptFailure, self.runScript, script)
+
+        # Account will now close as the user doesn't own
+        # any other teams at this point
+        removeSecurityProxy(owned_team2).merged = merged_person
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
 
     def test_handles_login_token(self):
         person = self.factory.makePerson()

@@ -346,6 +346,8 @@ The "suggestive templates" cache is up to date.
 We have the same message in both templates but with different
 translations in Spanish:
 
+    >>> from zope.security.proxy import removeSecurityProxy
+
     >>> spanish = pofile_es.language
     >>> evo_product_message = evo_product_template.getPOTMsgSetByMsgIDText(
     ...     ' cards')
@@ -353,16 +355,17 @@ translations in Spanish:
     ...     evo_product_message.getCurrentTranslation(
     ...         evo_product_template, spanish,
     ...         evo_product_template.translation_side))
-    >>> evo_product_translation.translations
-    [u' tarjetas']
+    >>> print(pretty(removeSecurityProxy(
+    ...     evo_product_translation.translations)))
+    [' tarjetas']
     >>> evo_distro_message = evo_distro_template.getPOTMsgSetByMsgIDText(
     ...     ' cards')
     >>> evo_distro_translation = (
     ...     evo_distro_message.getCurrentTranslation(
     ...         evo_distro_template, spanish,
     ...         evo_distro_template.translation_side))
-    >>> evo_distro_translation.translations
-    [u' caratas']
+    >>> print(pretty(removeSecurityProxy(evo_distro_translation.translations)))
+    [' caratas']
 
     >>> suggestions = (
     ...     evo_product_message.getExternallyUsedTranslationMessages(spanish))
@@ -451,8 +454,8 @@ Let's take a message 'test man page' that is translated into Spanish.
     >>> current = potmsgset_translated.getCurrentTranslation(
     ...     evo_man_template, pofile.language,
     ...     evo_man_template.translation_side)
-    >>> print(current.translations)
-    [u'just a translation']
+    >>> print(pretty(removeSecurityProxy(current.translations)))
+    ['just a translation']
 
 It doesn't return other submissions done in the given IPOMsgSet because
 the 'wiki' space is for any submission done outside that IPOMsgSet.
@@ -591,8 +594,8 @@ To put 'external' suggestions in database, let's translate the
 
     >>> current = translator_credits.getCurrentTranslation(
     ...     alsa_potemplate, spanish, alsa_potemplate.translation_side)
-    >>> current.translations
-    [u'Some Translator']
+    >>> print(pretty(removeSecurityProxy(current.translations)))
+    ['Some Translator']
 
 Now, let's add 'translation-credits' message to a different POTemplate:
 
@@ -612,20 +615,14 @@ POTMsgSet.setSequence
 Finally, the new `IPOTMsgSet` should have an entry in the
 `TranslationTemplateItem` table once we assign a sequence number.
 
-    >>> from lp.translations.model.translationtemplateitem import (
-    ...     TranslationTemplateItem)
-
 First, we need a helper function to check whether the potmsgset exists
 in the table or not.
 
-
     >>> def is_potmsgset_in_potemplate(potmsgset, potemplate):
-    ...     items = [
-    ...         item.potmsgset.id
-    ...         for item in TranslationTemplateItem.selectBy(
-    ...             potemplate=potemplate, potmsgset=potmsgset)
-    ...         if item.sequence > 0
-    ...         ]
+    ...     items = {
+    ...         potmsgset.id
+    ...         for potmsgset in potemplate.getPOTMsgSets(prefetch=False)
+    ...         }
     ...     return potmsgset.id in items
 
 Let's create a new potmsgset object.

@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Proxy calls to lp-signing service"""
@@ -64,41 +64,51 @@ class SigningServiceClient:
     def _decryptResponseJson(self, response, response_nonce):
         box = Box(self.private_key, self.service_public_key)
         return json.loads(box.decrypt(
-            response.content, response_nonce, encoder=Base64Encoder))
+            response.content, response_nonce,
+            encoder=Base64Encoder).decode("UTF-8"))
 
-    def _requestJson(self, path, method="GET", **kwargs):
+    def _requestJson(self, path, method="GET", encrypt=False, **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
         signing service, raising exception if status code != 2xx.
 
         :param path: The endpoint path
         :param method: The HTTP method to be used (GET, POST, etc)
-        :param needs_resp_nonce: Indicates if the endpoint requires us to
-            include a X-Response-Nonce, and returns back an encrypted
-            response JSON.
+        :param encrypt: If True, make an encrypted and authenticated
+            request.
         """
-        headers = kwargs.get("headers", {})
+        kwargs = dict(kwargs)
 
         timeline = get_request_timeline(get_current_browser_request())
-        redacted_kwargs = dict(kwargs)
-        if "X-Client-Public-Key" in headers and "data" in redacted_kwargs:
-            # The data will be encrypted, and possibly also very large.
-            del redacted_kwargs["data"]
+        if encrypt:
+            nonce = self.getNonce()
+            response_nonce = self._makeResponseNonce()
+            headers = kwargs.setdefault("headers", {})
+            headers.update(self._getAuthHeaders(nonce, response_nonce))
+            if "data" in kwargs:
+                data = kwargs.pop("data")
+            elif "json" in kwargs:
+                data = json.dumps(kwargs.pop("json")).encode("UTF-8")
+            else:
+                data = b""
+            # The data will be encrypted, so shouldn't be exposed to OOPSes.
+            # It may also be very large.
+            redacted_kwargs = dict(kwargs)
+            # Stuff the encrypted data back into the arguments.
+            kwargs["data"] = self._encryptPayload(nonce, data)
+        else:
+            redacted_kwargs = kwargs
         action = timeline.start(
             "services-signing-proxy-%s" % method, "%s %s" %
             (path, json.dumps(redacted_kwargs)))
-
-        response_nonce = None
-        if "X-Response-Nonce" in headers:
-            response_nonce = base64.b64decode(headers["X-Response-Nonce"])
 
         try:
             url = self.getUrl(path)
             response = urlfetch(url, method=method.lower(), **kwargs)
             response.raise_for_status()
-            if response_nonce is None:
-                return response.json()
-            else:
+            if encrypt:
                 return self._decryptResponseJson(response, response_nonce)
+            else:
+                return response.json()
         finally:
             action.finish()
 
@@ -129,8 +139,9 @@ class SigningServiceClient:
         return {
             "Content-Type": "application/x-boxed-json",
             "X-Client-Public-Key": config.signing.client_public_key,
-            "X-Nonce": base64.b64encode(nonce),
-            "X-Response-Nonce": base64.b64encode(response_nonce),
+            "X-Nonce": base64.b64encode(nonce).decode("UTF-8"),
+            "X-Response-Nonce": (
+                base64.b64encode(response_nonce).decode("UTF-8")),
             }
 
     def _encryptPayload(self, nonce, message):
@@ -155,25 +166,22 @@ class SigningServiceClient:
             if length is None:
                 raise ValueError("SigningKeyType.OPENPGP requires length")
 
-        nonce = self.getNonce()
-        response_nonce = self._makeResponseNonce()
-        raw_payload = {
+        payload = {
             "key-type": key_type.name,
             "description": description,
             }
         if key_type == SigningKeyType.OPENPGP:
-            raw_payload.update({
+            payload.update({
                 "openpgp-key-algorithm": openpgp_key_algorithm.name,
                 "length": length,
                 })
-        payload = json.dumps(raw_payload).encode("UTF-8")
+
         ret = self._requestJson(
-            "/generate", "POST",
-            headers=self._getAuthHeaders(nonce, response_nonce),
-            data=self._encryptPayload(nonce, payload))
+            "/generate", "POST", encrypt=True, json=payload)
         return {
             "fingerprint": ret["fingerprint"],
-            "public-key": base64.b64decode(ret["public-key"])}
+            "public-key": base64.b64decode(ret["public-key"].encode("UTF-8")),
+            }
 
     def sign(self, key_type, fingerprint, message_name, message, mode):
         valid_modes = {SigningMode.ATTACHED, SigningMode.DETACHED}
@@ -184,41 +192,46 @@ class SigningServiceClient:
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
 
-        nonce = self.getNonce()
-        response_nonce = self._makeResponseNonce()
-        payload = json.dumps({
+        payload = {
             "key-type": key_type.name,
             "fingerprint": fingerprint,
             "message-name": message_name,
             "message": base64.b64encode(message).decode("UTF-8"),
             "mode": mode.name,
-            }).encode("UTF-8")
-        data = self._requestJson(
-            "/sign", "POST",
-            headers=self._getAuthHeaders(nonce, response_nonce),
-            data=self._encryptPayload(nonce, payload))
+            }
 
+        ret = self._requestJson("/sign", "POST", encrypt=True, json=payload)
         return {
-            'public-key': base64.b64decode(data['public-key']),
-            'signed-message': base64.b64decode(data['signed-message'])}
+            "public-key": base64.b64decode(ret["public-key"].encode("UTF-8")),
+            "signed-message": base64.b64decode(
+                ret["signed-message"].encode("UTF-8")),
+            }
 
     def inject(self, key_type, private_key, public_key, description,
                created_at):
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
 
-        nonce = self.getNonce()
-        response_nonce = self._makeResponseNonce()
-        payload = json.dumps({
+        payload = {
             "key-type": key_type.name,
             "private-key": base64.b64encode(private_key).decode("UTF-8"),
             "public-key": base64.b64encode(public_key).decode("UTF-8"),
             "created-at": created_at.isoformat(),
             "description": description,
-        }).encode("UTF-8")
+            }
 
-        data = self._requestJson(
-            "/inject", "POST",
-            headers=self._getAuthHeaders(nonce, response_nonce),
-            data=self._encryptPayload(nonce, payload))
-        return {"fingerprint": data["fingerprint"]}
+        ret = self._requestJson("/inject", "POST", encrypt=True, json=payload)
+        return {"fingerprint": ret["fingerprint"]}
+
+    def addAuthorization(self, key_type, fingerprint, client_name):
+        if key_type not in SigningKeyType.items:
+            raise ValueError("%s is not a valid key type" % key_type)
+
+        payload = {
+            "key-type": key_type.name,
+            "fingerprint": fingerprint,
+            "client-name": client_name,
+            }
+
+        self._requestJson(
+            "/authorizations/add", "POST", encrypt=True, json=payload)

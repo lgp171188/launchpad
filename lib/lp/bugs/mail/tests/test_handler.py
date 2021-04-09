@@ -5,8 +5,6 @@
 
 __metaclass__ = type
 
-import time
-
 import transaction
 from zope.component import getUtility
 from zope.security.management import (
@@ -29,9 +27,12 @@ from lp.bugs.mail.handler import (
     )
 from lp.bugs.model.bugnotification import BugNotification
 from lp.registry.enums import BugSharingPolicy
+from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
+from lp.services.mail.incoming import authenticateEmail
+from lp.services.mail.interfaces import IWeaklyAuthenticatedPrincipal
 from lp.services.webapp.authorization import LaunchpadSecurityPolicy
 from lp.testing import (
     celebrity_logged_in,
@@ -42,7 +43,10 @@ from lp.testing import (
     )
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.factory import GPGSigningContext
-from lp.testing.gpgkeys import import_secret_test_key
+from lp.testing.gpgkeys import (
+    import_public_key,
+    import_secret_test_key,
+    )
 from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
@@ -108,7 +112,7 @@ class TestMaloneHandler(TestCaseWithFactory):
                 handler.extractAndAuthenticateCommands(message,
                     'new@bugs.launchpad.net')
         self.assertEqual(mail_handled, None)
-        self.assertEqual(map(str, commands), [
+        self.assertEqual([str(command) for command in commands], [
             'bug new',
             'affects malone',
             ])
@@ -183,13 +187,13 @@ class TestMaloneHandler(TestCaseWithFactory):
         big_body_text = 'This is really big.' * 10000
         message = self.getFailureForMessage(
             'new@bugs.launchpad.test', body=big_body_text)
-        self.assertIn("The description is too long.", message)
+        self.assertIn(b"The description is too long.", message)
 
     def test_bug_not_found(self):
         # Non-existent bug numbers result in an informative error.
         message = self.getFailureForMessage('1234@bugs.launchpad.test')
         self.assertIn(
-            "There is no such bug in Launchpad: 1234", message)
+            b"There is no such bug in Launchpad: 1234", message)
 
     def test_accessible_private_bug(self):
         # Private bugs are accessible by their subscribers.
@@ -212,7 +216,7 @@ class TestMaloneHandler(TestCaseWithFactory):
                 True, self.factory.makePerson())
         message = self.getFailureForMessage('4@bugs.launchpad.test')
         self.assertIn(
-            "There is no such bug in Launchpad: 4", message)
+            b"There is no such bug in Launchpad: 4", message)
 
 
 class MaloneHandlerProcessTestCase(TestCaseWithFactory):
@@ -379,14 +383,14 @@ class BugTaskCommandGroupTestCase(TestCase):
         self.assertEqual(
             [command_1, command_2, command_3], group.commands)
 
-    def test_BugTaskCommandGroup__nonzero__false(self):
-        # A BugTaskCommandGroup is zero is it has no commands.
+    def test_BugTaskCommandGroup__bool__false(self):
+        # A BugTaskCommandGroup is false if it has no commands.
         group = BugTaskCommandGroup()
         self.assertEqual(0, len(group._commands))
         self.assertFalse(bool(group))
 
-    def test_BugTaskCommandGroup__nonzero__true(self):
-        # A BugTaskCommandGroup is non-zero is it has commands.
+    def test_BugTaskCommandGroup__bool__true(self):
+        # A BugTaskCommandGroup is true if it has commands.
         group = BugTaskCommandGroup(
             BugEmailCommands.get('affects', ['fnord']))
         self.assertEqual(1, len(group._commands))
@@ -470,23 +474,23 @@ class BugCommandGroupTestCase(TestCase):
         self.assertEqual(
             [affects_command, status_command], group.groups[0].commands)
 
-    def test_BugCommandGroup__nonzero__false(self):
-        # A BugCommandGroup is zero is it has no commands or groups.
+    def test_BugCommandGroup__bool__false(self):
+        # A BugCommandGroup is false if it has no commands or groups.
         group = BugCommandGroup()
         self.assertEqual(0, len(group._commands))
         self.assertEqual(0, len(group._groups))
         self.assertFalse(bool(group))
 
-    def test_BugCommandGroup__nonzero__true_commands(self):
-        # A BugCommandGroup is not zero is it has a command.
+    def test_BugCommandGroup__bool__true_commands(self):
+        # A BugCommandGroup is true if it has a command.
         group = BugCommandGroup(
             BugEmailCommands.get('private', ['true']))
         self.assertEqual(1, len(group._commands))
         self.assertEqual(0, len(group._groups))
         self.assertTrue(bool(group))
 
-    def test_BugCommandGroup__nonzero__true_groups(self):
-        # A BugCommandGroup is not zero is it has a group.
+    def test_BugCommandGroup__bool__true_groups(self):
+        # A BugCommandGroup is true if it has a group.
         group = BugCommandGroup()
         group.add(BugTaskCommandGroup(
             BugEmailCommands.get('affects', ['fnord'])))
@@ -668,47 +672,69 @@ class BugCommandGroupsTestCase(TestCase):
             expected, [str(command) for command in ordered_commands])
 
 
-class FakeSignature:
-
-    def __init__(self, timestamp):
-        self.timestamp = timestamp
-
-
-class TestSignatureTimestampValidation(TestCaseWithFactory):
-    """GPG signature timestamps are checked for emails containing commands."""
+class TestAuthenticationRequirements(TestCaseWithFactory):
+    """Emails containing commands require strong authentication."""
 
     layer = LaunchpadFunctionalLayer
 
-    def test_good_signature_timestamp(self):
-        # An email message's GPG signature's timestamp checked to be sure it
-        # isn't too far in the future or past.  This test shows that a
-        # signature with a timestamp of appxoimately now will be accepted.
+    def test_commands_with_strong_authentication(self):
+        # A good GPG signature counts as strong authentication, and allows
+        # command processing.
+        # The test keys belong to test@canonical.com.
+        import_public_key('test@canonical.com')
+        bug = self.factory.makeBug()
+        with person_logged_in(bug.owner):
+            bug.setSecurityRelated(True, bug.owner)
+        sender = getUtility(IPersonSet).getByEmail('test@canonical.com')
         signing_context = GPGSigningContext(
             import_secret_test_key(), password='test')
         msg = self.factory.makeSignedMessage(
-            body=' security no', signing_context=signing_context)
+            body=' security no',
+            email_address=removeSecurityProxy(sender).preferredemail.email,
+            signing_context=signing_context,
+            to_address='%d@bugs.launchpad.test' % bug.id)
+        self.assertIsNotNone(msg.signature)
+        principal = authenticateEmail(msg)
+        self.assertEqual(sender, principal.person)
+        self.assertFalse(IWeaklyAuthenticatedPrincipal.providedBy(principal))
         handler = MaloneHandler()
-        with person_logged_in(self.factory.makePerson()):
-            handler.process(msg, msg['To'])
-        # Since there were no commands in the poorly-timestamped message, no
-        # error emails were generated.
+        handler.process(msg, msg['To'])
+        # Since the message was strongly authenticated, no error emails were
+        # generated, and the command was run.
         self.assertEmailQueueLength(0)
+        self.assertFalse(bug.security_related)
 
-    def test_bad_timestamp_but_no_commands(self):
-        # If an email message's GPG signature's timestamp is too far in the
-        # future or past but it doesn't contain any commands, the email is
-        # processed anyway.
-
+    def test_commands_with_weak_authentication(self):
+        # An unsigned message does not allow command processing.
+        bug = self.factory.makeBug()
+        with person_logged_in(bug.owner):
+            bug.setSecurityRelated(True, bug.owner)
         msg = self.factory.makeSignedMessage(
-            body='I really hope this bug gets fixed.')
-        now = time.time()
-        one_week = 60 * 60 * 24 * 7
-        msg.signature = FakeSignature(timestamp=now + one_week)
+            body=' security no', to_address='%d@bugs.launchpad.test' % bug.id)
+        self.assertIsNone(msg.signature)
+        principal = authenticateEmail(msg)
+        self.assertTrue(IWeaklyAuthenticatedPrincipal.providedBy(principal))
         handler = MaloneHandler()
-        # Clear old emails before potentially generating more.
-        pop_notifications()
-        with person_logged_in(self.factory.makePerson()):
-            handler.process(msg, msg['To'])
-        # Since there were no commands in the poorly-timestamped message, no
-        # error emails were generated.
+        handler.process(msg, msg['To'])
+        [notification] = self.assertEmailQueueLength(1)
+        self.assertEqual('Submit Request Failure', notification['Subject'])
+        self.assertTrue(bug.security_related)
+
+    def test_no_commands_with_weak_authentication(self):
+        # A message that does not contain commands is accepted with only
+        # weak authentication.
+        bug = self.factory.makeBug()
+        msg = self.factory.makeSignedMessage(
+            body='I really hope this bug gets fixed.',
+            to_address='%d@bugs.launchpad.test' % bug.id)
+        self.assertIsNone(msg.signature)
+        principal = authenticateEmail(msg)
+        self.assertTrue(IWeaklyAuthenticatedPrincipal.providedBy(principal))
+        handler = MaloneHandler()
+        handler.process(msg, msg['To'])
+        # Since there were no commands in the unsigned message, no error
+        # emails were generated, and the message was added.
         self.assertEmailQueueLength(0)
+        self.assertEqual(
+            'I really hope this bug gets fixed.',
+            bug.bug_messages.last().message.text_contents)

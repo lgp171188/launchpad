@@ -49,7 +49,7 @@ the branch, and suggest logging in for directions.
     >>> anon_browser.open(branch_page)
     >>> content = anon_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print(instructions.renderContents())
+    >>> print(instructions.decode_contents())
     Only
     <a href="http://launchpad.test/~name12">Sample Person</a>
     can upload to this branch. If you are Sample Person please
@@ -61,7 +61,7 @@ definitive that it is not possible to upload to this branch.
     >>> ddaa_browser.open(branch_page)
     >>> content = ddaa_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print(instructions.renderContents())
+    >>> print(instructions.decode_contents())
     <div...
     You cannot upload to this branch. Only
     <a href="http://launchpad.test/~name12">Sample Person</a>
@@ -95,7 +95,7 @@ The branch page now displays directions and a link to register an SSH key.
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
     >>> instructions = find_tag_by_id(content, 'ssh-key-directions')
-    >>> print(instructions.renderContents())
+    >>> print(instructions.decode_contents())
     To authenticate with the Launchpad branch upload service, you need to
     <a href="http://launchpad.test/~name12/+editsshkeys">
     register an SSH key</a>.
@@ -154,7 +154,7 @@ owner is a team.
     >>> anon_browser.open(branch_page)
     >>> content = anon_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print(instructions.renderContents())
+    >>> print(instructions.decode_contents())
     Members of <a
     href="http://launchpad.test/~landscape-developers">Landscape
     Developers</a> can upload to this branch. <a href="+login">Log in</a> for
@@ -166,7 +166,7 @@ a link to the team.
     >>> ddaa_browser.open(branch_page)
     >>> content = ddaa_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print(instructions.renderContents())
+    >>> print(instructions.decode_contents())
     <div...
     You cannot upload to this branch. Members of <a
     href="http://launchpad.test/~landscape-developers">Landscape

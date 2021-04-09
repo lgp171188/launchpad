@@ -153,8 +153,8 @@ invalid.
     >>> bug.messages[-1].owner == joe
     True
 
-    >>> joe.displayname
-    u'Joe Bloggs'
+    >>> print(joe.displayname)
+    Joe Bloggs
     >>> print(joe.preferredemail)
     None
     >>> print(joe.creation_rationale.name)
@@ -179,8 +179,8 @@ is associated with the existing person.
     >>> bugwatch_updater.importBugComments()
     INFO Imported 1 comments for remote bug 123456 on ...
 
-    >>> bug.messages[-1].owner.name
-    u'no-priv'
+    >>> print(bug.messages[-1].owner.name)
+    no-priv
 
 It's also possible for Launchpad to create Persons from remote
 bugtracker users when the remote bugtracker doesn't specify an email
@@ -197,8 +197,8 @@ used to create a Person based on the displayname alone.
     >>> bugwatch_updater.importBugComments()
     INFO Imported 1 comments for remote bug 123456 on ...
 
-    >>> bug.messages[-1].owner.name
-    u'noemail-bugzilla-checkwatches-1'
+    >>> print(bug.messages[-1].owner.name)
+    noemail-bugzilla-checkwatches-1
 
     >>> print(bug.messages[-1].owner.preferredemail)
     None
@@ -480,8 +480,8 @@ is used as the From address.
 
     >>> notifications[0].is_comment
     True
-    >>> notifications[0].message.owner.name
-    u'bug-watch-updater'
+    >>> print(notifications[0].message.owner.name)
+    bug-watch-updater
 
     >>> print(notifications[0].message.text_contents)
     Launchpad has imported 2 comments from the remote bug at

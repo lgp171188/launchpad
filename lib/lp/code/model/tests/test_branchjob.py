@@ -18,6 +18,7 @@ from breezy.revision import NULL_REVISION
 from breezy.transport import get_transport
 from fixtures import MockPatch
 import pytz
+import six
 from storm.locals import Store
 import transaction
 from zope.component import getUtility
@@ -201,10 +202,10 @@ class TestBranchScanJob(TestCaseWithFactory):
         product = self.factory.makeProduct()
         private_bug = self.factory.makeBug(
             target=product, information_type=InformationType.USERDATA)
-        bug_line = b'https://launchpad.net/bugs/%s fixed' % private_bug.id
+        bug_line = 'https://launchpad.net/bugs/%s fixed' % private_bug.id
         with override_environ(BRZ_EMAIL='me@example.com'):
             bzr_tree.commit(
-                'First commit', rev_id=b'rev1', revprops={b'bugs': bug_line})
+                'First commit', rev_id=b'rev1', revprops={'bugs': bug_line})
         job = BranchScanJob.create(db_branch)
         with dbuser("branchscanner"):
             job.run()
@@ -332,7 +333,8 @@ class TestBranchUpgradeJob(TestCaseWithFactory):
         (mail,) = pop_notifications()
         self.assertEqual(
             'Launchpad error while upgrading a branch', mail['subject'])
-        self.assertIn('Not a branch', mail.get_payload(decode=True))
+        self.assertIn(
+            'Not a branch', six.ensure_text(mail.get_payload(decode=True)))
 
 
 class TestRevisionMailJob(TestCaseWithFactory):
@@ -384,7 +386,7 @@ class TestRevisionMailJob(TestCaseWithFactory):
                 'url': canonical_url(branch),
                 'identity': branch.bzr_identity,
                 },
-            mail.get_payload(decode=True))
+            six.ensure_text(mail.get_payload(decode=True)))
 
     def test_revno_string(self):
         """Ensure that revnos can be strings."""
@@ -441,11 +443,11 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         """
         for bzr_revision in bzr_branch.repository.get_revisions(revision_ids):
             existing = branch.getBranchRevision(
-                revision_id=bzr_revision.revision_id)
+                revision_id=six.ensure_text(bzr_revision.revision_id))
             if existing is None:
                 RevisionSet().newFromBazaarRevisions([bzr_revision])
             revision = RevisionSet().getByRevisionId(
-                bzr_revision.revision_id)
+                six.ensure_text(bzr_revision.revision_id))
             try:
                 revno = bzr_branch.revision_id_to_revno(revision.revision_id)
             except bzr_errors.NoSuchRevision:
@@ -579,7 +581,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         self.addCleanup(job.bzr_branch.unlock)
         self.assertEqual(
             set([b'rev2a-id', b'rev3-id', b'rev2b-id', b'rev2c-id']),
-            job.getMergedRevisionIDs('rev2d-id', graph))
+            job.getMergedRevisionIDs(b'rev2d-id', graph))
 
     def test_findRelatedBMP(self):
         """The related branch merge proposals can be identified."""
@@ -968,7 +970,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
                 if file_content is None:
                     raise IndexError  # Same as if missing.
             except IndexError:
-                file_content = self.factory.getUniqueString()
+                file_content = self.factory.getUniqueBytes()
             dname = os.path.dirname(file_name)
             self.tree.controldir.root_transport.clone(dname).create_prefix()
             self.tree.controldir.root_transport.put_bytes(
@@ -981,7 +983,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
-            revision_id = self.tree.commit(commit_message)
+            revision_id = six.ensure_text(self.tree.commit(commit_message))
         self.branch.last_scanned_id = revision_id
         self.branch.last_mirrored_id = revision_id
         return revision_id
@@ -1047,9 +1049,9 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         # files from the branch but does not add changed directories to the
         # template_files_changed and translation_files_changed lists .
         pot_path = "subdir/foo.pot"
-        pot_content = self.factory.getUniqueString()
+        pot_content = self.factory.getUniqueBytes()
         po_path = "subdir/foo.po"
-        po_content = self.factory.getUniqueString()
+        po_content = self.factory.getUniqueBytes()
         self._makeBranchWithTreeAndFiles(((pot_path, pot_content),
                                           (po_path, po_content)))
         self._makeProductSeries(TranslationsBranchImportMode.NO_IMPORT)
@@ -1216,7 +1218,8 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         # iterReady does not return jobs for branches where last_scanned_id
         # and last_mirror_id are different.
         self._makeBranchWithTreeAndFiles([])
-        self.branch.last_scanned_id = NULL_REVISION  # Was not scanned yet.
+        # Was not scanned yet.
+        self.branch.last_scanned_id = six.ensure_text(NULL_REVISION)
         self._makeProductSeries(
             TranslationsBranchImportMode.IMPORT_TEMPLATES)
         # Put the job in ready state.
@@ -1283,7 +1286,7 @@ class TestViaCelery(TestCaseWithFactory):
         db_branch = self.factory.makeAnyBranch()
         self.createBzrBranch(db_branch)
         commit = DirectBranchCommit(db_branch, no_race_check=True)
-        commit.writeFile('foo.pot', 'gibberish')
+        commit.writeFile('foo.pot', b'gibberish')
         with person_logged_in(db_branch.owner):
             # wait for branch scan
             with block_on_job(self):

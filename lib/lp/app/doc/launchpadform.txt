@@ -245,10 +245,12 @@ Check that form wide errors can be reported:
   >>> view.setUpFields()
   >>> view.setUpWidgets()
   >>> data = {}
-  >>> view._validate(None, data)
-  [u'your password may not be the same as your name']
-  >>> view.form_wide_errors
-  [u'your password may not be the same as your name']
+  >>> for error in view._validate(None, data):
+  ...     print(error)
+  your password may not be the same as your name
+  >>> for error in view.form_wide_errors:
+  ...     print(error)
+  your password may not be the same as your name
 
 Check that widget specific errors can be reported:
 
@@ -259,10 +261,12 @@ Check that widget specific errors can be reported:
   >>> view.setUpFields()
   >>> view.setUpWidgets()
   >>> data = {}
-  >>> view._validate(None, data)
-  [u'your password must not be &quot;password&quot;']
-  >>> view.widget_errors
-  {'password': u'your password must not be &quot;password&quot;'}
+  >>> for error in view._validate(None, data):
+  ...     print(error)
+  your password must not be &quot;password&quot;
+  >>> for field, error in view.widget_errors.items():
+  ...     print("%s: %s" % (field, error))
+  password: your password must not be &quot;password&quot;
 
 The base template used for LaunchpadFormView classes takes care of
 displaying these errors in the appropriate locations.
@@ -370,8 +374,8 @@ executing the template attribute (which can be set from ZCML):
 
   >>> context = FormTest()
   >>> view = RenderFormTest(context, LaunchpadTestRequest(form={}))
-  >>> view()
-  u'Content that comes from a ZCML registered template.'
+  >>> print(view())
+  Content that comes from a ZCML registered template.
 
 When a redirection is done (either by calling
 self.request.response.redirect() or setting the next_url attribute), the
@@ -383,8 +387,8 @@ rendered content is always the empty string.
   ...     form={'field.displayname': 'bob',
   ...           'field.actions.redirect': 'Redirect'})
   >>> view = RenderFormTest(context, request)
-  >>> view()
-  u''
+  >>> print(view())
+  <BLANKLINE>
 
 As an alternative to executing the template attribute, an action handler
 can directly return the rendered content:
@@ -395,8 +399,8 @@ can directly return the rendered content:
   ...     form={'field.displayname': 'bob',
   ...           'field.actions.update': 'Update'})
   >>> view = RenderFormTest(context, request)
-  >>> view()
-  u'Display name changed to: bob.'
+  >>> print(view())
+  Display name changed to: bob.
 
 This is also true of failure handlers:
 
@@ -406,8 +410,8 @@ This is also true of failure handlers:
   ...     form={'field.displayname': '',
   ...           'field.actions.update': 'Update'})
   >>> view = RenderFormTest(context, request)
-  >>> view()
-  u'Some errors occured.'
+  >>> print(view())
+  Some errors occured.
 
 
 == Initial Focused Widget ==
@@ -467,12 +471,11 @@ using a custom widget.
 First we'll create a fake pagetemplate which doesn't use Launchpad's main
 template and thus is way simpler.
 
-  >>> from StringIO import StringIO
   >>> from tempfile import mkstemp
   >>> from zope.browserpage import ViewPageTemplateFile
   >>> file, filename = mkstemp()
   >>> f = open(filename, 'w')
-  >>> f.write(u'<div metal:use-macro="context/@@launchpad_form/form" />')
+  >>> _ = f.write(u'<div metal:use-macro="context/@@launchpad_form/form" />')
   >>> f.close()
 
 By default, all widgets are visible.
@@ -551,9 +554,10 @@ request:
   ...           'field.actions.change': 'Change'})
   >>> view = UnsafeActionTestView(context, request)
   >>> view.initialize()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  UnsafeFormGetSubmissionError: field.actions.change
+  lp.services.webapp.interfaces.UnsafeFormGetSubmissionError: field.actions.change
 
   >>> request = LaunchpadTestRequest(
   ...     method='POST',
@@ -624,8 +628,8 @@ object for us too:
   >>> request.response.getStatus()
   302
 
-  >>> context.displayname
-  u'James Henstridge'
+  >>> print(context.displayname)
+  James Henstridge
 
 By default updateContextFromData() uses the view's context, but it's
 possible to pass in a specific context to use instead:
@@ -633,6 +637,5 @@ possible to pass in a specific context to use instead:
   >>> custom_context = FormTest()
   >>> view.updateContextFromData({'displayname': u'New name'}, custom_context)
   True
-  >>> custom_context.displayname
-  u'New name'
-
+  >>> print(custom_context.displayname)
+  New name

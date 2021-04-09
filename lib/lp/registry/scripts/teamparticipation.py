@@ -181,7 +181,7 @@ def check_teamparticipation_consistency(log, info):
 
     for error in errors:
         people_repr = ", ".join(imap(get_repr, error.people))
-        log.warn(
+        log.warning(
             "%s: %s TeamParticipation entries for %s.",
             get_repr(error.team), error.type, people_repr)
 
@@ -229,4 +229,4 @@ def fix_teamparticipation_consistency(log, errors):
             store.execute(statement)
             transaction.commit()
         else:
-            log.warn("Unrecognized error: %r", error)
+            log.warning("Unrecognized error: %r", error)

@@ -171,15 +171,16 @@ This specialized list does not include the search form. So there is no
     >>> user_browser.getControl('Search', index=0).type
     Traceback (most recent call last):
     ...
-    LookupError: label u'Search'
+    LookupError: label ...'Search'
     ...
 
 The 'Report a bug' link is also not present.
 
     >>> user_browser.getLink('Report a bug')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 The listing is sorted in order of most inactive to least inactive. The
 bugs at the top of the list will expire before the ones at the bottom.

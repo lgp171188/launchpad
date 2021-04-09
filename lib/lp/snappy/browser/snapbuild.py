@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """SnapBuild views."""
@@ -48,7 +48,13 @@ class SnapBuildContextMenu(ContextMenu):
 
     facet = 'overview'
 
-    links = ('cancel', 'rescore')
+    links = ('retry', 'cancel', 'rescore')
+
+    @enabled_with_permission('launchpad.Edit')
+    def retry(self):
+        return Link(
+            '+retry', 'Retry this build', icon='retry',
+            enabled=self.context.can_be_retried)
 
     @enabled_with_permission('launchpad.Edit')
     def cancel(self):
@@ -104,6 +110,32 @@ class SnapBuildView(LaunchpadFormView):
             self.request.response.addInfoNotification(
                 "An upload has been scheduled and will run as soon as "
                 "possible.")
+
+
+class SnapBuildRetryView(LaunchpadFormView):
+    """View for retrying a snap package build."""
+
+    class schema(Interface):
+        """Schema for retrying a build."""
+
+    page_title = label = 'Retry build'
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+    next_url = cancel_url
+
+    @action('Retry build', name='retry')
+    def request_action(self, action, data):
+        """Retry the build."""
+        if not self.context.can_be_retried:
+            self.request.response.addErrorNotification(
+                'Build cannot be retried')
+        else:
+            self.context.retry()
+            self.request.response.addInfoNotification('Build has been queued')
+
+        self.request.response.redirect(self.next_url)
 
 
 class SnapBuildCancelView(LaunchpadFormView):

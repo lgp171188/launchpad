@@ -24,6 +24,7 @@ from storm.databases.postgres import JSON
 from storm.locals import (
     Int,
     Reference,
+    Store,
     )
 import transaction
 from zope.component import getUtility
@@ -47,6 +48,11 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
+    )
+from lp.services.database.locking import (
+    AdvisoryLockHeld,
+    LockType,
+    try_advisory_lock,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
@@ -186,7 +192,7 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     class ManifestListUploadError(Exception):
         pass
 
-    retry_error_types = (ManifestListUploadError, )
+    retry_error_types = (ManifestListUploadError, AdvisoryLockHeld,)
     max_retries = 5
 
     config = config.IOCIRegistryUploadJobSource
@@ -212,10 +218,13 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     @property
     def retry_delay(self):
         dithering_secs = int(random.random() * 60)
-        # Adds some random seconds between 0 and 60 to minimize the
-        # likelihood of synchronized retries holding locks on the database
-        # at the same time.
-        return timedelta(minutes=10, seconds=dithering_secs)
+        delays = (10, 15, 20, 30)
+        try:
+            return timedelta(
+                minutes=delays[self.attempt_count - 1],
+                seconds=dithering_secs)
+        except IndexError:
+            return timedelta(minutes=10, seconds=dithering_secs)
 
     # Ideally we'd just override Job._set_status or similar, but
     # lazr.delegates makes that difficult, so we use this to override all
@@ -290,32 +299,11 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         """
         builds = list(build_request.builds)
         uploads_per_build = {i: list(i.registry_upload_jobs) for i in builds}
-        upload_jobs = sum(uploads_per_build.values(), [])
-
-        # Lock the Job rows, so no other job updates its status until the
-        # end of this job's transaction. This is done to avoid race conditions,
-        # where 2 upload jobs could be running simultaneously and end up
-        # uploading an incomplete manifest list at the same time.
-        # Note also that new upload jobs might be created between the
-        # transaction begin and this lock takes place, but in this case the
-        # new upload is either a retry from a failed upload, or the first
-        # upload for one of the existing builds. Either way, we will succeed
-        # to execute our manifest list upload, and the new job will wait
-        # until this job finishes to upload their version of the manifest
-        # list (which will override our version, including both manifests).
-        store = IMasterStore(builds[0])
-        placeholders = ', '.join('?' for _ in upload_jobs)
-        sql = (
-            "SELECT id, status FROM job WHERE id IN (%s) FOR UPDATE"
-            % placeholders)
-        job_status = {
-            job_id: JobStatus.items[status] for job_id, status in
-            store.execute(sql, [i.job_id for i in upload_jobs])}
 
         builds = set()
         for build, upload_jobs in uploads_per_build.items():
             has_finished_upload = any(
-                job_status[i.job_id] == JobStatus.COMPLETED
+                i.status == JobStatus.COMPLETED
                 or i.job_id == self.job_id
                 for i in upload_jobs)
             if has_finished_upload:
@@ -342,33 +330,25 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     def run(self):
         """See `IRunnableJob`."""
         client = getUtility(IOCIRegistryClient)
-        # XXX twom 2020-04-16 This is taken from SnapStoreUploadJob
-        # it will need to gain retry support.
         try:
-            try:
-                if not self.build_uploaded:
-                    client.upload(self.build)
-                    self.build_uploaded = True
+            with try_advisory_lock(LockType.REGISTRY_UPLOAD,
+                                   self.build.recipe.id,
+                                   Store.of(self.build.recipe)):
+                try:
+                    if not self.build_uploaded:
+                        client.upload(self.build)
+                        self.build_uploaded = True
 
-                self.uploadManifestList(client)
-                # Force this job status to COMPLETED in the same transaction we
-                # called `getUploadedBuilds` (in the uploadManifestList call
-                # above) to release the lock already including our new status.
-                # This way, any other transaction that was blocked waiting to
-                # get the info about the upload jobs will immediately have the
-                # new status of this job, avoiding race conditions. Keep the
-                # `manage_transaction=False` to prevent the method from
-                # commiting at the wrong moment.
-                self.complete(manage_transaction=False)
+                    self.uploadManifestList(client)
 
-            except OCIRegistryError as e:
-                self.error_summary = str(e)
-                self.errors = e.errors
-                raise
-            except Exception as e:
-                self.error_summary = str(e)
-                self.errors = None
-                raise
+                except OCIRegistryError as e:
+                    self.error_summary = str(e)
+                    self.errors = e.errors
+                    raise
+                except Exception as e:
+                    self.error_summary = str(e)
+                    self.errors = None
+                    raise
         except Exception:
             transaction.commit()
             raise

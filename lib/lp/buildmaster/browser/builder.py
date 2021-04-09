@@ -48,6 +48,7 @@ from lp.buildmaster.interfaces.builder import (
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuildSource,
     )
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -99,6 +100,13 @@ class BuilderSetNavigation(GetitemNavigation):
     @stepthrough('+snapbuild')
     def traverse_snapbuild(self, name):
         build = get_build_by_id_str(ISnapBuildSet, name)
+        if build is None:
+            return None
+        return self.redirectSubTree(canonical_url(build, request=self.request))
+
+    @stepthrough('+ocirecipebuild')
+    def traverse_ocirecipebuild(self, name):
+        build = get_build_by_id_str(IOCIRecipeBuildSet, name)
         if build is None:
             return None
         return self.redirectSubTree(canonical_url(build, request=self.request))

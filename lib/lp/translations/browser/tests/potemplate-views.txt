@@ -5,8 +5,8 @@ On this section, we are going to test the view class for an IPOTemplate.
 
 First, we need some imports.
 
+    >>> import io
     >>> from zope.publisher.browser import FileUpload
-    >>> from StringIO import StringIO
     >>> from lp.translations.interfaces.translationimportqueue import (
     ...     ITranslationImportQueue)
     >>> from lp.registry.interfaces.distribution import IDistributionSet
@@ -47,7 +47,7 @@ string again once we're on zope.publisher >= 4.0.0a1.
 
     >>> class FileUploadArgument:
     ...     filename=b'po/foo.pot'
-    ...     file=StringIO(b'foos')
+    ...     file=io.BytesIO(b'foos')
     ...     headers=''
 
 Now, we do the upload.
@@ -81,7 +81,7 @@ string again once we're on zope.publisher >= 4.0.0a1.
 
     >>> class FileUploadArgument:
     ...     filename=b'po/es.po'
-    ...     file=StringIO(b'foos')
+    ...     file=io.BytesIO(b'foos')
     ...     headers=''
 
 We do the upload...
@@ -110,7 +110,7 @@ And for the path, we are going to use the filename we got from the upload form
 because it's a .po file instead of a .pot file and we need that information
 to differenciate different .po files associated with the context.
 
-    >>> entry.path
-    u'po/es.po'
+    >>> print(entry.path)
+    po/es.po
 
 And that's all, folks!

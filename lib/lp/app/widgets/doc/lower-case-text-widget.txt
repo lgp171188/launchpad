@@ -13,16 +13,16 @@ lower case:
   >>> field = IBug['description']
   >>> request = LaunchpadTestRequest(form={'field.description':'Foo'})
   >>> widget = LowerCaseTextWidget(field, request)
-  >>> widget.getInputValue()
-  u'foo'
+  >>> print(widget.getInputValue())
+  foo
 
 However, strings without lower case characters are left unchanged:
 
   >>> field = IBug['description']
   >>> request = LaunchpadTestRequest(form={'field.description':'foo1'})
   >>> widget = LowerCaseTextWidget(field, request)
-  >>> widget.getInputValue()
-  u'foo1'
+  >>> print(widget.getInputValue())
+  foo1
 
 In addition, the widget also renders itself with a CSS style that causes
 characters to be rendered in lower case as they are typed in by the

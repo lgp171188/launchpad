@@ -16,7 +16,7 @@ Tests for the team '+join' page's raw view objects.
     ...     view = getMultiAdapter((team, request), name='+join')
     ...     view.initialize()
     ...     for notification in request.notifications:
-    ...         print notification.message
+    ...         print(notification.message)
 
     # Define a helper for creating teams with a specific subscription
     # policy.

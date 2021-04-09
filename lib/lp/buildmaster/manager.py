@@ -77,12 +77,6 @@ JOB_RESET_THRESHOLD = 3
 BUILDER_FAILURE_THRESHOLD = 5
 
 
-def build_candidate_sort_key(candidate):
-    # Sort key for build candidates.  This must match the ordering used in
-    # BuildQueueSet.findBuildCandidates.
-    return -candidate.lastscore, candidate.id
-
-
 class PrefetchedBuildCandidates:
     """A set of build candidates updated using efficient bulk queries.
 
@@ -409,7 +403,7 @@ def recover_failure(logger, vitals, builder, retry, exception):
         # We've already tried resetting it enough times, so we have
         # little choice but to give up.
         logger.info("Failing builder %s.", builder.name)
-        builder.failBuilder(str(exception))
+        builder.failBuilder(six.text_type(exception))
     elif builder_action == True:
         # Dirty the builder to attempt recovery. In the virtual case,
         # the dirty idleness will cause a reset, giving us a good chance
@@ -529,13 +523,16 @@ class SlaveScanner:
         builder = self.builder_factory[self.builder_name]
         try:
             builder.gotFailure()
+            labels = {}
             if builder.current_build is not None:
                 builder.current_build.gotFailure()
-                self.statsd_client.incr(
-                    'builders.judged_failed,build=True,arch={}'.format(
-                        builder.current_build.processor.name))
+                labels.update({
+                    'build': True,
+                    'arch': builder.current_build.processor.name,
+                    })
             else:
-                self.statsd_client.incr('builders.judged_failed,build=False')
+                labels['build'] = False
+            self.statsd_client.incr('builders.judged_failed', labels=labels)
             recover_failure(self.logger, vitals, builder, retry, failure.value)
             transaction.commit()
         except Exception:
@@ -596,6 +593,8 @@ class SlaveScanner:
     def updateVersion(self, vitals, slave_status):
         """Update the DB's record of the slave version if necessary."""
         version = slave_status.get("builder_version")
+        if version is not None:
+            version = six.ensure_text(version)
         if version != vitals.version:
             self.builder_factory[self.builder_name].version = version
             transaction.commit()
@@ -636,7 +635,7 @@ class SlaveScanner:
                 # The slave is either confused or disabled, so reset and
                 # requeue the job. The next scan cycle will clean up the
                 # slave if appropriate.
-                self.logger.warn(
+                self.logger.warning(
                     "%s. Resetting job %s.", lost_reason,
                     vitals.build_queue.build_cookie)
                 vitals.build_queue.reset()

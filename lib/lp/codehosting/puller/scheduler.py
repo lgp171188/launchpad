@@ -12,9 +12,9 @@ __all__ = [
     'PullerMonitorProtocol',
     ]
 
+import io
 import os
 import socket
-from StringIO import StringIO
 
 from contrib.glock import (
     GlobalLock,
@@ -123,6 +123,11 @@ class PullerWireProtocol(NetstringReceiver):
 
     def stringReceived(self, line):
         """See `NetstringReceiver.stringReceived`."""
+        try:
+            line = line.decode('UTF-8')
+        except UnicodeDecodeError:
+            self.puller_protocol.unexpectedError(
+                failure.Failure(BadMessage(line)))
         if (self._current_command is not None
             and self._expected_args is not None):
             # state [2]
@@ -180,7 +185,7 @@ class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
         self.reported_mirror_finished = False
         self.listener = listener
         self.wire_protocol = PullerWireProtocol(self)
-        self._stderr = StringIO()
+        self._stderr = io.BytesIO()
         self._deferred.addCallbacks(
             self.checkReportingFinishedAndNoStderr,
             self.ensureReportingFinished)
@@ -194,7 +199,7 @@ class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
         When the process exits cleanly, we expect it to have not printed
         anything to stderr and to have reported success or failure.  If it has
         failed to do either of these things, we should fail noisily."""
-        stderr = self._stderr.getvalue()
+        stderr = self._stderr.getvalue().decode('UTF-8', 'replace')
         if stderr:
             fail = failure.Failure(UnexpectedStderr(stderr))
             fail.error = stderr
@@ -213,7 +218,7 @@ class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
         as a failure reason.
         """
         if not self.reported_mirror_finished:
-            stderr = self._stderr.getvalue()
+            stderr = self._stderr.getvalue().decode('UTF-8', 'replace')
             reason.error = stderr
             if stderr:
                 errorline = stderr.splitlines()[-1]

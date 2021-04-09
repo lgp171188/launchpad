@@ -84,8 +84,8 @@ Perform some diffs in advance, the first diff in ubuntu and the diff
 in PPA will be performed, the second diff in ubuntu will be performed
 later.
 
+    >>> import io
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> from StringIO import StringIO
     >>> from lp.services.database.constants import UTC_NOW
     >>> from lp.services.librarian.interfaces.client import ILibrarianClient
     >>> from lp.soyuz.enums import PackageDiffStatus
@@ -95,7 +95,7 @@ later.
     ...     naked_diff.date_fulfilled = UTC_NOW
     ...     naked_diff.status = PackageDiffStatus.COMPLETED
     ...     naked_diff.diff_content = getUtility(ILibrarianClient).addFile(
-    ...         filename, 3, StringIO('Foo'), 'application/gzipped-patch')
+    ...         filename, 3, io.BytesIO(b'Foo'), 'application/gzipped-patch')
 
     >>> perform_fake_diff(diff_one, 'biscuit_1.0-1_1.0-2.diff.gz')
 
@@ -147,9 +147,10 @@ and "(pending)" is appended to the text as a further hint that it's not
 ready yet.
 
     >>> anon_browser.getLink('diff from 1.0-2 to 1.0-3')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 When the remaining pending diff is performed and the page is reloaded
 the missing link is rendered.

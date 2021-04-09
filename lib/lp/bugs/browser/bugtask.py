@@ -408,7 +408,7 @@ class BugTaskNavigation(Navigation):
         """Traverse to a nomination by id."""
         if not nomination_id.isdigit():
             return None
-        return getUtility(IBugNominationSet).get(nomination_id)
+        return getUtility(IBugNominationSet).get(int(nomination_id))
 
     @redirection('references')
     def redirect_references(self):
@@ -594,8 +594,8 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             'affects|description|security vulnerability|information type|'
             'summary|tags|visibility|bug task deleted')
         bugtask_change_re = (
-            '[a-z0-9][a-z0-9\+\.\-]+( \([A-Za-z0-9\s]+\))?: '
-            '(assignee|importance|milestone|status)')
+            r'[a-z0-9][a-z0-9\+\.\-]+( \([A-Za-z0-9\s]+\))?: '
+            r'(assignee|importance|milestone|status)')
         interesting_match = re.compile(
             "^(%s|%s)$" % (bug_change_re, bugtask_change_re)).match
 
@@ -690,10 +690,14 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
         """
         event_groups = self._event_groups
 
+        def activity_sort_key(activity):
+            target = activity.target
+            return (
+                activity.datechanged, 0 if target is None else 1, target,
+                activity.attribute)
+
         def group_activities_by_target(activities):
-            activities = sorted(
-                activities, key=attrgetter(
-                    "datechanged", "target", "attribute"))
+            activities = sorted(activities, key=activity_sort_key)
             return [
                 {"target": target, "activity": list(activity)}
                 for target, activity in groupby(
@@ -728,7 +732,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             else:
                 return comment_event_dict(event_group)
 
-        events = map(event_dict, event_groups)
+        events = [event_dict(event_group) for event_group in event_groups]
 
         # Insert blanks if we're showing only a subset of the comment list.
         if self.visible_comments_truncated_for_display:
@@ -1369,7 +1373,7 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
                 self.context.validateTransitionToTarget(
                     new_target, check_source_package=False)
             except IllegalTarget as e:
-                self.setFieldError(error_field, e[0])
+                self.setFieldError(error_field, e.args[0])
 
     def updateContextFromData(self, data, context=None):
         """Updates the context object using the submitted form data.
@@ -1390,7 +1394,7 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
         # Save the field names we extract from the form in a separate
         # list, because we modify this list of names later if the
         # bugtask is reassigned to a different product.
-        field_names = data.keys()
+        field_names = list(data)
         new_values = data.copy()
         data_to_apply = data.copy()
 
@@ -1973,7 +1977,7 @@ class BugTasksTableView(LaunchpadView):
         nominations = list(bug.getNominations())
         # Eager load validity for all the persons we know of that will be
         # displayed.
-        ids = set(map(attrgetter('ownerID'), nominations))
+        ids = set(map(attrgetter('owner_id'), nominations))
         ids.discard(None)
         if ids:
             list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
@@ -2467,12 +2471,12 @@ class BugActivityItem:
         # Turn the strings of newvalue and oldvalue into sets so we
         # can work out the differences.
         if self.newvalue != '':
-            new_tags = set(re.split('\s+', self.newvalue))
+            new_tags = set(re.split(r'\s+', self.newvalue))
         else:
             new_tags = set()
 
         if self.oldvalue != '':
-            old_tags = set(re.split('\s+', self.oldvalue))
+            old_tags = set(re.split(r'\s+', self.oldvalue))
         else:
             old_tags = set()
 

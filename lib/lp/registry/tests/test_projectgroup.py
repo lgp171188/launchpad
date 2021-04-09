@@ -94,16 +94,16 @@ class ProjectGroupSearchTestCase(TestCaseWithFactory):
         results = self.projectgroupset.search(
             text="zazzle", search_products=False)
         self.assertEqual(2, results.count())
-        expected = sorted([self.projectgroup1, self.projectgroup2])
-        self.assertEqual(expected, sorted(results))
+        self.assertContentEqual(
+            [self.projectgroup1, self.projectgroup2], results)
 
     def testSearchDifferingCaseMatch(self):
         # Search for a matching string with a different case.
         results = self.projectgroupset.search(
             text="Zazzle", search_products=False)
         self.assertEqual(2, results.count())
-        expected = sorted([self.projectgroup1, self.projectgroup2])
-        self.assertEqual(expected, sorted(results))
+        self.assertContentEqual(
+            [self.projectgroup1, self.projectgroup2], results)
 
     def testProductSearchNoMatch(self):
         # Search for only project group even if a product matches.
@@ -227,5 +227,5 @@ class TestLaunchpadlibAPI(TestCaseWithFactory):
         self.assertEqual([], self.oopses)
         self.assertEqual(400, e.response.status)
         self.assertIn(
-            'This project cannot be deactivated since it is linked to source '
-            'packages.', e.content)
+            b'This project cannot be deactivated since it is linked to source '
+            b'packages.', e.content)

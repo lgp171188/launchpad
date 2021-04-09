@@ -20,7 +20,7 @@ __all__ = [
     'DistroHandler',
     ]
 
-from cStringIO import StringIO
+import io
 import os
 import re
 
@@ -28,6 +28,11 @@ import six
 from sqlobject import (
     SQLObjectMoreThanOneResultError,
     SQLObjectNotFound,
+    )
+from storm.exceptions import NotOneError
+from storm.expr import (
+    Cast,
+    Desc,
     )
 from zope.component import getUtility
 
@@ -45,10 +50,8 @@ from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.sqlbase import (
-    quote,
-    sqlvalues,
-    )
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import quote
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.scripts import log
 from lp.soyuz.enums import (
@@ -351,11 +354,12 @@ class ImporterHandler:
 
             # We couldn't find a sourcepackagerelease in the database.
             # Perhaps we can opportunistically pick one out of the archive.
-            log.warn("No source package %s (%s) listed for %s (%s), "
-                     "scrubbing archive..." %
-                     (binarypackagedata.source,
-                      version, binarypackagedata.package,
-                      binarypackagedata.version))
+            log.warning(
+                "No source package %s (%s) listed for %s (%s), "
+                "scrubbing archive..." %
+                (binarypackagedata.source,
+                 version, binarypackagedata.package,
+                 binarypackagedata.version))
 
             # XXX kiko 2005-11-03: I question whether
             # binarypackagedata.section here is actually correct -- but
@@ -368,8 +372,9 @@ class ImporterHandler:
             if sourcepackage:
                 return sourcepackage
 
-            log.warn("Nope, couldn't find it. Could it be a "
-                     "bin-only-NMU? Checking version %s" % version)
+            log.warning(
+                "Nope, couldn't find it. Could it be a "
+                "bin-only-NMU? Checking version %s" % version)
 
             # XXX kiko 2005-11-03: Testing a third cycle of this loop
             # isn't done.
@@ -510,21 +515,21 @@ class SourcePackageHandler:
         # Since the dsc doesn't know, we add in the directory, package
         # component and section
         dsc_contents['directory'] = os.path.join("pool",
-            poolify(sp_name, sp_component))
-        dsc_contents['package'] = sp_name
-        dsc_contents['component'] = sp_component
-        dsc_contents['section'] = sp_section
+            poolify(sp_name, sp_component)).encode("ASCII")
+        dsc_contents['package'] = sp_name.encode("ASCII")
+        dsc_contents['component'] = sp_component.encode("ASCII")
+        dsc_contents['section'] = sp_section.encode("ASCII")
 
         # the dsc doesn't list itself so add it ourselves
         if 'files' not in dsc_contents:
             log.error('DSC for %s didn\'t contain a files entry: %r' %
                       (dsc_name, dsc_contents))
             return None
-        if not dsc_contents['files'].endswith("\n"):
-            dsc_contents['files'] += "\n"
+        if not dsc_contents['files'].endswith(b"\n"):
+            dsc_contents['files'] += b"\n"
         # XXX kiko 2005-10-21: Why do we hack the md5sum and size of the DSC?
         # Should probably calculate it properly.
-        dsc_contents['files'] += "xxx 000 %s" % dsc_name
+        dsc_contents['files'] += ("xxx 000 %s" % dsc_name).encode("ASCII")
 
         # SourcePackageData requires capitals
         capitalized_dsc = {}
@@ -558,26 +563,19 @@ class SourcePackageHandler:
 
         # Check here to see if this release has ever been published in
         # the distribution, no matter what status.
-        query = """
-                SourcePackageRelease.sourcepackagename = %s AND
-                SourcePackageRelease.version::text = %s AND
-                SourcePackagePublishingHistory.sourcepackagerelease =
-                    SourcePackageRelease.id AND
-                SourcePackagePublishingHistory.distroseries =
-                    DistroSeries.id AND
-                SourcePackagePublishingHistory.archive = %s AND
-                SourcePackagePublishingHistory.sourcepackagename = %s AND
-                DistroSeries.distribution = %s
-                """ % sqlvalues(sourcepackagename, version,
-                                distroseries.main_archive,
-                                sourcepackagename,
-                                distroseries.distribution)
-        ret = SourcePackageRelease.select(query,
-            clauseTables=['SourcePackagePublishingHistory', 'DistroSeries'],
-            orderBy=["-SourcePackagePublishingHistory.datecreated"])
-        if not ret:
-            return None
-        return ret[0]
+        SPR = SourcePackageRelease
+        SPPH = SourcePackagePublishingHistory
+        rows = IStore(SPR).find(
+            SPR,
+            SPR.sourcepackagename == sourcepackagename,
+            Cast(SPR.version, "text") == version,
+            SPPH.sourcepackagerelease == SPR.id,
+            SPPH.distroseries == DistroSeries.id,
+            SPPH.archive == distroseries.main_archive,
+            SPPH.sourcepackagename == sourcepackagename,
+            DistroSeries.distribution == distroseries.distribution)
+        return rows.order_by(
+            Desc(SourcePackagePublishingHistory.datecreated)).first()
 
     def createSourcePackageRelease(self, src, distroseries):
         """Create a SourcePackagerelease and db dependencies if needed.
@@ -645,7 +643,7 @@ class SourcePackageHandler:
             changelog_lfa = getUtility(ILibraryFileAliasSet).create(
                 "changelog",
                 len(src.changelog),
-                StringIO(src.changelog),
+                io.BytesIO(src.changelog),
                 "text/x-debian-source-changelog")
             spr.changelog = changelog_lfa
 
@@ -711,18 +709,17 @@ class SourcePackagePublisher:
 
     def _checkPublishing(self, sourcepackagerelease):
         """Query for the publishing entry"""
-        ret = SourcePackagePublishingHistory.select("""
-            sourcepackagerelease = %s AND
-            distroseries = %s AND
-            archive = %s AND
-            status in %s""" % sqlvalues(
-                sourcepackagerelease, self.distroseries,
-                self.distroseries.main_archive, active_publishing_status),
-            orderBy=["-datecreated"])
-        ret = list(ret)
-        if ret:
-            return ret[0]
-        return None
+        return IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.sourcepackagerelease ==
+                sourcepackagerelease,
+            SourcePackagePublishingHistory.distroseries ==
+                self.distroseries,
+            SourcePackagePublishingHistory.archive ==
+                self.distroseries.main_archive,
+            SourcePackagePublishingHistory.status.is_in(
+                active_publishing_status),
+            ).order_by(SourcePackagePublishingHistory).last()
 
 
 class BinaryPackageHandler:
@@ -747,37 +744,33 @@ class BinaryPackageHandler:
         version = binarypackagedata.version
         architecture = binarypackagedata.architecture
 
-        clauseTables = ["BinaryPackageRelease", "DistroSeries",
-                        "DistroArchSeries", "BinaryPackageBuild",
-                        "BinaryPackagePublishingHistory"]
         distroseries = distroarchseries.distroseries
 
         # When looking for binaries, we need to remember that they are
         # shared between distribution releases, so match on the
         # distribution and the architecture tag of the distroarchseries
         # they were built for
-        query = (
-            "BinaryPackagePublishingHistory.archive = %s AND "
-            "BinaryPackagePublishingHistory.binarypackagename = %s AND "
-            "BinaryPackageRelease.id ="
-            " BinaryPackagePublishingHistory.binarypackagerelease AND "
-            "BinaryPackageRelease.binarypackagename=%s AND "
-            "BinaryPackageRelease.version::text = %s AND "
-            "BinaryPackageRelease.build = BinaryPackageBuild.id AND "
-            "BinaryPackageBuild.distro_arch_series = DistroArchSeries.id AND "
-            "DistroArchSeries.distroseries = DistroSeries.id AND "
-            "DistroSeries.distribution = %s" %
-            sqlvalues(distroseries.main_archive, binaryname, binaryname,
-                      version, distroseries.distribution))
+        BPR = BinaryPackageRelease
+        BPPH = BinaryPackagePublishingHistory
+        BPB = BinaryPackageBuild
+        clauses = [
+            BPPH.archive == distroseries.main_archive,
+            BPPH.binarypackagename == binaryname,
+            BPPH.binarypackagerelease == BPR.id,
+            BPR.binarypackagename == binaryname,
+            Cast(BPR.version, "text") == version,
+            BPR.build == BPB.id,
+            BPB.distro_arch_series == DistroArchSeries.id,
+            DistroArchSeries.distroseries == DistroSeries.id,
+            DistroSeries.distribution == distroseries.distribution,
+            ]
 
         if architecture != "all":
-            query += ("AND DistroArchSeries.architecturetag = %s" %
-                      quote(architecture))
+            clauses.append(DistroArchSeries.architecturetag == architecture)
 
         try:
-            bpr = BinaryPackageRelease.selectOne(
-                query, clauseTables=clauseTables, distinct=True)
-        except SQLObjectMoreThanOneResultError:
+            bpr = IStore(BPR).find(BPR, *clauses).config(distinct=True).one()
+        except NotOneError:
             # XXX kiko 2005-10-27: Untested
             raise MultiplePackageReleaseError("Found more than one "
                     "entry for %s (%s) for %s in %s" %
@@ -965,15 +958,14 @@ class BinaryPackagePublisher:
 
     def _checkPublishing(self, binarypackage):
         """Query for the publishing entry"""
-        ret = BinaryPackagePublishingHistory.select("""
-            binarypackagerelease = %s AND
-            distroarchseries = %s AND
-            archive = %s AND
-            status in %s""" % sqlvalues(
-                binarypackage, self.distroarchseries,
-                self.distroarchseries.main_archive, active_publishing_status),
-            orderBy=["-datecreated"])
-        ret = list(ret)
-        if ret:
-            return ret[0]
-        return None
+        return IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            BinaryPackagePublishingHistory.binarypackagerelease ==
+                binarypackage,
+            BinaryPackagePublishingHistory.distroarchseries ==
+                self.distroarchseries,
+            BinaryPackagePublishingHistory.archive ==
+                self.distroarchseries.main_archive,
+            BinaryPackagePublishingHistory.status.is_in(
+                active_publishing_status),
+            ).order_by(BinaryPackagePublishingHistory.datecreated).last()

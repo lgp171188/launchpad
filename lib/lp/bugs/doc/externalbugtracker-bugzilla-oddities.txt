@@ -38,7 +38,7 @@ Mozilla's Bugzilla is an Issuezilla instance here:
     ...     bug_watch_updater.updateBugWatches(
     ...         issuezilla, mozilla_bugzilla.watches)
     INFO Updating 4 watches for 3 bugs on https://bugzilla.mozilla.org
-    INFO Didn't find bug u'42' on https://bugzilla.mozilla.org
+    INFO Didn't find bug '42' on https://bugzilla.mozilla.org
     (local bugs: 1, 2).
 
     >>> for bug_watch in mozilla_bugzilla.watches:
@@ -109,10 +109,10 @@ Some Bugzillas have some weird properties that we need to cater for:
 
   b) The content is non-ascii:
 
-    >>> bug_item_file.decode("ascii")
+    >>> six.ensure_text(bug_item_file).encode("ascii")
     Traceback (most recent call last):
     ...
-    UnicodeDecodeError: 'ascii' codec can't decode byte...
+    UnicodeEncodeError: 'ascii' codec can't encode character...
 
 Yet everything still works as expected:
 
@@ -147,9 +147,10 @@ invalid XML:
     >>> remote_bugs = ['42', '2000']
     >>> with broken_bugzilla.responses():
     ...     broken_bugzilla.initializeRemoteBugDB(remote_bugs)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnparsableBugData: Failed to parse XML description...
+    lp.bugs.externalbugtracker.base.UnparsableBugData: Failed to parse XML description...
 
 However, embedded control characters do not generate errors.
 

@@ -257,7 +257,7 @@ package is linked to the evolution upstream product.
     >>> user_browser.getControl('Project').value
     Traceback (most recent call last):
     ...
-    LookupError: label u'Project'
+    LookupError: label ...'Project'
     ...
 
     >>> user_browser.getControl(name='field.product').value
@@ -506,7 +506,7 @@ But we're happy, so we add the bug watch.
     >>> bug_watches = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
     >>> for li in bug_watches('li'):
-    ...     print(li.findAll('a')[0].renderContents())
+    ...     print(li.findAll('a')[0].decode_contents())
     gnome-bugzilla #42
 
 It's possible to supply an HTTPS URL, even though the bug tracker's base
@@ -555,7 +555,7 @@ tracker type it is), an error message is displayed.
     http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     Launchpad does not recognize the bug tracker at this URL.
 
@@ -597,7 +597,7 @@ registered automatically.
     >>> bug_watches = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
     >>> for li in bug_watches('li'):
-    ...     print(li.findAll('a')[0].renderContents())
+    ...     print(li.findAll('a')[0].decode_contents())
     gnome-bugzilla #42
     gnome-bugzilla #84
     auto-new.trac #42
@@ -703,7 +703,7 @@ confirmation.
       mailto:dark-master-o-bugs@mylittlepony.com
 
     >>> user_browser.contents.count(
-    ...     b'mailto:dark-master-o-bugs@mylittlepony.com')
+    ...     six.ensure_str('mailto:dark-master-o-bugs@mylittlepony.com'))
     3
 
 To evade harvesting, the email address above is obfuscated if you're not
@@ -719,5 +719,5 @@ logged in.
       auto-dark-master-o-bugs
 
     >>> anon_browser.contents.count(
-    ...     b'mailto:dark-master-o-bugs@mylittlepony.com')
+    ...     six.ensure_str('mailto:dark-master-o-bugs@mylittlepony.com'))
     0

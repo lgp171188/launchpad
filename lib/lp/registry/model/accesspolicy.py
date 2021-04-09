@@ -1,4 +1,4 @@
-# Copyright 2011-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Model classes for pillar and artifact access policies."""
@@ -11,10 +11,11 @@ __all__ = [
     'AccessPolicyArtifact',
     'AccessPolicyGrant',
     'AccessPolicyGrantFlat',
-    'reconcile_access_for_artifact',
+    'reconcile_access_for_artifacts',
     ]
 
 from collections import defaultdict
+from itertools import product
 
 import pytz
 from storm.expr import (
@@ -23,7 +24,6 @@ from storm.expr import (
     Or,
     Select,
     SQL,
-    With,
     )
 from storm.properties import (
     DateTime,
@@ -51,7 +51,6 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicySource,
     )
 from lp.registry.model.person import Person
-from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import create
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
@@ -59,14 +58,14 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 
 
-def reconcile_access_for_artifact(artifact, information_type, pillars,
-                                  wanted_links=None):
+def reconcile_access_for_artifacts(artifacts, information_type, pillars,
+                                   wanted_links=None):
     if information_type in PUBLIC_INFORMATION_TYPES:
         # If it's public we can delete all the access information.
         # IAccessArtifactSource handles the cascade.
-        getUtility(IAccessArtifactSource).delete([artifact])
+        getUtility(IAccessArtifactSource).delete(artifacts)
         return
-    [abstract_artifact] = getUtility(IAccessArtifactSource).ensure([artifact])
+    abstract_artifacts = getUtility(IAccessArtifactSource).ensure(artifacts)
     aps = getUtility(IAccessPolicySource).find(
         (pillar, information_type) for pillar in pillars)
     missing_pillars = set(pillars) - set([ap.pillar for ap in aps])
@@ -79,11 +78,11 @@ def reconcile_access_for_artifact(artifact, information_type, pillars,
     # Now determine the existing and desired links, and make them
     # match. The caller may have provided the wanted_links.
     apasource = getUtility(IAccessPolicyArtifactSource)
-    wanted_links = (wanted_links
-                    or set((abstract_artifact, policy) for policy in aps))
+    wanted_links = (
+            wanted_links or set(product(abstract_artifacts, aps)))
     existing_links = set([
         (apa.abstract_artifact, apa.policy)
-        for apa in apasource.findByArtifact([abstract_artifact])])
+        for apa in apasource.findByArtifact(abstract_artifacts)])
     apasource.create(wanted_links - existing_links)
     apasource.delete(existing_links - wanted_links)
 
@@ -100,8 +99,12 @@ class AccessArtifact(StormBase):
     branch = Reference(branch_id, 'Branch.id')
     gitrepository_id = Int(name='gitrepository')
     gitrepository = Reference(gitrepository_id, 'GitRepository.id')
+    snap_id = Int(name="snap")
+    snap = Reference(snap_id, 'Snap.id')
     specification_id = Int(name='specification')
     specification = Reference(specification_id, 'Specification.id')
+    ocirecipe_id = Int(name="ocirecipe")
+    ocirecipe = Reference(ocirecipe_id, 'OCIRecipe.id')
 
     @property
     def concrete_artifact(self):
@@ -116,14 +119,20 @@ class AccessArtifact(StormBase):
         from lp.bugs.interfaces.bug import IBug
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.snappy.interfaces.snap import ISnap
+        from lp.oci.interfaces.ocirecipe import IOCIRecipe
         if IBug.providedBy(concrete_artifact):
             col = cls.bug
         elif IBranch.providedBy(concrete_artifact):
             col = cls.branch
         elif IGitRepository.providedBy(concrete_artifact):
             col = cls.gitrepository
+        elif ISnap.providedBy(concrete_artifact):
+            col = cls.snap
         elif ISpecification.providedBy(concrete_artifact):
             col = cls.specification
+        elif IOCIRecipe.providedBy(concrete_artifact):
+            col = cls.ocirecipe
         else:
             raise ValueError(
                 "%r is not a valid artifact" % concrete_artifact)
@@ -145,6 +154,8 @@ class AccessArtifact(StormBase):
         from lp.bugs.interfaces.bug import IBug
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.snappy.interfaces.snap import ISnap
+        from lp.oci.interfaces.ocirecipe import IOCIRecipe
 
         existing = list(cls.find(concrete_artifacts))
         if len(existing) == len(concrete_artifacts):
@@ -158,18 +169,22 @@ class AccessArtifact(StormBase):
         insert_values = []
         for concrete in needed:
             if IBug.providedBy(concrete):
-                insert_values.append((concrete, None, None, None))
+                insert_values.append((concrete, None, None, None, None, None))
             elif IBranch.providedBy(concrete):
-                insert_values.append((None, concrete, None, None))
+                insert_values.append((None, concrete, None, None, None, None))
             elif IGitRepository.providedBy(concrete):
-                insert_values.append((None, None, concrete, None))
+                insert_values.append((None, None, concrete, None, None, None))
+            elif ISnap.providedBy(concrete):
+                insert_values.append((None, None, None, concrete, None, None))
             elif ISpecification.providedBy(concrete):
-                insert_values.append((None, None, None, concrete))
+                insert_values.append((None, None, None, None, concrete, None))
+            elif IOCIRecipe.providedBy(concrete):
+                insert_values.append((None, None, None, None, None, concrete))
             else:
                 raise ValueError("%r is not a supported artifact" % concrete)
-        new = create(
-            (cls.bug, cls.branch, cls.gitrepository, cls.specification),
-            insert_values, get_objects=True)
+        columns = (cls.bug, cls.branch, cls.gitrepository, cls.snap,
+                   cls.specification, cls.ocirecipe)
+        new = create(columns, insert_values, get_objects=True)
         return list(existing) + new
 
     @classmethod
@@ -181,7 +196,7 @@ class AccessArtifact(StormBase):
         ids = [abstract.id for abstract in abstracts]
         getUtility(IAccessArtifactGrantSource).revokeByArtifact(abstracts)
         getUtility(IAccessPolicyArtifactSource).deleteByArtifact(abstracts)
-        IStore(abstract).find(cls, cls.id.is_in(ids)).remove()
+        IStore(abstracts[0]).find(cls, cls.id.is_in(ids)).remove()
 
 
 @implementer(IAccessPolicy)
@@ -514,91 +529,6 @@ class AccessPolicyGrantFlat(StormBase):
         return DecoratedResultSet(
             result_set,
             result_decorator=set_permission, pre_iter_hook=load_permissions)
-
-    @classmethod
-    def _populateIndirectGranteePermissions(cls,
-                                            policies_by_id, result_set):
-        # A cache for the sharing permissions, keyed on grantee.
-        permissions_cache = defaultdict(dict)
-        # A cache of teams belonged to, keyed by grantee.
-        via_teams_cache = defaultdict(list)
-        grantees_by_id = defaultdict()
-        # Information types for which there are shared artifacts.
-        shared_artifact_info_types = defaultdict(list)
-
-        def set_permission(grantee):
-            # Lookup the permissions from the previously loaded cache.
-            via_team_ids = via_teams_cache[grantee[0].id]
-            via_teams = sorted(
-                [grantees_by_id[team_id] for team_id in via_team_ids],
-                key=lambda x: x.displayname)
-            permissions = permissions_cache[grantee[0]]
-            shared_info_types = shared_artifact_info_types[grantee[0]]
-            # For access via teams, we need to use the team permissions. If a
-            # person has access via more than one team, we use the most
-            # powerful permission of all that are there.
-            for team in via_teams:
-                team_permissions = permissions_cache[team]
-                shared_info_types = []
-                for info_type, permission in team_permissions.items():
-                    permission_to_use = permissions.get(info_type, permission)
-                    if permission == SharingPermission.ALL:
-                        permission_to_use = permission
-                    elif permission == SharingPermission.SOME:
-                        shared_info_types.append(info_type.type)
-                    permissions[info_type] = permission_to_use
-            result = (
-                grantee[0], permissions, via_teams or None,
-                shared_info_types)
-            return result
-
-        def load_teams_and_permissions(grantees):
-            # We now have the grantees we want in the result so load any
-            # associated team memberships and permissions and cache them.
-            if permissions_cache:
-                return
-            store = IStore(cls)
-            for grantee in grantees:
-                grantees_by_id[grantee[0].id] = grantee[0]
-            # Find any teams associated with the grantees. If grantees is a
-            # sliced list (for batching), it may contain indirect grantees but
-            # not the team they belong to so that needs to be fixed below.
-            with_expr = With("grantees", store.find(
-                cls.grantee_id, cls.policy_id.is_in(policies_by_id.keys())
-                ).config(distinct=True)._get_select())
-            result_set = store.with_(with_expr).find(
-                (TeamParticipation.teamID, TeamParticipation.personID),
-                TeamParticipation.personID.is_in(grantees_by_id.keys()),
-                TeamParticipation.teamID.is_in(
-                    Select(
-                        (SQL("grantees.grantee"),),
-                        tables="grantees",
-                        distinct=True)))
-            team_ids = set()
-            direct_grantee_ids = set()
-            for team_id, team_member_id in result_set:
-                if team_member_id == team_id:
-                    direct_grantee_ids.add(team_member_id)
-                else:
-                    via_teams_cache[team_member_id].append(team_id)
-                    team_ids.add(team_id)
-            # Remove from the via_teams cache all the direct grantees.
-            for direct_grantee_id in direct_grantee_ids:
-                if direct_grantee_id in via_teams_cache:
-                    del via_teams_cache[direct_grantee_id]
-            # Load and cache the additional required teams.
-            persons = store.find(Person, Person.id.is_in(team_ids))
-            for person in persons:
-                grantees_by_id[person.id] = person
-
-            cls._populatePermissionsCache(
-                permissions_cache, shared_artifact_info_types,
-                grantees_by_id.keys(), policies_by_id, grantees_by_id)
-
-        return DecoratedResultSet(
-            result_set,
-            result_decorator=set_permission,
-            pre_iter_hook=load_teams_and_permissions)
 
     @classmethod
     def findArtifactsByGrantee(cls, grantee, policies):

@@ -203,7 +203,7 @@ Unlike people, teams don't need a contact address, so we can pass None
 to setContactAddress() to leave a team without a contact address.
 
     >>> team.setContactAddress(None)
-    >>> print team.preferredemail
+    >>> print(team.preferredemail)
     None
 
 When a new sourcepackage is imported and a Person entry has to be
@@ -216,8 +216,8 @@ code to create the person should look like this:
     >>> person.is_valid_person
     False
 
-    >>> person.creation_comment
-    u'when the ed package was imported into Ubuntu Breezy'
+    >>> print(person.creation_comment)
+    when the ed package was imported into Ubuntu Breezy
 
 Checking .is_valid_person issues a DB query to the
 ValidPersonOrTeamCache, unless it's already been cached. To avoid many
@@ -234,8 +234,9 @@ issuing a DB query.
     True
 
     >>> valid_persons = personset.getValidPersons([non_valid_person, foobar])
-    >>> [person.name for person in valid_persons]
-    [u'name16']
+    >>> for person in valid_persons:
+    ...     print(person.name)
+    name16
 
 
 Accounts
@@ -245,8 +246,8 @@ A Person may be linked to an Account.
 
     >>> login('no-priv@canonical.com')
     >>> person = personset.getByEmail('no-priv@canonical.com')
-    >>> person.account.openid_identifiers.any().identifier
-    u'no-priv_oid'
+    >>> print(person.account.openid_identifiers.any().identifier)
+    no-priv_oid
 
 
 Adapting an Account into a Person
@@ -264,7 +265,7 @@ We can't adapt an account which has no person associated with, though.
     ...     AccountCreationRationale, IAccountSet)
     >>> personless_account = getUtility(IAccountSet).new(
     ...     AccountCreationRationale.UNKNOWN, 'Display name')
-    >>> print IPerson(personless_account, None)
+    >>> print(IPerson(personless_account, None))
     None
 
 Our security adapters expect to get passed an IPerson, but we use
@@ -281,7 +282,7 @@ done.
 
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> request = LaunchpadTestRequest()
-    >>> print request.annotations.get('launchpad.person_to_account_cache')
+    >>> print(request.annotations.get('launchpad.person_to_account_cache'))
     None
 
 Now we log in with the request so that whenever we adapt an account into
@@ -300,8 +301,8 @@ If we manually change the cache, the adapter will be fooled and will
 return the wrong object.
 
     >>> cache[removeSecurityProxy(person.account)] = 'foo'
-    >>> IPerson(person.account)
-    'foo'
+    >>> print(IPerson(person.account))
+    foo
 
 If the cached value is None, though, the adapter will look up the
 correct Person again and update the cache.
@@ -331,7 +332,7 @@ A person also has a reason for why their standing is what it is.  The
 default value of None means that no reason for the personal_standing
 value is available.
 
-    >>> print lifeless.personal_standing_reason
+    >>> print(lifeless.personal_standing_reason)
     None
 
 A Launchpad administrator may change a person's standing, and may give a
@@ -344,27 +345,29 @@ reason for the change.
     >>> lifeless.personal_standing
     <DBItem PersonalStanding.GOOD...
 
-    >>> print lifeless.personal_standing_reason
+    >>> print(lifeless.personal_standing_reason)
     Such a cool guy!
 
 Non-administrators may not change a person's standing.
 
     >>> login('test@canonical.com')
     >>> lifeless.personal_standing = PersonalStanding.POOR
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> lifeless.personal_standing_reason = 'Such a cool guy!'
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> login('foo.bar@canonical.com')
     >>> lifeless.personal_standing
     <DBItem PersonalStanding.GOOD...
 
-    >>> print lifeless.personal_standing_reason
+    >>> print(lifeless.personal_standing_reason)
     Such a cool guy!
 
     >>> login(ANONYMOUS)
@@ -424,19 +427,20 @@ team owner and some of the team's details, returning the newly created
 team.
 
     >>> new_team = personset.newTeam(ddaa, 'new-team', 'Just a new team')
-    >>> new_team.name
-    u'new-team'
+    >>> print(new_team.name)
+    new-team
 
-    >>> new_team.teamowner.name
-    u'ddaa'
+    >>> print(new_team.teamowner.name)
+    ddaa
 
 If the given name is already in use by another team/person, an exception
 is raised.
 
     >>> personset.newTeam(ddaa, 'ddaa', 'Just a new team')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NameAlreadyTaken:...
+    lp.registry.errors.NameAlreadyTaken: ...
 
 PersonSet.newTeam() will also fire an ObjectCreatedEvent for the newly
 created team.
@@ -444,7 +448,7 @@ created team.
     >>> from zope.lifecycleevent.interfaces import IObjectCreatedEvent
     >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> def print_event(team, event):
-    ...     print "ObjectCreatedEvent fired for team '%s'" % team.name
+    ...     print("ObjectCreatedEvent fired for team '%s'" % team.name)
 
     >>> listener = ZopeEventHandlerFixture(
     ...     print_event, (ITeam, IObjectCreatedEvent))
@@ -494,8 +498,9 @@ entries into teams.
 
 The team owner is also added as an administrator of its team.
 
-    >>> [member.name for member in not_a_person.adminmembers]
-    [u'ddaa']
+    >>> for member in not_a_person.adminmembers:
+    ...     print(member.name)
+    ddaa
 
     # As said previously, no notifications are sent when we add the
     # team owner as a member of their team.
@@ -509,8 +514,10 @@ And we can even add other members to our new team!
     >>> login('foo.bar@canonical.com')
     >>> ignored = not_a_person.addMember(lifeless, reviewer=ddaa)
     >>> login(ANONYMOUS)
-    >>> [member.name for member in not_a_person.activemembers]
-    [u'ddaa', u'lifeless']
+    >>> for member in not_a_person.activemembers:
+    ...     print(member.name)
+    ddaa
+    lifeless
 
 This functionality is only available for non-team Person entries whose
 account_status is NOACCOUNT, though.
@@ -524,9 +531,10 @@ account_status is NOACCOUNT, though.
     AssertionError: Only Person entries whose account_status is NOACCOUNT...
 
     >>> not_a_person.convertToTeam(team_owner=landscape_devs)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    AlreadyConvertedException: foo-o has already been converted to a team.
+    lp.registry.interfaces.person.AlreadyConvertedException: foo-... has already been converted to a team.
 
 
 Team members
@@ -539,67 +547,85 @@ relationship between that person and that team. Only
 TeamMembershipStatus with an ADMIN or APPROVED status are considered
 active.
 
-    >>> [member.displayname for member in landscape_devs.approvedmembers]
-    [u'Guilherme Salgado']
+    >>> for member in landscape_devs.approvedmembers:
+    ...     print(member.displayname)
+    Guilherme Salgado
 
-    >>> [member.displayname for member in landscape_devs.adminmembers]
-    [u'Sample Person']
+    >>> for member in landscape_devs.adminmembers:
+    ...     print(member.displayname)
+    Sample Person
 
 The IPerson.activemembers property will always include all approved and
 admin members of that team.
 
-    >>> [member.displayname for member in landscape_devs.activemembers]
-    [u'Guilherme Salgado', u'Sample Person']
+    >>> for member in landscape_devs.activemembers:
+    ...     print(member.displayname)
+    Guilherme Salgado
+    Sample Person
 
 TeamMemberships with a PROPOSED or INVITED status represent a
 person/team which has proposed themselves as a member or which has been
 invited to join the team.
 
-    >>> [member.displayname for member in landscape_devs.proposedmembers]
-    [u'Foo Bar']
+    >>> for member in landscape_devs.proposedmembers:
+    ...     print(member.displayname)
+    Foo Bar
 
-    >>> [member.displayname for member in landscape_devs.invited_members]
-    [u'Launchpad Developers']
+    >>> for member in landscape_devs.invited_members:
+    ...     print(member.displayname)
+    Launchpad Developers
 
 Similarly, we have IPerson.pendingmembers which includes both invited
 and proposed members.
 
-    >>> [member.displayname for member in landscape_devs.pendingmembers]
-    [u'Foo Bar', u'Launchpad Developers']
+    >>> for member in landscape_devs.pendingmembers:
+    ...     print(member.displayname)
+    Foo Bar
+    Launchpad Developers
 
 Finally, we have EXPIRED and DEACTIVATED TeamMemberships, which
 represent former (inactive) members of a team.
 
-    >>> [member.displayname for member in landscape_devs.expiredmembers]
-    [u'Karl Tilbury']
+    >>> for member in landscape_devs.expiredmembers:
+    ...     print(member.displayname)
+    Karl Tilbury
 
-    >>> [member.displayname for member in landscape_devs.deactivatedmembers]
-    [u'No Privileges Person']
+    >>> for member in landscape_devs.deactivatedmembers:
+    ...     print(member.displayname)
+    No Privileges Person
 
 We can get a list of all inactive members of a team with the
 IPerson.inactivemembers property.
 
-    >>> [member.displayname for member in landscape_devs.inactivemembers]
-    [u'Karl Tilbury', u'No Privileges Person']
+    >>> for member in landscape_devs.inactivemembers:
+    ...     print(member.displayname)
+    Karl Tilbury
+    No Privileges Person
 
 We can also iterate over the TeamMemberships themselves, which is useful
 when we want to display details about them rather than just the member.
 
-    >>> [(membership.person.displayname, membership.status.name)
-    ...  for membership in landscape_devs.member_memberships]
-    [(u'Guilherme Salgado', 'APPROVED'), (u'Sample Person', 'ADMIN')]
+    >>> for membership in landscape_devs.member_memberships:
+    ...     print('%s: %s' % (
+    ...         membership.person.displayname, membership.status.name))
+    Guilherme Salgado: APPROVED
+    Sample Person: ADMIN
 
-    >>> [(membership.person.displayname, membership.status.name)
-    ...  for membership in landscape_devs.getInvitedMemberships()]
-    [(u'Launchpad Developers', 'INVITED')]
+    >>> for membership in landscape_devs.getInvitedMemberships():
+    ...     print('%s: %s' % (
+    ...         membership.person.displayname, membership.status.name))
+    Launchpad Developers: INVITED
 
-    >>> [(membership.person.displayname, membership.status.name)
-    ...  for membership in landscape_devs.getProposedMemberships()]
-    [(u'Foo Bar', 'PROPOSED')]
+    >>> for membership in landscape_devs.getProposedMemberships():
+    ...     print('%s: %s' % (
+    ...         membership.person.displayname, membership.status.name))
+    Foo Bar: PROPOSED
 
-    >>> [(membership.person.displayname, membership.status.name)
-    ...  for membership in landscape_devs.getInactiveMemberships()]
-    [(u'Karl Tilbury', 'EXPIRED'), (u'No Privileges Person', 'DEACTIVATED')]
+    >>> for membership in landscape_devs.getInactiveMemberships():
+    ...     print('%s: %s' % (
+    ...         membership.person.displayname, membership.status.name))
+    Karl Tilbury: EXPIRED
+    No Privileges Person: DEACTIVATED
 
 An IPerson has an inTeam method to allow us to easily check if a person
 is a member (directly or through other teams) of a team. It accepts an
@@ -638,12 +664,13 @@ team will go to that address.
 
     >>> login('no-priv@canonical.com')
     >>> ubuntu_team = personset.getByName('ubuntu-team')
-    >>> ubuntu_team.preferredemail.email
-    u'support@ubuntu.com'
+    >>> print(ubuntu_team.preferredemail.email)
+    support@ubuntu.com
 
     >>> from lp.services.mail.helpers import get_contact_email_addresses
-    >>> get_contact_email_addresses(ubuntu_team)
-    set(['support@ubuntu.com'])
+    >>> for email in get_contact_email_addresses(ubuntu_team):
+    ...     print(email)
+    support@ubuntu.com
 
 On the other hand, if a team doesn't have a contact email address, all
 notifications we send to the team will go to the preferred email of each
@@ -652,10 +679,14 @@ direct member of that team.
     >>> vcs_imports.preferredemail is None
     True
 
-    >>> sorted(member.preferredemail.email
-    ...        for member in vcs_imports.activemembers)
-    [u'david.allouche@canonical.com', u'foo.bar@canonical.com',
-     u'robertc@robertcollins.net']
+    >>> from operator import attrgetter
+    >>> for member in sorted(
+    ...         vcs_imports.activemembers,
+    ...         key=attrgetter('preferredemail.email')):
+    ...     print(member.preferredemail.email)
+    david.allouche@canonical.com
+    foo.bar@canonical.com
+    robertc@robertcollins.net
 
     >>> sorted(get_contact_email_addresses(vcs_imports))
     ['david.allouche@canonical.com', 'foo.bar@canonical.com',
@@ -728,7 +759,7 @@ team list is actually sorted by date joined.
     >>> foobar = personset.getByName('name16')
     >>> membership_list = foobar.getLatestApprovedMembershipsForPerson()
     >>> for membership in membership_list:
-    ...     print membership.datejoined
+    ...     print(membership.datejoined)
     2009-07-09 11:58:38.122886+00:00
     2008-05-14 12:07:14.227450+00:00
     2007-01-17 14:13:39.692693+00:00
@@ -755,25 +786,25 @@ address:
     ...     for person in results:
     ...         emails = [email.email
     ...                   for email in naked_emailset.getByPerson(person)]
-    ...         print "%s (%s): %s" % (
-    ...             person.displayname, person.name, emails)
+    ...         print("%s (%s): %s" % (
+    ...             person.displayname, person.name, pretty(emails)))
 
     >>> print_people(personset.find('ubuntu'))
     Mirror Administrators (ubuntu-mirror-admins): []
-    Sigurd Gartmann (sigurd-ubuntu): [u'sigurd-ubuntu@brogar.org']
-    Ubuntu Doc Team (doc): [u'doc@lists.ubuntu.com']
+    Sigurd Gartmann (sigurd-ubuntu): ['sigurd-ubuntu@brogar.org']
+    Ubuntu Doc Team (doc): ['doc@lists.ubuntu.com']
     Ubuntu Gnome Team (name18): []
     Ubuntu Security Team (ubuntu-security): []
-    Ubuntu Single Sign On (ubuntu-sso): [u'ubuntu-sso@example.com']
-    Ubuntu Team (ubuntu-team): [u'support@ubuntu.com']
+    Ubuntu Single Sign On (ubuntu-sso): ['ubuntu-sso@example.com']
+    Ubuntu Team (ubuntu-team): ['support@ubuntu.com']
     Ubuntu Technical Board (techboard): []
     Ubuntu Translators (ubuntu-translators): []
 
     >>> print_people(personset.find('steve.alexander'))
-    Steve Alexander (stevea): [u'steve.alexander@ubuntulinux.com']
+    Steve Alexander (stevea): ['steve.alexander@ubuntulinux.com']
 
     >>> print_people(personset.find('steve.alexander@'))
-    Steve Alexander (stevea): [u'steve.alexander@ubuntulinux.com']
+    Steve Alexander (stevea): ['steve.alexander@ubuntulinux.com']
 
     >>> list(personset.find('eve.alexander@'))
     []
@@ -793,15 +824,15 @@ Anonymous users cannot see non-public teams, such as 'private-team'.
     HWDB Team (hwdb-team): []
     Just a new team (new-team): []
     No Team Memberships (no-team-memberships):
-      [u'no-team-memberships@test.com']
+      ['no-team-memberships@test.com']
     Other Team (otherteam): []
     Simple Team (simple-team): []
     Team Membership Janitor (team-membership-janitor): []
     testing Spanish team (testing-spanish-team): []
-    Ubuntu Doc Team (doc): [u'doc@lists.ubuntu.com']
+    Ubuntu Doc Team (doc): ['doc@lists.ubuntu.com']
     Ubuntu Gnome Team (name18): []
     Ubuntu Security Team (ubuntu-security): []
-    Ubuntu Team (ubuntu-team): [u'support@ubuntu.com']
+    Ubuntu Team (ubuntu-team): ['support@ubuntu.com']
     Warty Gnome Team (warty-gnome): []
     Warty Security Team (name20): []
 
@@ -814,16 +845,16 @@ But Owner, a member of that team, will see it in the results.
     HWDB Team (hwdb-team): []
     Just a new team (new-team): []
     No Team Memberships (no-team-memberships):
-      [u'no-team-memberships@test.com']
+      ['no-team-memberships@test.com']
     Other Team (otherteam): []
     Private Team (private-team): []
     Simple Team (simple-team): []
     Team Membership Janitor (team-membership-janitor): []
     testing Spanish team (testing-spanish-team): []
-    Ubuntu Doc Team (doc): [u'doc@lists.ubuntu.com']
+    Ubuntu Doc Team (doc): ['doc@lists.ubuntu.com']
     Ubuntu Gnome Team (name18): []
     Ubuntu Security Team (ubuntu-security): []
-    Ubuntu Team (ubuntu-team): [u'support@ubuntu.com']
+    Ubuntu Team (ubuntu-team): ['support@ubuntu.com']
     Warty Gnome Team (warty-gnome): []
     Warty Security Team (name20): []
 
@@ -836,11 +867,11 @@ the results will cause no people/teams to be returned.
 Searching only for People based on their names or email addresses:
 
     >>> print_people(personset.findPerson('james.blackwell'))
-    James Blackwell (jblack): [u'james.blackwell@ubuntulinux.com']
+    James Blackwell (jblack): ['james.blackwell@ubuntulinux.com']
 
     >>> print_people(personset.findPerson('dave'))
-    Dave Miller (justdave): [u'dave.miller@ubuntulinux.com',
-                             u'justdave@bugzilla.org']
+    Dave Miller (justdave): ['dave.miller@ubuntulinux.com',
+                             'justdave@bugzilla.org']
 
 The created_before and created_after arguments can be used to restrict
 the matches by the IPerson.datecreated value.
@@ -852,7 +883,7 @@ the matches by the IPerson.datecreated value.
     >>> created_before = datetime(2008, 7, 1, tzinfo=pytz.UTC)
     >>> print_people(personset.findPerson(text='',
     ...     created_after=created_after, created_before=created_before))
-    Brad Crittenden (bac): [u'bac@canonical.com']
+    Brad Crittenden (bac): ['bac@canonical.com']
 
 By default, when searching only for people, any person whose account is
 inactive is not included in the list, but we can tell findPerson to
@@ -868,8 +899,8 @@ include them as well.
 
     >>> print_people(
     ...     personset.findPerson('dave', exclude_inactive_accounts=False))
-    Dave Miller (justdave): [u'dave.miller@ubuntulinux.com',
-                             u'justdave@bugzilla.org']
+    Dave Miller (justdave): ['dave.miller@ubuntulinux.com',
+                             'justdave@bugzilla.org']
 
     >>> removeSecurityProxy(dave).setAccountStatus(
     ...     AccountStatus.ACTIVE, None, 'Welcome back')
@@ -879,7 +910,7 @@ include them as well.
 Searching only for Teams based on their names or email addresses:
 
     >>> print_people(personset.findTeam('support'))
-    Ubuntu Team (ubuntu-team): [u'support@ubuntu.com']
+    Ubuntu Team (ubuntu-team): ['support@ubuntu.com']
 
     >>> print_people(personset.findTeam('translators'))
     Ubuntu Translators (ubuntu-translators): []
@@ -894,7 +925,7 @@ Searching only for Teams based on their names or email addresses:
     testing Spanish team (testing-spanish-team): []
     Ubuntu Gnome Team (name18): []
     Ubuntu Security Team (ubuntu-security): []
-    Ubuntu Team (ubuntu-team): [u'support@ubuntu.com']
+    Ubuntu Team (ubuntu-team): ['support@ubuntu.com']
     Warty Gnome Team (warty-gnome): []
     Warty Security Team (name20): []
 
@@ -913,27 +944,27 @@ the previous search will include myteam in the results.
     testing Spanish team (testing-spanish-team): []
     Ubuntu Gnome Team (name18): []
     Ubuntu Security Team (ubuntu-security): []
-    Ubuntu Team (ubuntu-team): [u'support@ubuntu.com']
+    Ubuntu Team (ubuntu-team): ['support@ubuntu.com']
     Warty Gnome Team (warty-gnome): []
     Warty Security Team (name20): []
 
 Searching for users with non-ASCII characters in their name works.
 
     >>> [found_person] = personset.find(u'P\xf6ll\xe4')
-    >>> found_person.displayname
-    u'Matti P\xf6ll\xe4'
+    >>> print(found_person.displayname)
+    Matti Pöllä
 
     >>> bjorns_team = factory.makeTeam(salgado, name='bjorn-team',
     ...     displayname=u'Team Bj\xf6rn')
     >>> [found_person] = personset.find(u'Bj\xf6rn')
-    >>> found_person.displayname
-    u'Team Bj\xf6rn'
+    >>> print(found_person.displayname)
+    Team Björn
 
 You can get the top overall contributors, that is, the people with the
 most karma.
 
     >>> for person in personset.getTopContributors(limit=3):
-    ...     print "%s: %s" % (person.name, person.karma)
+    ...     print("%s: %s" % (person.name, person.karma))
     name16: 241
     name12: 138
     mark: 130
@@ -969,41 +1000,44 @@ related packages:
     >>> mark.hasMaintainedPackages()
     True
     >>> for sprelease in mark.getLatestMaintainedPackages():
-    ...     print (sprelease.name,
-    ...            sprelease.upload_distroseries.fullseriesname,
-    ...            sprelease.version)
-    (u'alsa-utils', u'Debian Sid', u'1.0.9a-4')
-    (u'pmount', u'Ubuntu Hoary', u'0.1-2')
-    (u'netapplet', u'Ubuntu Warty', u'0.99.6-1')
-    (u'netapplet', u'Ubuntu Hoary', u'1.0-1')
-    (u'alsa-utils', u'Ubuntu Warty', u'1.0.8-1ubuntu1')
-    (u'mozilla-firefox', u'Ubuntu Warty', u'0.9')
-    (u'evolution', u'Ubuntu Hoary', u'1.0')
+    ...     print(pretty((
+    ...         sprelease.name,
+    ...         sprelease.upload_distroseries.fullseriesname,
+    ...         sprelease.version)))
+    ('alsa-utils', 'Debian Sid', '1.0.9a-4')
+    ('pmount', 'Ubuntu Hoary', '0.1-2')
+    ('netapplet', 'Ubuntu Warty', '0.99.6-1')
+    ('netapplet', 'Ubuntu Hoary', '1.0-1')
+    ('alsa-utils', 'Ubuntu Warty', '1.0.8-1ubuntu1')
+    ('mozilla-firefox', 'Ubuntu Warty', '0.9')
+    ('evolution', 'Ubuntu Hoary', '1.0')
 
     >>> mark.hasUploadedButNotMaintainedPackages()
     True
     >>> for sprelease in mark.getLatestUploadedButNotMaintainedPackages():
-    ...     print (sprelease.name,
-    ...            sprelease.upload_distroseries.fullseriesname,
-    ...            sprelease.version)
-    (u'foobar', u'Ubuntu Breezy-autotest', u'1.0')
-    (u'cdrkit', u'Ubuntu Breezy-autotest', u'1.0')
-    (u'libstdc++', u'Ubuntu Hoary', u'b8p')
-    (u'cnews', u'Ubuntu Hoary', u'cr.g7-37')
-    (u'linux-source-2.6.15', u'Ubuntu Hoary', u'2.6.15.3')
-    (u'alsa-utils', u'Ubuntu Hoary', u'1.0.9a-4ubuntu1')
+    ...     print(pretty((
+    ...         sprelease.name,
+    ...         sprelease.upload_distroseries.fullseriesname,
+    ...         sprelease.version)))
+    ('foobar', 'Ubuntu Breezy-autotest', '1.0')
+    ('cdrkit', 'Ubuntu Breezy-autotest', '1.0')
+    ('libstdc++', 'Ubuntu Hoary', 'b8p')
+    ('cnews', 'Ubuntu Hoary', 'cr.g7-37')
+    ('linux-source-2.6.15', 'Ubuntu Hoary', '2.6.15.3')
+    ('alsa-utils', 'Ubuntu Hoary', '1.0.9a-4ubuntu1')
 
     >>> mark.hasUploadedPPAPackages()
     True
     >>> mark_spreleases = mark.getLatestUploadedPPAPackages()
     >>> for sprelease in mark_spreleases:
-    ...     print (sprelease.name,
-    ...            sprelease.version,
-    ...            sprelease.creator.name,
-    ...            sprelease.maintainer.name,
-    ...            sprelease.upload_archive.owner.name,
-    ...            sprelease.upload_distroseries.fullseriesname)
-    (u'iceweasel', u'1.0', u'mark', u'name16', u'mark', u'Ubuntu Warty')
+    ...     print(pretty((
+    ...         sprelease.name,
+    ...         sprelease.version,
+    ...         sprelease.creator.name,
+    ...         sprelease.maintainer.name,
+    ...         sprelease.upload_archive.owner.name,
+    ...         sprelease.upload_distroseries.fullseriesname)))
+    ('iceweasel', '1.0', 'mark', 'name16', 'mark', 'Ubuntu Warty')
 
 We will change modify the first SourcePackageRelease to reproduce the
 issue mentioned in bug 157303, where source with same creator and
@@ -1016,13 +1050,14 @@ maintainer got omitted from the results:
 
     >>> mark_spreleases = mark.getLatestUploadedPPAPackages()
     >>> for sprelease in mark_spreleases:
-    ...     print (sprelease.name,
-    ...            sprelease.version,
-    ...            sprelease.creator.name,
-    ...            sprelease.maintainer.name,
-    ...            sprelease.upload_archive.owner.name,
-    ...            sprelease.upload_distroseries.fullseriesname)
-    (u'iceweasel', u'1.0', u'mark', u'mark', u'mark', u'Ubuntu Warty')
+    ...     print(pretty((
+    ...         sprelease.name,
+    ...         sprelease.version,
+    ...         sprelease.creator.name,
+    ...         sprelease.maintainer.name,
+    ...         sprelease.upload_archive.owner.name,
+    ...         sprelease.upload_distroseries.fullseriesname)))
+    ('iceweasel', '1.0', 'mark', 'mark', 'mark', 'Ubuntu Warty')
 
 Unlike Mark, this next person is very lazy and has no related packages:
 
@@ -1054,8 +1089,10 @@ alphabetically by package name.
     >>> mozilla_firefox.addBugSubscription(no_priv, no_priv)
     <...StructuralSubscription object at ...>
 
-    >>> [package.name for package in no_priv.getBugSubscriberPackages()]
-    [u'mozilla-firefox', u'pmount']
+    >>> for package in no_priv.getBugSubscriberPackages():
+    ...     print(package.name)
+    mozilla-firefox
+    pmount
 
 
 Project owned by a person or team
@@ -1066,14 +1103,14 @@ getOwnedProjects() method of IPerson.  This method returns projects
 ordered by displayname.
 
     >>> for project in mark.getOwnedProjects():
-    ...     print project.displayname
+    ...     print(project.displayname)
     Derby
     alsa-utils
 
 We can also ask for projects owned through team memberships.
 
     >>> for project in mark.getOwnedProjects(transitive=True):
-    ...     print project.displayname
+    ...     print(project.displayname)
     Derby
     Tomcat
     alsa-utils
@@ -1091,12 +1128,12 @@ The method does not return inactive projects.
     >>> derby = getUtility(IProductSet).getByName('derby')
     >>> derby.active = False
     >>> for project in mark.getOwnedProjects(transitive=True):
-    ...     print project.displayname
+    ...     print(project.displayname)
     Tomcat
     alsa-utils
 
     >>> for project in ubuntu_team.getOwnedProjects():
-    ...     print project.displayname
+    ...     print(project.displayname)
     Tomcat
 
 David does not own any projects.
@@ -1109,7 +1146,7 @@ search.
 
     >>> for project in mark.getOwnedProjects(
     ...     match_name=u'java', transitive=True):
-    ...     print project.displayname
+    ...     print(project.displayname)
     Tomcat
 
 Searching for a non-existent project returns no matches.
@@ -1128,7 +1165,7 @@ Person.languages.
     >>> carlos = personset.getByName('carlos')
 
     >>> for language in carlos.languages:
-    ...     print language.code, language.englishname
+    ...     print(language.code, language.englishname)
     ca     Catalan
     en     English
     es     Spanish
@@ -1138,34 +1175,48 @@ To add new languages we use Person.addLanguage().
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> languageset = getUtility(ILanguageSet)
     >>> carlos.addLanguage(languageset['pt_BR'])
-    >>> [lang.code for lang in carlos.languages]
-    [u'ca', u'en', u'pt_BR', u'es']
+    >>> for lang in carlos.languages:
+    ...     print(lang.code)
+    ca
+    en
+    pt_BR
+    es
 
 Adding a language which is already in the person's preferred ones will
 be a no-op.
 
     >>> carlos.addLanguage(languageset['es'])
-    >>> [lang.code for lang in carlos.languages]
-    [u'ca', u'en', u'pt_BR', u'es']
+    >>> for lang in carlos.languages:
+    ...     print(lang.code)
+    ca
+    en
+    pt_BR
+    es
 
 And to remove languages we use Person.removeLanguage().
 
     >>> carlos.removeLanguage(languageset['pt_BR'])
-    >>> [lang.code for lang in carlos.languages]
-    [u'ca', u'en', u'es']
+    >>> for lang in carlos.languages:
+    ...     print(lang.code)
+    ca
+    en
+    es
 
 Trying to remove a language which is not in the person's preferred ones
 will be a no-op.
 
     >>> carlos.removeLanguage(languageset['pt_BR'])
-    >>> [lang.code for lang in carlos.languages]
-    [u'ca', u'en', u'es']
+    >>> for lang in carlos.languages:
+    ...     print(lang.code)
+    ca
+    en
+    es
 
 The Person.languages list is ordered alphabetically by the languages'
 English names.
 
     >>> for language in daf.languages:
-    ...     print language.code, language.englishname
+    ...     print(language.code, language.englishname)
     en_GB  English (United Kingdom)
     ja     Japanese
     cy     Welsh
@@ -1190,7 +1241,7 @@ Next, Carlos has two incomplete specs *related* to him:
 
     >>> filter = []
     >>> for spec in carlos.specifications(None, filter=filter):
-    ...     print spec.name, spec.is_complete, spec.informational
+    ...     print(spec.name, spec.is_complete, spec.informational)
     svg-support False False
     extension-manager-upgrades False True
 
@@ -1199,15 +1250,15 @@ These 2 specifications are assigned to Carlos:
     >>> assigned_specs = carlos.specifications(
     ...     carlos, filter=[SpecificationFilter.ASSIGNEE])
     >>> for spec in assigned_specs:
-    ...     print spec.name
+    ...     print(spec.name)
     svg-support
     extension-manager-upgrades
 
 But from these two, only one has started.
 
-    >>> [(spec.name, spec.is_started)
-    ...  for spec in carlos.findVisibleAssignedInProgressSpecs(None)]
-    [(u'svg-support', True)]
+    >>> for spec in carlos.findVisibleAssignedInProgressSpecs(None):
+    ...     print('%s: %s' % (spec.name, spec.is_started))
+    svg-support: True
 
 Just for fun, lets check the SAB. He should have one spec for which he
 is the approver.
@@ -1215,13 +1266,13 @@ is the approver.
     >>> mark = getUtility(IPersonSet).getByName('mark')
     >>> filter = [SpecificationFilter.APPROVER]
     >>> for spec in mark.specifications(None, filter=filter):
-    ...     print spec.name
+    ...     print(spec.name)
     extension-manager-upgrades
 
 But has registered 5 of them:
 
     >>> filter = [SpecificationFilter.CREATOR]
-    >>> print foobar.specifications(None, filter=filter).count()
+    >>> print(foobar.specifications(None, filter=filter).count())
     5
 
 Now Celso, on the other hand, has 2 specs related to him:
@@ -1234,20 +1285,20 @@ On one of those, he is the approver:
 
     >>> filter = [SpecificationFilter.APPROVER]
     >>> for spec in cprov.specifications(None, filter=filter):
-    ...     print spec.name
+    ...     print(spec.name)
     svg-support
 
 And on another one, he is the drafter
 
     >>> filter = [SpecificationFilter.DRAFTER]
     >>> for spec in cprov.specifications(None, filter=filter):
-    ...     print spec.name
+    ...     print(spec.name)
     e4x
 
 We can filter for specifications that contain specific text:
 
     >>> for spec in cprov.specifications(None, filter=[u'svg']):
-    ...     print spec.name
+    ...     print(spec.name)
     svg-support
 
 Inactive products are excluded from the listings.
@@ -1351,19 +1402,19 @@ takes no parameters regarding to emails.
     ...     comment="when importing bugs", displayname="Ford Prefect",
     ...     registrant=foo_bar)
 
-    >>> print new_person.name
+    >>> print(new_person.name)
     ix
 
-    >>> print new_person.displayname
+    >>> print(new_person.displayname)
     Ford Prefect
 
-    >>> print new_person.preferredemail
+    >>> print(new_person.preferredemail)
     None
 
-    >>> print new_person.creation_rationale.name
+    >>> print(new_person.creation_rationale.name)
     BUGIMPORT
 
-    >>> print new_person.registrant.name
+    >>> print(new_person.registrant.name)
     name16
 
 
@@ -1392,9 +1443,10 @@ error will be raised.
     >>> person_set._newPerson(
     ...     'new-name', 'New Person', True,
     ...     PersonCreationRationale.BUGIMPORT)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NameAlreadyTaken: The name 'new-name' is already taken.
+    lp.registry.errors.NameAlreadyTaken: The name 'new-name' is already taken.
 
 If the name passed to _newPerson() isn't valid an InvalidName error will
 be raised.
@@ -1402,9 +1454,10 @@ be raised.
     >>> person_set._newPerson(
     ...     "ThisIsn'tValid", 'New Person', True,
     ...     PersonCreationRationale.BUGIMPORT)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    InvalidName: ThisIsn'tValid is not a valid name for a person.
+    lp.registry.errors.InvalidName: ThisIsn'tValid is not a valid name for a person.
 
 
 Probationary users

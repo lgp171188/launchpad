@@ -1,7 +1,9 @@
-# Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Classes and logic for the checkwatches BugWatchUpdater."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
@@ -11,6 +13,7 @@ __all__ = [
 import sys
 
 from lazr.lifecycle.event import ObjectCreatedEvent
+import six
 from zope.component import getUtility
 from zope.event import notify
 
@@ -247,7 +250,8 @@ class BugWatchUpdater(WorkingBase):
             assert remote_comment_id is not None, (
                 "A remote_comment_id must be specified.")
             with self.transaction:
-                unpushed_comment.remote_comment_id = remote_comment_id
+                unpushed_comment.remote_comment_id = six.ensure_text(
+                    remote_comment_id)
 
             pushed_comments += 1
 

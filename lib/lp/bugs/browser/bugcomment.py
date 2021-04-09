@@ -1,4 +1,4 @@
-# Copyright 2006-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2006-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug comment browser view classes."""
@@ -90,7 +90,7 @@ def build_comments_from_chunks(
             # has already loaded all the bug watches. If we start lazy loading
             # those, or not needing them we will need to batch lookup watches
             # here.
-            if bugmessage.bugwatchID is not None:
+            if bugmessage.bugwatch_id is not None:
                 bug_comment.bugwatch = bugmessage.bugwatch
                 bug_comment.synchronized = (
                     bugmessage.remote_comment_id is not None)

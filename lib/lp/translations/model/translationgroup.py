@@ -17,6 +17,7 @@ from sqlobject import (
     StringCol,
     )
 from storm.expr import (
+    Desc,
     Join,
     LeftJoin,
     )
@@ -100,8 +101,8 @@ class TranslationGroup(SQLBase):
     # get a translator by language or code
     def query_translator(self, language):
         """See ITranslationGroup."""
-        return Translator.selectOneBy(language=language,
-                                      translationgroup=self)
+        return IStore(Translator).find(
+            Translator, language=language, translationgroup=self).one()
 
     @property
     def products(self):
@@ -109,7 +110,8 @@ class TranslationGroup(SQLBase):
         # Avoid circular imports.
         from lp.registry.model.product import Product
 
-        return Product.selectBy(translationgroup=self.id, active=True)
+        return IStore(Product).find(
+            Product, translationgroup=self, active=True)
 
     @property
     def projects(self):
@@ -117,7 +119,8 @@ class TranslationGroup(SQLBase):
         # Avoid circular imports.
         from lp.registry.model.projectgroup import ProjectGroup
 
-        return ProjectGroup.selectBy(translationgroup=self.id, active=True)
+        return IStore(ProjectGroup).find(
+            ProjectGroup, translationgroup=self, active=True)
 
     # A limit of projects to get for the `top_projects`.
     TOP_PROJECTS_LIMIT = 6
@@ -260,10 +263,10 @@ class TranslationGroupSet:
         # group names from their respective celebrities.  For now,
         # just hard-code them so they show up at the top of the
         # listing of all translation groups.
-        for group in TranslationGroup.select(
-            orderBy=[
-                "-(name in ('launchpad-translators', 'ubuntu-translators'))",
-                "title"]):
+        for group in IStore(TranslationGroup).find(TranslationGroup).order_by(
+                Desc(TranslationGroup.name.is_in((
+                    'launchpad-translators', 'ubuntu-translators'))),
+                TranslationGroup.title):
             yield group
 
     def __getitem__(self, name):
@@ -306,4 +309,4 @@ class TranslationGroupSet:
 
     def getGroupsCount(self):
         """See ITranslationGroupSet."""
-        return TranslationGroup.select().count()
+        return IStore(TranslationGroup).find(TranslationGroup).count()

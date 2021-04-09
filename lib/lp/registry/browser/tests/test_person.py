@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import unicode_literals
@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 __metaclass__ = type
 
 import doctest
-import email
 from operator import attrgetter
 import re
 from textwrap import dedent
@@ -65,6 +64,7 @@ from lp.registry.interfaces.teammembership import (
 from lp.registry.model.karma import KarmaCategory
 from lp.registry.model.milestone import milestone_sort_key
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
+from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
@@ -465,6 +465,49 @@ class TestPersonIndexView(BrowserTestCase):
         self.assertNotEqual('', markup)
         self.assertThat(markup, Not(link_match))
 
+    def test_show_oci_recipes_link(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        person = self.factory.makePerson()
+        # Creates a recipe, so the link appears.
+        self.factory.makeOCIRecipe(owner=person, registrant=person)
+        view = create_initialized_view(person, '+index', principal=person)
+        with person_logged_in(person):
+            markup = self.get_markup(view, person)
+        expected_url = 'http://launchpad.test/~%s/+oci-recipes' % person.name
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCI recipes link', 'a',
+                attrs={
+                    'href': expected_url},
+                text='View OCI recipes'))
+        self.assertThat(markup, link_match)
+
+        login(ANONYMOUS)
+        markup = self.get_markup(view, person)
+        self.assertThat(markup, link_match)
+
+    def test_hides_oci_recipes_link_if_user_doesnt_have_oci_recipes(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        person = self.factory.makePerson()
+        # Creates a recipe from another user, just to make sure it will not
+        # interfere.
+        self.factory.makeOCIRecipe()
+        view = create_initialized_view(person, '+index', principal=person)
+        with person_logged_in(person):
+            markup = self.get_markup(view, person)
+        expected_url = 'http://launchpad.test/~%s/+oci-recipes' % person.name
+        link_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'OCI recipes link', 'a',
+                attrs={
+                    'href': expected_url},
+                text='View OCI recipes'))
+        self.assertThat(markup, Not(link_match))
+
+        login(ANONYMOUS)
+        markup = self.get_markup(view, person)
+        self.assertThat(markup, Not(link_match))
+
     def test_ppas_query_count(self):
         owner = self.factory.makePerson()
 
@@ -740,7 +783,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         """Special assert function for dealing with email-related errors."""
         view = self.createAddEmailView(email_str)
         error_msg = view.errors[0]
-        if type(error_msg) != unicode:
+        if not isinstance(error_msg, six.text_type):
             error_msg = error_msg.doc()
         self.assertEqual(expected_msg, error_msg)
 
@@ -829,7 +872,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         messages = [msg for from_addr, to_addr, msg in stub.test_emails]
         raw_msg = None
         for orig_msg in messages:
-            msg = email.message_from_string(orig_msg)
+            msg = message_from_bytes(orig_msg)
             if msg.get('to') == added_email:
                 raw_msg = orig_msg
         token_url = get_token_url_from_email(raw_msg)
@@ -1455,13 +1498,16 @@ class TestPersonOCIRegistryCredentialsView(
                         "password": Equals("bar"),
                         })))
 
-        # change only the registry url
+        # change only the registry url and region
         browser = self.getViewBrowser(
             self.owner, view_name='+oci-registry-credentials', user=self.user)
         browser.getLink("Edit OCI registry credentials").click()
         url_control = browser.getControl(
             name="field.url.%d" % registry_credentials_id)
         url_control.value = newurl
+        url_control = browser.getControl(
+            name="field.region.%d" % registry_credentials_id)
+        url_control.value = 'us-west-2'
         browser.getControl("Save").click()
         with person_logged_in(self.user):
             self.assertThat(
@@ -1470,6 +1516,7 @@ class TestPersonOCIRegistryCredentialsView(
                     MatchesDict({
                         "username": Equals("different_username"),
                         "password": Equals("bar"),
+                        "region": Equals("us-west-2"),
                         })))
 
         # change only the password
@@ -1484,7 +1531,7 @@ class TestPersonOCIRegistryCredentialsView(
         self.assertIn(
             "Passwords do not match.", six.ensure_text(browser.contents))
 
-        # change all fields with one edit action
+        # change all fields (except region) with one edit action
         username_control = browser.getControl(
             name="field.username.%d" % registry_credentials_id)
         username_control.value = 'third_different_username'
@@ -1506,6 +1553,7 @@ class TestPersonOCIRegistryCredentialsView(
                     MatchesDict({
                         "username": Equals("third_different_username"),
                         "password": Equals("third_newpassword"),
+                        "region": Equals("us-west-2"),
                         })))
 
     def test_add_oci_registry_credentials(self):
@@ -1530,6 +1578,7 @@ class TestPersonOCIRegistryCredentialsView(
             [owner_name], browser.getControl(name="field.add_owner").value)
 
         browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_region").value = "sa-east-1"
         browser.getControl(name="field.add_owner").value = [new_owner_name]
         browser.getControl(name="field.add_username").value = "new_username"
         browser.getControl(name="field.add_password").value = "password"
@@ -1555,6 +1604,7 @@ class TestPersonOCIRegistryCredentialsView(
                         MatchesDict({
                             "username": Equals("new_username"),
                             "password": Equals("password"),
+                            "region": Equals("sa-east-1"),
                             }))))
 
     def test_delete_oci_registry_credentials(self):
@@ -2167,7 +2217,8 @@ class TestPersonRdfView(BrowserTestCase):
         self.assertEqual(
             content_disposition, browser.headers['Content-disposition'])
         self.assertEqual(
-            'application/rdf+xml', browser.headers['Content-type'])
+            'application/rdf+xml;charset="utf-8"',
+            browser.headers['Content-type'])
 
 
 load_tests = load_tests_apply_scenarios

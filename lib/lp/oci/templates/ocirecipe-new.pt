@@ -20,6 +20,9 @@
         <tal:widget define="widget nocall:view/widgets/owner">
           <metal:block use-macro="context/@@launchpad_form/widget_row" />
         </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/information_type">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
         <tal:widget define="widget nocall:view/widgets/description">
           <metal:block use-macro="context/@@launchpad_form/widget_row" />
         </tal:widget>
@@ -41,6 +44,14 @@
         <tal:widget define="widget nocall:view/widgets/processors">
           <metal:block use-macro="context/@@launchpad_form/widget_row" />
         </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/official_recipe">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <span tal:condition="view/distribution_has_credentials">
+          <tal:widget define="widget nocall:view/widgets/image_name" >
+            <metal:block use-macro="context/@@launchpad_form/widget_row" />
+          </tal:widget>
+        </span>
       </table>
     </metal:formbody>
   </div>

@@ -98,8 +98,9 @@ class TestDistroSeriesQueueRosettaTranslationsTarball(
         self.assertEqual(1, len(upload.queue_root.customfiles))
 
     def _getImportableFilesFromTarball(self):
-        tarball = TarFile.open(mode="r:gz", fileobj=open(datadir(
-            "rosetta-translations/%s" % self.translations_file)))
+        tarball_path = datadir(
+            "rosetta-translations/%s" % self.translations_file)
+        tarball = TarFile.open(name=tarball_path, mode="r:gz")
         return [relpath(file_, "./source/") for file_ in tarball.getnames() if
                 ".po" in file_]
 

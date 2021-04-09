@@ -31,7 +31,7 @@ def _try_except(callable, *args, **kwargs):
         raise
     except:
         if DEBUG_EXCEPTION_FORMATTER:
-            traceback.print_exc()
+            traceback.print_exc(file=sys.stderr)
     # return None
 
 
@@ -104,7 +104,7 @@ def format_list(extracted_list):
             # The values above may not stringify properly, or who knows what
             # else.  Be defensive.
             if DEBUG_EXCEPTION_FORMATTER:
-                traceback.print_exc()
+                traceback.print_exc(file=sys.stderr)
             # else just swallow the exception.
         item.append('')  # This gives us a trailing newline.
         list.append('\n'.join(item))
@@ -172,7 +172,7 @@ def _get_frame_data(f, lineno):
                 raise
             except:
                 if DEBUG_EXCEPTION_FORMATTER:
-                    traceback.print_exc()
+                    traceback.print_exc(file=sys.stderr)
             supplement_dict = dict(warnings=warnings, extra=extra)
             for key in ('source_url', 'line', 'column', 'expression'):
                 value = getattr(supplement, key, None)

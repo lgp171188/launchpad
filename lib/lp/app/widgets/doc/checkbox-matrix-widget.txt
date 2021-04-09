@@ -33,10 +33,14 @@ as a set from _getFormValue() or getInputValue():
     >>> request = LaunchpadTestRequest(
     ...     form={'field.licenses': ['GNU_LGPL_V2_1', 'GNU_GPL_V2']})
     >>> matrix_widget = CheckBoxMatrixWidget(licenses_field, vtype, request)
-    >>> matrix_widget._getFormValue()
-    set([<...License.GNU_GPL_V2...>, <...License.GNU_LGPL_V2_1...>])
-    >>> matrix_widget.getInputValue()
-    set([<...License.GNU_GPL_V2...>, <...License.GNU_LGPL_V2_1...>])
+    >>> for item in sorted(matrix_widget._getFormValue()):
+    ...     print(repr(item))
+    <...License.GNU_GPL_V2...>
+    <...License.GNU_LGPL_V2_1...>
+    >>> for item in sorted(matrix_widget.getInputValue()):
+    ...     print(repr(item))
+    <...License.GNU_GPL_V2...>
+    <...License.GNU_LGPL_V2_1...>
 
 It should render as many rows as are specified by the column_count attribute.
 

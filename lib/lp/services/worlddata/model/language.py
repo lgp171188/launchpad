@@ -40,7 +40,6 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
-from lp.services.helpers import ensure_unicode
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -283,19 +282,6 @@ class LanguageSet:
         else:
             return code
 
-    def codes_to_languages(self, codes):
-        """See `ILanguageSet`."""
-
-        languages = []
-
-        for code in [self.canonicalise_language_code(code) for code in codes]:
-            try:
-                languages.append(self[code])
-            except KeyError:
-                pass
-
-        return languages
-
     def createLanguage(self, code, englishname, nativename=None,
                        pluralforms=None, pluralexpression=None, visible=True,
                        direction=TextDirection.LTR):
@@ -308,7 +294,7 @@ class LanguageSet:
     def search(self, text):
         """See `ILanguageSet`."""
         if text:
-            text = ensure_unicode(text).lower()
+            text = six.ensure_text(text).lower()
             results = ISlaveStore(Language).find(
                 Language, Or(
                     Language.code.lower().contains_string(text),

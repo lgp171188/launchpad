@@ -27,9 +27,7 @@ from zope.interface import Interface
 from zope.publisher.interfaces import NotFound
 from zope.schema import (
     Bool,
-    Choice,
     Text,
-    TextLine,
     )
 
 from lp import _
@@ -37,11 +35,11 @@ from lp.app.browser.launchpadform import (
     action,
     LaunchpadFormView,
     )
-from lp.app.widgets.suggestion import TargetGitRepositoryWidget
 from lp.code.browser.branchmergeproposal import (
     latest_proposals_for_each_branch,
     )
 from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
+from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.enums import GitRepositoryType
 from lp.code.errors import InvalidBranchMergeProposal
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
@@ -247,30 +245,15 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
 class GitRefRegisterMergeProposalSchema(Interface):
     """The schema to define the form for registering a new merge proposal."""
 
-    target_git_repository = Choice(
-        title=_("Target repository"),
-        vocabulary="GitRepository", required=True, readonly=True,
-        description=_("The repository that the source will be merged into."))
+    target_git_ref = copy_field(
+        IBranchMergeProposal['target_git_ref'], required=True)
 
-    target_git_path = TextLine(
-        title=_("Target branch"), required=True, readonly=True,
-        description=_(
-            "The branch within the target repository that the source will "
-            "be merged into."))
-
-    prerequisite_git_repository = Choice(
-        title=_("Prerequisite repository"),
-        vocabulary="GitRepository", required=False, readonly=True,
-        description=_(
-            "A repository containing a branch that should be merged before "
-            "this one.  (Its changes will not be shown in the diff.)"))
-
-    prerequisite_git_path = TextLine(
-        title=_("Prerequisite branch"), required=False, readonly=True,
-        description=_(
-            "A branch within the prerequisite repository that should be "
-            "merged before this one.  (Its changes will not be shown in the "
-            "diff.)"))
+    prerequisite_git_ref = copy_field(
+        IBranchMergeProposal['prerequisite_git_ref'], required=False,
+        description=_("If the source branch is based on a different branch, "
+                      "you can add this as a prerequisite. "
+                      "The changes from that branch will not show "
+                      "in the diff."))
 
     comment = Text(
         title=_('Description of the change'), required=False,
@@ -302,7 +285,10 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
     schema = GitRefRegisterMergeProposalSchema
     for_input = True
 
-    custom_widget_target_git_repository = TargetGitRepositoryWidget
+    custom_widget_target_git_ref = CustomWidgetFactory(
+        GitRefWidget, require_branch=True)
+    custom_widget_prerequisite_git_ref = CustomWidgetFactory(
+        GitRefWidget, require_branch=True)
     custom_widget_commit_message = CustomWidgetFactory(
         TextAreaWidget, cssClass='comment-text')
     custom_widget_comment = CustomWidgetFactory(
@@ -323,15 +309,25 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
     def setUpWidgets(self, context=None):
         super(GitRefRegisterMergeProposalView, self).setUpWidgets(
             context=context)
-        term = next(
-            iter(self.widgets['target_git_repository'].vocabulary),
-            None)
-        # If we have a target, and the user hasn't entered a value.
-        if term and not self.widgets['target_git_path'].hasInput():
-            branch_display = term.value.default_branch
-            if branch_display and branch_display.startswith("refs/heads/"):
-                branch_display = branch_display[len("refs/heads/"):]
-            self.widgets['target_git_path'].setRenderedValue(branch_display)
+
+        if not self.widgets['target_git_ref'].hasInput():
+            if self.context.repository.namespace.has_defaults:
+                repo_set = getUtility(IGitRepositorySet)
+                default_repo = repo_set.getDefaultRepository(
+                    self.context.repository.target)
+            else:
+                default_repo = None
+            if not default_repo:
+                default_repo = self.context.repository
+            if default_repo.default_branch:
+                default_ref = default_repo.getRefByPath(
+                    default_repo.default_branch)
+                with_path = True
+            else:
+                default_ref = self.context
+                with_path = False
+            self.widgets["target_git_ref"].setRenderedValue(
+                default_ref, with_path=with_path)
 
     @action('Propose Merge', name='register',
             failure=LaunchpadFormView.ajax_failure_handler)
@@ -340,15 +336,8 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
 
         registrant = self.user
         source_ref = self.context
-        target_ref = data['target_git_repository'].getRefByPath(
-            data['target_git_path'])
-        if (data.get('prerequisite_git_repository') is not None and
-                data.get('prerequisite_git_path') is not None):
-            prerequisite_ref = (
-                data['prerequisite_git_repository'].getRefByPath(
-                    data['prerequisite_git_path']))
-        else:
-            prerequisite_ref = None
+        target_ref = data['target_git_ref']
+        prerequisite_ref = data.get('prerequisite_git_ref')
 
         review_requests = []
         reviewer = data.get('reviewer')
@@ -403,41 +392,31 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
             self.addError(str(error))
 
     def _validateRef(self, data, name):
-        repository = data.get('%s_git_repository' % name)
-        path = data.get('%s_git_path' % name)
-        if path:
-            ref = repository.getRefByPath(path)
-        else:
-            ref = None
-        if ref is None:
+        ref = data['{}_git_ref'.format(name)]
+        if ref == self.context:
             self.setFieldError(
-                '%s_git_path' % name,
-                "The %s path must be the path of a reference in the "
-                "%s repository." % (name, name))
-        elif ref == self.context:
-            self.setFieldError(
-                '%s_git_path' % name,
+                '%s_git_ref' % name,
                 "The %s repository and path together cannot be the same "
                 "as the source repository and path." % name)
-        return repository
+        return ref.repository
 
     def validate(self, data):
         source_ref = self.context
         # The existence of target_git_repository is handled by the form
         # machinery.
-        if data.get('target_git_repository') is not None:
+        if data.get('target_git_ref') is not None:
             target_repository = self._validateRef(data, 'target')
             if not target_repository.isRepositoryMergeable(
                     source_ref.repository):
                 self.setFieldError(
-                    'target_git_repository',
+                    'target_git_ref',
                     "%s is not mergeable into this repository." %
                     source_ref.repository.identity)
-        if data.get('prerequisite_git_repository') is not None:
+        if data.get('prerequisite_git_ref') is not None:
             prerequisite_repository = self._validateRef(data, 'prerequisite')
             if not target_repository.isRepositoryMergeable(
                     prerequisite_repository):
                 self.setFieldError(
-                    'prerequisite_git_repository',
+                    'prerequisite_git_ref',
                     "This repository is not mergeable into %s." %
                     target_repository.identity)

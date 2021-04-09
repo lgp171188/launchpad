@@ -14,7 +14,7 @@ A new ProductRelease can be created using ProductReleaseAddView.
     >>> product = factory.makeProduct(name='app', owner=owner)
     >>> series = factory.makeProductSeries(name='simple', product=product)
     >>> naked_milestone = removeSecurityProxy(series).newMilestone('0.1')
-    >>> print naked_milestone.active
+    >>> print(naked_milestone.active)
     True
 
 The view explains what that the user is creating a release, and lists
@@ -22,15 +22,15 @@ the other releases for the series. There are no other releases yet.
 
     >>> ignored = login_person(owner)
     >>> view = create_initialized_view(naked_milestone, '+addrelease')
-    >>> print view.label
+    >>> print(view.label)
     Create a new release for App
-    >>> print view.page_title
+    >>> print(view.page_title)
     Create a new release for App
 
 The view creates a checkbox to allow the user to keep the milestone
 active, which is normally deactivated when a release is made.
 
-    >>> print view.widgets['keep_milestone_active'].hint
+    >>> print(view.widgets['keep_milestone_active'].hint)
     Only select this if bugs or blueprints still need to be targeted to this
     project release's milestone.
 
@@ -45,17 +45,17 @@ milestone.
     ...     'field.keep_milestone_active.used': '', # false
     ...     }
     >>> view = create_initialized_view(naked_milestone, '+addrelease', form=form)
-    >>> print view.errors
+    >>> print(view.errors)
     []
 
-    >>> print view.widget_errors
+    >>> print(view.widget_errors)
     {}
 
-    >>> print naked_milestone.active
+    >>> print(naked_milestone.active)
     False
 
     >>> for release in series.releases:
-    ...     print release.version, release.release_notes, release.datereleased
+    ...     print(release.version, release.release_notes, release.datereleased)
     0.1 Initial release. 2007-05-11 00:00:00+00:00
 
     >>> transaction.commit()
@@ -64,14 +64,14 @@ Only one release can be created for the milestone.
 
     >>> view = create_initialized_view(naked_milestone, '+addrelease', form=form)
     >>> for notice in view.request.response.notifications:
-    ...     print notice.message
+    ...     print(notice.message)
     A project release already exists for this milestone.
 
 The milestone can be kept active when a release is created by submitting
 the keep_milestone_active option as 'on' (the value of the checkbox).
 
     >>> active_milestone = series.newMilestone('0.2')
-    >>> print active_milestone.active
+    >>> print(active_milestone.active)
     True
 
     >>> form = {
@@ -83,16 +83,16 @@ the keep_milestone_active option as 'on' (the value of the checkbox).
     ...     }
     >>> view = create_initialized_view(
     ...     active_milestone, '+addrelease', form=form)
-    >>> print view.errors
+    >>> print(view.errors)
     []
 
-    >>> print view.widget_errors
+    >>> print(view.widget_errors)
     {}
 
     >>> view.request.response.notifications
     []
 
-    >>> print active_milestone.active
+    >>> print(active_milestone.active)
     True
 
 
@@ -112,9 +112,9 @@ set the milestone.
     >>> [field.__name__ for field in view.form_fields]
     ['milestone_for_release', 'keep_milestone_active', 'datereleased',
      'release_notes', 'changelog']
-    >>> print view.label
+    >>> print(view.label)
     Create a new release for App
-    >>> print view.page_title
+    >>> print(view.page_title)
     Create a new release for App
 
 The rendered template includes a script that adds a js-action link to
@@ -123,7 +123,7 @@ show a formoverlay that updates the milestone_for_release field.
     >>> from lp.testing.pages import find_tag_by_id
 
     >>> script = find_tag_by_id(view.render(), 'milestone-script')
-    >>> print script
+    >>> print(script)
     <script id="milestone-script" type="text/javascript">
         LPJS.use(... 'lp.registry.milestoneoverlay'...
             var milestone_form_uri = '.../app/simple/+addmilestone/++form++';
@@ -142,7 +142,7 @@ Editing a a product release
 A ProductRelease can be edited using the ProductReleaseEditView.
 
     >>> release = series.getRelease('0.1')
-    >>> print release.release_notes
+    >>> print(release.release_notes)
     Initial release.
 
     >>> form = {
@@ -152,19 +152,19 @@ A ProductRelease can be edited using the ProductReleaseEditView.
     ...     'field.actions.change': 'Change',
     ...     }
     >>> view = create_initialized_view(release, '+edit', form=form)
-    >>> print view.label
+    >>> print(view.label)
     Edit App 0.1 release details
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Edit App 0.1 release details
 
-    >>> print view.errors
+    >>> print(view.errors)
     []
 
-    >>> print view.widget_errors
+    >>> print(view.widget_errors)
     {}
 
-    >>> print release.release_notes
+    >>> print(release.release_notes)
     revised
 
 
@@ -193,10 +193,10 @@ Adding a download file to a release
     >>> view = create_initialized_view(
     ...     release, '+adddownloadfile',
     ...     form=form)
-    >>> print view.label
+    >>> print(view.label)
     Add a download file to App 0.1
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Add a download file to App 0.1
 
 
@@ -207,18 +207,18 @@ Deleting a product release
     ...     'field.actions.delete': 'Delete Release',
     ...     }
     >>> view = create_initialized_view(release, '+delete', form=form)
-    >>> print view.label
+    >>> print(view.label)
     Delete App 0.1
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Delete App 0.1
 
-    >>> print view.errors
+    >>> print(view.errors)
     []
 
-    >>> print view.widget_errors
+    >>> print(view.widget_errors)
     {}
 
     >>> release = series.getRelease('0.1')
-    >>> print release
+    >>> print(release)
     None

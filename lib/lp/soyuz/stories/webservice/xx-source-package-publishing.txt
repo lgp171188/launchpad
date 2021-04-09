@@ -146,9 +146,9 @@ publication to play with first.
     sponsor_link: None
     status: 'Pending'
 
-    >>> webservice.named_get(
-    ...     pubs['entries'][0]['self_link'], 'changesFileUrl').jsonBody()
-    u'http://.../~cprov/+archive/ubuntu/ppa/+files/testwebservice_666_source.changes'
+    >>> print(webservice.named_get(
+    ...     pubs['entries'][0]['self_link'], 'changesFileUrl').jsonBody())
+    http://.../~cprov/+archive/ubuntu/ppa/+files/testwebservice_666_source.changes
 
 
 Unsigned sources
@@ -292,7 +292,7 @@ binaries have been copied and published in the same context archive.
     >>> source_pub = pubs['entries'][0]
     >>> builds = webservice.named_get(
     ...     source_pub['self_link'], 'getBuilds').jsonBody()
-    >>> for entry in sorted(builds['entries']):
+    >>> for entry in builds['entries']:
     ...     print(entry['title'])
     i386 build of pmount 0.1-1 in ubuntu warty RELEASE
 
@@ -310,7 +310,7 @@ of that publication.
     >>> source_pub = pubs['entries'][0]
     >>> builds = webservice.named_get(
     ...     source_pub['self_link'], 'getPublishedBinaries').jsonBody()
-    >>> for entry in sorted(builds['entries']):
+    >>> for entry in builds['entries']:
     ...     print(entry['display_name'])
     pmount 0.1-1 in warty hppa
     pmount 0.1-1 in warty i386
@@ -350,17 +350,17 @@ service:
 Create a helper function to print the results:
 
     >>> def print_build_summaries(summaries):
-    ...     for id, summary in summaries.items():
+    ...     for id, summary in sorted(summaries.items()):
     ...         arch_tags = [build['arch_tag'] for build in summary['builds']]
     ...         print("Source ID %s: %s (%s)" % (id, summary['status'],
-    ...                                          arch_tags))
+    ...                                          pretty(arch_tags)))
 
 The results contain an entry for each source ID, with the summary status
 and a list of all the relevant builds for the summary:
 
     >>> print_build_summaries(build_summaries)
-    Source ID 27: FAILEDTOBUILD ([u'i386'])
-    Source ID 28: FULLYBUILT_PENDING ([u'i386'])
+    Source ID 27: FAILEDTOBUILD (['i386'])
+    Source ID 28: FULLYBUILT_PENDING (['i386'])
 
 
 Associated Files In The Librarian
@@ -375,12 +375,12 @@ for this package:
     ...     entry['self_link'] for entry in pubs['entries']):
     ...     source_urls = webservice.named_get(
     ...         pub_link, 'sourceFileUrls').jsonBody()
-    ...     print(source_urls)
-    [u'http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/cdrkit/1.0/foobar-1.0.dsc']
-    [u'http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/iceweasel/1.0/firefox_0.9.2.orig.tar.gz',
-     u'http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/iceweasel/1.0/iceweasel-1.0.dsc']
+    ...     print(pretty(source_urls))
+    ['http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/cdrkit/1.0/foobar-1.0.dsc']
+    ['http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/iceweasel/1.0/firefox_0.9.2.orig.tar.gz',
+     'http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/iceweasel/1.0/iceweasel-1.0.dsc']
     []
-    [u'http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/testwebservice/666/testwebservice_666.dsc']
+    ['http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/testwebservice/666/testwebservice_666.dsc']
 
 binaryFileUrls() is similar:
 
@@ -388,11 +388,11 @@ binaryFileUrls() is similar:
     ...     entry['self_link'] for entry in pubs['entries']):
     ...     binary_urls = webservice.named_get(
     ...         pub_link, 'binaryFileUrls').jsonBody()
-    ...     print(binary_urls)
+    ...     print(pretty(binary_urls))
     []
-    [u'http://.../~cprov/+archive/ubuntu/ppa/+files/mozilla-firefox_0.9_i386.deb']
+    ['http://.../~cprov/+archive/ubuntu/ppa/+files/mozilla-firefox_0.9_i386.deb']
     []
-    [u'http://.../~cprov/+archive/ubuntu/ppa/+files/testwebservice-bin_666_all.deb']
+    ['http://.../~cprov/+archive/ubuntu/ppa/+files/testwebservice-bin_666_all.deb']
 
 changelogUrl() returns the URL of debian/changelog, if it's available in
 the librarian.

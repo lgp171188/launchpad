@@ -197,7 +197,7 @@ class UploadProcessor:
                 try:
                     handler = UploadHandler.forProcessor(self, fsroot, upload)
                 except CannotGetBuild as e:
-                    self.log.warn(e)
+                    self.log.warning(e)
                 else:
                     handler.process()
         finally:
@@ -681,7 +681,7 @@ class BuildUploadHandler(UploadHandler):
             # bug, so get the upload out of the queue before the status
             # changes to something that might accidentally let it be
             # accepted.
-            self.processor.log.warn(
+            self.processor.log.warning(
                 "Expected build status to be UPLOADING or BUILDING, was %s.",
                 self.build.status.name)
             self.moveUpload(UploadStatusEnum.FAILED, logger)

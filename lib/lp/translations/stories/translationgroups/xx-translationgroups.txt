@@ -20,24 +20,26 @@ page.
 
     >>> anon_browser.open(
     ...     'http://translations.launchpad.test/+groups/+new')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Same for a regular, unprivileged user.
 
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/+groups/+new')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 OK, best we try again, with administrator rights!
 
     >>> admin_browser.open(
     ...     'http://translations.launchpad.test/+groups/+new')
     >>> print(find_main_content(
-    ...     admin_browser.contents).find('h1').renderContents())
+    ...     admin_browser.contents).find('h1').decode_contents())
     Create a new translation group
 
 Translation group names must meet certain conditions.  For example, they
@@ -53,7 +55,7 @@ may not contain any upper-case letters.
     ...     "each specialising in their own language.")
     >>> admin_browser.getControl('Create').click()
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     Invalid name 'PolYglot'. Names must be at least two characters ...
 
@@ -73,7 +75,7 @@ translation-team.
     http://translations.launchpad.test/+groups/+new
 
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     There is already a translation group with such name
 
@@ -100,8 +102,8 @@ that group's page.
     >>> print(extract_text(docs))
     Please read the translation instructions...
     >>> docs_url = docs.find('a')
-    >>> extract_link_from_tag(docs_url)
-    u'https://help.launchpad.net/Translations/PolyglotPolicies'
+    >>> print(extract_link_from_tag(docs_url))
+    https://help.launchpad.net/Translations/PolyglotPolicies
 
 A Rosetta administrator is also allowed to create groups.
 
@@ -123,7 +125,7 @@ A Rosetta administrator is also allowed to create groups.
 By default, when a group is created, the creator is its owner.
 
     >>> for t in find_tags_by_class(browser.contents, 'link'):
-    ...     print(t.renderContents())
+    ...     print(t.decode_contents())
     Jordi Mallach
 
 The Rosetta administrator assigns ownership of the group to Sample
@@ -146,7 +148,7 @@ The Rosetta administrator is still able to administer this group:
 But Sample Person is now listed as its owner:
 
     >>> for t in find_tags_by_class(browser.contents, 'link'):
-    ...     print(t.renderContents())
+    ...     print(t.decode_contents())
     Sample Person
 
 That means that Sample Person is allowed to administer "their" group.
@@ -212,7 +214,7 @@ didn't move away from this form.
     http://translations.launchpad.test/+groups/testing-translation-team/+edit
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     There is already a translation group with this name
 
@@ -224,7 +226,7 @@ Choosing another name should work though.
     http://translations.launchpad.test/+groups/renamed-group
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
 
 You can also edit the generic translation instructions for the team
 
@@ -264,14 +266,16 @@ Other users cannot access this page, nor see the menu link to it.
 
     >>> user_browser.open(anon_browser.url)
     >>> user_browser.getLink('Configure Translations').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(ubuntu_owner_browser.url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Let's post to the form, setting the translation group to polyglot and
 closed permissions.
@@ -361,14 +365,16 @@ leads to.
 
     >>> user_browser.open(translations_page_url)
     >>> user_browser.getLink('Configure Translations').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(change_translators_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Now let's post to the form. We should be redirected to the product page.
 
@@ -407,14 +413,16 @@ to access the page it leads to.
 
     >>> user_browser.open(translations_page_url)
     >>> user_browser.getLink('Change permissions').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(gnome_owner_browser.url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 Let's post to the form, setting the translation group to polyglot and
 closed permissions.
@@ -577,7 +585,7 @@ The error means we stay on the appoint page:
     'http://translations.launchpad.test/+groups/polyglot/+appoint'
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     There is already a translator for this language
 
@@ -606,9 +614,10 @@ Normal users, however, are not.
     'http://translations.launchpad.test/+groups/polyglot/'
 
     >>> user_browser.getLink('Appoint a new translation team')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...   'http://translations.launchpad.test/+groups/polyglot/')
@@ -616,9 +625,10 @@ Normal users, however, are not.
     'http://translations.launchpad.test/+groups/polyglot/'
 
     >>> user_browser.getLink('Change details').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 
 Change a translator in a translation group
@@ -680,7 +690,7 @@ exist.
 the system detects it and notify the user that is not possible.
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     <a href="http://translations.launchpad.test/~name21">Hoary Gnome Team</a>
     is already a translator for this language
@@ -690,9 +700,10 @@ instance Welsh (cy), the change will work.
 
     >>> admin_browser.open(
     ...     'http://translations.launchpad.test/+groups/polyglot/cy')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound:...
+    zope.publisher.interfaces.NotFound: ...
 
     >>> browser.getControl('Language').value = ['cy']
     >>> browser.getControl('Change').click()
@@ -732,7 +743,7 @@ should be redirected to the polyglot page.
 And on that page, we should see the removal message.
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Removed Hoary Gnome Team as the Abkhazian translator for The PolyGlot
     Translation Group.
 
@@ -781,7 +792,7 @@ No Privileges is going to do some translation here.  Right now, message
 number 148 is not translated.
 
     >>> tag = find_tag_by_id(browser.contents, 'msgset_148_cy_translation_0')
-    >>> print(tag.renderContents())
+    >>> print(tag.decode_contents())
     (no translation yet)
 
 After No posts a translation, however, it is.
@@ -803,7 +814,7 @@ added (with some extra html code, but the same content we wanted to add)
     http://.../ubuntu/.../evolution/+pots/evolution-2.2/cy/19/+translate
 
     >>> tag = find_tag_by_id(browser.contents, 'msgset_148_cy_translation_0')
-    >>> print(tag.renderContents())
+    >>> print(tag.decode_contents())
     foo<img alt="" src="/@@/translation-newline"/><br/>
     %i%i%i
 
@@ -842,7 +853,7 @@ suggestions.
     ...     if not labels:
     ...         return None
     ...     else:
-    ...         return labels[0].renderContents()
+    ...         return labels[0].decode_contents()
 
     >>> def get_detail_tag(browser, tag_class):
     ...     """Find tag of given class in translation page."""
@@ -850,13 +861,13 @@ suggestions.
     ...     if not tag:
     ...         return None
     ...     else:
-    ...         return tag.renderContents()
+    ...         return tag.decode_contents()
 
     >>> def print_menu_option(contents, option):
     ...     """Print given navigation menu on given page, if present."""
     ...     found = False
     ...     for item in find_tags_by_class(contents, 'menu-link-%s' % option):
-    ...         print(item.renderContents())
+    ...         print(item.decode_contents())
     ...         found = True
     ...     if not found:
     ...         print("Not found.")
@@ -942,7 +953,7 @@ as well as to upload files.
     ...     if not markers:
     ...         return None
     ...     else:
-    ...         return markers[0].renderContents()
+    ...         return markers[0].decode_contents()
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
@@ -990,7 +1001,7 @@ has been added.
     >>> print(find_no_translation_marker(browser.contents))
     None
 
-    >>> print(find_main_content(browser.contents).renderContents())
+    >>> print(find_main_content(browser.contents).decode_contents())
     <...evolution minikaart...
 
 First, we verify that netapplet is using Launchpad Translations.
@@ -1081,9 +1092,10 @@ Try to get the page when unauthenticated.
     >>> browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/' +
     ...         'evolution/+pots/evolution-2.2/af/+upload')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 And now with valid credentials.
 
@@ -1101,14 +1113,14 @@ an error message back.
     http://.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'error'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Ignored your upload because you didn't select a file to upload.
 
 Uploading files with an unkown file format notifies the user that it
 cannot be handled.
 
     >>> from io import BytesIO
-    >>> af_file = b'''
+    >>> af_file = '''
     ... # Afrikaans translation for Silky
     ... # Copyright (C) 2004 Free Software Foundation, Inc.
     ... # This file is distributed under the same license as the silky package.
@@ -1132,7 +1144,7 @@ cannot be handled.
     ... #: hello.ycp:20
     ... #, ycp-format
     ... msgid "This program is running as process number %1."
-    ... msgstr "Hierdie program loop as prosesnommer %1."'''
+    ... msgstr "Hierdie program loop as prosesnommer %1."'''.encode('UTF-8')
 
     >>> upload = admin_browser.getControl(name='file')
     >>> upload.add_file(BytesIO(af_file), 'application/msword', 'af.doc')
@@ -1141,7 +1153,7 @@ cannot be handled.
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'error'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Ignored your upload because the file you uploaded was not recognised as
     a file that can be imported.
 
@@ -1154,7 +1166,7 @@ With all the correct information, a file can be uploaded.
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Thank you for your upload.  It will be automatically reviewed...
 
 

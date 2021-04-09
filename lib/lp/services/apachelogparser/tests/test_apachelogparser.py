@@ -3,9 +3,8 @@
 
 from datetime import datetime
 import gzip
-from operator import itemgetter
+import io
 import os
-from StringIO import StringIO
 import tempfile
 import time
 
@@ -199,8 +198,10 @@ class TestLogFileParsing(TestCase):
         # also been downloaded once (last line of the sample log), but
         # parse_file() always skips the last line as it may be truncated, so
         # it doesn't show up in the dict returned.
-        fd = open(os.path.join(
-            here, 'apache-log-files', 'launchpadlibrarian.net.access-log'))
+        fd = open(
+            os.path.join(
+                here, 'apache-log-files', 'launchpadlibrarian.net.access-log'),
+            'rb')
         downloads, parsed_bytes, parsed_lines = parse_file(
             fd, start_position=0, logger=self.logger,
             get_download_key=get_path_download_key)
@@ -223,8 +224,10 @@ class TestLogFileParsing(TestCase):
         # When there's only the last line of a given file for us to parse, we
         # assume the file has been rotated and it's safe to parse its last
         # line without worrying about whether or not it's been truncated.
-        fd = open(os.path.join(
-            here, 'apache-log-files', 'launchpadlibrarian.net.access-log'))
+        fd = open(
+            os.path.join(
+                here, 'apache-log-files', 'launchpadlibrarian.net.access-log'),
+            'rb')
         downloads, parsed_bytes, parsed_lines = parse_file(
             fd, start_position=self._getLastLineStart(fd), logger=self.logger,
             get_download_key=get_path_download_key)
@@ -242,7 +245,7 @@ class TestLogFileParsing(TestCase):
         # When there's an unexpected error, we log it and return as if we had
         # parsed up to the line before the one where the failure occurred.
         # Here we force an unexpected error on the first line.
-        fd = StringIO('Not a log')
+        fd = io.BytesIO(b'Not a log')
         downloads, parsed_bytes, parsed_lines = parse_file(
             fd, start_position=0, logger=self.logger,
             get_download_key=get_path_download_key)
@@ -252,8 +255,9 @@ class TestLogFileParsing(TestCase):
 
     def _assertResponseWithGivenStatusIsIgnored(self, status):
         """Assert that responses with the given status are ignored."""
-        fd = StringIO(
-            self.sample_line % dict(status=status, method='GET'))
+        fd = io.BytesIO(
+            (self.sample_line % dict(status=status, method='GET')).encode(
+                'UTF-8'))
         downloads, parsed_bytes, parsed_lines = parse_file(
             fd, start_position=0, logger=self.logger,
             get_download_key=get_path_download_key)
@@ -277,8 +281,9 @@ class TestLogFileParsing(TestCase):
 
     def _assertRequestWithGivenMethodIsIgnored(self, method):
         """Assert that requests with the given method are ignored."""
-        fd = StringIO(
-            self.sample_line % dict(status='200', method=method))
+        fd = io.BytesIO(
+            (self.sample_line % dict(status='200', method=method)).encode(
+                'UTF-8'))
         downloads, parsed_bytes, parsed_lines = parse_file(
             fd, start_position=0, logger=self.logger,
             get_download_key=get_path_download_key)
@@ -295,8 +300,9 @@ class TestLogFileParsing(TestCase):
         self._assertRequestWithGivenMethodIsIgnored('POST')
 
     def test_normal_request_is_not_ignored(self):
-        fd = StringIO(
-            self.sample_line % dict(status=200, method='GET'))
+        fd = io.BytesIO(
+            (self.sample_line % dict(status=200, method='GET')).encode(
+                'UTF-8'))
         downloads, parsed_bytes, parsed_lines = parse_file(
             fd, start_position=0, logger=self.logger,
             get_download_key=get_path_download_key)
@@ -317,8 +323,10 @@ class TestLogFileParsing(TestCase):
             'log_parser config',
             '[launchpad]\nlogparser_max_parsed_lines: 2')
         self.addCleanup(config.pop, 'log_parser config')
-        fd = open(os.path.join(
-            here, 'apache-log-files', 'launchpadlibrarian.net.access-log'))
+        fd = open(
+            os.path.join(
+                here, 'apache-log-files', 'launchpadlibrarian.net.access-log'),
+            'rb')
         self.addCleanup(fd.close)
 
         downloads, parsed_bytes, parsed_lines = parse_file(
@@ -359,8 +367,10 @@ class TestLogFileParsing(TestCase):
             'log_parser config',
             '[launchpad]\nlogparser_max_parsed_lines: 2')
         self.addCleanup(config.pop, 'log_parser config')
-        fd = open(os.path.join(
-            here, 'apache-log-files', 'launchpadlibrarian.net.access-log'))
+        fd = open(
+            os.path.join(
+                here, 'apache-log-files', 'launchpadlibrarian.net.access-log'),
+            'rb')
         self.addCleanup(fd.close)
 
         # We want to start parsing on line 2 so we will have a value in
@@ -413,24 +423,27 @@ class TestParsedFilesDetection(TestCase):
         for fd, _ in get_files_to_parse(file_paths):
             fd.seek(0)
             contents.append(fd.read())
-        self.assertEqual(['2\n', '1\n', '0\n'], contents)
+            fd.close()
+        self.assertEqual([b'2\n', b'1\n', b'0\n'], contents)
 
     def test_not_parsed_file(self):
         # A file that has never been parsed will have to be parsed from the
         # start.
-        files_to_parse = get_files_to_parse([self.file_path])
-        fd, position = list(files_to_parse)[0]
-        self.assertEqual(position, 0)
+        files_to_parse = list(get_files_to_parse([self.file_path]))
+        self.assertEqual(1, len(files_to_parse))
+        fd, position = files_to_parse[0]
+        fd.close()
+        self.assertEqual(0, position)
 
     def test_completely_parsed_file(self):
         # A file that has been completely parsed will be skipped.
-        fd = open(self.file_path)
-        first_line = fd.readline()
-        fd.seek(0)
-        ParsedApacheLog(first_line, len(fd.read()))
+        with open(self.file_path) as fd:
+            first_line = fd.readline()
+            fd.seek(0)
+            ParsedApacheLog(first_line, len(fd.read()))
 
         files_to_parse = get_files_to_parse([self.file_path])
-        self.assertEqual(list(files_to_parse), [])
+        self.assertEqual([], list(files_to_parse))
 
     def test_parsed_file_with_new_content(self):
         # A file that has been parsed already but in which new content was
@@ -440,11 +453,12 @@ class TestParsedFilesDetection(TestCase):
         ParsedApacheLog(first_line, len(first_line))
 
         files_to_parse = list(get_files_to_parse([self.file_path]))
-        self.assertEqual(len(files_to_parse), 1)
+        self.assertEqual(1, len(files_to_parse))
         fd, position = files_to_parse[0]
+        fd.close()
         # Since we parsed the first line above, we'll be told to start where
         # the first line ends.
-        self.assertEqual(position, len(first_line))
+        self.assertEqual(len(first_line), position)
 
     def test_different_files_with_same_name(self):
         # Thanks to log rotation, two runs of our script may see files with
@@ -459,12 +473,14 @@ class TestParsedFilesDetection(TestCase):
         # parse it from the start.
         fd, new_path = tempfile.mkstemp()
         content2 = 'Different First Line\nSecond Line'
-        fd = open(new_path, 'w')
-        fd.write(content2)
-        fd.close()
+        with open(new_path, 'w') as fd:
+            fd.write(content2)
         files_to_parse = get_files_to_parse([new_path])
-        positions = map(itemgetter(1), files_to_parse)
-        self.assertEqual(positions, [0])
+        positions = []
+        for fd, position in files_to_parse:
+            fd.close()
+            positions.append(position)
+        self.assertEqual([0], positions)
 
     def test_fresh_gzipped_file(self):
         # get_files_to_parse() handles gzipped files just like uncompressed
@@ -472,8 +488,11 @@ class TestParsedFilesDetection(TestCase):
         gz_name = 'launchpadlibrarian.net.access-log.1.gz'
         gz_path = os.path.join(self.root, gz_name)
         files_to_parse = get_files_to_parse([gz_path])
-        positions = map(itemgetter(1), files_to_parse)
-        self.assertEqual(positions, [0])
+        positions = []
+        for fd, position in files_to_parse:
+            fd.close()
+            positions.append(position)
+        self.assertEqual([0], positions)
 
     def test_resumed_gzipped_file(self):
         # In subsequent runs of the script we will resume from where we
@@ -483,8 +502,11 @@ class TestParsedFilesDetection(TestCase):
         first_line = gzip.open(gz_path).readline()
         ParsedApacheLog(first_line, len(first_line))
         files_to_parse = get_files_to_parse([gz_path])
-        positions = map(itemgetter(1), files_to_parse)
-        self.assertEqual(positions, [len(first_line)])
+        positions = []
+        for fd, position in files_to_parse:
+            fd.close()
+            positions.append(position)
+        self.assertEqual([len(first_line)], positions)
 
 
 class Test_create_or_update_parsedlog_entry(TestCase):

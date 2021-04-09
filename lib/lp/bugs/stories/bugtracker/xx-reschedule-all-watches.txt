@@ -25,7 +25,7 @@ page. It isn't visible to ordinary users, however.
     >>> user_browser.getControl('Reschedule all watches')
     Traceback (most recent call last):
       ...
-    LookupError: label u'Reschedule all watches'
+    LookupError: label ...'Reschedule all watches'
     ...
 
 However, the reschedule button will appear to administrators.
@@ -80,5 +80,5 @@ appear on the bugtracker page.
     ...     'Reschedule all watches')
     Traceback (most recent call last):
       ...
-    LookupError: label u'Reschedule all watches'
+    LookupError: label ...'Reschedule all watches'
     ...

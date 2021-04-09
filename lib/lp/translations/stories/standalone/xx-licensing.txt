@@ -97,14 +97,16 @@ no link to change Karl's licensing choice.
 
     >>> user_browser.open('http://translations.launchpad.test/~karl/')
     >>> user_browser.getLink('Translations licensing')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Typing in the URL directly doesn't work either.
 
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/~karl/+licensing')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...

@@ -32,7 +32,7 @@ available from the 'Answers' facet.
     >>> browser.getLink('Answers').click()
 
     >>> soup = find_main_content(browser.contents)
-    >>> print(soup.find('h1').renderContents())
+    >>> print(soup.find('h1').decode_contents())
     Questions for Mozilla Firefox
 
     >>> browser.getLink('Firefox loses focus and gets stuck').url
@@ -61,7 +61,7 @@ question page.
     >>> print(browser.title)
     Question #2 : ...
 
-    >>> print(find_main_content(browser.contents).find('h1').renderContents())
+    >>> print(find_main_content(browser.contents).find('h1').decode_contents())
     Problem showing the SVG demo on W3C site
 
 
@@ -169,7 +169,7 @@ question' button on their overview page.
 
     >>> questions = find_tag_by_id(
     ...     user_browser.contents, 'portlet-latest-questions')
-    >>> print(extract_text(questions).encode('ASCII', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(questions)))
     All questions
     Latest questions
     Problemas de Impress\xe3o no Firefox ...
@@ -197,7 +197,7 @@ involving a person.
     >>> print(browser.title)
     Questions : Foo Bar
 
-    >>> print(find_main_content(browser.contents).find('h1').renderContents())
+    >>> print(find_main_content(browser.contents).find('h1').decode_contents())
     Questions for Foo Bar
 
     >>> browser.getLink('Slow system').url
@@ -222,7 +222,7 @@ the proper context where the question can be found:
     >>> print(browser.url)
     http://answers.launchpad.test/firefox/+question/1
 
-    >>> print(find_main_content(browser.contents).find('h1').renderContents())
+    >>> print(find_main_content(browser.contents).find('h1').decode_contents())
     Firefox cannot render Bank Site
 
 This also works on the webservice.
@@ -235,14 +235,16 @@ Asking for a non-existent question or an invalid ID will still raise a
 404 though:
 
     >>> browser.open('http://answers.launchpad.test/questions/255')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
     >>> browser.open('http://answers.launchpad.test/questions/bad_id')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
 Also If you access a question through the wrong context, you'll be
 redirected to the question in the proper context. (For example, this is
@@ -266,14 +268,16 @@ It also works with pages below that URL:
 But again, an invalid ID still raises a 404:
 
     >>> browser.open('http://answers.launchpad.test/ubuntu/+question/255')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
     >>> browser.open(
     ...     'http://answers.launchpad.test/ubuntu/+question/bad_id')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
 

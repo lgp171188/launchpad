@@ -1,10 +1,13 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from textwrap import dedent
 
+import six
 from zope.interface.verify import verifyObject
 
 from lp.services.helpers import test_diff
@@ -43,12 +46,18 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         :param import_file: buffer with the source file content.
         :param export_file: buffer with the output file content.
         """
-        import_lines = [line for line in import_file.split('\n')]
+        if import_file == export_file:
+            return
+
+        import_lines = [
+            six.ensure_text(line, errors='replace')
+            for line in import_file.split(b'\n')]
         # Remove X-Launchpad-Export-Date line to prevent time bombs in tests.
         export_lines = [
-            line for line in export_file.split('\n')
-            if (not line.startswith('"X-Launchpad-Export-Date:') and
-                not line.startswith('"X-Generator: Launchpad'))]
+            six.ensure_text(line, errors='replace')
+            for line in export_file.split(b'\n')
+            if (not line.startswith(b'"X-Launchpad-Export-Date:') and
+                not line.startswith(b'"X-Generator: Launchpad'))]
 
         line_pairs = zip(export_lines, import_lines)
         debug_diff = test_diff(import_lines, export_lines)
@@ -124,7 +133,7 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
 
             #~ msgid "zot"
             #~ msgstr "zat"
-            ''')
+            ''').encode('UTF-8')
         cy_translation_file = self.parser.parse(pofile_cy)
         cy_translation_file.is_template = False
         cy_translation_file.language_code = 'cy'
@@ -159,7 +168,7 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             #| msgid "zog"
             msgid "zig"
             msgstr "zag"
-            ''')
+            ''').encode('UTF-8')
 
         pofile_eo_obsolete = dedent('''
             msgid ""
@@ -179,7 +188,7 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             #~| msgid "zog"
             #~ msgid "zig"
             #~ msgstr "zag"
-            ''')
+            ''').encode('UTF-8')
         eo_translation_file = self.parser.parse(pofile_eo)
         eo_translation_file.is_template = False
         eo_translation_file.language_code = 'eo'
@@ -220,64 +229,30 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             self._compareImportAndExport(
                 pofile.strip(), storage.export().read().strip())
 
-        # File representing the same PO file three times. Each is identical
-        # except for the charset declaration in the header.
-        pofiles = [
-            dedent('''
-                msgid ""
-                msgstr ""
-                "Project-Id-Version: foo\\n"
-                "Report-Msgid-Bugs-To: \\n"
-                "POT-Creation-Date: 2007-07-09 03:39+0100\\n"
-                "PO-Revision-Date: 2001-09-09 01:46+0000\\n"
-                "Last-Translator: Kubla Kahn <kk@pleasure-dome.com>\\n"
-                "Language-Team: LANGUAGE <LL@li.org>\\n"
-                "MIME-Version: 1.0\\n"
-                "Content-Type: text/plain; charset=UTF-8\\n"
-                "Content-Transfer-Encoding: 8bit\\n"
+        pofile_content = dedent('''
+            msgid ""
+            msgstr ""
+            "Project-Id-Version: foo\\n"
+            "Report-Msgid-Bugs-To: \\n"
+            "POT-Creation-Date: 2007-07-09 03:39+0100\\n"
+            "PO-Revision-Date: 2001-09-09 01:46+0000\\n"
+            "Last-Translator: Kubla Kahn <kk@pleasure-dome.com>\\n"
+            "Language-Team: LANGUAGE <LL@li.org>\\n"
+            "MIME-Version: 1.0\\n"
+            "Content-Type: text/plain; charset=%(charset)s\\n"
+            "Content-Transfer-Encoding: 8bit\\n"
 
-                msgid "Japanese"
-                msgstr "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e"
-                '''),
-            dedent('''
-                msgid ""
-                msgstr ""
-                "Project-Id-Version: foo\\n"
-                "Report-Msgid-Bugs-To: \\n"
-                "POT-Creation-Date: 2007-07-09 03:39+0100\\n"
-                "PO-Revision-Date: 2001-09-09 01:46+0000\\n"
-                "Last-Translator: Kubla Kahn <kk@pleasure-dome.com>\\n"
-                "Language-Team: LANGUAGE <LL@li.org>\\n"
-                "MIME-Version: 1.0\\n"
-                "Content-Type: text/plain; charset=Shift-JIS\\n"
-                "Content-Transfer-Encoding: 8bit\\n"
-
-                msgid "Japanese"
-                msgstr "\x93\xfa\x96\x7b\x8c\xea"
-                '''),
-            dedent('''
-                msgid ""
-                msgstr ""
-                "Project-Id-Version: foo\\n"
-                "Report-Msgid-Bugs-To: \\n"
-                "POT-Creation-Date: 2007-07-09 03:39+0100\\n"
-                "PO-Revision-Date: 2001-09-09 01:46+0000\\n"
-                "Last-Translator: Kubla Kahn <kk@pleasure-dome.com>\\n"
-                "Language-Team: LANGUAGE <LL@li.org>\\n"
-                "MIME-Version: 1.0\\n"
-                "Content-Type: text/plain; charset=EUC-JP\\n"
-                "Content-Transfer-Encoding: 8bit\\n"
-
-                msgid "Japanese"
-                msgstr "\xc6\xfc\xcb\xdc\xb8\xec"
-                '''),
-            ]
-        for pofile in pofiles:
+            msgid "Japanese"
+            msgstr "\u65e5\u672c\u8a9e"
+            ''')
+        for charset in ('UTF-8', 'Shift-JIS', 'EUC-JP'):
+            pofile = (pofile_content % {'charset': charset}).encode(charset)
             compare(self, pofile)
 
     def _testBrokenEncoding(self, pofile_content):
         translation_file = self.parser.parse(
-            pofile_content % {'charset': 'ISO-8859-15', 'special': '\xe1'})
+            (pofile_content %
+             {'charset': 'ISO-8859-15'}).encode('ISO-8859-15'))
         translation_file.is_template = False
         translation_file.language_code = 'es'
         translation_file.path = 'po/es.po'
@@ -291,8 +266,7 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             translation_file, storage)
 
         self._compareImportAndExport(
-            pofile_content.strip() % {
-                'charset': 'UTF-8', 'special': '\xc3\xa1'},
+            (pofile_content.strip() % {'charset': 'UTF-8'}).encode('UTF-8'),
             storage.export().read().strip())
 
     def testBrokenEncodingExport(self):
@@ -317,7 +291,7 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             "Content-Transfer-Encoding: 8bit\\n"
 
             msgid "a"
-            msgstr "%(special)s"
+            msgstr "\xe1"
             ''')
         self._testBrokenEncoding(pofile_content)
 
@@ -339,7 +313,7 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             "Report-Msgid-Bugs-To: \\n"
             "POT-Creation-Date: 2007-07-09 03:39+0100\\n"
             "PO-Revision-Date: 2001-09-09 01:46+0000\\n"
-            "Last-Translator: Kubla K%(special)shn <kk@pleasure-dome.com>\\n"
+            "Last-Translator: Kubla K\xe1hn <kk@pleasure-dome.com>\\n"
             "Language-Team: LANGUAGE <LL@li.org>\\n"
             "MIME-Version: 1.0\\n"
             "Content-Type: text/plain; charset=%(charset)s\\n"
@@ -369,9 +343,9 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
 
             msgid "1 dead horse"
             msgid_plural "%%d dead horses"
-            msgstr[0] "ning\xc3\xban caballo muerto"
+            msgstr[0] "ning\xfan caballo muerto"
             %s''')
-        translation_file = self.parser.parse(pofile % (''))
+        translation_file = self.parser.parse((pofile % '').encode('UTF-8'))
         translation_file.is_template = False
         translation_file.language_code = 'es'
         translation_file.path = 'po/es.po'
@@ -381,7 +355,8 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             translation_file, storage)
 
         self._compareImportAndExport(
-            pofile.strip() % 'msgstr[1] ""', storage.export().read().strip())
+            (pofile.strip() % 'msgstr[1] ""').encode('UTF-8'),
+            storage.export().read().strip())
 
     def testClashingSingularMsgIds(self):
         # We don't accept it in gettext imports directly, since it's not
@@ -391,9 +366,9 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         # first of the two messages is exported.
         template = self.factory.makePOTemplate()
         self.factory.makePOTMsgSet(
-            template, singular='%d foo', plural='%d foos', sequence=1)
+            template, singular=u'%d foo', plural=u'%d foos', sequence=1)
         self.factory.makePOTMsgSet(
-            template, singular='%d foo', plural='%d foox', sequence=2)
+            template, singular=u'%d foo', plural=u'%d foox', sequence=2)
 
         exported_file = template.export()
 
@@ -404,9 +379,9 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             msgid_plural "%d foos"
             msgstr[0] ""
             msgstr[1] ""
-            """).strip()
+            """).strip().encode('UTF-8')
 
-        body = exported_file.split('\n\n', 1)[1].strip()
+        body = exported_file.split(b'\n\n', 1)[1].strip()
         self.assertEqual(body, expected_output)
 
     def testObsoleteMessageYieldsToNonObsoleteClashingOne(self):
@@ -417,9 +392,9 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         # non-obsolete one is exported.
         template = self.factory.makePOTemplate()
         obsolete_message = self.factory.makePOTMsgSet(
-            template, singular='%d goo', plural='%d goos', sequence=0)
+            template, singular=u'%d goo', plural=u'%d goos', sequence=0)
         current_message = self.factory.makePOTMsgSet(
-            template, singular='%d goo', plural='%d gooim', sequence=1)
+            template, singular=u'%d goo', plural=u'%d gooim', sequence=1)
 
         pofile = self.factory.makePOFile(
             potemplate=template, language_code='nl')
@@ -442,9 +417,9 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             msgid_plural "%d gooim"
             msgstr[0] "%d gargl"
             msgstr[1] "%d garglii"
-            """).strip()
+            """).strip().encode('UTF-8')
 
-        body = exported_file.split('\n\n', 1)[1].strip()
+        body = exported_file.split(b'\n\n', 1)[1].strip()
         self.assertEqual(expected_output, body)
 
     def test_strip_last_newline(self):
@@ -489,5 +464,5 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         # Exporting an empty gettext file does not break the exporter.
         # The output does contain one message: the header.
         output = self.factory.makePOFile('nl').export()
-        self.assertTrue(output.startswith('# Dutch translation for '))
-        self.assertEqual(1, output.count('msgid'))
+        self.assertTrue(output.startswith(b'# Dutch translation for '))
+        self.assertEqual(1, output.count(b'msgid'))

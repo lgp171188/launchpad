@@ -1,4 +1,4 @@
-# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Master distro publishing script."""
@@ -353,7 +353,7 @@ class PublishFTPMaster(LaunchpadCronScript):
             test_args=arguments, logger=self.logger, ignore_cron_control=True)
         publish_distro.logger = self.logger
         publish_distro.txn = self.txn
-        publish_distro.main()
+        publish_distro.main(reset_store_between_archives=False)
 
     def publishDistroArchive(self, distribution, archive,
                              security_suites=None):
@@ -496,6 +496,12 @@ class PublishFTPMaster(LaunchpadCronScript):
                             current_path,
                             (math.ceil(st.st_atime), math.ceil(st.st_mtime)))
                         os.unlink(new_path)
+                    # Make sure that the file is world-readable, since
+                    # occasionally files synced from other services have
+                    # been known to end up mode 0o600 or similar and that
+                    # breaks mirroring.
+                    os.chmod(
+                        current_path, os.stat(current_path).st_mode | 0o444)
                     updated = True
         return updated
 

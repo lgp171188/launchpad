@@ -80,9 +80,10 @@ However, when the user visits someone else's page, they see no such URL.
 And there is no helpful link.
 
     >>> print(user_browser.getLink('openid help').url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 
 Jabber IDs
@@ -188,7 +189,7 @@ most active and also the areas in which they worked on each project.
     >>> anon_browser.open('http://launchpad.test/~name16')
     >>> table = find_tag_by_id(anon_browser.contents, 'contributions')
     >>> for tr in table.findAll('tr'):
-    ...     print(tr.find('th').find('a').renderContents())
+    ...     print(tr.find('th').find('a').decode_contents())
     ...     for td in tr.findAll('td'):
     ...         img = td.find('img')
     ...         if img is not None:
@@ -271,3 +272,32 @@ users cannot see this, but admins like Foo Bar can.
     Change email settings
 
 
+Deceased profiles
+-----------------
+
+When we have reliable information that former users have died, it can be in
+better taste to make this clear on their profile page.
+
+    >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from lp.services.identity.interfaces.account import AccountStatus
+
+    >>> anon_browser.open('https://launchpad.test/~name12')
+    >>> print(find_tag_by_id(anon_browser.contents, 'deceased-note'))
+    None
+
+    >>> login('admin@canonical.com')
+    >>> name12 = getUtility(IPersonSet).getByName('name12')
+    >>> name12.setAccountStatus(AccountStatus.DECEASED, None, 'RIP')
+    >>> transaction.commit()
+    >>> logout()
+
+    >>> anon_browser.open('https://launchpad.test/~name12')
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'deceased-note')))
+    This account belonged to a deceased user and has been archived.
+
+Most of the rest of their profile page remains intact.
+
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'contact-details')))
+    User information...

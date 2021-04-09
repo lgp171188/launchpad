@@ -11,6 +11,7 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 
 from lp.code.enums import CodeReviewVote
 from lp.code.model.codereviewcomment import quote_text_as_email
+from lp.services.compat import message_as_bytes
 from lp.services.messages.model.message import MessageSet
 from lp.testing import (
     TestCase,
@@ -139,7 +140,7 @@ class TestCodeReviewCommentGetAttachments(TestCaseWithFactory):
             body='This is the body of the email.',
             attachments=[
                 (filename, content_type, 'Attachment body')])
-        message = MessageSet().fromEmail(msg.as_string())
+        message = MessageSet().fromEmail(message_as_bytes(msg))
         return self.bmp.createCommentFromMessage(message, None, None, msg)
 
     def test_getAttachments_text_plain_are_displayed(self):

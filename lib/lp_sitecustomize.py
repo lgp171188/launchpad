@@ -189,9 +189,15 @@ def main(instance_name=None):
     # through actually using itertools.groupby.
     grouper = type(list(itertools.groupby([0]))[0][1])
     checker.BasicTypes[grouper] = checker._iteratorChecker
+    # Work around https://github.com/zopefoundation/zope.security/issues/75.
+    checker.BasicTypes[type(().__repr__)] = checker._callableChecker
 
-    # XXX 2019-09-17: git must be disabled until codeimport is upgraded,
-    # since the required dulwich versions for our current version of bzr-git
-    # and for Breezy are incompatible in both directions.
+    # XXX cjwatson 2020-11-20: Remove this once we upgrade to a version of
+    # Breezy with
+    # https://code.launchpad.net/~cjwatson/brz/fix-loggerhead-git-option
+    # merged, to avoid https://bugs.launchpad.net/launchpad/+bug/1744830.
+    # (But arguably we might want to figure out a way to disable the git
+    # formats anyway, just in a less crude way, as we don't want to use them
+    # in practice.)
     import types
     sys.modules['breezy.git'] = types.ModuleType('breezy.git')

@@ -14,7 +14,8 @@ packages.
 There are several builders in the sample data. Let's examine the first.
 
     >>> from lp.buildmaster.model.builder import Builder
-    >>> builder = Builder.get(1)
+    >>> from lp.services.database.interfaces import IStore
+    >>> builder = IStore(Builder).get(Builder, 1)
 
 As expected, it implements IBuilder.
 
@@ -63,9 +64,10 @@ And also by ID.
     >>> print(builderset.get(2).name)
     frog
     >>> print(builderset.get(100).name)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    SQLObjectNotFound: Object not found
+    lp.app.errors.NotFoundError: 100
 
 The 'new' method will create a new builder in the database.
 
@@ -73,8 +75,8 @@ The 'new' method will create a new builder in the database.
     >>> with admin_logged_in():
     ...     bnew = builderset.new(
     ...         [1], 'http://dummy.com:8221/', 'dummy', 'Dummy Title', 1)
-    >>> bnew.name
-    u'dummy'
+    >>> print(bnew.name)
+    dummy
 
 'getBuilders' returns builders with the 'active' flag set, ordered by
 virtualization status, architecture, then name.
@@ -96,17 +98,21 @@ virtualization status, architecture, then name.
 Processor/virtualization.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> queue_sizes['nonvirt']['386']
-    (1L, datetime.timedelta(0, 60))
+    >>> size, duration = queue_sizes['nonvirt']['386']
+    >>> print(size)
+    1
+    >>> print(duration)
+    0:01:00
 
 There are no 'amd64' build queue entries.
 
-    >>> queue_sizes['nonvirt'].keys()
-    [u'386']
+    >>> for arch_tag in queue_sizes['nonvirt']:
+    ...     print(arch_tag)
+    386
 
 The virtualized build queue for 386 is also empty.
 
-    >>> queue_sizes['virt'].keys()
+    >>> list(queue_sizes['virt'])
     []
 
 The queue size is not affect by builds target to disabled
@@ -126,7 +132,7 @@ We will temporarily disable the ubuntu primary archive.
 That done, the non-virtualized queue for i386 becomes empty.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> queue_sizes['nonvirt'].keys()
+    >>> list(queue_sizes['nonvirt'])
     []
 
 Let's re-enable the ubuntu primary archive.
@@ -139,8 +145,11 @@ Let's re-enable the ubuntu primary archive.
 The build for the ubuntu primary archive shows up again.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> queue_sizes['nonvirt']['386']
-    (1L, datetime.timedelta(0, 60))
+    >>> size, duration = queue_sizes['nonvirt']['386']
+    >>> print(size)
+    1
+    >>> print(duration)
+    0:01:00
 
 All job types are included. If we create a recipe build job, it will
 show up in the calculated queue size.
@@ -149,5 +158,8 @@ show up in the calculated queue size.
     ...     distroseries=ubuntu.currentseries).queueBuild()
     >>> transaction.commit()
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> print(queue_sizes['virt']['386'])
-    (1L, datetime.timedelta(0, 600))
+    >>> size, duration = queue_sizes['virt']['386']
+    >>> print(size)
+    1
+    >>> print(duration)
+    0:10:00

@@ -273,9 +273,6 @@ class ITranslationImportQueueEntry(Interface):
 
         Return None if we cannot guess it."""
 
-    def getFileContent():
-        """Return the imported file content as a stream."""
-
     def getTemplatesOnSameDirectory():
         """Return import queue entries stored on the same directory as self.
 

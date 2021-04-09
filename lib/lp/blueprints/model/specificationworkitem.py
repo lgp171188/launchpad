@@ -25,6 +25,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.stormbase import StormBase
+from lp.services.helpers import backslashreplace
 
 
 @implementer(ISpecificationWorkItem)
@@ -49,7 +50,7 @@ class SpecificationWorkItem(StormBase):
     deleted = Bool(allow_none=False, default=False)
 
     def __repr__(self):
-        title = self.title.encode('ASCII', 'backslashreplace')
+        title = backslashreplace(self.title)
         assignee = getattr(self.assignee, 'name', None)
         return '<SpecificationWorkItem [%s] %s: %s of %s>' % (
             assignee, title, self.status.name, self.specification)

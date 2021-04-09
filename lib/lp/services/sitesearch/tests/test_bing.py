@@ -96,9 +96,8 @@ class TestBingSearchService(TestCase):
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-incompatible-matches.json')
         with open(file_name, 'r') as response_file:
-            response = response_file.read()
-        self.assertEqual(
-            '~25', json.loads(response)['webPages']['totalEstimatedMatches'])
+            response = json.loads(response_file.read())
+        self.assertEqual('~25', response['webPages']['totalEstimatedMatches'])
 
         self.assertRaisesWithContent(
             SiteSearchResponseError,
@@ -112,9 +111,8 @@ class TestBingSearchService(TestCase):
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-negative-total.json')
         with open(file_name, 'r') as response_file:
-            response = response_file.read()
-        self.assertEqual(
-            -25, json.loads(response)['webPages']['totalEstimatedMatches'])
+            response = json.loads(response_file.read())
+        self.assertEqual(-25, response['webPages']['totalEstimatedMatches'])
 
         matches = self.search_service._parse_search_response(response)
         self.assertEqual(0, matches.total)
@@ -129,9 +127,8 @@ class TestBingSearchService(TestCase):
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-missing-title.json')
         with open(file_name, 'r') as response_file:
-            response = response_file.read()
-        self.assertThat(
-            json.loads(response)['webPages']['value'], HasLength(2))
+            response = json.loads(response_file.read())
+        self.assertThat(response['webPages']['value'], HasLength(2))
 
         matches = self.search_service._parse_search_response(response)
         self.assertThat(matches, MatchesListwise([
@@ -150,9 +147,8 @@ class TestBingSearchService(TestCase):
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-missing-summary.json')
         with open(file_name, 'r') as response_file:
-            response = response_file.read()
-        self.assertThat(
-            json.loads(response)['webPages']['value'], HasLength(2))
+            response = json.loads(response_file.read())
+        self.assertThat(response['webPages']['value'], HasLength(2))
 
         matches = self.search_service._parse_search_response(response)
         self.assertThat(matches, MatchesListwise([
@@ -169,9 +165,8 @@ class TestBingSearchService(TestCase):
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-missing-url.json')
         with open(file_name, 'r') as response_file:
-            response = response_file.read()
-        self.assertThat(
-            json.loads(response)['webPages']['value'], HasLength(2))
+            response = json.loads(response_file.read())
+        self.assertThat(response['webPages']['value'], HasLength(2))
 
         matches = self.search_service._parse_search_response(response)
         self.assertThat(matches, MatchesListwise([
@@ -192,9 +187,8 @@ class TestBingSearchService(TestCase):
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-no-meaningful-results.json')
         with open(file_name, 'r') as response_file:
-            response = response_file.read()
-        self.assertThat(
-            json.loads(response)['webPages']['value'], HasLength(1))
+            response = json.loads(response_file.read())
+        self.assertThat(response['webPages']['value'], HasLength(1))
 
         matches = self.search_service._parse_search_response(response)
         self.assertThat(matches, HasLength(0))
@@ -221,23 +215,18 @@ class TestBingSearchService(TestCase):
         self.assertRaises(
             SiteSearchResponseError, self.search_service.search, 'fnord')
 
-    def test_parse_search_response_TypeError(self):
-        # The method converts TypeError to SiteSearchResponseError.
-        self.assertRaises(
-            SiteSearchResponseError,
-            self.search_service._parse_search_response, None)
-
-    def test_parse_search_response_ValueError(self):
+    @responses.activate
+    def test_search_converts_ValueError(self):
         # The method converts ValueError to SiteSearchResponseError.
+        responses.add('GET', re.compile(r'.*'))
         self.assertRaises(
-            SiteSearchResponseError,
-            self.search_service._parse_search_response, '')
+            SiteSearchResponseError, self.search_service.search, 'fnord')
 
     def test_parse_search_response_KeyError(self):
         # The method converts KeyError to SiteSearchResponseError.
         self.assertRaises(
             SiteSearchResponseError,
-            self.search_service._parse_search_response, '{}')
+            self.search_service._parse_search_response, {})
 
     def test_search_uses_proxy(self):
         proxy = 'http://proxy.example:3128/'

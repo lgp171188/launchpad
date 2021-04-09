@@ -41,7 +41,7 @@ main translations page.
 
     >>> owner_browser.open(product_page)
     >>> tag = find_custom_language_codes_link(owner_browser)
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     If necessary, you may
     define custom language codes
     for this project.
@@ -50,7 +50,7 @@ Translation admins also have access to this link.
 
     >>> rosetta_admin_browser.open(product_page)
     >>> tag = find_custom_language_codes_link(rosetta_admin_browser)
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     If necessary, you may
     define custom language codes
     for this project.
@@ -69,7 +69,7 @@ Other users don't see this link.
 Initially the page shows no custom language codes for the project.
 
     >>> tag = find_tag_by_id(owner_browser.contents, 'empty')
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.
 
 There is a link to add a custom language code.
@@ -88,7 +88,7 @@ code is now shown.
     True
 
     >>> tag = find_tag_by_id(owner_browser.contents, 'nonempty')
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     Foo uses the following custom language codes:
     Code...     ...maps to language
     no          Norwegian Nynorsk
@@ -130,7 +130,7 @@ This leads back to the overview page.
     True
 
     >>> tag = find_tag_by_id(owner_browser.contents, 'empty')
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.
 
 
@@ -143,22 +143,24 @@ This can be convenient for debugging.
     >>> user_browser.open(custom_language_codes_page)
 
     >>> tag = find_tag_by_id(user_browser.contents, 'empty')
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.
 
 However all they get is a read-only version of the page.
 
     >>> user_browser.getLink("Add a custom language code").click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 The page for adding custom language codes is not accessible to them.
 
     >>> user_browser.open(add_page)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 And naturally, if the owner creates a custom language code again, an
 unprivileged user can't remove it.
@@ -170,21 +172,23 @@ unprivileged user can't remove it.
 
     >>> user_browser.open(custom_language_codes_page)
     >>> tag = find_tag_by_id(user_browser.contents, 'nonempty')
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     Foo uses the following custom language codes:
     Code...     ...maps to language
     no          Norwegian Nynorsk
 
     >>> user_browser.getLink("no").click()
     >>> user_browser.getLink("remove custom language code")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(remove_page)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 
 Source packages
@@ -231,7 +235,7 @@ Of course in this case, the notice about there being no custom language
 codes talks about a package, not a project.
 
     >>> tag = find_custom_language_codes_link(translations_browser)
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     If necessary, you may
     define custom language codes
     for this package.
@@ -240,7 +244,7 @@ codes talks about a package, not a project.
     >>> custom_language_codes_page = translations_browser.url
 
     >>> tag = find_tag_by_id(translations_browser.contents, 'empty')
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.
 
 A translations admin can add a language code.
@@ -255,7 +259,7 @@ A translations admin can add a language code.
 The language code is displayed.
 
     >>> tag = find_tag_by_id(translations_browser.contents, 'nonempty')
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     bar in Distro uses the following custom language codes:
     Code...     ...maps to language
     pt-br       Portuguese (Brazil)
@@ -265,14 +269,14 @@ release series of the same distribution.
 
     >>> translations_browser.open(page_in_other_series)
     >>> tag = find_custom_language_codes_link(translations_browser)
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     If necessary, you may
     define custom language codes
     for this package.
 
     >>> translations_browser.getLink("define custom language codes").click()
     >>> tag = find_tag_by_id(translations_browser.contents, 'nonempty')
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     bar in Distro uses the following custom language codes:
     Code...     ...maps to language
     pt-br       Portuguese (Brazil)
@@ -288,5 +292,5 @@ The new code has a link there...
     >>> translations_browser.getControl("Remove").click()
 
     >>> tag = find_tag_by_id(translations_browser.contents, 'empty')
-    >>> print(extract_text(tag.renderContents()))
+    >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.

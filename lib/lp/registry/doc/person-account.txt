@@ -25,7 +25,7 @@ process. Matsubara's account was created during a code import.
     False
     >>> matsubara.account_status
     <DBItem AccountStatus.NOACCOUNT, ...>
-    >>> print matsubara.preferredemail
+    >>> print(matsubara.preferredemail)
     None
 
 The account can only be activated by the user who is claiming
@@ -33,9 +33,10 @@ the profile. Sample Person cannot claim it.
 
     >>> login('test@canonical.com')
     >>> matsubara.account.reactivate(comment="test")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...'launchpad.View')
+    zope.security.interfaces.Unauthorized: ...'launchpad.View')
 
 Matsubara can.
 
@@ -49,10 +50,10 @@ Matsubara can.
     True
     >>> matsubara.account.status
     <DBItem AccountStatus.ACTIVE, ...>
-    >>> removeSecurityProxy(matsubara.account).status_history
-    u'...: Unactivated -> Active: test\n'
-    >>> removeSecurityProxy(matsubara.preferredemail).email
-    u'matsubara@async.com.br'
+    >>> six.ensure_str(removeSecurityProxy(matsubara.account).status_history)
+    '...: Unactivated -> Active: test\n'
+    >>> print(removeSecurityProxy(matsubara.preferredemail).email)
+    matsubara@async.com.br
 
 
 Deactivating user accounts
@@ -79,19 +80,28 @@ will cause this spec to be reassigned.
     >>> spec = Specification.selectFirst("assignee IS NULL", orderBy='id')
     >>> spec.assignee = foobar
 
-    >>> [membership.team.name for membership in foobar.team_memberships]
-    [u'canonical-partner-dev', u'guadamen', u'hwdb-team', u'admins',
-     u'launchpad-buildd-admins', u'launchpad', u'testing-spanish-team',
-     u'name18', u'ubuntu-team', u'vcs-imports']
+    >>> for membership in foobar.team_memberships:
+    ...     print(membership.team.name)
+    canonical-partner-dev
+    guadamen
+    hwdb-team
+    admins
+    launchpad-buildd-admins
+    launchpad
+    testing-spanish-team
+    name18
+    ubuntu-team
+    vcs-imports
 
-    >>> [email.email for email in foobar.validatedemails]
-    [u'admin@canonical.com']
+    >>> for email in foobar.validatedemails:
+    ...     print(email.email)
+    admin@canonical.com
 
-    >>> foobar.name
-    u'name16'
+    >>> print(foobar.name)
+    name16
 
-    >>> foobar.preferredemail.email
-    u'foo.bar@canonical.com'
+    >>> print(foobar.preferredemail.email)
+    foo.bar@canonical.com
 
     >>> [coc.active for coc in foobar.signedcocs]
     [True]
@@ -128,9 +138,10 @@ even launchpad admins can use it.
 
     >>> login('mark@example.com')
     >>> foobar.deactivate(comment=comment)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...'launchpad.Special')
+    zope.security.interfaces.Unauthorized: ...'launchpad.Special')
 
     >>> login('foo.bar@canonical.com')
     >>> foobar.deactivate(comment=comment)
@@ -139,16 +150,16 @@ even launchpad admins can use it.
 Deactivating an account changes many of the person's attributes.  It
 adds a '-deactivatedaccount' suffix to the person's name...
 
-    >>> foobar.name
-    u'name16-deactivatedaccount'
+    >>> print(foobar.name)
+    name16-deactivatedaccount
 
 ...an account status of DEACTIVATED...
 
     >>> foobar.account.status
     <DBItem AccountStatus.DEACTIVATED...
 
-    >>> removeSecurityProxy(foobar.account).status_history
-    u"... name16: Active -> Deactivated:
+    >>> six.ensure_str(removeSecurityProxy(foobar.account).status_history)
+    "... name16: Active -> Deactivated:
     I'm a person who doesn't want to be listed as a Launchpad user.\n"
 
 ...to have no team memberships...
@@ -161,7 +172,7 @@ adds a '-deactivatedaccount' suffix to the person's name...
     >>> [email.email for email in foobar.validatedemails]
     []
 
-    >>> print getattr(foobar.preferredemail, 'email', None)
+    >>> print(getattr(foobar.preferredemail, 'email', None))
     None
 
 ...no signed codes of conduct...
@@ -223,13 +234,13 @@ Accounts can be reactivated.
     >>> foobar.account.status
     <DBItem AccountStatus.ACTIVE...
 
-    >>> removeSecurityProxy(foobar.account).status_history
-    u"... name16: Active -> Deactivated: I'm a person
+    >>> six.ensure_str(removeSecurityProxy(foobar.account).status_history)
+    "... name16: Active -> Deactivated: I'm a person
     who doesn't want to be listed as a Launchpad user.\n...:
     Deactivated -> Active:
     User reactivated the account using reset password.\n"
 
 The person name is fixed if it was altered when it was deactivated.
 
-    >>> foobar.name
-    u'name16'
+    >>> print(foobar.name)
+    name16

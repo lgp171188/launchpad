@@ -284,26 +284,28 @@ The string is not ellipsized if it is less than the max length.
 
 To preserve newlines in text when displaying as HTML, use fmt:nl_to_br:
 
-    >>> test_tales('foo/fmt:nl_to_br',
-    ...             foo='icicle\nbicycle\ntricycle & troika')
-    u'icicle<br />\nbicycle<br />\ntricycle &amp; troika'
+    >>> print(test_tales('foo/fmt:nl_to_br',
+    ...             foo='icicle\nbicycle\ntricycle & troika'))
+    icicle<br />
+    bicycle<br />
+    tricycle &amp; troika
 
 To "<pre>" format a string, use fmt:nice_pre:
 
-    >>> import pprint, textwrap
-    >>> pprint.pprint(textwrap.wrap(
-    ...     test_tales('foo/fmt:nice_pre', foo='hello & goodbye')
-    ...    ))
-    [u'<pre class="wrap">hello &amp; goodbye</pre>']
+    >>> import textwrap
+    >>> for line in textwrap.wrap(
+    ...         test_tales('foo/fmt:nice_pre', foo='hello & goodbye')):
+    ...     print(line)
+    <pre class="wrap">hello &amp; goodbye</pre>
 
 Add manual word breaks to long words in a string:
 
-    >>> test_tales('foo/fmt:break-long-words', foo='short words')
-    u'short words'
+    >>> print(test_tales('foo/fmt:break-long-words', foo='short words'))
+    short words
 
-    >>> test_tales('foo/fmt:break-long-words',
-    ...     foo='<http://launchpad.net/products/launchpad>')
-    u'&lt;http:/<wbr />/launchpad.<wbr />...<wbr />launchpad&gt;'
+    >>> print(test_tales('foo/fmt:break-long-words',
+    ...     foo='<http://launchpad.net/products/launchpad>'))
+    &lt;http:/<wbr />/launchpad.<wbr />...<wbr />launchpad&gt;
 
 To get a int with its thousands separated by a comma, use fmt:intcomma.
 
@@ -418,15 +420,15 @@ Person entries
 For a person or team, fmt:link gives us a link to that person's page,
 containing the person name and an icon.
 
-    >>> test_tales("person/fmt:link", person=mark)
-    u'<a href=".../~mark" class="sprite person">Mark Shuttleworth</a>'
+    >>> print(test_tales("person/fmt:link", person=mark))
+    <a href=".../~mark" class="sprite person">Mark Shuttleworth</a>
 
-    >>> test_tales("person/fmt:link", person=matsubara)
-    u'<a href=".../~matsubara" class="sprite person-inactive">Diogo ...</a>'
+    >>> print(test_tales("person/fmt:link", person=matsubara))
+    <a href=".../~matsubara" class="sprite person-inactive">Diogo ...</a>
 
     >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
-    >>> test_tales("person/fmt:link", person=ubuntu_team)
-    u'<a href=".../~ubuntu-team" class="sprite team">Ubuntu Team</a>'
+    >>> print(test_tales("person/fmt:link", person=ubuntu_team))
+    <a href=".../~ubuntu-team" class="sprite team">Ubuntu Team</a>
 
 The link can make the URL go to a specific app.
 
@@ -467,22 +469,22 @@ Person's displayname will be escaped; averting a XSS vulnerability.
     >>> sample_person = getUtility(IPersonSet).getByName('name12')
     >>> sample_person.display_name = (
     ...     "Sample Person<br/><script>alert('XSS')</script>")
-    >>> test_tales("person/fmt:link", person=sample_person)
-    u'<a href=".../~name12"...>Sample
-      Person&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>'
+    >>> print(test_tales("person/fmt:link", person=sample_person))
+    <a href=".../~name12"...>Sample
+      Person&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>
 
 The fmt:link formatter takes an additional view_name component to extend
 the link:
 
     >>> login(ANONYMOUS, LaunchpadTestRequest())
-    >>> test_tales("person/fmt:link/+edit", person=matsubara)
-    u'<a href=".../~matsubara/+edit"...>...'
+    >>> print(test_tales("person/fmt:link/+edit", person=matsubara))
+    <a href=".../~matsubara/+edit"...>...
 
 The fmt:local-time formatter will return the local time for that person.
 If the person has no time_zone specified, we use UTC.
 
-    >>> sample_person.time_zone
-    u'Australia/Perth'
+    >>> print(sample_person.time_zone)
+    Australia/Perth
 
     >>> test_tales("person/fmt:local-time", person=sample_person)
     '... AWST'
@@ -490,8 +492,8 @@ If the person has no time_zone specified, we use UTC.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> print(removeSecurityProxy(mark).location)
     None
-    >>> mark.time_zone
-    u'UTC'
+    >>> print(mark.time_zone)
+    UTC
 
     >>> test_tales("person/fmt:local-time", person=mark)
     '... UTC'
@@ -552,17 +554,17 @@ Bugs
 For bugs, fmt:link takes to the bug redirect page.
 
     >>> bug = getUtility(IBugSet).get(1)
-    >>> test_tales("bug/fmt:link", bug=bug)
-    u'<a href=".../bugs/1" class="sprite bug">Bug #1:
-      Firefox does not support SVG</a>'
+    >>> print(test_tales("bug/fmt:link", bug=bug))
+    <a href=".../bugs/1" class="sprite bug">Bug #1:
+      Firefox does not support SVG</a>
 
 For bugtasks, fmt:link shows the severity bug icon, and links to the
 appropriate project's bug.
 
     >>> bugtask = bug.bugtasks[0]
-    >>> test_tales("bugtask/fmt:link", bugtask=bugtask)
-    u'<a href=".../firefox/+bug/1" class="sprite bug-low"
-         title="Low - New">Bug #1: Firefox does not support SVG</a>'
+    >>> print(test_tales("bugtask/fmt:link", bugtask=bugtask))
+    <a href=".../firefox/+bug/1" class="sprite bug-low"
+         title="Low - New">Bug #1: Firefox does not support SVG</a>
 
 Bug titles may contain markup (when describing issue regarding markup).
 Their titles are escaped so that they display correctly. This also
@@ -571,13 +573,13 @@ title might be interpreted by the browser.
 
     >>> login('test@canonical.com')
     >>> bug.title = "Opps<br/><script>alert('XSS')</script>"
-    >>> test_tales("bug/fmt:link", bug=getUtility(IBugSet).get(1))
-    u'<a href=".../bugs/1" ...>Bug #1:
-      Opps&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>'
+    >>> print(test_tales("bug/fmt:link", bug=getUtility(IBugSet).get(1)))
+    <a href=".../bugs/1" ...>Bug #1:
+      Opps&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>
 
-    >>> test_tales("bugtask/fmt:link", bugtask=bugtask)
-    u'<a href=".../firefox/+bug/1" ...>Bug #1:
-      Opps&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>'
+    >>> print(test_tales("bugtask/fmt:link", bugtask=bugtask))
+    <a href=".../firefox/+bug/1" ...>Bug #1:
+      Opps&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>
 
 
 Branch subscriptions
@@ -592,16 +594,15 @@ adequate permissions, a link is not generated.
     ...     name='michael', displayname='Michael the Viking')
     >>> subscription = factory.makeBranchSubscription(
     ...     branch=branch, person=michael)
-    >>> test_tales("subscription/fmt:link", subscription=subscription)
-    u'Subscription of Michael the Viking to
-      lp://dev/~eric/fooix/my-branch'
+    >>> print(test_tales("subscription/fmt:link", subscription=subscription))
+    Subscription of Michael the Viking to lp://dev/~eric/fooix/my-branch
 
 But if we log in as the subscriber, a link is presented.
 
     >>> ignored = login_person(subscription.person)
-    >>> test_tales("subscription/fmt:link", subscription=subscription)
-    u'<a href="http://.../+subscription/michael">Subscription
-      of Michael the Viking to lp://dev/~eric/fooix/my-branch</a>'
+    >>> print(test_tales("subscription/fmt:link", subscription=subscription))
+    <a href="http://.../+subscription/michael">Subscription
+      of Michael the Viking to lp://dev/~eric/fooix/my-branch</a>
 
 Merge proposals also have a link formatter, which displays branch
 titles:
@@ -616,8 +617,8 @@ Merge proposals
     >>> target = factory.makeProductBranch(product=fooix)
     >>> fooix.development_focus.branch = target
     >>> proposal = source.addLandingTarget(eric, target)
-    >>> test_tales("proposal/fmt:link", proposal=proposal)
-    u'<a href="...">[Merge] lp://dev/~eric/fooix/fix into lp://dev/fooix</a>'
+    >>> print(test_tales("proposal/fmt:link", proposal=proposal))
+    <a href="...">[Merge] lp://dev/~eric/fooix/fix into lp://dev/fooix</a>
 
 
 Code review comments
@@ -639,8 +640,8 @@ Bug branches
     >>> bug = factory.makeBug()
     >>> bug.linkBranch(branch, branch.owner)
     >>> [bugbranch] = bug.linked_bugbranches
-    >>> test_tales("bugbranch/fmt:link", bugbranch=bugbranch)
-    u'<a href="...+bug...">Bug #...</a>'
+    >>> print(test_tales("bugbranch/fmt:link", bugbranch=bugbranch))
+    <a href="...+bug...">Bug #...</a>
 
 
 Code imports
@@ -652,8 +653,8 @@ support the branch deletion code.
 
     >>> login('foo.bar@canonical.com')
     >>> code_import = factory.makeCodeImport(branch_name="trunk")
-    >>> test_tales("code_import/fmt:link", code_import=code_import)
-    u'<a href=".../trunk">Import of...</a>'
+    >>> print(test_tales("code_import/fmt:link", code_import=code_import))
+    <a href=".../trunk">Import of...</a>
 
 
 Product release files
@@ -711,8 +712,9 @@ Product series
 ..............
 
     >>> product_series = factory.makeProductSeries()
-    >>> test_tales("product_series/fmt:link", product_series=product_series)
-    u'... series...'
+    >>> print("'%s'" % test_tales(
+    ...     "product_series/fmt:link", product_series=product_series))
+    '... series...'
 
 
 Blueprints
@@ -723,8 +725,9 @@ Blueprints
     >>> login('test@canonical.com')
     >>> specification = factory.makeSpecification(
     ...     priority=SpecificationPriority.UNDEFINED)
-    >>> test_tales("specification/fmt:link", specification=specification)
-    u'<a...class="sprite blueprint-undefined">...</a>'
+    >>> print(test_tales(
+    ...     "specification/fmt:link", specification=specification))
+    <a...class="sprite blueprint-undefined">...</a>
 
 
 Blueprint branches
@@ -734,17 +737,17 @@ Blueprint branches
     ...     priority=SpecificationPriority.UNDEFINED)
     >>> branch = factory.makeAnyBranch()
     >>> specification_branch = specification.linkBranch(branch, branch.owner)
-    >>> test_tales("specification_branch/fmt:link",
-    ...     specification_branch=specification_branch)
-    u'<a...class="sprite blueprint-undefined">...</a>'
+    >>> print(test_tales("specification_branch/fmt:link",
+    ...     specification_branch=specification_branch))
+    <a...class="sprite blueprint-undefined">...</a>
 
 
 Projects
 ........
 
     >>> product = factory.makeProduct()
-    >>> test_tales('product/fmt:link', product=product)
-    u'<a href=... class="sprite product">...</a>'
+    >>> print(test_tales('product/fmt:link', product=product))
+    <a href=... class="sprite product">...</a>
 
 
 Questions
@@ -752,24 +755,24 @@ Questions
 
     >>> from lp.answers.interfaces.questioncollection import IQuestionSet
     >>> question = getUtility(IQuestionSet).get(1)
-    >>> test_tales("question/fmt:link", question=question)
-    u'<a... class="sprite question">1:...</a>'
+    >>> print(test_tales("question/fmt:link", question=question))
+    <a... class="sprite question">1:...</a>
 
 
 Distributions
 .............
 
     >>> distribution = factory.makeDistribution()
-    >>> test_tales("distribution/fmt:link", distribution=distribution)
-    u'<a... class="sprite distribution">...</a>'
+    >>> print(test_tales("distribution/fmt:link", distribution=distribution))
+    <a... class="sprite distribution">...</a>
 
 
 Distribution Series
 ...................
 
     >>> distroseries = factory.makeDistroArchSeries().distroseries
-    >>> test_tales("distroseries/fmt:link", distroseries=distroseries)
-    u'<a href="...">...</a>'
+    >>> print(test_tales("distroseries/fmt:link", distroseries=distroseries))
+    <a href="...">...</a>
 
 
 The fmt: namespace for specially formatted object info
@@ -787,8 +790,8 @@ Bug Trackers
 
 The "standard" 'url' name is supported:
 
-    >>> test_tales("bugtracker/fmt:url", bugtracker=bugtracker)
-    u'http://bugs.launchpad.test/bugs/bugtrackers/email'
+    >>> print(test_tales("bugtracker/fmt:url", bugtracker=bugtracker))
+    http://bugs.launchpad.test/bugs/bugtrackers/email
 
 (The url is relative if possible, and our test request claims to be from
 launchpad.test, so the url is relative.)
@@ -799,36 +802,36 @@ which help when hiding email addresses from users who are not logged in.
     >>> def print_formatted_bugtrackers():
     ...     expression = "bugtracker/fmt:%s"
     ...     for format in ['link', 'external-link', 'external-title-link']:
-    ...         print('%s -->\n  %r' % (
+    ...         print("%s -->\n  '%s'" % (
     ...             format, test_tales(expression % format,
     ...                                bugtracker=bugtracker)))
-    ...     print('aliases -->\n  %r' % (
-    ...         list(test_tales(expression % 'aliases',
-    ...                         bugtracker=bugtracker)),))
+    ...     print("aliases -->\n  [%s]" % (', '.join(
+    ...         "'%s'" % alias for alias in test_tales(
+    ...             expression % 'aliases', bugtracker=bugtracker))))
 
     >>> login('test@canonical.com')
     >>> print_formatted_bugtrackers()
     link -->
-      u'<a href=".../bugs/bugtrackers/email">an@email.address bug tracker</a>'
+      '<a href=".../bugs/bugtrackers/email">an@email.address bug tracker</a>'
     external-link -->
-      u'<a class="link-external"
-        href="mailto:bugs@example.com">mailto:bugs@example.com</a>'
+      '<a class="link-external"
+       href="mailto:bugs@example.com">mailto:bugs@example.com</a>'
     external-title-link -->
-      u'<a class="link-external"
-        href="mailto:bugs@example.com">an@email.address bug tracker</a>'
+      '<a class="link-external"
+       href="mailto:bugs@example.com">an@email.address bug tracker</a>'
     aliases -->
-      [u'http://bugs.vikingsrool.no/', u'mailto:eatme@wundrlnd.com']
+      ['http://bugs.vikingsrool.no/', 'mailto:eatme@wundrlnd.com']
 
     >>> login(ANONYMOUS)
     >>> print_formatted_bugtrackers()
     link -->
-      u'<a href="...ckers/email">&lt;email address hidden&gt; bug tracker</a>'
+      '<a href="...ckers/email">&lt;email address hidden&gt; bug tracker</a>'
     external-link -->
-      u'mailto:&lt;email address hidden&gt;'
+      'mailto:&lt;email address hidden&gt;'
     external-title-link -->
-      u'&lt;email address hidden&gt; bug tracker'
+      '&lt;email address hidden&gt; bug tracker'
     aliases -->
-      [u'http://bugs.vikingsrool.no/', u'mailto:<email address hidden>']
+      ['http://bugs.vikingsrool.no/', 'mailto:<email address hidden>']
 
     >>> login('test@canonical.com')
 
@@ -850,48 +853,52 @@ Bug Watches
 
 The "standard" 'url' name is supported:
 
-    >>> test_tales("bugwatch/fmt:url", bugwatch=sf_bugwatch)
-    u'http://bugs.launchpad.test/bugs/12/+watch/...'
+    >>> print(test_tales("bugwatch/fmt:url", bugwatch=sf_bugwatch))
+    http://bugs.launchpad.test/bugs/12/+watch/...
 
-    >>> test_tales("bugwatch/fmt:url", bugwatch=email_bugwatch)
-    u'http://bugs.launchpad.test/bugs/12/+watch/...'
+    >>> print(test_tales("bugwatch/fmt:url", bugwatch=email_bugwatch))
+    http://bugs.launchpad.test/bugs/12/+watch/...
 
 As are 'external-link' and 'external-link-short', which help when hiding
 email addresses from users who are not logged in:
 
     >>> login('test@canonical.com')
 
-    >>> test_tales("bugwatch/fmt:external-link", bugwatch=sf_bugwatch)
-    u'<a class="link-external"
-      href="http://sourceforge.net/support/tracker.php?aid=1234">sf #1234</a>'
+    >>> print(test_tales("bugwatch/fmt:external-link", bugwatch=sf_bugwatch))
+    <a class="link-external"
+       href="http://sourceforge.net/support/tracker.php?aid=1234">sf #1234</a>
 
-    >>> test_tales("bugwatch/fmt:external-link-short", bugwatch=sf_bugwatch)
-    u'<a class="link-external"
-      href="http://sourceforge.net/support/tracker.php?aid=1234">1234</a>'
+    >>> print(test_tales(
+    ...     "bugwatch/fmt:external-link-short", bugwatch=sf_bugwatch))
+    <a class="link-external"
+       href="http://sourceforge.net/support/tracker.php?aid=1234">1234</a>
 
-    >>> test_tales("bugwatch/fmt:external-link", bugwatch=email_bugwatch)
-    u'<a class="link-external" href="mailto:bugs@example.com">email</a>'
+    >>> print(test_tales(
+    ...     "bugwatch/fmt:external-link", bugwatch=email_bugwatch))
+    <a class="link-external" href="mailto:bugs@example.com">email</a>
 
-    >>> test_tales(
-    ...     "bugwatch/fmt:external-link-short", bugwatch=email_bugwatch)
-    u'<a class="link-external" href="mailto:bugs@example.com">&mdash;</a>'
+    >>> print(test_tales(
+    ...     "bugwatch/fmt:external-link-short", bugwatch=email_bugwatch))
+    <a class="link-external" href="mailto:bugs@example.com">&mdash;</a>
 
     >>> login(ANONYMOUS)
 
-    >>> test_tales("bugwatch/fmt:external-link", bugwatch=sf_bugwatch)
-    u'<a class="link-external"
-      href="http://sourceforge.net/support/tracker.php?aid=1234">sf #1234</a>'
+    >>> print(test_tales("bugwatch/fmt:external-link", bugwatch=sf_bugwatch))
+    <a class="link-external"
+       href="http://sourceforge.net/support/tracker.php?aid=1234">sf #1234</a>
 
-    >>> test_tales("bugwatch/fmt:external-link-short", bugwatch=sf_bugwatch)
-    u'<a class="link-external"
-      href="http://sourceforge.net/support/tracker.php?aid=1234">1234</a>'
+    >>> print(test_tales(
+    ...     "bugwatch/fmt:external-link-short", bugwatch=sf_bugwatch))
+    <a class="link-external"
+       href="http://sourceforge.net/support/tracker.php?aid=1234">1234</a>
 
-    >>> test_tales("bugwatch/fmt:external-link", bugwatch=email_bugwatch)
-    u'email'
+    >>> print(test_tales(
+    ...     "bugwatch/fmt:external-link", bugwatch=email_bugwatch))
+    email
 
-    >>> test_tales(
-    ...     "bugwatch/fmt:external-link-short", bugwatch=email_bugwatch)
-    u'&mdash;'
+    >>> print(test_tales(
+    ...     "bugwatch/fmt:external-link-short", bugwatch=email_bugwatch))
+    &mdash;
 
     >>> login('test@canonical.com')
 
@@ -1065,11 +1072,11 @@ Escaping strings
 
 To escape a string you should use fmt:escape.
 
-    >>> test_tales('foo/fmt:escape', foo='some value')
-    u'some value'
+    >>> print(test_tales('foo/fmt:escape', foo='some value'))
+    some value
 
-    >>> test_tales('foo/fmt:escape', foo='some <br /> value')
-    u'some &lt;br /&gt; value'
+    >>> print(test_tales('foo/fmt:escape', foo='some <br /> value'))
+    some &lt;br /&gt; value
 
 
 CSS ids
@@ -1204,25 +1211,25 @@ Launchpad and linkify them to point at the profile page for that person.
 The resulting HTML includes a person icon next to the linked text to
 emphasise the linkage.
 
-    >>> test_tales('foo/fmt:linkify-email',
-    ...    foo='I am the mighty foo.bar@canonical.com hear me roar.')
-    u'...<a href="http://launchpad.test/~name16"
-      class="sprite person">foo.bar@canonical.com</a>...'
+    >>> print("'%s'" % test_tales('foo/fmt:linkify-email',
+    ...     foo='I am the mighty foo.bar@canonical.com hear me roar.'))
+    '...<a href="http://launchpad.test/~name16"
+          class="sprite person">foo.bar@canonical.com</a>...'
 
 Multiple addresses may be linkified at once:
 
-    >>> test_tales('foo/fmt:linkify-email',
-    ...     foo='foo.bar@canonical.com and cprov@ubuntu.com')
-    u'<a href="http://launchpad.test/~name16"
-      class="sprite person">foo.bar@canonical.com</a>
-      and <a href="http://launchpad.test/~cprov"
-        class="sprite person">cprov@ubuntu.com</a>'
+    >>> print(test_tales('foo/fmt:linkify-email',
+    ...     foo='foo.bar@canonical.com and cprov@ubuntu.com'))
+    <a href="http://launchpad.test/~name16"
+       class="sprite person">foo.bar@canonical.com</a>
+    and <a href="http://launchpad.test/~cprov"
+           class="sprite person">cprov@ubuntu.com</a>
 
 Team addresses are linkified with a team icon:
 
-    >>> test_tales('foo/fmt:linkify-email', foo='support@ubuntu.com')
-    u'<a href="http://launchpad.test/~ubuntu-team"
-      class="sprite team">support@ubuntu.com</a>'
+    >>> print(test_tales('foo/fmt:linkify-email', foo='support@ubuntu.com'))
+    <a href="http://launchpad.test/~ubuntu-team"
+       class="sprite team">support@ubuntu.com</a>
 
 Unknown email addresses are not altered in any way:
 
@@ -1255,8 +1262,8 @@ Test the 'fmt:url' namespace for canonical urls.
     ...     rootsite = None
 
     >>> object_having_url = ObjectThatHasUrl()
-    >>> test_tales('foo/fmt:url', foo=object_having_url)
-    u'/bonobo/saki'
+    >>> print(test_tales('foo/fmt:url', foo=object_having_url))
+    /bonobo/saki
 
 Now, we need to test that it gets the correct application URL from the
 request.
@@ -1291,8 +1298,8 @@ Make a mock-up IBrowserRequest, and use this as the interaction.
 Note how the URL has only a path part, because it is for the same site
 as the current request.
 
-    >>> test_tales('foo/fmt:url', foo=object_having_url)
-    u'/bonobo/saki'
+    >>> print(test_tales('foo/fmt:url', foo=object_having_url))
+    /bonobo/saki
 
 
 The some_string/fmt:something helper
@@ -1307,9 +1314,10 @@ Everything you can do with 'something/fmt:foo', you should be able to do
 with 'None/fmt:foo'.
 
     >>> test_tales('foo/fmt:shorten', foo=None)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LocationError: 'you need to traverse a number after fmt:shorten'
+    zope.location.interfaces.LocationError: 'you need to traverse a number after fmt:shorten'
 
     >>> test_tales('foo/fmt:shorten/8', foo=None)
     ''
@@ -1409,10 +1417,10 @@ We don't get a ValueError when we use a value that doesn't appear in the
 DBSchema the item comes from.
 
     >>> test_tales('deb/enumvalue:CHEESEFISH', deb=udeb)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LocationError: 'The enumerated type BinaryPackageFormat does not have a
-                     value CHEESEFISH.'
+    zope.location.interfaces.LocationError: 'The enumerated type BinaryPackageFormat does not have a value CHEESEFISH.'
 
 It is possible for dbschemas to have a 'None' value.  This is a bit
 awkward, because when the value is None, we can't do any checking
@@ -1431,10 +1439,10 @@ dbschema items too:
     False
 
     >>> test_tales('deb/enumvalue:CHEESEFISH', deb=wrapped_deb)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LocationError: 'The enumerated type BinaryPackageFormat does not have a
-                     value CHEESEFISH.'
+    zope.location.interfaces.LocationError: 'The enumerated type BinaryPackageFormat does not have a value CHEESEFISH.'
 
 
 Formatting timedelta objects
@@ -1563,17 +1571,17 @@ And the url format is also available.
 If the link is disabled, no markup is rendered.
 
     >>> menu_link.enabled = False
-    >>> test_tales('menu_link/fmt:icon', menu_link=menu_link)
-    u''
+    >>> print(test_tales('menu_link/fmt:icon', menu_link=menu_link))
+    <BLANKLINE>
 
-    >>> test_tales('menu_link/fmt:link-icon', menu_link=menu_link)
-    u''
+    >>> print(test_tales('menu_link/fmt:link-icon', menu_link=menu_link))
+    <BLANKLINE>
 
-    >>> test_tales('menu_link/fmt:link', menu_link=menu_link)
-    u''
+    >>> print(test_tales('menu_link/fmt:link', menu_link=menu_link))
+    <BLANKLINE>
 
-    >>> test_tales('menu_link/fmt:url', menu_link=menu_link)
-    u''
+    >>> print(test_tales('menu_link/fmt:url', menu_link=menu_link))
+    <BLANKLINE>
 
 
 CSS classes for public and private objects
@@ -1627,48 +1635,48 @@ Foo Bar is an administrator so they can see all.
 
     >>> login('foo.bar@canonical.com')
     >>> myteam = getUtility(IPersonSet).getByName('myteam')
-    >>> test_tales("team/fmt:link", team=myteam)
-    u'<a ...class="sprite team private"...>My Team</a>'
+    >>> print(test_tales("team/fmt:link", team=myteam))
+    <a ...class="sprite team private"...>My Team</a>
 
-    >>> test_tales("team/fmt:displayname", team=myteam)
-    u'My Team'
+    >>> print(test_tales("team/fmt:displayname", team=myteam))
+    My Team
 
-    >>> test_tales("team/fmt:unique_displayname", team=myteam)
-    u'My Team (myteam)'
+    >>> print(test_tales("team/fmt:unique_displayname", team=myteam))
+    My Team (myteam)
 
 Owner is a member of myteam so they can see all.
 
     >>> login('owner@canonical.com')
-    >>> test_tales("team/fmt:link", team=myteam)
-    u'<a ...class="sprite team private"...>My Team</a>'
+    >>> print(test_tales("team/fmt:link", team=myteam))
+    <a ...class="sprite team private"...>My Team</a>
 
-    >>> test_tales("team/fmt:displayname", team=myteam)
-    u'My Team'
+    >>> print(test_tales("team/fmt:displayname", team=myteam))
+    My Team
 
-    >>> test_tales("team/fmt:unique_displayname", team=myteam)
-    u'My Team (myteam)'
+    >>> print(test_tales("team/fmt:unique_displayname", team=myteam))
+    My Team (myteam)
 
 No Priv is neither a member of myteam nor an administrator, so the
 information about myteam is hidden.
 
     >>> login('no-priv@canonical.com')
-    >>> test_tales("team/fmt:link", team=myteam)
-    u'<span ...class="sprite team"...>&lt;hidden&gt;</span>'
+    >>> print(test_tales("team/fmt:link", team=myteam))
+    <span ...class="sprite team"...>&lt;hidden&gt;</span>
 
-    >>> test_tales("team/fmt:displayname", team=myteam)
-    u'<hidden>'
+    >>> print(test_tales("team/fmt:displayname", team=myteam))
+    <hidden>
 
-    >>> test_tales("team/fmt:unique_displayname", team=myteam)
-    u'<hidden>'
+    >>> print(test_tales("team/fmt:unique_displayname", team=myteam))
+    <hidden>
 
 The anonymous user is not allowed to see private team details.
 
     >>> login(ANONYMOUS)
-    >>> test_tales("team/fmt:link", team=myteam)
-    u'<span ...class="sprite team"...>&lt;hidden&gt;</span>'
+    >>> print(test_tales("team/fmt:link", team=myteam))
+    <span ...class="sprite team"...>&lt;hidden&gt;</span>
 
-    >>> test_tales("team/fmt:displayname", team=myteam)
-    u'<hidden>'
+    >>> print(test_tales("team/fmt:displayname", team=myteam))
+    <hidden>
 
-    >>> test_tales("team/fmt:unique_displayname", team=myteam)
-    u'<hidden>'
+    >>> print(test_tales("team/fmt:unique_displayname", team=myteam))
+    <hidden>

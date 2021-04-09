@@ -25,14 +25,25 @@ import sys
 import tempfile
 
 import transaction
-from zope.component import getUtility
 
 from lp.code.enums import BranchType
 from lp.code.model.branch import Branch
-from lp.codehosting.tests.helpers import make_bazaar_branch_and_tree
+from lp.codehosting.tests.helpers import create_branch_with_one_revision
+from lp.codehosting.vfs import branch_id_to_path
 from lp.services.config import config
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.scripts import execute_zcml_for_scripts
+
+
+def make_bazaar_branch_and_tree(db_branch):
+    """Make a dummy Bazaar branch and working tree from a database Branch."""
+    assert db_branch.branch_type == BranchType.HOSTED, (
+        "Can only create branches for HOSTED branches: %r"
+        % db_branch)
+    branch_dir = os.path.join(
+        config.codehosting.mirrored_branches_root,
+        branch_id_to_path(db_branch.id))
+    return create_branch_with_one_revision(branch_dir)
 
 
 def main(argv):

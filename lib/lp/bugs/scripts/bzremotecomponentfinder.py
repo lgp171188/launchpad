@@ -58,7 +58,8 @@ class BugzillaRemoteComponentScraper:
     def getPage(self):
         """Download and return content from the Bugzilla page"""
         with override_timeout(config.updatebugzillaremotecomponents.timeout):
-            return urlfetch(self.url, use_proxy=True).content
+            with urlfetch(self.url, use_proxy=True) as response:
+                return response.content
 
     def parsePage(self, page_text):
         """Builds self.product using HTML content in page_text"""

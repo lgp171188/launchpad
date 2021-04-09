@@ -38,8 +38,8 @@ To retrieve a specification by its ID, we use `ISpecificationSet.get`.
 
 It should be possible to retrieve a specification by its name
 
-    >>> upstream_firefox.getSpecification('mng').name
-    u'mng'
+    >>> print(upstream_firefox.getSpecification('mng').name)
+    mng
 
 And if we try to retrieve a non-existent specification we should get
 None
@@ -49,8 +49,9 @@ None
 
 It's also possible to retrieve a specification by its URL
 
-    >>> specset.getByURL('http://developer.mozilla.org/en/docs/SVG').specurl
-    u'http://developer.mozilla.org/en/docs/SVG'
+    >>> print(specset.getByURL(
+    ...     'http://developer.mozilla.org/en/docs/SVG').specurl)
+    http://developer.mozilla.org/en/docs/SVG
 
 And if there's no specification with the given URL we should get None
 
@@ -392,8 +393,8 @@ when we do.
     >>> e4x.goal is not None
     True
 
-    >>> e4x.goal_proposer.name
-    u'jdub'
+    >>> print(e4x.goal_proposer.name)
+    jdub
 
     >>> e4x.date_goal_proposed is not None
     True
@@ -415,8 +416,8 @@ We can then accept the goal.
     >>> e4x.goalstatus.title
     'Accepted'
 
-    >>> e4x.goal_decider.name
-    u'mark'
+    >>> print(e4x.goal_decider.name)
+    mark
 
     >>> e4x.date_goal_decided is not None
     True

@@ -20,7 +20,6 @@ __all__ = [
     'ISOLATION_LEVEL_REPEATABLE_READ',
     'ISOLATION_LEVEL_SERIALIZABLE',
     'quote',
-    'quote_like',
     'quoteIdentifier',
     'quote_identifier',
     'reset_store',
@@ -41,7 +40,6 @@ from psycopg2.extensions import (
     ISOLATION_LEVEL_SERIALIZABLE,
     )
 import pytz
-import six
 from sqlobject.sqlbuilder import sqlrepr
 import storm
 from storm.databases.postgres import compile as postgres_compile
@@ -233,26 +231,50 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
     def __eq__(self, other):
         """Equality operator.
 
-        Objects compare equal if:
-            - They are the same instance, or
-            - They have the same class and id, and the id is not None.
+        Objects compare equal if they have the same class and id, and the id
+        is not None.
 
-        These rules allows objects retrieved from different stores to
-        compare equal. The 'is' comparison is to support newly created
-        objects that don't yet have an id (and by definition only exist
-        in the Master store).
+        This rule allows objects retrieved from different stores to compare
+        equal.  Newly-created objects may not yet have an id; in such cases
+        we flush the store so that we can find out their id.
         """
         naked_self = removeSecurityProxy(self)
         naked_other = removeSecurityProxy(other)
-        return (
-            (naked_self is naked_other)
-            or (naked_self.__class__ == naked_other.__class__
-                and naked_self.id is not None
-                and naked_self.id == naked_other.id))
+        if naked_self.__class__ != naked_other.__class__:
+            return False
+        try:
+            self_id = naked_self.id
+        except KeyError:
+            self.syncUpdate()
+            self_id = naked_self.id
+        if self_id is None:
+            return False
+        try:
+            other_id = naked_other.id
+        except KeyError:
+            other.syncUpdate()
+            other_id = naked_other.id
+        return self_id == other_id
 
     def __ne__(self, other):
         """Inverse of __eq__."""
         return not (self == other)
+
+    def __hash__(self):
+        """Hash operator.
+
+        We must define __hash__ since we define __eq__ (Python 3 requires
+        this), but we need to take care to preserve the invariant that
+        objects that compare equal have the same hash value.  Newly-created
+        objects may not yet have an id; in such cases we flush the store so
+        that we can find out their id.
+        """
+        try:
+            id = self.id
+        except KeyError:
+            self.syncUpdate()
+            id = self.id
+        return hash((self.__class__, id))
 
     def __storm_invalidated__(self):
         """Flush cached properties."""
@@ -277,7 +299,9 @@ def get_transaction_timestamp(store):
 
 def quote(x):
     r"""Quote a variable ready for inclusion into an SQL statement.
-    Note that you should use quote_like to create a LIKE comparison.
+
+    >>> import six
+    >>> from lp.services.helpers import backslashreplace
 
     Basic SQL quoting works
 
@@ -296,8 +320,11 @@ def quote(x):
     query will be a Unicode string (the entire query will be encoded
     before sending across the wire to the database).
 
-    >>> quote(u"\N{TRADE MARK SIGN}")
-    u"E'\u2122'"
+    >>> quoted = quote(u"\N{TRADE MARK SIGN}")
+    >>> isinstance(quoted, six.text_type)
+    True
+    >>> print(backslashreplace(quoted))
+    E'\u2122'
 
     Timezone handling is not implemented, since all timestamps should
     be UTC anyway.
@@ -338,56 +365,22 @@ def quote(x):
     return sqlrepr(x, 'postgres')
 
 
-def quote_like(x):
-    r"""Quote a variable ready for inclusion in a SQL statement's LIKE clause
-
-    XXX: StuartBishop 2004-11-24:
-    Including the single quotes was a stupid decision.
-
-    To correctly generate a SELECT using a LIKE comparision, we need
-    to make use of the SQL string concatination operator '||' and the
-    quote_like method to ensure that any characters with special meaning
-    to the LIKE operator are correctly escaped.
-
-    >>> "SELECT * FROM mytable WHERE mycol LIKE '%%' || %s || '%%'" \
-    ...     % quote_like('%')
-    "SELECT * FROM mytable WHERE mycol LIKE '%' || E'\\\\%' || '%'"
-
-    Note that we need 2 backslashes to quote, as per the docs on
-    the LIKE operator. This is because, unless overridden, the LIKE
-    operator uses the same escape character as the SQL parser.
-
-    >>> quote_like('100%')
-    "E'100\\\\%'"
-    >>> quote_like('foobar_alpha1')
-    "E'foobar\\\\_alpha1'"
-    >>> quote_like('hello')
-    "E'hello'"
-
-    Only strings are supported by this method.
-
-    >>> quote_like(1)
-    Traceback (most recent call last):
-        [...]
-    TypeError: Not a string (<type 'int'>)
-
-    """
-    if not isinstance(x, six.string_types):
-        raise TypeError('Not a string (%s)' % type(x))
-    return quote(x.replace('%', r'\%').replace('_', r'\_'))
-
-
 def sqlvalues(*values, **kwvalues):
     """Return a tuple of converted sql values for each value in some_tuple.
 
-    This safely quotes strings, or gives representations of dbschema items,
-    for example.
+    This safely quotes strings (except for '%'!), or gives representations
+    of dbschema items, for example.
 
     Use it when constructing a string for use in a SELECT.  Always use
     %s as the replacement marker.
 
       ('SELECT foo from Foo where bar = %s and baz = %s'
        % sqlvalues(BugTaskSeverity.CRITICAL, 'foo'))
+
+    This is DEPRECATED in favour of passing parameters to SQL statements
+    using the second parameter to `cursor.execute` (normally via the Storm
+    query compiler), because it does not deal with escaping '%' characters
+    in strings.
 
     >>> sqlvalues()
     Traceback (most recent call last):

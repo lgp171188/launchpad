@@ -16,12 +16,12 @@ Test for the product/+download page.
     4
 
     >>> batch = view.series_and_releases_batch.currentBatch()
-    >>> print len(list(batch))
+    >>> print(len(list(batch)))
     1
 
     >>> def print_series_release(sr):
-    ...     print "%s from the %s series" % (sr.release.name_with_codename,
-    ...                                      sr.series.name)
+    ...     print("%s from the %s series" % (sr.release.name_with_codename,
+    ...                                      sr.series.name))
 
     >>> for sr in batch:
     ...     print_series_release(sr)
@@ -39,7 +39,7 @@ Test for the product/+download page.
     ...             milestone=milestone)
     >>> view = create_initialized_view(product, '+download')
     >>> batch = view.series_and_releases_batch.currentBatch()
-    >>> print len(batch)
+    >>> print(len(batch))
     4
     >>> for sr in batch:
     ...     print_series_release(sr)
@@ -66,7 +66,7 @@ page will be links to add new files for each series and release.
     ...                                principal=product.owner)
     >>> admin_links = find_tag_by_id(view.render(), 'admin-links')
     >>> content = extract_text(admin_links)
-    >>> print content
+    >>> print(content)
     Add download file to the s4 series for release: 4.3, 4.2, 4.1
     Add download file to the s3 series for release: 3.3, 3.2, 3.1
     Add download file to the s2 series for release: 2.3, 2.2, 2.1
@@ -79,7 +79,7 @@ Product index
 The product index view shows the latest release for the project.
 
     >>> view = create_initialized_view(product, name='+index')
-    >>> print view.latest_release_with_download_files.version
+    >>> print(view.latest_release_with_download_files.version)
     4.3
 
 Obsolete series are ignored.
@@ -89,5 +89,5 @@ Obsolete series are ignored.
     >>> obsolete_series = product.getSeries('s4')
     >>> obsolete_series.status = SeriesStatus.OBSOLETE
     >>> view = create_initialized_view(product, name='+index')
-    >>> print view.latest_release_with_download_files.version
+    >>> print(view.latest_release_with_download_files.version)
     3.3

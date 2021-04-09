@@ -177,7 +177,7 @@ class PackageBranchTarget(_BaseBranchTarget):
                     distroseries.status != SeriesStatus.OBSOLETE)])
 
         result = sorted_version_numbers(result, key=lambda branch_info: (
-                    getattr(branch_info[1], 'name')))
+            getattr(branch_info[1], 'name'), branch_info[0].id))
 
         if limit_results is not None:
             # We only want the most recent branches
@@ -416,7 +416,7 @@ class ProductBranchTarget(_BaseBranchTarget):
                 pass
 
         result = sorted_version_numbers(result, key=lambda branch_info: (
-                    getattr(branch_info[1], 'name')))
+            getattr(branch_info[1], 'name'), branch_info[0].id))
 
         if limit_results is not None:
             # We only want the most recent branches

@@ -9,18 +9,20 @@ don't have access to that feature.
 
     >>> user_browser.open('http://launchpad.test/firefox/+question/2')
     >>> user_browser.getLink('Reject question')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 Even when trying to access the page directly, they will get an unauthorized
 error.
 
     >>> user_browser.open(
     ...     'http://launchpad.test/firefox/+question/2/+reject')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 To reject the question, the user clicks on the 'Reject Question' link.
 
@@ -31,7 +33,7 @@ To reject the question, the user clicks on the 'Reject Question' link.
 They need to enter a message explaining the rejection:
 
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     You must provide an explanation message.
 
@@ -51,7 +53,7 @@ will reject the question.
 Once the question is rejected, a confirmation message is shown;
 
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     You have rejected this question.
 
 its status is changed to 'Invalid';
@@ -66,7 +68,7 @@ its status is changed to 'Invalid';
 and the rejection message is added to the question board.
 
     >>> content = find_main_content(admin_browser.contents)
-    >>> print(content.findAll('div', 'boardCommentBody')[-1].renderContents())
+    >>> print(content.findAll('div', 'boardCommentBody')[-1].decode_contents())
     <p>Rejecting because it's a duplicate of <a...>bug #1</a>.</p>
 
 The call to help with this problem is not displayed.
@@ -81,7 +83,7 @@ stating that the question is already rejected:
     >>> print(admin_browser.url)
     http://answers.launchpad.test/firefox/+question/2
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     The question is already rejected.
 
 = Changing the Question Status =
@@ -99,9 +101,10 @@ That action isn't available to a non-privileged user:
 
     >>> browser.open('http://launchpad.test/firefox/+question/2')
     >>> browser.getLink('Change status')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 The change status form is available to an administrator through the
 'Change status' link.
@@ -124,7 +127,7 @@ status change:
 
     >>> admin_browser.getControl('Change Status').click()
     >>> for error in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(error.renderContents())
+    ...     print(error.decode_contents())
     There are 2 errors.
     You didn't change the status.
     You must provide an explanation message.
@@ -141,7 +144,7 @@ select back the 'Open' status and provide an appropriate message:
 Once the operation is completed, a confirmation message is displayed;
 
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     Question status updated.
 
 its status is updated;
@@ -152,6 +155,6 @@ its status is updated;
 and the explanation message is added to the question discussion:
 
     >>> content = find_main_content(admin_browser.contents)
-    >>> print(content.findAll('div', 'boardCommentBody')[-1].renderContents())
+    >>> print(content.findAll('div', 'boardCommentBody')[-1].decode_contents())
     <p>Setting status back to 'Open'. Questions similar to a
     bug report should be linked to it, not rejected.</p>

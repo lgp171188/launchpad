@@ -78,7 +78,9 @@ class BranchTargetWidget(BrowserWidget, InputWidget):
         try:
             self.getInputValue()
             return True
-        except (InputErrors, UnexpectedFormData):
+        except InputErrors:
+            return False
+        except UnexpectedFormData:
             return False
 
     def getInputValue(self):

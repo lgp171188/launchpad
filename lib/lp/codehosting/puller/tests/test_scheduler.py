@@ -151,12 +151,14 @@ class TestPullerWireProtocol(TestCase):
 
     def convertToNetstring(self, string):
         """Encode `string` as a netstring."""
-        return '%d:%s,' % (len(string), string)
+        return b'%d:%s,' % (len(string), string)
 
     def sendToProtocol(self, *arguments):
         """Send each element of `arguments` to the protocol as a netstring."""
         for argument in arguments:
-            self.protocol.dataReceived(self.convertToNetstring(str(argument)))
+            if not isinstance(argument, bytes):
+                argument = six.text_type(argument).encode('UTF-8')
+            self.protocol.dataReceived(self.convertToNetstring(argument))
 
     def assertUnexpectedErrorCalled(self, exception_type):
         """Assert that the puller protocol's unexpectedError has been called.
@@ -213,10 +215,16 @@ class TestPullerWireProtocol(TestCase):
         self.sendToProtocol('foo')
         self.assertUnexpectedErrorCalled(scheduler.BadMessage)
 
+    def test_nonUTF8Message(self):
+        # The protocol notifies the listener if it receives a line not
+        # encoded in UTF-8.
+        self.sendToProtocol(b'\x80')
+        self.assertUnexpectedErrorCalled(scheduler.BadMessage)
+
     def test_invalidNetstring(self):
         # The protocol terminates the session if it receives an unparsable
         # netstring.
-        self.protocol.dataReceived('foo')
+        self.protocol.dataReceived(b'foo')
         self.assertUnexpectedErrorCalled(NetstringParseError)
 
 
@@ -346,7 +354,7 @@ class TestPullerMonitorProtocol(ProcessTestsMixin, TestCase):
 
         self.termination_deferred.addErrback(check_failure)
 
-        self.protocol.errReceived('error message')
+        self.protocol.errReceived(b'error message')
         self.simulateProcessExit(clean=False)
 
         return assert_fails_with(
@@ -367,7 +375,7 @@ class TestPullerMonitorProtocol(ProcessTestsMixin, TestCase):
 
         self.termination_deferred.addErrback(check_failure)
 
-        self.protocol.errReceived('error message')
+        self.protocol.errReceived(b'error message')
         self.simulateProcessExit()
 
         return self.termination_deferred
@@ -385,7 +393,7 @@ class TestPullerMonitorProtocol(ProcessTestsMixin, TestCase):
         # If the subprocess exits before reporting success or failure, the
         # puller master should record failure.
         self.protocol.do_startMirroring()
-        self.protocol.errReceived('traceback')
+        self.protocol.errReceived(b'traceback')
         self.simulateProcessExit(clean=False)
         self.assertEqual(
             self.listener.calls,
@@ -410,7 +418,7 @@ class TestPullerMonitorProtocol(ProcessTestsMixin, TestCase):
 
         self.protocol.listener = FailingMirrorFailedStubPullerListener()
         self.listener = self.protocol.listener
-        self.protocol.errReceived('traceback')
+        self.protocol.errReceived(b'traceback')
         self.simulateProcessExit(clean=False)
         self.assertEqual(
             flush_logged_errors(RuntimeError), [runtime_error_failure])
@@ -441,8 +449,8 @@ class TestPullerMaster(TestCase):
         self.assertEqual('error message', oops['value'])
         self.assertEqual('RuntimeError', oops['type'])
         self.assertEqual(
-            get_canonical_url_for_branch_name(
-                self.eventHandler.unique_name), oops['url'])
+            six.ensure_text(get_canonical_url_for_branch_name(
+                self.eventHandler.unique_name)), oops['url'])
 
     def test_startMirroring(self):
         # startMirroring does not send a message to the endpoint.
@@ -548,7 +556,8 @@ parser = OptionParser()
  branch_type_name, default_stacked_on_url) = arguments
 from breezy import branch
 branch = branch.Branch.open(destination_url)
-protocol = PullerWorkerProtocol(sys.stdout)
+stdout = getattr(sys.stdout, 'buffer', sys.stdout)
+protocol = PullerWorkerProtocol(stdout)
 """
 
 
@@ -622,7 +631,7 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
                 default_format.repository_format.get_format_string())
             self.assertEqual(
                 [('branchChanged', LAUNCHPAD_SERVICES, self.db_branch.id, '',
-                  revision_id, control_string, branch_string,
+                  six.ensure_str(revision_id), control_string, branch_string,
                   repository_string)],
                 self.client.calls)
             return ignored
@@ -707,7 +716,7 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         protocol.mirrorFailed('a', 'b')
         protocol.sendEvent(
             'lock_id', branch.control_files._lock.peek().get('user'))
-        sys.stdout.flush()
+        stdout.flush()
         branch.unlock()
         """
 
@@ -791,7 +800,7 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         lock_and_wait_script = """
         branch.lock_write()
         protocol.sendEvent('branchLocked')
-        sys.stdout.flush()
+        stdout.flush()
         time.sleep(3600)
         """
 

@@ -150,9 +150,8 @@ class TestRevisionCache(TestCaseWithFactory):
                                  revision_collection):
         # Check that the revisions returned from the revision collection match
         # the expected revisions.
-        self.assertEqual(
-            sorted(expected_revisions),
-            sorted(revision_collection.getRevisions()))
+        self.assertContentEqual(
+            expected_revisions, revision_collection.getRevisions())
 
     def test_private_revisions(self):
         # Private flags are honoured when only requesting public revisions.

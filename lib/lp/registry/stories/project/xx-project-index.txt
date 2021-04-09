@@ -46,15 +46,17 @@ project.
 
     >>> browser.open('http://launchpad.test/mozilla')
     >>> browser.getLink('Register a project in The Mozilla Project')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.addHeader('Authorization', 'Basic no-priv@canonical.com:test')
     >>> browser.getLink('Register a project in The Mozilla Project')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> admin_browser.open('http://launchpad.test/mozilla')
     >>> admin_browser.getLink('Register a project in The Mozilla Project').url
@@ -81,49 +83,58 @@ question' or 'Help translate' buttons.
 
     >>> user_browser.open('http://launchpad.test/a-test-group')
     >>> user_browser.getLink('Report a bug')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.getLink('Ask a question')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.getLink('Help translate')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 Also, the bugs, blueprints, translations and answers facets will be disabled:
 
     >>> user_browser.open('http://launchpad.test/a-test-group')
     >>> user_browser.getLink('Bugs')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.getLink('Blueprints')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.getLink('Answers')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.getLink('Answers')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.getLink('Translations')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 A warning message will be displayed at the top of the overview page when the
 owner of the project group views it:
 
     >>> admin_browser.open('http://launchpad.test/a-test-group')
     >>> for warning in find_tags_by_class(admin_browser.contents, 'warning'):
-    ...     extract_text(warning.renderContents())
-    u'There are no projects registered for\nTest Group...'
+    ...     print(extract_text(warning.decode_contents()))
+    There are no projects registered for
+    Test Group...
 
 A link is included in the warning message which will take the admin user to
 the new product form for the project group.

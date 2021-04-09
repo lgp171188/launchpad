@@ -877,13 +877,20 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self._test_AnswerContactPruner(
             AccountStatus.SUSPENDED, SEVEN_DAYS_AGO)
 
+    def test_AnswerContactPruner_deceased_accounts(self):
+        # Answer contacts with an account marked as deceased at least seven
+        # days ago should be pruned.
+        self._test_AnswerContactPruner(AccountStatus.DECEASED, SEVEN_DAYS_AGO)
+
     def test_AnswerContactPruner_doesnt_prune_recently_changed_accounts(self):
-        # Answer contacts which are suspended or deactivated inside the
-        # minimum time interval are not pruned.
+        # Answer contacts which are deactivated, suspended, or deceased
+        # inside the minimum time interval are not pruned.
         self._test_AnswerContactPruner(
             AccountStatus.DEACTIVATED, None, expected_count=1)
         self._test_AnswerContactPruner(
             AccountStatus.SUSPENDED, ONE_DAY_AGO, expected_count=1)
+        self._test_AnswerContactPruner(
+            AccountStatus.DECEASED, ONE_DAY_AGO, expected_count=1)
 
     def test_BranchJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.
@@ -1173,17 +1180,17 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertEqual(0, len(list(store.find(TimeLimitedToken,
             path="sample path"))))
         # One to clean and one to keep
-        store.add(TimeLimitedToken(path="sample path", token="foo",
+        store.add(TimeLimitedToken(path="sample path", token=b"foo",
             created=datetime(2008, 1, 1, tzinfo=UTC)))
-        store.add(TimeLimitedToken(path="sample path", token="bar")),
+        store.add(TimeLimitedToken(path="sample path", token=b"bar")),
         store.commit()
         self.assertEqual(2, len(list(store.find(TimeLimitedToken,
             path="sample path"))))
         self.runDaily()
         self.assertEqual(0, len(list(store.find(TimeLimitedToken,
-            path="sample path", token=hashlib.sha256("foo").hexdigest()))))
+            path="sample path", token=hashlib.sha256(b"foo").hexdigest()))))
         self.assertEqual(1, len(list(store.find(TimeLimitedToken,
-            path="sample path", token=hashlib.sha256("bar").hexdigest()))))
+            path="sample path", token=hashlib.sha256(b"bar").hexdigest()))))
 
     def test_CacheSuggestivePOTemplates(self):
         switch_dbuser('testadmin')
@@ -1251,7 +1258,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             potmsgset_pofile[translation_message.potmsgset.id] = pofile.id
         transaction.commit()
         store = IMasterStore(POTMsgSet)
-        test_ids = potmsgset_pofile.keys()
+        test_ids = list(potmsgset_pofile)
         obsolete_msgsets = store.find(
             POTMsgSet,
             In(TranslationTemplateItem.potmsgsetID, test_ids),
@@ -1308,7 +1315,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         naked_bug.heat_last_updated = old_update
         IMasterStore(FeatureFlag).add(FeatureFlag(
             'default', 0, 'bugs.heat_updates.cutoff',
-            cutoff.isoformat().decode('ascii')))
+            six.ensure_text(cutoff.isoformat())))
         transaction.commit()
         self.assertEqual(old_update, naked_bug.heat_last_updated)
         self.runHourly()

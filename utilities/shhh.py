@@ -27,6 +27,8 @@ def shhh(cmd):
     To test, we invoke both this method and this script with some commands
     and examine the output and exit status.
 
+    >>> import six
+
     >>> python = sys.executable
 
     >>> def shhh_script(cmd):
@@ -34,7 +36,7 @@ def shhh(cmd):
     ...     cmd = [python, __file__] + cmd
     ...     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     ...     (out, err) = p.communicate()
-    ...     return (out, err, p.returncode)
+    ...     return (six.ensure_str(out), six.ensure_str(err), p.returncode)
 
     >>> cmd = [python, "-c", "import sys; sys.exit(0)"]
     >>> shhh(cmd)
@@ -86,8 +88,8 @@ def shhh(cmd):
     if process.returncode == 0:
         return 0
     else:
-        sys.stderr.write(err)
-        sys.stdout.write(out)
+        getattr(sys.stderr, "buffer", sys.stderr).write(err)
+        getattr(sys.stdout, "buffer", sys.stdout).write(out)
         return process.returncode
 
 

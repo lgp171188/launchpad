@@ -5,14 +5,12 @@
 
 __all__ = [
     'XMLValidator',
-    'RelaxNGValidator',
     ]
 
 
 import os
+import subprocess
 from tempfile import NamedTemporaryFile
-
-from lp.services.helpers import simple_popen2
 
 
 class XMLValidator:
@@ -60,7 +58,12 @@ class XMLValidator:
         catalogs = " ".join(
             [local_catalog_path, "/etc/xml/catalog"])
         env = {"XML_CATALOG_FILES": catalogs}
-        result = simple_popen2(command, '', env=env).strip()
+        xmllint = subprocess.Popen(
+            command, env=env,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, universal_newlines=True)
+        result, _ = xmllint.communicate('')
+        result = result.strip()
 
         # The output consists of lines describing possible errors; the
         # last line is either "(file) fails to validate" or
@@ -88,9 +91,3 @@ class XMLValidator:
         error_log is the empty string.
         """
         return self._errors
-
-
-class RelaxNGValidator(XMLValidator):
-    """A validator for Relax NG schemas."""
-
-    SCHEMA_ARGUMENT = 'relaxng'

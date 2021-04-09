@@ -131,9 +131,7 @@ class TestGetOfficialSourcePackageLinksForBranches(TestCaseWithFactory):
         make_linked_package_branch(self.factory)
         links = (BranchListingQueryOptimiser.
                  getOfficialSourcePackageLinksForBranches([b1.id, b2.id]))
-        self.assertEqual(
-            sorted([b1, b2]),
-            sorted([link.branch for link in links]))
+        self.assertContentEqual([b1, b2], [link.branch for link in links])
 
     def test_objects_loaded(self):
         # Traversing through the source package and the distribution should

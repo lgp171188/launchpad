@@ -181,10 +181,10 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.assertEqual([job_1], runner.completed_jobs)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('job.start_count,type=NullJob,env=test',))
+            ('job.start_count,env=test,type=NullJob',))
         self.assertEqual(
             self.stats_client.incr.call_args_list[1][0],
-            ('job.complete_count,type=NullJob,env=test',))
+            ('job.complete_count,env=test,type=NullJob',))
 
     def test_runAll(self):
         """Ensure runAll works in the normal case."""
@@ -229,13 +229,13 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.assertEqual(JobStatus.COMPLETED, job_2.job.status)
         oops = self.oopses[-1]
         self.assertIn('Fake exception.  Foobar, I say!', oops['tb_text'])
-        self.assertEqual(["{'foo': 'bar'}"], oops['req_vars'].values())
+        self.assertEqual(["{'foo': 'bar'}"], list(oops['req_vars'].values()))
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('job.start_count,type=NullJob,env=test',))
+            ('job.start_count,env=test,type=NullJob',))
         self.assertEqual(
             self.stats_client.incr.call_args_list[1][0],
-            ('job.fail_count,type=NullJob,env=test',))
+            ('job.fail_count,env=test,type=NullJob',))
 
     def test_oops_messages_used_when_handling(self):
         """Oops messages should appear even when exceptions are handled."""
@@ -251,7 +251,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         runner = JobRunner([job_1, job_2])
         runner.runAll()
         oops = self.oopses[-1]
-        self.assertEqual(["{'foo': 'bar'}"], oops['req_vars'].values())
+        self.assertEqual(["{'foo': 'bar'}"], list(oops['req_vars'].values()))
 
     def test_runAll_aborts_transaction_on_error(self):
         """runAll should abort the transaction on oops."""
@@ -290,9 +290,10 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
             'Launchpad encountered an internal error during the following'
             ' operation: appending a string to a list.  It was logged with id'
             ' %s.  Sorry for the inconvenience.' % oops['id'],
-            notification.get_payload(decode=True))
-        self.assertNotIn('Fake exception.  Foobar, I say!',
-                         notification.get_payload(decode=True))
+            notification.get_payload(decode=True).decode('UTF-8'))
+        self.assertNotIn(
+            'Fake exception.  Foobar, I say!',
+            notification.get_payload(decode=True).decode('UTF-8'))
         self.assertEqual('Launchpad internal error', notification['subject'])
 
     def test_runAll_mails_user_errors(self):
@@ -317,7 +318,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.assertEqual([], self.oopses)
         notifications = pop_notifications()
         self.assertEqual(1, len(notifications))
-        body = notifications[0].get_payload(decode=True)
+        body = notifications[0].get_payload(decode=True).decode('UTF-8')
         self.assertEqual(
             'Launchpad encountered an error during the following operation:'
             ' appending a string to a list.  Fake exception.  Foobar, I say!',

@@ -11,8 +11,8 @@ getLanguageByCode
 We can get hold of languages by their language code.
 
   >>> language = language_set.getLanguageByCode('es')
-  >>> language.englishname
-  u'Spanish'
+  >>> print(language.englishname)
+  Spanish
 
 Or if it doesn't exist, we return None.
 
@@ -30,19 +30,6 @@ We can convert language codes to standard form.
   pt_BR
   >>> print(language_set.canonicalise_language_code('pt-br'))
   pt_BR
-
-codes_to_languages
-==================
-
-Convert a list of ISO language codes to language objects. If the code is
-unknown, it's ignored.
-
-  # 'zz' code doesn't exist:
-  >>> language_set.getLanguageByCode('zz') is None
-  True
-  >>> languages = language_set.codes_to_languages(['es', 'pt_BR', 'zz'])
-  >>> [language.englishname for language in languages]
-  [u'Spanish', u'Portuguese (Brazil)']
 
 createLanguage
 ==============
@@ -286,11 +273,28 @@ Property holding a list of countries a language is spoken in, and allowing
 reading and setting them.
 
   >>> es = language_set.getLanguageByCode('es')
-  >>> print([country.name for country in es.countries])
-  [u'Argentina', u'Bolivia', u'Chile', u'Colombia', u'Costa Rica',
-   u'Dominican Republic', u'Ecuador', u'El Salvador', u'Guatemala',
-   u'Honduras', u'Mexico', u'Nicaragua', u'Panama', u'Paraguay', u'Peru',
-   u'Puerto Rico', u'Spain', u'United States', u'Uruguay', u'Venezuela']
+  >>> for country in es.countries:
+  ...     print(country.name)
+  Argentina
+  Bolivia
+  Chile
+  Colombia
+  Costa Rica
+  Dominican Republic
+  Ecuador
+  El Salvador
+  Guatemala
+  Honduras
+  Mexico
+  Nicaragua
+  Panama
+  Paraguay
+  Peru
+  Puerto Rico
+  Spain
+  United States
+  Uruguay
+  Venezuela
 
 We can add countries using `ILanguage.addCountry` method.
 
@@ -298,26 +302,63 @@ We can add countries using `ILanguage.addCountry` method.
   >>> country_set = getUtility(ICountrySet)
   >>> germany = country_set['DE']
   >>> es.addCountry(germany)
-  >>> print([country.name for country in es.countries])
-  [u'Argentina', u'Bolivia', u'Chile', u'Colombia', u'Costa Rica',
-   u'Dominican Republic', u'Ecuador', u'El Salvador', u'Germany', u'Guatemala',
-   u'Honduras', u'Mexico', u'Nicaragua', u'Panama', u'Paraguay', u'Peru',
-   u'Puerto Rico', u'Spain', u'United States', u'Uruguay', u'Venezuela']
+  >>> for country in es.countries:
+  ...     print(country.name)
+  Argentina
+  Bolivia
+  Chile
+  Colombia
+  Costa Rica
+  Dominican Republic
+  Ecuador
+  El Salvador
+  Germany
+  Guatemala
+  Honduras
+  Mexico
+  Nicaragua
+  Panama
+  Paraguay
+  Peru
+  Puerto Rico
+  Spain
+  United States
+  Uruguay
+  Venezuela
 
 Or, we can remove countries using `ILanguage.removeCountry` method.
 
   >>> argentina = country_set['AR']
   >>> es.removeCountry(argentina)
-  >>> print([country.name for country in es.countries])
-  [u'Bolivia', u'Chile', u'Colombia', u'Costa Rica', u'Dominican Republic',
-   u'Ecuador', u'El Salvador', u'Germany', u'Guatemala', u'Honduras',
-   u'Mexico', u'Nicaragua', u'Panama', u'Paraguay', u'Peru', u'Puerto Rico',
-   u'Spain', u'United States', u'Uruguay', u'Venezuela']
+  >>> for country in es.countries:
+  ...     print(country.name)
+  Bolivia
+  Chile
+  Colombia
+  Costa Rica
+  Dominican Republic
+  Ecuador
+  El Salvador
+  Germany
+  Guatemala
+  Honduras
+  Mexico
+  Nicaragua
+  Panama
+  Paraguay
+  Peru
+  Puerto Rico
+  Spain
+  United States
+  Uruguay
+  Venezuela
 
 We can also assign a complete set of languages directly to `countries`,
 but we need to log in as a translations administrator first.
 
   >>> login('carlos@canonical.com')
   >>> es.countries = set([argentina, germany])
-  >>> print([country.name for country in es.countries])
-  [u'Argentina', u'Germany']
+  >>> for country in es.countries:
+  ...     print(country.name)
+  Argentina
+  Germany

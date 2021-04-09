@@ -4,39 +4,52 @@
 __metaclass__ = type
 __all__ = ['POMsgID']
 
-from sqlobject import (
-    SQLObjectNotFound,
-    StringCol,
+import six
+from storm.expr import Func
+from storm.locals import (
+    Int,
+    Unicode,
     )
 from zope.interface import implementer
 
-from lp.services.database.sqlbase import (
-    quote,
-    SQLBase,
-    )
+from lp.app.errors import NotFoundError
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.translations.interfaces.pomsgid import IPOMsgID
 
 
 @implementer(IPOMsgID)
-class POMsgID(SQLBase):
+class POMsgID(StormBase):
 
-    _table = 'POMsgID'
+    __storm_table__ = 'POMsgID'
 
-    # alternateID is technically true, but we don't use it because this
-    # column is too large to be indexed.
-    msgid = StringCol(dbName='msgid', notNull=True, unique=True,
-        alternateID=False)
+    id = Int(primary=True)
+    msgid = Unicode(name='msgid', allow_none=False)
 
-    def byMsgid(cls, key):
-        """Return a POMsgID object for the given msgid."""
+    def __init__(self, msgid):
+        super(POMsgID, self).__init__()
+        self.msgid = msgid
 
+    @classmethod
+    def new(cls, msgid):
+        """Return a new POMsgID object for the given msgid."""
+        pomsgid = cls(msgid)
+        IStore(cls).add(pomsgid)
+        return pomsgid
+
+    @classmethod
+    def getByMsgid(cls, key):
+        """Return a POMsgID object for the given msgid.
+
+        :raises NotFoundError: if the msgid is not found.
+        """
         # We can't search directly on msgid, because this database column
         # contains values too large to index. Instead we search on its
-        # hash, which *is* indexed
-        r = POMsgID.selectOne('sha1(msgid) = sha1(%s)' % quote(key))
+        # hash, which *is* indexed.
+        r = IStore(POMsgID).find(
+            POMsgID,
+            Func('sha1', POMsgID.msgid) ==
+                Func('sha1', six.ensure_text(key))).one()
         if r is None:
-            # To be 100% compatible with the alternateID behaviour, we should
-            # raise SQLObjectNotFound instead of KeyError
-            raise SQLObjectNotFound(key)
+            raise NotFoundError(six.ensure_str(key, errors='replace'))
         return r
-    byMsgid = classmethod(byMsgid)

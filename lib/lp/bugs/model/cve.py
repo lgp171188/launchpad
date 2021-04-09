@@ -187,20 +187,6 @@ class CveSet:
 
         return sorted(cves, key=lambda a: a.sequence)
 
-    def inMessage(self, message):
-        """See ICveSet."""
-        cves = set()
-        for messagechunk in message:
-            if messagechunk.blob is not None:
-                # we don't process attachments
-                continue
-            elif messagechunk.content is not None:
-                # look for potential CVE URL's and create them as needed
-                cves.update(self.inText(messagechunk.content))
-            else:
-                raise AssertionError('MessageChunk without content or blob.')
-        return sorted(cves, key=lambda a: a.sequence)
-
     def getBugCvesForBugTasks(self, bugtasks, cve_mapper=None):
         """See ICveSet."""
         bugs = bulk.load_related(Bug, bugtasks, ('bug_id', ))

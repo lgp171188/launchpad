@@ -78,12 +78,12 @@ class CustomUploadsCopier:
                             source_pocket=PackagePublishingPocket.RELEASE):
         """Find custom uploads that may need copying."""
         uploads = source_series.getPackageUploads(
-            pocket=source_pocket, custom_type=self.copyable_types.keys())
+            pocket=source_pocket, custom_type=list(self.copyable_types))
         load_referencing(PackageUploadCustom, uploads, ['packageuploadID'])
         customs = sum([list(upload.customfiles) for upload in uploads], [])
-        customs = filter(self.isCopyable, customs)
-        customs.sort(key=attrgetter('id'), reverse=True)
-        return customs
+        return sorted(
+            filter(self.isCopyable, customs),
+            key=attrgetter('id'), reverse=True)
 
     def extractSeriesKey(self, custom_type, filename):
         """Get the relevant fields out of `filename` for `custom_type`."""

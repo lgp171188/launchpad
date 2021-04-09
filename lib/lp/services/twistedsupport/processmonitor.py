@@ -12,8 +12,8 @@ __all__ = [
     ]
 
 
+import io
 import os
-import StringIO
 
 from twisted.internet import (
     defer,
@@ -278,8 +278,8 @@ class ProcessWithTimeout(ProcessProtocol, TimeoutMixin):
         self._deferred = deferred
         self._clock = clock
         self._timeout = timeout
-        self._out_buf = StringIO.StringIO()
-        self._err_buf = StringIO.StringIO()
+        self._out_buf = io.BytesIO()
+        self._err_buf = io.BytesIO()
         self._process_transport = None
 
         # outReceived and errReceived are callback methods on

@@ -13,6 +13,7 @@ __all__ = [
 
 from itertools import repeat
 
+import six
 from six.moves import zip as izip
 from zope.component import queryAdapter
 from zope.interface import implementer
@@ -119,13 +120,16 @@ class AnonymousAuthorization(AuthorizationBase):
 
 class non_boolean_izip(izip):
 
-    def __nonzero__(self):
+    def __bool__(self):
         # XXX wgrant 2016-11-15: Guard against security adapters
         # accidentally using a delegation as a boolean authentication
         # result.
         raise Exception(
             "DelegatedAuthorization results can't be used in boolean "
             "expressions.")
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
 
 class DelegatedAuthorization(AuthorizationBase):

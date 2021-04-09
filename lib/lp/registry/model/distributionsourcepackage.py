@@ -18,15 +18,18 @@ from operator import (
 from threading import local
 
 from breezy.lru_cache import LRUCache
-from sqlobject.sqlbuilder import SQLConstant
+import six
 from storm.expr import (
     And,
+    Cast,
     Desc,
     )
 from storm.locals import (
     Bool,
     Int,
+    Not,
     Reference,
+    SQL,
     Store,
     Storm,
     Unicode,
@@ -59,7 +62,6 @@ from lp.registry.model.sourcepackage import (
 from lp.services.database.bulk import load
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import sqlvalues
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.enums import (
     ArchivePurpose,
@@ -228,53 +230,48 @@ class DistributionSourcePackage(BugTargetBase,
         # and pocket enum values, which is arguably evil but much faster
         # than CASE sorting; at any rate this can be fixed when
         # https://bugs.launchpad.net/soyuz/+bug/236922 is.
-        spph = SourcePackagePublishingHistory.selectFirst("""
-            SourcePackagePublishingHistory.distroseries = DistroSeries.id AND
-            DistroSeries.distribution = %s AND
-            SourcePackagePublishingHistory.sourcepackagename = %s AND
-            SourcePackagePublishingHistory.archive IN %s AND
-            pocket NOT IN (%s, %s) AND
-            status in (%s, %s)""" %
-                sqlvalues(self.distribution,
-                          self.sourcepackagename,
-                          self.distribution.all_distro_archive_ids,
-                          PackagePublishingPocket.PROPOSED,
-                          PackagePublishingPocket.BACKPORTS,
-                          PackagePublishingStatus.PUBLISHED,
-                          PackagePublishingStatus.OBSOLETE),
-            clauseTables=["SourcePackagePublishingHistory",
-                          "DistroSeries"],
-            orderBy=["status",
-                     SQLConstant(
-                        "to_number(DistroSeries.version, '99.99') DESC"),
-                     "-pocket"])
+        spph = IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.distroseries == DistroSeries.id,
+            DistroSeries.distribution == self.distribution,
+            SourcePackagePublishingHistory.sourcepackagename ==
+                self.sourcepackagename,
+            SourcePackagePublishingHistory.archiveID.is_in(
+                self.distribution.all_distro_archive_ids),
+            Not(SourcePackagePublishingHistory.pocket.is_in({
+                PackagePublishingPocket.PROPOSED,
+                PackagePublishingPocket.BACKPORTS,
+                })),
+            SourcePackagePublishingHistory.status.is_in({
+                PackagePublishingStatus.PUBLISHED,
+                PackagePublishingStatus.OBSOLETE,
+                }),
+            ).order_by(
+                SourcePackagePublishingHistory.status,
+                SQL("to_number(DistroSeries.version, '99.99') DESC"),
+                Desc(SourcePackagePublishingHistory.pocket),
+                ).first()
         return spph
 
     def getVersion(self, version):
         """See `IDistributionSourcePackage`."""
-        spph = SourcePackagePublishingHistory.select("""
-            SourcePackagePublishingHistory.distroseries =
-                DistroSeries.id AND
-            DistroSeries.distribution = %s AND
-            SourcePackagePublishingHistory.archive IN %s AND
-            SourcePackagePublishingHistory.sourcepackagerelease =
-                SourcePackageRelease.id AND
-            SourcePackagePublishingHistory.sourcepackagename = %s AND
-            SourcePackageRelease.sourcepackagename = %s AND
-            SourcePackageRelease.version::text = %s
-            """ % sqlvalues(self.distribution,
-                            self.distribution.all_distro_archive_ids,
-                            self.sourcepackagename,
-                            self.sourcepackagename,
-                            version),
-            orderBy='-datecreated',
-            prejoinClauseTables=['SourcePackageRelease'],
-            clauseTables=['DistroSeries', 'SourcePackageRelease'])
-        if spph.is_empty():
+        spr = IStore(SourcePackagePublishingHistory).find(
+            SourcePackageRelease,
+            SourcePackagePublishingHistory.distroseries == DistroSeries.id,
+            DistroSeries.distribution == self.distribution,
+            SourcePackagePublishingHistory.archiveID.is_in(
+                self.distribution.all_distro_archive_ids),
+            SourcePackagePublishingHistory.sourcepackagerelease ==
+                SourcePackageRelease.id,
+            SourcePackagePublishingHistory.sourcepackagename == self.sourcepackagename,
+            SourcePackageRelease.sourcepackagename == self.sourcepackagename,
+            Cast(SourcePackageRelease.version, "text") ==
+                six.ensure_text(version),
+            ).order_by(SourcePackagePublishingHistory.datecreated).last()
+        if spr is None:
             return None
         return DistributionSourcePackageRelease(
-            distribution=self.distribution,
-            sourcepackagerelease=spph[0].sourcepackagerelease)
+            distribution=self.distribution, sourcepackagerelease=spr)
 
     # XXX kiko 2006-08-16: Bad method name, no need to be a property.
     @property

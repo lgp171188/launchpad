@@ -177,7 +177,7 @@ class ChooseProductStep(LinkPackgingMixin, AlsoAffectsStep):
             try:
                 validate_new_target(self.context.bug, data.get('product'))
             except IllegalTarget as e:
-                self.setFieldError('product', e[0])
+                self.setFieldError('product', e.args[0])
             return
 
         entered_product = self.request.form.get(self.widgets['product'].name)
@@ -460,9 +460,9 @@ class DistroBugTaskCreationStep(BugTaskCreationStep):
                     data['sourcepackagename'] = target
             except IllegalTarget as e:
                 if sourcepackagename:
-                    self.setFieldError('sourcepackagename', e[0])
+                    self.setFieldError('sourcepackagename', e.args[0])
                 else:
-                    self.setFieldError('distribution', e[0])
+                    self.setFieldError('distribution', e.args[0])
 
         super(DistroBugTaskCreationStep, self).validateStep(data)
 
@@ -852,7 +852,7 @@ class BugAlsoAffectsProductWithProductCreationView(LinkPackgingMixin,
         try:
             validate_target(self.context.bug, project)
         except IllegalTarget as e:
-            self.setFieldError('existing_product', e[0])
+            self.setFieldError('existing_product', e.args[0])
 
     @action('Use Existing Project', name='use_existing_product',
             validator=validate_existing_product)

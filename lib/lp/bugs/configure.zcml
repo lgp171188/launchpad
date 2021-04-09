@@ -431,13 +431,15 @@
         <class
             class="lp.bugs.model.bugtracker.BugTrackerSet">
             <allow
-                interface="lp.bugs.interfaces.bugtracker.IBugTrackerSet"/>
+                interface="lp.bugs.interfaces.bugtracker.IBugTrackerSet"
+                attributes="__len__"/>
         </class>
         <securedutility
             class="lp.bugs.model.bugtracker.BugTrackerSet"
             provides="lp.bugs.interfaces.bugtracker.IBugTrackerSet">
             <allow
-                interface="lp.bugs.interfaces.bugtracker.IBugTrackerSet"/>
+                interface="lp.bugs.interfaces.bugtracker.IBugTrackerSet"
+                attributes="__len__"/>
         </securedutility>
         <adapter
             provides="lp.services.webapp.interfaces.IBreadcrumb"
@@ -802,7 +804,7 @@
                     productseries
                     bug
                     owner
-                    ownerID
+                    owner_id
                     decider
                     target
                     status

@@ -36,9 +36,10 @@ To register themselves as answer contact, the user clicks on the
 'Set answer contact' link. They need to login to access that function.
 
     >>> anon_browser.getLink('Set answer contact').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
     >>> browser.open(
@@ -88,5 +89,5 @@ Again a confirmation message is displayed.
 
     >>> browser.getControl('Continue').click()
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     You have been removed as an answer contact for evolution in Ubuntu.

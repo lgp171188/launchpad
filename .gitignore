@@ -74,5 +74,5 @@ callgrind.out.*
 !logs/README.txt
 /logs
 yarn/node_modules
-/wheelhouse
+/wheels
 requirements/combined.txt

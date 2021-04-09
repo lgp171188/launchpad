@@ -324,7 +324,7 @@ class PersonTranslationView(LaunchpadView):
         Results are ordered from most to fewest untranslated messages.
         """
         person = ITranslationsPerson(self.context)
-        urgent_first = (max_fetch >= 0)
+        urgent_first = (max_fetch is not None and max_fetch >= 0)
         pofiles = person.getTranslatableFiles(
             no_older_than=self.history_horizon, urgent_first=urgent_first)
 

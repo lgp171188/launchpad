@@ -182,7 +182,7 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         branch = self._makeTranslationBranch()
         removeSecurityProxy(branch).last_scanned_id = 'null:'
         commit = DirectBranchCommit(branch)
-        commit.writeFile('POTFILES.in', 'foo')
+        commit.writeFile('POTFILES.in', b'foo')
         commit.commit('message')
         notify(events.TipChanged(branch, commit.bzrbranch, False))
         self.assertEqual(

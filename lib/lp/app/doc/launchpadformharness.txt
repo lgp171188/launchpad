@@ -103,8 +103,8 @@ see where we were redirected to:
 We can also see that the context object was updated by this form
 submission:
 
-  >>> context.string
-  u'abcdef'
+  >>> print(context.string)
+  abcdef
   >>> context.number
   42
 

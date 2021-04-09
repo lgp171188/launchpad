@@ -1,4 +1,4 @@
-# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test UEFI custom uploads."""
@@ -191,7 +191,7 @@ class FakeMethodCallLog(FakeMethod):
 class TestSigningHelpers(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestSigningHelpers, self).setUp()
@@ -231,11 +231,10 @@ class TestSigningHelpers(TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def setUpArchiveKey(self):
-        with InProcessKeyServerFixture() as keyserver:
-            yield keyserver.start()
-            key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-            yield IArchiveGPGSigningKey(self.archive).setSigningKey(
-                key_path, async_keyserver=True)
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
+        yield IArchiveGPGSigningKey(self.archive).setSigningKey(
+            key_path, async_keyserver=True)
 
     def setUpUefiKeys(self, create=True, series=None):
         if not series:
@@ -746,7 +745,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         text = upload.generateOpensslConfig('Kmod', upload.openssl_config_kmod)
 
         id_re = re.compile(r'^# KMOD OpenSSL config\n')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + '\s+Kmod')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + r'\s+Kmod')
         eku_re = re.compile(
             r'\bextendedKeyUsage\s*=\s*'
             r'codeSigning,1.3.6.1.4.1.2312.16.1.2\s*\b')
@@ -832,7 +831,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         text = upload.generateOpensslConfig('Opal', upload.openssl_config_opal)
 
         id_re = re.compile(r'^# OPAL OpenSSL config\n')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + '\s+Opal')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + r'\s+Opal')
 
         self.assertIn('[ req ]', text)
         self.assertIsNotNone(id_re.search(text))
@@ -915,7 +914,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         text = upload.generateOpensslConfig('SIPL', upload.openssl_config_sipl)
 
         id_re = re.compile(r'^# SIPL OpenSSL config\n')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + '\s+SIPL')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + r'\s+SIPL')
 
         self.assertIn('[ req ]', text)
         self.assertIsNotNone(id_re.search(text))
@@ -1632,6 +1631,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.opal", b"c")
         self.tarfile.add_file("1.0/empty.sipl", b"d")
         self.tarfile.add_file("1.0/empty.fit", b"e")
+        self.tarfile.add_file("1.0/empty.cv2-kernel", b"f")
 
         self.process_emulate()
 
@@ -1653,6 +1653,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 '1.0/control/sipl.x509',
                 '1.0/empty.fit', '1.0/empty.fit.signed',
                 '1.0/control/fit.crt',
+                '1.0/empty.cv2-kernel', '1.0/empty.cv2-kernel.sig',
+                '1.0/control/cv2-kernel.pub',
                 ], tarball.getnames())
         self.assertEqual(0, self.signing_service_client.generate.call_count)
         keys = self.signing_keys
@@ -1671,7 +1673,11 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 'empty.sipl', b'd', SigningMode.DETACHED),
             call(
                 SigningKeyType.FIT, keys[SigningKeyType.FIT].fingerprint,
-                'empty.fit', b'e', SigningMode.ATTACHED)],
+                'empty.fit', b'e', SigningMode.ATTACHED),
+            call(
+                SigningKeyType.CV2_KERNEL,
+                keys[SigningKeyType.CV2_KERNEL].fingerprint,
+                'empty.cv2-kernel', b'f', SigningMode.DETACHED)],
             self.signing_service_client.sign.call_args_list)
 
     def test_options_signed_only(self):
@@ -1685,6 +1691,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.opal", b"c")
         self.tarfile.add_file("1.0/empty.sipl", b"d")
         self.tarfile.add_file("1.0/empty.fit", b"e")
+        self.tarfile.add_file("1.0/empty.cv2-kernel", b"f")
 
         self.process_emulate()
 
@@ -1695,6 +1702,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             "1.0/empty.opal.sig", "1.0/control/opal.x509",
             "1.0/empty.sipl.sig", "1.0/control/sipl.x509",
             "1.0/empty.fit.signed", "1.0/control/fit.crt",
+            "1.0/empty.cv2-kernel.sig", "1.0/control/cv2-kernel.pub",
         ]))
         self.assertEqual(0, self.signing_service_client.generate.call_count)
         keys = self.signing_keys
@@ -1713,7 +1721,11 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 'empty.sipl', b'd', SigningMode.DETACHED),
             call(
                 SigningKeyType.FIT, keys[SigningKeyType.FIT].fingerprint,
-                'empty.fit', b'e', SigningMode.ATTACHED)],
+                'empty.fit', b'e', SigningMode.ATTACHED),
+            call(
+                SigningKeyType.CV2_KERNEL,
+                keys[SigningKeyType.CV2_KERNEL].fingerprint,
+                'empty.cv2-kernel', b'f', SigningMode.DETACHED)],
             self.signing_service_client.sign.call_args_list)
 
     def test_options_tarball_signed_only(self):
@@ -1728,6 +1740,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.opal", b"c")
         self.tarfile.add_file("1.0/empty.sipl", b"d")
         self.tarfile.add_file("1.0/empty.fit", b"e")
+        self.tarfile.add_file("1.0/empty.cv2-kernel", b"f")
         self.process_emulate()
         self.assertThat(self.getSignedPath("test", "amd64"), SignedMatches([
             "1.0/SHA256SUMS",
@@ -1743,6 +1756,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 '1.0/empty.opal.sig', '1.0/control/opal.x509',
                 '1.0/empty.sipl.sig', '1.0/control/sipl.x509',
                 '1.0/empty.fit.signed', '1.0/control/fit.crt',
+                '1.0/empty.cv2-kernel.sig', '1.0/control/cv2-kernel.pub',
             ], tarball.getnames())
         self.assertEqual(0, self.signing_service_client.generate.call_count)
         keys = self.signing_keys
@@ -1761,7 +1775,11 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 'empty.sipl', b'd', SigningMode.DETACHED),
             call(
                 SigningKeyType.FIT, keys[SigningKeyType.FIT].fingerprint,
-                'empty.fit', b'e', SigningMode.ATTACHED)],
+                'empty.fit', b'e', SigningMode.ATTACHED),
+            call(
+                SigningKeyType.CV2_KERNEL,
+                keys[SigningKeyType.CV2_KERNEL].fingerprint,
+                'empty.cv2-kernel', b'f', SigningMode.DETACHED)],
             self.signing_service_client.sign.call_args_list)
 
     def test_archive_copy(self):
@@ -1780,6 +1798,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.opal", b"c")
         self.tarfile.add_file("1.0/empty.sipl", b"d")
         self.tarfile.add_file("1.0/empty.fit", b"e")
+        self.tarfile.add_file("1.0/empty.cv2-kernel", b"f")
         self.tarfile.close()
         self.buffer.close()
 
@@ -1790,7 +1809,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         signed_path = self.getSignedPath("test", "amd64")
         self.assertThat(signed_path, SignedMatches(
             ["1.0/SHA256SUMS", "1.0/empty.efi", "1.0/empty.ko",
-             "1.0/empty.opal", "1.0/empty.sipl", "1.0/empty.fit", ]))
+             "1.0/empty.opal", "1.0/empty.sipl", "1.0/empty.fit",
+             "1.0/empty.cv2-kernel"]))
 
         self.assertEqual(0, self.signing_service_client.generate.call_count)
         self.assertEqual(0, self.signing_service_client.sign.call_count)
@@ -1809,7 +1829,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         filenames = [
             "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",
-            "1.0/empty.sipl", "1.0/empty.fit"]
+            "1.0/empty.sipl", "1.0/empty.fit", "1.0/empty.cv2-kernel"]
 
         # Write data on the archive
         self.openArchive("test", "1.0", "amd64")
@@ -1860,7 +1880,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         filenames = [
             "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",
-            "1.0/empty.sipl", "1.0/empty.fit"]
+            "1.0/empty.sipl", "1.0/empty.fit", "1.0/empty.cv2-kernel"]
 
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
@@ -1879,20 +1899,20 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         expected_signed_filenames = [
             "1.0/empty.efi.signed", "1.0/empty.ko.sig",
             "1.0/empty.opal.sig", "1.0/empty.sipl.sig",
-            "1.0/empty.fit.signed"]
+            "1.0/empty.fit.signed", "1.0/empty.cv2-kernel.sig"]
 
         expected_public_keys_filenames = [
             "1.0/control/uefi.crt", "1.0/control/kmod.x509",
             "1.0/control/opal.x509", "1.0/control/sipl.x509",
-            "1.0/control/fit.crt"]
+            "1.0/control/fit.crt", "1.0/control/cv2-kernel.pub"]
 
         signed_path = self.getSignedPath("test", "amd64")
         self.assertThat(signed_path, SignedMatches(
             ["1.0/SHA256SUMS"] + filenames + expected_public_keys_filenames +
             expected_signed_filenames))
 
-        self.assertEqual(5, self.signing_service_client.generate.call_count)
-        self.assertEqual(5, self.signing_service_client.sign.call_count)
+        self.assertEqual(6, self.signing_service_client.generate.call_count)
+        self.assertEqual(6, self.signing_service_client.sign.call_count)
 
         fingerprints = {
             key_type: data['fingerprint'] for key_type, data in
@@ -1912,7 +1932,12 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 'empty.sipl', b'data - 1.0/empty.sipl', SigningMode.DETACHED),
             call(
                 SigningKeyType.FIT, fingerprints[SigningKeyType.FIT],
-                'empty.fit', b'data - 1.0/empty.fit', SigningMode.ATTACHED)],
+                'empty.fit', b'data - 1.0/empty.fit', SigningMode.ATTACHED),
+            call(
+                SigningKeyType.CV2_KERNEL,
+                fingerprints[SigningKeyType.CV2_KERNEL],
+                'empty.cv2-kernel', b'data - 1.0/empty.cv2-kernel',
+                SigningMode.DETACHED)],
             self.signing_service_client.sign.call_args_list)
 
         # Checks that all files got signed
@@ -1920,16 +1945,18 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             signed_path, expected_signed_filenames)
         key_types = (
             SigningKeyType.UEFI, SigningKeyType.KMOD, SigningKeyType.OPAL,
-            SigningKeyType.SIPL, SigningKeyType.FIT)
+            SigningKeyType.SIPL, SigningKeyType.FIT, SigningKeyType.CV2_KERNEL)
         modes = {
             SigningKeyType.UEFI: SigningMode.ATTACHED,
             SigningKeyType.KMOD: SigningMode.DETACHED,
             SigningKeyType.OPAL: SigningMode.DETACHED,
             SigningKeyType.SIPL: SigningMode.DETACHED,
             SigningKeyType.FIT: SigningMode.ATTACHED,
+            SigningKeyType.CV2_KERNEL: SigningMode.DETACHED,
             }
         expected_signed_contents = [
-            b"signed with key_type=%s mode=%s" % (k.name, modes[k].name)
+            ("signed with key_type=%s mode=%s" % (
+                k.name, modes[k].name)).encode("UTF-8")
             for k in key_types]
         self.assertItemsEqual(expected_signed_contents, contents)
 
@@ -2083,7 +2110,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         self.assertIn(
             "INFO Skipping injection for key type UEFI: "
-            "not in [u'SIPL', u'OPAL']",
+            "not in %s" % ['SIPL', 'OPAL'],
             log_content)
 
     def test_fallback_skips_key_injection_for_existing_keys(self):

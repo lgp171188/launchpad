@@ -59,7 +59,7 @@ We stay on the same page and get an error message printed out:
   'http://blueprints.launchpad.test/firefox/+spec/svg-support/+retarget'
 
   >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-  ...     print(tag.renderContents())
+  ...     print(tag.decode_contents())
   There is 1 error.
   <BLANKLINE>
   There is no project with the name 'foo bar'. Please check that name and try again.

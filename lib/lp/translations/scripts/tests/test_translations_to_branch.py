@@ -73,7 +73,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
             path='po/messages.pot')
         template = removeSecurityProxy(template)
         potmsgset = self.factory.makePOTMsgSet(
-            template, singular='Hello World', sequence=1)
+            template, singular=u'Hello World', sequence=1)
         pofile = self.factory.makePOFile(
             'nl', potemplate=template, owner=product.owner)
         self.factory.makeCurrentTranslationMessage(
@@ -127,8 +127,8 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         self.assertEqual(set(), missing_filenames)
 
         for filename, expected in six.iteritems(expected_contents):
-            contents = branch_contents[filename].lstrip('\n')
-            pattern = dedent(expected.lstrip('\n'))
+            contents = branch_contents[filename].lstrip(b'\n')
+            pattern = dedent(expected.lstrip('\n')).encode('UTF-8')
             if not re.match(pattern, contents, re.MULTILINE):
                 self.assertEqual(pattern, contents)
 
@@ -160,14 +160,16 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         self.becomeDbUser('translationstobranch')
         self.assertFalse(db_branch.pending_writes)
         self.assertNotEqual(
-            db_branch.last_mirrored_id, tree.branch.last_revision())
+            db_branch.last_mirrored_id,
+            six.ensure_text(tree.branch.last_revision()))
         # The export code works on a Branch from the slave store.  It
         # shouldn't stop the scan request.
         slave_series = ISlaveStore(productseries).get(
             ProductSeries, productseries.id)
         exporter._exportToBranch(slave_series)
         self.assertEqual(
-            db_branch.last_mirrored_id, tree.branch.last_revision())
+            db_branch.last_mirrored_id,
+            six.ensure_text(tree.branch.last_revision()))
         self.assertTrue(db_branch.pending_writes)
         matches = MatchesRegex(
             "(.|\n)*WARNING Skipped .* due to stale DB info, and scheduled a "

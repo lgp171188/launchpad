@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functional tests for process-death-row.py script.
@@ -23,9 +23,11 @@ import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.archivepublisher.scripts.processdeathrow import DeathRowProcessor
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.testing import TestCaseWithFactory
@@ -148,28 +150,56 @@ class TestProcessDeathRow(TestCaseWithFactory):
 
     def probePublishingStatus(self, pubrec_ids, status):
         """Check if all source publishing records match the given status."""
+        store = IStore(SourcePackagePublishingHistory)
         for pubrec_id in pubrec_ids:
-            spph = SourcePackagePublishingHistory.get(pubrec_id)
+            spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertEqual(
                 spph.status, status, "ID %s -> %s (expected %s)" % (
                 spph.id, spph.status.title, status.title))
 
     def probeRemoved(self, pubrec_ids):
         """Check if all source publishing records were removed."""
+        store = IStore(SourcePackagePublishingHistory)
         right_now = datetime.datetime.now(pytz.timezone('UTC'))
         for pubrec_id in pubrec_ids:
-            spph = SourcePackagePublishingHistory.get(pubrec_id)
+            spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertTrue(
                 spph.dateremoved < right_now,
                 "ID %s -> not removed" % (spph.id))
 
     def probeNotRemoved(self, pubrec_ids):
         """Check if all source publishing records were not removed."""
+        store = IStore(SourcePackagePublishingHistory)
         for pubrec_id in pubrec_ids:
-            spph = SourcePackagePublishingHistory.get(pubrec_id)
+            spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertTrue(
                 spph.dateremoved is None,
                 "ID %s -> removed" % (spph.id))
+
+    def test_getTargetArchives_ppa(self):
+        """With --ppa, getTargetArchives returns all non-empty PPAs."""
+        ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
+        cprov_archive = getUtility(IPersonSet).getByName("cprov").archive
+        mark_archive = getUtility(IPersonSet).getByName("mark").archive
+        # Private PPAs are included too.
+        private_archive = self.factory.makeArchive(
+            distribution=ubuntutest, private=True)
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=private_archive)
+        # Empty PPAs are skipped.
+        self.factory.makeArchive(distribution=ubuntutest)
+        script = DeathRowProcessor(test_args=["-d", "ubuntutest", "--ppa"])
+        self.assertContentEqual(
+            [cprov_archive, mark_archive, private_archive],
+            script.getTargetArchives(ubuntutest))
+
+    def test_getTargetArchives_main(self):
+        """Without --ppa, getTargetArchives returns main archives."""
+        ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
+        script = DeathRowProcessor(test_args=["-d", "ubuntutest"])
+        self.assertContentEqual(
+            ubuntutest.all_distro_archives,
+            script.getTargetArchives(ubuntutest))
 
     def testDryRun(self):
         """Test we don't delete the file or change the db in dry run mode."""

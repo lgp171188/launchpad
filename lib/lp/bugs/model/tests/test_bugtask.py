@@ -11,7 +11,11 @@ import unittest
 
 from lazr.lifecycle.snapshot import Snapshot
 from storm.store import Store
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    MatchesSetwise,
+    MatchesStructure,
+    )
 from testtools.testcase import ExpectedException
 import transaction
 from zope.component import getUtility
@@ -235,12 +239,11 @@ class TestBugTaskCreation(TestCaseWithFactory):
             bug_many, mark,
             [evolution, a_distro, warty],
             status=BugTaskStatus.FIXRELEASED)
-        tasks = [(t.product, t.distribution, t.distroseries) for t in taskset]
-        tasks.sort()
 
-        self.assertEqual(tasks[0][2], warty)
-        self.assertEqual(tasks[1][1], a_distro)
-        self.assertEqual(tasks[2][0], evolution)
+        self.assertThat(taskset, MatchesSetwise(
+            MatchesStructure.byEquality(product=evolution),
+            MatchesStructure.byEquality(distribution=a_distro),
+            MatchesStructure.byEquality(distroseries=warty)))
 
     def test_accesspolicyartifacts_updated(self):
         # createManyTasks updates the AccessPolicyArtifacts related
@@ -1209,8 +1212,11 @@ class BugTaskSearchBugsElsewhereTest(unittest.TestCase):
         # Mark an upstream task on bug #1 "Fix Released"
         bug_one = bugset.get(1)
         firefox_upstream = self._getBugTaskByTarget(bug_one, firefox)
-        self.assertEqual(ServiceUsage.LAUNCHPAD,
-                         firefox_upstream.product.bug_tracking_usage)
+        if (firefox_upstream.product.bug_tracking_usage !=
+                ServiceUsage.LAUNCHPAD):
+            raise AssertionError("%s != %s" % (
+                firefox_upstream.product.bug_tracking_usage,
+                ServiceUsage.LAUNCHPAD))
         self.old_firefox_status = firefox_upstream.status
         firefox_upstream.transitionToStatus(
             BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
@@ -1231,8 +1237,12 @@ class BugTaskSearchBugsElsewhereTest(unittest.TestCase):
 
         # Get a debbugs watch.
         watch_debbugs_327452 = bugwatchset.get(9)
-        self.assertEqual(watch_debbugs_327452.bugtracker.name, "debbugs")
-        self.assertEqual(watch_debbugs_327452.remotebug, "327452")
+        if watch_debbugs_327452.bugtracker.name != "debbugs":
+            raise AssertionError(
+                "%r != 'debbugs'" % watch_debbugs_327452.bugtracker.name)
+        if watch_debbugs_327452.remotebug != "327452":
+            raise AssertionError(
+                "%r != '327452'" % watch_debbugs_327452.remotebug)
 
         # Associate the watch to a Fix Released task.
         debian = getUtility(IDistributionSet).getByName("debian")
@@ -1625,11 +1635,9 @@ class TestBugTaskMilestones(TestCaseWithFactory):
             self.product_bug.default_bugtask,
             self.distribution_bug.default_bugtask,
             ]
-        milestones = sorted(
+        self.assertContentEqual(
+            [self.product_milestone, self.distribution_milestone],
             self.bugtaskset.getBugTaskTargetMilestones(tasks))
-        self.assertEqual(
-            sorted([self.product_milestone, self.distribution_milestone]),
-            milestones)
 
 
 class TestConjoinedBugTasks(TestCaseWithFactory):
@@ -3273,7 +3281,7 @@ class TestTargetNameCache(TestCase):
         process = subprocess.Popen(
             'cronscripts/update-bugtask-targetnamecaches.py', shell=True,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE, universal_newlines=True)
         (out, err) = process.communicate()
 
         self.assertTrue(err.startswith(("INFO    Creating lockfile: "
@@ -3281,7 +3289,8 @@ class TestTargetNameCache(TestCase):
         self.assertTrue('INFO    Updating targetname cache of bugtasks' in err)
         self.assertTrue('INFO    Calculating targets.' in err)
         self.assertTrue('INFO    Will check ' in err)
-        self.assertTrue("INFO    Updating (u'Mozilla Thunderbird',)" in err)
+        self.assertTrue(
+            ('INFO    Updating ' + repr((u'Mozilla Thunderbird',))) in err)
         self.assertTrue('INFO    Updated 1 target names.' in err)
         self.assertTrue('INFO    Finished updating targetname cache' in err)
 

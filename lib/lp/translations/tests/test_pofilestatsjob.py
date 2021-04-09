@@ -45,7 +45,7 @@ class TestPOFileStatsJob(TestCaseWithFactory):
 
     def test_run(self):
         # Running a job causes the POFile statistics to be updated.
-        singular = self.factory.getUniqueString()
+        singular = self.factory.getUniqueUnicode()
         pofile = self.factory.makePOFile(side=TranslationSide.UPSTREAM)
         # Create a message so we have something to have statistics about.
         self.factory.makePOTMsgSet(pofile.potemplate, singular)
@@ -66,7 +66,7 @@ class TestPOFileStatsJob(TestCaseWithFactory):
         potemplate = self.factory.makePOTemplate(productseries=productseries)
         pofile = self.factory.makePOFile('en', potemplate)
         # Create a message so we have something to have statistics about.
-        singular = self.factory.getUniqueString()
+        singular = self.factory.getUniqueUnicode()
         self.factory.makePOTMsgSet(pofile.potemplate, singular)
         # The statistics are still at 0, even though there is a message.
         self.assertEqual(potemplate.messageCount(), 0)
@@ -209,7 +209,7 @@ class TestViaCelery(TestCaseWithFactory):
         self.useFixture(FeatureFixture(
             {'jobs.celery.enabled_classes': 'POFileStatsJob'}))
         # Running a job causes the POFile statistics to be updated.
-        singular = self.factory.getUniqueString()
+        singular = self.factory.getUniqueUnicode()
         pofile = self.factory.makePOFile(side=TranslationSide.UPSTREAM)
         # Create a message so we have something to have statistics about.
         self.factory.makePOTMsgSet(pofile.potemplate, singular)

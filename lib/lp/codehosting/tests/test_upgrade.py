@@ -48,7 +48,7 @@ class TestUpgrader(TestCaseWithFactory):
         self.useBzrBranches(direct_database=True)
         branch, tree = self.create_branch_and_tree(format=format)
         tree.commit(
-            'foo', rev_id='prepare-commit', committer='jrandom@example.com')
+            'foo', rev_id=b'prepare-commit', committer='jrandom@example.com')
         if loomify_branch:
             loomify(tree.branch)
             bzr_branch = tree.controldir.open_branch()
@@ -155,7 +155,7 @@ class TestUpgrader(TestCaseWithFactory):
         with read_locked(upgrader.bzr_branch):
             upgrader.start_upgrade()
             upgraded = upgrader.add_upgraded_branch().open_branch()
-        self.assertEqual('prepare-commit', upgraded.last_revision())
+        self.assertEqual(b'prepare-commit', upgraded.last_revision())
 
     def test_create_upgraded_repository_preserves_dead_heads(self):
         """Fetch-based upgrade preserves heads in the repository."""
@@ -165,7 +165,7 @@ class TestUpgrader(TestCaseWithFactory):
             upgrader.create_upgraded_repository()
         upgraded = upgrader.get_bzrdir().open_repository()
         self.assertEqual(
-            'foo', upgraded.get_revision('prepare-commit').message)
+            'foo', upgraded.get_revision(b'prepare-commit').message)
 
     def test_create_upgraded_repository_uses_target_subdir(self):
         """The repository is created in the right place."""
@@ -177,11 +177,11 @@ class TestUpgrader(TestCaseWithFactory):
     def test_add_upgraded_branch_preserves_tags(self):
         """Fetch-based upgrade preserves heads in the repository."""
         upgrader = self.prepare('pack-0.92-subtree')
-        upgrader.bzr_branch.tags.set_tag('steve', 'rev-id')
+        upgrader.bzr_branch.tags.set_tag('steve', b'rev-id')
         with read_locked(upgrader.bzr_branch):
             upgrader.start_upgrade()
             upgraded = upgrader.add_upgraded_branch().open_branch()
-        self.assertEqual('rev-id', upgraded.tags.lookup_tag('steve'))
+        self.assertEqual(b'rev-id', upgraded.tags.lookup_tag('steve'))
 
     def test_has_tree_references(self):
         """Detects whether repo contains actual tree references."""
@@ -239,7 +239,7 @@ class TestUpgrader(TestCaseWithFactory):
         upgraded = upgrader.get_bzrdir().open_repository()
         self.assertIs(RepositoryFormat2a, upgraded._format.__class__)
         self.assertEqual(
-            'foo', upgraded.get_revision('prepare-commit').message)
+            'foo', upgraded.get_revision(b'prepare-commit').message)
 
     def test_finish_upgrade_fetches(self):
         """finish_upgrade fetches new changes into the branch."""
@@ -273,7 +273,7 @@ class TestUpgrader(TestCaseWithFactory):
         self.assertIs(RepositoryFormat2a,
             upgraded.repository._format.__class__)
         self.assertEqual(
-            'foo', upgraded.repository.get_revision('prepare-commit').message)
+            'foo', upgraded.repository.get_revision(b'prepare-commit').message)
 
     def test_invalid_stacking(self):
         """Upgrade tolerates branches stacked on different-format branches."""

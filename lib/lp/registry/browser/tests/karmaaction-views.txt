@@ -18,7 +18,7 @@ The karma action set +index view lists all the karma actions.
     >>> user = getUtility(ILaunchBag).user
     >>> view = create_view(karmaactionset, '+index', principal=user,
     ...     path_info='/karmaaction')
-    >>> print extract_text(find_tag_by_id(view(), 'karmas'))
+    >>> print(extract_text(find_tag_by_id(view(), 'karmas')))
     Category        Action          Points
     bugs            Bug Accepted    5
     ...
@@ -32,13 +32,13 @@ view provides a label, page_title and a cancel_url
 
     >>> action = karmaactionset.getByName('branchcreated')
     >>> view = create_initialized_view(action, '+index')
-    >>> print view.label
+    >>> print(view.label)
     Edit New branch registered karma action
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Edit New branch registered karma action
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/karmaaction
 
 The admin can edit the karma action's fields.
@@ -58,7 +58,7 @@ The admin can edit the karma action's fields.
     >>> view.errors
     []
 
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/karmaaction
 
     >>> action.points

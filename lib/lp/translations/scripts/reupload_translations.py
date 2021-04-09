@@ -113,6 +113,6 @@ class ReuploadPackageTranslations(LaunchpadScript):
                 filename_filter=_filter_ubuntu_translation_file)
 
         if not have_uploads:
-            self.logger.warn(
+            self.logger.warning(
                 "Found no translations upload for %s." % package.displayname)
             self.uploadless_packages.append(package)

@@ -203,7 +203,8 @@
             class="lp.translations.model.translationimportqueue.TranslationImportQueue"
             provides="lp.translations.interfaces.translationimportqueue.ITranslationImportQueue">
             <allow
-                interface="lp.translations.interfaces.translationimportqueue.ITranslationImportQueue"/>
+                interface="lp.translations.interfaces.translationimportqueue.ITranslationImportQueue"
+                attributes="__len__"/>
         </securedutility>
     <class
         class="lp.translations.model.pofiletranslator.POFileTranslator">
@@ -375,7 +376,8 @@
         <class
             class="lp.translations.model.potemplate.POTemplate">
             <allow
-                interface="lp.translations.interfaces.potemplate.IPOTemplate"/>
+                interface="lp.translations.interfaces.potemplate.IPOTemplate"
+                attributes="__len__"/>
             <require
                 permission="launchpad.TranslationsAdmin"
                 set_attributes="

@@ -15,7 +15,7 @@ Get a PO template.
 Check that the PO template has a certain message ID.
 
     >>> from lp.translations.model.pomsgid import POMsgID
-    >>> pomsgid = POMsgID.byMsgid('evolution addressbook')
+    >>> pomsgid = POMsgID.getByMsgid('evolution addressbook')
     >>> template.hasMessageID(pomsgid, None)
     True
 

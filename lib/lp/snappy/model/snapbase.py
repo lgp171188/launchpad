@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bases for snaps."""
@@ -11,6 +11,7 @@ __all__ = [
     ]
 
 import pytz
+import six
 from storm.locals import (
     Bool,
     DateTime,
@@ -21,9 +22,13 @@ from storm.locals import (
     Storm,
     Unicode,
     )
+from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
+from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.model.person import Person
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -35,6 +40,13 @@ from lp.snappy.interfaces.snapbase import (
     ISnapBaseSet,
     NoSuchSnapBase,
     )
+from lp.soyuz.interfaces.archive import (
+    ArchiveDependencyError,
+    ComponentNotFound,
+    )
+from lp.soyuz.interfaces.component import IComponentSet
+from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archivedependency import ArchiveDependency
 
 
 @implementer(ISnapBase)
@@ -72,6 +84,63 @@ class SnapBase(Storm):
         self.build_channels = build_channels
         self.date_created = date_created
         self.is_default = False
+
+    @property
+    def dependencies(self):
+        """See `ISnapBase`."""
+        return IStore(ArchiveDependency).find(
+            ArchiveDependency,
+            ArchiveDependency.dependency == Archive.id,
+            Archive.owner == Person.id,
+            ArchiveDependency.snap_base == self).order_by(Person.display_name)
+
+    def getArchiveDependency(self, dependency):
+        """See `ISnapBase`."""
+        return IStore(ArchiveDependency).find(
+            ArchiveDependency, snap_base=self, dependency=dependency).one()
+
+    def addArchiveDependency(self, dependency, pocket, component=None):
+        """See `ISnapBase`."""
+        archive_dependency = self.getArchiveDependency(dependency)
+        if archive_dependency is not None:
+            raise ArchiveDependencyError(
+                "This dependency is already registered.")
+        # XXX cjwatson 2021-03-19: Relax this once we have a way to dispatch
+        # appropriate tokens for snap builds whose base has dependencies on
+        # private archives.
+        if dependency.private:
+            raise ArchiveDependencyError("This dependency is private.")
+        if not dependency.enabled:
+            raise ArchiveDependencyError("Dependencies must not be disabled.")
+
+        if dependency.is_ppa:
+            if pocket is not PackagePublishingPocket.RELEASE:
+                raise ArchiveDependencyError(
+                    "Non-primary archives only support the RELEASE pocket.")
+            if (component is not None and
+                    component != dependency.default_component):
+                raise ArchiveDependencyError(
+                    "Non-primary archives only support the '%s' component." %
+                    dependency.default_component.name)
+        return ArchiveDependency(
+            parent=self, dependency=dependency, pocket=pocket,
+            component=component)
+
+    def _addArchiveDependency(self, dependency, pocket, component=None):
+        """See `ISnapBase`."""
+        if isinstance(component, six.text_type):
+            try:
+                component = getUtility(IComponentSet)[component]
+            except NotFoundError as e:
+                raise ComponentNotFound(e)
+        return self.addArchiveDependency(dependency, pocket, component)
+
+    def removeArchiveDependency(self, dependency):
+        """See `ISnapBase`."""
+        archive_dependency = self.getArchiveDependency(dependency)
+        if archive_dependency is None:
+            raise ArchiveDependencyError("This dependency does not exist.")
+        archive_dependency.destroySelf()
 
     def destroySelf(self):
         """See `ISnapBase`."""

@@ -50,12 +50,12 @@ understood by any member of the support community.
     already finds nothing.
 
     #>>> for row in similar_questions.findAll('tr', 'noted'):
-    #...     row.find('a').renderContents()
+    #...     row.find('a').decode_contents()
     #'Installation of Java Runtime Environment for Mozilla'
     #'Problema al recompilar kernel con soporte smp (doble-n\xc3\xbacleo)'
 
     >>> for tag in find_tags_by_class(browser.contents, 'warning message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     <strong>Portuguese (Brazil) (pt_BR)</strong> doesn't seem to be
     a language spoken by any answer contacts in this community. If you
     go ahead and ask a question in that language, no answer
@@ -129,7 +129,7 @@ Welsh, we'll have to warn them.
     'http://launchpad.test/ubuntu/+addquestion'
 
     >>> for tag in find_tags_by_class(browser.contents, 'warning message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     <strong>Welsh (cy)</strong> doesn't seem to be
     a language spoken by any answer contacts in this community. If you
     go ahead and ask a question in that language, no answer
@@ -147,7 +147,7 @@ display the warning again.
     >>> browser.getControl('Post Question').click()
 
     >>> for tag in find_tags_by_class(browser.contents, 'warning message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     <strong>Japanese (ja)</strong> doesn't seem to be
     a language spoken by any answer contacts in this community. If you
     go ahead and ask a question in that language, no answer
@@ -160,6 +160,6 @@ new question.
     >>> browser.getControl('Post Question').click()
     >>> browser.url
     '.../ubuntu/+question/...'
-    >>> print(browser.title.decode('utf-8'))
+    >>> print(six.ensure_text(browser.title))
     Question #... : Questions : Ubuntu
     >>> portlet = find_tag_by_id(browser.contents, 'portlet-details')

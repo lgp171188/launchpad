@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad Pillars share a namespace.
@@ -11,15 +11,20 @@ __metaclass__ = type
 from operator import attrgetter
 import warnings
 
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
     StringCol,
     )
+from storm.databases.postgres import Case
 from storm.expr import (
     And,
+    Coalesce,
+    Desc,
     LeftJoin,
-    SQL,
+    Lower,
+    Or,
     )
 from storm.info import ClassAlias
 from storm.store import Store
@@ -50,11 +55,11 @@ from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
+from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormexpr import (
+    fti_search,
+    rank_by_fti,
     )
-from lp.services.helpers import ensure_unicode
 from lp.services.librarian.model import LibraryFileAlias
 
 
@@ -91,7 +96,7 @@ class PillarNameSet:
 
     def __contains__(self, name):
         """See `IPillarNameSet`."""
-        name = ensure_unicode(name)
+        name = six.ensure_text(name)
         result = IStore(PillarName).execute("""
             SELECT TRUE
             FROM PillarName
@@ -134,7 +139,7 @@ class PillarNameSet:
             query %= " AND active IS TRUE"
         else:
             query %= ""
-        name = ensure_unicode(name)
+        name = six.ensure_text(name)
         result = IStore(PillarName).execute(query, [name, name])
         row = result.get_one()
         if row is None:
@@ -172,20 +177,16 @@ class PillarNameSet:
             LeftJoin(
                 Distribution, PillarName.distribution == Distribution.id),
             ]
-        conditions = SQL('''
-            PillarName.active = TRUE
-            AND (PillarName.name = lower(%(text)s) OR
-
-                 Product.fti @@ ftq(%(text)s) OR
-                 lower(Product.title) = lower(%(text)s) OR
-
-                 Project.fti @@ ftq(%(text)s) OR
-                 lower(Project.title) = lower(%(text)s) OR
-
-                 Distribution.fti @@ ftq(%(text)s) OR
-                 lower(Distribution.title) = lower(%(text)s)
-                )
-            ''' % sqlvalues(text=ensure_unicode(text)))
+        conditions = And(
+            PillarName.active,
+            Or(
+                PillarName.name == Lower(text),
+                fti_search(Product, text),
+                Lower(Product._title) == Lower(text),
+                fti_search(ProjectGroup, text),
+                Lower(ProjectGroup._title) == Lower(text),
+                fti_search(Distribution, text),
+                Lower(Distribution._title) == Lower(text)))
         columns = [
             PillarName, OtherPillarName, Product, ProjectGroup, Distribution]
         return IStore(PillarName).using(*origin).find(
@@ -193,14 +194,21 @@ class PillarNameSet:
             And(conditions, ProductSet.getProductPrivacyFilter(user)))
 
     def count_search_matches(self, user, text):
+        text = six.ensure_text(text)
         result = self.build_search_query(user, text)
         return result.count()
 
     def search(self, user, text, limit):
         """See `IPillarSet`."""
-        # Avoid circular import.
-        from lp.registry.model.product import get_precached_products
+        # Avoid circular imports.
+        from lp.registry.model.distribution import Distribution
+        from lp.registry.model.product import (
+            get_precached_products,
+            Product,
+            )
+        from lp.registry.model.projectgroup import ProjectGroup
 
+        text = six.ensure_text(text)
         if limit is None:
             limit = config.launchpad.default_batch_size
 
@@ -216,17 +224,20 @@ class PillarNameSet:
         # of either the Product, Project, or Distribution tables,
         # so the coalesce() is necessary to find the ts_rank() which
         # is not null.
-        result.order_by(SQL('''
-            (CASE WHEN PillarName.name = lower(%(text)s)
-                      OR lower(Product.title) = lower(%(text)s)
-                      OR lower(Project.title) = lower(%(text)s)
-                      OR lower(Distribution.title) = lower(%(text)s)
-                THEN 9999999
-                ELSE coalesce(ts_rank(Product.fti, ftq(%(text)s)),
-                              ts_rank(Project.fti, ftq(%(text)s)),
-                              ts_rank(Distribution.fti, ftq(%(text)s)))
-            END) DESC, PillarName.name
-            ''' % sqlvalues(text=text)))
+        result.order_by(
+            Desc(Case(
+                cases=(
+                    (Or(
+                        PillarName.name == Lower(text),
+                        Lower(Product._title) == Lower(text),
+                        Lower(ProjectGroup._title) == Lower(text),
+                        Lower(Distribution._title) == Lower(text)),
+                     9999999),),
+                default=Coalesce(
+                    rank_by_fti(Product, text, desc=False),
+                    rank_by_fti(ProjectGroup, text, desc=False),
+                    rank_by_fti(Distribution, text, desc=False)))),
+            PillarName.name)
         # People shouldn't be calling this method with too big limits
         longest_expected = 2 * config.launchpad.default_batch_size
         if limit > longest_expected:
@@ -249,24 +260,23 @@ class PillarNameSet:
 
     def add_featured_project(self, project):
         """See `IPillarSet`."""
-        query = """
-            PillarName.name = %s
-            AND PillarName.id = FeaturedProject.pillar_name
-            """ % sqlvalues(project.name)
-        existing = FeaturedProject.selectOne(
-            query, clauseTables=['PillarName'])
+        existing = IStore(FeaturedProject).find(
+            FeaturedProject,
+            PillarName.name == project.name,
+            PillarName.id == FeaturedProject.pillar_name_id).one()
         if existing is None:
-            pillar_name = PillarName.selectOneBy(name=project.name)
-            return FeaturedProject(pillar_name=pillar_name.id)
+            pillar_name = IStore(PillarName).find(
+                PillarName, name=project.name).one()
+            featured_project = FeaturedProject(pillar_name=pillar_name)
+            IStore(FeaturedProject).add(featured_project)
+            return featured_project
 
     def remove_featured_project(self, project):
         """See `IPillarSet`."""
-        query = """
-            PillarName.name = %s
-            AND PillarName.id = FeaturedProject.pillar_name
-            """ % sqlvalues(project.name)
-        existing = FeaturedProject.selectOne(
-            query, clauseTables=['PillarName'])
+        existing = IStore(FeaturedProject).find(
+            FeaturedProject,
+            PillarName.name == project.name,
+            PillarName.id == FeaturedProject.pillar_name_id).one()
         if existing is not None:
             existing.destroySelf()
 
@@ -280,7 +290,7 @@ class PillarNameSet:
 
         store = IStore(PillarName)
         pillar_names = store.find(
-            PillarName, PillarName.id == FeaturedProject.pillar_name)
+            PillarName, PillarName.id == FeaturedProject.pillar_name_id)
 
         def preload_pillars(rows):
             pillar_names = (

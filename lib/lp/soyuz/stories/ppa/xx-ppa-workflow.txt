@@ -167,9 +167,10 @@ Even if we try the URL directly:
 
     >>> cprov_browser.open(
     ...    "http://launchpad.test/~landscape-developers/+activate-ppa")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (..., 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (..., 'launchpad.Edit')
 
 Let's proceed with the required permissions:
 
@@ -269,7 +270,7 @@ Similarly to users, teams with active PPAs cannot be renamed either.
     >>> sample_browser.getControl(name='field.name').value = 'duderinos'
     Traceback (most recent call last):
     ...
-    LookupError: name u'field.name'
+    LookupError: name ...'field.name'
     ...
 
     >>> print(extract_text(
@@ -319,9 +320,10 @@ virtualisation settings, and so on.
 
     >>> sample_browser.open("http://launchpad.test/~jblack/+archive")
     >>> print(sample_browser.getLink("Administer archive"))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> admin_browser.open("http://launchpad.test/~jblack/+archive")
     >>> admin_browser.getLink("Administer archive").click()
@@ -350,9 +352,10 @@ Trying to shortcut the URL as a non-privileged user does not work:
 
     >>> sample_browser.open(
     ...     "http://launchpad.test/~jblack/+archive/ppa/+admin")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 The administration procedure allows administrators to:
 
@@ -557,7 +560,7 @@ all their PPAs.
     >>> cprov_browser.getControl(name="field.accepted")
     Traceback (most recent call last):
     ...
-    LookupError: name u'field.accepted'
+    LookupError: name ...'field.accepted'
     ...
 
     >>> print(extract_text(
@@ -675,14 +678,16 @@ required.
 And direct access to the PPA page is also denied.
 
     >>> anon_browser.open("http://launchpad.test/~cprov/+archive/edge")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> browser.open("http://launchpad.test/~cprov/+archive/edge")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Deleted PPAs don't even show up for the owner.
 
@@ -753,9 +758,10 @@ navigation menu.
 
     >>> anon_browser.open("http://launchpad.test/~no-priv/+archive/ppa")
     >>> print(anon_browser.getLink("Delete PPA"))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> no_priv_browser.open("http://launchpad.test/~no-priv/+archive/ppa")
     >>> no_priv_browser.getLink("Delete PPA").click()
@@ -806,20 +812,23 @@ However, most of the action links are removed for deleted PPAs, so you can
 no longer "Delete packages", "Edit PPA dependencies", or "Change details".
 
     >>> print(no_priv_browser.getLink("Change details"))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> print(no_priv_browser.getLink("Edit PPA dependencies"))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> no_priv_browser.getLink("View package details").click()
     >>> print(no_priv_browser.getLink("Delete packages"))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Even if someone URL-hacks to the edit form, it's not possible to
 reenable the PPA or turn on publishing.

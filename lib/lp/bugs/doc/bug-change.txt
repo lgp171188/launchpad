@@ -205,10 +205,10 @@ If get_bug_change_class() is asked for a BugChange for an object or
 field that it doesn't know about, it will raise a NoBugChangeFoundError.
 
     >>> get_bug_change_class(object(), 'fooix')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NoBugChangeFoundError: Unable to find a suitable BugChange for field
-    'fooix' on object <object object at ...>
+    lp.bugs.adapters.bugchange.NoBugChangeFoundError: Unable to find a suitable BugChange for field 'fooix' on object <object object at ...>
 
 For fields it knows about, it will return a more suitable class.
 
@@ -239,9 +239,9 @@ method.
 
     >>> activity_data = simple_change.getBugActivity()
     >>> print(pretty(activity_data))
-    {'newvalue': u'Spam',
-     'oldvalue': u'Reality is on the blink again',
-     'whatchanged': u'title'}
+    {'newvalue': 'Spam',
+     'oldvalue': 'Reality is on the blink again',
+     'whatchanged': 'title'}
 
 
 === BugDescriptionChange ===
@@ -334,9 +334,9 @@ other attribute change. The list of tags is converted to a
 space-separated string for display.
 
     >>> print(pretty(tags_change.getBugActivity()))
-    {'newvalue': u'second-tag third-tag zillionth-tag',
-     'oldvalue': u'first-tag second-tag third-tag',
-     'whatchanged': u'tags'}
+    {'newvalue': 'second-tag third-tag zillionth-tag',
+     'oldvalue': 'first-tag second-tag third-tag',
+     'whatchanged': 'tags'}
 
 Addtions and removals are expressed separately in the notification.
 
@@ -362,7 +362,7 @@ when a CVE is linked to a bug.
     ...     when=nowish, person=example_person, cve=cve)
 
     >>> print(pretty(bug_cve_linked.getBugActivity()))
-    {'newvalue': u'1999-8979',
+    {'newvalue': '1999-8979',
      'whatchanged': 'cve linked'}
 
     >>> print(bug_cve_linked.getBugNotification()['text'])
@@ -374,7 +374,7 @@ And when a CVE is unlinked from a bug.
     ...     when=nowish, person=example_person, cve=cve)
 
     >>> print(pretty(bug_cve_unlinked.getBugActivity()))
-    {'oldvalue': u'1999-8979',
+    {'oldvalue': '1999-8979',
      'whatchanged': 'cve unlinked'}
 
     >>> print(bug_cve_unlinked.getBugNotification()['text'])
@@ -400,7 +400,7 @@ You can add an attachment...
 
     >>> print(pretty(attachment_change.getBugActivity()))
     {'newvalue':
-         u'sample-attachment http://bugs.launchpad.test/bugs/...+files/...',
+         'sample-attachment http://bugs.launchpad.test/bugs/...+files/...',
      'oldvalue': None,
      'whatchanged': 'attachment added'}
 
@@ -418,7 +418,7 @@ Or remove one.
     >>> print(pretty(attachment_change.getBugActivity()))
     {'newvalue': None,
      'oldvalue':
-         u'sample-attachment http://bugs.launchpad.test/bugs/...+files/...',
+         'sample-attachment http://bugs.launchpad.test/bugs/...+files/...',
      'whatchanged': 'attachment removed'}
 
     >>> print(attachment_change.getBugNotification()['text'])
@@ -482,7 +482,7 @@ the user what has changed.
     >>> print(pretty(status_change.getBugActivity()))
     {'newvalue': 'Fix Released',
      'oldvalue': 'New',
-     'whatchanged': u'heart-of-gold: status'}
+     'whatchanged': 'heart-of-gold: status'}
 
     >>> notification_text = status_change.getBugNotification()['text']
     >>> print(notification_text) #doctest: -NORMALIZE_WHITESPACE
@@ -506,7 +506,7 @@ describe to the user what has changed.
     >>> print(pretty(importance_change.getBugActivity()))
     {'newvalue': 'Critical',
      'oldvalue': 'Undecided',
-     'whatchanged': u'heart-of-gold: importance'}
+     'whatchanged': 'heart-of-gold: importance'}
 
     >>> notification_text = importance_change.getBugNotification()['text']
     >>> print(notification_text) #doctest: -NORMALIZE_WHITESPACE
@@ -531,9 +531,9 @@ the user what has changed.
     ...     person=example_person, what_changed='milestone',
     ...     old_value=None, new_value=milestone)
     >>> print(pretty(milestone_change.getBugActivity()))
-    {'newvalue': u'example-milestone',
+    {'newvalue': 'example-milestone',
      'oldvalue': None,
-     'whatchanged': u'heart-of-gold: milestone'}
+     'whatchanged': 'heart-of-gold: milestone'}
 
     >>> notification_text = milestone_change.getBugNotification()['text']
     >>> print(notification_text) #doctest: -NORMALIZE_WHITESPACE
@@ -560,9 +560,9 @@ user what has changed.
     ...     person=example_person, what_changed='bugwatch',
     ...     old_value=None, new_value=bug_watch)
     >>> print(pretty(bug_watch_change.getBugActivity()))
-    {'newvalue': u'bugs.example.com/ #1245',
+    {'newvalue': 'bugs.example.com/ #1245',
      'oldvalue': None,
-     'whatchanged': u'heart-of-gold: remote watch'}
+     'whatchanged': 'heart-of-gold: remote watch'}
 
     >>> notification_text = bug_watch_change.getBugNotification()['text']
     >>> print(notification_text) #doctest: -NORMALIZE_WHITESPACE
@@ -583,9 +583,9 @@ describe to the user what has changed.
     ...     person=example_person, what_changed='assignee',
     ...     old_value=None, new_value=example_person)
     >>> print(pretty(assignee_change.getBugActivity()))
-    {'newvalue': u'Ford Prefect (ford-prefect)',
+    {'newvalue': 'Ford Prefect (ford-prefect)',
      'oldvalue': None,
-     'whatchanged': u'heart-of-gold: assignee'}
+     'whatchanged': 'heart-of-gold: assignee'}
 
     >>> notification_text = assignee_change.getBugNotification()['text']
     >>> print(notification_text) #doctest: -NORMALIZE_WHITESPACE
@@ -610,8 +610,8 @@ attribute for the values to use in the activity log.
     ...     old_value=example_bug_task.target,
     ...     new_value=new_target)
     >>> print(pretty(target_change.getBugActivity()))
-    {'newvalue': u'magrathea',
-     'oldvalue': u'heart-of-gold',
+    {'newvalue': 'magrathea',
+     'oldvalue': 'heart-of-gold',
      'whatchanged': 'affects'}
 
     >>> notification_text = target_change.getBugNotification()['text']

@@ -1187,7 +1187,7 @@ class SearchAllQuestionsView(SearchQuestionsView):
 
     display_target_column = True
     # Match contiguous digits, optionally prefixed with a '#'.
-    id_pattern = re.compile('^#?(\d+)$')
+    id_pattern = re.compile(r'^#?(\d+)$')
 
     @property
     def pageheading(self):

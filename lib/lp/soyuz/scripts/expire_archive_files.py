@@ -3,15 +3,39 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
+from storm.expr import (
+    And,
+    Cast,
+    Except,
+    Not,
+    Or,
+    Select,
+    )
+
+from lp.registry.model.person import Person
+from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormexpr import (
+    Concatenate,
+    IsTrue,
+    )
+from lp.services.librarian.model import LibraryFileAlias
 from lp.services.scripts.base import LaunchpadCronScript
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.files import (
+    BinaryPackageFile,
+    SourcePackageReleaseFile,
+    )
+from lp.soyuz.model.publishing import (
+    BinaryPackagePublishingHistory,
+    SourcePackagePublishingHistory,
+    )
 
 # PPA owners or particular PPAs that we never want to expire.
 BLACKLISTED_PPAS = """
-adobe-isv
 bzr
 bzr-beta-ppa
 bzr-nightly-ppa
@@ -34,8 +58,11 @@ wheelbarrow
 # Particular PPAs (not owners, unlike the whitelist) that should be
 # expired even if they're private.
 WHITELISTED_PPAS = """
+adobe-isv/flash64
+adobe-isv/ppa
 kubuntu-ninjas/ppa
 landscape/lds-trunk
+moblin/moblin-private-beta
 """.split()
 
 
@@ -60,125 +87,61 @@ class ArchiveExpirer(LaunchpadCronScript):
             help=("The number of days after which to expire binaries. "
                   "Must be specified."))
 
-    def determineSourceExpirables(self, num_days):
-        """Return expirable libraryfilealias IDs."""
-        stay_of_execution = '%d days' % num_days
+    def _determineExpirables(self, num_days, binary):
+        stay_of_execution = Cast('%d days' % num_days, 'interval')
         archive_types = (ArchivePurpose.PPA, ArchivePurpose.PARTNER)
+
+        LFA = LibraryFileAlias
+        if binary:
+            xPF = BinaryPackageFile
+            xPPH = BinaryPackagePublishingHistory
+            xPR_join = xPF.binarypackagerelease == xPPH.binarypackagereleaseID
+        else:
+            xPF = SourcePackageReleaseFile
+            xPPH = SourcePackagePublishingHistory
+            xPR_join = xPF.sourcepackagerelease == xPPH.sourcepackagereleaseID
+        full_archive_name = Concatenate(
+            Person.name, Concatenate('/', Archive.name))
 
         # The subquery here has to repeat the checks for privacy and
         # blacklisting on *other* publications that are also done in
         # the main loop for the archive being considered.
-        results = self.store.execute("""
-            SELECT lfa.id
-            FROM
-                LibraryFileAlias AS lfa,
-                Archive,
-                SourcePackageReleaseFile AS sprf,
-                SourcePackageRelease AS spr,
-                SourcePackagePublishingHistory AS spph
-            WHERE
-                lfa.id = sprf.libraryfile
-                AND spr.id = sprf.sourcepackagerelease
-                AND spph.sourcepackagerelease = spr.id
-                AND spph.dateremoved < (
-                    CURRENT_TIMESTAMP AT TIME ZONE 'UTC' -
-                    interval %(stay_of_execution)s)
-                AND spph.archive = archive.id
-                AND archive.purpose IN %(archive_types)s
-                AND lfa.expires IS NULL
-            EXCEPT
-            SELECT sprf.libraryfile
-            FROM
-                SourcePackageRelease AS spr,
-                SourcePackageReleaseFile AS sprf,
-                SourcePackagePublishingHistory AS spph,
-                Archive AS a,
-                Person AS p
-            WHERE
-                spr.id = sprf.sourcepackagerelease
-                AND spph.sourcepackagerelease = spr.id
-                AND spph.archive = a.id
-                AND p.id = a.owner
-                AND (
-                    ((p.name IN %(blacklist)s
-                      OR (p.name || '/' || a.name) IN %(blacklist)s)
-                     AND a.purpose = %(ppa)s)
-                    OR (a.private IS TRUE
-                        AND (p.name || '/' || a.name) NOT IN %(whitelist)s)
-                    OR a.purpose NOT IN %(archive_types)s
-                    OR dateremoved >
-                        CURRENT_TIMESTAMP AT TIME ZONE 'UTC' -
-                        interval %(stay_of_execution)s
-                    OR dateremoved IS NULL);
-            """ % sqlvalues(
-                stay_of_execution=stay_of_execution,
-                archive_types=archive_types,
-                blacklist=self.blacklist,
-                whitelist=self.whitelist,
-                ppa=ArchivePurpose.PPA))
+        eligible = Select(
+            LFA.id,
+            where=And(
+                xPF.libraryfile == LFA.id,
+                xPR_join,
+                xPPH.dateremoved < UTC_NOW - stay_of_execution,
+                xPPH.archive == Archive.id,
+                Archive.purpose.is_in(archive_types),
+                LFA.expires == None))
+        denied = Select(
+            xPF.libraryfileID,
+            where=And(
+                xPR_join,
+                xPPH.archive == Archive.id,
+                Archive.owner == Person.id,
+                Or(
+                    And(
+                        Or(
+                            Person.name.is_in(self.blacklist),
+                            full_archive_name.is_in(self.blacklist)),
+                        Archive.purpose == ArchivePurpose.PPA),
+                    And(
+                        IsTrue(Archive._private),
+                        Not(full_archive_name.is_in(self.whitelist))),
+                    Not(Archive.purpose.is_in(archive_types)),
+                    xPPH.dateremoved > UTC_NOW - stay_of_execution,
+                    xPPH.dateremoved == None)))
+        return list(self.store.execute(Except(eligible, denied)))
 
-        lfa_ids = results.get_all()
-        return lfa_ids
+    def determineSourceExpirables(self, num_days):
+        """Return expirable libraryfilealias IDs."""
+        return self._determineExpirables(num_days=num_days, binary=False)
 
     def determineBinaryExpirables(self, num_days):
         """Return expirable libraryfilealias IDs."""
-        stay_of_execution = '%d days' % num_days
-        archive_types = (ArchivePurpose.PPA, ArchivePurpose.PARTNER)
-
-        # The subquery here has to repeat the checks for privacy and
-        # blacklisting on *other* publications that are also done in
-        # the main loop for the archive being considered.
-        results = self.store.execute("""
-            SELECT lfa.id
-            FROM
-                LibraryFileAlias AS lfa,
-                Archive,
-                BinaryPackageFile AS bpf,
-                BinaryPackageRelease AS bpr,
-                BinaryPackagePublishingHistory AS bpph
-            WHERE
-                lfa.id = bpf.libraryfile
-                AND bpr.id = bpf.binarypackagerelease
-                AND bpph.binarypackagerelease = bpr.id
-                AND bpph.dateremoved < (
-                    CURRENT_TIMESTAMP AT TIME ZONE 'UTC' -
-                    interval %(stay_of_execution)s)
-                AND bpph.archive = archive.id
-                AND archive.purpose IN %(archive_types)s
-                AND lfa.expires IS NULL
-            EXCEPT
-            SELECT bpf.libraryfile
-            FROM
-                BinaryPackageRelease AS bpr,
-                BinaryPackageFile AS bpf,
-                BinaryPackagePublishingHistory AS bpph,
-                Archive AS a,
-                Person AS p
-            WHERE
-                bpr.id = bpf.binarypackagerelease
-                AND bpph.binarypackagerelease = bpr.id
-                AND bpph.archive = a.id
-                AND p.id = a.owner
-                AND (
-                    ((p.name IN %(blacklist)s
-                      OR (p.name || '/' || a.name) IN %(blacklist)s)
-                     AND a.purpose = %(ppa)s)
-                    OR (a.private IS TRUE
-                        AND (p.name || '/' || a.name) NOT IN %(whitelist)s)
-                    OR a.purpose NOT IN %(archive_types)s
-                    OR dateremoved > (
-                        CURRENT_TIMESTAMP AT TIME ZONE 'UTC' -
-                        interval %(stay_of_execution)s)
-                    OR dateremoved IS NULL)
-            """ % sqlvalues(
-                stay_of_execution=stay_of_execution,
-                archive_types=archive_types,
-                blacklist=self.blacklist,
-                whitelist=self.whitelist,
-                ppa=ArchivePurpose.PPA))
-
-        lfa_ids = results.get_all()
-        return lfa_ids
+        return self._determineExpirables(num_days=num_days, binary=True)
 
     def main(self):
         self.logger.info('Starting the PPA binary expiration')

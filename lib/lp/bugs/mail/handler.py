@@ -13,6 +13,7 @@ import os
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.interfaces import IObjectCreatedEvent
+import six
 import transaction
 from zope.component import getUtility
 from zope.event import notify
@@ -28,6 +29,7 @@ from lp.bugs.interfaces.bugattachment import (
     )
 from lp.bugs.interfaces.bugmessage import IBugMessageSet
 from lp.bugs.mail.commands import BugEmailCommands
+from lp.services.compat import message_as_bytes
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.mail.helpers import (
     ensure_not_weakly_authenticated,
@@ -64,8 +66,11 @@ class BugTaskCommandGroup:
         if command is not None:
             self._commands.append(command)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return len(self._commands) > 0
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def __str__(self):
         text_commands = [str(cmd) for cmd in self.commands]
@@ -87,11 +92,14 @@ class BugCommandGroup(BugTaskCommandGroup):
         super(BugCommandGroup, self).__init__(command=command)
         self._groups = []
 
-    def __nonzero__(self):
+    def __bool__(self):
         if len(self._groups) > 0:
             return True
         else:
-            return super(BugCommandGroup, self).__nonzero__()
+            return super(BugCommandGroup, self).__bool__()
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def __str__(self):
         text_commands = [super(BugCommandGroup, self).__str__()]
@@ -398,7 +406,7 @@ class MaloneHandler:
         """Append the message text to the bug comments."""
         messageset = getUtility(IMessageSet)
         message = messageset.fromEmail(
-            signed_msg.as_string(), owner=getUtility(ILaunchBag).user,
+            message_as_bytes(signed_msg), owner=getUtility(ILaunchBag).user,
             filealias=filealias, parsed_message=signed_msg,
             fallback_parent=bug.initial_message, restricted=bug.private)
         # If the new message's parent is linked to a bug watch we also link

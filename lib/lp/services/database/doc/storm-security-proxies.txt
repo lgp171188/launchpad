@@ -16,7 +16,7 @@ Get Mark's person and another person, wrapped in security proxies.
     >>> mark = getUtility(IPersonSet).getByName('mark')
     >>> spiv = getUtility(IPersonSet).getByName('spiv')
     >>> print(type(mark))
-    <type 'zope.security._proxy._Proxy'>
+    <... 'zope.security._proxy._Proxy'>
 
 Get a bug task assigned to Mark.  The bug task is also security-proxied.
 
@@ -24,7 +24,7 @@ Get a bug task assigned to Mark.  The bug task is also security-proxied.
     >>> print(bugtask.assignee.name)
     mark
     >>> print(type(mark))
-    <type 'zope.security._proxy._Proxy'>
+    <... 'zope.security._proxy._Proxy'>
 
 Assign a different person as the assignee, and check that it worked by reading
 it back, despite the security proxies.

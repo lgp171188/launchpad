@@ -14,6 +14,7 @@ __all__ = [
 from contextlib import contextmanager
 from cProfile import Profile
 import datetime
+import io
 import logging
 from optparse import OptionParser
 import os.path
@@ -24,11 +25,11 @@ from contrib.glock import (
     LockAlreadyAcquired,
     )
 import pytz
-from six.moves.urllib.error import (
-    HTTPError,
-    URLError,
+import requests
+from six.moves.urllib.parse import (
+    urlparse,
+    urlunparse,
     )
-from six.moves.urllib.request import urlopen
 import transaction
 from zope.component import getUtility
 
@@ -47,6 +48,10 @@ from lp.services.features import (
 from lp.services.mail.sendmail import set_immediate_mail_delivery
 from lp.services.scripts.interfaces.scriptactivity import IScriptActivitySet
 from lp.services.scripts.logger import OopsHandler
+from lp.services.timeout import (
+    override_timeout,
+    urlfetch,
+    )
 from lp.services.webapp.errorlog import globalErrorUtility
 from lp.services.webapp.interaction import (
     ANONYMOUS,
@@ -437,20 +442,22 @@ def disable_oops_handler(logger):
 
 def cronscript_enabled(control_url, name, log):
     """Return True if the cronscript is enabled."""
+    # In test environments, this may be a file: URL.  Adjust it to be in a
+    # form that requests can cope with (i.e. using an absolute path).
+    parsed_url = urlparse(control_url)
+    if parsed_url.scheme == 'file' and not os.path.isabs(parsed_url.path):
+        assert parsed_url.path == parsed_url[2]
+        parsed_url = list(parsed_url)
+        parsed_url[2] = os.path.join(config.root, parsed_url[2])
+    control_url = urlunparse(parsed_url)
     try:
         # Timeout of 5 seconds should be fine on the LAN. We don't want
         # the default as it is too long for scripts being run every 60
         # seconds.
-        control_fp = urlopen(control_url, timeout=5)
-    # Yuck. API makes it hard to catch 'does not exist'.
-    except HTTPError as error:
-        if error.code == 404:
-            log.debug("Cronscript control file not found at %s", control_url)
-            return True
-        log.exception("Error loading %s" % control_url)
-        return True
-    except URLError as error:
-        if getattr(error.reason, 'errno', None) == 2:
+        with override_timeout(5.0):
+            response = urlfetch(control_url, allow_file=True)
+    except requests.HTTPError as error:
+        if error.response.status_code == 404:
             log.debug("Cronscript control file not found at %s", control_url)
             return True
         log.exception("Error loading %s" % control_url)
@@ -464,8 +471,13 @@ def cronscript_enabled(control_url, name, log):
     # Try reading the config file. If it fails, we log the
     # traceback and continue on using the defaults.
     try:
-        cron_config.readfp(control_fp)
-    except:
+        with response:
+            if sys.version_info[:2] >= (3, 2):
+                read_file = cron_config.read_file
+            else:
+                read_file = cron_config.readfp
+            read_file(io.StringIO(response.text))
+    except Exception:
         log.exception("Error parsing %s", control_url)
 
     if cron_config.has_option(name, 'enabled'):
@@ -475,7 +487,7 @@ def cronscript_enabled(control_url, name, log):
 
     try:
         enabled = cron_config.getboolean(section, 'enabled')
-    except:
+    except Exception:
         log.exception(
             "Failed to load value from %s section of %s",
             section, control_url)

@@ -23,7 +23,6 @@ from lp.buildmaster.enums import BuildBaseImageType
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features.testing import FeatureFixture
-from lp.soyuz.enums import DistroArchSeriesFilterSense
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     api_url,
@@ -103,7 +102,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         ws_das = ws_object(webservice, das)
         e = self.assertRaises(
             BadRequest, ws_das.setChroot, data=b'zyx', sha1sum='x')
-        self.assertEqual("Chroot upload checksums do not match", e.content)
+        self.assertEqual(b"Chroot upload checksums do not match", e.content)
 
     def test_setChroot_missing_trailing_cr(self):
         # Due to http://bugs.python.org/issue1349106 launchpadlib sends
@@ -126,8 +125,8 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = das.distroseries.distribution.main_archive.owner
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
-        sha1 = hashlib.sha1('abcxyz').hexdigest()
-        sha256 = hashlib.sha256('abcxyz').hexdigest()
+        sha1 = hashlib.sha1(b'abcxyz').hexdigest()
+        sha256 = hashlib.sha256(b'abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1)
         self.assertThat(
             das.getChrootHash(
@@ -142,7 +141,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
             das.architecturetag)
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
-        sha1 = hashlib.sha1('abcxyz').hexdigest()
+        sha1 = hashlib.sha1(b'abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1)
         self.assertTrue(ws_das.chroot_url.endswith(expected_file))
         ws_das.removeChroot()
@@ -155,9 +154,9 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = das.distroseries.distribution.main_archive.owner
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
-        sha1_1 = hashlib.sha1('abcxyz').hexdigest()
+        sha1_1 = hashlib.sha1(b'abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1_1)
-        sha1_2 = hashlib.sha1('123456').hexdigest()
+        sha1_2 = hashlib.sha1(b'123456').hexdigest()
         ws_das.setChroot(data=b'123456', sha1sum=sha1_2, pocket='Updates')
         release_chroot = das.getChroot(pocket=PackagePublishingPocket.RELEASE)
         self.assertEqual(sha1_1, release_chroot.content.sha1)
@@ -196,9 +195,9 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = das.distroseries.distribution.main_archive.owner
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
-        sha1_1 = hashlib.sha1('abcxyz').hexdigest()
+        sha1_1 = hashlib.sha1(b'abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1_1)
-        sha1_2 = hashlib.sha1('123456').hexdigest()
+        sha1_2 = hashlib.sha1(b'123456').hexdigest()
         ws_das.setChroot(data=b'123456', sha1sum=sha1_2, image_type='LXD image')
         chroot_image = das.getChroot(image_type=BuildBaseImageType.CHROOT)
         self.assertEqual(sha1_1, chroot_image.content.sha1)
@@ -272,7 +271,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         e = self.assertRaises(
             BadRequest, ws_das.setChrootFromBuild,
             livefsbuild=build_url, filename="livecd.ubuntu-base.rootfs.tar.gz")
-        self.assertEqual("Cannot set chroot from a private build.", e.content)
+        self.assertEqual(b"Cannot set chroot from a private build.", e.content)
 
     def test_setChrootFromBuild_pocket(self):
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
@@ -337,12 +336,13 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         e = self.assertRaises(
             BadRequest, ws_das.setSourceFilter,
             packageset=packageset_url, sense="Include")
-        self.assertEqual(
+        expected_error = (
             "The requested package set is for %s and cannot be set as a "
             "filter for %s %s." % (
                 packageset.distroseries.fullseriesname,
-                das.distroseries.fullseriesname, das.architecturetag),
-            e.content)
+                das.distroseries.fullseriesname,
+                das.architecturetag))
+        self.assertEqual(expected_error.encode("UTF-8"), e.content)
 
     def test_setSourceFilter_removeSourceFilter(self):
         das = self.factory.makeDistroArchSeries()

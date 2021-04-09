@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -233,12 +233,13 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     date_started = UtcDateTimeCol(notNull=False, default=None)
 
     # useful joins
-    _subscriptions = SQLMultipleJoin('SpecificationSubscription',
-        joinColumn='specification', orderBy='id')
-    subscribers = SQLRelatedJoin('Person',
-        joinColumn='specification', otherColumn='person',
-        intermediateTable='SpecificationSubscription',
-        orderBy=['display_name', 'name'])
+    _subscriptions = ReferenceSet(
+        'id', 'SpecificationSubscription.specification_id',
+        order_by='SpecificationSubscription.id')
+    subscribers = ReferenceSet(
+        'id', 'SpecificationSubscription.specification_id',
+        'SpecificationSubscription.person_id', 'Person.id',
+        order_by=('Person.display_name', 'Person.name'))
     sprint_links = ReferenceSet(
         '<primary key>', 'SprintSpecification.specification_id',
         order_by='SprintSpecification.id')
@@ -715,8 +716,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     # subscriptions
     def subscription(self, person):
         """See ISpecification."""
-        return SpecificationSubscription.selectOneBy(
-                specification=self, person=person)
+        return IStore(SpecificationSubscription).find(
+            SpecificationSubscription, specification=self, person=person).one()
 
     def getSubscriptionByName(self, name):
         """See ISpecification."""
@@ -754,8 +755,9 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             # Grant the subscriber access if they can't see the
             # specification.
             service = getUtility(IService, 'sharing')
-            _, _, _, shared_specs = service.getVisibleArtifacts(
-                person, specifications=[self], ignore_permissions=True)
+            shared_specs = service.getVisibleArtifacts(
+                person, specifications=[self],
+                ignore_permissions=True)["specifications"]
             if not shared_specs:
                 service.ensureAccessGrants(
                     [person], subscribed_by, specifications=[self])
@@ -776,7 +778,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
                             unsubscribed_by.displayname,
                             person.displayname))
                 get_property_cache(self).subscriptions.remove(sub)
-                SpecificationSubscription.delete(sub.id)
+                IStore(SpecificationSubscription).remove(sub)
                 artifacts_to_delete = getUtility(
                     IAccessArtifactSource).find([self])
                 getUtility(IAccessArtifactGrantSource).revokeByArtifact(
@@ -921,15 +923,16 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         """See ISpecification."""
         # avoid circular imports.
         from lp.registry.model.accesspolicy import (
-            reconcile_access_for_artifact,
+            reconcile_access_for_artifacts,
             )
         if self.information_type == information_type:
             return False
         if information_type not in self.getAllowedInformationTypes(who):
             raise CannotChangeInformationType("Forbidden by project policy.")
         self.information_type = information_type
-        reconcile_access_for_artifact(self, information_type, [self.target])
-        if information_type in PRIVATE_INFORMATION_TYPES and self.subscribers:
+        reconcile_access_for_artifacts([self], information_type, [self.target])
+        if (information_type in PRIVATE_INFORMATION_TYPES and
+                not self.subscribers.is_empty()):
             # Grant the subscribers access if they do not have a
             # policy grant.
             service = getUtility(IService, 'sharing')

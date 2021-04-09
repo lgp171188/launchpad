@@ -22,6 +22,7 @@ import shutil
 import tempfile
 
 import apt_pkg
+import six
 
 from lp.services.scripts import log
 from lp.soyuz.scripts.gina import call
@@ -153,9 +154,10 @@ class ArchiveComponentItems:
             archive_info = ArchiveFilesystemInfo(
                 archive_root, distroseries, component, arch, source_only)
         except NoBinaryArchive:
-            log.warn("The archive for %s/%s doesn't contain "
-                     "a directory for %s, skipping" %
-                     (distroseries, component, arch))
+            log.warning(
+                "The archive for %s/%s doesn't contain "
+                "a directory for %s, skipping" %
+                (distroseries, component, arch))
             return
         self._archive_archs.append(archive_info)
 
@@ -201,13 +203,14 @@ class PackagesMap:
             # because most of them are the same for all architectures,
             # but we go over it to also cover source packages that only
             # compile for one architecture.
-            sources = apt_pkg.TagFile(info_set.srcfile)
+            sources = apt_pkg.TagFile(info_set.srcfile, bytes=True)
             try:
                 for section in sources:
                     try:
                         src_tmp = dict(section)
-                        src_tmp['Component'] = info_set.component
-                        src_name = src_tmp['Package']
+                        src_tmp['Component'] = six.ensure_binary(
+                            info_set.component)
+                        src_name = six.ensure_text(src_tmp['Package'])
                     except KeyError:
                         log.exception(
                             "Invalid Sources stanza in %s",
@@ -228,13 +231,14 @@ class PackagesMap:
 
             tmpbin_map = self.bin_map[info_set.arch]
 
-            binaries = apt_pkg.TagFile(info_set.binfile)
+            binaries = apt_pkg.TagFile(info_set.binfile, bytes=True)
             for section in binaries:
                 try:
                     bin_tmp = dict(section)
                     # The component isn't listed in the tagfile.
-                    bin_tmp['Component'] = info_set.component
-                    bin_name = bin_tmp['Package']
+                    bin_tmp['Component'] = six.ensure_binary(
+                        info_set.component)
+                    bin_name = six.ensure_text(bin_tmp['Package'])
                 except KeyError:
                     log.exception(
                         "Invalid Releases stanza in %s",
@@ -243,12 +247,13 @@ class PackagesMap:
                 tmpbin_map[bin_name] = bin_tmp
 
             # Run over the D-I stanzas and store info in tmp_bin_map.
-            dibinaries = apt_pkg.TagFile(info_set.difile)
+            dibinaries = apt_pkg.TagFile(info_set.difile, bytes=True)
             for section in dibinaries:
                 try:
                     dibin_tmp = dict(section)
-                    dibin_tmp['Component'] = info_set.component
-                    dibin_name = dibin_tmp['Package']
+                    dibin_tmp['Component'] = six.ensure_binary(
+                        info_set.component)
+                    dibin_name = six.ensure_text(dibin_tmp['Package'])
                 except KeyError:
                     log.exception("Invalid D-I Releases stanza in %s" %
                                   info_set.difile)

@@ -1,4 +1,4 @@
-# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test publish-ftpmaster cron script."""
@@ -9,6 +9,7 @@ __metaclass__ = type
 
 import logging
 import os
+import stat
 from textwrap import dedent
 import time
 
@@ -94,15 +95,18 @@ def get_distscopy_root(pub_config):
     return get_archive_root(pub_config) + "-distscopy"
 
 
-def write_marker_file(path, contents):
+def write_marker_file(path, contents, mode=None):
     """Write a marker file for checking directory movements.
 
     :param path: A list of path components.
     :param contents: Text to write into the file.
+    :param mode: If given, explicitly set the file to this permission mode.
     """
     with open(os.path.join(*path), "w") as marker:
         marker.write(contents)
         marker.flush()
+        if mode is not None:
+            os.fchmod(marker.fileno(), mode)
 
 
 def read_marker_file(path):
@@ -258,7 +262,7 @@ class TestPublishFTPMasterScript(
         distro = self.makeDistroWithPublishDirectory()
         script = self.makeScript(distro)
         script.setUp()
-        self.assertEqual([distro], script.getConfigs().keys())
+        self.assertEqual([distro], list(script.getConfigs()))
 
     def test_getConfigs_skips_configless_distros(self):
         distro = self.factory.makeDistribution(no_pubconf=True)
@@ -793,6 +797,34 @@ class TestPublishFTPMasterScript(
             archive_config, distroseries.name))
         self.assertFalse(script.updateStagedFilesForSuite(
             archive_config, distroseries.name))
+
+    def test_updateStagedFilesForSuite_ensures_world_readable(self):
+        # updateStagedFilesForSuite ensures that files it stages have
+        # sufficient permissions not to break mirroring.
+        distro = self.makeDistroWithPublishDirectory()
+        distroseries = self.factory.makeDistroSeries(distribution=distro)
+        script = self.makeScript(distro)
+        script.setUp()
+        script.setUpDirs()
+        archive_config = getPubConfig(distro.main_archive)
+        backup_suite = os.path.join(
+            archive_config.archiveroot + "-distscopy", "dists",
+            distroseries.name)
+        os.makedirs(backup_suite)
+        staging_suite = os.path.join(
+            archive_config.stagingroot, distroseries.name)
+        os.makedirs(staging_suite)
+        for name, mode in (
+                ("Commands-amd64", 0o644), ("Commands-i386", 0o600)):
+            write_marker_file([staging_suite, name], name, mode=mode)
+        self.assertTrue(script.updateStagedFilesForSuite(
+            archive_config, distroseries.name))
+        for name in ("Commands-amd64", "Commands-i386"):
+            self.assertEqual(name, read_marker_file([backup_suite, name]))
+            self.assertEqual(
+                0o644,
+                stat.S_IMODE(
+                    os.stat(os.path.join(backup_suite, name)).st_mode))
 
     def test_updateStagedFiles_marks_suites_dirty(self):
         # updateStagedFiles marks the suites for which it updated staged

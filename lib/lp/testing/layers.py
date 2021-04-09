@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Layers used by Launchpad tests.
@@ -39,8 +39,6 @@ __all__ = [
     'LibrarianLayer',
     'PageTestLayer',
     'RabbitMQLayer',
-    'TwistedAppServerLayer',
-    'TwistedLaunchpadZopelessLayer',
     'TwistedLayer',
     'YUITestLayer',
     'YUIAppServerLayer',
@@ -57,6 +55,7 @@ from functools import partial
 import gc
 import logging
 import os
+import select
 import signal
 import socket
 import subprocess
@@ -76,7 +75,11 @@ from fixtures import (
     MonkeyPatch,
     )
 import psycopg2
-from six.moves.urllib.error import URLError
+import six
+from six.moves.urllib.error import (
+    HTTPError,
+    URLError,
+    )
 from six.moves.urllib.parse import (
     quote,
     urlparse,
@@ -216,28 +219,6 @@ def reconnect_stores(reset=False):
     r = main_store.execute('SELECT count(*) FROM LaunchpadDatabaseRevision')
     assert r.get_one()[0] > 0, 'Storm is not talking to the database'
     assert session_store() is not None, 'Failed to reconnect'
-
-
-def wait_children(seconds=120):
-    """Wait for all children to exit.
-
-    :param seconds: Maximum number of seconds to wait.  If None, wait
-        forever.
-    """
-    now = datetime.datetime.now
-    if seconds is None:
-        until = None
-    else:
-        until = now() + datetime.timedelta(seconds=seconds)
-    while True:
-        try:
-            os.waitpid(-1, os.WNOHANG)
-        except OSError as error:
-            if error.errno != errno.ECHILD:
-                raise
-            break
-        if until is not None and now() > until:
-            break
 
 
 class BaseLayer:
@@ -1627,7 +1608,8 @@ class AccessLoggingMiddleware:
         # here is gratuitously annoying.  This is similar to parts of
         # wsgiref.util.request_uri, but with slightly more lenient quoting.
         url = quote(
-            environ.get('SCRIPT_NAME', '') + environ.get('PATH_INFO', ''),
+            six.ensure_str(
+                environ.get('SCRIPT_NAME', '') + environ.get('PATH_INFO', '')),
             safe='/+')
         if environ.get('QUERY_STRING'):
             url += '?' + environ['QUERY_STRING']
@@ -1696,53 +1678,6 @@ class PageTestLayer(LaunchpadFunctionalLayer, BingServiceLayer):
     @profiled
     def testTearDown(cls):
         pass
-
-
-class TwistedLaunchpadZopelessLayer(TwistedLayer, LaunchpadZopelessLayer):
-    """A layer for cleaning up the Twisted thread pool."""
-
-    @classmethod
-    @profiled
-    def setUp(cls):
-        pass
-
-    @classmethod
-    @profiled
-    def tearDown(cls):
-        pass
-
-    @classmethod
-    @profiled
-    def testSetUp(cls):
-        pass
-
-    @classmethod
-    @profiled
-    def testTearDown(cls):
-        # XXX 2008-06-11 jamesh bug=239086:
-        # Due to bugs in the transaction module's thread local
-        # storage, transactions may be reused by new threads in future
-        # tests.  Therefore we do some cleanup before the pool is
-        # destroyed by TwistedLayer.testTearDown().
-        from twisted.internet import interfaces, reactor
-        if interfaces.IReactorThreads.providedBy(reactor):
-            pool = getattr(reactor, 'threadpool', None)
-            if pool is not None and pool.workers > 0:
-
-                def cleanup_thread_stores(event):
-                    disconnect_stores()
-                    # Don't exit until the event fires.  This ensures
-                    # that our thread doesn't get added to
-                    # pool.waiters until all threads are processed.
-                    event.wait()
-
-                event = threading.Event()
-                # Ensure that the pool doesn't grow, and issue one
-                # cleanup job for each thread in the pool.
-                pool.adjustPoolsize(0, pool.workers)
-                for i in range(pool.workers):
-                    pool.callInThread(cleanup_thread_stores, event)
-                event.set()
 
 
 class LayerProcessController:
@@ -1843,6 +1778,14 @@ class LayerProcessController:
             raise LayerIsolationError(
                 "App server died in this test (status=%s):\n%s" % (
                     cls.appserver.returncode, cls.appserver.stdout.read()))
+        # Cleanup the app server's output buffer between tests.
+        while True:
+            # Read while we have something available at the stdout.
+            r, w, e = select.select([cls.appserver.stdout], [], [], 0)
+            if cls.appserver.stdout in r:
+                cls.appserver.stdout.readline()
+            else:
+                break
         DatabaseLayer.force_dirty_database()
 
     @classmethod
@@ -1885,6 +1828,12 @@ class LayerProcessController:
             try:
                 connection = urlopen(root_url)
                 connection.read()
+            except HTTPError as error:
+                if error.code == 503:
+                    raise RuntimeError(
+                        "App server is returning unknown error code %s. Is "
+                        "there another instance running in the same port?" %
+                        error.code)
             except URLError as error:
                 # We are interested in a wrapped socket.error.
                 if not isinstance(error.reason, socket.error):
@@ -1988,31 +1937,6 @@ class CeleryBranchWriteJobLayer(AppServerLayer):
 
 class ZopelessAppServerLayer(LaunchpadZopelessLayer):
     """Layer for tests that run in the zopeless environment with an appserver.
-    """
-
-    @classmethod
-    @profiled
-    def setUp(cls):
-        LayerProcessController.setUp()
-
-    @classmethod
-    @profiled
-    def tearDown(cls):
-        LayerProcessController.stopAppServer()
-
-    @classmethod
-    @profiled
-    def testSetUp(cls):
-        LaunchpadLayer.resetSessionDb()
-
-    @classmethod
-    @profiled
-    def testTearDown(cls):
-        LayerProcessController.postTestInvariants()
-
-
-class TwistedAppServerLayer(TwistedLaunchpadZopelessLayer):
-    """Layer for twisted-using zopeless tests that need a running app server.
     """
 
     @classmethod

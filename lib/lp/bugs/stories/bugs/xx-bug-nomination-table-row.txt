@@ -55,9 +55,10 @@ buttons) directly either.
     >>> user_browser.open(
     ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
     ...     "+bug/1/nominations/2/+edit-form")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 But if we log in as a user that does have launchpad.Driver permission,
 we will see the approve/decline links.

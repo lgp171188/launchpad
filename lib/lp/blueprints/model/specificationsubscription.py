@@ -5,9 +5,10 @@ __metaclass__ = type
 
 __all__ = ['SpecificationSubscription']
 
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
+from storm.locals import (
+    Bool,
+    Int,
+    Reference,
     )
 from zope.component import getUtility
 from zope.interface import implementer
@@ -21,20 +22,26 @@ from lp.registry.interfaces.accesspolicy import (
     )
 from lp.registry.interfaces.person import validate_person
 from lp.registry.interfaces.role import IPersonRoles
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ISpecificationSubscription)
-class SpecificationSubscription(SQLBase):
+class SpecificationSubscription(StormBase):
     """A subscription for person to a spec."""
 
-    _table = 'SpecificationSubscription'
-    specification = ForeignKey(dbName='specification',
-        foreignKey='Specification', notNull=True)
-    person = ForeignKey(
-        dbName='person', foreignKey='Person',
-        storm_validator=validate_person, notNull=True)
-    essential = BoolCol(notNull=True, default=False)
+    __storm_table__ = 'SpecificationSubscription'
+    id = Int(primary=True)
+    specification_id = Int(name='specification', allow_none=False)
+    specification = Reference(specification_id, 'Specification.id')
+    person_id = Int(name='person', validator=validate_person, allow_none=False)
+    person = Reference(person_id, 'Person.id')
+    essential = Bool(allow_none=False, default=False)
+
+    def __init__(self, specification, person, essential=False):
+        super(SpecificationSubscription, self).__init__()
+        self.specification = specification
+        self.person = person
+        self.essential = essential
 
     def canBeUnsubscribedByUser(self, user):
         """See `ISpecificationSubscription`."""

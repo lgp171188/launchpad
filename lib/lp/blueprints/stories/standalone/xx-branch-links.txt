@@ -19,9 +19,10 @@ If the user is not logged in, they will be asked to log in.
     >>> anon_browser.open(
     ...     'http://code.launchpad.test/~name12/firefox/main')
     >>> anon_browser.getLink('Link to a blueprint').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (...launchpad.AnyPerson')
+    zope.security.interfaces.Unauthorized: (...launchpad.AnyPerson')
 
     >>> def printSpecBranchLinks(browser):
     ...     tags = find_tags_by_class(browser.contents, 'spec-branch-summary')

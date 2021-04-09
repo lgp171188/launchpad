@@ -10,7 +10,7 @@ translation, and also reminds him that he has full editing privileges.
     ...     if tag is None:
     ...         print('None')
     ...     else:
-    ...         print(tag.renderContents())
+    ...         print(tag.decode_contents())
 
     >>> admin_browser.open(
     ...     'http://translations.launchpad.test/'
@@ -38,20 +38,25 @@ translation group of its own, that too is shown here.
 
     >>> import re
 
+    >>> from zope.component import getUtility
+    >>> from zope.security.proxy import removeSecurityProxy
+
     >>> from lp.services.database.constants import UTC_NOW
-    >>> from lp.registry.model.person import Person
-    >>> from lp.registry.model.product import Product
-    >>> from lp.services.worlddata.model.language import Language
+    >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from lp.registry.interfaces.product import IProductSet
+    >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> from lp.translations.model.translationgroup import (
     ...     TranslationGroup)
 
-    >>> spanish = Language.selectOneBy(code='es')
-    >>> evolution = Product.selectOneBy(name='evolution')
-    >>> foobar = Person.selectOneBy(name='name16')
+    >>> login('admin@canonical.com')
+    >>> spanish = getUtility(ILanguageSet)['es']
+    >>> evolution = removeSecurityProxy(getUtility(IProductSet)['evolution'])
+    >>> foobar = getUtility(IPersonSet).getByName('name16')
     >>> gnomegroup = TranslationGroup(name='gnomegroup',
     ...     title="Gnome translation group", summary="Testing group",
     ...     datecreated=UTC_NOW, owner=foobar)
     >>> evolution.projectgroup.translationgroup = gnomegroup
+    >>> logout()
 
     >>> admin_browser.open(
     ...     'http://translations.launchpad.test/'
@@ -68,7 +73,7 @@ If the two groups are identical, however, it is only listed once.
     ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> managers_tag = find_tag_by_id(
-    ...     admin_browser.contents, 'translation-managers').renderContents()
+    ...     admin_browser.contents, 'translation-managers').decode_contents()
     >>> print(re.search(',\s+and', managers_tag))
     None
 

@@ -244,16 +244,17 @@ Retrieve file information for using the direct HTTP browsing API.
 Sample Person can't access the file.
 
     >>> browser.open(dsc_file_lp_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized
+    zope.security.interfaces.Unauthorized
 
 The 'No Privileges' user, the PPA owner, can download the DSC file.
 
-    >>> print(http(br"""
+    >>> print(http(six.ensure_binary(r"""
     ... GET %s HTTP/1.1
     ... Authorization: Basic no-priv@canonical.com:test
-    ... """ % (dsc_file_lp_url.replace('http://launchpad.test', ''))))
+    ... """ % (dsc_file_lp_url.replace('http://launchpad.test', '')))))
     HTTP/1.1 303 See Other
     ...
     Location: https://...restricted.../test-pkg_1.0.dsc?token=...
@@ -267,13 +268,14 @@ Binary files are served via '+files' rather than '+sourcefiles'.
     ...     deb_file.filename)
     >>> logout()
     >>> browser.open(deb_file_lp_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized
-    >>> print(http(br"""
+    zope.security.interfaces.Unauthorized
+    >>> print(http(six.ensure_binary(r"""
     ... GET %s HTTP/1.1
     ... Authorization: Basic no-priv@canonical.com:test
-    ... """ % (deb_file_lp_url.replace('http://launchpad.test', ''))))
+    ... """ % (deb_file_lp_url.replace('http://launchpad.test', '')))))
     HTTP/1.1 303 See Other
     ...
     Location: https://...restricted.../test-bin_1.0_all.deb?token=...
@@ -312,9 +314,9 @@ binaries across to no-priv's public ppa.
     >>> print(file_librarian_url)
     http://.../test-pkg_1.0.dsc
 
-    >>> print(http(br"""
+    >>> print(http(six.ensure_binary(r"""
     ... GET %s HTTP/1.1
-    ... """ % file_lp_url.replace('http://launchpad.test', '')))
+    ... """ % file_lp_url.replace('http://launchpad.test', ''))))
     HTTP/1.1 303 See Other
     ...
     Location: http://.../test-pkg_1.0.dsc
@@ -323,9 +325,10 @@ binaries across to no-priv's public ppa.
 The filename must be at the end of the URL. No further segments are permitted.
 
     >>> browser.open(file_lp_url + '/foo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
 
 Compatibility URL Redirection
@@ -338,10 +341,10 @@ redirect to the files for the default named PPA.
     >>> file_lp_url_without_ppa_name = (
     ...     'http://launchpad.test/~no-priv/+archive/+files/test-pkg_1.0.dsc')
 
-    >>> print(http(br"""
+    >>> print(http(six.ensure_binary(r"""
     ... GET %s HTTP/1.1
     ... """ % file_lp_url_without_ppa_name.replace(
-    ...     'http://launchpad.test', '')))
+    ...     'http://launchpad.test', ''))))
     HTTP/1.1 301 Moved Permanently
     ...
     Location: http://localhost/~no-priv/+archive/ubuntu/ppa/+files/test-pkg_1.0.dsc
@@ -351,10 +354,10 @@ The same redirection happens for +archive/+build/blah urls:
 
     >>> buildlog_lp_url_without_ppa_name = (
     ...     'http://launchpad.test/~no-priv/+archive/+build/1/+files/foo')
-    >>> print(http(br"""
+    >>> print(http(six.ensure_binary(r"""
     ... GET %s HTTP/1.1
     ... """ % buildlog_lp_url_without_ppa_name.replace(
-    ...     'http://launchpad.test', '')))
+    ...     'http://launchpad.test', ''))))
     HTTP/1.1 301 Moved Permanently
     ...
     Location: http://.../~no-priv/+archive/ubuntu/ppa/+build/1/+files/...
@@ -408,9 +411,9 @@ LP proxy URL a proper NotFound error is raised.
     >>> print(file_lp_url)
     http://launchpad.test/~no-priv/+archive/ubuntu/ppa/+sourcefiles/test-pkg/1.0/test-pkg_1.0.dsc
 
-    >>> not_found_file = http(br"""
+    >>> not_found_file = http(six.ensure_binary(r"""
     ... GET %s HTTP/1.1
-    ... """ % file_lp_url.replace('http://launchpad.test', ''))
+    ... """ % file_lp_url.replace('http://launchpad.test', '')))
 
 It results in a 404 response.
 
@@ -424,8 +427,7 @@ the error occurred based on the traceback included in the page.
     >>> main_content = find_main_content(str(not_found_file))
     >>> print(extract_text(main_content))
     Lost something?
-    ...
-    NotFound:
-    Object: &lt;Archive at ...&gt;, name: u'test-pkg'...
+    ...NotFound:
+    Object: &lt;Archive at ...&gt;, name: 'test-pkg'...
     ...
 

@@ -42,6 +42,18 @@ class TestPillarNameSet(TestCaseWithFactory):
                 getUtility(IPersonSet).getByName('mark'), 'lz', limit=5)]
         self.assertEqual(result_names, [u'launchzap', u'lz-bar', u'lz-foo'])
 
+    def test_search_percent(self):
+        """Searches involving '%' characters work correctly."""
+        login('mark@example.com')
+        self.factory.makeProduct(name='percent', title='contains % character')
+        self.factory.makeProduct()
+        pillar_set = getUtility(IPillarNameSet)
+        mark = getUtility(IPersonSet).getByName('mark')
+        result_names = [
+            pillar.name
+            for pillar in pillar_set.search(mark, '% character', limit=5)]
+        self.assertEqual([u'percent'], result_names)
+
 
 class TestPillarPerson(TestCaseWithFactory):
 

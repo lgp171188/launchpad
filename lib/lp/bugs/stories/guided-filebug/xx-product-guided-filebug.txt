@@ -20,11 +20,11 @@ If no title is entered, the user is asked to supply one.
     >>> top_portlet = first_tag_by_class(
     ...     user_browser.contents, 'top-portlet')
     >>> for message in top_portlet.findAll(attrs={'class': 'error message'}):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     >>> for message in top_portlet.findAll(
     ...         lambda node: node.attrs.get('class') == ['message']):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     Required input is missing.
 
 The user fills in some keywords, and clicks a button to search existing
@@ -62,12 +62,12 @@ will be displayed as well.
     >>> print(user_browser.url)
     http://bugs.launchpad.test/firefox/+filebug
 
-    >>> print(find_main_content(user_browser.contents).renderContents())
+    >>> print(find_main_content(user_browser.contents).decode_contents())
     <...
     No similar bug reports were found...
 
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     Required input is missing.
 

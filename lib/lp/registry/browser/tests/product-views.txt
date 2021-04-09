@@ -32,14 +32,14 @@ project has no driver then None is returned.
 
 Neither Mozilla nor Firefox has a driver set.
 
-    >>> print mozilla.driver
+    >>> print(mozilla.driver)
     None
-    >>> print firefox.driver
+    >>> print(firefox.driver)
     None
 
 Thus the effective driver for Firefox is None.
     >>> view = create_initialized_view(firefox, name='+index')
-    >>> print view.effective_driver
+    >>> print(view.effective_driver)
     None
 
 Setting the driver for the Mozilla project trickles down to Firefox.
@@ -49,23 +49,23 @@ Setting the driver for the Mozilla project trickles down to Firefox.
 But since the effective_driver is a cached property it will not show
 up on this view instance.
 
-    >>> print view.effective_driver
+    >>> print(view.effective_driver)
     None
 
 Creating a new view shows the new driver.
 
     >>> view = create_initialized_view(firefox, name='+index')
-    >>> print view.effective_driver.name
+    >>> print(view.effective_driver.name)
     mark
 
 Setting the driver for Firefox shows that it is used for the product,
 after a new view is obtained.
 
     >>> firefox.driver = cprov
-    >>> print view.effective_driver.name
+    >>> print(view.effective_driver.name)
     mark
     >>> view = create_initialized_view(firefox, name='+index')
-    >>> print view.effective_driver.name
+    >>> print(view.effective_driver.name)
     cprov
 
 
@@ -81,35 +81,35 @@ For product maintainers the property is true.  Sample Person
 
     >>> login('test@canonical.com')
     >>> view = create_initialized_view(firefox, name='+index')
-    >>> print view.show_commercial_subscription_info
+    >>> print(view.show_commercial_subscription_info)
     True
 
 For Launchpad admins the property is true.
 
     >>> login('foo.bar@canonical.com')
     >>> view = create_initialized_view(firefox, name='+index')
-    >>> print view.show_commercial_subscription_info
+    >>> print(view.show_commercial_subscription_info)
     True
 
 For Launchpad commercial members th property is true.
 
     >>> login('commercial-member@canonical.com')
     >>> view = create_initialized_view(firefox, name='+index')
-    >>> print view.show_commercial_subscription_info
+    >>> print(view.show_commercial_subscription_info)
     True
 
 But for a no-privileges user the property is false.
 
     >>> login('no-priv@canonical.com')
     >>> view = create_initialized_view(firefox, name='+index')
-    >>> print view.show_commercial_subscription_info
+    >>> print(view.show_commercial_subscription_info)
     False
 
 And for an anonymous user it is false.
 
     >>> login(ANONYMOUS)
     >>> view = create_initialized_view(firefox, name='+index')
-    >>> print view.show_commercial_subscription_info
+    >>> print(view.show_commercial_subscription_info)
     False
 
 
@@ -126,15 +126,16 @@ cannot access the page.
     >>> view = create_initialized_view(firefox, name='+index')
 
     >>> view = create_initialized_view(firefox, name='+review-license')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<Product..., 'project_reviewed', 'launchpad.Moderate')
+    zope.security.interfaces.Unauthorized: (<Product..., 'project_reviewed', 'launchpad.Moderate')
 
 Mark is in the registry admins team and is allowed to access the page.
 
     >>> login('mark@example.com')
     >>> view = create_initialized_view(firefox, name='+review-license')
-    >>> print view.label
+    >>> print(view.label)
     Review project
 
 Adding the Commercial Admin to the registry experts team will give
@@ -147,7 +148,7 @@ them access.
     >>> transaction.commit()
     >>> login('commercial-member@canonical.com')
     >>> view = create_initialized_view(firefox, name='+review-license')
-    >>> print view.label
+    >>> print(view.label)
     Review project
 
 The view allow the reviewer to see and change project privileges and
@@ -190,7 +191,7 @@ The reviewer can deactivate a project if they conclude it is bogus.
     []
     >>> product.active
     False
-    >>> print product.reviewer_whiteboard
+    >>> print(product.reviewer_whiteboard)
     Looks bogus
 
 The reviewer can reactivate the project.
@@ -207,7 +208,7 @@ The reviewer can reactivate the project.
     []
     >>> firefox.active
     True
-    >>> print firefox.reviewer_whiteboard
+    >>> print(firefox.reviewer_whiteboard)
     Reinstated old project
 
 A project with proprietary licence cannot be approved; the owner must
@@ -230,13 +231,14 @@ purchase a commercial subscription.
     ...     }
     >>> view = create_initialized_view(
     ...     firefox, name='+review-license', form=form)
-    >>> view.errors
-    [u'Proprietary projects may not be manually approved to use Launchpad.
-       Proprietary projects must be granted a commercial subscription
-       to be allowed to use Launchpad.']
+    >>> for error in view.errors:
+    ...     print(error)
+    Proprietary projects may not be manually approved to use Launchpad.
+    Proprietary projects must be granted a commercial subscription
+    to be allowed to use Launchpad.
     >>> firefox.license_approved
     False
-    >>> print firefox.reviewer_whiteboard
+    >>> print(firefox.reviewer_whiteboard)
     None
 
 A project with additional licence information must be approved by a reviewer.
@@ -348,13 +350,13 @@ Drivers, which include project driver and owners can access the
 The +addseries view provides a label and a page_title. There is a cancel_url
 too.
 
-    >>> print view.label
+    >>> print(view.label)
     Register a new Mozilla Firefox release series
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Register a new Mozilla Firefox release series
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/firefox
 
 The view allows the driver to set series name, summary, branch and
@@ -371,13 +373,13 @@ releasefileglob fields.
     ...     'field.actions.add': 'Register Series',
     ...     }
     >>> view = create_initialized_view(firefox, name='+addseries', form=form)
-    >>> print view.series.name
+    >>> print(view.series.name)
     master
 
-    >>> print view.series.summary
+    >>> print(view.series.summary)
     The primary development series.
 
-    >>> print view.series.releasefileglob
+    >>> print(view.series.releasefileglob)
     ftp://mozilla.org/firefox.*bz2
 
 
@@ -391,10 +393,10 @@ All the product series can be viewed in batches.
     ...     series = factory.makeProductSeries(product=product, name=name)
     >>> view = create_view(product, name='+series')
     >>> batch = view.batched_series.currentBatch()
-    >>> print batch.total()
+    >>> print(batch.total())
     6
     >>> for series in batch:
-    ...     print series.name
+    ...     print(series.name)
     trunk
     1.2
     1.1
@@ -424,13 +426,13 @@ officially supports.
     >>> view = create_initialized_view(
     ...     product, name='+index', principal=owner)
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print find_tag_by_id(content, 'portlet-latest-faqs')
+    >>> print(find_tag_by_id(content, 'portlet-latest-faqs'))
     None
-    >>> print find_tag_by_id(content, 'portlet-latest-questions')
+    >>> print(find_tag_by_id(content, 'portlet-latest-questions'))
     None
-    >>> print find_tag_by_id(content, 'portlet-latest-bugs')
+    >>> print(find_tag_by_id(content, 'portlet-latest-bugs'))
     None
-    >>> print find_tag_by_id(content, 'portlet-blueprints')
+    >>> print(find_tag_by_id(content, 'portlet-blueprints'))
     None
 
 The portlet are rendered when a product officially uses the Launchpad
@@ -444,11 +446,11 @@ Answers, Blueprints, and Bugs applications.
     >>> view = create_initialized_view(
     ...     product, name='+index', principal=owner)
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print find_tag_by_id(content, 'portlet-latest-faqs')['id']
+    >>> print(find_tag_by_id(content, 'portlet-latest-faqs')['id'])
     portlet-latest-faqs
-    >>> print find_tag_by_id(content, 'portlet-latest-questions')['id']
+    >>> print(find_tag_by_id(content, 'portlet-latest-questions')['id'])
     portlet-latest-questions
-    >>> print find_tag_by_id(content, 'portlet-latest-bugs')['id']
+    >>> print(find_tag_by_id(content, 'portlet-latest-bugs')['id'])
     portlet-latest-bugs
-    >>> print find_tag_by_id(content, 'portlet-blueprints')['id']
+    >>> print(find_tag_by_id(content, 'portlet-blueprints')['id'])
     portlet-blueprints

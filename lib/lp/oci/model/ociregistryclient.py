@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Client for talking to an OCI registry."""
@@ -15,23 +15,21 @@ from functools import partial
 import hashlib
 from io import BytesIO
 import json
-try:
-    from json.decoder import JSONDecodeError
-except ImportError:
-    JSONDecodeError = ValueError
 import logging
+import re
 import tarfile
 
 import boto3
+from botocore.config import Config
 from requests.exceptions import (
     ConnectionError,
     HTTPError,
     )
+from six.moves.urllib.parse import urlparse
 from six.moves.urllib.request import (
     parse_http_list,
     parse_keqv_list,
     )
-from six.moves.urllib.parse import urlparse
 from tenacity import (
     before_log,
     retry,
@@ -41,12 +39,15 @@ from tenacity import (
     )
 from zope.interface import implementer
 
+from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
     IOCIRegistryClient,
-    MultipleOCIRegistryError,
     ManifestUploadFailed,
+    MultipleOCIRegistryError,
     )
+from lp.services.config import config
+from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.timeout import urlfetch
 
@@ -57,6 +58,20 @@ log = logging.getLogger(__name__)
 proxy_urlfetch = partial(urlfetch, use_proxy=True)
 
 
+OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG = 'oci.push.aws.bearer_token_domains'
+
+
+def is_aws_bearer_token_domain(domain):
+    """Returns True if the given registry domain should use bearer token
+    instead of basic auth."""
+    domains = getFeatureFlag(OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG)
+    if not domains:
+        # We know that public ECR default domain is bearer token. If the
+        # flag is not set, force it.
+        domains = 'public.ecr.aws'
+    return any(domain.endswith(i) for i in domains.split())
+
+
 @implementer(IOCIRegistryClient)
 class OCIRegistryClient:
 
@@ -65,7 +80,7 @@ class OCIRegistryClient:
         """Read JSON out of a `LibraryFileAlias`."""
         try:
             reference.open()
-            return json.loads(reference.read())
+            return json.loads(reference.read().decode("UTF-8"))
         finally:
             reference.close()
 
@@ -75,7 +90,7 @@ class OCIRegistryClient:
         if response.content:
             try:
                 response_data = response.json()
-            except JSONDecodeError:
+            except ValueError:
                 pass
             else:
                 errors = response_data.get("errors")
@@ -89,12 +104,13 @@ class OCIRegistryClient:
         before=before_log(log, logging.INFO),
         retry=retry_if_exception_type(ConnectionError),
         stop=stop_after_attempt(5))
-    def _upload(cls, digest, push_rule, fileobj, http_client):
+    def _upload(cls, digest, push_rule, fileobj, length, http_client):
         """Upload a blob to the registry, using a given digest.
 
         :param digest: The digest to store the file under.
         :param push_rule: `OCIPushRule` to use for the URL and credentials.
         :param fileobj: An object that looks like a buffer.
+        :param length: The length of the blob in bytes.
 
         :raises BlobUploadFailed: if the registry does not accept the blob.
         """
@@ -122,6 +138,7 @@ class OCIRegistryClient:
                 post_location,
                 params=query_parsed,
                 data=fileobj,
+                headers={"Content-Length": str(length)},
                 method="PUT")
         except HTTPError as http_error:
             put_response = http_error.response
@@ -145,13 +162,22 @@ class OCIRegistryClient:
         """
         lfa.open()
         try:
-            un_zipped = tarfile.open(fileobj=lfa, mode='r|gz')
-            for tarinfo in un_zipped:
-                if tarinfo.name != 'layer.tar':
-                    continue
-                fileobj = un_zipped.extractfile(tarinfo)
-                cls._upload(digest, push_rule, fileobj, http_client)
-                return tarinfo.size
+            with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
+                for tarinfo in un_zipped:
+                    if tarinfo.name != 'layer.tar':
+                        continue
+                    fileobj = un_zipped.extractfile(tarinfo)
+                    # XXX Work around requests handling of objects that have
+                    # fileno, but error on access in python3:
+                    # https://github.com/psf/requests/pull/5239
+                    fileobj.len = tarinfo.size
+                    try:
+                        cls._upload(
+                            digest, push_rule, fileobj, tarinfo.size,
+                            http_client)
+                    finally:
+                        fileobj.close()
+                    return tarinfo.size
         finally:
             lfa.close()
 
@@ -224,19 +250,38 @@ class OCIRegistryClient:
         return data
 
     @classmethod
-    def _calculateTag(cls, build, push_rule):
+    def _calculateTags(cls, recipe):
         """Work out the base tag for the image should be.
 
-        :param build: `OCIRecipeBuild` representing this build.
         :param push_rule: `OCIPushRule` that we are using.
         """
-        # XXX twom 2020-04-17 This needs to include OCIProjectSeries and
-        # base image name
-        return "{}".format("edge")
+        tags = []
+        if recipe.is_valid_branch_format:
+            ref_name = recipe.git_ref.path
+            # lp:1921865, account for tags in the correct format
+            if ref_name.startswith('refs/tags/'):
+                ref_name = ref_name[len('refs/tags/'):]
+            elif ref_name.startswith('refs/heads/'):
+                ref_name = ref_name[len('refs/heads/'):]
+            tags.append("{}_{}".format(ref_name, "edge"))
+        else:
+            tags.append("edge")
+        return tags
+
+    @classmethod
+    def _getCurrentRegistryManifest(cls, http_client, tag):
+        """Get the current manifest for the given push rule. If manifest
+        doesn't exist, raises HTTPError.
+        """
+        url = "/manifests/{}".format(tag)
+        accept = "application/vnd.docker.distribution.manifest.list.v2+json"
+        response = http_client.requestPath(
+            url, method="GET", headers={"Accept": accept})
+        return response.json()
 
     @classmethod
     def _uploadRegistryManifest(cls, http_client, registry_manifest,
-                                push_rule, build=None):
+                                push_rule, tag, build=None):
         """Uploads the build manifest, returning its content information.
 
         The returned information can be used to create a Manifest list
@@ -245,18 +290,15 @@ class OCIRegistryClient:
 
         :return: A dict with {"digest": "sha256:xxx", "size": total_bytes}
         """
+        # This is
+        # https://docs.docker.com/registry/spec/manifest-v2-2/#manifest-list
+        # Specifically the Schema 2 manifest.
         digest = None
-        data = json.dumps(registry_manifest)
+        data = json.dumps(registry_manifest).encode("UTF-8")
         size = len(data)
         content_type = registry_manifest.get(
             "mediaType",
             "application/vnd.docker.distribution.manifest.v2+json")
-        if build is None:
-            # When uploading a manifest list, use the tag.
-            tag = cls._calculateTag(build, push_rule)
-        else:
-            # When uploading individual build manifests, use their digest.
-            tag = "sha256:%s" % hashlib.sha256(data).hexdigest()
         try:
             manifest_response = http_client.requestPath(
                 "/manifests/{}".format(tag),
@@ -280,7 +322,7 @@ class OCIRegistryClient:
 
     @classmethod
     def _upload_to_push_rule(
-            cls, push_rule, build, manifest, digests, preloaded_data):
+            cls, push_rule, build, manifest, digests, preloaded_data, tag):
         http_client = RegistryHTTPClient.getInstance(push_rule)
 
         for section in manifest:
@@ -304,6 +346,7 @@ class OCIRegistryClient:
                 "sha256:{}".format(config_sha),
                 push_rule,
                 BytesIO(config_json),
+                len(config_json),
                 http_client)
 
             # Build the registry manifest from the image manifest
@@ -315,7 +358,7 @@ class OCIRegistryClient:
 
             # Upload the registry manifest
             manifest = cls._uploadRegistryManifest(
-                http_client, registry_manifest, push_rule, build)
+                http_client, registry_manifest, push_rule, tag, build)
 
             # Save the uploaded manifest location, so we can use it in case
             # this is a multi-arch image upload.
@@ -330,6 +373,9 @@ class OCIRegistryClient:
         :raises ManifestUploadFailed: If the final registry manifest fails to
                                       upload due to network or validity.
         """
+        cls.updateSupersededBuilds(build)
+        if build.status == BuildStatus.SUPERSEDED:
+            return
         # Get the required metadata files
         manifest = cls._getJSONfile(build.manifest)
         digests_list = cls._getJSONfile(build.digests)
@@ -342,53 +388,136 @@ class OCIRegistryClient:
 
         exceptions = []
         for push_rule in build.recipe.push_rules:
-            try:
-                cls._upload_to_push_rule(
-                    push_rule, build, manifest, digests, preloaded_data)
-            except Exception as e:
-                exceptions.append(e)
+            for tag in cls._calculateTags(build.recipe):
+                try:
+                    cls._upload_to_push_rule(
+                        push_rule, build, manifest, digests, preloaded_data,
+                        tag)
+                except Exception as e:
+                    exceptions.append(e)
         if len(exceptions) == 1:
             raise exceptions[0]
         elif len(exceptions) > 1:
             raise MultipleOCIRegistryError(exceptions)
 
     @classmethod
-    def makeMultiArchManifest(cls, build_request, uploaded_builds):
+    def makeMultiArchManifest(cls, http_client, push_rule, build_request,
+                              uploaded_builds, tag):
         """Returns the multi-arch manifest content including all uploaded
         builds of the given build_request.
         """
-        manifests = []
+        def get_manifest_for_architecture(manifests, arch):
+            """Find, in the manifests list, the manifest for the given arch."""
+            expected_platform = {"architecture": arch, "os": "linux"}
+            for m in manifests:
+                if m["platform"] == expected_platform:
+                    return m
+            return None
+
+        try:
+            current_manifest = cls._getCurrentRegistryManifest(
+                http_client, tag)
+            # Check if the current manifest is not an incompatible version.
+            version = current_manifest.get("schemaVersion", 1)
+            if version < 2 or "manifests" not in current_manifest:
+                current_manifest = None
+        except HTTPError as e:
+            if e.response.status_code == 404:
+                # If there is no manifest file (or it doesn't follow the
+                # multi-arch spec), we should proceed adding our own
+                # manifest file.
+                current_manifest = None
+                msg_tpl = (
+                    "No multi-arch manifest on registry %s (image name: %s). "
+                    "Uploading a new one.")
+                log.info(msg_tpl % (
+                    push_rule.registry_url, push_rule.image_name))
+            else:
+                raise
+        if current_manifest is None:
+            current_manifest = {
+                "schemaVersion": 2,
+                "mediaType": ("application/"
+                              "vnd.docker.distribution.manifest.list.v2+json"),
+                "manifests": []}
+        manifests = current_manifest["manifests"]
         for build in uploaded_builds:
             build_manifest = build_request.uploaded_manifests.get(build.id)
             if not build_manifest:
+                log.info(
+                    "No build manifest found for build {}".format(build.id))
                 continue
+            log.info("Build manifest found for build {}".format(build.id))
             digest = build_manifest["digest"]
             size = build_manifest["size"]
             arch = build.processor.name
-            manifests.append({
-                "mediaType": ("application/"
-                              "vnd.docker.distribution.manifest.v2+json"),
-                "size": size,
-                "digest": digest,
-                "platform": {"architecture": arch, "os": "linux"}
-            })
-        return {
-          "schemaVersion": 2,
-          "mediaType": ("application/"
-                        "vnd.docker.distribution.manifest.list.v2+json"),
-          "manifests": manifests}
+
+            manifest = get_manifest_for_architecture(manifests, arch)
+            if manifest is None:
+                log.info(
+                    "Appending multi-arch manifest for build {} "
+                    "with arch {}".format(build.id, arch))
+                manifest = {
+                    "mediaType": ("application/"
+                                  "vnd.docker.distribution.manifest.v2+json"),
+                    "size": size,
+                    "digest": digest,
+                    "platform": {"architecture": arch, "os": "linux"}
+                }
+                manifests.append(manifest)
+            else:
+                log.info(
+                    "Updating multi-arch manifest for build {} "
+                    "with arch {}".format(build.id, arch))
+                manifest["digest"] = digest
+                manifest["size"] = size
+                manifest["platform"]["architecture"] = arch
+
+        return current_manifest
+
+    @classmethod
+    def updateSupersededBuilds(cls, build):
+        """Checks if the given build was superseded by another build,
+        updating its status in case it should have been superseded.
+
+        :return: True if the build was superseded.
+        """
+        if build.status == BuildStatus.SUPERSEDED:
+            return
+        if build.hasMoreRecentBuild():
+            force_transition = (build.status == BuildStatus.FULLYBUILT)
+            build.updateStatus(
+                BuildStatus.SUPERSEDED,
+                force_invalid_transition=force_transition)
 
     @classmethod
     def uploadManifestList(cls, build_request, uploaded_builds):
         """Uploads to all build_request.recipe.push_rules the manifest list
         for the builds in the given build_request.
         """
-        multi_manifest_content = cls.makeMultiArchManifest(
-            build_request, uploaded_builds)
+        # First, double check that the builds that will be updated in the
+        # manifest files were not superseded by newer builds.
+        for build in uploaded_builds:
+            cls.updateSupersededBuilds(build)
+        uploaded_builds = [build for build in uploaded_builds
+                           if build.status != BuildStatus.SUPERSEDED]
+        if not uploaded_builds:
+            return
         for push_rule in build_request.recipe.push_rules:
-            http_client = RegistryHTTPClient.getInstance(push_rule)
-            cls._uploadRegistryManifest(
-                http_client, multi_manifest_content, push_rule, build=None)
+            for tag in cls._calculateTags(build_request.recipe):
+                try:
+                    http_client = RegistryHTTPClient.getInstance(push_rule)
+                    multi_manifest_content = cls.makeMultiArchManifest(
+                        http_client, push_rule, build_request, uploaded_builds,
+                        tag)
+                    cls._uploadRegistryManifest(
+                        http_client, multi_manifest_content, push_rule, tag,
+                        build=None)
+                except Exception:
+                    log.exception(
+                        "Exception in uploading manifest for OCI build "
+                        "request {} with tag {}".format(build_request.id, tag))
+                    raise
 
 
 class OCIRegistryAuthenticationError(Exception):
@@ -430,8 +559,10 @@ class RegistryHTTPClient:
     def getInstance(cls, push_rule):
         """Returns an instance of RegistryHTTPClient adapted to the
         given push rule and registry's authentication flow."""
-        registry_domain = urlparse(push_rule.registry_url).netloc
-        if registry_domain.endswith(".amazonaws.com"):
+        domain = urlparse(push_rule.registry_url).netloc
+        if is_aws_bearer_token_domain(domain):
+            return AWSRegistryBearerTokenClient(push_rule)
+        if domain.endswith(".amazonaws.com"):
             return AWSRegistryHTTPClient(push_rule)
         try:
             proxy_urlfetch("{}/v2/".format(push_rule.registry_url))
@@ -525,29 +656,67 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
             raise
 
 
-class AWSRegistryHTTPClient(RegistryHTTPClient):
+class AWSAuthenticatorMixin:
+    """Basic class to override the way we get credentials, exchanging
+    registered aws_access_key_id and aws_secret_access_key with the
+    temporary token got from AWS API.
+    """
+
+    def _getClientParameters(self):
+        if config.launchpad.http_proxy:
+            boto_config = Config(proxies={
+                'http': config.launchpad.http_proxy,
+                'https': config.launchpad.http_proxy})
+        else:
+            boto_config = Config()
+        auth = self.push_rule.registry_credentials.getCredentials()
+        username, password = auth['username'], auth.get('password')
+        region = self._getRegion()
+        log.info("Trying to authenticate with AWS in region %s" % region)
+        return dict(
+            aws_access_key_id=username,
+            aws_secret_access_key=password, region_name=region,
+            config=boto_config)
+
+    def _getBotoClient(self):
+        params = self._getClientParameters()
+        client_type = 'ecr-public' if self.is_public_ecr else 'ecr'
+        return boto3.client(client_type, **params)
+
+    @property
+    def is_public_ecr(self):
+        """Returns True if the given registry domain is a public ECR. False
+        otherwise.
+        """
+        domain = urlparse(self.push_rule.registry_url).netloc
+        return is_aws_bearer_token_domain(domain)
 
     def _getRegion(self):
         """Returns the region from the push URL domain."""
-        domain = urlparse(self.push_rule.registry_url).netloc
-        # The domain format should be something like
+        push_rule = self.push_rule
+        region = push_rule.registry_credentials.region
+        if region is not None:
+            return region
+        # Try to guess from the domain. The format should be something like
         # 'xxx.dkr.ecr.sa-east-1.amazonaws.com'. 'sa-east-1' is the region.
-        return domain.split(".")[-3]
+        domain = urlparse(self.push_rule.registry_url).netloc
+        if re.match(r'.+\.dkr\.ecr\..+\.amazonaws\.com', domain):
+            return domain.split(".")[-3]
+        raise OCIRegistryAuthenticationError("Unknown AWS region.")
 
     @cachedproperty
     def credentials(self):
         """Exchange aws_access_key_id and aws_secret_access_key with the
         authentication token that should be used when talking to ECR."""
         try:
-            auth = self.push_rule.registry_credentials.getCredentials()
-            username, password = auth['username'], auth.get('password')
-            region = self._getRegion()
-            log.info("Trying to authenticate with AWS in region %s" % region)
-            client = boto3.client('ecr', aws_access_key_id=username,
-                                  aws_secret_access_key=password,
-                                  region_name=region)
+            client = self._getBotoClient()
             token = client.get_authorization_token()
-            auth_data = token["authorizationData"][0]
+            auth_data = token["authorizationData"]
+            # Some AWS services returns a list with one element inside,
+            # while others return only a dict directly. We should support
+            # both situations.
+            if isinstance(auth_data, list):
+                auth_data = auth_data[0]
             authorization_token = auth_data['authorizationToken']
             username, password = base64.b64decode(
                 authorization_token).decode().split(':')
@@ -558,3 +727,15 @@ class AWSRegistryHTTPClient(RegistryHTTPClient):
             raise OCIRegistryAuthenticationError(
                 "It was not possible to get AWS credentials for %s: %s" %
                 (self.push_rule.registry_url, e))
+
+
+class AWSRegistryHTTPClient(AWSAuthenticatorMixin, RegistryHTTPClient):
+    """AWS registry client with authentication flow based on basic auth."""
+    pass
+
+
+class AWSRegistryBearerTokenClient(
+        AWSAuthenticatorMixin, BearerTokenRegistryClient):
+    """AWS registry client with authentication flow based on bearer token flow.
+    """
+    pass

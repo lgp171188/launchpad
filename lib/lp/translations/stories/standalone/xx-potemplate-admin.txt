@@ -13,9 +13,10 @@ An unprivileged user cannot reach the POTemplate administration page.
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/+admin')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Jordi, a Rosetta expert, can.
 
@@ -186,10 +187,11 @@ Distribution templates
 Distributions get slightly wider permissions to manage their templates
 autonomously.
 
-    >>> from lp.registry.model.distribution import Distribution
+    >>> from zope.component import getUtility
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.translations.model.potemplate import POTemplateSet
     >>> login('admin@canonical.com')
-    >>> ubuntu = Distribution.selectOneBy(name='ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
     >>> hoary = ubuntu['hoary']
     >>> templateset = POTemplateSet()
 
@@ -201,6 +203,7 @@ autonomously.
     >>> template = templatesubset.new(
     ...     'foo', 'foo', 'foo.pot', template_owner)
 
+    >>> login('admin@canonical.com')
     >>> distro_owner = factory.makePerson('do@example.com')
     >>> ubuntu.owner = distro_owner
 

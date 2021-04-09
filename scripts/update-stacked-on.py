@@ -97,17 +97,17 @@ class UpdateStackedBranches(LaunchpadScript):
         try:
             bzrdir = BzrDir.open(bzr_branch_url)
         except errors.NotBranchError:
-            self.logger.warn(
+            self.logger.warning(
                 "No bzrdir for %r at %r" % (branch_id, bzr_branch_url))
             return
 
         try:
             current_stacked_on_location = get_branch_stacked_on_url(bzrdir)
         except errors.NotBranchError:
-            self.logger.warn(
+            self.logger.warning(
                 "No branch for %r at %r" % (branch_id, bzr_branch_url))
         except errors.NotStacked:
-            self.logger.warn(
+            self.logger.warning(
                 "Branch for %r at %r is not stacked at all. Giving up."
                 % (branch_id, bzr_branch_url))
         except UnstackableBranchFormat:

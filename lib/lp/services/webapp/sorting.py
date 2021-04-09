@@ -3,6 +3,8 @@
 
 """This module contains sorting utility functions."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = ['expand_numbers',
            'sorted_version_numbers',
@@ -16,14 +18,14 @@ import six
 def expand_numbers(unicode_text, fill_digits=4):
     """Return a copy of the string with numbers zero filled.
 
-    >>> expand_numbers(u'hello world')
-    u'hello world'
-    >>> expand_numbers(u'0.12.1')
-    u'0000.0012.0001'
-    >>> expand_numbers(u'0.12.1', 2)
-    u'00.12.01'
-    >>> expand_numbers(u'branch-2-3.12')
-    u'branch-0002-0003.0012'
+    >>> print(expand_numbers(u'hello world'))
+    hello world
+    >>> print(expand_numbers(u'0.12.1'))
+    0000.0012.0001
+    >>> print(expand_numbers(u'0.12.1', 2))
+    00.12.01
+    >>> print(expand_numbers(u'branch-2-3.12'))
+    branch-0002-0003.0012
 
     """
     assert(isinstance(unicode_text, six.text_type))
@@ -40,26 +42,22 @@ reversed_numbers_table = dict(
   zip(map(ord, u'0123456789'), reversed(u'0123456789')))
 
 
-def _reversed_number_comparator(lhs_text, rhs_text):
+def _reversed_number_sort_key(text):
     """Return comparison value reversed for numbers only.
 
-    >>> _reversed_number_comparator(u'9.3', u'2.4')
-    -1
-    >>> _reversed_number_comparator(u'world', u'hello')
-    1
-    >>> _reversed_number_comparator(u'hello world', u'hello world')
-    0
-    >>> _reversed_number_comparator(u'dev', u'development')
-    -1
-    >>> _reversed_number_comparator(u'bzr-0.13', u'bzr-0.08')
-    -1
+    >>> print(_reversed_number_sort_key(u'9.3'))
+    0.6
+    >>> print(_reversed_number_sort_key(u'2.4'))
+    7.5
+    >>> print(_reversed_number_sort_key(u'hello'))
+    hello
+    >>> print(_reversed_number_sort_key(u'bzr-0.13'))
+    bzr-9.86
 
     """
-    assert isinstance(lhs_text, six.text_type)
-    assert isinstance(rhs_text, six.text_type)
-    translated_lhs_text = lhs_text.translate(reversed_numbers_table)
-    translated_rhs_text = rhs_text.translate(reversed_numbers_table)
-    return cmp(translated_lhs_text, translated_rhs_text)
+    assert isinstance(text, six.text_type)
+    assert isinstance(text, six.text_type)
+    return text.translate(reversed_numbers_table)
 
 
 def _identity(x):
@@ -71,13 +69,13 @@ def sorted_version_numbers(sequence, key=_identity):
 
     >>> bzr_versions = [u'0.9', u'0.10', u'0.11']
     >>> for version in sorted_version_numbers(bzr_versions):
-    ...   print version
+    ...   print(version)
     0.11
     0.10
     0.9
     >>> bzr_versions = [u'bzr-0.9', u'bzr-0.10', u'bzr-0.11']
     >>> for version in sorted_version_numbers(bzr_versions):
-    ...   print version
+    ...   print(version)
     bzr-0.11
     bzr-0.10
     bzr-0.9
@@ -91,7 +89,7 @@ def sorted_version_numbers(sequence, key=_identity):
     >>> from operator import attrgetter
     >>> for version in sorted_version_numbers(bzr_versions,
     ...                                       key=attrgetter('name')):
-    ...   print version.name
+    ...   print(version.name)
     0.11
     0.10
     0.9
@@ -100,10 +98,43 @@ def sorted_version_numbers(sequence, key=_identity):
     bzr-0.9
     foo
 
+    Items in the sequence can also be tuples or lists, allowing for
+    tie-breaking.  In such cases, only the first element in each item is
+    considered as a version.
+
+    >>> bzr_versions = [
+    ...     (series('0.9'), 8), (series('0.9'), 9), (series('0.9'), 10),
+    ...     (series('1.0'), 1)]
+    >>> for version, tiebreak in sorted_version_numbers(
+    ...         bzr_versions, key=lambda item: item[0].name):
+    ...     print(version.name, tiebreak)
+    1.0 1
+    0.9 8
+    0.9 9
+    0.9 10
+
+    >>> bzr_versions = [
+    ...     [series('0.9'), 8], [series('0.9'), 9], [series('0.9'), 10],
+    ...     [series('1.0'), 1]]
+    >>> for version, tiebreak in sorted_version_numbers(
+    ...         bzr_versions, key=lambda item: item[0].name):
+    ...     print(version.name, tiebreak)
+    1.0 1
+    0.9 8
+    0.9 9
+    0.9 10
+
     """
-    expanded_key = lambda x: expand_numbers(key(x))
-    return sorted(sequence, key=expanded_key,
-                  cmp=_reversed_number_comparator)
+    def sort_key(item):
+        k = key(item)
+        if isinstance(k, (tuple, list)):
+            return (
+                (_reversed_number_sort_key(expand_numbers(k[0])),) +
+                tuple(k[1:]))
+        else:
+            return _reversed_number_sort_key(expand_numbers(k))
+
+    return sorted(sequence, key=sort_key)
 
 
 def sorted_dotted_numbers(sequence, key=_identity):
@@ -117,13 +148,13 @@ def sorted_dotted_numbers(sequence, key=_identity):
 
     >>> bzr_versions = [u'0.9', u'0.10', u'0.11']
     >>> for version in sorted_dotted_numbers(bzr_versions):
-    ...   print version
+    ...   print(version)
     0.9
     0.10
     0.11
     >>> bzr_versions = [u'bzr-0.9', u'bzr-0.10', u'bzr-0.11']
     >>> for version in sorted_dotted_numbers(bzr_versions):
-    ...   print version
+    ...   print(version)
     bzr-0.9
     bzr-0.10
     bzr-0.11
@@ -137,7 +168,7 @@ def sorted_dotted_numbers(sequence, key=_identity):
     >>> from operator import attrgetter
     >>> for version in sorted_dotted_numbers(bzr_versions,
     ...                                      key=attrgetter('name')):
-    ...   print version.name
+    ...   print(version.name)
     0.9
     0.10
     0.11
@@ -147,5 +178,4 @@ def sorted_dotted_numbers(sequence, key=_identity):
     foo
 
     """
-    expanded_key = lambda x: expand_numbers(key(x))
-    return sorted(sequence, key=expanded_key)
+    return sorted(sequence, key=lambda x: expand_numbers(key(x)))

@@ -35,7 +35,7 @@ branch.
     ...     The browser must be pointing at the settings page.
     ...     """
     ...     tag = find_tag_by_id(browser.contents, 'translations-branch')
-    ...     return tag.renderContents()
+    ...     return tag.decode_contents()
 
 A project owner sets a translations branch from the series' translations
 settings page.
@@ -148,6 +148,7 @@ And of course, setting the translations branch requires edit privileges
 on the release series.
 
     >>> user_browser.open(link_page)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...

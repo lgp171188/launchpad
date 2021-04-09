@@ -60,9 +60,10 @@ Currently we only support PPAs for a limited number of distros. The
 
     >>> anon_browser.open("http://launchpad.test/debian")
     >>> anon_browser.getLink("Personal Package Archives")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 If we enable Debian PPA support, the links appear and the pages present
 coherent data for a distribution with no PPAs.
@@ -105,7 +106,7 @@ The 'search' form is also suppresed.
     >>> anon_browser.getControl('Search', index=0).click()
     Traceback (most recent call last):
     ...
-    LookupError: label u'Search'
+    LookupError: label ...'Search'
     ...
 
 
@@ -380,9 +381,9 @@ latest published sources with their states.
     Latest updates
     cdrkit ... ago
     Failed to build: i386
-    iceweasel ... ago
-    Successfully built
     pmount ... ago
+    Successfully built
+    iceweasel ... ago
     Successfully built
 
 A statistics portlet is included on the index page.
@@ -676,11 +677,13 @@ either via the new-style URL or the compatibility redirection, will
 result in a NotFound error.
 
     >>> admin_browser.open("http://launchpad.test/~name16/+archive/ppa")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: Object: <Person at ... name16 (Foo Bar)>, name: u'+archive'
+    zope.publisher.interfaces.NotFound: Object: <Person at ... name16 (Foo Bar)>, name: '+archive'
 
     >>> admin_browser.open("http://launchpad.test/~name16/+archive")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: Object: <Person at ... name16 (Foo Bar)>, name: u'+archive'
+    zope.publisher.interfaces.NotFound: Object: <Person at ... name16 (Foo Bar)>, name: '+archive'

@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from testtools.testcase import ExpectedException
 from zope.component import getUtility
 
 from lp.registry.errors import (
@@ -22,10 +21,7 @@ from lp.registry.model.ociprojectname import (
     OCIProjectName,
     OCIProjectNameSet,
     )
-from lp.testing import (
-    admin_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
 

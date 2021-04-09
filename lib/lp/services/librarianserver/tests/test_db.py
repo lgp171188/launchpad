@@ -1,6 +1,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from fixtures import MockPatchObject
@@ -85,7 +87,7 @@ class TestLibrarianStuff(TestCase):
     """Tests for the librarian."""
 
     layer = LaunchpadZopelessLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestLibrarianStuff, self).setUp()
@@ -208,8 +210,8 @@ class TestLibrarianStuff(TestCase):
         library = db.Library(restricted=False)
         aliases = library.getAliases(1)
         expected_aliases = [
-            (1, u'netapplet-1.0.0.tar.gz', u'application/x-gtar'),
-            (2, u'netapplet_1.0.0.orig.tar.gz', u'application/x-gtar'),
+            (1, 'netapplet-1.0.0.tar.gz', 'application/x-gtar'),
+            (2, 'netapplet_1.0.0.orig.tar.gz', 'application/x-gtar'),
             ]
         self.assertEqual(expected_aliases, aliases)
 
@@ -221,7 +223,7 @@ class TestLibrarianStuff(TestCase):
         alias.content = None
         aliases = library.getAliases(1)
         expected_aliases = [
-            (2, u'netapplet_1.0.0.orig.tar.gz', u'application/x-gtar'),
+            (2, 'netapplet_1.0.0.orig.tar.gz', 'application/x-gtar'),
             ]
         self.assertEqual(expected_aliases, aliases)
 
@@ -235,13 +237,13 @@ class TestLibrarianStuff(TestCase):
 
         aliases = unrestricted_library.getAliases(1)
         expected_aliases = [
-            (2, u'netapplet_1.0.0.orig.tar.gz', u'application/x-gtar'),
+            (2, 'netapplet_1.0.0.orig.tar.gz', 'application/x-gtar'),
             ]
         self.assertEqual(expected_aliases, aliases)
 
         restricted_library = db.Library(restricted=True)
         aliases = restricted_library.getAliases(1)
         expected_aliases = [
-            (1, u'netapplet-1.0.0.tar.gz', u'application/x-gtar'),
+            (1, 'netapplet-1.0.0.tar.gz', 'application/x-gtar'),
             ]
         self.assertEqual(expected_aliases, aliases)

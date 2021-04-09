@@ -40,14 +40,14 @@ the approver, Cprov, and the drafter, Robert.
     ...     subscription.person for subscription in svg_support.subscriptions]
     >>> related_people_addresses = [
     ...     [person.preferredemail.email] for person in set(related_people)]
-    >>> for addr in sorted(related_people_addresses): print(addr)
-    [u'andrew.bennetts@ubuntulinux.com']
-    [u'carlos@canonical.com']
-    [u'celso.providelo@canonical.com']
-    [u'daf@canonical.com']
-    [u'foo.bar@canonical.com']
-    [u'robertc@robertcollins.net']
-    [u'stuart.bishop@canonical.com']
+    >>> for addr in sorted(related_people_addresses): print(pretty(addr))
+    ['andrew.bennetts@ubuntulinux.com']
+    ['carlos@canonical.com']
+    ['celso.providelo@canonical.com']
+    ['daf@canonical.com']
+    ['foo.bar@canonical.com']
+    ['robertc@robertcollins.net']
+    ['stuart.bishop@canonical.com']
 
     >>> sent_addresses = sorted(
     ...     [to_addrs for from_addr, to_addrs, message in stub.test_emails])
@@ -116,9 +116,9 @@ are now subscribed.
 
 Now let's take a look at what the notification looks like:
 
-    >>> import email
+    >>> from lp.services.compat import message_from_bytes
     >>> notifications = [
-    ...     email.message_from_string(raw_message)
+    ...     message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']
@@ -128,7 +128,7 @@ Now let's take a look at what the notification looks like:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Definition Status: Drafting => Pending Approval
@@ -158,7 +158,7 @@ Whiteboard change:
     >>> transaction.commit()
 
     >>> notifications = [
-    ...     email.message_from_string(raw_message)
+    ...     message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']
@@ -168,7 +168,7 @@ Whiteboard change:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
     Whiteboard set to:
@@ -198,7 +198,7 @@ Definition status and whiteboard change:
     >>> transaction.commit()
 
     >>> notifications = [
-    ...     email.message_from_string(raw_message)
+    ...     message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']
@@ -208,7 +208,7 @@ Definition status and whiteboard change:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Definition Status: Pending Approval => Approved
@@ -238,7 +238,7 @@ Change priority:
     >>> transaction.commit()
 
     >>> notifications = [
-    ...     email.message_from_string(raw_message)
+    ...     message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']
@@ -248,7 +248,7 @@ Change priority:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Priority: High => Essential
@@ -272,7 +272,7 @@ Change approver, assignee and drafter:
     >>> transaction.commit()
 
     >>> notifications = [
-    ...     email.message_from_string(raw_message)
+    ...     message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']
@@ -282,7 +282,7 @@ Change approver, assignee and drafter:
     >>> status_notification['Subject']
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body)
+    >>> print(body.decode('UTF-8'))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Approver: Mark Shuttleworth => (none)

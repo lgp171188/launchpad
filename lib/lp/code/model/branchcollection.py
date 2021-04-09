@@ -438,7 +438,7 @@ class GenericBranchCollection:
             "candidate_branches",
             Select(
                 Branch.id,
-                tables=[Branch] + self._tables.values(),
+                tables=[Branch] + list(self._tables.values()),
                 where=And(*expressions) if expressions else True))
         expressions = [SQL("""
             source_branch IN (SELECT id FROM candidate_branches) AND

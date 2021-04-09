@@ -37,6 +37,7 @@ from zope.formlib.textwidgets import TextWidget
 from zope.formlib.widget import DisplayWidget
 
 from lp.app.validators import LaunchpadValidationError
+from lp.services.utils import round_half_up
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchBag
 
@@ -83,10 +84,12 @@ class DateTimeWidget(TextWidget):
       >>> widget.request.form[widget.name] = '2005-07-03'
       >>> widget.from_date = datetime(2006, 5, 23,
       ...                             tzinfo=pytz.timezone('UTC'))
-      >>> print(widget.getInputValue())  #doctest: +ELLIPSIS
+      >>> print(widget.getInputValue())
+      ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
+      ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
       Traceback (most recent call last):
       ...
-      WidgetInputError: (...Please pick a date after 2006-05-22 17:00:00...)
+      zope.formlib.interfaces.WidgetInputError: (...Please pick a date after 2006-05-22 17:00:00...)
 
     If the date provided is greater than from_date then the widget works as
     expected.
@@ -99,10 +102,12 @@ class DateTimeWidget(TextWidget):
 
       >>> widget.to_date = datetime(2008, 1, 26,
       ...                           tzinfo=pytz.timezone('UTC'))
-      >>> print(widget.getInputValue())  #doctest: +ELLIPSIS
+      >>> print(widget.getInputValue())
+      ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
+      ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
       Traceback (most recent call last):
       ...
-      WidgetInputError: (...Please pick a date before 2008-01-25 16:00:00...)
+      zope.formlib.interfaces.WidgetInputError: (...Please pick a date before 2008-01-25 16:00:00...)
 
     A datetime picker can be disabled initially:
 
@@ -379,10 +384,12 @@ class DateTimeWidget(TextWidget):
 
         Invalid dates result in a ConversionError:
 
-          >>> print(widget._parseInput('not a date'))  #doctest: +ELLIPSIS
+          >>> print(widget._parseInput('not a date'))
+          ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
+          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
-          ConversionError: ('Invalid date value', ...)
+          zope.formlib.interfaces.ConversionError: ('Invalid date value', ...)
         """
         if input == self._missing:
             return self.context.missing_value
@@ -390,9 +397,9 @@ class DateTimeWidget(TextWidget):
         try:
             year, month, day, hour, minute, second, dummy_tz = parse(input)
             second, micro = divmod(second, 1.0)
-            micro = round(micro * 1000000)
+            micro = round_half_up(micro * 1000000)
             dt = datetime(year, month, day,
-                          hour, minute, int(second), int(micro))
+                          hour, minute, int(second), micro)
         except (DateTimeError, ValueError, IndexError) as v:
             raise ConversionError('Invalid date value', v)
         return self.time_zone.localize(dt)
@@ -407,8 +414,8 @@ class DateTimeWidget(TextWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         DateTimes are displayed without the corresponding time zone
         information:
@@ -540,10 +547,12 @@ class DateWidget(DateTimeWidget):
 
         Invalid dates result in a ConversionError:
 
-          >>> print(widget._toFieldValue('not a date'))  #doctest: +ELLIPSIS
+          >>> print(widget._toFieldValue('not a date'))
+          ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
+          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
-          ConversionError: ('Invalid date value', ...)
+          zope.formlib.interfaces.ConversionError: ('Invalid date value', ...)
 
         """
         parsed = self._parseInput(input)
@@ -561,8 +570,8 @@ class DateWidget(DateTimeWidget):
 
         The 'missing' value is converted to an empty string:
 
-          >>> widget._toFormValue(field.missing_value)
-          u''
+          >>> print(widget._toFormValue(field.missing_value))
+          <BLANKLINE>
 
         The widget ignores time and time zone information, returning only
         the date:

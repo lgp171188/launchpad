@@ -333,10 +333,8 @@ This will create a script named ``run`` in the ``bin`` directory that calls the
 Work with Unreleased or Forked Packages
 =======================================
 
-Sometimes you need to work with unreleased or forked packages.  FeedValidator_,
-for instance, makes nightly zip releases but other than that only offers svn
-access.  Similarly, we may require a patched or unreleased version of a package
-for some purpose.  Hopefully, these situations will be rare, but they do occur.
+Sometimes you need to work with unreleased or forked packages.  Hopefully,
+these situations will be rare, but they do occur.
 
 At the moment, our solution is to use the download-cache.  Basically, make a
 custom source distribution with a unique suffix in the name, and use it (and
@@ -348,8 +346,6 @@ In general, the suffix should comply with `PEP 440`_; in the case of a
 forked package, you should use ``lp`` as a local version identifier.  For
 example, you might start by appending ``+lp1``, followed by ``+lp2`` and so
 on for further revisions.
-
-.. _FeedValidator: http://feedvalidator.org/
 
 .. _`PEP 440`: https://www.python.org/dev/peps/pep-0440/
 

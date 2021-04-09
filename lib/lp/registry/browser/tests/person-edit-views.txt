@@ -13,13 +13,13 @@ The +editircnickname provides a label and a title.
     >>> ignored = login_person(person)
     >>> view = create_initialized_view(
     ...     person, name='+editircnicknames', form={}, principal=person)
-    >>> print view.label
+    >>> print(view.label)
     Basil's IRC nicknames
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Basil's IRC nicknames
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/~basil
 
 The IRC form requires a nickname.
@@ -37,7 +37,7 @@ The IRC form requires a nickname.
     []
 
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     Neither Nickname nor Network can be empty...
 
     >>> [irc for irc in person.ircnicknames]
@@ -58,7 +58,7 @@ The IRC form requires a network.
     []
 
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     Neither Nickname nor Network can be empty.
 
     >>> [irc for irc in person.ircnicknames]
@@ -78,7 +78,7 @@ The IRC nickname is added when both the nickname and network are submitted.
     >>> view.errors
     []
 
-    >>> print view.request.response.notifications
+    >>> print(view.request.response.notifications)
     []
 
     # We need to clear ircnicknames from the property cache so the new data
@@ -86,7 +86,7 @@ The IRC nickname is added when both the nickname and network are submitted.
     >>> from lp.services.propertycache import get_property_cache
     >>> del get_property_cache(person).ircnicknames
     >>> [ircnickname] = [irc for irc in person.ircnicknames]
-    >>> print ircnickname.nickname
+    >>> print(ircnickname.nickname)
     basil
 
 An IRC nickname can be removed.
@@ -105,7 +105,7 @@ An IRC nickname can be removed.
     >>> view.errors
     []
 
-    >>> print view.request.response.notifications
+    >>> print(view.request.response.notifications)
     []
 
     # Clear the cache first.

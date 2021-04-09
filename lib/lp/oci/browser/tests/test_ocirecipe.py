@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test OCI recipe views."""
@@ -33,6 +33,8 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 from zope.testbrowser.browser import LinkNotFoundError
 
+from lp.app.browser.tales import GitRepositoryFormatterAPI
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -55,6 +57,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.enums import BranchSharingPolicy
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -87,6 +90,7 @@ from lp.testing.matchers import (
 from lp.testing.pages import (
     extract_text,
     find_main_content,
+    find_tag_by_id,
     find_tags_by_class,
     )
 from lp.testing.publication import test_traverse
@@ -150,7 +154,7 @@ class BaseTestOCIRecipeView(BrowserTestCase):
             name="test-person", displayname="Test Person")
 
 
-class TestOCIRecipeAddView(BaseTestOCIRecipeView):
+class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
     def setUp(self):
         super(TestOCIRecipeAddView, self).setUp()
@@ -161,6 +165,7 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
             "oci.build_series.%s" % self.distribution.name:
                 self.distroseries.name,
             }))
+        self.setConfig()
 
     def setUpDistroSeries(self):
         """Set up self.distroseries with some available processors."""
@@ -189,15 +194,16 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
     def test_create_new_recipe(self):
         oci_project = self.factory.makeOCIProject()
         oci_project_display = oci_project.display_name
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v2.0-20.04'])
         source_display = git_ref.display_name
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             git_ref.repository.identity)
-        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Create OCI recipe").click()
 
         content = find_main_content(browser.contents)
@@ -222,17 +228,60 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         self.assertThat(
             "Build schedule:\nBuilt on request\nEdit OCI recipe\n",
             MatchesTagText(content, "build-schedule"))
+        self.assertThat(
+            "Official recipe:\nNo",
+            MatchesTagText(content, "official-recipe"))
 
-    def test_create_new_recipe_with_build_args(self):
+    def test_create_new_available_information_types(self):
+        public_pillar = self.factory.makeProduct(owner=self.person)
+        private_pillar = self.factory.makeProduct(
+            owner=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        public_oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=public_pillar)
+        private_oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=private_pillar)
+
+        # Public pillar.
+        browser = self.getViewBrowser(
+            public_oci_project, view_name="+new-recipe", user=self.person)
+        self.assertContentEqual(
+            ['PUBLIC', 'PUBLICSECURITY', 'PRIVATESECURITY', 'USERDATA'],
+            browser.getControl(name="field.information_type").options)
+
+        # Proprietary pillar.
+        browser = self.getViewBrowser(
+            private_oci_project, view_name="+new-recipe", user=self.person)
+        self.assertContentEqual(
+            ['PROPRIETARY'],
+            browser.getControl(name="field.information_type").options)
+
+    def test_create_new_recipe_invalid_format(self):
         oci_project = self.factory.makeOCIProject()
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/invalid'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             git_ref.repository.identity)
-        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        browser.getControl("Create OCI recipe").click()
+        self.assertIn("Branch does not match format", browser.contents)
+
+    def test_create_new_recipe_with_build_args(self):
+        oci_project = self.factory.makeOCIProject()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v2.0-20.04'])
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Build-time ARG variables").value = (
             "VAR1=10\nVAR2=20")
         browser.getControl("Create OCI recipe").click()
@@ -242,6 +291,29 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         self.assertThat(
             "Build-time\nARG variables:\nVAR1=10\nVAR2=20",
             MatchesTagText(content, "build-args"))
+
+    def test_create_new_recipe_with_image_name(self):
+        oci_project = self.factory.makeOCIProject()
+        credentials = self.factory.makeOCIRegistryCredentials()
+        with person_logged_in(oci_project.distribution.owner):
+            oci_project.distribution.oci_registry_credentials = credentials
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v2.0-20.04'])
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+
+        image_name = self.factory.getUniqueUnicode()
+        browser.getControl(name="field.image_name").value = image_name
+        browser.getControl("Create OCI recipe").click()
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Registry image name:\n{}".format(image_name),
+            MatchesTagText(content, "image-name"))
 
     def test_create_new_recipe_users_teams_as_owner_options(self):
         # Teams that the user is in are options for the OCI recipe owner.
@@ -285,21 +357,183 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
     def test_create_new_recipe_processors(self):
         self.setUpDistroSeries()
         oci_project = self.factory.makeOCIProject(pillar=self.distribution)
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v2.0-20.04'])
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         processors = browser.getControl(name="field.processors")
         processors.value = ["386", "amd64"]
         browser.getControl(name="field.name").value = "recipe-name"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             git_ref.repository.identity)
-        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Create OCI recipe").click()
         login_person(self.person)
         recipe = getUtility(IOCIRecipeSet).getByName(
             self.person, oci_project, "recipe-name")
         self.assertContentEqual(
             ["386", "amd64"], [proc.name for proc in recipe.processors])
+
+    def test_create_new_recipe_no_default_repo_warning(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        with admin_logged_in():
+            oci_project_url = canonical_url(oci_project)
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        error_message = (
+            'Your git repository for this OCI project was not created yet.'
+            "<br/>Check the <a href='{url}'>OCI project page</a> for "
+            'instructions on how to create one.').format(url=oci_project_url)
+        self.assertIn(error_message, browser.contents)
+
+    def test_create_new_recipe_with_default_repo_already_created(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        self.factory.makeGitRepository(
+            name=oci_project.name,
+            target=oci_project, owner=self.person, registrant=self.person)
+        with admin_logged_in():
+            default_repo_path = oci_project.getDefaultGitRepositoryPath(
+                self.person)
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        error_message = (
+            'Your git repository for this OCI project was not created yet.')
+        self.assertNotIn(error_message, browser.contents)
+        self.assertThat(browser.contents, soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Repository pre-filled', 'input', attrs={
+                    "id": "field.git_ref.repository",
+                    "value": default_repo_path})))
+
+    def test_official_is_disabled(self):
+        oci_project = self.factory.makeOCIProject()
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        official_control = browser.getControl("Official recipe")
+        self.assertTrue(official_control.disabled)
+
+    def test_official_is_enabled(self):
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=self.person)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        official_control = browser.getControl("Official recipe")
+        self.assertFalse(official_control.disabled)
+
+    def test_set_official(self):
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=self.person)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v2.0-20.04'])
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        official_control = browser.getControl("Official recipe")
+        official_control.selected = True
+        browser.getControl("Create OCI recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Official recipe:\nYes",
+            MatchesTagText(content, "official-recipe"))
+
+    def test_set_official_multiple(self):
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=self.person)
+
+        # do it once
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v2.0-20.04'])
+
+        # and then do it again
+        oci_project2 = self.factory.makeOCIProject(pillar=distribution)
+        [git_ref2] = self.factory.makeGitRefs(
+            paths=['refs/heads/v3.0-20.04'])
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        official_control = browser.getControl("Official recipe")
+        official_control.selected = True
+        browser.getControl("Create OCI recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Official recipe:\nYes",
+            MatchesTagText(content, "official-recipe"))
+
+        browser2 = self.getViewBrowser(
+            oci_project2, view_name="+new-recipe", user=self.person)
+        browser2.getControl(name="field.name").value = "recipe-name"
+        browser2.getControl("Description").value = "Recipe description"
+        browser2.getControl(name="field.git_ref.repository").value = (
+            git_ref2.repository.identity)
+        browser2.getControl(name="field.git_ref.path").value = git_ref2.path
+        official_control = browser2.getControl("Official recipe")
+        official_control.selected = True
+        browser2.getControl("Create OCI recipe").click()
+
+        content = find_main_content(browser2.contents)
+        self.assertThat(
+            "Official recipe:\nYes",
+            MatchesTagText(content, "official-recipe"))
+
+        browser.reload()
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Official recipe:\nYes",
+            MatchesTagText(content, "official-recipe"))
+
+    def test_set_official_no_permissions(self):
+        distro_owner = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=distro_owner)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v2.0-20.04'])
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        official_control = browser.getControl("Official recipe")
+        official_control.selected = True
+        browser.getControl("Create OCI recipe").click()
+
+        error_message = (
+            "You do not have permission to set the official status "
+            "of this recipe.")
+        self.assertIn(error_message, browser.contents)
+
+    def test_create_recipe_doesnt_override_gitref_errors(self):
+        oci_project = self.factory.makeOCIProject()
+        [git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v2.0-20.04'])
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Description").value = "Recipe description"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.identity)
+        browser.getControl(name="field.git_ref.path").value = "non-exist"
+        browser.getControl("Create OCI recipe").click()
+
+        error_message = "does not contain a branch named"
+        self.assertIn(error_message, browser.contents)
 
 
 class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
@@ -392,6 +626,22 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             for name in disabled])
         self.assertThat(processors_control.controls, MatchesSetwise(*matchers))
 
+    def assertShowsPrivateBanner(self, browser):
+        banners = find_tags_by_class(
+            browser.contents, "private_banner_container")
+        self.assertEqual(1, len(banners))
+        self.assertEqual(
+            'The information on this page is private.',
+            extract_text(banners[0]))
+
+    def test_edit_private_recipe_shows_banner(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            information_type=InformationType.USERDATA)
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        self.assertShowsPrivateBanner(browser)
+
     def test_edit_recipe(self):
         oci_project = self.factory.makeOCIProject()
         oci_project_display = oci_project.display_name
@@ -401,7 +651,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             oci_project=oci_project, git_ref=old_git_ref)
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
-        [new_git_ref] = self.factory.makeGitRefs()
+        [new_git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v2.0-20.04'])
         self.factory.makeOCIPushRule(recipe=recipe)
 
         browser = self.getViewBrowser(recipe, user=self.person)
@@ -409,9 +660,9 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Owner").value = ["new-team"]
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl("Description").value = "New description"
-        browser.getControl("Git repository").value = (
+        browser.getControl(name="field.git_ref.repository").value = (
             new_git_ref.repository.identity)
-        browser.getControl("Git branch").value = new_git_ref.path
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
         browser.getControl("Build file path").value = "Dockerfile-2"
         browser.getControl("Build directory context").value = "apath"
         browser.getControl("Build daily").selected = True
@@ -435,6 +686,63 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.assertThat(
             "Build schedule:\nBuilt daily\nEdit OCI recipe\n",
             MatchesTagText(content, "build-schedule"))
+
+    def test_edit_recipe_invalid_branch(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository()
+        [old_git_ref] = self.factory.makeGitRefs(repository=repository)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project, git_ref=old_git_ref)
+        self.factory.makeTeam(
+            name="new-team", displayname="New Team", members=[self.person])
+        [new_git_ref] = self.factory.makeGitRefs(
+            repository=repository, paths=['refs/heads/invalid'])
+        self.factory.makeOCIPushRule(recipe=recipe)
+
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
+        browser.getControl("Update OCI recipe").click()
+        self.assertIn("Branch does not match format", browser.contents)
+
+    def test_edit_can_make_recipe_private(self):
+        pillar = self.factory.makeProduct(
+            owner=self.person,
+            information_type=InformationType.PUBLIC,
+            branch_sharing_policy=BranchSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=pillar)
+        [git_ref] = self.factory.makeGitRefs(
+            owner=self.person,
+            paths=['refs/heads/v2.0-20.04'])
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project, git_ref=git_ref,
+            information_type=InformationType.PUBLIC)
+
+        browser = self.getViewBrowser(recipe, '+edit', user=self.person)
+
+        # Make sure we are showing all available information types:
+        info_type_field = browser.getControl(name="field.information_type")
+        self.assertContentEqual([
+            'PUBLIC', 'PUBLICSECURITY', 'PRIVATESECURITY', 'USERDATA',
+            'PROPRIETARY'],
+            info_type_field.options)
+
+        info_type_field.value = InformationType.PROPRIETARY.name
+        browser.getControl("Update OCI recipe").click()
+        self.assertShowsPrivateBanner(browser)
+
+    def test_edit_recipe_on_public_pillar_information_types(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person)
+        browser = self.getViewBrowser(recipe, '+edit', user=self.person)
+
+        info_type_field = browser.getControl(name="field.information_type")
+        self.assertContentEqual(
+            ['PUBLIC', 'PUBLICSECURITY', 'PRIVATESECURITY', 'USERDATA'],
+            info_type_field.options)
 
     def test_edit_recipe_sets_date_last_modified(self):
         # Editing an OCI recipe sets the date_last_modified property.
@@ -539,6 +847,31 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         IStore(recipe).reload(recipe)
         self.assertEqual({"VAR1": "xxx", "VAR2": "uu"}, recipe.build_args)
 
+    def test_edit_image_name(self):
+        self.setUpDistroSeries()
+        credentials = self.factory.makeOCIRegistryCredentials()
+        original_name = self.factory.getUniqueUnicode()
+        with person_logged_in(self.distribution.owner):
+            self.distribution.oci_registry_credentials = credentials
+            oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+            recipe = self.factory.makeOCIRecipe(
+                name=original_name,
+                registrant=self.person, owner=self.person,
+                oci_project=oci_project)
+            oci_project.setOfficialRecipeStatus(recipe, True)
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        image_name = self.factory.getUniqueUnicode()
+        field = browser.getControl(name="field.image_name")
+        # Default is the recipe name
+        self.assertEqual(field.value, original_name)
+        field.value = image_name
+        browser.getControl("Update OCI recipe").click()
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Registry image name:\n{}".format(image_name),
+            MatchesTagText(content, "image-name"))
+
     def test_edit_with_invisible_processor(self):
         # It's possible for existing recipes to have an enabled processor
         # that's no longer usable with the current distroseries, which will
@@ -622,6 +955,179 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Update OCI recipe").click()
         login_person(self.person)
         self.assertRecipeProcessors(recipe, ["386", "armhf"])
+
+    def test_edit_without_default_repo_for_ociproject(self):
+        self.setUpDistroSeries()
+        repo = self.factory.makeGitRepository(
+            owner=self.person, registrant=self.person)
+        [git_ref] = self.factory.makeGitRefs(repository=repo)
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, oci_project=oci_project, git_ref=git_ref)
+        with person_logged_in(self.person):
+            oci_project_url = canonical_url(oci_project)
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+        error_message = (
+            "This recipe's git repository is not in the correct "
+            "namespace.<br/>Check the <a href='{url}'>OCI project page</a> "
+            "for instructions on how to create it correctly.")
+        self.assertIn(
+            error_message.format(url=oci_project_url), browser.contents)
+
+    def test_edit_repository_is_not_default_for_ociproject(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+        [random_git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project,
+            git_ref=random_git_ref)
+
+        # Make the default git repository that should have been used by the
+        # recipe.
+        self.factory.makeGitRepository(
+            name=oci_project.name,
+            target=oci_project, owner=self.person, registrant=self.person)
+
+        with person_logged_in(self.person):
+            default_repo = oci_project.getDefaultGitRepository(recipe.owner)
+            repo_link = GitRepositoryFormatterAPI(default_repo).link('')
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+        error_message = (
+            "This recipe's git repository is not in the correct "
+            "namespace.<br/>Consider using {repo} instead.")
+        self.assertIn(
+            error_message.format(repo=repo_link), browser.contents)
+
+    def test_edit_repository_in_the_correct_namespace(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+        default_repo = self.factory.makeGitRepository(
+            name=oci_project.name,
+            target=oci_project, owner=self.person, registrant=self.person)
+
+        [git_ref] = self.factory.makeGitRefs(repository=default_repo)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project,
+            git_ref=git_ref)
+
+        with person_logged_in(self.person):
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+        self.assertNotIn(
+            "This recipe's git repository is not in the correct namespace",
+            browser.contents)
+
+    def test_edit_repository_dont_override_important_msgs(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            registrant=self.person, pillar=self.distribution)
+
+        [git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project,
+            git_ref=git_ref)
+
+        wrong_namespace_msg = (
+            "This recipe's git repository is not in the correct namespace")
+        wrong_ref_path_msg = (
+                "The repository at %s does not contain a branch named "
+                "&#x27;non-existing git-ref&#x27;."
+            ) % git_ref.repository.display_name
+        with person_logged_in(self.person):
+            browser = self.getViewBrowser(
+                recipe, view_name="+edit", user=self.person)
+            self.assertIn(wrong_namespace_msg, browser.contents)
+            args = browser.getControl(name="field.git_ref.path")
+            args.value = "non-existing git-ref"
+            browser.getControl("Update OCI recipe").click()
+
+            # The error message should have changed.
+            self.assertNotIn(wrong_namespace_msg, browser.contents)
+            self.assertIn(wrong_ref_path_msg, browser.contents)
+
+    def test_official_is_disabled(self):
+        oci_project = self.factory.makeOCIProject()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project)
+
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        official_control = browser.getControl("Official recipe")
+        self.assertTrue(official_control.disabled)
+
+    def test_official_is_set_while_disabled(self):
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=self.person)
+        non_admin = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=non_admin, owner=non_admin,
+            oci_project=oci_project)
+        with person_logged_in(self.person):
+            oci_project.setOfficialRecipeStatus(recipe, True)
+        browser = self.getViewBrowser(recipe, user=non_admin)
+        browser.getLink("Edit OCI recipe").click()
+        official_control = browser.getControl("Official recipe")
+        self.assertTrue(official_control.disabled)
+        self.assertTrue(official_control.selected)
+
+    def test_official_is_enabled(self):
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=self.person)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project)
+
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        official_control = browser.getControl("Official recipe")
+        self.assertFalse(official_control.disabled)
+
+    def test_set_official(self):
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=self.person)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project)
+
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        official_control = browser.getControl("Official recipe")
+        official_control.selected = True
+        browser.getControl("Update OCI recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Official recipe:\nYes",
+            MatchesTagText(content, "official-recipe"))
+
+    def test_set_official_no_permissions(self):
+        distro_owner = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=distro_owner)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            oci_project=oci_project)
+
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit OCI recipe").click()
+        official_control = browser.getControl("Official recipe")
+        official_control.selected = True
+        browser.getControl("Update OCI recipe").click()
+
+        error_message = (
+            "You do not have permission to change the official status "
+            "of this recipe.")
+        self.assertIn(error_message, browser.contents)
 
 
 class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
@@ -762,6 +1268,9 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         build = self.makeBuild(
             recipe=recipe, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
+
+        browser = self.getViewBrowser(build.recipe)
+        login_person(self.person)
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
             %s OCI project
             recipe-name
@@ -773,11 +1282,39 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Build file path: Dockerfile
             Build context directory: %s
             Build schedule: Built on request
+            Official recipe:
+            No
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago 386
             """ % (oci_project_name, oci_project_display, recipe.build_path),
-            self.getMainText(build.recipe))
+            extract_text(find_main_content(browser.contents)))
+
+        # Check portlet on side menu.
+        privacy_tag = find_tag_by_id(browser.contents, "privacy")
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            "This OCI recipe contains Public information",
+            extract_text(privacy_tag))
+
+    def test_index_for_private_recipe_shows_banner(self):
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person,
+            information_type=InformationType.USERDATA)
+        browser = self.getViewBrowser(recipe, user=self.person)
+
+        # Check top banner.
+        banners = find_tags_by_class(
+            browser.contents, "private_banner_container")
+        self.assertEqual(1, len(banners))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            'The information on this page is private.',
+            extract_text(banners[0]))
+
+        # Check portlet on side menu.
+        privacy_tag = find_tag_by_id(browser.contents, "privacy")
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            "This OCI recipe contains Private information",
+            extract_text(privacy_tag))
 
     def test_index_with_build_args(self):
         oci_project = self.factory.makeOCIProject(
@@ -806,18 +1343,63 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Build context directory: %s
             Build schedule: Built on request
             Build-time\nARG variables: VAR1=123 VAR2=XXX
+            Official recipe:
+            No
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago 386
             """ % (oci_project_name, oci_project_display, build_path),
             self.getMainText(build.recipe))
 
+    def test_index_for_subscriber_without_git_repo_access(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        oci_project_name = oci_project.name
+        oci_project_display = oci_project.display_name
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="recipe-repository",
+            paths=["refs/heads/master"],
+            information_type=InformationType.PRIVATESECURITY)
+        recipe = self.makeOCIRecipe(
+            oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
+            information_type=InformationType.PRIVATESECURITY)
+        with admin_logged_in():
+            build_path = recipe.build_path
+            build = self.makeBuild(
+                recipe=recipe, status=BuildStatus.FULLYBUILT,
+                duration=timedelta(minutes=30))
+
+        # Subscribe a user.
+        subscriber = self.factory.makePerson()
+        with person_logged_in(self.person):
+            recipe.subscribe(subscriber, self.person)
+
+        main_text = self.getMainText(build.recipe, user=subscriber)
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            %s OCI project
+            recipe-name
+            .*
+            OCI recipe information
+            Owner: Test Person
+            OCI project: %s
+            Source: &lt;redacted&gt;
+            Build file path: Dockerfile
+            Build context directory: %s
+            Build schedule: Built on request
+            Official recipe:
+            No
+            Latest builds
+            Status When complete Architecture
+            Successfully built 30 minutes ago 386
+            """ % (oci_project_name, oci_project_display, build_path),
+            main_text)
+
     def test_index_success_with_buildlog(self):
         # The build log is shown if it is there.
         build = self.makeBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=30))
         build.setLog(self.factory.makeLibraryFileAlias())
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago buildlog \(.*\) 386
@@ -834,7 +1416,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         # A pending build is listed as such.
         build = self.makeBuild()
         build.queueBuild()
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture
             Needs building in .* \(estimated\) 386
@@ -1111,6 +1693,10 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                                      text=soupmatchers._not_passed)),
                 soupmatchers.Within(
                     row,
+                    soupmatchers.Tag("Region", "td",
+                                     text=soupmatchers._not_passed)),
+                soupmatchers.Within(
+                    row,
                     soupmatchers.Tag("Username", "td",
                                      text=soupmatchers._not_passed)),
                 soupmatchers.Within(
@@ -1330,6 +1916,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getControl(name="field.add_credentials").value = "new"
         browser.getControl(name="field.add_image_name").value = "imagename3"
         browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_region").value = "somewhere-02"
         browser.getControl(name="field.add_username").value = "username"
         browser.getControl(name="field.add_password").value = "password"
         browser.getControl(
@@ -1347,8 +1934,9 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                 url=url,
                 username="username")))
         with person_logged_in(self.person):
-            self.assertEqual(
-                {"username": "username", "password": "password"},
+            self.assertEqual({
+                "username": "username", "password": "password",
+                "region": "somewhere-02"},
                 rule.registry_credentials.getCredentials())
 
     def test_add_oci_push_rules_existing_credentials_duplicate(self):
@@ -1494,6 +2082,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         browser.getLink("Edit OCI registry credentials").click()
 
         browser.getControl(name="field.add_url").value = url
+        browser.getControl(name="field.add_region").value = "new_region1"
         browser.getControl(name="field.add_username").value = "new_username"
         browser.getControl(name="field.add_password").value = "password"
         browser.getControl(name="field.add_confirm_password"
@@ -1508,13 +2097,15 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
             self.assertEqual(url, creds[1].url)
             self.assertThat(
                 (creds[1]).getCredentials(),
-                MatchesDict({"username": Equals("new_username"),
-                             "password": Equals("password")}))
+                MatchesDict({
+                    "username": Equals("new_username"),
+                    "password": Equals("password"),
+                    "region": Equals("new_region1")}))
 
 
-class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
+class TestOCIRecipeListingView(BaseTestOCIRecipeView):
     def setUp(self):
-        super(TestOCIProjectRecipesView, self).setUp()
+        super(TestOCIRecipeListingView, self).setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
@@ -1530,14 +2121,45 @@ class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
             pillar=self.distroseries.distribution,
             ociprojectname="oci-project-name")
 
-    def makeRecipes(self, count=1):
+    def makeRecipes(self, count=1, **kwargs):
         with person_logged_in(self.person):
             owner = self.factory.makePerson()
             return [self.factory.makeOCIRecipe(
-                registrant=owner, owner=owner, oci_project=self.oci_project)
+                registrant=owner, owner=owner, oci_project=self.oci_project,
+                **kwargs)
                 for _ in range(count)]
 
+    def test_oci_recipe_list_for_person(self):
+        owner = self.factory.makePerson(name="recipe-owner")
+        for i in range(2):
+            self.factory.makeOCIRecipe(
+                name="my-oci-recipe-%s" % i, owner=owner, registrant=owner)
+
+        # This recipe should not be present.
+        someone_else = self.factory.makePerson()
+        self.factory.makeOCIRecipe(owner=someone_else, registrant=someone_else)
+
+        # self.person now visits ~owner/+oci-recipes page.
+        browser = self.getViewBrowser(owner, "+oci-recipes", user=self.person)
+        main_text = extract_text(find_main_content(browser.contents))
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
+            OCI recipes for recipe-owner
+            There are 2 recipes registered for recipe-owner.
+            Name             Owner          Source   Build file   Date created
+            my-oci-recipe-0  Recipe-owner   .*
+            my-oci-recipe-1  Recipe-owner   .*
+            1 .* 2 of 2 results
+            First .* Previous .* Next .* Last
+            """, main_text)
+
     def test_shows_no_recipe(self):
+        """Should shows correct message when there are no visible recipes."""
+        # Create a private OCI recipe that should not be shown.
+        owner = self.factory.makePerson()
+        self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner, oci_project=self.oci_project,
+            information_type=InformationType.PRIVATESECURITY)
         browser = self.getViewBrowser(
             self.oci_project, "+recipes", user=self.person)
         main_text = extract_text(find_main_content(browser.contents))
@@ -1550,10 +2172,17 @@ class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
     def test_paginates_recipes(self):
         batch_size = 5
         self.pushConfig("launchpad", default_batch_size=batch_size)
-        recipes = self.makeRecipes(10)
+        # We will create 1 private recipe with proper permission in the
+        # list, and 9 others. This way, we should have 10 recipes in the list.
+        [private_recipe] = self.makeRecipes(
+            1, information_type=InformationType.PRIVATESECURITY)
+        with admin_logged_in():
+            private_recipe.subscribe(self.person, private_recipe.owner)
+        recipes = self.makeRecipes(9)
+        recipes.append(private_recipe)
+
         browser = self.getViewBrowser(
             self.oci_project, "+recipes", user=self.person)
-
         main_text = extract_text(find_main_content(browser.contents))
         no_wrap_main_text = main_text.replace('\n', ' ')
         with person_logged_in(self.person):

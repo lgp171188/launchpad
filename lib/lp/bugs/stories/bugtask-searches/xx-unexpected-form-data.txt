@@ -4,22 +4,25 @@ is raised.
 
     >>> browser.open(
     ...     "http://localhost/ubuntu/+bugs?search=Search&field.status=Fred")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnexpectedFormData: Unexpected value for field 'status'...
+    lp.app.errors.UnexpectedFormData: Unexpected value for field 'status'...
 
     >>> browser.open(
     ...     "http://localhost/ubuntu/+bugs?search=Search&orderby=foobar")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnexpectedFormData: Unknown sort column 'foobar'
+    lp.app.errors.UnexpectedFormData: Unknown sort column 'foobar'
     
     >>> browser.open(
     ...     "http://launchpad.test/firefox/+bugs?"
     ...     "field.status_upstream=hide_open")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnexpectedFormData: Unexpected value for field 'status_upstream'...
+    lp.app.errors.UnexpectedFormData: Unexpected value for field 'status_upstream'...
 
 When a UnexpectedFormData is raised, we display a custom error page to the
 user.

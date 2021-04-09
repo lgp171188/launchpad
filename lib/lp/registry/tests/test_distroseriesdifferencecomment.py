@@ -6,7 +6,7 @@
 __metaclass__ = type
 
 from datetime import timedelta
-from random import randint
+from random import random
 
 from storm.store import Store
 from zope.component import getUtility
@@ -31,14 +31,9 @@ def get_comment_source():
     return getUtility(IDistroSeriesDifferenceCommentSource)
 
 
-def flip_coin(*args):
-    """Random comparison function.  Returns -1 or 1 randomly."""
-    return 1 - 2 * randint(0, 1)
-
-
 def randomize_list(original_list):
     """Sort a list (or other iterable) in random order.  Return list."""
-    return sorted(original_list, cmp=flip_coin)
+    return sorted(original_list, key=lambda _: random())
 
 
 class DistroSeriesDifferenceCommentTestCase(TestCaseWithFactory):

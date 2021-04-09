@@ -26,9 +26,10 @@ Project in this case.
 
     >>> anon_browser.open('http://answers.launchpad.test/mozilla')
     >>> anon_browser.getLink('Ask a question').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> user_browser.open('http://answers.launchpad.test/mozilla')
     >>> user_browser.getLink('Ask a question').click()
@@ -78,7 +79,7 @@ that they submitted:
     >>> similar_questions = find_tag_by_id(
     ...     user_browser.contents, 'similar-questions')
     >>> for row in similar_questions.findAll('li'):
-    ...     print(row.a.renderContents())
+    ...     print(row.a.decode_contents())
     2: Problem showing the SVG demo on W3C site
 
 No Privileged Person can still change the product for which they're asking
@@ -98,7 +99,7 @@ An error message in the page informs the user that the summary is
 missing:
 
     >>> soup = find_main_content(user_browser.contents)
-    >>> print(soup.find('div', 'message').renderContents())
+    >>> print(soup.find('div', 'message').decode_contents())
     You must enter a summary of your problem.
 
 The product Thunderbird that they selected on the previous screen is still
@@ -117,7 +118,7 @@ Thunderbird. Since there are no similar questions against Thunderbird,
 an appropriate message is displayed to inform them of this:
 
     >>> soup = find_main_content(user_browser.contents)
-    >>> print(soup.find('p').renderContents())
+    >>> print(soup.find('p').decode_contents())
     There are no existing FAQs or questions similar to the summary you
     entered.
 
@@ -177,7 +178,7 @@ speaks Japanese, so we will use him.
     >>> daf_browser.getControl('Continue').click()
     >>> content = find_main_content(daf_browser.contents)
     >>> for message in content.findAll('div', 'informational message'):
-    ...      print(message.renderContents())
+    ...      print(message.decode_contents())
     You have been added as an answer contact for Mozilla Thunderbird.
 
 And we add Japanese to No Privileges Person's preferred languages. We
@@ -193,7 +194,7 @@ match. This condition demonstrates the supported language behaviour.
     >>> user_browser.getControl('Japanese').selected = True
     >>> user_browser.getControl('Save').click()
     >>> soup = find_main_content(user_browser.contents)
-    >>> print(soup.find('div', 'informational message').renderContents())
+    >>> print(soup.find('div', 'informational message').decode_contents())
     Added Japanese to your preferred languages.
 
 So if No Privileges Person were to visit the Ask a Question page for

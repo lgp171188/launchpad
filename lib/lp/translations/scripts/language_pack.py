@@ -131,8 +131,8 @@ def export(distroseries, component, update, force_utf8, logger):
                 # one.
                 gc.collect()
 
-        domain = potemplate.translation_domain.encode('ascii')
-        code = pofile.getFullLanguageCode().encode('UTF-8')
+        domain = potemplate.translation_domain
+        code = pofile.getFullLanguageCode()
         path = os.path.join(path_prefix, code, 'LC_MESSAGES', '%s.po' % domain)
 
         try:

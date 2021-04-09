@@ -24,7 +24,7 @@ from openid.server.server import (
     ENCODE_HTML_FORM,
     Server,
     )
-from openid.store.memstore import MemoryStore
+from openid.store.filestore import FileOpenIDStore
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -39,6 +39,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.errors import UnexpectedFormData
 from lp.registry.interfaces.person import IPerson
+from lp.services.config import config
 from lp.services.identity.interfaces.account import (
     AccountStatus,
     IAccountSet,
@@ -74,7 +75,15 @@ from lp.testopenid.interfaces.server import (
 
 OPENID_REQUEST_SESSION_KEY = 'testopenid.request'
 SESSION_PKG_KEY = 'TestOpenID'
-openid_store = MemoryStore()
+openid_store = None
+
+
+def get_openid_store():
+    global openid_store
+    if openid_store is None:
+        openid_store = FileOpenIDStore(
+            config.launchpad.test_openid_provider_store)
+    return openid_store
 
 
 @implementer(ICanonicalUrlData)
@@ -128,7 +137,7 @@ class OpenIDMixin:
     def __init__(self, context, request):
         super(OpenIDMixin, self).__init__(context, request)
         self.server_url = get_server_url()
-        self.openid_server = Server(openid_store, self.server_url)
+        self.openid_server = Server(get_openid_store(), self.server_url)
 
     @property
     def user_identity_url(self):

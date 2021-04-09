@@ -8,8 +8,8 @@ contributors.
     >>> anon_browser.open(
     ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/es/+details')
-    >>> print(extract_text(find_main_content(anon_browser.contents)).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_main_content(
+    ...     anon_browser.contents))))
     Details for Spanish translation
     ...
     Latest contributor:

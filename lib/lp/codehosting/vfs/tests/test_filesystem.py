@@ -143,7 +143,8 @@ class TestFilesystem(TestCaseWithTransport):
             % (self.requester.name, product.name))
         stacked_on = IBranchTarget(product).default_stacked_on_branch
         self.assertEqual(
-            'default_stack_on = %s' % branch_id_alias(stacked_on),
+            ('default_stack_on = %s' % branch_id_alias(stacked_on)).encode(
+                'UTF-8'),
             control_file.strip())
 
     def test_can_open_product_control_dir(self):

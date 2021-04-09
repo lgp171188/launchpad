@@ -24,8 +24,8 @@ collections:
 
     >>> firefox_faqs = set(firefox.searchFAQs())
     >>> vocabulary_faqs = set(term.value for term in vocabulary)
-    >>> firefox_faqs.symmetric_difference(vocabulary_faqs)
-    set([])
+    >>> for item in firefox_faqs.symmetric_difference(vocabulary_faqs):
+    ...     print(item)
 
 And it only contains FAQs:
 

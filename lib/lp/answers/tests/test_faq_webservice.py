@@ -46,8 +46,9 @@ class TestFAQWebService(TestCaseWithFactory):
                     "title": Equals("Nothing works"),
                     "keywords": Equals("foo bar"),
                     "content": Equals("It is all broken."),
-                    "date_created": MatchesRegex("\d\d\d\d-\d\d-\d\dT.*"),
-                    "date_last_updated": MatchesRegex("\d\d\d\d-\d\d-\d\dT.*"),
+                    "date_created": MatchesRegex(r"\d\d\d\d-\d\d-\d\dT.*"),
+                    "date_last_updated": MatchesRegex(
+                        r"\d\d\d\d-\d\d-\d\dT.*"),
                     "last_updated_by_link": Contains(
                         "/devel/~%s" % faq.owner.name),
                     "target_link": Contains(

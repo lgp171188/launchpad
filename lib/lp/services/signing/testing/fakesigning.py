@@ -38,7 +38,7 @@ class ServiceKeyResource(resource.Resource, object):
         return json.dumps({
             "service-key": self.service_public_key.encode(
                 encoder=Base64Encoder).decode("UTF-8"),
-            })
+            }).encode("UTF-8")
 
 
 class NonceResource(resource.Resource, object):
@@ -58,7 +58,7 @@ class NonceResource(resource.Resource, object):
         nonce = base64.b64encode(random(Box.NONCE_SIZE)).decode("UTF-8")
         self.nonces.append(nonce)
         request.setHeader(b"Content-Type", b"application/json")
-        return json.dumps({"nonce": nonce})
+        return json.dumps({"nonce": nonce}).encode("UTF-8")
 
 
 class BoxedAuthenticationResource(resource.Resource, object):

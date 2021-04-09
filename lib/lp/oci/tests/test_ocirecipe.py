@@ -1,13 +1,15 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for OCI image building recipe functionality."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from datetime import datetime
 import json
 
 from fixtures import FakeLogger
+import six
 from six import string_types
 from storm.exceptions import LostObjectError
 from storm.store import Store
@@ -30,6 +32,7 @@ from zope.security.interfaces import (
     )
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocipushrule import (
@@ -49,6 +52,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeBuildAlreadyPending,
     OCIRecipeBuildRequestStatus,
     OCIRecipeNotOwner,
+    OCIRecipePrivacyMismatch,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
@@ -59,7 +63,21 @@ from lp.oci.tests.helpers import (
     MatchesOCIRegistryCredentials,
     OCIConfigHelperMixin,
     )
+from lp.registry.enums import (
+    BranchSharingPolicy,
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
+from lp.registry.interfaces.accesspolicy import (
+    IAccessArtifactSource,
+    IAccessPolicyArtifactSource,
+    IAccessPolicySource,
+    )
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.accesspolicy import (
+    AccessArtifact,
+    AccessArtifactGrant,
+    )
 from lp.services.config import config
 from lp.services.database.constants import (
     ONE_DAY_AGO,
@@ -391,8 +409,10 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         self.setConfig()
         oci_recipe = self.factory.makeOCIRecipe()
         # Create associated builds:
+        build_request = oci_recipe.requestBuilds(oci_recipe.owner, ["386"])
         build_ids = [
-            self.factory.makeOCIRecipeBuild(recipe=oci_recipe).id
+            self.factory.makeOCIRecipeBuild(
+                recipe=oci_recipe, build_request=build_request).id
             for _ in range(3)]
         # Create associated push rules:
         push_rule_ids = [
@@ -592,27 +612,32 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                 oci_project=oci_project2, registrant=owner, owner=owner)
             for _ in range(2)]
 
-        self.assertIsNone(oci_project1.getOfficialRecipe())
-        self.assertIsNone(oci_project2.getOfficialRecipe())
+        self.assertTrue(oci_project1.getOfficialRecipes().is_empty())
+        self.assertTrue(oci_project2.getOfficialRecipes().is_empty())
         for recipe in oci_proj1_recipes + oci_proj2_recipes:
             self.assertFalse(recipe.official)
 
+        # Cache permissions.
+        oci_project1.setOfficialRecipeStatus
+
         # Set official for project1 and make sure nothing else got changed.
         with StormStatementRecorder() as recorder:
-            oci_project1.setOfficialRecipe(oci_proj1_recipes[0])
-            self.assertEqual(2, recorder.count)
+            oci_project1.setOfficialRecipeStatus(oci_proj1_recipes[0], True)
+            Store.of(oci_project1).flush()
+        self.assertEqual(1, recorder.count)
 
-        self.assertIsNone(oci_project2.getOfficialRecipe())
+        self.assertTrue(oci_project2.getOfficialRecipes().is_empty())
         self.assertEqual(
-            oci_proj1_recipes[0], oci_project1.getOfficialRecipe())
+            oci_proj1_recipes[0], oci_project1.getOfficialRecipes()[0])
         self.assertTrue(oci_proj1_recipes[0].official)
         for recipe in oci_proj1_recipes[1:] + oci_proj2_recipes:
             self.assertFalse(recipe.official)
 
         # Set back no recipe as official.
         with StormStatementRecorder() as recorder:
-            oci_project1.setOfficialRecipe(None)
-            self.assertEqual(1, recorder.count)
+            oci_project1.setOfficialRecipeStatus(oci_proj1_recipes[0], False)
+            Store.of(oci_project1).flush()
+        self.assertEqual(1, recorder.count)
 
         for recipe in oci_proj1_recipes + oci_proj2_recipes:
             self.assertFalse(recipe.official)
@@ -630,7 +655,8 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_project=oci_project, registrant=owner)
 
         self.assertRaises(
-            ValueError, another_oci_project.setOfficialRecipe, recipe)
+            ValueError, another_oci_project.setOfficialRecipeStatus,
+            recipe, True)
 
     def test_permission_check_on_setOfficialRecipe(self):
         distro = self.factory.makeDistribution()
@@ -642,7 +668,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         another_user = self.factory.makePerson()
         with person_logged_in(another_user):
             self.assertRaises(
-                Unauthorized, getattr, oci_project, 'setOfficialRecipe')
+                Unauthorized, getattr, oci_project, 'setOfficialRecipeStatus')
 
     def test_oci_project_get_recipe_by_name_and_owner(self):
         owner = self.factory.makePerson()
@@ -735,7 +761,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         # Makes sure we only store one level of key=pair, flattening to
         # string every value.
         args = {
-            "VAR1": {b"something": [1, 2, 3]},
+            "VAR1": {six.ensure_str("something"): [1, 2, 3]},
             "VAR2": 123,
             "VAR3": "A string",
         }
@@ -748,6 +774,243 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             "VAR2": "123",
             "VAR3": "A string",
         }, recipe.build_args)
+
+    def test_use_distribution_credentials_set(self):
+        self.setConfig()
+        distribution = self.factory.makeDistribution()
+        credentials = self.factory.makeOCIRegistryCredentials()
+        with person_logged_in(distribution.owner):
+            distribution.oci_registry_credentials = credentials
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        with person_logged_in(distribution.owner):
+            project.setOfficialRecipeStatus(recipe, True)
+        self.assertTrue(recipe.use_distribution_credentials)
+
+    def test_use_distribution_credentials_not_set(self):
+        distribution = self.factory.makeDistribution()
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        self.assertFalse(recipe.use_distribution_credentials)
+
+    def test_image_name_set(self):
+        distribution = self.factory.makeDistribution()
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        image_name = self.factory.getUniqueUnicode()
+        with person_logged_in(recipe.owner):
+            recipe.image_name = image_name
+        self.assertEqual(image_name, removeSecurityProxy(recipe)._image_name)
+
+    def test_image_name_not_set(self):
+        distribution = self.factory.makeDistribution()
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        self.assertEqual(recipe.name, recipe.image_name)
+
+    def test_public_recipe_should_not_be_linked_to_private_content(self):
+        login_admin()
+        private_team = self.factory.makeTeam(
+            visibility=PersonVisibility.PRIVATE,
+            membership_policy=TeamMembershipPolicy.MODERATED)
+        owner = self.factory.makePerson(member_of=[private_team])
+        pillar = self.factory.makeProduct(
+            owner=private_team, registrant=owner,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        oci_project = self.factory.makeOCIProject(
+            registrant=owner, pillar=pillar)
+
+        [private_git_ref] = self.factory.makeGitRefs(
+            target=pillar, owner=owner,
+            information_type=InformationType.PROPRIETARY)
+
+        private_recipe = self.factory.makeOCIRecipe(
+            owner=private_team, registrant=owner,
+            oci_project=oci_project, git_ref=private_git_ref,
+            information_type=InformationType.PROPRIETARY)
+        public_recipe = self.factory.makeOCIRecipe()
+
+        # Should not be able to make the recipe PUBLIC if it's linked to
+        self.assertRaises(
+            OCIRecipePrivacyMismatch, setattr,
+            private_recipe, 'information_type', InformationType.PUBLIC)
+        # We should not be able to link public recipe to a private repo.
+        self.assertRaises(
+            OCIRecipePrivacyMismatch, setattr,
+            public_recipe, 'git_ref', private_git_ref)
+        # We should not be able to link public recipe to a private owner.
+        self.assertRaises(
+            OCIRecipePrivacyMismatch, setattr,
+            public_recipe, 'owner', private_team)
+
+
+class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeAccessControl, self).setUp()
+        self.setConfig()
+
+    def test_change_oci_project_pillar_reconciles_access(self):
+        person = self.factory.makePerson()
+        initial_project = self.factory.makeProduct(
+            name='initial-project',
+            owner=person, registrant=person)
+        final_project = self.factory.makeProduct(
+            name='final-project',
+            owner=person, registrant=person)
+        oci_project = self.factory.makeOCIProject(
+            ociprojectname='the-oci-project', pillar=initial_project,
+            registrant=person)
+        recipes = []
+        for i in range(10):
+            recipes.append(self.factory.makeOCIRecipe(
+                registrant=person, owner=person,
+                oci_project=oci_project,
+                information_type=InformationType.USERDATA))
+
+        access_artifacts = getUtility(IAccessArtifactSource).find(recipes)
+        initial_access_policy = getUtility(IAccessPolicySource).find(
+            [(initial_project, InformationType.USERDATA)]).one()
+        apasource = getUtility(IAccessPolicyArtifactSource)
+        policy_artifacts = apasource.find(
+            [(recipe_artifact, initial_access_policy)
+             for recipe_artifact in access_artifacts])
+        self.assertEqual(
+            {i.policy.pillar for i in policy_artifacts}, {initial_project})
+
+        # Changing OCI project's pillar should move the policy artifacts of
+        # all OCI recipes associated to the new pillar.
+        flush_database_caches()
+        with admin_logged_in():
+            oci_project.pillar = final_project
+
+        final_access_policy = getUtility(IAccessPolicySource).find(
+            [(final_project, InformationType.USERDATA)]).one()
+        policy_artifacts = apasource.find(
+            [(recipe_artifact, final_access_policy)
+             for recipe_artifact in access_artifacts])
+        self.assertEqual(
+            {i.policy.pillar for i in policy_artifacts}, {final_project})
+
+    def getGrants(self, ocirecipe, person=None):
+        conditions = [AccessArtifact.ocirecipe == ocirecipe]
+        if person is not None:
+            conditions.append(AccessArtifactGrant.grantee == person)
+        return IStore(AccessArtifactGrant).find(
+            AccessArtifactGrant,
+            AccessArtifactGrant.abstract_artifact_id == AccessArtifact.id,
+            *conditions)
+
+    def test_reconcile_set_public(self):
+        owner = self.factory.makePerson()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=owner, owner=owner,
+            information_type=InformationType.USERDATA)
+        another_user = self.factory.makePerson()
+        with admin_logged_in():
+            recipe.subscribe(another_user, recipe.owner)
+            self.assertEqual(1, self.getGrants(recipe, another_user).count())
+            self.assertThat(
+                recipe.getSubscription(another_user),
+                MatchesStructure(
+                    person=Equals(another_user),
+                    recipe=Equals(recipe),
+                    subscribed_by=Equals(recipe.owner),
+                    date_created=IsInstance(datetime)))
+
+            recipe.information_type = InformationType.PUBLIC
+            self.assertEqual(0, self.getGrants(recipe, another_user).count())
+            self.assertThat(
+                recipe.getSubscription(another_user),
+                MatchesStructure(
+                    person=Equals(another_user),
+                    recipe=Equals(recipe),
+                    subscribed_by=Equals(recipe.owner),
+                    date_created=IsInstance(datetime)))
+
+    def test_owner_is_subscribed_automatically(self):
+        recipe = self.factory.makeOCIRecipe()
+        owner = recipe.owner
+        registrant = recipe.registrant
+        self.assertTrue(recipe.visibleByUser(owner))
+        self.assertIn(owner, recipe.subscribers)
+        with person_logged_in(owner):
+            self.assertThat(recipe.getSubscription(owner), MatchesStructure(
+                person=Equals(owner),
+                subscribed_by=Equals(registrant),
+                date_created=IsInstance(datetime)))
+
+    def test_owner_can_grant_access(self):
+        owner = self.factory.makePerson()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=owner, owner=owner,
+            information_type=InformationType.USERDATA)
+        other_person = self.factory.makePerson()
+        with person_logged_in(other_person):
+            self.assertRaises(Unauthorized, getattr, recipe, 'subscribe')
+        with person_logged_in(owner):
+            recipe.subscribe(other_person, owner)
+            self.assertIn(other_person, recipe.subscribers)
+
+    def test_private_is_invisible_by_default(self):
+        owner = self.factory.makePerson()
+        person = self.factory.makePerson()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=owner, owner=owner,
+            information_type=InformationType.USERDATA)
+        with person_logged_in(owner):
+            self.assertFalse(recipe.visibleByUser(person))
+
+    def test_private_is_visible_by_team_member(self):
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(
+            members=[person], membership_policy=TeamMembershipPolicy.MODERATED)
+        recipe = self.factory.makeOCIRecipe(
+            owner=team, registrant=person,
+            information_type=InformationType.USERDATA)
+        with person_logged_in(team):
+            self.assertTrue(recipe.visibleByUser(person))
+
+    def test_subscribing_changes_visibility(self):
+        person = self.factory.makePerson()
+        owner = self.factory.makePerson()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=owner, owner=owner,
+            information_type=InformationType.USERDATA)
+
+        with person_logged_in(owner):
+            self.assertFalse(recipe.visibleByUser(person))
+            recipe.subscribe(person, recipe.owner)
+            self.assertThat(
+                recipe.getSubscription(person),
+                MatchesStructure(
+                    person=Equals(person),
+                    recipe=Equals(recipe),
+                    subscribed_by=Equals(recipe.owner),
+                    date_created=IsInstance(datetime)))
+            # Calling again should be a no-op.
+            recipe.subscribe(person, recipe.owner)
+            self.assertTrue(recipe.visibleByUser(person))
+
+            recipe.unsubscribe(person, recipe.owner)
+            self.assertFalse(recipe.visibleByUser(person))
+            self.assertIsNone(recipe.getSubscription(person))
+
+    def test_owner_can_unsubscribe_anyone(self):
+        person = self.factory.makePerson()
+        owner = self.factory.makePerson()
+        admin = self.factory.makeAdministrator()
+        recipe = self.factory.makeOCIRecipe(
+            registrant=owner, owner=owner,
+            information_type=InformationType.USERDATA)
+        with person_logged_in(admin):
+            recipe.subscribe(person, admin)
+            self.assertTrue(recipe.visibleByUser(person))
+        with person_logged_in(owner):
+            recipe.unsubscribe(person, owner)
+            self.assertFalse(recipe.visibleByUser(person))
 
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):
@@ -869,6 +1132,28 @@ class TestOCIRecipeProcessors(TestCaseWithFactory):
                 check_permissions=True, user=owner)
             self.assertContentEqual(
                 [self.default_procs[0], self.arm, hppa], recipe.processors)
+
+    def test_valid_branch_format(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0-20.04"])
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.assertTrue(recipe.is_valid_branch_format)
+
+    def test_valid_branch_format_invalid(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0-foo"])
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.assertFalse(recipe.is_valid_branch_format)
+
+    def test_valid_branch_format_invalid_uses_risk(self):
+        for risk in ["stable", "candidate", "beta", "edge"]:
+            path = "refs/heads/{}-20.04".format(risk)
+            [git_ref] = self.factory.makeGitRefs(paths=[path])
+            recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+            self.assertFalse(recipe.is_valid_branch_format)
+
+    def test_valid_branch_format_invalid_with_slash(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0/bar-foo"])
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.assertFalse(recipe.is_valid_branch_format)
 
 
 class TestOCIRecipeSet(TestCaseWithFactory):
@@ -1283,6 +1568,29 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             ws_recipe["push_rules_collection_link"])
         self.assertEqual(
             image_name, push_rules["entries"][0]["image_name"])
+
+    def test_api_set_image_name(self):
+        """Can you set and retrieve the image name via the API?"""
+        self.setConfig()
+
+        image_name = self.factory.getUniqueUnicode()
+
+        with person_logged_in(self.person):
+            oci_project = self.factory.makeOCIProject(
+                registrant=self.person)
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project, owner=self.person,
+                registrant=self.person)
+            url = api_url(recipe)
+
+        resp = self.webservice.patch(
+            url, 'application/json',
+            json.dumps({'image_name': image_name}))
+
+        self.assertEqual(209, resp.status, resp.body)
+
+        ws_project = self.load_from_api(url)
+        self.assertEqual(image_name, ws_project['image_name'])
 
 
 class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):

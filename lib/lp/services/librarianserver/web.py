@@ -1,5 +1,7 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -47,10 +49,10 @@ defaultResource = static.Data(b"""
         file repository used by
         <a href="https://launchpad.net/">Launchpad</a>.
         </p>
-        <p><small>Copyright 2004-2020 Canonical Ltd.</small></p>
+        <p><small>Copyright 2004-2021 Canonical Ltd.</small></p>
         <!-- kthxbye. -->
         </body></html>
-        """, type='text/html')
+        """, type=six.ensure_str('text/html'))
 fourOhFour = resource.NoResource('No such resource')
 
 
@@ -314,9 +316,10 @@ class DigestSearchResource(resource.Resource):
 
     def render_GET(self, request):
         try:
-            digest = request.args['digest'][0]
-        except LookupError:
-            return static.Data(b'Bad search', 'text/plain').render(request)
+            digest = six.ensure_text(request.args[b'digest'][0])
+        except (LookupError, UnicodeDecodeError):
+            return static.Data(
+                b'Bad search', six.ensure_str('text/plain')).render(request)
 
         deferred = deferToThread(self._matchingAliases, digest)
         deferred.addCallback(self._cb_matchingAliases, request)
@@ -333,8 +336,9 @@ class DigestSearchResource(resource.Resource):
 
     def _cb_matchingAliases(self, matches, request):
         text = '\n'.join([str(len(matches))] + matches)
-        response = static.Data(text.encode('utf-8'),
-                               'text/plain; charset=utf-8').render(request)
+        response = static.Data(
+            text.encode('utf-8'),
+            six.ensure_str('text/plain; charset=utf-8')).render(request)
         request.write(response)
         request.finish()
 
@@ -343,7 +347,7 @@ class DigestSearchResource(resource.Resource):
 robotsTxt = static.Data(b"""
 User-agent: *
 Disallow: /
-""", type='text/plain')
+""", type=six.ensure_str('text/plain'))
 
 
 def _eb(failure, request):

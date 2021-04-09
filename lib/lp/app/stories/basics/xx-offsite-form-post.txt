@@ -44,9 +44,10 @@ If we try to create a new team with with the referrer set to
   >>> browser.getControl('Name', index=0).value = 'team1'
   >>> browser.getControl('Display Name').value = 'Team 1'
   >>> browser.getControl('Create').click()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  OffsiteFormPostError: http://evil.people.com/
+  lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
 
 
 Similarly, posting with a garbage referer fails:
@@ -56,9 +57,10 @@ Similarly, posting with a garbage referer fails:
   >>> browser.getControl('Name', index=0).value = 'team2'
   >>> browser.getControl('Display Name').value = 'Team 2'
   >>> browser.getControl('Create').click()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  OffsiteFormPostError: not a url
+  lp.services.webapp.interfaces.OffsiteFormPostError: not a url
 
 
 It also fails if there is no referrer.
@@ -68,9 +70,10 @@ It also fails if there is no referrer.
   >>> browser.getControl('Name', index=0).value = 'team3'
   >>> browser.getControl('Display Name').value = 'Team 3'
   >>> browser.getControl('Create').click()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  NoReferrerError: No value for REFERER header
+  lp.services.webapp.interfaces.NoReferrerError: No value for REFERER header
 
 When a POST request is rejected because the REFERER header is missing, it
 may be because the user is trying to enforce anonymity.  Therefore, we
@@ -81,9 +84,10 @@ present a hopefully helpful error message.
   >>> browser.getControl('Name', index=0).value = 'team3'
   >>> browser.getControl('Display Name').value = 'Team 3'
   >>> browser.getControl('Create').click()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  HTTPError...
+  urllib.error.HTTPError: ...
   >>> print(browser.headers['status'])
   403 Forbidden
   >>> print(extract_text(find_main_content(browser.contents)))
@@ -113,9 +117,10 @@ exception for +access-token, it would result in an
 OffsiteFormPostError.
 
   >>> browser.post('http://launchpad.test/+access-token', 'x=1')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  HTTPError: HTTP Error 401: Unauthorized
+  urllib.error.HTTPError: HTTP Error 401: Unauthorized
 
 We also let the request go through if the referrer is from a site
 managed by launchpad:
@@ -148,30 +153,34 @@ a referrerless POST request to the browser-accessible API.
   >>> no_referrer_browser = setupBrowserWithReferrer(None)
 
   >>> browser.post('http://launchpad.test/api/devel/people', 'ws.op=foo&x=1')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  OffsiteFormPostError: http://evil.people.com/
+  lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
 
   >>> no_referrer_browser.post(
   ...     'http://launchpad.test/api/devel/people', 'ws.op=foo&x=1')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  NoReferrerError: No value for REFERER header
+  lp.services.webapp.interfaces.NoReferrerError: No value for REFERER header
 
 You can't cheat by making your referrerless POST request seem as
 though it were signed with OAuth.
 
   >>> browser.post(
   ...     'http://launchpad.test/', 'oauth_consumer_key=foo&oauth_token=bar')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  OffsiteFormPostError: http://evil.people.com/
+  lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
 
   >>> no_referrer_browser.post(
   ...     'http://launchpad.test/', 'oauth_consumer_key=foo&oauth_token=bar')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  NoReferrerError: No value for REFERER header
+  lp.services.webapp.interfaces.NoReferrerError: No value for REFERER header
 
 You might think you can actually sign a request with an anonymous
 OAuth credential. You don't need any knowledge of the user account to
@@ -188,17 +197,19 @@ But the browser-accessible API ignores OAuth credentials altogether.
 
   >>> browser.post(
   ...     'http://launchpad.test/api/devel/projects', sig)
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  OffsiteFormPostError: http://evil.people.com/
+  lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
 
 If you go through the 'api' vhost, the signed request will be
 processed despite the bogus referrer, but...
 
   >>> browser.post('http://api.launchpad.test/devel/projects', sig)
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  NoneError: None isn't acceptable as a value for Product.owner
+  storm.exceptions.NoneError: None isn't acceptable as a value for Product...
 
 You're making an _anonymous_ request. That's a request that 1) is not
 associated with any Launchpad user account (thus the NoneError when

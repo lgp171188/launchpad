@@ -236,7 +236,7 @@ informative error message explaining why it is invalid.
     "what? my wife does this stuff" is not a valid URI
 
     >>> user_browser.getControl('Location', index=0).value = (
-    ...     b'http://ξνεr.been.fishing?')
+    ...     'http://ξνεr.been.fishing?')
     >>> user_browser.getControl('Change').click()
 
     >>> print_feedback_messages(user_browser.contents)
@@ -351,7 +351,7 @@ shown informative error messages.
     >>> user_browser.open(
     ...     'http://launchpad.test/bugs/bugtrackers/testbugzilla/+edit')
     >>> user_browser.getControl('Location aliases').value = (
-    ...     b'ξνεr been http://fishing?')
+    ...     'ξνεr been http://fishing?')
     >>> user_browser.getControl('Change').click()
 
     >>> print_feedback_messages(user_browser.contents)
@@ -425,7 +425,7 @@ The first and second restrictions both apply to the GNOME Bugzilla:
     >>> user_browser.getControl('Delete')
     Traceback (most recent call last):
     ...
-    LookupError: label u'Delete'
+    LookupError: label ...'Delete'
     ...
 
 Note how we tell the user about _all_ the restrictions they face. In
@@ -450,7 +450,7 @@ Tracker:
     >>> user_browser.getControl('Delete')
     Traceback (most recent call last):
     ...
-    LookupError: label u'Delete'
+    LookupError: label ...'Delete'
     ...
 
 Again, we tell the user about all the restrictions they have stumbled
@@ -468,7 +468,7 @@ deleting bug watches en masse:
     >>> admin_browser.getControl('Delete')
     Traceback (most recent call last):
     ...
-    LookupError: label u'Delete'
+    LookupError: label ...'Delete'
     ...
 
 
@@ -485,7 +485,7 @@ Ordinary users can't disable a bug tracker.
     >>> user_browser.getControl(name='field.active')
     Traceback (most recent call last):
       ...
-    LookupError: name u'field.active'
+    LookupError: name ...'field.active'
     ...
 
 But admins can.

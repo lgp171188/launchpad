@@ -588,7 +588,7 @@ class TestPopulateArchiveScript(TestCaseWithFactory):
         # are in the state expected:
         #   - binary build: pending
         #   - job: suspended
-        builds_in_wrong_state = filter(build_in_wrong_state, builds)
+        builds_in_wrong_state = list(filter(build_in_wrong_state, builds))
         self.assertEqual(
             [], builds_in_wrong_state,
             "The binary builds generated for the target copy archive "

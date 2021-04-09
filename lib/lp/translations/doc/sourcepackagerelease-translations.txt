@@ -12,9 +12,9 @@ upload the same sampledata tarball twice, one public and one restricted
     >>> tarball_path = os.path.join(
     ...     os.path.dirname(lp.translations.__file__),
     ...     'doc/sourcepackagerelease-translations.tar.gz')
-    >>> tarball = open(tarball_path)
+    >>> tarball = open(tarball_path, 'rb')
     >>> tarball_size = len(tarball.read())
-    >>> tarball.seek(0)
+    >>> _ = tarball.seek(0)
 
     >>> from lp.services.librarian.interfaces import (
     ...     ILibraryFileAliasSet)
@@ -24,13 +24,15 @@ upload the same sampledata tarball twice, one public and one restricted
     ...     file=tarball,
     ...     contentType='application/x-gtar')
 
-    >>> tarball.seek(0)
+    >>> _ = tarball.seek(0)
     >>> restricted_translation = getUtility(ILibraryFileAliasSet).create(
     ...     name='test.tar.gz',
     ...     size=tarball_size,
     ...     file=tarball,
     ...     contentType='application/x-gtar',
     ...     restricted=True)
+
+    >>> tarball.close()
 
 Commit, so uploaded contents are available in the current test.
 
@@ -101,7 +103,7 @@ The first one, approves the import.
     >>> process = subprocess.Popen([
     ...     sys.executable, 'cronscripts/rosetta-approve-imports.py'
     ...     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.STDOUT
+    ...     stderr=subprocess.STDOUT, universal_newlines=True,
     ...     )
     >>> (output, empty) = process.communicate()
     >>> print(output)
@@ -117,7 +119,7 @@ The second one, executes the import.
     >>> process = subprocess.Popen([
     ...     sys.executable, 'cronscripts/rosetta-poimport.py'
     ...     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.STDOUT
+    ...     stderr=subprocess.STDOUT, universal_newlines=True,
     ...     )
     >>> (output, empty) = process.communicate()
     >>> print(output)

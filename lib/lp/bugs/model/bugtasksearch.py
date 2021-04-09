@@ -632,7 +632,7 @@ def _build_query(params):
         with_clauses.append(convert_storm_clause_to_string(
             With('commented_bug_ids', Union(
                 Select(
-                    BugMessage.bugID, tables=[BugMessage],
+                    BugMessage.bug_id, tables=[BugMessage],
                     where=And(
                         BugMessage.index > 0,
                         BugMessage.owner == params.bug_commenter)),
@@ -675,7 +675,7 @@ def _build_query(params):
             raise AssertionError(
                 'Unknown nomination target: %r.' % params.nominated_for)
         extra_clauses.append(And(
-            BugNomination.bugID == BugTaskFlat.bug_id,
+            BugNomination.bug_id == BugTaskFlat.bug_id,
             BugNomination.status == BugNominationStatus.PROPOSED,
             target_col == params.nominated_for))
         clauseTables.append(BugNomination)

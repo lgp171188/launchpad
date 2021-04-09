@@ -219,12 +219,6 @@ class ILanguageSet(Interface):
     def canonicalise_language_code(code):
         """Convert a language code to standard xx_YY form."""
 
-    def codes_to_languages(codes):
-        """Convert a list of ISO language codes to language objects.
-
-        Unrecognised language codes are ignored.
-        """
-
     def createLanguage(code, englishname, nativename=None, pluralforms=None,
                        pluralexpression=None, visible=True,
                        direction=TextDirection.LTR):

@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI Project interfaces."""
@@ -99,17 +99,36 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     def getSeriesByName(name):
         """Get an OCIProjectSeries for this OCIProject by series' name."""
 
-    def getRecipeByNameAndOwner(recipe_name, owner_name):
+    def getRecipeByNameAndOwner(recipe_name, owner_name, visible_by_user=None):
         """Returns the exact match search for recipe_name AND owner_name."""
 
-    def getRecipes():
+    def getRecipes(visible_by_user=None):
         """Returns the set of OCI recipes for this project."""
 
-    def searchRecipes(query):
+    def searchRecipes(query, visible_by_user=None):
         """Searches for recipes in this OCI project."""
 
-    def getOfficialRecipe():
-        """Gets the official recipe for this OCI project."""
+    def getOfficialRecipes(visible_by_user=None):
+        """Gets the official recipes for this OCI project."""
+
+    def getUnofficialRecipes(visible_by_user=None):
+        """Gets the unofficial recipes for this OCI project."""
+
+    def getAllowedInformationTypes(user):
+        """Get a list of acceptable `InformationType`s for for OCI recipes
+        of this OCI project.
+
+        If the user is a Launchpad admin, any type is acceptable.
+        """
+
+    def getDefaultGitRepository(person):
+        """Returns the default git repository for the given user under the
+        namespace of this OCI project"""
+
+    def getDefaultGitRepositoryPath(person):
+        """Returns the default git repository path for this OCI Project,
+        regardless if the repository exists or not.
+        """
 
 
 class IOCIProjectEditableAttributes(IBugTarget):
@@ -151,9 +170,8 @@ class IOCIProjectEdit(Interface):
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
         """Creates a new `IOCIProjectSeries`."""
 
-    def setOfficialRecipe(recipe):
-        """Sets the given recipe as the official one. If recipe is None,
-        the current official recipe will be unset."""
+    def setOfficialRecipeStatus(recipe, status):
+        """Change whether an OCI Recipe is official or not for this project."""
 
 
 class IOCIProjectLegitimate(Interface):

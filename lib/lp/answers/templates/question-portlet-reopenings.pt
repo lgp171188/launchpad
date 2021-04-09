@@ -4,7 +4,7 @@
   xmlns:i18n="http://xml.zope.org/namespaces/i18n"
   omit-tag="">
   <div id="portlet-reopenings"
-    tal:condition="context/reopenings">
+    tal:condition="not: context/reopenings/is_empty">
     <h2>This question was reopened</h2>
 
     <ul>

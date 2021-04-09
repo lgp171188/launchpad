@@ -1,0 +1,37 @@
+<tal:root
+    xmlns:tal="http://xml.zope.org/namespaces/tal"
+    xmlns:metal="http://xml.zope.org/namespaces/metal"
+    omit-tag="">
+
+<metal:form-picker use-macro="context/@@form-picker-macros/form-picker">
+  <script metal:fill-slot="add-picker" tal:content="structure string:
+  LPJS.use('node', 'lp.app.autocomplete', 'lp.app.picker', function(Y) {
+      var config = ${view/json_config};
+      var repository_id = '${view/repository_id}';
+      if (repository_id !== '') {
+          config.getContextPath = function() {
+              var repository_value = Y.DOM.byId(repository_id).value;
+              // XXX cjwatson 2017-06-24: We don't have a straightforward
+              // URL parser available to us at the moment.  This will do for
+              // now, since we just want to tell the difference between
+              // internal and external repositories.
+              // XXX twom 2020-11-18
+              // This just closes the picker, not ideal.
+              // but would need some refactoring of picker_patcher.js
+              if (repository_value.indexOf('://') !== -1) {
+                  return null;
+              }
+              else if (repository_value.indexOf('git@') !== -1) {
+                  return null;
+              }
+              return '/' + repository_value;
+          };
+      }
+      var show_widget_id = '${view/show_widget_id}';
+      Y.lp.app.picker.addPicker(config, show_widget_id);
+      Y.lp.app.autocomplete.addAutocomplete(config);
+  });
+  "/>
+</metal:form-picker>
+
+</tal:root>

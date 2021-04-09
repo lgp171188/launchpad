@@ -74,7 +74,7 @@ When the time is in the past, the time is still given as "very very soon".
 If the time doesn't make sense, or is empty, then no message is displayed.
 
     >>> with open('+maintenancetime.txt', 'w') as f:
-    ...     f.write('xxxx')
+    ...     _ = f.write('xxxx')
     >>> content = front_page_content()
     >>> okay200 in content
     True
@@ -82,7 +82,7 @@ If the time doesn't make sense, or is empty, then no message is displayed.
     True
 
     >>> with open('+maintenancetime.txt', 'w') as f:
-    ...     f.write('')
+    ...     _ = f.write('')
     >>> content = front_page_content()
     >>> okay200 in content
     True

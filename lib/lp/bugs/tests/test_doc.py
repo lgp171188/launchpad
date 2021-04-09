@@ -444,10 +444,6 @@ special = {
         tearDown=tearDown,
         layer=LaunchpadZopelessLayer
         ),
-    'filebug-data-parser.txt': LayeredDocFileSuite(
-        '../doc/filebug-data-parser.txt',
-        setUp=lambda test: setGlobs(test, future=True),
-        ),
     'product-update-remote-product.txt': LayeredDocFileSuite(
         '../doc/product-update-remote-product.txt',
         setUp=updateRemoteProductSetup,

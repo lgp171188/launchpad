@@ -11,11 +11,11 @@ PersonLocation). Until we move the time zone back to the Person table
     >>> personset = getUtility(IPersonSet)
 
     >>> marilize = personset.getByName('marilize')
-    >>> print marilize.time_zone
+    >>> print(marilize.time_zone)
     Africa/Maseru
-    >>> print marilize.latitude
+    >>> print(marilize.latitude)
     None
-    >>> print marilize.longitude
+    >>> print(marilize.longitude)
     None
 
 setLocation() will always set the time zone to the given value and both
@@ -24,11 +24,11 @@ latitude and longitude to None, regardless of what was passed in.
     >>> cprov = personset.getByName('cprov')
     >>> ignored = login_person(cprov)
     >>> cprov.setLocation(-43.2, -61.93, 'America/Sao_Paulo', cprov)
-    >>> print cprov.time_zone
+    >>> print(cprov.time_zone)
     America/Sao_Paulo
-    >>> print cprov.latitude
+    >>> print(cprov.latitude)
     None
-    >>> print cprov.longitude
+    >>> print(cprov.longitude)
     None
 
 We cannot store a location for a team, though.

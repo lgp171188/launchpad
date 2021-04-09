@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git references."""
@@ -72,6 +72,32 @@ from lp.testing.pages import webservice_for_person
 class TestGitRef(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
+
+    def test_comparison(self):
+        refs = self.factory.makeGitRefs(
+            paths=["refs/heads/master", "refs/heads/next"])
+        refs.extend(self.factory.makeGitRefs())
+        dup_refs = [ref.repository.getRefByPath(ref.path) for ref in refs]
+        remote_refs = [self.factory.makeGitRefRemote() for _ in range(2)]
+        refs.extend(remote_refs)
+        dup_refs.extend([
+            self.factory.makeGitRefRemote(
+                repository_url=ref.repository_url, path=ref.path)
+            for ref in remote_refs])
+        for i, ref in enumerate(refs):
+            for j, dup_ref in enumerate(dup_refs):
+                if i == j:
+                    self.assertEqual(ref, dup_ref)
+                    self.assertEqual(dup_ref, ref)
+                else:
+                    self.assertNotEqual(ref, dup_ref)
+                    self.assertNotEqual(dup_ref, ref)
+        ref_set = set(refs) | set(dup_refs)
+        self.assertEqual(5, len(ref_set))
+        for ref in refs:
+            self.assertIn(ref, ref_set)
+        for dup_ref in dup_refs:
+            self.assertIn(dup_ref, ref_set)
 
     def test_display_name(self):
         [master, personal] = self.factory.makeGitRefs(
@@ -147,8 +173,8 @@ class TestGitRefGetCommits(TestCaseWithFactory):
             datetime(2015, 1, 1, 0, 0, 0, tzinfo=pytz.UTC),
             datetime(2015, 1, 2, 0, 0, 0, tzinfo=pytz.UTC),
             ]
-        self.sha1_tip = six.ensure_text(hashlib.sha1("tip").hexdigest())
-        self.sha1_root = six.ensure_text(hashlib.sha1("root").hexdigest())
+        self.sha1_tip = six.ensure_text(hashlib.sha1(b"tip").hexdigest())
+        self.sha1_root = six.ensure_text(hashlib.sha1(b"root").hexdigest())
         self.log = [
             {
                 "sha1": self.sha1_tip,
@@ -164,7 +190,7 @@ class TestGitRefGetCommits(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(self.dates[1])),
                     },
                 "parents": [self.sha1_root],
-                "tree": six.ensure_text(hashlib.sha1("").hexdigest()),
+                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
                 },
             {
                 "sha1": self.sha1_root,
@@ -180,7 +206,7 @@ class TestGitRefGetCommits(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(self.dates[0])),
                     },
                 "parents": [],
-                "tree": six.ensure_text(hashlib.sha1("").hexdigest()),
+                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
                 },
             ]
         self.hosting_fixture = self.useFixture(GitHostingFixture(log=self.log))
@@ -752,7 +778,7 @@ class TestGitRefWebservice(TestCaseWithFactory):
         self.assertThat(result["repository_link"], EndsWith(repository_url))
         self.assertEqual("refs/heads/master", result["path"])
         self.assertEqual(
-            six.ensure_text(hashlib.sha1("refs/heads/master").hexdigest()),
+            six.ensure_text(hashlib.sha1(b"refs/heads/master").hexdigest()),
             result["commit_sha1"])
 
     def test_landing_candidates(self):
@@ -867,7 +893,7 @@ class TestGitRefWebservice(TestCaseWithFactory):
             ref.owner, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_get(ref_url, "getGrants")
-        self.assertThat(json.loads(response.body), MatchesSetwise(
+        self.assertThat(response.jsonBody(), MatchesSetwise(
             MatchesDict({
                 "grantee_type": Equals("Repository owner"),
                 "grantee_link": Is(None),
@@ -951,10 +977,10 @@ class TestGitRefWebservice(TestCaseWithFactory):
         webservice.default_api_version = "devel"
         response = webservice.named_get(
             ref_url, "checkPermissions", person=owner_url)
-        self.assertEqual(["create", "push"], json.loads(response.body))
+        self.assertEqual(["create", "push"], response.jsonBody())
         response = webservice.named_get(
             ref_url, "checkPermissions", person=grantee_urls[0])
-        self.assertEqual(["create"], json.loads(response.body))
+        self.assertEqual(["create"], response.jsonBody())
         response = webservice.named_get(
             ref_url, "checkPermissions", person=grantee_urls[1])
-        self.assertEqual(["push", "force-push"], json.loads(response.body))
+        self.assertEqual(["push", "force-push"], response.jsonBody())

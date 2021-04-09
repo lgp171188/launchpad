@@ -23,7 +23,7 @@ branches in the listings.
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> browser.open('http://code.launchpad.test/~name12')
     >>> links = find_tag_by_id(browser.contents, 'branch-batch-links')
-    >>> print(links.renderContents())
+    >>> print(links.decode_contents())
     <BLANKLINE>
     ...1...→...6...of 10 results...
 
@@ -50,7 +50,7 @@ and are really just branch metadata without the revisions behind them.
 
     >>> browser.getLink('Next').click()
     >>> links = find_tag_by_id(browser.contents, 'branch-batch-links')
-    >>> print(links.renderContents())
+    >>> print(links.decode_contents())
     <BLANKLINE>
     ...7...→...10...of 10 results...
 
@@ -112,7 +112,7 @@ button.
 Now all types of branches should be shown.
 
     >>> links = find_tag_by_id(browser.contents, 'branch-batch-links')
-    >>> print(links.renderContents())
+    >>> print(links.decode_contents())
     <BLANKLINE>
     ...1...→...6...of 12 results...
 
@@ -128,7 +128,7 @@ Now all types of branches should be shown.
 
     >>> browser.getLink('Next').click()
     >>> links = find_tag_by_id(browser.contents, 'branch-batch-links')
-    >>> print(links.renderContents())
+    >>> print(links.decode_contents())
     <BLANKLINE>
     ...7...→...12...of 12 results...
 
@@ -177,7 +177,7 @@ helpful message supplied.
     >>> browser.getControl(name='field.lifecycle').displayValue
     ['Mature']
     >>> message = find_tag_by_id(browser.contents, 'no-branch-message')
-    >>> print(message.renderContents())
+    >>> print(message.decode_contents())
     There are branches related to Launchpad Developers...
 
 Personal branch listings shouldn't show an option for sorting by "most
@@ -302,7 +302,7 @@ options that can be selected.
     >>> sort_by_control.value = ['by project name']
     Traceback (most recent call last):
       ...
-    ValueError: Option u'by project name' not found ...
+    ValueError: Option ...'by project name' not found ...
     >>> for option in sort_by_control.options:
     ...     print(option)
     by most interesting
@@ -330,7 +330,7 @@ The implicitly sorted listings do not have an ordering widget at all.
     >>> browser.getControl(name='field.sort_by').value
     Traceback (most recent call last):
     ...
-    LookupError: name u'field.sort_by'
+    LookupError: name ...'field.sort_by'
     ...
 
 Finally, sorting by a particular criterion has the desired effect.

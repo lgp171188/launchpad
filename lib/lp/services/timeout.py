@@ -10,7 +10,6 @@ __all__ = [
     "override_timeout",
     "raise_for_status_redacted",
     "reduced_timeout",
-    "SafeTransportWithTimeout",
     "set_default_timeout_function",
     "TimeoutError",
     "TransportWithTimeout",
@@ -39,10 +38,7 @@ from requests_file import FileAdapter
 from requests_toolbelt.downloadutils import stream
 import six
 from six import reraise
-from six.moves.xmlrpc_client import (
-    SafeTransport,
-    Transport,
-    )
+from six.moves.xmlrpc_client import Transport
 from urllib3.connectionpool import (
     HTTPConnectionPool,
     HTTPSConnectionPool,
@@ -380,6 +376,9 @@ class URLFetcher:
             request_kwargs.setdefault(
                 "verify", config.launchpad.ca_certificates_path)
         response = self.session.request(url=url, **request_kwargs)
+        if response.status_code is None:
+            raise HTTPError(
+                "HTTP request returned no status code", response=response)
         raise_for_status_redacted(response)
         if output_file is None:
             # Make sure the content has been consumed before returning.
@@ -431,35 +430,3 @@ class TransportWithTimeout(Transport):
             # beforehand.
             pass
         self.conn.close()
-
-
-class SafeTransportWithTimeout(SafeTransport):
-    """Create a HTTPS transport for XMLRPC with timeouts."""
-
-    timeout = None
-
-    def __init__(self, timeout=None, **kwargs):
-        # Old style class call to super required.
-        SafeTransport.__init__(self, **kwargs)
-        self.timeout = timeout
-
-    def make_connection(self, host):
-        """Create the connection for the transport and save it."""
-        self.conn = SafeTransport.make_connection(self, host)
-        return self.conn
-
-    @with_timeout(cleanup='cleanup', timeout=lambda self: self.timeout)
-    def request(self, host, handler, request_body, verbose=0):
-        """Make the request but using the with_timeout decorator."""
-        return SafeTransport.request(
-            self, host, handler, request_body, verbose)
-
-    def cleanup(self):
-        """In the event of a timeout cleanup by closing the connection."""
-        try:
-            self.conn._conn.sock.shutdown(socket.SHUT_RDWR)
-        except AttributeError:
-            # It's possible that the other thread closed the socket
-            # beforehand.
-            pass
-        self.conn._conn.close()

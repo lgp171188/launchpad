@@ -290,9 +290,9 @@ class TestSourcePackageRecipeMixin:
         # If a recipe links to more than one branch, getReferencedBranches()
         # returns all of them.
         sp_recipe, [branch1, branch2] = self.createSourcePackageRecipe()
-        self.assertEqual(
-            sorted([self.getRepository(branch1), self.getRepository(branch2)]),
-            sorted(sp_recipe.getReferencedBranches()))
+        self.assertContentEqual(
+            [self.getRepository(branch1), self.getRepository(branch2)],
+            sp_recipe.getReferencedBranches())
 
     def test_preLoadReferencedBranches(self):
         sp_recipe, unused = self.createSourcePackageRecipe()
@@ -302,9 +302,8 @@ class TestSourcePackageRecipeMixin:
         referenced_branches = sp_recipe.getReferencedBranches()
         clear_property_cache(recipe_data)
         SourcePackageRecipeData.preLoadReferencedBranches([recipe_data])
-        self.assertEqual(
-            sorted(referenced_branches),
-            sorted(sp_recipe.getReferencedBranches()))
+        self.assertContentEqual(
+            referenced_branches, sp_recipe.getReferencedBranches())
 
     def test_random_user_cant_edit(self):
         # An arbitrary user can't set attributes.

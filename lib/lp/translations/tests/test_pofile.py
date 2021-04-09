@@ -1881,7 +1881,7 @@ class TestPOFileStatistics(TestCaseWithFactory):
         # untranslated if at least one plural translation required
         # for the given language is missing.
         plural_potmsgset = self.factory.makePOTMsgSet(
-            self.potemplate, singular='singular-en', plural='plural-en')
+            self.potemplate, singular=u'singular-en', plural=u'plural-en')
         self.factory.makeCurrentTranslationMessage(
             pofile=self.pofile, potmsgset=plural_potmsgset,
             translations=['sr-singular', 'sr-plural-1'])
@@ -1895,7 +1895,7 @@ class TestPOFileStatistics(TestCaseWithFactory):
         # A translation requiring plural forms is considered to be
         # translated if all variants are translated.
         plural_potmsgset = self.factory.makePOTMsgSet(
-            self.potemplate, singular='singular-en', plural='plural-en')
+            self.potemplate, singular=u'singular-en', plural=u'plural-en')
         self.factory.makeCurrentTranslationMessage(
             pofile=self.pofile, potmsgset=plural_potmsgset,
             translations=['sr-singular', 'sr-plural-1', 'sr-plural-2'])
@@ -1925,7 +1925,7 @@ class TestPOFileStatistics(TestCaseWithFactory):
         # partially translated is considered to be untranslated, regardless
         # of any translations it may have on the other side.
         plural_potmsgset = self.factory.makePOTMsgSet(
-            self.potemplate, singular='singular-en', plural='plural-en')
+            self.potemplate, singular=u'singular-en', plural=u'plural-en')
         self.factory.makeCurrentTranslationMessage(
             pofile=self.pofile, potmsgset=plural_potmsgset,
             translations=['sr-singular', 'sr-plural-1'])
@@ -1966,7 +1966,7 @@ class TestPOFileStatistics(TestCaseWithFactory):
         # Instead, it's counted as translated on this side but not on
         # the other (newCount).
         plural_potmsgset = self.factory.makePOTMsgSet(
-            self.potemplate, singular='singular-en', plural='plural-en')
+            self.potemplate, singular=u'singular-en', plural=u'plural-en')
         self.factory.makeCurrentTranslationMessage(
             pofile=self.pofile, potmsgset=plural_potmsgset,
             translations=['sr-singular', 'sr-plural1', 'sr-plural2'])
@@ -1998,7 +1998,7 @@ class TestPOFileStatistics(TestCaseWithFactory):
         # A partial Translations that's current on both sides
         # counts as untranslated.
         plural_potmsgset = self.factory.makePOTMsgSet(
-            self.potemplate, singular='singular-en', plural='plural-en')
+            self.potemplate, singular=u'singular-en', plural=u'plural-en')
         self.factory.makeCurrentTranslationMessage(
             pofile=self.pofile, potmsgset=plural_potmsgset,
             translations=['sr-singular', 'sr-plural1'], current_other=True)
@@ -2056,10 +2056,10 @@ class TestPOFile(TestCaseWithFactory):
     # The sequence number 0 is put at the beginning of the data to verify that
     # it really gets sorted to the end.
     TEST_MESSAGES = [
-        {'msgid':'computer', 'string':'komputilo', 'sequence':0},
-        {'msgid':'mouse', 'string':'muso', 'sequence':0},
-        {'msgid':'Good morning', 'string':'Bonan matenon', 'sequence':2},
-        {'msgid':'Thank you', 'string':'Dankon', 'sequence':1},
+        {'msgid': u'computer', 'string': u'komputilo', 'sequence': 0},
+        {'msgid': u'mouse', 'string': u'muso', 'sequence': 0},
+        {'msgid': u'Good morning', 'string': u'Bonan matenon', 'sequence': 2},
+        {'msgid': u'Thank you', 'string': u'Dankon', 'sequence': 1},
         ]
     EXPECTED_SEQUENCE = [1, 2, 0, 0]
 

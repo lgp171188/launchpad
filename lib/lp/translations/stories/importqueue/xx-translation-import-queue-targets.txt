@@ -15,11 +15,11 @@ The import queue is linked from the translations page for distribution.
 There is no content for Ubuntu.
 
     >>> print(find_tag_by_id(
-    ...     user_browser.contents, 'description').renderContents().strip())
+    ...     user_browser.contents, 'description').decode_contents().strip())
     These translation related entries are imported, blocked, deleted or
     waiting to be imported in Launchpad for Ubuntu.
     >>> print(find_tag_by_id(
-    ...     user_browser.contents, 'no-entries').renderContents())
+    ...     user_browser.contents, 'no-entries').decode_contents())
     There are no entries that match this filtering.
     >>> find_tag_by_id(user_browser.contents, 'import-entries-list') is None
     True
@@ -36,11 +36,11 @@ And obviously, given that the ubuntu distribution had no content, Hoary, an
 Ubuntu distro series has also no content.
 
     >>> print(find_tag_by_id(
-    ...     user_browser.contents, 'description').renderContents().strip())
+    ...     user_browser.contents, 'description').decode_contents().strip())
     These translation related entries are imported, blocked, deleted or
     waiting to be imported in Launchpad for Hoary.
     >>> print(find_tag_by_id(
-    ...     user_browser.contents, 'no-entries').renderContents())
+    ...     user_browser.contents, 'no-entries').decode_contents())
     There are no entries that match this filtering.
     >>> find_tag_by_id(user_browser.contents, 'import-entries-list') is None
     True
@@ -56,7 +56,7 @@ The import queue is linked from the translations page for products.
 This time, we do have content for this product:
 
     >>> print(find_tag_by_id(
-    ...     user_browser.contents, 'description').renderContents().strip())
+    ...     user_browser.contents, 'description').decode_contents().strip())
     These translation related entries are imported, blocked, deleted or
     waiting to be imported in Launchpad for Evolution.
     >>> find_tag_by_id(user_browser.contents, 'no-entries') is None
@@ -89,7 +89,7 @@ The import queue is linked from the translations page for product series.
 This time, we do have content for this product:
 
     >>> print(find_tag_by_id(
-    ...     user_browser.contents, 'description').renderContents().strip())
+    ...     user_browser.contents, 'description').decode_contents().strip())
     These translation related entries are imported, blocked, deleted or
     waiting to be imported in Launchpad for trunk.
     >>> find_tag_by_id(user_browser.contents, 'no-entries') is None
@@ -123,7 +123,7 @@ The import queue is linked from the translations page for persons.
 This time, we do have content for this product:
 
     >>> print(find_tag_by_id(
-    ...     user_browser.contents, 'description').renderContents().strip())
+    ...     user_browser.contents, 'description').decode_contents().strip())
     These translation related entries are imported, blocked, deleted or
     waiting to be imported in Launchpad for Foo Bar.
     >>> find_tag_by_id(user_browser.contents, 'no-entries') is None

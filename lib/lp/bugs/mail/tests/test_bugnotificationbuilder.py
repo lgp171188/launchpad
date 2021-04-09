@@ -70,7 +70,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
         message = self.builder.build(
             'from', self.bug.owner, 'body', 'subject', utc_now, filters=[])
         self.assertNotIn(
-            "Launchpad-Notification-Type", message.get_payload(decode=True))
+            b"Launchpad-Notification-Type", message.get_payload(decode=True))
 
     def test_mails_append_expanded_footer(self):
         # Recipients with expanded_notification_footers receive an expanded
@@ -81,7 +81,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
         message = self.builder.build(
             'from', self.bug.owner, 'body', 'subject', utc_now, filters=[])
         self.assertIn(
-            "\n-- \nLaunchpad-Notification-Type: bug\n",
+            b"\n-- \nLaunchpad-Notification-Type: bug\n",
             message.get_payload(decode=True))
 
     def test_private_team(self):

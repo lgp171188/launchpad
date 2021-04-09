@@ -35,7 +35,7 @@ messages in the batches of 10 items.
     ...     for msgset_id in sorted(translations.keys()):
     ...         translation = translations[msgset_id]
     ...         print("%d: '%s'" % (
-    ...             msgset_id, translation.renderContents().strip()))
+    ...             msgset_id, translation.decode_contents().strip()))
 
 
 Filters
@@ -358,7 +358,7 @@ conversion specifications the original message has, and is shown an
 error.
 
     >>> print(find_tag_by_id(
-    ...     user_browser.contents, 'msgset_142_singular').renderContents())
+    ...     user_browser.contents, 'msgset_142_singular').decode_contents())
     Migrating ...%s...
 
     >>> user_browser.getControl(
@@ -390,7 +390,7 @@ The exact same batch of messages is shown again, but with the error.
     142: '(no translation yet)'
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'error'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is an error in a translation you provided.
     Please correct it before continuing.
     ...Error in Translation:...
@@ -428,7 +428,7 @@ suggestions.
     >>> user_browser.getLink("Previous").click()
 
     >>> text = extract_text(find_main_content(user_browser.contents))
-    >>> print(text.encode('UTF-8'))
+    >>> print(text)
     Translating...
     English: current addressbook folder
     Current Chinese (China): (no translation yet)

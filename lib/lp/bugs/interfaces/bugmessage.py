@@ -1,4 +1,4 @@
-# Copyright 2004-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2004-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug message interfaces."""
@@ -45,14 +45,14 @@ class IBugMessage(IHasBug):
     # change it, rather than arbitrary API scripts.
     index = Int(title=u'The comment number', required=False, readonly=False,
         default=None)
-    messageID = Int(title=u"The message id.", readonly=True)
+    message_id = Int(title=u"The message id.", readonly=True)
     message = Object(schema=IMessage, title=u"The message.")
     bugwatch = Object(schema=IBugWatch,
         title=u"A bugwatch to which the message pertains.")
-    bugwatchID = Int(title=u'The bugwatch id.', readonly=True)
+    bugwatch_id = Int(title=u'The bugwatch id.', readonly=True)
     remote_comment_id = TextLine(
         title=u"The id this comment has in the bugwatch's bug tracker.")
-    ownerID = Attribute("The ID of the owner mirrored from the message")
+    owner_id = Attribute("The ID of the owner mirrored from the message")
     owner = Object(schema=IPerson,
         title=u"The Message owner mirrored from the message.", readonly=True)
 

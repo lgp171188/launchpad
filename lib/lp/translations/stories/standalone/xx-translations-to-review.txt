@@ -55,7 +55,7 @@ Xowxz is a Khmer reviewer.
     ...     if listing:
     ...         count = 0
     ...         for tr in listing.findAll('tr'):
-    ...             tds = [td.renderContents() for td in tr.findAll('td')]
+    ...             tds = [td.decode_contents() for td in tr.findAll('td')]
     ...             print('    '.join(tds))
     ...             count += 1
     ...         print("Listing contains %d translation(s)." % count)
@@ -67,7 +67,7 @@ Xowxz is a Khmer reviewer.
     ...     soup = BeautifulSoup(browser.contents)
     ...     link = soup.find(id="translations-to-review-link")
     ...     if link:
-    ...         print(link.renderContents())
+    ...         print(link.decode_contents())
     ...     else:
     ...         print("No link.")
 

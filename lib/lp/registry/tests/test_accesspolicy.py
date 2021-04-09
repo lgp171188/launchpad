@@ -1,4 +1,4 @@
-# Copyright 2011-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -22,12 +22,18 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantSource,
     IAccessPolicySource,
     )
-from lp.registry.model.accesspolicy import reconcile_access_for_artifact
+from lp.registry.model.accesspolicy import reconcile_access_for_artifacts
 from lp.registry.model.person import Person
 from lp.services.database.interfaces import IStore
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    record_two_runs,
+    TestCaseWithFactory,
+    )
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.matchers import Provides
+from lp.testing.matchers import (
+    HasQueryCount,
+    Provides,
+    )
 
 
 def get_policies_for_artifact(concrete_artifact):
@@ -729,57 +735,79 @@ class TestReconcileAccessPolicyArtifacts(TestCaseWithFactory):
             get_policies_for_artifact(bug))
 
     def test_creates_missing_accessartifact(self):
-        # reconcile_access_for_artifact creates an AccessArtifact for a
+        # reconcile_access_for_artifacts creates an AccessArtifact for a
         # private artifact if there isn't one already.
         bug = self.factory.makeBug()
 
         self.assertTrue(
             getUtility(IAccessArtifactSource).find([bug]).is_empty())
-        reconcile_access_for_artifact(bug, InformationType.USERDATA, [])
+        reconcile_access_for_artifacts([bug], InformationType.USERDATA, [])
         self.assertFalse(
             getUtility(IAccessArtifactSource).find([bug]).is_empty())
+
+    def test_bulk_creates_missing_accessartifact_query_count(self):
+        # reconcile_access_for_artifacts creates one for each AccessArtifact
+        # private artifact if there isn't one already.
+        bugs = [self.factory.makeBug()]
+
+        def create_bugs():
+            while len(bugs):
+                bugs.pop()
+            for i in range(10):
+                bugs.append(self.factory.makeBug())
+
+        def reconcile():
+            reconcile_access_for_artifacts(bugs, InformationType.USERDATA, [])
+
+        # Runs with original `bugs` list with 1 item, then cleanup that list
+        # and create another set of new bugs.
+        recorder1, recorder2 = record_two_runs(reconcile, create_bugs, 0, 1)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+        self.assertEqual(
+            10, getUtility(IAccessArtifactSource).find(bugs).count())
 
     def test_removes_extra_accessartifact(self):
-        # reconcile_access_for_artifact removes an AccessArtifact for a
+        # reconcile_access_for_artifacts removes an AccessArtifact for a
         # public artifact if there's one left over.
         bug = self.factory.makeBug()
-        reconcile_access_for_artifact(bug, InformationType.USERDATA, [])
+        reconcile_access_for_artifacts([bug], InformationType.USERDATA, [])
 
         self.assertFalse(
             getUtility(IAccessArtifactSource).find([bug]).is_empty())
-        reconcile_access_for_artifact(bug, InformationType.PUBLIC, [])
+        reconcile_access_for_artifacts([bug], InformationType.PUBLIC, [])
         self.assertTrue(
             getUtility(IAccessArtifactSource).find([bug]).is_empty())
 
     def test_adds_missing_accesspolicyartifacts(self):
-        # reconcile_access_for_artifact adds missing links.
+        # reconcile_access_for_artifacts adds missing links.
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(target=product)
-        reconcile_access_for_artifact(bug, InformationType.USERDATA, [])
+        reconcile_access_for_artifacts([bug], InformationType.USERDATA, [])
 
         self.assertPoliciesForBug([], bug)
-        reconcile_access_for_artifact(
-            bug, InformationType.USERDATA, [product])
+        reconcile_access_for_artifacts(
+            [bug], InformationType.USERDATA, [product])
         self.assertPoliciesForBug([(product, InformationType.USERDATA)], bug)
 
     def test_removes_extra_accesspolicyartifacts(self):
-        # reconcile_access_for_artifact removes excess links.
+        # reconcile_access_for_artifacts removes excess links.
         bug = self.factory.makeBug()
         product = self.factory.makeProduct()
         other_product = self.factory.makeProduct()
-        reconcile_access_for_artifact(
-            bug, InformationType.USERDATA, [product, other_product])
+        reconcile_access_for_artifacts(
+            [bug], InformationType.USERDATA, [product, other_product])
 
         self.assertPoliciesForBug(
             [(product, InformationType.USERDATA),
              (other_product, InformationType.USERDATA)],
             bug)
-        reconcile_access_for_artifact(
-            bug, InformationType.USERDATA, [product])
+        reconcile_access_for_artifacts(
+            [bug], InformationType.USERDATA, [product])
         self.assertPoliciesForBug([(product, InformationType.USERDATA)], bug)
 
     def test_raises_exception_on_missing_policies(self):
-        # reconcile_access_for_artifact raises an exception if a pillar is
+        # reconcile_access_for_artifacts raises an exception if a pillar is
         # missing an AccessPolicy.
         product = self.factory.makeProduct()
         # Creating a product will have created two APs, delete them.
@@ -792,5 +820,5 @@ class TestReconcileAccessPolicyArtifacts(TestCaseWithFactory):
             "Pillar(s) %s require an access policy for information type "
             "Private.") % product.name
         self.assertRaisesWithContent(
-            AssertionError, expected, reconcile_access_for_artifact, bug,
+            AssertionError, expected, reconcile_access_for_artifacts, [bug],
             InformationType.USERDATA, [product])

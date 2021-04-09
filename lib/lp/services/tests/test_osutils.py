@@ -100,14 +100,22 @@ class TestOpenForWriting(TestCase):
         with open(filename) as fp:
             self.assertEqual("Hello world!\n", fp.read())
 
+    def test_error(self):
+        # open_for_writing passes through errors other than the directory
+        # not existing.
+        directory = self.makeTemporaryDirectory()
+        os.chmod(directory, 0)
+        filename = os.path.join(directory, 'foo')
+        self.assertRaises(IOError, open_for_writing, filename, 'w')
+
 
 class TestWriteFile(TestCase):
 
     def test_write_file(self):
         directory = self.makeTemporaryDirectory()
         filename = os.path.join(directory, 'filename')
-        content = self.getUniqueString()
-        write_file(filename, content)
+        content = self.factory.getUniqueUnicode()
+        write_file(filename, content.encode('UTF-8'))
         self.assertThat(filename, FileContains(content))
 
 

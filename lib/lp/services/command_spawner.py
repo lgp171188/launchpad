@@ -158,7 +158,7 @@ class CommandSpawner:
         """Spawn a sub-process for `command`.  Overridable in tests."""
         return subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            close_fds=True)
+            close_fds=True, universal_newlines=True)
 
     def _handle(self, process, event, *args):
         """If we have a handler for `event` on `process`, call it."""

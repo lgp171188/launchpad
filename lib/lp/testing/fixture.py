@@ -254,7 +254,7 @@ class CaptureOops(Fixture):
         received over AMQP.
     """
 
-    AMQP_SENTINEL = "STOP NOW"
+    AMQP_SENTINEL = b"STOP NOW"
 
     def _setUp(self):
         self.oopses = []

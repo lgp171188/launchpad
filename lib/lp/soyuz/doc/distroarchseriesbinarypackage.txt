@@ -134,25 +134,25 @@ Then, we ensure that grabbing the current release of pmount and the old
 release both are sane.
 
     >>> current_release = pmount_hoary_i386.currentrelease
-    >>> current_release.version
-    u'cr98.34'
+    >>> print(current_release.version)
+    cr98.34
 
-    >>> current_release.name
-    u'pmount'
+    >>> print(current_release.name)
+    pmount
 
     >>> old_release = pmount_hoary_i386['0.1-1']
-    >>> old_release.version
-    u'0.1-1'
+    >>> print(old_release.version)
+    0.1-1
 
-    >>> old_release.name
-    u'pmount'
+    >>> print(old_release.name)
+    pmount
 
 The source package that was used to build the current release is
 available in the binary package's distro_source_package attribute.
 
     >>> distro_source_package = firefox_hoary_i386.distro_source_package
-    >>> distro_source_package.displayname
-    u'mozilla-firefox in Ubuntu'
+    >>> print(distro_source_package.displayname)
+    mozilla-firefox in Ubuntu
 
 If a given binary package doesn't have a current release, then the
 distro_source_package attribute should return None.
@@ -171,14 +171,18 @@ Check the publishing record of packages returned by 'currentrelease' and
     >>> pe.id == current_release.current_publishing_record.id
     True
 
-    >>> (pe.status.title,
-    ...     pe.distroarchseries.architecturetag)
-    ('Published', u'i386')
+    >>> print(pe.status.title)
+    Published
+    >>> print(pe.distroarchseries.architecturetag)
+    i386
 
     >>> old_pubrec = old_release.current_publishing_record
-    >>> (old_pubrec.id , old_pubrec.status.title,
-    ...     old_pubrec.distroarchseries.architecturetag)
-    (12, 'Published', u'i386')
+    >>> old_pubrec.id
+    12
+    >>> print(old_pubrec.status.title)
+    Published
+    >>> print(old_pubrec.distroarchseries.architecturetag)
+    i386
 
 Note that it is only really possible to have two packages in the
 "Published" status if domination hasn't run yet.
@@ -236,6 +240,7 @@ Then, supersede all pmount publications in warty for pmount (this sets
 us up to demonstrate bug 208233).
 
     >>> switch_dbuser('archivepublisher')
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> from lp.soyuz.model.distroarchseriesbinarypackage import (
@@ -245,10 +250,11 @@ us up to demonstrate bug 208233).
     >>> pmount_name = BinaryPackageName.selectOneBy(name="pmount")
     >>> pmount_warty_i386 = DistroArchSeriesBinaryPackage(warty_i386,
     ...                                                      pmount_name)
-    >>> pubs = BinaryPackagePublishingHistory.selectBy(
-    ...          archive=1,
-    ...          distroarchseries=warty_i386,
-    ...          status=PackagePublishingStatus.PUBLISHED)
+    >>> pubs = IStore(BinaryPackagePublishingHistory).find(
+    ...     BinaryPackagePublishingHistory,
+    ...     archive=1,
+    ...     distroarchseries=warty_i386,
+    ...     status=PackagePublishingStatus.PUBLISHED)
     >>> for p in pubs:
     ...      if p.binarypackagerelease.binarypackagename == pmount_name:
     ...          s = p.supersede()
@@ -258,10 +264,10 @@ us up to demonstrate bug 208233).
 
 Now, if that bug is actually fixed, this works:
 
-    >>> pmount_warty_i386.summary
-    u'pmount shortdesc'
+    >>> print(pmount_warty_i386.summary)
+    pmount shortdesc
 
-    >>> pmount_warty_i386.description
-    u'pmount description'
+    >>> print(pmount_warty_i386.description)
+    pmount description
 
 Yay!

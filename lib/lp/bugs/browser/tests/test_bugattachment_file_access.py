@@ -82,7 +82,7 @@ class TestAccessToBugAttachmentFiles(TestCaseWithFactory):
         navigation = BugAttachmentFileNavigation(
             self.bugattachment, request)
         view = navigation.publishTraverse(request, '+files')
-        mo = re.match('^http://.*/\d+/foo.txt$', view.target)
+        mo = re.match(r'^http://.*/\d+/foo.txt$', view.target)
         self.assertIsNot(None, mo)
 
     def test_access_to_restricted_file(self):
@@ -99,7 +99,7 @@ class TestAccessToBugAttachmentFiles(TestCaseWithFactory):
         navigation = BugAttachmentFileNavigation(self.bugattachment, request)
         view = navigation.publishTraverse(request, '+files')
         mo = re.match(
-            '^https://.*.restricted.*/\d+/foo.txt\?token=.*$', view.target)
+            r'^https://.*.restricted.*/\d+/foo.txt\?token=.*$', view.target)
         self.assertIsNot(None, mo)
 
     def test_access_to_restricted_file_unauthorized(self):
@@ -174,7 +174,7 @@ class TestWebserviceAccessToBugAttachmentFiles(TestCaseWithFactory):
         mo = re.search(r'^/\d+/foo\.txt$', parsed_url.path)
         self.assertIsNot(None, mo)
         params = parse_qs(parsed_url.query)
-        self.assertEqual(['token'], params.keys())
+        self.assertEqual(['token'], list(params))
 
         # Our test environment does not support wildcard DNS.  Work around
         # this.

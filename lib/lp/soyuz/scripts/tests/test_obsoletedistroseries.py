@@ -12,9 +12,10 @@ from zope.component import getUtility
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.interfaces import IStore
 from lp.services.log.logger import DevNullLogger
 from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
@@ -46,7 +47,8 @@ class TestObsoleteDistroseriesScript(TestCase):
         args = [sys.executable, script, '-y']
         args.extend(extra_args)
         process = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
         stdout, stderr = process.communicate()
         return (process.returncode, stdout, stderr)
 
@@ -106,22 +108,22 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
         """Return a tuple of sources, binaries published in distroseries."""
         if distroseries is None:
             distroseries = self.warty
-        published_sources = SourcePackagePublishingHistory.select("""
-            distroseries = %s AND
-            status = %s AND
-            archive IN %s
-            """ % sqlvalues(distroseries, PackagePublishingStatus.PUBLISHED,
-                            self.main_archive_ids))
-        published_binaries = BinaryPackagePublishingHistory.select("""
-            BinaryPackagePublishingHistory.distroarchseries =
-                DistroArchSeries.id AND
-            DistroArchSeries.DistroSeries = DistroSeries.id AND
-            DistroSeries.id = %s AND
-            BinaryPackagePublishingHistory.status = %s AND
-            BinaryPackagePublishingHistory.archive IN %s
-            """ % sqlvalues(distroseries, PackagePublishingStatus.PUBLISHED,
-                            self.main_archive_ids),
-            clauseTables=["DistroArchSeries", "DistroSeries"])
+        published_sources = IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.distroseries == distroseries,
+            SourcePackagePublishingHistory.status ==
+                PackagePublishingStatus.PUBLISHED,
+            SourcePackagePublishingHistory.archiveID.is_in(
+                self.main_archive_ids))
+        published_binaries = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            BinaryPackagePublishingHistory.distroarchseries ==
+                DistroArchSeries.id,
+            DistroArchSeries.distroseries == distroseries,
+            BinaryPackagePublishingHistory.status ==
+                PackagePublishingStatus.PUBLISHED,
+            BinaryPackagePublishingHistory.archiveID.is_in(
+                self.main_archive_ids))
         return (published_sources, published_binaries)
 
     def testNonObsoleteDistroseries(self):
@@ -163,13 +165,14 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
         # Now see if the modified publications have been correctly obsoleted.
         # We need to re-fetch the published_sources and published_binaries
         # because the existing objects are not valid through a transaction.
+        store = IStore(SourcePackagePublishingHistory)
         for id in source_ids:
-            source = SourcePackagePublishingHistory.get(id)
+            source = store.get(SourcePackagePublishingHistory, id)
             self.assertTrue(
                 source.status == PackagePublishingStatus.OBSOLETE)
             self.assertTrue(source.scheduleddeletiondate is not None)
         for id in binary_ids:
-            binary = BinaryPackagePublishingHistory.get(id)
+            binary = store.get(BinaryPackagePublishingHistory, id)
             self.assertTrue(
                 binary.status == PackagePublishingStatus.OBSOLETE)
             self.assertTrue(binary.scheduleddeletiondate is not None)
@@ -177,8 +180,8 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
         # Make sure nothing else was obsoleted.  Subtract the set of
         # known OBSOLETE IDs from the set of all the IDs and assert that
         # the remainder are not OBSOLETE.
-        all_sources = SourcePackagePublishingHistory.select(True)
-        all_binaries = BinaryPackagePublishingHistory.select(True)
+        all_sources = store.find(SourcePackagePublishingHistory)
+        all_binaries = store.find(BinaryPackagePublishingHistory)
         all_source_ids = [source.id for source in all_sources]
         all_binary_ids = [binary.id for binary in all_binaries]
 
@@ -186,11 +189,11 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
         remaining_binary_ids = set(all_binary_ids) - set(binary_ids)
 
         for id in remaining_source_ids:
-            source = SourcePackagePublishingHistory.get(id)
+            source = store.get(SourcePackagePublishingHistory, id)
             self.assertTrue(
                 source.status != PackagePublishingStatus.OBSOLETE)
         for id in remaining_binary_ids:
-            binary = BinaryPackagePublishingHistory.get(id)
+            binary = store.get(BinaryPackagePublishingHistory, id)
             self.assertTrue(
                 binary.status != PackagePublishingStatus.OBSOLETE)
 

@@ -18,13 +18,13 @@ Let's instantiate the view for +index:
 
     >>> builder_view = getMultiAdapter((builder, request), name="+index")
 
-    >>> print builder_view.page_title
+    >>> print(builder_view.page_title)
     Builder ...Bob The Builder...
 
 The BuilderView provides a helper for the text to use on the toggle
 mode button.
 
-    >>> print builder_view.toggle_mode_text
+    >>> print(builder_view.toggle_mode_text)
     Switch to manual-mode
 
 
@@ -33,7 +33,7 @@ mode button.
 Let's instantiate a view for +history:
 
     >>> builder_view = getMultiAdapter((builder, request), name="+history")
-    >>> print builder_view.page_title
+    >>> print(builder_view.page_title)
     Build history
 
     setupBuildList, build a batched list of build records and store it
@@ -60,11 +60,11 @@ by mark. we nee to log in as mark or any other member of admin team
     >>> from lp.testing.views import create_initialized_view
     >>> login("foo.bar@canonical.com")
     >>> builder_view = create_initialized_view(builder, name="+edit")
-    >>> print builder_view.page_title
+    >>> print(builder_view.page_title)
     Change details for builder ...Bob The Builder...
 
     >>> for field_name in builder_view.field_names:
-    ...     print field_name
+    ...     print(field_name)
     name
     title
     processors
@@ -79,24 +79,24 @@ by mark. we nee to log in as mark or any other member of admin team
     active
 
     >>> for action in builder_view.actions:
-    ...     print action.label
+    ...     print(action.label)
     Change
 
 The BuilderEditView also has a next_url property for redirecting after
 a successful form submission.
 
-    >>> print builder_view.next_url
+    >>> print(builder_view.next_url)
     http://launchpad.test/builders/bob
 
 The BuilderEditView can be used to update the relevant fields on the
 builder.
 
     >>> def print_builder_info(builder):
-    ...     print "%s: manual=%s, vm_host=%s." % (
+    ...     print("%s: manual=%s, vm_host=%s." % (
     ...         builder.name,
     ...         builder.manual,
     ...         builder.vm_host,
-    ...         )
+    ...         ))
     >>> print_builder_info(builder)
     bob: manual=False, vm_host=None.
 
@@ -114,7 +114,7 @@ builder.
 After editing a builder, a relevant notification is added to the view.
 
     >>> for notification in builder_view.request.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     The builder &quot;Bob The Builder&quot; was updated successfully.
 
 
@@ -174,15 +174,15 @@ is widely available:
  * Frog 'currentjob' exists;
  * Frog has no 'failnotes';
 
-    >>> print frog.builderok
+    >>> print(frog.builderok)
     True
 
     >>> build_set = getUtility(IBinaryPackageBuildSet)
     >>> build = build_set.getByQueueEntry(frog.currentjob)
-    >>> print build.title
+    >>> print(build.title)
     i386 build of privacy-test 666 in ubuntutest breezy-autotest RELEASE
 
-    >>> print frog.failnotes
+    >>> print(frog.failnotes)
     None
 
 Accessing the view for $builder/+index as a Foo Bar, which has
@@ -196,14 +196,14 @@ all the 'private' information is exposed.
     >>> empty_request = LaunchpadTestRequest(form={})
     >>> admin_view = getMultiAdapter((frog, empty_request), name="+index")
 
-    >>> print admin_view.context.builderok
+    >>> print(admin_view.context.builderok)
     True
 
     >>> build = build_set.getByQueueEntry(admin_view.context.currentjob)
-    >>> print build.title
+    >>> print(build.title)
     i386 build of privacy-test 666 in ubuntutest breezy-autotest RELEASE
 
-    >>> print admin_view.context.failnotes
+    >>> print(admin_view.context.failnotes)
     None
 
     >>> import datetime
@@ -211,7 +211,7 @@ all the 'private' information is exposed.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> removeSecurityProxy(private_job).date_started = (
     ...     datetime.datetime.now(pytz.UTC) - datetime.timedelta(10))
-    >>> print admin_view.current_build_duration
+    >>> print(admin_view.current_build_duration)
     10 days...
 
 Once the private job is gone, Frog 'real' details are exposed publicly
@@ -292,16 +292,16 @@ contains the following attributes:
 
     >>> builder_category = builderset_view.nonvirt_builders
 
-    >>> print builder_category
+    >>> print(builder_category)
     <...BuilderCategory ...>
 
-    >>> print builder_category.title
+    >>> print(builder_category.title)
     Non-virtual build status
 
-    >>> print builder_category.virtualized
+    >>> print(builder_category.virtualized)
     False
 
-    >>> print builder_category.groups[0]
+    >>> print(builder_category.groups[0])
     <...BuilderGroup ...>
 
 Similarly to what is done in the UI, we have a helper that prints the
@@ -309,10 +309,10 @@ grouped builders within a category in a easy manner.
 
     >>> def print_category(category):
     ...     for group in category.groups:
-    ...         print group.processor_name, \
-    ...               group.number_of_available_builders, \
-    ...               group.queue_size, \
-    ...               group.duration
+    ...         print(group.processor_name,
+    ...               group.number_of_available_builders,
+    ...               group.queue_size,
+    ...               group.duration)
 
     >>> print_category(builder_category)
     386    2  1  0:00:30
@@ -334,16 +334,16 @@ Each `BuilderGroup` contains the following attributes:
 
     >>> [i386_group, amd64_group, hppa_group] = builder_category.groups
 
-    >>> print i386_group.processor_name
+    >>> print(i386_group.processor_name)
     386
 
-    >>> print i386_group.number_of_available_builders
+    >>> print(i386_group.number_of_available_builders)
     2
 
-    >>> print i386_group.queue_size
+    >>> print(i386_group.queue_size)
     1
 
-    >>> print i386_group.duration
+    >>> print(i386_group.duration)
     0:00:30
 
 The 'virtual' builder category is also available in BuilderSetView as a
@@ -351,10 +351,10 @@ The 'virtual' builder category is also available in BuilderSetView as a
 
     >>> builder_category = builderset_view.virt_builders
 
-    >>> print builder_category.title
+    >>> print(builder_category.title)
     Virtual build status
 
-    >>> print builder_category.virtualized
+    >>> print(builder_category.virtualized)
     True
 
     >>> print_category(builder_category)

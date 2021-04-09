@@ -7,9 +7,10 @@ Not logged in users can't access the +export page.
     ...     'http://translations.launchpad.test/ubuntu/hoary'
     ...     '/+source/evolution/+pots/evolution-2.2/es/')
     >>> anon_browser.getLink('Download').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Logged in as a regular user, the +export page is accessible.
 
@@ -37,8 +38,8 @@ If we POST the page, it should add the request to the queue.
     http://translatio.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es
 
     >>> for tag in find_tags_by_class(user_browser.contents, 'informational'):
-    ...     tag.renderContents()
-    'Your request has been received. Expect to receive an email shortly.'
+    ...     print(tag.decode_contents())
+    Your request has been received. Expect to receive an email shortly.
 
 Let's be sure that we can request po files without translations as the
 No Privileges Person.
@@ -55,7 +56,7 @@ No Privileges Person.
 
     >>> for tag in find_tags_by_class(
     ...     user_browser.contents, 'informational'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Your request has been received. Expect to receive an email shortly.
 
 If the POFile first has to be created, the requester becomes its owner.
@@ -76,8 +77,8 @@ evolution yet; it will be created at the moment the export is requested.
     http://translations.launchpad.test/evolution/trunk/+pots/evolution-2.2/sv
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     tag.renderContents()
-    'Your request has been received. Expect to receive an email shortly.'
+    ...     print(tag.decode_contents())
+    Your request has been received. Expect to receive an email shortly.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
@@ -101,5 +102,5 @@ https://launchpad.net/rosetta/+bug/1558).
     http://translations.launchpad.test/evolution/trunk/+pots/evolution-2.2/sv
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
-    ...     tag.renderContents()
-    'Your request has been received. Expect to receive an email shortly.'
+    ...     print(tag.decode_contents())
+    Your request has been received. Expect to receive an email shortly.

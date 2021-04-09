@@ -13,7 +13,6 @@ import doctest
 from io import BytesIO
 from itertools import chain
 import os
-import pprint
 import re
 import unittest
 
@@ -63,6 +62,7 @@ from lp.services.beautifulsoup import (
     )
 from lp.services.config import config
 from lp.services.encoding import wsgi_native_string
+from lp.services.helpers import backslashreplace
 from lp.services.oauth.interfaces import (
     IOAuthConsumerSet,
     OAUTH_REALM,
@@ -85,6 +85,7 @@ from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.layers import PageTestLayer
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
+    PrettyPrinter,
     stop,
     )
 
@@ -238,7 +239,7 @@ def find_portlet(content, name):
     ending whitespace is also ignored, as are non-text elements such as
     images.
     """
-    whitespace_re = re.compile('\s+')
+    whitespace_re = re.compile(r'\s+')
     name = whitespace_re.sub(' ', name.strip())
     for portlet in find_tags_by_class(content, 'portlet'):
         if portlet.find('h2'):
@@ -439,7 +440,7 @@ def parse_relationship_section(content):
     """
     soup = BeautifulSoup(content)
     section = soup.find('ul')
-    whitespace_re = re.compile('\s+')
+    whitespace_re = re.compile(r'\s+')
     if section is None:
         print('EMPTY SECTION')
         return
@@ -533,15 +534,15 @@ def print_comments(page):
     main_content = find_main_content(page)
     for comment in main_content('div', 'boardCommentBody'):
         for li_tag in comment('li'):
-            print("Attachment: %s" % li_tag.a.renderContents())
-        print(comment.div.renderContents())
+            print("Attachment: %s" % li_tag.a.decode_contents())
+        print(comment.div.decode_contents())
         print("-" * 40)
 
 
 def print_batch_header(soup):
     """Print the batch navigator header."""
     navigation = soup.find('td', {'class': 'batch-navigation-index'})
-    print(extract_text(navigation).encode('ASCII', 'backslashreplace'))
+    print(backslashreplace(extract_text(navigation)))
 
 
 def print_self_link_of_entries(json_body):
@@ -573,8 +574,7 @@ def print_location(contents):
     heading = doc.find(attrs={'id': 'watermark-heading'}).findAll('a')
     container = doc.find(attrs={'class': 'breadcrumbs'})
     hierarchy = container.findAll(recursive=False) if container else []
-    segments = [extract_text(step).encode('us-ascii', 'replace')
-                for step in chain(heading, hierarchy)]
+    segments = [extract_text(step) for step in chain(heading, hierarchy)]
 
     if len(segments) == 0:
         breadcrumbs = 'None displayed'
@@ -586,8 +586,7 @@ def print_location(contents):
     print_location_apps(contents)
     main_heading = doc.h1
     if main_heading:
-        main_heading = extract_text(main_heading).encode(
-            'us-ascii', 'replace')
+        main_heading = extract_text(main_heading)
     else:
         main_heading = '(No main heading)'
     print("Main heading: %s" % main_heading)
@@ -876,7 +875,7 @@ def setUpGlobs(test, future=False):
     test.globs['logout'] = logout
     test.globs['parse_relationship_section'] = parse_relationship_section
     test.globs['permissive_security_policy'] = permissive_security_policy
-    test.globs['pretty'] = pprint.PrettyPrinter(width=1).pformat
+    test.globs['pretty'] = PrettyPrinter(width=1).pformat
     test.globs['print_action_links'] = print_action_links
     test.globs['print_errors'] = print_errors
     test.globs['print_location'] = print_location
@@ -894,6 +893,7 @@ def setUpGlobs(test, future=False):
     test.globs['page_log_location'] = PageTestLayer.log_location
     test.globs['stop'] = stop
     test.globs['six'] = six
+    test.globs['backslashreplace'] = backslashreplace
 
     if future:
         import __future__
@@ -929,10 +929,8 @@ def PageTestSuite(storydir, package=None, setUp=setUpGlobs, **kw):
     suite = unittest.TestSuite()
     # Add tests to the suite individually.
     if filenames:
-        checker = doctest.OutputChecker()
         paths = [os.path.join(storydir, filename) for filename in filenames]
         suite.addTest(LayeredDocFileSuite(
-            paths=paths,
-            package=package, checker=checker, stdout_logging=False,
+            paths=paths, package=package, stdout_logging=False,
             layer=PageTestLayer, setUp=setUp, **kw))
     return suite

@@ -1,6 +1,8 @@
 # Copyright 2009, 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 import gc
@@ -739,16 +741,16 @@ class TestSharingMigrationPerformance(TestCaseWithFactory,
         with StormStatementRecorder() as recorder:
             self.merger.mergePOTMsgSets()
         self.assertNoStatementsInvolvingTable(
-            POMsgID._table, recorder.statements)
+            POMsgID.__storm_table__, recorder.statements)
         self.assertNoStatementsInvolvingTable(
-            POTranslation._table, recorder.statements)
+            POTranslation.__storm_table__, recorder.statements)
 
         with StormStatementRecorder() as recorder:
             self.merger.mergeTranslationMessages()
         self.assertNoStatementsInvolvingTable(
-            POMsgID._table, recorder.statements)
+            POMsgID.__storm_table__, recorder.statements)
         self.assertNoStatementsInvolvingTable(
-            POTranslation._table, recorder.statements)
+            POTranslation.__storm_table__, recorder.statements)
 
 
 class TestFindMergablePackagings(TestCaseWithFactory):

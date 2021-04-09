@@ -19,9 +19,10 @@ if the user is not logged in, they will be asked to log in.
     >>> anon_browser.open(
     ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
     >>> anon_browser.getLink('Link a bug report').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (...launchpad.AnyPerson')
+    zope.security.interfaces.Unauthorized: (...launchpad.AnyPerson')
 
     >>> def printBugBranchLinks(browser):
     ...     tags = find_tags_by_class(browser.contents, 'buglink-summary')
@@ -105,9 +106,10 @@ links to a page restricted with the launchpad.AnyPerson permission.
     >>> anon_browser.open(
     ...     'http://launchpad.test/bugs/11')
     >>> anon_browser.getLink('Link a related branch').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (...launchpad.AnyPerson')
+    zope.security.interfaces.Unauthorized: (...launchpad.AnyPerson')
 
     >>> browser.open(
     ...     'http://launchpad.test/bugs/11')

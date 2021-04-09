@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for bases for snaps."""
@@ -19,6 +19,7 @@ from lazr.restful.declarations import (
     error_status,
     export_destructor_operation,
     export_factory_operation,
+    export_operation_as,
     export_read_operation,
     export_write_operation,
     exported,
@@ -29,7 +30,12 @@ from lazr.restful.declarations import (
     operation_returns_entry,
     REQUEST_USER,
     )
-from lazr.restful.fields import Reference
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
+from lazr.restful.interface import copy_field
+import six
 from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import Interface
@@ -49,6 +55,8 @@ from lp.services.fields import (
     ContentNameField,
     PublicPersonChoice,
     )
+from lp.soyuz.interfaces.archive import IArchive
+from lp.soyuz.interfaces.archivedependency import IArchiveDependency
 
 
 class NoSuchSnapBase(NameLookupFailed):
@@ -99,6 +107,24 @@ class ISnapBaseView(Interface):
             "Whether this base is the default for snaps that do not specify a "
             "base.")))
 
+    dependencies = exported(CollectionField(
+        title=_("Archive dependencies for this snap base."),
+        value_type=Reference(schema=IArchiveDependency),
+        readonly=True))
+
+    @operation_parameters(dependency=Reference(schema=IArchive))
+    @operation_returns_entry(schema=IArchiveDependency)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getArchiveDependency(dependency):
+        """Return the `IArchiveDependency` object for the given dependency.
+
+        :param dependency: an `IArchive`.
+
+        :return: an `IArchiveDependency`, or None if a corresponding object
+            could not be found.
+        """
+
 
 class ISnapBaseEditableAttributes(Interface):
     """`ISnapBase` attributes that can be edited.
@@ -128,6 +154,49 @@ class ISnapBaseEditableAttributes(Interface):
 class ISnapBaseEdit(Interface):
     """`ISnapBase` methods that require launchpad.Edit permission."""
 
+    def addArchiveDependency(dependency, pocket, component=None):
+        """Add an archive dependency for this snap base.
+
+        :param dependency: an `IArchive`.
+        :param pocket: a `PackagePublishingPocket`.
+        :param component: an optional `IComponent` object; if not given, the
+            archive dependency will use the component used for dependencies
+            on the primary archive.
+
+        :raise: `ArchiveDependencyError` if the given `dependency` does not
+            fit this snap base.
+        :return: an `IArchiveDependency`.
+        """
+
+    @operation_parameters(
+        component=copy_field(IArchiveDependency["component_name"]))
+    @export_operation_as(six.ensure_str("addArchiveDependency"))
+    @export_factory_operation(IArchiveDependency, ["dependency", "pocket"])
+    @operation_for_version("devel")
+    def _addArchiveDependency(dependency, pocket, component=None):
+        """Add an archive dependency for this snap base.
+
+        :param dependency: an `IArchive`.
+        :param pocket: a `PackagePublishingPocket`.
+        :param component: an optional component name; if not given, the
+            archive dependency will use the component used for dependencies
+            on the primary archive.
+
+        :raise: `ArchiveDependencyError` if the given `dependency` does not
+            fit this snap base.
+        :return: an `IArchiveDependency`.
+        """
+
+    @operation_parameters(
+        dependency=Reference(schema=IArchive, required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def removeArchiveDependency(dependency):
+        """Remove the archive dependency on the given archive.
+
+        :param dependency: an `IArchive`.
+        """
+
     @export_destructor_operation()
     @operation_for_version("devel")
     def destroySelf():
@@ -141,7 +210,7 @@ class ISnapBaseEdit(Interface):
 # generation working.  Individual attributes must set their version to
 # "devel".
 @exported_as_webservice_entry(as_of="beta")
-class ISnapBase(ISnapBaseView, ISnapBaseEditableAttributes):
+class ISnapBase(ISnapBaseView, ISnapBaseEditableAttributes, ISnapBaseEdit):
     """A base for snaps."""
 
 

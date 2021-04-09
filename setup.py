@@ -155,10 +155,6 @@ setup(
         'beautifulsoup4[lxml]',
         'boto3',
         'breezy',
-        # XXX cjwatson 2020-08-07: This should eventually be removed
-        # entirely, but we need to retain it until codeimport has been
-        # ported to Breezy.
-        'bzr; python_version < "3"',
         'celery',
         'contextlib2; python_version < "3.3"',
         'cssselect',
@@ -168,7 +164,6 @@ setup(
         'dkimpy[ed25519]',
         'dulwich',
         'feedparser',
-        'feedvalidator',
         'fixtures',
         # Required for gunicorn[gthread].  We depend on it explicitly
         # because gunicorn declares its dependency in a way that produces
@@ -231,6 +226,7 @@ setup(
         'requests-toolbelt',
         'responses',
         'scandir',
+        'secure-cookie',
         'setproctitle',
         'setuptools',
         'six',
@@ -238,9 +234,7 @@ setup(
         'Sphinx',
         'statsd',
         'storm',
-        # XXX cjwatson 2020-08-07: Temporarily dropped on Python 3 until
-        # codeimport can be ported to Breezy.
-        'subvertpy; python_version < "3"',
+        'talisker[gunicorn]',
         'tenacity',
         'testscenarios',
         'testtools',
@@ -254,6 +248,7 @@ setup(
         'wadllib',
         'WebOb',
         'WebTest',
+        'Werkzeug',
         'WSGIProxy2',
         'z3c.ptcompat',
         'zc.zservertracelog',

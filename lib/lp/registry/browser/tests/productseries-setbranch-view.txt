@@ -18,7 +18,7 @@ that exists externally in a variety of version control systems.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver)
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print content
+    >>> print(content)
     <div...
     ...Link to a Bazaar branch already on Launchpad...
     ...Import a branch hosted somewhere else...
@@ -45,7 +45,7 @@ must be provided.
     >>> view = create_initialized_view(
     ...    series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     The branch location must be set.
 
 Setting the branch location to an invalid branch results in another
@@ -59,8 +59,8 @@ validation error.
     >>> view = create_initialized_view(
     ...    series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print error
-    (u'Invalid value', InvalidValue("token 'foo' not found in vocabulary"))
+    ...     print('%s: %r' % (error.error_name, error.original_exception))
+    Invalid value: InvalidValue("token ...'foo' not found in vocabulary")
 
 Providing a valid branch results in a successful linking.
 
@@ -76,12 +76,12 @@ Providing a valid branch results in a successful linking.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     Series code location updated.
 
-    >>> print series.branch.name
+    >>> print(series.branch.name)
     impala-branch
 
 Revisiting the +setbranch page when the branch is already set will
@@ -89,7 +89,7 @@ show the branch location pre-populated with the existing value.
 
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
-    >>> print view.widgets.get('branch_location')._getFormValue().unique_name
+    >>> print(view.widgets.get('branch_location')._getFormValue().unique_name)
     ~person.../chevy/impala-branch
 
 
@@ -111,9 +111,9 @@ Lots of data are required to create an import.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     You must set the external repository URL.
     You must specify the type of RCS for the remote host.
     The branch name must be set.
@@ -132,9 +132,9 @@ For Bazaar branches the scheme may only be http or https.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     ('repo_url'...The URI scheme &quot;bzr+ssh&quot; is not allowed.
     Only URIs with the following schemes may be used: bzr, http,
     https'))
@@ -153,11 +153,11 @@ A correct URL is accepted.
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> transaction.commit()
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     Code import created and branch linked to the series.
-    >>> print series.branch.name
+    >>> print(series.branch.name)
     blazer-branch
     >>> series.branch.registrant.name == driver.name
     True
@@ -170,7 +170,7 @@ External Bazaar imports can not use an Launchpad URL.
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> transaction.commit()
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     You cannot create same-VCS imports for branches or repositories that are
     hosted by Launchpad.
 
@@ -183,11 +183,11 @@ Git imports can use a Launchpad URL.
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> transaction.commit()
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     Code import created and branch linked to the series.
-    >>> print series.branch.name
+    >>> print(series.branch.name)
     blazer-git-branch
 
 Git branches cannot use svn.
@@ -203,9 +203,9 @@ Git branches cannot use svn.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     ('repo_url'...'The URI scheme &quot;svn&quot; is not allowed.  Only
     URIs with the following schemes may be used: git, http, https'))
 
@@ -225,11 +225,11 @@ But Git branches may use git.
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> transaction.commit()
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     Code import created and branch linked to the series.
-    >>> print series.branch.name
+    >>> print(series.branch.name)
     chevette-branch
 
 But Subversion branches cannnot use git.
@@ -245,9 +245,9 @@ But Subversion branches cannnot use git.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     ('repo_url'...'The URI scheme &quot;git&quot; is not allowed.  Only
     URIs with the following schemes may be used: http, https, svn'))
 
@@ -266,11 +266,11 @@ But Subversion branches may use svn as the scheme.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     Code import created and branch linked to the series.
-    >>> print series.branch.name
+    >>> print(series.branch.name)
     suburban-branch
 
 CVS branches must use http or https as the scheme and must have the
@@ -289,9 +289,9 @@ CVS module field specified.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     The CVS module must be set.
 
     >>> form = {
@@ -306,11 +306,11 @@ CVS module field specified.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     Code import created and branch linked to the series.
-    >>> print series.branch.name
+    >>> print(series.branch.name)
     corvair-branch
 
 Attempting to import a location that has already been imported results
@@ -327,13 +327,13 @@ in an error.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     <BLANKLINE>
     This foreign branch URL is already specified for
     the imported branch
     <a href='http://.../chevy/chevette-branch'>~.../chevy/chevette-branch</a>.
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
 
 Using a branch name that already exists results in an error.
 
@@ -348,18 +348,18 @@ Using a branch name that already exists results in an error.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     There is already an existing import for
     <a href="http://.../chevy">chevy</a>
     with the name of
     <a href="http://.../chevy/chevette-branch">chevette-branch</a>.
-    >>> print view.errors_in_action
+    >>> print(view.errors_in_action)
     True
-    >>> print view.next_url
+    >>> print(view.next_url)
     None
 
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
 
 Bazaar external branches are handled differently but they also give an
 error if a duplicate name is used.
@@ -375,16 +375,16 @@ error if a duplicate name is used.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     <BLANKLINE>
     This foreign branch URL is already specified for the imported branch
     <a href='http://.../blazer-branch'>...</a>.
-    >>> print view.errors_in_action
+    >>> print(view.errors_in_action)
     False
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/chevy/corvair
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
 
 If the owner is set to a private team, an error is raised.
 
@@ -402,5 +402,5 @@ If the owner is set to a private team, an error is raised.
     >>> view = create_initialized_view(
     ...     series, name='+setbranch', principal=driver, form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     Private teams are forbidden from owning external imports.

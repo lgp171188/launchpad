@@ -32,7 +32,7 @@ It also includes a search form...
 ...and lists of featured projects and marketing material.
 
     >>> featured = find_tag_by_id(browser.contents, 'homepage-featured')
-    >>> print(extract_text(featured.renderContents()))
+    >>> print(extract_text(featured.decode_contents()))
     Featured projects
     ...
     Ubuntu

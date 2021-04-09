@@ -84,7 +84,8 @@ the user themselves --not even Launchpad admins can do that on behalf of other
 people.
 
     >>> admin_browser.open('http://launchpad.test/~cprov/+deactivate-account')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 

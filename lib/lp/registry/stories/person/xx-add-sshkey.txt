@@ -65,21 +65,21 @@ message will be shown.
     >>> browser.getControl(name='sshkey').value = sshkey
     >>> browser.getControl('Import Public Key').click()
     >>> for tag in find_main_content(browser.contents)('p', 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Invalid public key
 
     >>> sshkey = "ssh-rsa foo"
     >>> browser.getControl(name='sshkey').value = sshkey
     >>> browser.getControl('Import Public Key').click()
     >>> for tag in find_main_content(browser.contents)('p', 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Invalid public key
 
     >>> sshkey = "ssh-xsa foo comment"
     >>> browser.getControl(name='sshkey').value = sshkey
     >>> browser.getControl('Import Public Key').click()
     >>> for tag in find_main_content(browser.contents)('p', 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Invalid public key
 
 
@@ -91,7 +91,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     SSH public key added.
 
     >>> sshkey = "ssh-dss AAAAB3NzaC1kc3MAAAEBAObOoy3fScSSQPHE/V6tPGoFzo5y1JRjDLcs8CNcvIHh9L27Qdj6h18AXn6MUCvvSCKm49aHpp1Xe14a6fmEIesjz6VopPWGENaOwRmhH6zfqM6imKUXQ0sq9p0znYb0TMjyRC0/AmqYneUF6FA2mVXygkGAkp/vDRPFQhPwnHpVD9TVPxHBQdHgM3bTo2TT+GoL7kw/s32ZiAH4OPvN5fN7bCkQWoUs/ySfoNbISMdvdtq07Rra2Biwzgjjs0ZcKbMicbDyYCe4gXlqK4wqcDfcwgrdqdG6NM0LUdekarWjnv0pMb6ttUl4U7e7Nf+eGkiTVItlppC8DyrnqC9SKCUAAAAVAOlEYNobJottyObVWQcrU8eAP4T5AAABAQDmJmL4DcQ1GVvw1Pjy57V0WUyGrOVBRVz7BwYBIvMA7xJCCvzd47mYWrWJkjV6O3tw2vG5oZx+BXE+ve8O6jL89CrwqncoUS8WHCojRmuUHTmtCCiRBCH+/68HMCusO3Blk//kQSsaqfIn+8Xa56Vr2SweSUlLgjvb51+89JJ13oDlUvdftW2GZu+grbmojqcoJ1LVAI5n0qsDItsFid46f8XfNzPeksasY9JbY5fKq/xf1KcgXL2F9XwmrDjFCuI4/xkJWNfGwaLKC/cbrJ1xmvPLl1/Hm5kNqgrwpNwHVOwyYSCUqXroU5PnpE9uydHUhjhtU2K2Hj0i7fOyxoxyAAABAQCpXKgd6lpTAEKm7ECY3TbJaTXPkNvAwg/2ud+PrtefHrVFFWrXrblSQhnmnc6ut8G3BsDzCljAIV2v+XcdOo+m8EViLf+Bi+gfbAIz4vdVepwQ2XHWUOTKk90i7Xqg4mUUDRIVw9ioNF0GAHbNlJTK3FWC3gstbCJU2hyV3UzgB95b6zqpUHeyn1RK4VAFYGY9fCIdZNy926HEart6uO/N6cO1ETw5B63kI8fTBjU7HLGgGXRjOv1APAqvKgry3tQD2WYkVJGRyYLjDK9d8nStUpwN5swI1xx2IWAbD+UCsRXAixn8s3mvpBD/jbnWjrzEensBc96jtiAsx2P5oXEd salgado@canario"
@@ -99,7 +99,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     SSH public key added.
 
     >>> sshkey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJseCUmxVG7D6qh4JmhLp0Du4kScScJ9PtZ0LGHYHaURnRw9tbX1wwURAio8og6dbnT75CQ3TbUE/xJhxI0aFXE= salgado@canario"
@@ -107,7 +107,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     SSH public key added.
 
     >>> sshkey = "ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAzODQAAABhBDUR0E0zCHRHJER6uzjfE/o0HAHFLcq/n8lp0duThpeIPsmo+wr3vHHuAAyOddOgkuQC8Lj8FzHlrOEYgXL6qa7FvpviE9YWUgmqVDa/yJbL/m6Mg8fvSIXlDJKmvOSv6g== salgado@canario"
@@ -115,7 +115,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     SSH public key added.
 
     >>> sshkey = "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAB3rpD+Ozb/kwUOqCZUXSiruAkIx6sNZLJyjJ0zxVTZSannaysCLxMQ/IiVxCd59+U2NaLduMzd93JcYDRlX3M5+AApY+3JjfSPo01Sb17HTLNSYU3RZWx0A3XJxm/YN+x/iuYZ3IziuAKeYMsNsdfHlO4/IWjw4Ruy0enW+QhWaY2qAQ== salgado@canario"
@@ -123,7 +123,7 @@ format.
     >>> browser.getControl('Import Public Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     SSH public key added.
 
 Launchpad administrators are not allowed to poke at other user's ssh keys.
@@ -133,9 +133,10 @@ Launchpad administrators are not allowed to poke at other user's ssh keys.
     >>> logout()
     >>> admin_browser = setupBrowserFreshLogin(foo_bar)
     >>> admin_browser.open('http://launchpad.test/~salgado/+editsshkeys')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Salgado chooses to remove one of his ssh keys from Launchpad. The link
 to edit his keys is on the page.
@@ -157,7 +158,7 @@ to edit his keys is on the page.
     >>> browser.getControl('Remove', index=0).click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Key ... removed
 
 If Salgado tries to remove a key that doesn't exist or one that doesn't
@@ -167,13 +168,14 @@ belong to him, it will fail with an error message.
     >>> browser.getControl('Remove', index=0).click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     Cannot remove a key that doesn't exist
 
     >>> browser.getControl(name='key', index=0).value = '1'
     >>> browser.getControl('Remove', index=0).click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    UnexpectedFormData: ...
+    lp.app.errors.UnexpectedFormData: ...
 
 Similarly, it's not possible to remove an unspecified ssh key, although in
 this case we'll raise an UnexpectedFormData.
@@ -181,14 +183,15 @@ this case we'll raise an UnexpectedFormData.
     >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
     >>> browser.getControl(name='key', index=0).value = ''
     >>> browser.getControl('Remove', index=0).click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: ...
+    lp.app.errors.UnexpectedFormData: ...
 
 If he removes a key then he will get a security warning email notification
 that the key has been removed.
 
-    >>> import email
+    >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> stub.test_emails = []
     >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
@@ -196,7 +199,7 @@ that the key has been removed.
     >>> from_addr, to_addr, msg = stub.test_emails.pop()
     >>> to_addr
     ['guilherme.salgado@canonical.com']
-    >>> payload = email.message_from_string(msg).get_payload()
+    >>> payload = message_from_bytes(msg).get_payload()
     >>> assert payload.startswith('The SSH Key')
 
 

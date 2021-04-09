@@ -514,7 +514,7 @@ class TestDiffFormatter(TestCase):
         line_numbers = find_tags_by_class(html, 'line-no')
         self.assertEqual(
             ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
-            [tag.renderContents() for tag in line_numbers])
+            [tag.decode_contents() for tag in line_numbers])
         text = find_tags_by_class(html, 'text')
         self.assertEqual(
             [['diff-file', 'text'],
@@ -549,7 +549,7 @@ class TestDiffFormatter(TestCase):
         line_numbers = find_tags_by_class(html, 'line-no')
         self.assertEqual(
             ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-            [tag.renderContents() for tag in line_numbers])
+            [tag.decode_contents() for tag in line_numbers])
         text = find_tags_by_class(html, 'text')
         self.assertEqual(
             [['diff-file', 'text'],
@@ -618,12 +618,12 @@ class TestSideBySideDiffFormatter(TestCase):
         line_numbers = find_tags_by_class(html, 'line-no')
         self.assertEqual(
             ['1', '2', '3', '4', '5', '7', '8', '9', '11', '12', '13'],
-            [tag.renderContents() for tag in line_numbers])
+            [tag.decode_contents() for tag in line_numbers])
         ss_line_numbers = find_tags_by_class(html, 'ss-line-no')
         self.assertEqual(
             ['2435', '2439', '2436', '2440', '', '2441', '2437', '2442',
              '2438', '2443'],
-            [tag.renderContents() for tag in ss_line_numbers])
+            [tag.decode_contents() for tag in ss_line_numbers])
         text = find_tags_by_class(html, 'text')
         self.assertEqual(
             [['diff-file', 'text'],
@@ -665,12 +665,12 @@ class TestSideBySideDiffFormatter(TestCase):
         line_numbers = find_tags_by_class(html, 'line-no')
         self.assertEqual(
             ['1', '2', '3', '4', '5', '6', '8', '9', '10', '12'],
-            [tag.renderContents() for tag in line_numbers])
+            [tag.decode_contents() for tag in line_numbers])
         ss_line_numbers = find_tags_by_class(html, 'ss-line-no')
         self.assertEqual(
             ['2435', '2439', '2436', '2440', '', '2441', '2437', '2442',
              '2438', '2443'],
-            [tag.renderContents() for tag in ss_line_numbers])
+            [tag.decode_contents() for tag in ss_line_numbers])
         text = find_tags_by_class(html, 'text')
         self.assertEqual(
             [['diff-file', 'text'],

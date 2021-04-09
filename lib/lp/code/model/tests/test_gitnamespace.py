@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -1117,7 +1118,7 @@ class BaseValidateNewRepositoryMixin:
         # The first character of a repository name must be a letter or a
         # number.
         namespace = self._getNamespace(self.factory.makePerson())
-        for c in [unichr(i) for i in range(128)]:
+        for c in [six.unichr(i) for i in range(128)]:
             if c.isalnum():
                 namespace.validateRepositoryName(c)
             else:
@@ -1129,7 +1130,7 @@ class BaseValidateNewRepositoryMixin:
         # After the first character, letters, numbers and certain
         # punctuation is permitted.
         namespace = self._getNamespace(self.factory.makePerson())
-        for c in [unichr(i) for i in range(128)]:
+        for c in [six.unichr(i) for i in range(128)]:
             if c.isalnum() or c in "+-_@.":
                 namespace.validateRepositoryName("a" + c)
             else:

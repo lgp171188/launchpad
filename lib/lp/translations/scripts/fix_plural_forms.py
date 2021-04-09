@@ -11,12 +11,11 @@ __all__ = [
 
 from sqlobject import SQLObjectNotFound
 
-from lp.services.database.sqlbase import (
-    cursor,
-    sqlvalues,
-    )
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import cursor
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.model.pofile import POFile
+from lp.translations.model.potmsgset import POTMsgSet
 from lp.translations.model.translationmessage import TranslationMessage
 from lp.translations.utilities.gettext_po_parser import POHeader
 from lp.translations.utilities.pluralforms import plural_form_mapper
@@ -49,11 +48,11 @@ def fix_pofile_plurals(pofile, logger, ztm):
     plural_forms_mapping = get_mapping_for_pofile_plurals(pofile)
     if plural_forms_mapping is not None:
         logger.info("Fixing PO file %s" % pofile.title)
-        pluralmessages = TranslationMessage.select("""
-            POTMsgSet.id = TranslationMessage.potmsgset AND
-            POTMsgSet.msgid_plural IS NOT NULL AND
-            TranslationMessage.pofile = %s""" % sqlvalues(pofile),
-            clauseTables=["POTMsgSet"])
+        pluralmessages = IStore(TranslationMessage).find(
+            TranslationMessage,
+            TranslationMessage.potmsgset == POTMsgSet.id,
+            POTMsgSet.msgid_plural != None,
+            TranslationMessage.pofile == pofile)
         for message in pluralmessages:
             logger.debug("\tFixing translations for '%s'" % (
                 message.potmsgset.singular_text))

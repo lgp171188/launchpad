@@ -4,7 +4,6 @@
 __metaclass__ = type
 
 __all__ = [
-    'DuplicateMessageId',
     'IDirectEmailAuthorization',
     'IIndexedMessage',
     'IMessage',
@@ -13,7 +12,6 @@ __all__ = [
     'IUserToUserEmail',
     'IndexedMessage',
     'InvalidEmailMessage',
-    'MissingSubject',
     'QuotaReachedError',
     'UnknownSender',
     ]
@@ -139,7 +137,7 @@ class IMessageSet(Interface):
                   restricted=False):
         """Construct a Message from an email message and return it.
 
-        :param email_message: The original email as a string.
+        :param email_message: The original email as a byte string.
         :param owner: Specifies the owner of the new Message. The default
             is calculated using the From: or Reply-To: headers, and will raise
             a UnknownSender error if they cannot be found.
@@ -160,8 +158,6 @@ class IMessageSet(Interface):
 
         Callers may want to explicitly handle the following exceptions:
             * UnknownSender
-            * MissingSubject
-            * DuplicateMessageId
             * InvalidEmailMessage
         """
 
@@ -268,17 +264,6 @@ class IDirectEmailAuthorization(Interface):
 
 class UnknownSender(NotFoundError):
     """Raised if we cannot lookup an email message's sender in the database"""
-
-
-class MissingSubject(ValueError):
-    """Raised if we get an email message with no Subject: header"""
-
-
-class DuplicateMessageId(ValueError):
-    """Raised if we attempt to store a new email with an existing Message-Id
-
-    Indicates a broken mail client or MTA.
-    """
 
 
 class InvalidEmailMessage(ValueError):

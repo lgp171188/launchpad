@@ -35,7 +35,12 @@ from storm.expr import (
     Or,
     SQL,
     )
-from storm.locals import JSON
+from storm.locals import (
+    Int,
+    JSON,
+    Reference,
+    ReferenceSet,
+    )
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -111,7 +116,7 @@ from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
-from lp.services.mail.signedmessage import signed_message_from_string
+from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -178,7 +183,6 @@ from lp.translations.model.hastranslationtemplates import (
     )
 from lp.translations.model.languagepack import LanguagePack
 from lp.translations.model.pofile import POFile
-from lp.translations.model.pofiletranslator import POFileTranslator
 from lp.translations.model.potemplate import (
     POTemplate,
     TranslationTemplatesCollection,
@@ -245,20 +249,22 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
     sourcecount = IntCol(notNull=True, default=DEFAULT)
     defer_translation_imports = BoolCol(notNull=True, default=True)
     hide_all_translations = BoolCol(notNull=True, default=True)
-    language_pack_base = ForeignKey(
-        foreignKey="LanguagePack", dbName="language_pack_base", notNull=False,
-        default=None)
-    language_pack_delta = ForeignKey(
-        foreignKey="LanguagePack", dbName="language_pack_delta",
-        notNull=False, default=None)
-    language_pack_proposed = ForeignKey(
-        foreignKey="LanguagePack", dbName="language_pack_proposed",
-        notNull=False, default=None)
+    language_pack_base_id = Int(
+        name="language_pack_base", allow_none=True, default=None)
+    language_pack_base = Reference(language_pack_base_id, "LanguagePack.id")
+    language_pack_delta_id = Int(
+        name="language_pack_delta", allow_none=True, default=None)
+    language_pack_delta = Reference(language_pack_delta_id, "LanguagePack.id")
+    language_pack_proposed_id = Int(
+        name="language_pack_proposed", allow_none=True, default=None)
+    language_pack_proposed = Reference(
+        language_pack_proposed_id, "LanguagePack.id")
     language_pack_full_export_requested = BoolCol(notNull=True, default=False)
     publishing_options = JSON("publishing_options")
 
-    language_packs = SQLMultipleJoin(
-        'LanguagePack', joinColumn='distroseries', orderBy='-date_exported')
+    language_packs = ReferenceSet(
+        'id', 'LanguagePack.distroseries_id',
+        order_by=Desc('LanguagePack.date_exported'))
     sections = SQLRelatedJoin(
         'Section', joinColumn='distroseries', otherColumn='section',
         intermediateTable='SectionSelection')
@@ -794,15 +800,17 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     @property
     def last_full_language_pack_exported(self):
-        return LanguagePack.selectFirstBy(
-            distroseries=self, type=LanguagePackType.FULL,
-            orderBy='-date_exported')
+        language_packs = IStore(LanguagePack).find(
+            LanguagePack, distroseries=self, type=LanguagePackType.FULL)
+        return language_packs.order_by(LanguagePack.date_exported).last()
 
     @property
     def last_delta_language_pack_exported(self):
-        return LanguagePack.selectFirstBy(
+        language_packs = IStore(LanguagePack).find(
+            LanguagePack,
             distroseries=self, type=LanguagePackType.DELTA,
-            updates=self.language_pack_base, orderBy='-date_exported')
+            updates=self.language_pack_base)
+        return language_packs.order_by(LanguagePack.date_exported).last()
 
     @property
     def backports_not_automatic(self):
@@ -1167,22 +1175,12 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
             return comp
         raise NotFoundError(name)
 
-    def getSectionByName(self, name):
-        """See `IDistroSeries`."""
-        section = Section.byName(name)
-        if section is None:
-            raise NotFoundError(name)
-        permitted = set(self.sections)
-        if section in permitted:
-            return section
-        raise NotFoundError(name)
-
     def searchPackages(self, text):
         """See `IDistroSeries`."""
         find_spec = (
             DistroSeriesPackageCache,
             BinaryPackageName,
-            SQL('ts_rank(fti, ftq(%s)) AS rank' % sqlvalues(text)))
+            SQL('ts_rank(fti, ftq(?)) AS rank', params=(text,)))
         origin = [
             DistroSeriesPackageCache,
             Join(
@@ -1318,7 +1316,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
             # The PGP signature is stripped from all changesfiles
             # to avoid replay attacks (see bugs 159304 and 451396).
-            signed_message = signed_message_from_string(changesfilecontent)
+            signed_message = signed_message_from_bytes(changesfilecontent)
             if signed_message is not None:
                 # Overwrite `changesfilecontent` with the text stripped
                 # of the PGP signature.
@@ -1363,6 +1361,9 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     def getPOFileContributorsByLanguage(self, language):
         """See `IDistroSeries`."""
+        # Circular import.
+        from lp.translations.model.pofiletranslator import POFileTranslator
+
         contributors = IStore(Person).find(
             Person,
             POFileTranslator.personID == Person.id,

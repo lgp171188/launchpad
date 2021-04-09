@@ -22,9 +22,9 @@ team.
 
 A team (name21) can be merged into another (ubuntu-team).
 
-    >>> print person_set.getByName('name21').displayname
+    >>> print(person_set.getByName('name21').displayname)
     Hoary Gnome Team
-    >>> print person_set.getByName('ubuntu-team').displayname
+    >>> print(person_set.getByName('ubuntu-team').displayname)
     Ubuntu Team
 
     >>> form = {'field.dupe_person': 'name21',
@@ -35,7 +35,7 @@ A team (name21) can be merged into another (ubuntu-team).
     >>> len(view.errors)
     0
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     A merge is queued and is expected to complete in a few minutes.
 
 
@@ -50,7 +50,7 @@ Attempting to merge a non-existent team results in an error.
     >>> len(view.errors)
     2
     >>> for error in view.errors:
-    ...     print error[0]
+    ...     print(error.args[0])
     Invalid value
     Invalid value
 
@@ -76,7 +76,7 @@ them to merge a profile which has no email address.
     ...     person_set, '+requestmerge', form=form)
     >>> len(view.errors)
     2
-    >>> print view.getFieldError('dupe_person')
+    >>> print(view.getFieldError('dupe_person'))
     The duplicate is not a valid person or team.
 
 Admins and registry experts, on the other hand, are allowed to merge people
@@ -90,7 +90,7 @@ without a single email address.
     ...     person_set, '+adminpeoplemerge', form=form)
     >>> view.errors
     []
-    >>> print view.request.response.getHeader('location')
+    >>> print(view.request.response.getHeader('location'))
     http://launchpad.test/~name16
 
 
@@ -123,13 +123,13 @@ can delete teams.
 
 The view provides a label, page_title, and cancel url to present the page.
 
-    >>> print view.label
+    >>> print(view.label)
     Delete Deletable
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Delete
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/~deletable
 
 The view uses the similar form fields as the team merge view, but it does not
@@ -143,17 +143,19 @@ and it is only rendered if canDelete() returns True.
     >>> view.field_names
     ['dupe_person']
 
-    >>> view.default_values
-    {'field.delete': True, 'field.dupe_person': u'deletable'}
+    >>> for key, value in sorted(view.default_values.items()):
+    ...     print('%s: %s' % (key, value))
+    field.delete: True
+    field.dupe_person: deletable
 
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print find_tag_by_id(content, 'field.dupe_person')
+    >>> print(find_tag_by_id(content, 'field.dupe_person'))
     None
 
-    >>> print find_tag_by_id(content, 'field.delete')
+    >>> print(find_tag_by_id(content, 'field.delete'))
     None
 
-    >>> print find_tag_by_id(content, 'field.actions.delete')['value']
+    >>> print(find_tag_by_id(content, 'field.actions.delete')['value'])
     Delete
 
     >>> view.canDelete(data={})
@@ -164,7 +166,7 @@ deleted.
 
     >>> from lp.testing.pages import extract_text
 
-    >>> print extract_text(content)
+    >>> print(extract_text(content))
     Delete Deletable
     Deleting a team is permanent. It cannot be undone.
     Deletable has 2 active members who will be removed before it is deleted...
@@ -177,10 +179,10 @@ The user is redirected to /people when a team is deleted.
     []
 
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     The team is queued to be deleted.
 
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/people
 
 And there is a person merge job setup to delete them.
@@ -188,8 +190,8 @@ And there is a person merge job setup to delete them.
     >>> job = merge_job_source.find(deletable_team).any()
     >>> job.metadata['delete']
     True
-    >>> job.from_person.name
-    u'deletable'
+    >>> print(job.from_person.name)
+    deletable
 
 The delete team view cannot be hacked to delete another team, or change
 the team that the merge operation is performed with.
@@ -202,7 +204,7 @@ the team that the merge operation is performed with.
     ...     'field.actions.delete': 'Delete'}
     >>> view = create_initialized_view(deletable_team, '+delete', form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     Unable to process submitted data.
 
     >>> view.request.response.notifications
@@ -222,13 +224,13 @@ A team with a mailing list cannot be deleted.
     True
 
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print extract_text(content)
+    >>> print(extract_text(content))
     Delete Not Deletable
     Deleting a team is permanent. It cannot be undone.
     This team cannot be deleted until its mailing list is first deactivated,
     then purged after the deactivation is confirmed...
 
-    >>> print find_tag_by_id(content, 'field.actions.delete')
+    >>> print(find_tag_by_id(content, 'field.actions.delete'))
     None
 
 Private teams can be deleted by admins.
@@ -244,5 +246,5 @@ Private teams can be deleted by admins.
     >>> view.errors
     []
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     The team is queued to be deleted.

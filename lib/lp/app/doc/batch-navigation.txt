@@ -81,9 +81,10 @@ InvalidBatchSizeError is raised.
     ...     """))
     >>> request = build_request({"start": "0", "batch": "20"})
     >>> BatchNavigator(reindeer, request=request )
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    InvalidBatchSizeError: Maximum for "batch" parameter is 5.
+    lazr.batchnavigator.interfaces.InvalidBatchSizeError: Maximum for "batch" parameter is 5.
 
     >>> ignored = config.pop('max-batch-size')
 
@@ -103,13 +104,13 @@ upper and lower navigation link views.
     >>> navigator = BatchNavigator([], request=request)
     >>> upper_view = getMultiAdapter(
     ...     (navigator, request), name='+navigation-links-upper')
-    >>> upper_view.render()
-    u''
+    >>> print(upper_view.render())
+    <BLANKLINE>
 
     >>> lower_view = getMultiAdapter(
     ...     (navigator, request), name='+navigation-links-lower')
-    >>> lower_view.render()
-    u''
+    >>> print(lower_view.render())
+    <BLANKLINE>
 
 When there is a current batch, but there are no previous or next
 batches, both the upper and lower navigation links view will render.

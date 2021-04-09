@@ -21,7 +21,7 @@ information.
     >>> anon_browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> soup = find_main_content(anon_browser.contents)
     >>> for question in soup.findAll('td', 'questionTITLE'):
-    ...     print(question.find('a').renderContents())
+    ...     print(question.find('a').decode_contents())
     Continue playing after shutdown
     Play DVDs in Totem
     mailto: problem in webpage
@@ -32,7 +32,7 @@ information.
     >>> anon_browser.getLink('Next').click()
     >>> soup = find_main_content(anon_browser.contents)
     >>> for question in soup.findAll('td', 'questionTITLE'):
-    ...     print(question.find('a').renderContents())
+    ...     print(question.find('a').decode_contents())
     Installation failed
 
 The questions match the languages inferred from GeoIP (South Africa in
@@ -51,12 +51,12 @@ the anonymous user will see a Spanish question.
     >>> anon_browser.getControl('Search', index=0).click()
     >>> table = find_tag_by_id(anon_browser.contents, 'question-listing')
     >>> for question in table.findAll('td', 'questionTITLE'):
-    ...     question.find('a').renderContents()
-    'Problema al recompilar kernel con soporte smp (doble-n\xc3\xbacleo)'
-    'Continue playing after shutdown'
-    'Play DVDs in Totem'
-    'mailto: problem in webpage'
-    'Installation of Java Runtime Environment for Mozilla'
+    ...     print(question.find('a').decode_contents())
+    Problema al recompilar kernel con soporte smp (doble-núcleo)
+    Continue playing after shutdown
+    Play DVDs in Totem
+    mailto: problem in webpage
+    Installation of Java Runtime Environment for Mozilla
 
 While the user might recognize the first question above is in Spanish,
 browsers and search engine robots need help. Each row in the list
@@ -77,10 +77,10 @@ Arabic and is written from right-to-left.
     >>> anon_browser.getLink('Next').click()
     >>> table = find_tag_by_id(anon_browser.contents, 'question-listing')
     >>> for question in table.findAll('td', 'questionTITLE'):
-    ...     question.find('a').renderContents()
-    'Slow system'
-    'Installation failed'
-    '\xd8\xb9\xd9\x83\xd8\xb3 ...
+    ...     print(question.find('a').decode_contents())
+    Slow system
+    Installation failed
+    عكس ...
 
     >>> for question in table.findAll('tr', lang=True):
     ...     print('lang="%s" dir="%s"' % (question['lang'], question['dir']))
@@ -106,10 +106,10 @@ language controls.
     >>> anon_browser.getControl(name='field.language')
     Traceback (most recent call last):
       ...
-    LookupError: name u'field.language...
+    LookupError: name ...'field.language...
 
     >>> content = find_main_content(anon_browser.contents).find('p')
-    >>> print(content.renderContents())
+    >>> print(content.decode_contents())
     There are no questions for Kubuntu with the requested statuses.
 
 When the project has questions in only one language, and that language
@@ -124,7 +124,7 @@ mapped, we assume they speak the default language of English.
     >>> anon_browser.getControl(name='field.language')
     Traceback (most recent call last):
       ...
-    LookupError: name u'field.language...
+    LookupError: name ...'field.language...
 
 But if the user configures their browser to accept Spanish and English
 then questions with those language will be displayed:
@@ -138,20 +138,20 @@ then questions with those language will be displayed:
 
     >>> soup = find_main_content(anon_browser.contents)
     >>> for question in soup.findAll('td', 'questionTITLE'):
-    ...     question.find('a').renderContents()
-    'Problema al recompilar kernel con soporte smp (doble-n\xc3\xbacleo)'
-    'Continue playing after shutdown'
-    'Play DVDs in Totem'
-    'mailto: problem in webpage'
-    'Installation of Java Runtime Environment for Mozilla'
+    ...     print(question.find('a').decode_contents())
+    Problema al recompilar kernel con soporte smp (doble-núcleo)
+    Continue playing after shutdown
+    Play DVDs in Totem
+    mailto: problem in webpage
+    Installation of Java Runtime Environment for Mozilla
 
     # Since we have more than 5 results, some of them are in the second batch.
     >>> anon_browser.getLink('Next').click()
     >>> soup = find_main_content(anon_browser.contents)
     >>> for question in soup.findAll('td', 'questionTITLE'):
-    ...     question.find('a').renderContents()
-    'Slow system'
-    'Installation failed'
+    ...     print(question.find('a').decode_contents())
+    Slow system
+    Installation failed
 
 
 == Authenticated searching ==
@@ -177,7 +177,7 @@ that language, we do not show the language controls.
     >>> user_browser.getControl(name='field.language')
     Traceback (most recent call last):
       ...
-    LookupError: name u'field.language...
+    LookupError: name ...'field.language...
 
 When No Privileges Person adds Spanish and English to their browser, they
 are added to the language controls.
@@ -213,8 +213,8 @@ the search results.
     >>> browser.getControl('Search', index=0).click()
     >>> content = find_main_content(browser.contents)
     >>> for question in content.findAll('td', 'questionTITLE'):
-    ...     question.find('a').renderContents()
-    'Problema al recompilar kernel con soporte smp (doble-n\xc3\xbacleo)'
+    ...     print(question.find('a').decode_contents())
+    Problema al recompilar kernel con soporte smp (doble-núcleo)
 
 Some users, translators in particular, speak an English variant.
 English variants are considered to be English in the Answers,
@@ -253,12 +253,12 @@ English, and can use it to locate English questions.
     >>> daf_browser.getControl('Search', index=0).click()
     >>> content = find_main_content(daf_browser.contents)
     >>> for question in content.findAll('td', 'questionTITLE'):
-    ...     question.find('a').renderContents()
-    'Continue playing after shutdown'
-    'Play DVDs in Totem'
-    'mailto: problem in webpage'
-    'Installation of Java Runtime Environment for Mozilla'
-    'Slow system'
+    ...     print(question.find('a').decode_contents())
+    Continue playing after shutdown
+    Play DVDs in Totem
+    mailto: problem in webpage
+    Installation of Java Runtime Environment for Mozilla
+    Slow system
 
 
 == Questions by language ==
@@ -302,8 +302,8 @@ the preceding page.
 
     >>> content = find_main_content(user_browser.contents)
     >>> for question in content.findAll('td', 'questionTITLE'):
-    ...     question.find('a').renderContents()
-    'Problemas de Impress\xc3\xa3o no Firefox'
+    ...     print(question.find('a').decode_contents())
+    Problemas de Impressão no Firefox
 
 The page in all other respects behaves like a question search page.
 
@@ -331,8 +331,8 @@ project. They can see the question on the second page of "My questions"...
     dir: rtl
 
     >>> for question in questions.findAll('td', {'class': 'questionTITLE'}):
-    ...     question.find('a').renderContents()
-    '\xd8\xb9\xd9\x83\xd8\xb3 \xd8\xa7\xd9\x84\xd8\xaa\xd8\xba...'
+    ...     print(question.find('a').decode_contents())
+    عكس التغ...
 
 ...even though they have not set Arabic as one of their preferred languages.
 

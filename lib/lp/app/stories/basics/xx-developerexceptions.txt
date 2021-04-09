@@ -104,7 +104,8 @@ want to see tracebacks instead of error pages.
   >>> print(http(r"""
   ... GET /whatever HTTP/1.1
   ... """, handle_errors=False))
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  NotFound: ...
+  zope.publisher.interfaces.NotFound: ...
 

@@ -19,7 +19,6 @@ from lp.services.config import config
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts.base import LaunchpadCronScript
-from lp.services.job.scripts.process_job_source import ProcessJobSource
 
 
 class LongEpilogHelpFormatter(IndentedHelpFormatter):

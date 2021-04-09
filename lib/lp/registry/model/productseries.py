@@ -72,10 +72,8 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import SQLBase
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.sorting import sorted_dotted_numbers
@@ -274,8 +272,8 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
 
     def getPOTemplate(self, name):
         """See IProductSeries."""
-        return POTemplate.selectOne(
-            "productseries = %s AND name = %s" % sqlvalues(self.id, name))
+        return IStore(POTemplate).find(
+            POTemplate, productseries=self, name=name).one()
 
     @property
     def title(self):

@@ -282,14 +282,16 @@ administration or download/upload links.
     ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> anon_browser.getLink('upload')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.getLink('download').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 As an authenticated user, you should see the download link,
 but not the one for uploading file to this potemplate.
@@ -298,9 +300,10 @@ but not the one for uploading file to this potemplate.
     ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> user_browser.getLink('upload')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink('download').click()
     >>> print(user_browser.url)

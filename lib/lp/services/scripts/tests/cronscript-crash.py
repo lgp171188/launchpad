@@ -28,7 +28,7 @@ class CrashScript(LaunchpadCronScript):
         # Debug messages do not generate an OOPS.
         assert not self.oopses, "oops reported %r" % (self.oopses,)
 
-        self.logger.warn("This is a warning")
+        self.logger.warning("This is a warning")
         if len(self.oopses):
             self.logger.info("New OOPS detected")
         del self.oopses[:]

@@ -46,7 +46,7 @@ as it doesn't have any IProductReleaseFiles associated with it.
     >>> firefox_109.files.count()
     0
     >>> firefox_109.destroySelf()
-    >>> print firefox_1_0.getRelease('1.0.9')
+    >>> print(firefox_1_0.getRelease('1.0.9'))
     None
 
 If a product release has files associated with it, though, it can't be

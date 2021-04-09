@@ -459,7 +459,7 @@ class TestLiveFSView(BrowserTestCase):
         build = self.makeBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=30))
         build.setLog(self.factory.makeLibraryFileAlias())
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Successfully built 30 minutes ago buildlog \(.*\) i386
@@ -486,7 +486,7 @@ class TestLiveFSView(BrowserTestCase):
         # A pending build is listed as such.
         build = self.makeBuild()
         build.queueBuild()
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Status When complete Architecture Archive
             Needs building in .* \(estimated\) i386

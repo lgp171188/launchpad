@@ -1,6 +1,6 @@
 #!/usr/bin/python2 -S
 #
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # This script updates the cached source package information in the system.
@@ -13,6 +13,8 @@ from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.scripts.base import LaunchpadCronScript
+from lp.soyuz.enums import ArchivePurpose
+from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
     )
@@ -97,7 +99,10 @@ class PackageCacheUpdater(LaunchpadCronScript):
 
             self.logger.info(
                 'Updating %s PPAs' % distribution.name)
-            for archive in distribution.getAllPPAs():
+            archives = getUtility(IArchiveSet).getArchivesForDistribution(
+                distribution, purposes=[ArchivePurpose.PPA],
+                check_permissions=False, exclude_pristine=True)
+            for archive in archives:
                 self.updateDistributionCache(distribution, archive)
                 archive.updateArchiveCache()
 

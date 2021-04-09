@@ -20,9 +20,9 @@ javascript calls newMilestone on the object at series_api_uri.
     >>> product = factory.makeProduct(name='app')
     >>> series = factory.makeProductSeries(name='stable', product=product)
     >>> view = MilestoneCreatorView(series, LaunchpadTestRequest())
-    >>> print view.milestone_form_uri
+    >>> print(view.milestone_form_uri)
     http://launchpad.test/app/stable/+addmilestone/++form++
-    >>> print view.series_api_uri
+    >>> print(view.series_api_uri)
     /app/stable
 
 
@@ -57,14 +57,14 @@ rule is to sort on the 'sortkey' attribute of the object being counted.
 
     >>> items = (concept_1, artefact_2, artefact_3)
     >>> for status_count in get_status_counts(items, 'status'):
-    ...     print status_count.count, status_count.status
+    ...     print(status_count.count, status_count.status)
     2 Experimental
     1 Current Stable Release
 
 The attribute to sort on can be specified.
 
     >>> for status_count in get_status_counts(items, 'status', key='title'):
-    ...     print status_count.count, status_count.status
+    ...     print(status_count.count, status_count.status)
     1 Current Stable Release
     2 Experimental
 
@@ -73,7 +73,7 @@ to specify the attribute to sort on.
 
     >>> for status_count in get_status_counts(
     ...     items, 'person', key='displayname'):
-    ...     print status_count.count, status_count.status.displayname
+    ...     print(status_count.count, status_count.status.displayname)
     1 Andy
     2 Bob
 
@@ -82,6 +82,6 @@ If the object being counted is None, it is ignored.
     >>> artefact_2.person = None
     >>> for status_count in get_status_counts(
     ...     items, 'person', key='displayname'):
-    ...     print status_count.count, status_count.status.displayname
+    ...     print(status_count.count, status_count.status.displayname)
     1 Andy
     1 Bob

@@ -72,10 +72,10 @@ from a store other than the correct Master.
     >>> t = transaction.begin()
     >>> person = main_slave.find(Person, name='mark').one()
     >>> person.display_name = 'Cannot change'
-    >>> transaction.commit()
+    >>> transaction.commit()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    InternalError: ...
+    storm.database.InternalError: ...
 
     >>> transaction.abort()
     >>> t = transaction.begin()
@@ -91,28 +91,30 @@ similarly wrapped.
     >>> person = getUtility(IPersonSet).getByEmail('no-priv@canonical.com')
     >>> removeSecurityProxy(person) is person
     False
-    >>> person.displayname
-    u'No Privileges Person'
+    >>> print(person.displayname)
+    No Privileges Person
     >>> person.name = 'foo'
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> person = IMasterObject(person)
     >>> removeSecurityProxy(person) is person
     False
-    >>> person.displayname
-    u'No Privileges Person'
+    >>> print(person.displayname)
+    No Privileges Person
     >>> person.name = 'foo'
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> person = IMasterObject(removeSecurityProxy(person))
     >>> removeSecurityProxy(person) is person
     True
-    >>> person.displayname
-    u'No Privileges Person'
+    >>> print(person.displayname)
+    No Privileges Person
     >>> person.name = 'foo'
 
 Our objects may compare equal even if they have come from different

@@ -8,6 +8,8 @@ __metaclass__ = type
 from datetime import datetime
 import logging
 import os
+import re
+from textwrap import dedent
 
 from fixtures import MockPatchObject
 from lazr.uri import URI
@@ -25,6 +27,7 @@ from testtools.twistedsupport import (
     AsynchronousDeferredRunTest,
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
+import transaction
 from twisted.internet import (
     defer,
     reactor,
@@ -37,8 +40,18 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.registry.interfaces.distributionmirror import (
+    MirrorContent,
+    MirrorStatus,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.registry.model.distributionmirror import DistributionMirror
+from lp.registry.model.distributionmirror import (
+    DistributionMirror,
+    MirrorCDImageDistroSeries,
+    MirrorDistroArchSeries,
+    MirrorDistroSeriesSource,
+    MirrorProbeRecord,
+    )
 from lp.registry.scripts import distributionmirror_prober
 from lp.registry.scripts.distributionmirror_prober import (
     _get_cdimage_file_list,
@@ -72,14 +85,18 @@ from lp.registry.tests.distributionmirror_http_server import (
     )
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
+from lp.services.database.interfaces import IStore
 from lp.services.httpproxy.connect_tunneling import TunnelingAgent
 from lp.services.timeout import default_timeout
 from lp.testing import (
+    admin_logged_in,
     clean_up_reactor,
+    run_script,
     TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.layers import (
+    LaunchpadZopelessLayer,
     TwistedLayer,
     ZopelessDatabaseLayer,
     )
@@ -116,7 +133,7 @@ class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
     def creatorForNetloc(self, hostname, port):
         # check if the hostname is in the the whitelist,
         # otherwise return the default policy
-        if hostname == 'localhost':
+        if hostname == b'localhost':
             return ssl.CertificateOptions(verify=False)
         return super(LocalhostWhitelistedHTTPSPolicy, self).creatorForNetloc(
             hostname, port)
@@ -228,9 +245,9 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
         def got_result(result):
             self.assertEqual(http_client.OK, result.code)
+            expected_url = 'https://localhost:%s/valid-mirror/file' % self.port
             self.assertEqual(
-                'https://localhost:%s/valid-mirror/file' % self.port,
-                result.request.absoluteURI)
+                expected_url.encode('UTF-8'), result.request.absoluteURI)
 
         return deferred.addCallback(got_result)
 
@@ -391,10 +408,10 @@ class TestProberProtocolAndFactory(TestCase):
         deferred = prober.probe()
 
         def got_result(result):
-            self.assertTrue(prober.redirection_count == 1)
+            self.assertEqual(1, prober.redirection_count)
             new_url = 'http://localhost:%s/valid-mirror/file' % self.port
-            self.assertTrue(prober.url == new_url)
-            self.assertTrue(result == str(http_client.OK))
+            self.assertEqual(new_url, prober.url)
+            self.assertEqual(http_client.OK, result)
 
         return deferred.addBoth(got_result)
 
@@ -414,9 +431,9 @@ class TestProberProtocolAndFactory(TestCase):
         d = self._createProberAndProbe(self.urls['200'])
 
         def got_result(result):
-            self.assertTrue(
-                result == str(http_client.OK),
-                "Expected a '200' status but got '%s'" % result)
+            self.assertEqual(
+                http_client.OK, result,
+                "Expected a '200' status but got %r" % result)
 
         return d.addCallback(got_result)
 
@@ -848,11 +865,11 @@ class TestRedirectAwareProberFactoryAndProtocol(TestCase):
         protocol.factory = FakeFactory('http://foo.bar/')
         protocol.makeConnection(FakeTransport())
         protocol.dataReceived(
-            "HTTP/1.1 301 Moved Permanently\r\n"
-            "Location: http://foo.baz/\r\n"
-            "Length: 0\r\n"
-            "\r\n")
-        self.assertEqual('http://foo.baz/', protocol.factory.redirectedTo)
+            b"HTTP/1.1 301 Moved Permanently\r\n"
+            b"Location: http://foo.baz/\r\n"
+            b"Length: 0\r\n"
+            b"\r\n")
+        self.assertEqual(b'http://foo.baz/', protocol.factory.redirectedTo)
         self.assertTrue(protocol.transport.disconnecting)
 
 
@@ -892,8 +909,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
 
     def test_mirrorcdimageseries_creation_and_deletion_some_404s(self):
         not_all_success = [
-            (defer.FAILURE,
-             Failure(BadResponseCode(str(http_client.NOT_FOUND)))),
+            (defer.FAILURE, Failure(BadResponseCode(http_client.NOT_FOUND))),
             (defer.SUCCESS, '200')]
         callbacks = self.makeMirrorProberCallbacks()
         all_success = [(defer.SUCCESS, '200'), (defer.SUCCESS, '200')]
@@ -924,7 +940,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
                 InvalidHTTPSCertificate,
                 InvalidHTTPSCertificateSkipped,
                 ]))
-        exceptions = [BadResponseCode(str(http_client.NOT_FOUND)),
+        exceptions = [BadResponseCode(http_client.NOT_FOUND),
                       ProberTimeout('http://localhost/', 5),
                       ConnectionSkipped(),
                       RedirectToDifferentFile('/foo', '/bar'),
@@ -983,8 +999,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
             self.fail("A timeout shouldn't be propagated. Got %s" % e)
         try:
             callbacks.deleteMirrorSeries(
-                Failure(BadResponseCode(
-                    str(http_client.INTERNAL_SERVER_ERROR))))
+                Failure(BadResponseCode(http_client.INTERNAL_SERVER_ERROR)))
         except Exception as e:
             self.fail(
                 "A bad response code shouldn't be propagated. Got %s" % e)
@@ -1015,7 +1030,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
     def test_mirrorseries_creation_and_deletion(self):
         callbacks = self.makeMirrorProberCallbacks()
         mirror_distro_series_source = callbacks.ensureMirrorSeries(
-             str(http_client.OK))
+             str(int(http_client.OK)))
         self.assertIsNot(
             mirror_distro_series_source, None,
             "If the prober gets a 200 Okay status, a new "
@@ -1023,7 +1038,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
             "created.")
 
         callbacks.deleteMirrorSeries(
-            Failure(BadResponseCode(str(http_client.NOT_FOUND))))
+            Failure(BadResponseCode(http_client.NOT_FOUND)))
         # If the prober gets a 404 status, we need to make sure there's no
         # MirrorDistroSeriesSource/MirrorDistroArchSeries referent to
         # that url
@@ -1174,3 +1189,117 @@ class TestLoggingMixin(TestCase):
         logger.log_file.seek(0)
         message = logger.log_file.read()
         self.assertNotEqual(None, message)
+
+
+class TestDistroMirrorProberFunctional(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super(TestDistroMirrorProberFunctional, self).setUp()
+        # Makes a clean distro mirror set, with only the mirrors we want.
+        self.removeMirrors()
+
+    def removeMirrors(self):
+        """Removes all mirror information from database."""
+        store = IStore(DistributionMirror)
+        store.find(MirrorProbeRecord).remove()
+        store.find(MirrorDistroArchSeries).remove()
+        store.find(MirrorDistroSeriesSource).remove()
+        store.find(MirrorCDImageDistroSeries).remove()
+        store.find(DistributionMirror).remove()
+        store.flush()
+
+    def makeMirror(self, content_type, distro=None):
+        with admin_logged_in():
+            if distro is None:
+                distro = self.factory.makeDistribution()
+                distro.supports_mirrors = True
+                self.factory.makeDistroSeries(distribution=distro)
+            mirror = self.factory.makeMirror(
+                distro, http_url="http://fake-url.invalid")
+            mirror.enabled = True
+            mirror.status = MirrorStatus.OFFICIAL
+            mirror.official_candidate = True
+            mirror.content = content_type
+        return mirror
+
+    def test_cdimage_prober(self):
+        """Checks that CD image prober works fine, end to end."""
+        mirror = self.makeMirror(content_type=MirrorContent.RELEASE)
+        transaction.commit()
+
+        out, err, exit_code = run_script(
+            "cronscripts/distributionmirror-prober.py --no-remote-hosts "
+            "--content-type=cdimage --no-owner-notification --force")
+        self.assertEqual(0, exit_code, err)
+
+        lock_file = "/var/lock/launchpad-distributionmirror-prober.lock"
+        self.assertEqual(dedent("""\
+            INFO    Creating lockfile: %s
+            INFO    Probing CD Image Mirrors
+            INFO    Probed 1 mirrors.
+            INFO    Starting to update mirrors statuses outside reactor now.
+            INFO    Done.
+            """) % lock_file, err)
+
+        with admin_logged_in():
+            record = removeSecurityProxy(mirror.last_probe_record)
+
+        log_lines = record.log_file.read().decode("UTF-8")
+        self.assertEqual(4, len(log_lines.split("\n")))
+        self.assertIn(
+            "Found all ISO images for series The Hoary Hedgehog Release "
+            "and flavour kubuntu.", log_lines)
+        self.assertIn(
+            "Found all ISO images for series The Hoary Hedgehog Release "
+            "and flavour ubuntu.", log_lines)
+        self.assertIn(
+            "Found all ISO images for series The Warty Warthog Release "
+            "and flavour ubuntu.", log_lines)
+
+    def test_archive_prober(self):
+        """Checks that archive prober works fine, end to end."""
+        # Using ubuntu to avoid the need to create all the packages that
+        # will be checked by prober.
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        mirror = self.makeMirror(
+            content_type=MirrorContent.ARCHIVE, distro=ubuntu)
+        transaction.commit()
+
+        out, err, exit_code = run_script(
+            "cronscripts/distributionmirror-prober.py --no-remote-hosts "
+            "--content-type=archive --no-owner-notification --force")
+        self.assertEqual(0, exit_code, err)
+
+        lock_file = "/var/lock/launchpad-distributionmirror-prober.lock"
+        self.assertEqual(dedent("""\
+            INFO    Creating lockfile: %s
+            INFO    Probing Archive Mirrors
+            INFO    Probed 1 mirrors.
+            INFO    Starting to update mirrors statuses outside reactor now.
+            INFO    Done.
+            """) % lock_file, err)
+
+        with admin_logged_in():
+            record = removeSecurityProxy(mirror.last_probe_record)
+
+        log_lines = record.log_file.read().decode("UTF-8")
+
+        # Make sure that prober output seems reasonable.
+        self.assertEqual(85, len(log_lines.split("\n")))
+        url = "http://fake-url.invalid/dists/"
+        self.assertEqual(40, len(re.findall(
+            (r"Ensuring MirrorDistroSeries of .* with url %s" % url) +
+            r".* exists in the database",
+            log_lines)))
+        self.assertEqual(40, len(re.findall(
+            (r"Ensuring MirrorDistroArchSeries of .* with url %s" % url) +
+            r".* exists in the database",
+            log_lines)))
+        self.assertEqual(1, len(re.findall(
+            r"Updating MirrorDistroArchSeries of .* freshness to Up to date",
+            log_lines)))
+        self.assertEqual(3, len(re.findall(
+            r"Updating MirrorDistroSeries of .* freshness to Up to date",
+            log_lines)))

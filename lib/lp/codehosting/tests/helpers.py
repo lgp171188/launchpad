@@ -11,12 +11,12 @@ __all__ = [
     'create_branch_with_one_revision',
     'force_stacked_on_url',
     'LoomTestMixin',
-    'make_bazaar_branch_and_tree',
     'TestResultWrapper',
     ]
 
 import os
 
+from breezy.controldir import ControlDir
 from breezy.errors import FileExists
 from breezy.plugins.loom import branch as loom_branch
 from breezy.tests import (
@@ -25,9 +25,6 @@ from breezy.tests import (
     )
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 
-from lp.code.enums import BranchType
-from lp.codehosting.vfs import branch_id_to_path
-from lp.services.config import config
 from lp.testing import TestCase
 
 
@@ -64,7 +61,7 @@ class LoomTestMixin:
         loom_tree = tree.controldir.open_workingtree()
         loom_tree.lock_write()
         loom_tree.branch.new_thread('bottom-thread')
-        loom_tree.commit('this is a commit', rev_id='commit-1')
+        loom_tree.commit('this is a commit', rev_id=b'commit-1')
         loom_tree.unlock()
         loom_tree.branch.record_loom('sample loom')
         self.get_transport().delete_tree('checkout')
@@ -82,32 +79,18 @@ class LoomTestMixin:
         loom_tree = tree.controldir.open_workingtree()
         loom_tree.lock_write()
         loom_tree.branch.new_thread('bottom-thread')
-        loom_tree.commit('this is a commit', rev_id='commit-1')
+        loom_tree.commit('this is a commit', rev_id=b'commit-1')
         loom_tree.unlock()
         loom_tree.branch.record_loom('sample loom')
         return loom_tree
 
 
-def make_bazaar_branch_and_tree(db_branch):
-    """Make a dummy Bazaar branch and working tree from a database Branch."""
-    assert db_branch.branch_type == BranchType.HOSTED, (
-        "Can only create branches for HOSTED branches: %r"
-        % db_branch)
-    branch_dir = os.path.join(
-        config.codehosting.mirrored_branches_root,
-        branch_id_to_path(db_branch.id))
-    return create_branch_with_one_revision(branch_dir)
-
-
 def create_branch_with_one_revision(branch_dir, format=None):
     """Create a dummy Bazaar branch at the given directory."""
-    # XXX cjwatson 2019-06-13: This still uses bzrlib until such time as the
-    # code import workers are ported to Breezy.
-    from bzrlib.bzrdir import BzrDir
     if not os.path.exists(branch_dir):
         os.makedirs(branch_dir)
     try:
-        tree = BzrDir.create_standalone_workingtree(branch_dir, format)
+        tree = ControlDir.create_standalone_workingtree(branch_dir, format)
     except FileExists:
         return
     f = open(os.path.join(branch_dir, 'hello'), 'w')

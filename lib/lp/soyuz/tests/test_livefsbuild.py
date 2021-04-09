@@ -160,11 +160,14 @@ class TestLiveFSBuild(TestCaseWithFactory):
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
             ]
-        for status in BuildStatus:
+        for status in BuildStatus.items:
+            build = self.factory.makeLiveFSBuild()
+            build.queueBuild()
+            build.updateStatus(status)
             if status in ok_cases:
-                self.assertTrue(self.build.can_be_cancelled)
+                self.assertTrue(build.can_be_cancelled)
             else:
-                self.assertFalse(self.build.can_be_cancelled)
+                self.assertFalse(build.can_be_cancelled)
 
     def test_cancel_not_in_progress(self):
         # The cancel() method for a pending build leaves it in the CANCELLED
@@ -337,7 +340,8 @@ class TestLiveFSBuild(TestCaseWithFactory):
             notification["X-Launchpad-Notification-Type"])
         self.assertEqual(
             "FAILEDTOBUILD", notification["X-Launchpad-Build-State"])
-        body, footer = notification.get_payload(decode=True).split("\n-- \n")
+        body, footer = notification.get_payload(decode=True).decode(
+            "UTF-8").split("\n-- \n")
         self.assertEqual(expected_body % (build.log_url, ""), body)
         self.assertEqual(
             "http://launchpad.test/~person/+livefs/distro/unstable/livefs-1/"

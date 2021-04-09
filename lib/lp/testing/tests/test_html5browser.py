@@ -79,7 +79,8 @@ class BrowserTestCase(TestCase):
 
     def setUp(self):
         super(BrowserTestCase, self).setUp()
-        self.file = NamedTemporaryFile(prefix='html5browser_', suffix='.html')
+        self.file = NamedTemporaryFile(
+            mode='w+', prefix='html5browser_', suffix='.html')
         self.addCleanup(self.file.close)
 
     def test_init_default(self):
@@ -89,7 +90,7 @@ class BrowserTestCase(TestCase):
         self.assertIsNone(browser.command)
         self.assertIsNone(browser.script)
         self.assertIsNone(browser.browser_window)
-        self.assertEqual(['console-message'], browser.listeners.keys())
+        self.assertEqual(['console-message'], list(browser.listeners))
 
     def test_init_show_browser(self):
         # The Browser can be set to show the window.

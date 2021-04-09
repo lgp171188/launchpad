@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI Project implementation."""
@@ -11,9 +11,10 @@ __all__ = [
     'OCIProjectSet',
     ]
 
+from collections import defaultdict
+
 import pytz
 import six
-from lp.services.database.stormexpr import fti_search
 from six import text_type
 from storm.expr import (
     Join,
@@ -31,7 +32,17 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import (
+    PRIVATE_INFORMATION_TYPES,
+    PUBLIC_INFORMATION_TYPES,
+    )
+from lp.app.interfaces.services import IService
 from lp.bugs.model.bugtarget import BugTargetBase
+from lp.code.interfaces.gitnamespace import IGitNamespaceSet
+from lp.code.model.branchnamespace import (
+    BRANCH_POLICY_ALLOWED_TYPES,
+    BRANCH_POLICY_REQUIRED_GRANTS,
+    )
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
@@ -41,7 +52,9 @@ from lp.registry.interfaces.ociproject import (
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProduct
+from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.accesspolicy import reconcile_access_for_artifacts
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.ociprojectseries import OCIProjectSeries
 from lp.registry.model.person import Person
@@ -66,6 +79,17 @@ def oci_project_modified(oci_project, event):
     # This attribute is normally read-only; bypass the security proxy to
     # avoid that.
     removeSecurityProxy(oci_project).date_last_modified = UTC_NOW
+
+
+def user_has_special_oci_access(user):
+    """Admins have special access.
+
+    :param user: An `IPerson` or None.
+    """
+    if user is None:
+        return False
+    roles = IPersonRoles(user)
+    return roles.in_admin
 
 
 @implementer(IOCIProject)
@@ -115,6 +139,11 @@ class OCIProject(BugTargetBase, StormBase):
 
     @pillar.setter
     def pillar(self, pillar):
+        """See `IBugTarget`."""
+        # We need to reconcile access for all OCI recipes from this OCI
+        # project if we are moving from one pillar to another.
+        needs_reconcile_access = (
+                self.pillar is not None and self.pillar != pillar)
         if IDistribution.providedBy(pillar):
             self.distribution = pillar
             self.project = None
@@ -125,6 +154,8 @@ class OCIProject(BugTargetBase, StormBase):
             raise ValueError(
                 'The target of an OCIProject must be either an IDistribution '
                 'or IProduct instance.')
+        if needs_reconcile_access:
+            self._reconcileAccess()
 
     @property
     def display_name(self):
@@ -145,6 +176,19 @@ class OCIProject(BugTargetBase, StormBase):
     def bug_supervisor(self):
         """See `IOCIProject`."""
         return self.pillar.bug_supervisor
+
+    def _reconcileAccess(self):
+        """Reconcile access for all OCI recipes of this project."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        rs = IStore(OCIRecipe).find(
+            OCIRecipe,
+            OCIRecipe.oci_project == self)
+        recipes_per_info_type = defaultdict(set)
+        for recipe in rs:
+            recipes_per_info_type[recipe.information_type].add(recipe)
+        for information_type, recipes in recipes_per_info_type.items():
+            reconcile_access_for_artifacts(
+                recipes, information_type, [self.pillar])
 
     def newRecipe(self, name, registrant, owner, git_ref,
                   build_file, description=None, build_daily=False,
@@ -186,37 +230,49 @@ class OCIProject(BugTargetBase, StormBase):
     def getSeriesByName(self, name):
         return self.series.find(OCIProjectSeries.name == name).one()
 
-    def getRecipes(self):
+    def getRecipes(self, visible_by_user=None):
         """See `IOCIProject`."""
-        from lp.oci.model.ocirecipe import OCIRecipe
+        from lp.oci.model.ocirecipe import (
+            OCIRecipe,
+            get_ocirecipe_privacy_filter,
+        )
         rs = IStore(OCIRecipe).find(
             OCIRecipe,
             OCIRecipe.owner_id == Person.id,
-            OCIRecipe.oci_project == self)
+            OCIRecipe.oci_project == self,
+            get_ocirecipe_privacy_filter(visible_by_user))
         return rs.order_by(Person.name, OCIRecipe.name)
 
-    def getRecipeByNameAndOwner(self, recipe_name, owner_name):
+    def getRecipeByNameAndOwner(self, recipe_name, owner_name,
+                                visible_by_user=None):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        q = self.getRecipes().find(
+        q = self.getRecipes(visible_by_user=visible_by_user).find(
             OCIRecipe.name == recipe_name,
             Person.name == owner_name)
         return q.one()
 
-    def searchRecipes(self, query):
+    def searchRecipes(self, query, visible_by_user=None):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        q = self.getRecipes().find(
+        q = self.getRecipes(visible_by_user=visible_by_user).find(
             OCIRecipe.name.contains_string(query) |
             Person.name.contains_string(query))
         return q.order_by(Person.name, OCIRecipe.name)
 
-    def getOfficialRecipe(self):
+    def getOfficialRecipes(self, visible_by_user=None):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import OCIRecipe
-        return self.getRecipes().find(OCIRecipe._official == True).one()
+        return self.getRecipes(
+            visible_by_user=visible_by_user).find(OCIRecipe._official == True)
 
-    def setOfficialRecipe(self, recipe):
+    def getUnofficialRecipes(self, visible_by_user=None):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        return self.getRecipes(
+            visible_by_user=visible_by_user).find(OCIRecipe._official == False)
+
+    def setOfficialRecipeStatus(self, recipe, status):
         """See `IOCIProject`."""
         if recipe is not None and recipe.oci_project != self:
             raise ValueError(
@@ -226,12 +282,31 @@ class OCIProject(BugTargetBase, StormBase):
         # attribute not declared on the Interface, and we need to set it
         # regardless of security checks on OCIRecipe objects.
         recipe = removeSecurityProxy(recipe)
-        previous = removeSecurityProxy(self.getOfficialRecipe())
-        if previous != recipe:
-            if previous is not None:
-                previous._official = False
-            if recipe is not None:
-                recipe._official = True
+        recipe._official = status
+
+    def getAllowedInformationTypes(self, user):
+        """See `IOCIRecipe`."""
+        if user_has_special_oci_access(user):
+            # Admins can set any type.
+            return set(PUBLIC_INFORMATION_TYPES + PRIVATE_INFORMATION_TYPES)
+        required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
+            self.pillar.branch_sharing_policy]
+        if (required_grant is not None
+                and not getUtility(IService, 'sharing').checkPillarAccess(
+                    [self.pillar], required_grant, self.registrant)
+                and (user is None
+                     or not getUtility(IService, 'sharing').checkPillarAccess(
+                            [self.pillar], required_grant, user))):
+            return []
+        return BRANCH_POLICY_ALLOWED_TYPES[self.pillar.branch_sharing_policy]
+
+    def getDefaultGitRepository(self, person):
+        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
+        return namespace.getByName(self.name)
+
+    def getDefaultGitRepositoryPath(self, person):
+        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
+        return namespace.name
 
 
 @implementer(IOCIProjectSet)

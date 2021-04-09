@@ -2,11 +2,22 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
+from datetime import (
+    datetime,
+    timedelta,
+    )
+
+import pytz
+
+from lp.services import database
+
 
 __metaclass__ = type
 
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
+from lp.answers.interfaces.questioncollection import IQuestionSet
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import (
     person_logged_in,
@@ -101,3 +112,23 @@ class TestQuestionInDirectSubscribers(TestCaseWithFactory):
 
         # Check the results.
         self.assertEqual([spanish_person], question.getIndirectSubscribers())
+
+
+class TestQuestionSet(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_expiredQuestions(self):
+        question = self.factory.makeQuestion()
+        removeSecurityProxy(question).datelastquery = datetime.now(
+            pytz.UTC) - timedelta(days=5)
+
+        question_set = getUtility(IQuestionSet)
+        expired = question_set.findExpiredQuestions(3)
+        self.assertIn(question, expired)
+
+    def test_expiredQuestionsDoesNotExpire(self):
+        question = self.factory.makeQuestion()
+        question_set = getUtility(IQuestionSet)
+        expired = question_set.findExpiredQuestions(3)
+        self.assertNotIn(question, expired)

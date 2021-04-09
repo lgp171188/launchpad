@@ -24,6 +24,7 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
+from lp.services.helpers import backslashreplace
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
     AccountStatus,
@@ -62,7 +63,7 @@ class Account(SQLBase):
         "Account.id", OpenIdIdentifier.account_id)
 
     def __repr__(self):
-        displayname = self.displayname.encode('ASCII', 'backslashreplace')
+        displayname = backslashreplace(self.displayname)
         return "<%s '%s' (%s)>" % (
             self.__class__.__name__, displayname, self.status)
 

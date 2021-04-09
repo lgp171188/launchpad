@@ -102,7 +102,7 @@ class Diff(SQLBase):
     @property
     def text(self):
         if self.diff_text is None:
-            return ''
+            return u''
         else:
             with reduced_timeout(
                     0.01, webapp_max=2.0,
@@ -110,7 +110,13 @@ class Diff(SQLBase):
                 timeout = get_default_timeout_function()()
             self.diff_text.open(timeout)
             try:
-                return self.diff_text.read(config.diff.max_read_size)
+                diff_bytes = self.diff_text.read(config.diff.max_read_size)
+                # Attempt to decode the diff somewhat intelligently,
+                # although this may not be a great heuristic.
+                try:
+                    return diff_bytes.decode('utf-8')
+                except UnicodeDecodeError:
+                    return diff_bytes.decode('windows-1252', 'replace')
             finally:
                 self.diff_text.close()
 
@@ -282,7 +288,7 @@ class Diff(SQLBase):
         for patch in patches:
             if not isinstance(patch, Patch):
                 continue
-            path = patch.newname.split('\t')[0]
+            path = patch.newname.decode('UTF-8', 'replace').split('\t')[0]
             if strip_prefix_segments:
                 path = path.split('/', strip_prefix_segments)[-1]
             file_stats[path] = tuple(patch.stats_values()[:2])
@@ -308,8 +314,9 @@ class Diff(SQLBase):
             for branch in [source_branch] + ignore_branches:
                 stack.enter_context(read_locked(branch))
             diff_ignore_branches(
-                source_branch, ignore_branches, old_revision.revision_id,
-                new_revision.revision_id, diff_content)
+                source_branch, ignore_branches,
+                six.ensure_binary(old_revision.revision_id),
+                six.ensure_binary(new_revision.revision_id), diff_content)
         return cls.fromFileAtEnd(diff_content)
 
 

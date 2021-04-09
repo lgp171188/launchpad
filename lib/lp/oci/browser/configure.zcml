@@ -1,4 +1,4 @@
-<!-- Copyright 2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -27,14 +27,26 @@
             for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
             class="lp.oci.browser.ocirecipe.OCIRecipeView"
             permission="launchpad.View"
+            name="+portlet-privacy"
+            template="../templates/ocirecipe-portlet-privacy.pt"/>
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeView"
+            permission="launchpad.View"
             name="+index"
             template="../templates/ocirecipe-index.pt" />
         <browser:page
             for="lp.registry.interfaces.ociproject.IOCIProject"
-            class="lp.oci.browser.ocirecipe.OCIProjectRecipesView"
+            class="lp.oci.browser.ocirecipe.OCIRecipeListingView"
             permission="launchpad.View"
             name="+recipes"
-            template="../templates/ociproject-recipes.pt" />
+            template="../templates/ocirecipe-listing.pt" />
+        <browser:page
+            for="lp.registry.interfaces.person.IPerson"
+            class="lp.oci.browser.ocirecipe.OCIRecipeListingView"
+            permission="launchpad.View"
+            name="+oci-recipes"
+            template="../templates/ocirecipe-listing.pt" />
         <browser:page
             for="lp.registry.interfaces.ociproject.IOCIProject"
             class="lp.oci.browser.ocirecipe.OCIRecipeAddView"
@@ -103,6 +115,12 @@
             template="../templates/ocirecipebuild-index.pt" />
         <browser:page
             for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+            class="lp.oci.browser.ocirecipebuild.OCIRecipeBuildRetryView"
+            permission="launchpad.Edit"
+            name="+retry"
+            template="../templates/ocirecipebuild-retry.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
             class="lp.oci.browser.ocirecipebuild.OCIRecipeBuildCancelView"
             permission="launchpad.Edit"
             name="+cancel"
@@ -123,5 +141,44 @@
             for="lp.oci.interfaces.ocipushrule.IOCIPushRule"
             path_expression="string:+push-rule/${id}"
             attribute_to_parent="recipe" />
+
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            permission="launchpad.View"
+            name="+portlet-subscribers"
+            template="../templates/ocirecipe-portlet-subscribers.pt"/>
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipesubscription.OCIRecipePortletSubscribersContent"
+            permission="launchpad.View"
+            name="+ocirecipe-portlet-subscriber-content"
+            template="../templates/ocirecipe-portlet-subscribers-content.pt"/>
+
+        <browser:defaultView
+            for="lp.oci.interfaces.ocirecipesubscription.IOCIRecipeSubscription"
+            name="+index"/>
+        <browser:page
+            for="lp.oci.interfaces.ocirecipesubscription.IOCIRecipeSubscription"
+            class="lp.oci.browser.ocirecipesubscription.OCIRecipeSubscriptionEditView"
+            permission="launchpad.Edit"
+            name="+index"
+            template="../templates/ocirecipesubscription-edit.pt"/>
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipesubscription.OCIRecipeSubscriptionAddView"
+            permission="launchpad.AnyPerson"
+            name="+subscribe"
+            template="../../app/templates/generic-edit.pt"/>
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipesubscription.OCIRecipeSubscriptionAddOtherView"
+            permission="launchpad.AnyPerson"
+            name="+addsubscriber"
+            template="../../app/templates/generic-edit.pt"/>
+        <browser:url
+            for="lp.oci.interfaces.ocirecipesubscription.IOCIRecipeSubscription"
+            path_expression="string:+subscription/${person/name}"
+            attribute_to_parent="recipe"
+            rootsite="code"/>
     </facet>
 </configure>

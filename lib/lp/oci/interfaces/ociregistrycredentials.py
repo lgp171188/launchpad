@@ -42,7 +42,8 @@ class OCIRegistryCredentialsAlreadyExist(Exception):
 
     def __init__(self):
         super(OCIRegistryCredentialsAlreadyExist, self).__init__(
-            "Credentials already exist with the same URL and username.")
+            "Credentials already exist with the same URL, username, and "
+            "region.")
 
 
 @error_status(http_client.UNAUTHORIZED)
@@ -61,6 +62,12 @@ class IOCIRegistryCredentialsView(Interface):
         title=_("Username"),
         description=_("The username for the credentials, if available."),
         required=True,
+        readonly=True)
+
+    region = TextLine(
+        title=_("Region"),
+        description=_("The registry region, if available."),
+        required=False,
         readonly=True)
 
 
@@ -104,10 +111,10 @@ class IOCIRegistryCredentials(IOCIRegistryCredentialsEdit,
 class IOCIRegistryCredentialsSet(Interface):
     """A utility to create and access OCI Registry Credentials."""
 
-    def new(registrant, owner, url, credentials):
+    def new(registrant, owner, url, credentials, override_owner=False):
         """Create an `IOCIRegistryCredentials`."""
 
-    def getOrCreate(registrant, owner, url, credentials):
+    def getOrCreate(registrant, owner, url, credentials, override_owner=False):
         """Get an `IOCIRegistryCredentials` that match the url and username
         or create a new object."""
 

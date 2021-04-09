@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes related to bug nomination.
@@ -16,10 +16,11 @@ __all__ = [
 from datetime import datetime
 
 import pytz
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
+from storm.properties import (
+    DateTime,
+    Int,
     )
+from storm.references import Reference
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -32,36 +33,60 @@ from lp.bugs.interfaces.bugnomination import (
     IBugNominationSet,
     )
 from lp.bugs.interfaces.bugtask import IBugTaskSet
+from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import validate_public_person
+from lp.registry.interfaces.productseries import IProductSeries
+from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
 
 
 @implementer(IBugNomination)
-class BugNomination(SQLBase):
-    _table = "BugNomination"
+class BugNomination(StormBase):
 
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    decider = ForeignKey(
-        dbName='decider', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=False, default=None)
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_decided = UtcDateTimeCol(notNull=False, default=None)
-    distroseries = ForeignKey(
-        dbName='distroseries', foreignKey='DistroSeries',
-        notNull=False, default=None)
-    productseries = ForeignKey(
-        dbName='productseries', foreignKey='ProductSeries',
-        notNull=False, default=None)
-    bug = ForeignKey(dbName='bug', foreignKey='Bug', notNull=True)
-    status = EnumCol(
-        dbName='status', notNull=True, schema=BugNominationStatus,
+    __storm_table__ = "BugNomination"
+
+    id = Int(primary=True)
+
+    owner_id = Int(
+        name="owner", allow_none=False, validator=validate_public_person)
+    owner = Reference(owner_id, "Person.id")
+
+    decider_id = Int(
+        name="decider", allow_none=True, default=None,
+        validator=validate_public_person)
+    decider = Reference(decider_id, "Person.id")
+
+    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+    date_decided = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+
+    distroseries_id = Int(name="distroseries", allow_none=True, default=None)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
+
+    productseries_id = Int(name="productseries", allow_none=True, default=None)
+    productseries = Reference(productseries_id, "ProductSeries.id")
+
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+
+    status = DBEnum(
+        name='status', allow_none=False, enum=BugNominationStatus,
         default=BugNominationStatus.PROPOSED)
+
+    def __init__(self, bug, owner, decider=None, date_created=UTC_NOW,
+                 date_decided=None, distroseries=None,
+                 productseries=None, status=BugNominationStatus.PROPOSED):
+        self.owner = owner
+        self.decider = decider
+        self.date_created = date_created
+        self.date_decided = date_decided
+        self.distroseries = distroseries
+        self.productseries = productseries
+        self.bug = bug
+        self.status = status
 
     @property
     def target(self):
@@ -156,6 +181,12 @@ class BugNomination(SQLBase):
                     return True
         return False
 
+    def destroySelf(self):
+        IStore(self).remove(self)
+
+    def __repr__(self):
+        return "<BugNomination bug=%s owner=%s>" % (self.bug_id, self.owner_id)
+
 
 @implementer(IBugNominationSet)
 class BugNominationSet:
@@ -163,7 +194,25 @@ class BugNominationSet:
 
     def get(self, id):
         """See IBugNominationSet."""
-        try:
-            return BugNomination.get(id)
-        except SQLObjectNotFound:
+        store = IStore(BugNomination)
+        nomination = store.get(BugNomination, id)
+        if nomination is None:
             raise NotFoundError(id)
+        return nomination
+
+    def getByBugTarget(self, bug, target):
+        if IDistroSeries.providedBy(target):
+            filter_args = dict(distroseries_id=target.id)
+        elif IProductSeries.providedBy(target):
+            filter_args = dict(productseries_id=target.id)
+        elif ISourcePackage.providedBy(target):
+            filter_args = dict(distroseries_id=target.series.id)
+        else:
+            return None
+        store = IStore(BugNomination)
+        return store.find(BugNomination, bug=bug, **filter_args).one()
+
+    def findByBug(self, bug):
+        """See IBugNominationSet."""
+        store = IStore(BugNomination)
+        return store.find(BugNomination, bug=bug)

@@ -35,7 +35,6 @@ from storm.databases.postgres import (
 from storm.exceptions import TimeoutError
 from storm.store import Store
 from storm.tracer import install_tracer
-from storm.zope.interfaces import IZStorm
 from timeline.timeline import Timeline
 import transaction
 from zope.component import getUtility
@@ -88,7 +87,6 @@ __all__ = [
     'get_request_statements',
     'get_request_start_time',
     'get_request_duration',
-    'get_store_name',
     'print_queries',
     'soft_timeout_expired',
     'start_sql_logging',
@@ -719,6 +717,7 @@ class LaunchpadStatementTracer:
                     int(time() * 1000),
                     u'SQL-%s' % connection._database.name,
                     statement_to_log)
+                connection._lp_statement_action = None
             return
         action = get_request_timeline(get_current_browser_request()).start(
             u'SQL-%s' % connection._database.name, statement_to_log)
@@ -849,11 +848,6 @@ def get_object_from_master_store(obj):
             return None
     alsoProvides(obj, IMasterObject)
     return obj
-
-
-def get_store_name(store):
-    """Helper to retrieve the store name for a ZStorm Store."""
-    return getUtility(IZStorm).get_name(store)
 
 
 class WhichDbView(LaunchpadView):

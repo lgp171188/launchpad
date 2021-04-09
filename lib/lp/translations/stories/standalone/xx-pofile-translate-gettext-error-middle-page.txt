@@ -37,7 +37,7 @@ We remain at the same page:
 The valid translation is stored:
 
   >>> print(find_tag_by_id(
-  ...     browser.contents, 'msgset_140_es_translation_0').renderContents())
+  ...     browser.contents, 'msgset_140_es_translation_0').decode_contents())
   Foo
 
 And the error is noted in the page.
