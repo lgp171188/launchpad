@@ -1,10 +1,11 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'get_snap_privacy_filter',
     'Snap',
     ]
 
@@ -24,11 +25,15 @@ import six
 from six.moves.urllib.parse import urlsplit
 from storm.expr import (
     And,
+    Coalesce,
     Desc,
+    Exists,
+    Join,
     LeftJoin,
     Not,
     Or,
     Select,
+    SQL,
     )
 from storm.locals import (
     Bool,
@@ -57,8 +62,20 @@ from lp.app.browser.tales import (
     ArchiveFormatterAPI,
     DateTimeFormatterAPI,
     )
-from lp.app.errors import IncompatibleArguments
+from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
+    InformationType,
+    PRIVATE_INFORMATION_TYPES,
+    PUBLIC_INFORMATION_TYPES,
+    )
+from lp.app.errors import (
+    IncompatibleArguments,
+    SubscriptionPrivacyViolation,
+    UserCannotUnsubscribePerson,
+    )
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
+from lp.app.interfaces.services import IService
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
@@ -91,9 +108,17 @@ from lp.code.interfaces.gitrepository import (
     )
 from lp.code.model.branch import Branch
 from lp.code.model.branchcollection import GenericBranchCollection
+from lp.code.model.branchnamespace import (
+    BRANCH_POLICY_ALLOWED_TYPES,
+    BRANCH_POLICY_REQUIRED_GRANTS,
+    )
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
+from lp.registry.interfaces.accesspolicy import (
+    IAccessArtifactGrantSource,
+    IAccessArtifactSource,
+    )
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -105,7 +130,12 @@ from lp.registry.interfaces.role import (
     IHasOwner,
     IPersonRoles,
     )
+from lp.registry.model.accesspolicy import (
+    AccessPolicyGrant,
+    reconcile_access_for_artifact,
+    )
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.person import Person
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
@@ -123,6 +153,9 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormexpr import (
+    Array,
+    ArrayAgg,
+    ArrayIntersects,
     Greatest,
     IsDistinctFrom,
     NullsLast,
@@ -181,6 +214,7 @@ from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snapbuild import SnapBuild
 from lp.snappy.model.snapjob import SnapJob
+from lp.snappy.model.snapsubscription import SnapSubscription
 from lp.soyuz.interfaces.archive import ArchiveDisabled
 from lp.soyuz.model.archive import (
     Archive,
@@ -196,6 +230,17 @@ def snap_modified(snap, event):
     events on snap packages.
     """
     removeSecurityProxy(snap).date_last_modified = UTC_NOW
+
+
+def user_has_special_snap_access(user):
+    """Admins have special access.
+
+    :param user: An `IPerson` or None.
+    """
+    if user is None:
+        return False
+    roles = IPersonRoles(user)
+    return roles.in_admin
 
 
 @implementer(ISnapBuildRequest)
@@ -298,6 +343,9 @@ class Snap(Storm, WebhookTargetMixin):
     owner_id = Int(name='owner', allow_none=False, validator=_validate_owner)
     owner = Reference(owner_id, 'Person.id')
 
+    project_id = Int(name='project', allow_none=True)
+    project = Reference(project_id, 'Product.id')
+
     distro_series_id = Int(name='distro_series', allow_none=True)
     distro_series = Reference(distro_series_id, 'DistroSeries.id')
 
@@ -344,13 +392,18 @@ class Snap(Storm, WebhookTargetMixin):
 
     require_virtualized = Bool(name='require_virtualized')
 
-    def _validate_private(self, attr, value):
-        if not getUtility(ISnapSet).isValidPrivacy(
+    _private = Bool(name='private')
+
+    def _valid_information_type(self, attr, value):
+        if not getUtility(ISnapSet).isValidInformationType(
                 value, self.owner, self.branch, self.git_ref):
             raise SnapPrivacyMismatch
         return value
 
-    private = Bool(name='private', validator=_validate_private)
+    _information_type = DBEnum(
+        enum=InformationType, default=InformationType.PUBLIC,
+        name="information_type",
+        validator=_valid_information_type)
 
     allow_internet = Bool(name='allow_internet', allow_none=False)
 
@@ -371,16 +424,21 @@ class Snap(Storm, WebhookTargetMixin):
                  description=None, branch=None, git_ref=None, auto_build=False,
                  auto_build_archive=None, auto_build_pocket=None,
                  auto_build_channels=None, require_virtualized=True,
-                 date_created=DEFAULT, private=False, allow_internet=True,
-                 build_source_tarball=False, store_upload=False,
-                 store_series=None, store_name=None, store_secrets=None,
-                 store_channels=None):
+                 date_created=DEFAULT, information_type=InformationType.PUBLIC,
+                 allow_internet=True, build_source_tarball=False,
+                 store_upload=False, store_series=None, store_name=None,
+                 store_secrets=None, store_channels=None, project=None):
         """Construct a `Snap`."""
         super(Snap, self).__init__()
 
-        # Set the private flag first so that other validators can perform
-        # suitable privacy checks.
-        self.private = private
+        # Set the information type first so that other validators can perform
+        # suitable privacy checks, but pillar should also be set, since it's
+        # mandatory for private snaps.
+        # Note that we set self._information_type (not self.information_type)
+        # to avoid the call to self._reconcileAccess() while building the
+        # Snap instance.
+        self.project = project
+        self._information_type = information_type
 
         self.registrant = registrant
         self.owner = owner
@@ -406,6 +464,22 @@ class Snap(Storm, WebhookTargetMixin):
 
     def __repr__(self):
         return "<Snap ~%s/+snap/%s>" % (self.owner.name, self.name)
+
+    @property
+    def information_type(self):
+        if self._information_type is None:
+            return (InformationType.PROPRIETARY if self._private
+                    else InformationType.PUBLIC)
+        return self._information_type
+
+    @information_type.setter
+    def information_type(self, information_type):
+        self._information_type = information_type
+        self._reconcileAccess()
+
+    @property
+    def private(self):
+        return self.information_type not in PUBLIC_INFORMATION_TYPES
 
     @property
     def valid_webhook_event_types(self):
@@ -459,6 +533,21 @@ class Snap(Storm, WebhookTargetMixin):
             return self.git_ref
         else:
             return None
+
+    @property
+    def pillar(self):
+        """See `ISnap`."""
+        return self.project
+
+    @pillar.setter
+    def pillar(self, pillar):
+        if pillar is None:
+            self.project = None
+        elif IProduct.providedBy(pillar):
+            self.project = pillar
+        else:
+            raise ValueError(
+                'The pillar of a Snap must be an IProduct instance.')
 
     @property
     def available_processors(self):
@@ -569,6 +658,24 @@ class Snap(Storm, WebhookTargetMixin):
     @store_channels.setter
     def store_channels(self, value):
         self._store_channels = value or None
+
+    def getAllowedInformationTypes(self, user):
+        """See `ISnap`."""
+        if user_has_special_snap_access(user):
+            # Admins can set any type.
+            return set(PUBLIC_INFORMATION_TYPES + PRIVATE_INFORMATION_TYPES)
+        if self.pillar is None:
+            return set(FREE_INFORMATION_TYPES)
+        required_grant = BRANCH_POLICY_REQUIRED_GRANTS[
+            self.project.branch_sharing_policy]
+        if (required_grant is not None
+                and not getUtility(IService, 'sharing').checkPillarAccess(
+                    [self.project], required_grant, self.owner)
+                and (user is None
+                     or not getUtility(IService, 'sharing').checkPillarAccess(
+                            [self.project], required_grant, user))):
+            return []
+        return BRANCH_POLICY_ALLOWED_TYPES[self.project.branch_sharing_policy]
 
     @staticmethod
     def extractSSOCaveats(macaroon):
@@ -1032,6 +1139,120 @@ class Snap(Storm, WebhookTargetMixin):
         order_by = Desc(SnapBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    @property
+    def subscriptions(self):
+        return Store.of(self).find(
+            SnapSubscription, SnapSubscription.snap == self)
+
+    @property
+    def subscribers(self):
+        return Store.of(self).find(
+            Person,
+            SnapSubscription.person_id == Person.id,
+            SnapSubscription.snap == self)
+
+    def visibleByUser(self, user):
+        """See `ISnap`."""
+        if self.information_type in PUBLIC_INFORMATION_TYPES:
+            return True
+        if user is None:
+            return False
+        store = IStore(self)
+        return not store.find(
+            Snap,
+            Snap.id == self.id,
+            get_snap_privacy_filter(user)).is_empty()
+
+    def hasSubscription(self, person):
+        """See `ISnap`."""
+        return self.getSubscription(person) is not None
+
+    def getSubscription(self, person):
+        """Returns person's subscription to this snap recipe, or None if no
+        subscription is available.
+        """
+        if person is None:
+            return None
+        return Store.of(self).find(
+            SnapSubscription,
+            SnapSubscription.person == person,
+            SnapSubscription.snap == self).one()
+
+    def userCanBeSubscribed(self, person):
+        """Checks if the given person can subscribe to this snap recipe."""
+        return not (
+            self.private and
+            person.is_team and
+            person.anyone_can_join())
+
+    @property
+    def subscribers(self):
+        return Store.of(self).find(
+            Person,
+            SnapSubscription.person_id == Person.id,
+            SnapSubscription.snap == self)
+
+    def subscribe(self, person, subscribed_by, ignore_permissions=False):
+        """See `ISnap`."""
+        if not self.userCanBeSubscribed(person):
+            raise SubscriptionPrivacyViolation(
+                "Open and delegated teams cannot be subscribed to private "
+                "snap recipes.")
+        subscription = self.getSubscription(person)
+        if subscription is None:
+            subscription = SnapSubscription(
+                person=person, snap=self, subscribed_by=subscribed_by)
+            Store.of(subscription).flush()
+        service = getUtility(IService, "sharing")
+        _, _, _, snaps, _ = service.getVisibleArtifacts(
+            person, snaps=[self], ignore_permissions=True)
+        if not snaps:
+            service.ensureAccessGrants(
+                [person], subscribed_by, snaps=[self],
+                ignore_permissions=ignore_permissions)
+
+    def unsubscribe(self, person, unsubscribed_by, ignore_permissions=False):
+        """See `ISnap`."""
+        subscription = self.getSubscription(person)
+        if subscription is None:
+            return
+        if (not ignore_permissions
+                and not subscription.canBeUnsubscribedByUser(unsubscribed_by)):
+            raise UserCannotUnsubscribePerson(
+                '%s does not have permission to unsubscribe %s.' % (
+                    unsubscribed_by.displayname,
+                    person.displayname))
+        artifact = getUtility(IAccessArtifactSource).find([self])
+        getUtility(IAccessArtifactGrantSource).revokeByArtifact(
+            artifact, [person])
+        store = Store.of(subscription)
+        store.remove(subscription)
+        IStore(self).flush()
+
+    def _reconcileAccess(self):
+        """Reconcile the snap's sharing information.
+
+        Takes the privacy and pillar and makes the related AccessArtifact
+        and AccessPolicyArtifacts match.
+        """
+        if self.project is None:
+            return
+        pillars = [self.project]
+        reconcile_access_for_artifact(self, self.information_type, pillars)
+
+    def setProject(self, project):
+        self.project = project
+        self._reconcileAccess()
+
+    def _deleteAccessGrants(self):
+        """Delete access grants for this snap recipe prior to deleting it."""
+        getUtility(IAccessArtifactSource).delete([self])
+
+    def _deleteSnapSubscriptions(self):
+        subscriptions = Store.of(self).find(
+            SnapSubscription, SnapSubscription.snap == self)
+        subscriptions.remove()
+
     def destroySelf(self):
         """See `ISnap`."""
         store = IStore(Snap)
@@ -1068,6 +1289,8 @@ class Snap(Storm, WebhookTargetMixin):
             [SnapJob.job_id], And(SnapJob.job == Job.id, SnapJob.snap == self))
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
         getUtility(IWebhookSet).delete(self.webhooks)
+        self._deleteAccessGrants()
+        self._deleteSnapSubscriptions()
         store.remove(self)
         store.find(
             BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
@@ -1095,10 +1318,11 @@ class SnapSet:
             git_path=None, git_ref=None, auto_build=False,
             auto_build_archive=None, auto_build_pocket=None,
             auto_build_channels=None, require_virtualized=True,
-            processors=None, date_created=DEFAULT, private=False,
-            allow_internet=True, build_source_tarball=False,
-            store_upload=False, store_series=None, store_name=None,
-            store_secrets=None, store_channels=None):
+            processors=None, date_created=DEFAULT,
+            information_type=InformationType.PUBLIC, allow_internet=True,
+            build_source_tarball=False, store_upload=False,
+            store_series=None, store_name=None, store_secrets=None,
+            store_channels=None, project=None):
         """See `ISnapSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -1135,7 +1359,8 @@ class SnapSet:
         # IntegrityError due to exceptions being raised during object
         # creation and to ensure that everything relevant is in the Storm
         # cache.
-        if not self.isValidPrivacy(private, owner, branch, git_ref):
+        if not self.isValidInformationType(
+                information_type, owner, branch, git_ref):
             raise SnapPrivacyMismatch
 
         store = IMasterStore(Snap)
@@ -1146,12 +1371,16 @@ class SnapSet:
             auto_build_pocket=auto_build_pocket,
             auto_build_channels=auto_build_channels,
             require_virtualized=require_virtualized, date_created=date_created,
-            private=private, allow_internet=allow_internet,
+            information_type=information_type, allow_internet=allow_internet,
             build_source_tarball=build_source_tarball,
             store_upload=store_upload, store_series=store_series,
             store_name=store_name, store_secrets=store_secrets,
-            store_channels=store_channels)
+            store_channels=store_channels, project=project)
         store.add(snap)
+        snap._reconcileAccess()
+
+        # Automatically subscribe the owner to the Snap.
+        snap.subscribe(snap.owner, registrant, ignore_permissions=True)
 
         if processors is None:
             processors = [
@@ -1160,9 +1389,13 @@ class SnapSet:
 
         return snap
 
-    def isValidPrivacy(self, private, owner, branch=None, git_ref=None):
+    def getPossibleSnapInformationTypes(self, project):
         """See `ISnapSet`."""
-        # Private snaps may contain anything ...
+        return BRANCH_POLICY_ALLOWED_TYPES[project.branch_sharing_policy]
+
+    def isValidInformationType(self, information_type, owner, branch=None,
+                               git_ref=None):
+        private = information_type not in PUBLIC_INFORMATION_TYPES
         if private:
             # If appropriately enabled via feature flag.
             if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
@@ -1195,7 +1428,20 @@ class SnapSet:
             raise NoSuchSnap(name)
         return snap
 
-    def _getSnapsFromCollection(self, collection, owner=None):
+    def getByPillarAndName(self, owner, pillar, name):
+        conditions = [Snap.owner == owner, Snap.name == name]
+        if pillar is None:
+            # If we start supporting more pillars, remember to add the
+            # conditions here.
+            conditions.append(Snap.project == None)
+        elif IProduct.providedBy(pillar):
+            conditions.append(Snap.project == pillar)
+        else:
+            raise NotImplementedError("Unknown pillar for snap: %s" % pillar)
+        return IStore(Snap).find(Snap, *conditions).one()
+
+    def _getSnapsFromCollection(self, collection, owner=None,
+                                visible_by_user=None):
         if IBranchCollection.providedBy(collection):
             id_column = Snap.branch_id
             ids = collection.getBranchIds()
@@ -1205,7 +1451,15 @@ class SnapSet:
         expressions = [id_column.is_in(ids._get_select())]
         if owner is not None:
             expressions.append(Snap.owner == owner)
+        expressions.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *expressions)
+
+    def findByIds(self, snap_ids, visible_by_user=None):
+        """See `ISnapSet`."""
+        clauses = [Snap.id.is_in(snap_ids)]
+        if visible_by_user is not None:
+            clauses.append(get_snap_privacy_filter(visible_by_user))
+        return IStore(Snap).find(Snap, *clauses)
 
     def findByOwner(self, owner):
         """See `ISnapSet`."""
@@ -1215,8 +1469,10 @@ class SnapSet:
         """See `ISnapSet`."""
         def _getSnaps(collection):
             collection = collection.visibleByUser(visible_by_user)
-            owned = self._getSnapsFromCollection(collection.ownedBy(person))
-            packaged = self._getSnapsFromCollection(collection, owner=person)
+            owned = self._getSnapsFromCollection(
+                collection.ownedBy(person), visible_by_user=visible_by_user)
+            packaged = self._getSnapsFromCollection(
+                collection, owner=person, visible_by_user=visible_by_user)
             return owned.union(packaged)
 
         bzr_collection = removeSecurityProxy(getUtility(IAllBranches))
@@ -1231,28 +1487,40 @@ class SnapSet:
         """See `ISnapSet`."""
         def _getSnaps(collection):
             return self._getSnapsFromCollection(
-                collection.visibleByUser(visible_by_user))
+                collection.visibleByUser(visible_by_user),
+                visible_by_user=visible_by_user)
 
+        snaps_for_project = IStore(Snap).find(
+            Snap,
+            Snap.project == project,
+            get_snap_privacy_filter(visible_by_user))
         bzr_collection = removeSecurityProxy(IBranchCollection(project))
         git_collection = removeSecurityProxy(IGitCollection(project))
-        return _getSnaps(bzr_collection).union(_getSnaps(git_collection))
+        return snaps_for_project.union(
+            _getSnaps(bzr_collection)).union(_getSnaps(git_collection))
 
-    def findByBranch(self, branch):
+    def findByBranch(self, branch, visible_by_user=None):
         """See `ISnapSet`."""
-        return IStore(Snap).find(Snap, Snap.branch == branch)
+        return IStore(Snap).find(
+            Snap,
+            Snap.branch == branch,
+            get_snap_privacy_filter(visible_by_user))
 
-    def findByGitRepository(self, repository, paths=None):
+    def findByGitRepository(self, repository, paths=None,
+                            visible_by_user=None):
         """See `ISnapSet`."""
         clauses = [Snap.git_repository == repository]
         if paths is not None:
             clauses.append(Snap.git_path.is_in(paths))
+        clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
-    def findByGitRef(self, ref):
+    def findByGitRef(self, ref, visible_by_user=None):
         """See `ISnapSet`."""
         return IStore(Snap).find(
             Snap,
-            Snap.git_repository == ref.repository, Snap.git_path == ref.path)
+            Snap.git_repository == ref.repository, Snap.git_path == ref.path,
+            get_snap_privacy_filter(visible_by_user))
 
     def findByContext(self, context, visible_by_user=None, order_by_date=True):
         if IPerson.providedBy(context):
@@ -1260,45 +1528,25 @@ class SnapSet:
         elif IProduct.providedBy(context):
             snaps = self.findByProject(
                 context, visible_by_user=visible_by_user)
-        # XXX cjwatson 2015-09-15: At the moment we can assume that if you
-        # can see the source context then you can see the snap packages
-        # based on it.  This will cease to be true if snap packages gain
-        # privacy of their own.
         elif IBranch.providedBy(context):
-            snaps = self.findByBranch(context)
+            snaps = self.findByBranch(context, visible_by_user=visible_by_user)
         elif IGitRepository.providedBy(context):
-            snaps = self.findByGitRepository(context)
+            snaps = self.findByGitRepository(
+                context, visible_by_user=visible_by_user)
         elif IGitRef.providedBy(context):
-            snaps = self.findByGitRef(context)
+            snaps = self.findByGitRef(context, visible_by_user=visible_by_user)
         else:
             raise BadSnapSearchContext(context)
         if order_by_date:
             snaps.order_by(Desc(Snap.date_last_modified))
         return snaps
 
-    def _findSnapVisibilityClause(self, visible_by_user):
-        # XXX cjwatson 2016-11-25: This is in principle a poor query, but we
-        # don't yet have the access grant infrastructure to do better, and
-        # in any case the numbers involved should be very small.
-        if visible_by_user is None:
-            return Snap.private == False
-        else:
-            roles = IPersonRoles(visible_by_user)
-            if roles.in_admin or roles.in_commercial_admin:
-                return True
-            else:
-                return Or(
-                    Snap.private == False,
-                    Snap.owner_id.is_in(Select(
-                        TeamParticipation.teamID,
-                        TeamParticipation.person == visible_by_user)))
-
     def findByURL(self, url, owner=None, visible_by_user=None):
         """See `ISnapSet`."""
         clauses = [Snap.git_repository_url == url]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findSnapVisibilityClause(visible_by_user))
+        clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def findByURLPrefix(self, url_prefix, owner=None, visible_by_user=None):
@@ -1315,7 +1563,7 @@ class SnapSet:
         clauses = [Or(*prefix_clauses)]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findSnapVisibilityClause(visible_by_user))
+        clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def findByStoreName(self, store_name, owner=None, visible_by_user=None):
@@ -1323,7 +1571,7 @@ class SnapSet:
         clauses = [Snap.store_name == store_name]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findSnapVisibilityClause(visible_by_user))
+        clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def preloadDataForSnaps(self, snaps, user=None):
@@ -1359,6 +1607,8 @@ class SnapSet:
         """See `ISnapSet`."""
         if ISnap.providedBy(context):
             context = context.source
+        if context is None:
+            raise CannotFetchSnapcraftYaml("Snap source is not defined")
         try:
             paths = (
                 "snap/snapcraft.yaml",
@@ -1488,3 +1738,52 @@ class SnapStoreSecretsEncryptedContainer(NaClEncryptedContainerBase):
                 config.snappy.store_secrets_private_key.encode("UTF-8"))
         else:
             return None
+
+
+def get_snap_privacy_filter(user):
+    """Returns the filter for all Snaps that the given user has access to,
+    including private snaps where the user has proper permission.
+
+    :param user: An IPerson, or a class attribute that references an IPerson
+                 in the database.
+    :return: A storm condition.
+    """
+    # XXX pappacena 2021-02-12: Once we do the migration to back fill
+    # information_type, we should be able to change this.
+    private_snap = SQL(
+        "COALESCE(information_type NOT IN ?, private)",
+        params=[tuple(i.value for i in PUBLIC_INFORMATION_TYPES)])
+    if user is None:
+        return private_snap == False
+
+    artifact_grant_query = Coalesce(
+        ArrayIntersects(
+            SQL("%s.access_grants" % Snap.__storm_table__),
+            Select(
+                ArrayAgg(TeamParticipation.teamID),
+                tables=TeamParticipation,
+                where=(TeamParticipation.person == user)
+            )), False)
+
+    policy_grant_query = Coalesce(
+        ArrayIntersects(
+            Array(SQL("%s.access_policy" % Snap.__storm_table__)),
+            Select(
+                ArrayAgg(AccessPolicyGrant.policy_id),
+                tables=(AccessPolicyGrant,
+                        Join(TeamParticipation,
+                             TeamParticipation.teamID ==
+                             AccessPolicyGrant.grantee_id)),
+                where=(TeamParticipation.person == user)
+            )), False)
+
+    admin_team_id = getUtility(ILaunchpadCelebrities).admin.id
+    user_is_admin = Exists(Select(
+        TeamParticipation.personID,
+        tables=[TeamParticipation],
+        where=And(
+            TeamParticipation.teamID == admin_team_id,
+            TeamParticipation.person == user)))
+    return Or(
+        private_snap == False, artifact_grant_query, policy_grant_query,
+        user_is_admin)

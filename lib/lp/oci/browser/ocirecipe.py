@@ -54,6 +54,7 @@ from lp.app.browser.tales import (
     GitRepositoryFormatterAPI,
     )
 from lp.app.errors import UnexpectedFormData
+from lp.app.validators.validation import validate_oci_branch_name
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
@@ -252,6 +253,15 @@ class OCIRecipeView(LaunchpadView):
         return "\n".join(
             "%s=%s" % (k, v)
             for k, v in sorted(self.context.build_args.items()))
+
+    @property
+    def distribution_has_credentials(self):
+        if hasattr(self.context, 'oci_project'):
+            oci_project = self.context.oci_project
+        else:
+            oci_project = self.context
+        distro = oci_project.distribution
+        return bool(distro and distro.oci_registry_credentials)
 
 
 def builds_for_recipe(recipe):
@@ -754,6 +764,25 @@ class OCIRecipeFormMixin:
             return True
         return False
 
+    def _branch_format_validator(self, ref):
+        result = validate_oci_branch_name(ref.name)
+        if result:
+            return result, ""
+        message = (
+            "Branch does not match format "
+            "'applicationversion-ubuntuversion', eg. 'v1.0-20.04'"
+        )
+        return False, message
+
+    @property
+    def distribution_has_credentials(self):
+        if hasattr(self.context, 'oci_project'):
+            oci_project = self.context.oci_project
+        else:
+            oci_project = self.context
+        distro = oci_project.distribution
+        return bool(distro and distro.oci_registry_credentials)
+
 
 class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                        OCIRecipeFormMixin):
@@ -797,6 +826,14 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
                 "May only be enabled by the owner of the OCI Project."),
             default=False,
             required=False, readonly=False))
+        if self.distribution_has_credentials:
+            self.form_fields += FormFields(TextLine(
+                __name__='image_name',
+                title=u"Image name",
+                description=(
+                    "Name to use for registry upload. "
+                    "Defaults to the name of the recipe."),
+                required=False, readonly=False))
 
     def setUpGitRefWidget(self):
         """Setup GitRef widget indicating the user to use the default
@@ -805,6 +842,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         path = self.context.getDefaultGitRepositoryPath(self.user)
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
+        widget.setBranchFormatValidator(self._branch_format_validator)
         widget.repository_widget.setRenderedValue(path)
         if widget.error():
             # Do not override more important git_ref errors.
@@ -874,7 +912,9 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
             build_file=data["build_file"], description=data["description"],
             build_daily=data["build_daily"], build_args=data["build_args"],
             build_path=data["build_path"], processors=data["processors"],
-            official=data.get('official_recipe', False))
+            official=data.get('official_recipe', False),
+            # image_name is only available if using distribution credentials.
+            image_name=data.get("image_name"))
         self.next_url = canonical_url(recipe)
 
 
@@ -950,6 +990,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         oci_proj_url = canonical_url(oci_proj)
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
+        widget.setBranchFormatValidator(self._branch_format_validator)
         if widget.error():
             # Do not override more important git_ref errors.
             return
@@ -998,6 +1039,15 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
                 "May only be enabled by the owner of the OCI Project."),
             default=self.context.official,
             required=False, readonly=False))
+        if self.distribution_has_credentials:
+            self.form_fields += FormFields(TextLine(
+                __name__='image_name',
+                title=u"Image name",
+                description=(
+                    "Name to use for registry upload. "
+                    "Defaults to the name of the recipe."),
+                default=self.context.image_name,
+                required=False, readonly=False))
 
     def validate(self, data):
         """See `LaunchpadFormView`."""

@@ -5,6 +5,8 @@
 
 __metaclass__ = type
 
+import sys
+
 from testtools.matchers import StartsWith
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -203,10 +205,14 @@ class TestSSHKeySet(TestCaseWithFactory):
             keyset.new,
             person, 'ssh-rsa badkeytext comment'
         )
+        if sys.version_info[0] >= 3:
+            expected_message = "unknown blob type: b'\\xc7_'"
+        else:
+            expected_message = "unknown blob type: \\xc7_"
         self.assertRaisesWithContent(
             SSHKeyAdditionError,
             "Invalid SSH key data: 'ssh-rsa asdfasdf comment' "
-            "(unknown blob type: \\xc7_)",
+            "(%s)" % expected_message,
             keyset.new,
             person, 'ssh-rsa asdfasdf comment'
         )

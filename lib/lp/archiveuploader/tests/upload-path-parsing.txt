@@ -14,9 +14,9 @@ in several scenarios.
     >>> def check_upload(relative_path):
     ...     (distribution, suite_name, archive) = parse_upload_path(
     ...         relative_path)
-    ...     print 'Archive: %s' % archive.name
-    ...     print 'Distribution: %s' % distribution.name
-    ...     print 'Suite: %s' % suite_name
+    ...     print('Archive: %s' % archive.name)
+    ...     print('Distribution: %s' % distribution.name)
+    ...     print('Suite: %s' % suite_name)
 
 
 == Distribution uploads ==
@@ -46,9 +46,10 @@ If such distribution doesn't exist, parse_upload_path() raises
 `UploadPathError`.
 
     >>> check_upload('does-not-exist')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UploadPathError: Could not find distribution 'does-not-exist'.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find distribution 'does-not-exist'.
 
 Upload to a distribution can have their 'changesfile' suite target
 overridden by including a specific suite name in the upload path.
@@ -67,9 +68,10 @@ Again, if the given suite name can not be found an `UploadPathError`
 is raised.
 
     >>> check_upload('debian/imaginary')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UploadPathError: Could not find suite 'imaginary'.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find suite 'imaginary'.
 
 
 == PPA uploads ==
@@ -99,15 +101,16 @@ up as a Person in Launchpad.
     Suite: None
 
     >>> check_upload('~does-not-exist/ubuntu/ppa')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    PPAUploadPathError: Could not find person or team named
-    'does-not-exist'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find person or team named 'does-not-exist'.
 
     >>> check_upload('~cprov/notbuntu/ppa')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    PPAUploadPathError: Could not find distribution 'notbuntu'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find distribution 'notbuntu'.
 
 Two deprecated PPA paths are still supported for compatibility. Before
 mid-2014 all PPAs were for Ubuntu, and the distribution came after the
@@ -142,9 +145,10 @@ valid. It's also supported for uploads to the deprecated paths.
     Suite: warty-backports
 
     >>> check_upload('~cprov/ppa/ubuntu/boing')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    PPAUploadPathError: Could not find suite 'boing'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find suite 'boing'.
 
 We will disable Celso's default PPA and uploads to it will result in
 an error.
@@ -157,28 +161,30 @@ an error.
     >>> transaction.commit()
 
     >>> check_upload('~cprov/ubuntu/ppa')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    PPAUploadPathError: PPA for Celso Providelo is disabled.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: PPA for Celso Providelo is disabled.
 
     >>> check_upload('~cprov/ppa/ubuntu')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    PPAUploadPathError: PPA for Celso Providelo is disabled.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: PPA for Celso Providelo is disabled.
 
 Uploading to named PPA that does not exist fails.
 
     >>> check_upload('~cprov/ubuntu/beta')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    PPAUploadPathError: Could not find a PPA owned by 'cprov' for
-    'ubuntu' named 'beta'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find a PPA owned by 'cprov' for 'ubuntu' named 'beta'.
 
     >>> check_upload('~cprov/beta/ubuntu')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    PPAUploadPathError: Could not find a PPA owned by 'cprov' for
-    'ubuntu' named 'beta'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find a PPA owned by 'cprov' for 'ubuntu' named 'beta'.
 
 We will create a 'beta' PPA for Celso.
 
@@ -206,45 +212,51 @@ identifies and warns users accordingly.
 An extra path part that cannot be processed for distribution uploads.
 
     >>> check_upload('ubuntu/warty/ding-dong')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UploadPathError: Path format mismatch.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 A distribution specific uploads starting with '~' as if it was a
 person name. Note that users can't be named like distribution anyways.
 
     >>> check_upload('~ubuntu')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UploadPathError: Path format mismatch.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 An extra path part that cannot be processed for PPA uploads.
 
     >>> check_upload('~cprov/ubuntu/ppa/warty/ding-dong')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UploadPathError: Path format mismatch.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 A PPA upload missing '~':
 
     >>> check_upload('cprov/ubuntu/ppa')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UploadPathError: Path format mismatch.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 A old-style PPA upload missing '~':
 
     >>> check_upload('cprov/ubuntu')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UploadPathError: Could not find distribution 'cprov'.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find distribution 'cprov'.
 
 An old-style named PPA upload missing '~'.
 
     >>> check_upload('cprov/ppa/ubuntu')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UploadPathError: Path format mismatch.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 
 == Binary uploads from build slaves ==
@@ -284,6 +296,7 @@ In the case where an archive cannot be found an 'UploadPathError' exception
 is raised.
 
     >>> check_upload('1234567890/ubuntu')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UploadPathError: Could not find archive with id=1234567890.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find archive with id=1234567890.

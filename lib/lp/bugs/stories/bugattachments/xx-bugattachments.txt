@@ -2,9 +2,10 @@ We need to login in order to add attachments.
 
   >>> anon_browser.open(
   ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  Unauthorized:...
+  zope.security.interfaces.Unauthorized: ...
 
 When we're logged in we can access the page.
 
@@ -43,14 +44,14 @@ We can check that the attachment is there
   >>> link.url
   'http://bugs.launchpad.test/firefox/+bug/1/+attachment/.../+files/foo.txt'
 
-  >>> b'Added some information' in user_browser.contents
+  >>> six.ensure_str('Added some information') in user_browser.contents
   True
 
 And that we stripped the leading and trailing whitespace correctly
 
-  >>> b'   Some information   ' in user_browser.contents
+  >>> six.ensure_str('   Some information   ') in user_browser.contents
   False
-  >>> b'Some information' in user_browser.contents
+  >>> six.ensure_str('Some information') in user_browser.contents
   True
 
 If no description is given it gets set to the attachment filename. It's
@@ -264,7 +265,7 @@ We can also edit the attachment details, let's navigate to that page.
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/...'
 
-    >>> b'Edit attachment' in user_browser.contents
+    >>> six.ensure_str('Edit attachment') in user_browser.contents
     True
 
 There's also an option to cancel, which takes you back to the bug
@@ -285,7 +286,7 @@ whitespace to test that's correctly stripped)...
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
 
-    >>> b'Another title' in user_browser.contents
+    >>> six.ensure_str('Another title') in user_browser.contents
     True
 
 We can edit the attachment to be a patch.

@@ -340,7 +340,8 @@ class TestLiveFSBuild(TestCaseWithFactory):
             notification["X-Launchpad-Notification-Type"])
         self.assertEqual(
             "FAILEDTOBUILD", notification["X-Launchpad-Build-State"])
-        body, footer = notification.get_payload(decode=True).split("\n-- \n")
+        body, footer = notification.get_payload(decode=True).decode(
+            "UTF-8").split("\n-- \n")
         self.assertEqual(expected_body % (build.log_url, ""), body)
         self.assertEqual(
             "http://launchpad.test/~person/+livefs/distro/unstable/livefs-1/"

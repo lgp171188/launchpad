@@ -61,7 +61,7 @@ For example, users can view a textual description of bug 1:
 The textual description contains basic information about that bug, along with
 all tasks related to that bug, presented in an easy-to-digest format:
 
-    >>> text_bug = anon_browser.contents.decode('UTF-8')
+    >>> text_bug = six.ensure_text(anon_browser.contents)
     >>> print(text_bug)
     bug: 1
     title: Firefox does not support SVG
@@ -95,7 +95,7 @@ all tasks related to that bug, presented in an easy-to-digest format:
     date-left-closed: ...
     reporter: Sample Person (name12)
     importance: Low
-    assignee: M...rk Sh...ttlew...rth (mark)
+    assignee: Márk Shúttlewòrth (mark)
     milestone: 
     <BLANKLINE>
     task: mozilla-firefox (Ubuntu)
@@ -119,12 +119,32 @@ all tasks related to that bug, presented in an easy-to-digest format:
     milestone: 
     <BLANKLINE>
     Content-Type: multipart/mixed; boundary="...
-    MIME-Version: 1.0
-    <BLANKLINE>
-    --...
-    Content-Type: text/plain; charset="utf-8"
-    Content-Transfer-Encoding: quoted-printable
-    <BLANKLINE>
+
+The multiple white spaces in the mime type of the second attachment
+are replaced by a single space.
+
+    >>> attachments_text = text_bug[text_bug.find('attachments:'):]
+    >>> attachment_2 = attachments_text.split('\n')[2]
+    >>> six.ensure_str(attachment_2)
+    ' http://bugs.launchpad.test/.../file%20with%20space.txt text/plain;
+    name="file with space.txt"'
+
+The comments are represented as a MIME message.
+
+    >>> import email
+    >>> from email.header import decode_header
+    >>> comments = email.message_from_string(
+    ...     text_bug[text_bug.find('Content-Type:'):]).get_payload()
+
+    >>> print(comments[0]['Content-Type'])
+    text/plain; charset="utf-8"
+    >>> 'Author' in comments[0]
+    False
+    >>> 'Date' in comments[0]
+    False
+    >>> 'Message-Id' in comments[0]
+    False
+    >>> print(comments[0].get_payload())
     Firefox needs to support embedded SVG images, now that the standard has
     been finalised.
     <BLANKLINE>
@@ -133,26 +153,18 @@ all tasks related to that bug, presented in an easy-to-digest format:
     install of Firefox. Ideally, the implementation needs to include support
     for the manipulation of SVG objects from JavaScript to enable interactive
     and dynamic SVG drawings.
-    --...
-    ...
-    --...
-    Content-Type: text/plain; charset="utf-8"
-    Content-Transfer-Encoding: quoted-printable
-    Author: ... (mark)
-    Date: ...
-    Message-Id: ...
-    <BLANKLINE>
+
+    >>> print(comments[3]['Content-Type'])
+    text/plain; charset="utf-8"
+    >>> [(author_bytes, author_charset)] = decode_header(comments[3]['Author'])
+    >>> print(author_bytes.decode(author_charset))
+    Márk Shúttlewòrth (mark)
+    >>> 'Date' in comments[3]
+    True
+    >>> 'Message-Id' in comments[3]
+    True
+    >>> print(comments[3].get_payload())
     comment for file with space
-    --...
-
-The multiple white spaces in the mime type of the second attachment
-are replaced by a single space.
-
-    >>> attachments_text = text_bug[text_bug.find('attachments:'):]
-    >>> attachment_2 = attachments_text.split('\n')[2]
-    >>> attachment_2
-    u' http://bugs.launchpad.test/.../file%20with%20space.txt text/plain;
-    name="file with space.txt"'
 
 
 == Text Pages from a Bug Task Context ==
@@ -175,7 +187,7 @@ description of bug 1 directly from the Mozilla Firefox-specific text page:
 The textual report contains the same information as the report provided by the
 parent bug context:
 
-    >>> text_bug_task = anon_browser.contents.decode('UTF-8')
+    >>> text_bug_task = six.ensure_text(anon_browser.contents)
     >>> print(text_bug_task)
     bug: 1
     title: Firefox does not support SVG

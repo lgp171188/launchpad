@@ -56,9 +56,10 @@ a 404 error:
 
   >>> anon_browser.open('http://launchpad.test/'
   ...                   'firefox/1.0/.bzr/branch/location')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  NotFound: ... u'.bzr'
+  zope.publisher.interfaces.NotFound: ... '.bzr'
 
 
 Product Branch
@@ -79,6 +80,7 @@ associated with it, we get a 404 error:
 
   >>> anon_browser.open('http://launchpad.test/'
   ...                   'firefox/.bzr/branch/location')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  NotFound: ... u'.bzr'
+  zope.publisher.interfaces.NotFound: ... '.bzr'

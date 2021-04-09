@@ -26,7 +26,6 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.helpers import ensure_unicode
 from lp.soyuz.interfaces.packageset import (
     DuplicatePackagesetName,
     IPackageset,
@@ -302,7 +301,7 @@ class Packageset(Storm):
     def addSources(self, names):
         """See `IPackageset`."""
         if isinstance(names, six.string_types):
-            names = [ensure_unicode(names)]
+            names = [six.ensure_text(names, 'ASCII')]
         clauses = (SourcePackageName, SourcePackageName.name.is_in(names))
         self._api_add_or_remove(clauses, self._addSourcePackageNames)
 

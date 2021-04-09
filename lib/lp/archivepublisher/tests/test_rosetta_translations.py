@@ -55,8 +55,7 @@ class TestRosettaTranslations(TestCaseWithFactory):
                 'source/po/foo.pot': b'Foo template',
                 'source/po/eo.po': b'Foo translation',
                 }
-        tarfile_content = LaunchpadWriteTarFile.files_to_string(
-            tar_content)
+        tarfile_content = LaunchpadWriteTarFile.files_to_bytes(tar_content)
         return self.factory.makeLibraryFileAlias(content=tarfile_content,
                                                  filename=filename)
 

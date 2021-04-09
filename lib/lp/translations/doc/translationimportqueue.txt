@@ -120,8 +120,8 @@ imported.
     >>> entry.getGuessedPOFile() is None
     False
 
-    >>> entry.getGuessedPOFile().title
-    u'Serbian (sr) ... of evolution-2.2 in Ubuntu Hoary package "evolution"'
+    >>> print(entry.getGuessedPOFile().title)
+    Serbian (sr) ... of evolution-2.2 in Ubuntu Hoary package "evolution"
 
 
 Let's try now to update the entries.
@@ -208,8 +208,8 @@ Change pofile.path value to a value that will help to prepare next test.
 Basically, we prevent that it's found by its path.
 
     >>> pofile = po_sr_entry.getGuessedPOFile()
-    >>> pofile.path
-    u'po/sr.po'
+    >>> print(pofile.path)
+    po/sr.po
     >>> pofile.path = u'po/sr-old.po'
 
 Reset any pofile/potemplate information we have for the po_sr_entry.
@@ -249,8 +249,8 @@ one we set a couple of lines ago (u'po/sr-old.pot'):
     True
     >>> pofile.path == po_sr_entry.path
     True
-    >>> pofile.path
-    u'po/sr.po'
+    >>> print(pofile.path)
+    po/sr.po
 
 getGuessedPOFile with KDE
 .........................
@@ -300,8 +300,8 @@ Create the template name and attach this new import to it.
     >>> kde_pot_entry.potemplate = subset.new(
     ...     'kdebugdialog', 'kdebugdialog', 'po/kdebugdialog.pot',
     ...     rosetta_experts)
-    >>> kde_pot_entry.potemplate.title
-    u'Template "kdebugdialog" in Ubuntu Hoary package "kdebase"'
+    >>> print(kde_pot_entry.potemplate.title)
+    Template "kdebugdialog" in Ubuntu Hoary package "kdebase"
 
 And set this entry as already imported.
 
@@ -317,8 +317,8 @@ Let's attach a .po file from kde-i18n-es
 
 And we will get the right IPOFile.
 
-    >>> es_entry.getGuessedPOFile().title
-    u'Spanish (es) ... of kdebugdialog in Ubuntu Hoary package "kdebase"'
+    >>> print(es_entry.getGuessedPOFile().title)
+    Spanish (es) ... of kdebugdialog in Ubuntu Hoary package "kdebase"
 
 The kde-i18n-sr-latin is a bit special, the language is sr@latin and we should
 be able to know that.
@@ -331,8 +331,8 @@ be able to know that.
 
 And we will get the right IPOFile.
 
-    >>> sr_latin_entry.getGuessedPOFile().title
-    u'Serbian Latin (sr@latin) ... of kdebugdialog ... package "kdebase"'
+    >>> print(sr_latin_entry.getGuessedPOFile().title)
+    Serbian Latin (sr@latin) ... of kdebugdialog ... package "kdebase"
 
 Now, we are going to see what happens if we get a .po file for a template
 that is not yet imported.
@@ -365,8 +365,8 @@ Create the template name and attach this new import to it.
     ...     distroseries=hoary_distroseries, sourcepackagename=kdebase)
     >>> kde_pot_entry.potemplate = subset.new(
     ...     'kio-sftp', 'kio_sftp', 'po/kio_sftp.pot', rosetta_experts)
-    >>> kde_pot_entry.potemplate.title
-    u'Template "kio-sftp" in Ubuntu Hoary package "kdebase"'
+    >>> print(kde_pot_entry.potemplate.title)
+    Template "kio-sftp" in Ubuntu Hoary package "kdebase"
 
 And set this entry as already imported.
 
@@ -382,8 +382,8 @@ Let's attach a .po file from kde-i18n-es
 
 And we will get the right IPOFile.
 
-    >>> es_entry.getGuessedPOFile().title
-    u'Spanish (es) translation of kio-sftp in Ubuntu Hoary package "kdebase"'
+    >>> print(es_entry.getGuessedPOFile().title)
+    Spanish (es) translation of kio-sftp in Ubuntu Hoary package "kdebase"
 
 Finally, we abort the transaction to undo all changes done.
 
@@ -426,8 +426,8 @@ Create the template name and attach this new import to it.
     ...     distroseries=hoary_distroseries, sourcepackagename=koffice)
     >>> koffice_pot_entry.potemplate = subset.new(
     ...     'koffice', 'koffice', 'po/koffice.pot', rosetta_experts)
-    >>> koffice_pot_entry.potemplate.title
-    u'Template "koffice" in Ubuntu Hoary package "koffice"'
+    >>> print(koffice_pot_entry.potemplate.title)
+    Template "koffice" in Ubuntu Hoary package "koffice"
 
 And set this entry as already imported.
 
@@ -445,8 +445,8 @@ Let's attach a .po file from koffice-l10n
 
 And we will get the right IPOFile.
 
-    >>> es_entry.getGuessedPOFile().title
-    u'Spanish (es) translation of koffice in Ubuntu Hoary package "koffice"'
+    >>> print(es_entry.getGuessedPOFile().title)
+    Spanish (es) translation of koffice in Ubuntu Hoary package "koffice"
 
 Let's try now a language with variant information like sr@latin.
 
@@ -458,8 +458,8 @@ Let's try now a language with variant information like sr@latin.
 
 And we will get the right IPOFile.
 
-    >>> sr_latin_entry.getGuessedPOFile().title
-    u'Serbian Latin (sr@latin) ... koffice in Ubuntu Hoary package "koffice"'
+    >>> print(sr_latin_entry.getGuessedPOFile().title)
+    Serbian Latin (sr@latin) ... koffice in Ubuntu Hoary package "koffice"
 
 Now, we are going to see what happens if we get a .po file for a template
 that is not yet imported.
@@ -526,8 +526,8 @@ Create the template name and attach this new import to it.
     ...     distroseries=hoary_distroseries, sourcepackagename=adept)
     >>> adept_pot_entry.potemplate = subset.new(
     ...     'adept', 'adept', 'po/adept.pot', rosetta_experts)
-    >>> adept_pot_entry.potemplate.title
-    u'Template "adept" in Ubuntu Hoary package "adept"'
+    >>> print(adept_pot_entry.potemplate.title)
+    Template "adept" in Ubuntu Hoary package "adept"
 
 And set this entry as already imported.
 
@@ -545,8 +545,8 @@ Let's attach a .po file now.
 
 And we will get the right IPOFile.
 
-    >>> es_entry.getGuessedPOFile().title
-    u'Spanish (es) translation of adept in Ubuntu Hoary package "adept"'
+    >>> print(es_entry.getGuessedPOFile().title)
+    Spanish (es) translation of adept in Ubuntu Hoary package "adept"
 
 Now, we are going to see what happens if we get a .po file for a template
 that is not yet imported.
@@ -579,8 +579,8 @@ Create the template name and attach this new import to it.
     ...     distroseries=hoary_distroseries, sourcepackagename=ktorrent)
     >>> ktorrent_pot_entry.potemplate = subset.new(
     ...     'ktorrent', 'ktorrent', 'po/ktorrent.pot', rosetta_experts)
-    >>> ktorrent_pot_entry.potemplate.title
-    u'Template "ktorrent" in Ubuntu Hoary package "ktorrent"'
+    >>> print(ktorrent_pot_entry.potemplate.title)
+    Template "ktorrent" in Ubuntu Hoary package "ktorrent"
 
 And set this entry as already imported.
 
@@ -598,8 +598,8 @@ Let's attach a .po file now.
 
 And we will get the right IPOFile.
 
-    >>> es_entry.getGuessedPOFile().title
-    u'Spanish (es) translation of ktorrent in Ubuntu Hoary package "ktorrent"'
+    >>> print(es_entry.getGuessedPOFile().title)
+    Spanish (es) translation of ktorrent in Ubuntu Hoary package "ktorrent"
 
 Now, we are going to see what happens if we get a .po file for a template
 that is not yet imported.
@@ -636,8 +636,8 @@ Create the template name and attach this new import to it.
     ...     'debian/zope3/usr/lib/python2.4/site-packages/zope/app/'
     ...     'locales/zope.pot',
     ...     rosetta_experts)
-    >>> zope_pot_entry.potemplate.title
-    u'Template "zope" in Ubuntu Hoary package "zope"'
+    >>> print(zope_pot_entry.potemplate.title)
+    Template "zope" in Ubuntu Hoary package "zope"
 
 And set this entry as already imported.
 
@@ -655,8 +655,8 @@ Let's attach a .po file now.
 
 And we will get the right IPOFile.
 
-    >>> es_entry.getGuessedPOFile().title
-    u'Spanish (es) translation of zope in Ubuntu Hoary package "zope"'
+    >>> print(es_entry.getGuessedPOFile().title)
+    Spanish (es) translation of zope in Ubuntu Hoary package "zope"
 
 Now, we are going to see what happens if we get a .po file for a template
 that is not yet imported.
@@ -691,8 +691,8 @@ Create the template name and attach this new import to it.
     ...     distroseries=hoary_distroseries, sourcepackagename=k3b)
     >>> k3b_pot_entry.potemplate = subset.new(
     ...     'k3b', 'k3b', 'po/k3b.pot', rosetta_experts)
-    >>> k3b_pot_entry.potemplate.title
-    u'Template "k3b" in Ubuntu Hoary package "k3b"'
+    >>> print(k3b_pot_entry.potemplate.title)
+    Template "k3b" in Ubuntu Hoary package "k3b"
 
 And set this entry as already imported.
 
@@ -707,8 +707,8 @@ Let's attach a .po file now.
 
 And we will get the right IPOFile.
 
-    >>> es_entry.getGuessedPOFile().title
-    u'Spanish (es) translation of k3b in Ubuntu Hoary package "k3b"'
+    >>> print(es_entry.getGuessedPOFile().title)
+    Spanish (es) translation of k3b in Ubuntu Hoary package "k3b"
 
 Now, we are going to see what happens if we get a .po file for a template
 that is not yet imported.
@@ -741,8 +741,8 @@ Create the template name and attach this new import to it.
     ...     sourcepackagename=gnome_terminal)
     >>> terminal_pot_entry.potemplate = subset.new(
     ...     'help', 'help', 'drivemount/help/drivemount.pot', rosetta_experts)
-    >>> terminal_pot_entry.potemplate.title
-    u'Template "help" in Ubuntu Hoary package "gnome-terminal"'
+    >>> print(terminal_pot_entry.potemplate.title)
+    Template "help" in Ubuntu Hoary package "gnome-terminal"
 
 And set this entry as already imported.
 
@@ -758,8 +758,8 @@ Let's attach a .po file now.
 
 And we will get the right IPOFile.
 
-    >>> es_entry.getGuessedPOFile().title
-    u'Spanish (es) ... of help in Ubuntu Hoary package "gnome-terminal"'
+    >>> print(es_entry.getGuessedPOFile().title)
+    Spanish (es) ... of help in Ubuntu Hoary package "gnome-terminal"
 
 Now, we are going to see what happens if we get a .po file for a template
 that is not yet imported.
@@ -798,32 +798,32 @@ First, let's check the status of the existing entries.
     ...     translationimportqueue.getAllEntries(), key=attrgetter('id'))
 
     >>> entry1 = entries[0]
-    >>> entry1.path
-    u'po/evolution-2.2-test.pot'
+    >>> print(entry1.path)
+    po/evolution-2.2-test.pot
     >>> entry1.status == RosettaImportStatus.IMPORTED
     True
 
     >>> entry2 = entries[1]
-    >>> entry2.path
-    u'po/pt_BR.po'
+    >>> print(entry2.path)
+    po/pt_BR.po
     >>> entry2.status == RosettaImportStatus.IMPORTED
     True
 
     >>> entry3 = entries[2]
-    >>> entry3.path
-    u'po/sr.po'
+    >>> print(entry3.path)
+    po/sr.po
     >>> entry3.status == RosettaImportStatus.NEEDS_REVIEW
     True
 
     >>> entry4 = entries[3]
-    >>> entry4.path
-    u'po/sr.po'
+    >>> print(entry4.path)
+    po/sr.po
     >>> entry4.status == RosettaImportStatus.NEEDS_REVIEW
     True
 
     >>> entry5 = entries[4]
-    >>> entry5.path
-    u'po/evolution-2.2.pot'
+    >>> print(entry5.path)
+    po/evolution-2.2.pot
 
 We need it blocked for this test.
 
@@ -837,8 +837,8 @@ Let's see how many entries are blocked.
 
 Now is time to check that we only have one item on the NeedsReview status.
 
-    >>> entry3.path
-    u'po/sr.po'
+    >>> print(entry3.path)
+    po/sr.po
 
 This entry is for a productseries, and it's not blocked because the blocked
 .pot entry is for a distroseries-sourcepackagename.
@@ -850,15 +850,15 @@ On the other hand, this other one is for the same
 distroseries/sourcepackagename than the .pot file we have so it's also
 blocked.
 
-    >>> entry4.path
-    u'po/sr.po'
+    >>> print(entry4.path)
+    po/sr.po
     >>> entry4.status == RosettaImportStatus.BLOCKED
     True
 
 And the .pot entry is still blocked.
 
-    >>> entry5.path
-    u'po/evolution-2.2.pot'
+    >>> print(entry5.path)
+    po/evolution-2.2.pot
     >>> entry5.status == RosettaImportStatus.BLOCKED
     True
 
@@ -973,7 +973,7 @@ We get a sample tarball to be uploaded into the system.
     ...     'es.po': b'Spanish translation',
     ...     'fr.po': b'French translation',
     ...     }
-    >>> tarfile_content = LaunchpadWriteTarFile.files_to_string(
+    >>> tarfile_content = LaunchpadWriteTarFile.files_to_bytes(
     ...     test_tar_content)
     >>> by_maintainer = True
 
@@ -1058,7 +1058,7 @@ It is possible to update the content of an entry in the queue.
 
     >>> existing_entry = getFirstEvoEntryByPath(queue, 'foo.pot')
     >>> existing_entry = removeSecurityProxy(existing_entry)
-    >>> print(existing_entry.content.read())
+    >>> print(existing_entry.content.read().decode('UTF-8'))
     Foo template
 
     >>> entry = translationimportqueue.addOrUpdateEntry(
@@ -1069,7 +1069,7 @@ It is possible to update the content of an entry in the queue.
     >>> transaction.commit()
     >>> entry is existing_entry
     True
-    >>> print(entry.content.read())
+    >>> print(entry.content.read().decode('UTF-8'))
     New content
 
 Not specifying the potemplate in this situation still selects the same entry
@@ -1082,14 +1082,14 @@ on a best match basis. The entry is updated.
     >>> transaction.commit()
     >>> entry is existing_entry
     True
-    >>> print(entry.content.read())
+    >>> print(entry.content.read().decode('UTF-8'))
     Even newer content
 
 Same goes for pofile entries.
 
     >>> existing_entry = getFirstEvoEntryByPath(queue, 'es.po')
     >>> existing_entry = removeSecurityProxy(existing_entry)
-    >>> print(existing_entry.content.read())
+    >>> print(existing_entry.content.read().decode('UTF-8'))
     Spanish translation
 
     >>> entry = removeSecurityProxy(translationimportqueue.addOrUpdateEntry(
@@ -1098,7 +1098,7 @@ Same goes for pofile entries.
     >>> transaction.commit()
     >>> entry is existing_entry
     True
-    >>> print(entry.content.read())
+    >>> print(entry.content.read().decode('UTF-8'))
     New po content
 
 Now, attaching the same layout to a different template for the same product,
@@ -1164,7 +1164,7 @@ When uploading to the prouct now, the best matching entry is updated.
     >>> transaction.commit()
     >>> entry is existing_entry
     True
-    >>> print(entry.content.read())
+    >>> print(entry.content.read().decode('UTF-8'))
     New bar content
 
 Filename filters

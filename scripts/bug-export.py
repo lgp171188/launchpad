@@ -33,9 +33,10 @@ class BugExportScript(LaunchpadScript):
     def main(self):
         if self.options.product is None:
             self.parser.error('No product specified')
-        output = sys.stdout
         if self.options.output is not None:
             output = open(self.options.output, 'wb')
+        else:
+            output = getattr(sys.stdout, 'buffer', sys.stdout)
 
         product = getUtility(IProductSet).getByName(self.options.product)
         if product is None:

@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -12,6 +16,7 @@ from unittest import TestLoader
 
 import apt_pkg
 from fixtures import EnvironmentVariableFixture
+import six
 from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,
@@ -240,8 +245,14 @@ class TestSourcePackageData(TestCaseWithFactory):
         # but not with DEB_VENDOR=ubuntu.
         with open(os.path.join(
             pool_dir, "foo_1.0.orig.tar.gz"), "wb+") as buffer:
-            orig_tar = LaunchpadWriteTarFile(buffer)
+            orig_tar = LaunchpadWriteTarFile(buffer, encoding="ISO-8859-1")
             orig_tar.add_directory("foo-1.0")
+            # Add a Unicode file name (which becomes non-UTF-8 due to
+            # encoding="ISO-8859-1" above) to ensure that shutil.rmtree is
+            # called in such a way as to cope with non-UTF-8 file names on
+            # Python 2.  See
+            # https://bugs.launchpad.net/launchpad/+bug/1917449.
+            orig_tar.add_file(u"íslenska.alias", b"Non-UTF-8 file name")
             orig_tar.close()
             buffer.seek(0)
             orig_tar_contents = buffer.read()
@@ -274,10 +285,10 @@ class TestSourcePackageData(TestCaseWithFactory):
                     len(debian_tar_contents))))
 
         dsc_contents = parse_tagfile(dsc_path)
-        dsc_contents["Directory"] = pool_dir
-        dsc_contents["Package"] = "foo"
-        dsc_contents["Component"] = "main"
-        dsc_contents["Section"] = "misc"
+        dsc_contents["Directory"] = six.ensure_binary(pool_dir)
+        dsc_contents["Package"] = b"foo"
+        dsc_contents["Component"] = b"main"
+        dsc_contents["Section"] = b"misc"
 
         sp_data = SourcePackageData(**dsc_contents)
         # Unpacking this in an Ubuntu context fails.
@@ -295,8 +306,14 @@ class TestSourcePackageData(TestCaseWithFactory):
 
         with open(os.path.join(
             pool_dir, "foo_1.0.orig.tar.gz"), "wb+") as buffer:
-            orig_tar = LaunchpadWriteTarFile(buffer)
+            orig_tar = LaunchpadWriteTarFile(buffer, encoding="ISO-8859-1")
             orig_tar.add_directory("foo-1.0")
+            # Add a Unicode file name (which becomes non-UTF-8 due to
+            # encoding="ISO-8859-1" above) to ensure that shutil.rmtree is
+            # called in such a way as to cope with non-UTF-8 file names on
+            # Python 2.  See
+            # https://bugs.launchpad.net/launchpad/+bug/1917449.
+            orig_tar.add_file(u"íslenska.alias", b"Non-UTF-8 file name")
             orig_tar.close()
             buffer.seek(0)
             orig_tar_contents = buffer.read()
@@ -329,10 +346,10 @@ class TestSourcePackageData(TestCaseWithFactory):
                     len(debian_tar_contents))))
 
         dsc_contents = parse_tagfile(dsc_path)
-        dsc_contents["Directory"] = pool_dir
-        dsc_contents["Package"] = "foo"
-        dsc_contents["Component"] = "main"
-        dsc_contents["Section"] = "misc"
+        dsc_contents["Directory"] = six.ensure_binary(pool_dir)
+        dsc_contents["Package"] = b"foo"
+        dsc_contents["Component"] = b"main"
+        dsc_contents["Section"] = b"misc"
 
         sp_data = SourcePackageData(**dsc_contents)
         unpack_tmpdir = self.makeTemporaryDirectory()
@@ -351,20 +368,20 @@ class TestSourcePackageData(TestCaseWithFactory):
     def test_checksum_fields(self):
         # We only need one of Files or Checksums-*.
         base_dsc_contents = {
-            "Package": "foo",
-            "Binary": "foo",
-            "Version": "1.0-1",
-            "Maintainer": "Foo Bar <foo@canonical.com>",
-            "Section": "misc",
-            "Architecture": "all",
-            "Directory": "pool/main/f/foo",
-            "Component": "main",
+            "Package": b"foo",
+            "Binary": b"foo",
+            "Version": b"1.0-1",
+            "Maintainer": b"Foo Bar <foo@canonical.com>",
+            "Section": b"misc",
+            "Architecture": b"all",
+            "Directory": b"pool/main/f/foo",
+            "Component": b"main",
             }
         for field in (
                 "Files", "Checksums-Sha1", "Checksums-Sha256",
                 "Checksums-Sha512"):
             dsc_contents = dict(base_dsc_contents)
-            dsc_contents[field] = "xxx 000 foo_1.0-1.dsc"
+            dsc_contents[field] = b"xxx 000 foo_1.0-1.dsc"
             sp_data = SourcePackageData(**dsc_contents)
             self.assertEqual(["foo_1.0-1.dsc"], sp_data.files)
         self.assertRaises(
@@ -382,18 +399,18 @@ class TestSourcePackageHandler(TestCaseWithFactory):
             series.distribution.name, archive_root,
             PackagePublishingPocket.RELEASE, None)
         dsc_contents = {
-            "Format": "3.0 (quilt)",
-            "Source": "foo",
-            "Binary": "foo",
-            "Architecture": "all arm64",
-            "Version": "1.0-1",
-            "Maintainer": "Foo Bar <foo@canonical.com>",
-            "Files": "xxx 000 foo_1.0-1.dsc",
-            "Build-Indep-Architecture": "amd64",
-            "Directory": "pool/main/f/foo",
-            "Package": "foo",
-            "Component": "main",
-            "Section": "misc",
+            "Format": b"3.0 (quilt)",
+            "Source": b"foo",
+            "Binary": b"foo",
+            "Architecture": b"all arm64",
+            "Version": b"1.0-1",
+            "Maintainer": b"Foo Bar <foo@canonical.com>",
+            "Files": b"xxx 000 foo_1.0-1.dsc",
+            "Build-Indep-Architecture": b"amd64",
+            "Directory": b"pool/main/f/foo",
+            "Package": b"foo",
+            "Component": b"main",
+            "Section": b"misc",
             }
         sp_data = SourcePackageData(**dsc_contents)
         self.assertEqual(
@@ -427,9 +444,10 @@ class TestSourcePackagePublisher(TestCaseWithFactory):
 
         publisher = SourcePackagePublisher(series, pocket, None)
         publisher.publish(spr, SourcePackageData(
-            component='main', section=section.name, version='1.0',
-            maintainer=maintainer.preferredemail, architecture='all',
-            files='foo.py', binaries='foo.py'))
+            component=b'main', section=section.name.encode('ASCII'),
+            version=b'1.0',
+            maintainer=maintainer.preferredemail.email.encode('ASCII'),
+            architecture=b'all', files=b'foo.py', binaries=b'foo.py'))
 
         [spph] = series.main_archive.getPublishedSources()
         self.assertEqual(PackagePublishingStatus.PUBLISHED, spph.status)
@@ -442,21 +460,21 @@ class TestBinaryPackageData(TestCaseWithFactory):
     def test_checksum_fields(self):
         # We only need one of MD5sum or SHA*.
         base_deb_contents = {
-            "Package": "foo",
-            "Installed-Size": "0",
-            "Maintainer": "Foo Bar <foo@canonical.com>",
-            "Section": "misc",
-            "Architecture": "all",
-            "Version": "1.0-1",
-            "Filename": "pool/main/f/foo/foo_1.0-1_all.deb",
-            "Component": "main",
-            "Size": "0",
-            "Description": "",
-            "Priority": "extra",
+            "Package": b"foo",
+            "Installed-Size": b"0",
+            "Maintainer": b"Foo Bar <foo@canonical.com>",
+            "Section": b"misc",
+            "Architecture": b"all",
+            "Version": b"1.0-1",
+            "Filename": b"pool/main/f/foo/foo_1.0-1_all.deb",
+            "Component": b"main",
+            "Size": b"0",
+            "Description": b"",
+            "Priority": b"extra",
             }
         for field in ("MD5sum", "SHA1", "SHA256", "SHA512"):
             deb_contents = dict(base_deb_contents)
-            deb_contents[field] = "0"
+            deb_contents[field] = b"0"
             BinaryPackageData(**deb_contents)
         self.assertRaises(
             MissingRequiredArguments, BinaryPackageData, **base_deb_contents)
@@ -477,21 +495,21 @@ class TestBinaryPackageHandler(TestCaseWithFactory):
         spr = self.factory.makeSourcePackageRelease(
             distroseries=das.distroseries)
         deb_contents = {
-            "Package": "foo",
-            "Installed-Size": "0",
-            "Maintainer": "Foo Bar <foo@canonical.com>",
-            "Section": "misc",
-            "Architecture": "amd64",
-            "Version": "1.0-1",
-            "Filename": "pool/main/f/foo/foo_1.0-1_amd64.deb",
-            "Component": "main",
-            "Size": "0",
-            "MD5sum": "0" * 32,
-            "Description": "",
-            "Summary": "",
-            "Priority": "extra",
-            "Python-Version": "2.7",
-            "Built-Using": "nonexistent (= 0.1)",
+            "Package": b"foo",
+            "Installed-Size": b"0",
+            "Maintainer": b"Foo Bar <foo@canonical.com>",
+            "Section": b"misc",
+            "Architecture": b"amd64",
+            "Version": b"1.0-1",
+            "Filename": b"pool/main/f/foo/foo_1.0-1_amd64.deb",
+            "Component": b"main",
+            "Size": b"0",
+            "MD5sum": b"0" * 32,
+            "Description": b"",
+            "Summary": b"",
+            "Priority": b"extra",
+            "Python-Version": b"2.7",
+            "Built-Using": b"nonexistent (= 0.1)",
             }
         bp_data = BinaryPackageData(**deb_contents)
         self.assertContentEqual(
@@ -529,20 +547,20 @@ class TestBinaryPackageHandler(TestCaseWithFactory):
         built_using_relationship = "%s (= %s)" % (
             built_using_spr.name, built_using_spr.version)
         deb_contents = {
-            "Package": "foo",
-            "Installed-Size": "0",
-            "Maintainer": "Foo Bar <foo@canonical.com>",
-            "Section": "misc",
-            "Architecture": "amd64",
-            "Version": "1.0-1",
-            "Filename": "pool/main/f/foo/foo_1.0-1_amd64.deb",
-            "Component": "main",
-            "Size": "0",
-            "MD5sum": "0" * 32,
-            "Description": "",
-            "Summary": "",
-            "Priority": "extra",
-            "Built-Using": built_using_relationship,
+            "Package": b"foo",
+            "Installed-Size": b"0",
+            "Maintainer": b"Foo Bar <foo@canonical.com>",
+            "Section": b"misc",
+            "Architecture": b"amd64",
+            "Version": b"1.0-1",
+            "Filename": b"pool/main/f/foo/foo_1.0-1_amd64.deb",
+            "Component": b"main",
+            "Size": b"0",
+            "MD5sum": b"0" * 32,
+            "Description": b"",
+            "Summary": b"",
+            "Priority": b"extra",
+            "Built-Using": built_using_relationship.encode("ASCII"),
             }
         bp_data = BinaryPackageData(**deb_contents)
         self.assertContentEqual(
@@ -579,11 +597,13 @@ class TestBinaryPackagePublisher(TestCaseWithFactory):
 
         publisher = BinaryPackagePublisher(series, pocket, None)
         publisher.publish(bpr, BinaryPackageData(
-            component='main', section=section.name, version='1.0',
-            maintainer=maintainer.preferredemail, architecture='all',
-            files='foo.py', binaries='foo.py', size=128, installed_size=1024,
-            md5sum='e83b5dd68079d727a494a469d40dc8db', description='test',
-            summary='Test!'))
+            component=b'main', section=section.name.encode('ASCII'),
+            version=b'1.0',
+            maintainer=maintainer.preferredemail.email.encode('ASCII'),
+            architecture=b'all', files=b'foo.py', binaries=b'foo.py',
+            size=128, installed_size=1024,
+            md5sum=b'e83b5dd68079d727a494a469d40dc8db', description=b'test',
+            summary=b'Test!'))
 
         [bpph] = series.main_archive.getAllPublishedBinaries()
         self.assertEqual(PackagePublishingStatus.PUBLISHED, bpph.status)

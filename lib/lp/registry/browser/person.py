@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person-related view classes."""
@@ -192,7 +192,6 @@ from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
     )
-from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.ssh import (
     ISSHKeySet,
     SSHKeyAdditionError,
@@ -647,7 +646,11 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
     @stepthrough('+snap')
     def traverse_snap(self, name):
         """Traverse to this person's snap packages."""
-        return getUtility(ISnapSet).getByName(self.context, name)
+        snap = getUtility(ISnapSet).getByPillarAndName(
+            self.context, None, name)
+        if snap is None:
+            raise NotFoundError(name)
+        return snap
 
 
 class PersonSetNavigation(Navigation):
@@ -1176,32 +1179,6 @@ class RedirectToEditLanguagesView(LaunchpadView):
             '%s/+editlanguages' % canonical_url(self.user))
 
 
-@delegate_to(IPerson, context='person')
-class PersonWithKeysAndPreferredEmail:
-    """A decorated person that includes GPG keys and preferred emails."""
-
-    # These need to be predeclared to avoid delegates taking them over.
-    # Would be nice if there was a way of allowing writes to just work
-    # (i.e. no proxying of __set__).
-    gpgkeys = None
-    sshkeys = None
-    preferredemail = None
-
-    def __init__(self, person):
-        self.person = person
-        self.gpgkeys = []
-        self.sshkeys = []
-
-    def addGPGKey(self, key):
-        self.gpgkeys.append(key)
-
-    def addSSHKey(self, key):
-        self.sshkeys.append(key)
-
-    def setPreferredEmail(self, email):
-        self.preferredemail = email
-
-
 class PersonRdfView(BaseRdfView):
     """A view that embeds PersonRdfContentsView in a standalone page."""
 
@@ -1376,6 +1353,12 @@ class PersonAccountAdministerView(LaunchpadFormView):
             self.request.response.addInfoNotification(
                 u'The account "%s" is now deactivated. The user can log in '
                 u'to reactivate it.' % self.context.displayname)
+        elif data['status'] == AccountStatus.DECEASED:
+            # Deliberately leave the email address in place so that it can't
+            # easily be claimed by somebody else.
+            self.request.response.addInfoNotification(
+                u'The account "%s" has been marked as having belonged to a '
+                u'deceased user.' % self.context.displayname)
         self.context.setStatus(data['status'], self.user, data['comment'])
 
 
@@ -4160,13 +4143,13 @@ class ContactViaWebNotificationRecipientSet:
         """
         if self.primary_reason is self.TO_USER:
             reason = (
-                'using the "Contact this user" link on your profile page\n'
+                'using the "Contact this user" link on your profile page '
                 '(%s)' % canonical_url(person_or_team))
             header = 'ContactViaWeb user'
         elif self.primary_reason is self.TO_ADMINS:
             reason = (
                 'using the "Contact this team\'s admins" link on the '
-                '%s team page\n(%s)' % (
+                '%s team page (%s)' % (
                     person_or_team.displayname,
                     canonical_url(person_or_team)))
             header = 'ContactViaWeb owner (%s team)' % person_or_team.name
@@ -4174,7 +4157,7 @@ class ContactViaWebNotificationRecipientSet:
             # self.primary_reason is self.TO_MEMBERS.
             reason = (
                 'to each member of the %s team using the '
-                '"Contact this team" link on the %s team page\n(%s)' % (
+                '"Contact this team" link on the %s team page (%s)' % (
                     person_or_team.displayname,
                     person_or_team.displayname,
                     canonical_url(person_or_team)))

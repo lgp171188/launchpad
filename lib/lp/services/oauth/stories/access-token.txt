@@ -36,9 +36,10 @@ will fail because request tokens can be used only once.
 
     >>> anon_browser.open(
     ...     'http://launchpad.test/+access-token', data=urlencode(data))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    HTTPError: HTTP Error 401: Unauthorized
+    urllib.error.HTTPError: HTTP Error 401: Unauthorized
 
 The token's context, when not None, is sent to the consumer together
 with the token's key and secret.

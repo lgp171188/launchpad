@@ -540,9 +540,7 @@ class DiffRenderingMixin:
         if preview_diff is None:
             return None
         try:
-            diff = preview_diff.text.decode('utf-8')
-        except UnicodeDecodeError:
-            diff = preview_diff.text.decode('windows-1252', 'replace')
+            diff = preview_diff.text
         except (LookupError, LibrarianServerError):
             self._diff_available = False
             diff = ''
@@ -862,7 +860,8 @@ class DecoratedCodeReviewVoteReference:
         CodeReviewVote.ABSTAIN: CodeReviewVote.ABSTAIN.title,
         CodeReviewVote.NEEDS_INFO: CodeReviewVote.NEEDS_INFO.title,
         CodeReviewVote.NEEDS_FIXING: CodeReviewVote.NEEDS_FIXING.title,
-        CodeReviewVote.RESUBMIT: CodeReviewVote.RESUBMIT.title,
+        CodeReviewVote.NEEDS_RESUBMITTING: (
+            CodeReviewVote.NEEDS_RESUBMITTING.title),
         }
 
     def __init__(self, context, user, users_vote):

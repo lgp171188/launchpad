@@ -54,14 +54,13 @@ on that.
 
     >>> nonexistent = NascentUpload.from_changesfile_path(
     ...     datadir("DOES-NOT-EXIST"), buildd_policy, FakeLogger())
-    >>> nonexistent.process()
+    >>> nonexistent.process()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    EarlyReturnUploadError: An error occurred that prevented further
-    processing.
+    lp.archiveuploader.nascentupload.EarlyReturnUploadError: An error occurred that prevented further processing.
     >>> nonexistent.is_rejected
     True
-    >>> print nonexistent.rejection_message
+    >>> print(nonexistent.rejection_message)
     Unable to read DOES-NOT-EXIST: ...
 
     >>> quodlibet = NascentUpload.from_changesfile_path(
@@ -69,7 +68,7 @@ on that.
     ...     anything_policy, DevNullLogger())
     >>> quodlibet.process()
     >>> for f in quodlibet.changes.files:
-    ...     print f.filename, f
+    ...     print(f.filename, f)
     quodlibet_0.13.1-1_all.deb <...DebBinaryUploadFile...>
     quodlibet-ext_0.13.1-1_i386.deb <...DebBinaryUploadFile...>
 
@@ -120,7 +119,7 @@ is 'native' (only a TARBALL, no diff + orig) or 'has_orig' (uses ORIG
 
     >>> ed_source_upload.process()
     >>> for f in ed_source_upload.changes.files:
-    ...     print f.filename, f
+    ...     print(f.filename, f)
     ed_0.2-20.dsc <...DSCFile...>
     ed_0.2-20.diff.gz <...SourceUploadFile...>
     ed_0.2.orig.tar.gz <...SourceUploadFile...>
@@ -130,7 +129,7 @@ try and parse the maintainer for it:
 
     >>> ed_source_upload.changes.signer is None
     True
-    >>> print ed_source_upload.changes.maintainer
+    >>> print(ed_source_upload.changes.maintainer)
     None
 
 ed_source upload is *sourceful*:
@@ -178,7 +177,7 @@ Let's try a simple binary upload:
 
     >>> ed_binary_upload.process()
     >>> for f in ed_binary_upload.changes.files:
-    ...     print f.filename, f
+    ...     print(f.filename, f)
     ed_0.2-20_i386.deb <...DebBinaryUploadFile...>
 
 ed_binary is *binaryful*:
@@ -210,7 +209,7 @@ parse the maintainer for them either:
 
     >>> ed_binary_upload.changes.signer is None
     True
-    >>> print ed_binary_upload.changes.maintainer
+    >>> print(ed_binary_upload.changes.maintainer)
     None
 
 Other ChangesFile information are also checked across the uploads
@@ -229,16 +228,17 @@ should match the files target architectures:
     >>> ed_mismatched_upload.process()
 
     >>> for f in ed_mismatched_upload.changes.files:
-    ...     print f.filename, f
+    ...     print(f.filename, f)
     ed_0.2-20_i386.deb <...DebBinaryUploadFile...>
 
-    >>> [a for a in ed_mismatched_upload.changes.architectures]
-    ['amd64']
+    >>> for a in ed_mismatched_upload.changes.architectures:
+    ...     print(a)
+    amd64
 
 Since the changesfile specify that only 'amd64' will be used and
 there is a file that depends on 'i386' the upload is rejected:
 
-    >>> print ed_mismatched_upload.rejection_message
+    >>> print(ed_mismatched_upload.rejection_message)
     ed_0.2-20_i386.deb: control file lists arch as 'i386' which isn't in the
     changes file.
 
@@ -281,8 +281,10 @@ And because of that it's not considered native.
 But if we check the DSC we will find the reference to the already
 known ORIG file:
 
-    >>> [f.filename for f in ed_upload.changes.dsc.files]
-    ['ed_0.2.orig.tar.gz', 'ed_0.2-21.diff.gz']
+    >>> for f in ed_upload.changes.dsc.files:
+    ...     print(f.filename)
+    ed_0.2.orig.tar.gz
+    ed_0.2-21.diff.gz
 
     >>> success = ed_upload.do_accept()
     >>> success
@@ -329,7 +331,7 @@ Retrive the just-inserted SourcePackageRelease correspondent to 'ed'
 Check if we have rebuid the change's author line properly (as
 mentioned in bug # 30621)
 
-    >>> print ed_spr.changelog_entry #doctest: -NORMALIZE_WHITESPACE
+    >>> print(ed_spr.changelog_entry) #doctest: -NORMALIZE_WHITESPACE
     ed (0.2-20) unstable; urgency=low
     <BLANKLINE>
       * Move to dpatch; existing non-debian/ changes split into
@@ -381,7 +383,7 @@ The content of 'debian/copyright' is stored as the 'copyright'
 attribute of SourcePackageRelease (note that its content is filtered
 with encoding.guess()).
 
-    >>> print ed_spr.copyright
+    >>> print(ed_spr.copyright)
     This is Debian GNU's prepackaged version of the FSF's GNU ed
     ...
     by the Foundation.
@@ -418,7 +420,7 @@ On the absence of debian/copyright a warning is issued in the upload
 processing log messages, then it can be further checked in Soyuz
 production mailbox.
 
-    >>> print nocopyright_src.warning_message
+    >>> print(nocopyright_src.warning_message)
     <BLANKLINE>
     Upload Warnings:
     No copyright file found.
@@ -482,7 +484,7 @@ The upload will be rejected.
     >>> ed_src_dup.is_rejected
     True
 
-    >>> print ed_src_dup.rejection_message
+    >>> print(ed_src_dup.rejection_message)
     The source ed - 0.2-20 is already accepted in ubuntu/hoary and you
     cannot upload the same version within the same distribution. You
     have to modify the source version and re-upload.
@@ -650,14 +652,14 @@ overridden by the changesfile:
 
     >>> success = ed_src.do_accept()
 
-    >>> print ed_src.queue_root.pocket.name
+    >>> print(ed_src.queue_root.pocket.name)
     UPDATES
 
 Even though this went to a pocket and thus would be unapproved rather
 than accepted, the ed upload ought still make it to NEW instead of
 unapproved.
 
-    >>> print ed_src.queue_root.status.name
+    >>> print(ed_src.queue_root.status.name)
     NEW
 
 And pop it back to development now that we're done
@@ -674,7 +676,7 @@ Check the uploader behaviour against a missing orig.tar.gz file,
     >>> ed21_src.process()
     >>> ed21_src.is_rejected
     True
-    >>> print ed21_src.rejection_message+"\nEND"
+    >>> print(ed21_src.rejection_message+"\nEND")
     Unable to find ed_0.2.orig.tar.gz in upload or distribution.
     Files specified in DSC are broken or missing, skipping package unpack
     verification.
@@ -760,15 +762,15 @@ record is a placeholder one, we used the second key):
 
     >>> name16 = getUtility(IPersonSet).getByName('name16')
     >>> uploader_key = name16.gpg_keys[1]
-    >>> print uploader_key.fingerprint
+    >>> print(uploader_key.fingerprint)
     340CA3BB270E2716C9EE0B768E7EB7086C64A8C5
 
 Both, DSC and changesfile are signed with Name16's second key.
 
-    >>> print bar_ok.changes.dsc.signingkey.fingerprint
+    >>> print(bar_ok.changes.dsc.signingkey.fingerprint)
     340CA3BB270E2716C9EE0B768E7EB7086C64A8C5
 
-    >>> print bar_ok.changes.signingkey.fingerprint
+    >>> print(bar_ok.changes.signingkey.fingerprint)
     340CA3BB270E2716C9EE0B768E7EB7086C64A8C5
 
 Let's modify the current ACL rules for ubuntu, moving the upload
@@ -793,7 +795,7 @@ This time the upload will fail because the ACLs don't let
     >>> bar_failed.process()
     >>> bar_failed.is_rejected
     True
-    >>> print bar_failed.rejection_message
+    >>> print(bar_failed.rejection_message)
     The signer of this package has no upload rights to this distribution's
     primary archive.  Did you mean to upload to a PPA?
 
@@ -806,10 +808,10 @@ for further checks:
     >>> verifyObject(IGPGKey, bar_failed.changes.signingkey)
     True
 
-    >>> print bar_failed.changes.dsc.signingkey.fingerprint
+    >>> print(bar_failed.changes.dsc.signingkey.fingerprint)
     340CA3BB270E2716C9EE0B768E7EB7086C64A8C5
 
-    >>> print bar_failed.changes.signingkey.fingerprint
+    >>> print(bar_failed.changes.signingkey.fingerprint)
     340CA3BB270E2716C9EE0B768E7EB7086C64A8C5
 
 The ACL rules also enable us to specify that a user has a
@@ -838,7 +840,7 @@ Now try the "bar" upload:
     >>> bar2.is_rejected
     False
 
-    >>> print bar2.rejection_message
+    >>> print(bar2.rejection_message)
 
 
 Uploads to copy archives

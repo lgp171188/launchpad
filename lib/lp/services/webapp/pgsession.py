@@ -6,7 +6,9 @@
 __metaclass__ = type
 
 from collections import MutableMapping
+from datetime import datetime
 import hashlib
+import io
 import time
 
 from lazr.restful.utils import get_current_browser_request
@@ -23,13 +25,40 @@ from zope.session.interfaces import (
     ISessionPkgData,
     )
 
-from lp.services.helpers import ensure_unicode
-
 
 SECONDS = 1
 MINUTES = 60 * SECONDS
 HOURS = 60 * MINUTES
 DAYS = 24 * HOURS
+
+
+if six.PY3:
+    class Python2FriendlyUnpickler(pickle._Unpickler):
+        """An unpickler that handles Python 2 datetime objects.
+
+        Python 3 versions before 3.6 fail to unpickle Python 2 datetime
+        objects (https://bugs.python.org/issue22005); even in Python >= 3.6
+        they require passing a different encoding to pickle.loads, which may
+        have undesirable effects on other objects being unpickled.  Work
+        around this by instead patching in a different encoding just for the
+        argument to datetime.datetime.
+        """
+
+        def find_class(self, module, name):
+            if module == 'datetime' and name == 'datetime':
+                original_encoding = self.encoding
+                self.encoding = 'bytes'
+
+                def datetime_factory(pickle_data):
+                    self.encoding = original_encoding
+                    return datetime(pickle_data)
+
+                return datetime_factory
+            else:
+                return super(Python2FriendlyUnpickler, self).find_class(
+                    module, name)
+else:
+    Python2FriendlyUnpickler = pickle.Unpickler
 
 
 class PGSessionBase:
@@ -93,7 +122,7 @@ class PGSessionData(PGSessionBase):
 
     def __init__(self, session_data_container, client_id):
         self.session_data_container = session_data_container
-        self.client_id = ensure_unicode(client_id)
+        self.client_id = six.ensure_text(client_id, 'ascii')
         self.hashed_client_id = six.ensure_text(
             hashlib.sha256(self.client_id.encode('utf-8')).hexdigest(),
             'ascii')
@@ -172,7 +201,7 @@ class PGSessionPkgData(MutableMapping, PGSessionBase):
 
     def __init__(self, session_data, product_id):
         self.session_data = session_data
-        self.product_id = ensure_unicode(product_id)
+        self.product_id = six.ensure_text(product_id, 'ascii')
         self.table_name = (
             session_data.session_data_container.session_pkg_data_table_name)
         self._populate()
@@ -188,15 +217,17 @@ class PGSessionPkgData(MutableMapping, PGSessionBase):
         result = self.store.execute(
             query, (self.session_data.hashed_client_id, self.product_id))
         for key, pickled_value in result:
-            value = pickle.loads(bytes(pickled_value))
+            value = Python2FriendlyUnpickler(
+                io.BytesIO(bytes(pickled_value))).load()
             self._data_cache[key] = value
 
     def __getitem__(self, key):
         return self._data_cache[key]
 
     def __setitem__(self, key, value):
-        key = ensure_unicode(key)
-        pickled_value = pickle.dumps(value, pickle.HIGHEST_PROTOCOL)
+        key = six.ensure_text(key, 'ascii')
+        # Use protocol 2 for Python 2 compatibility.
+        pickled_value = pickle.dumps(value, protocol=2)
 
         self.session_data._ensureClientId()
         self.store.execute(
@@ -228,7 +259,7 @@ class PGSessionPkgData(MutableMapping, PGSessionBase):
         self.store.execute(
             query,
             (self.session_data.hashed_client_id, self.product_id,
-             ensure_unicode(key)),
+             six.ensure_text(key, 'ascii')),
             noresult=True)
 
     def __iter__(self):

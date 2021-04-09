@@ -15,7 +15,6 @@ __all__ = [
 
 import base64
 import crypt
-from operator import itemgetter
 import os
 
 from lp.registry.model.person import Person
@@ -77,7 +76,8 @@ def make_salt(s):
     """
     # As long as the input string is at least one character long, there will
     # be no padding within the first two characters.
-    return base64.b64encode((s or " ").encode("UTF-8"), altchars=b"./")[:2]
+    return base64.b64encode(
+        (s or " ").encode("UTF-8"), altchars=b"./")[:2].decode("ASCII")
 
 
 def htpasswd_credentials_for_archive(archive):
@@ -98,10 +98,10 @@ def htpasswd_credentials_for_archive(archive):
     tokens = list(tokens)
 
     # Preload map with person ID to person name.
-    person_ids = map(itemgetter(0), tokens)
+    person_ids = {token[0] for token in tokens}
     names = dict(
         IStore(Person).find(
-            (Person.id, Person.name), Person.id.is_in(set(person_ids))))
+            (Person.id, Person.name), Person.id.is_in(person_ids)))
 
     # Format the user field by combining the token list with the person list
     # (when token has person_id) or prepending a '+' (for named tokens).

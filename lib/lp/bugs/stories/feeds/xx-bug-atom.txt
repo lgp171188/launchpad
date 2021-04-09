@@ -27,8 +27,9 @@ point to the bugs themselves.
 
     >>> browser.open('http://feeds.launchpad.test/jokosher/latest-bugs.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bugs in Jokosher']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in Jokosher
     >>> browser.url
     'http://feeds.launchpad.test/jokosher/latest-bugs.atom'
 
@@ -83,8 +84,9 @@ as the latest bugs feed for a product.
 
     >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bugs in The Mozilla Project']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in The Mozilla Project
     >>> browser.url
     'http://feeds.launchpad.test/mozilla/latest-bugs.atom'
 
@@ -143,8 +145,9 @@ of content as the latest bugs feed for a product.
 
     >>> browser.open('http://feeds.launchpad.test/ubuntu/latest-bugs.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bugs in Ubuntu']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in Ubuntu
     >>> browser.url
     'http://feeds.launchpad.test/ubuntu/latest-bugs.atom'
 
@@ -213,8 +216,11 @@ The bug should be included in the feed.
 Private teams should show as '-'.
 
     >>> soup = BeautifulSoup(entry.find('content').text, 'xml')
-    >>> print([tr.find_all('td')[4].text for tr in soup.find_all('tr')[1:4]])
-    [u'Mark Shuttleworth', u'-', u'-']
+    >>> for tr in soup.find_all('tr')[1:4]:
+    ...     print(tr.find_all('td')[4].text)
+    Mark Shuttleworth
+    -
+    -
 
 == Latest bugs for a source package ==
 
@@ -225,8 +231,9 @@ type of content as the latest bugs feed for a product.
     ...     'http://feeds.launchpad.test/ubuntu/+source/thunderbird'
     ...     '/latest-bugs.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bugs in thunderbird in Ubuntu']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in thunderbird in Ubuntu
     >>> browser.url
     'http://feeds.launchpad.test/ubuntu/+source/thunderbird/latest-bugs.atom'
     >>> soup = BeautifulSoup(
@@ -256,8 +263,9 @@ type of content as the latest bugs feed for a product.
     >>> browser.open(
     ...     'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bugs in Hoary']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in Hoary
     >>> browser.url
     'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom'
 
@@ -295,8 +303,9 @@ type of content as the latest bugs feed for a product.
     >>> browser.open(
     ...     'http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bugs in 1.0']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in 1.0
     >>> browser.url
     'http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom'
 
@@ -332,8 +341,9 @@ This feed gets the latest bugs for a person.
 
     >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bugs for Foo Bar']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs for Foo Bar
     >>> browser.url
     'http://feeds.launchpad.test/~name16/latest-bugs.atom'
 
@@ -406,8 +416,9 @@ some results.
     >>> browser.open(
     ...    'http://feeds.launchpad.test/~simple-team/latest-bugs.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bugs for Simple Team']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs for Simple Team
 
     >>> soup = BeautifulSoup(
     ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
@@ -433,8 +444,9 @@ This feed gets the latest bugs reported against any target.
 
     >>> browser.open('http://feeds.launchpad.test/bugs/latest-bugs.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Launchpad bugs']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Launchpad bugs
     >>> browser.url
     'http://feeds.launchpad.test/bugs/latest-bugs.atom'
 
@@ -486,9 +498,10 @@ performance problem in production.
     ...     """
     >>> config.push('bug_search_feed_data', bug_search_feed_data)
     >>> browser.open(url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: Bug search feed deactivated
+    zope.security.interfaces.Unauthorized: Bug search feed deactivated
 
     # Restore the config.
     >>> config_data = config.pop('bug_search_feed_data')
@@ -497,8 +510,9 @@ The bug search feed can be tested after setting is_bug_search_feed_active
 to True.
 
     >>> browser.open(url)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bugs from custom search']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs from custom search
 
     >>> soup = BeautifulSoup(
     ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
@@ -542,8 +556,9 @@ This feed shows the status of a single bug.
 
     >>> browser.open('http://feeds.launchpad.test/bugs/1/bug.atom')
     >>> _ = feedparser.parse(browser.contents)
-    >>> BeautifulSoup(browser.contents, 'xml').title.contents
-    [u'Bug 1']
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bug 1
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
     1

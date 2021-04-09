@@ -42,7 +42,7 @@ Person's. A comment is also sent to the applying users and the team admins.
     ['mark@example.com']
     ['mark@example.com']
     ['test@canonical.com']
-    >>> print(raw_msg)
+    >>> print(six.ensure_text(raw_msg))
     Content-Type: text/plain; charset="utf-8"
     ...
     Mark Shuttleworth said:
@@ -72,6 +72,7 @@ as an inactive one.
 And now we see that there are no pending members left.
 
     >>> browser.getLink('Approve or decline members')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError

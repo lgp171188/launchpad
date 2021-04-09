@@ -62,11 +62,11 @@ directions.
     >>> from lp.services.webapp.canonicalurl import (nearest_adapter,
     ...     nearest_context_with_adapter)
 
-    >>> print nearest_adapter(root, ICookingDirections)
+    >>> print(nearest_adapter(root, ICookingDirections))
     None
-    >>> print nearest_adapter(cookbook, ICookingDirections)
+    >>> print(nearest_adapter(cookbook, ICookingDirections))
     None
-    >>> print nearest_adapter(recipe, ICookingDirections)
+    >>> print(nearest_adapter(recipe, ICookingDirections))
     None
 
 The same holds true for nearest_context_with_adapter():
@@ -88,26 +88,26 @@ that has the requested adaptation.
 "recipe" does not provide ICookingDirections, but "cookbook" does, so
 cookbook's adapter will be returned.
 
-    >>> print nearest_adapter(recipe, ICookingDirections)
+    >>> print(nearest_adapter(recipe, ICookingDirections))
     <...CookingDirections ...>
 
 We can verify that the adapter is actually for the Cookbook using
 nearest_adapter_with_context().
 
-    >>> print nearest_context_with_adapter(recipe, ICookingDirections)
+    >>> print(nearest_context_with_adapter(recipe, ICookingDirections))
     (<...Cookbook ...>, <...CookingDirections ...>)
 
 Calling nearest_adapter() on "cookbook" itself will return the
 CookingDirections:
 
-    >>> print nearest_adapter(cookbook, ICookingDirections)
+    >>> print(nearest_adapter(cookbook, ICookingDirections))
     <...CookingDirections ...>
 
 Calling nearest_adapter() on the hierarchy root returns nothing:
 the root does not have the requested adaptation, and there are no higher
 objects to search.
 
-    >>> print nearest_adapter(root, ICookingDirections)
+    >>> print(nearest_adapter(root, ICookingDirections))
     None
 
 
@@ -130,7 +130,7 @@ First we need a named adapter to use:
     >>> provideAdapter(LabelledCookbook, [ICookbook], ILabelledCookbook,
     ...     name='foo')
 
-    >>> print queryAdapter(cookbook, ILabelledCookbook)
+    >>> print(queryAdapter(cookbook, ILabelledCookbook))
     None
     >>> queryAdapter(cookbook, ILabelledCookbook, name='foo')
     <...LabelledCookbook ...>
@@ -145,14 +145,14 @@ For a recipe, this is the adapter for the cookbook:
 We can verify that the adapter is for the Cookbook using
 nearest_context_with_adapter():
 
-    >>> print nearest_context_with_adapter(
-    ...     recipe, ILabelledCookbook, name='foo')
+    >>> print(nearest_context_with_adapter(
+    ...     recipe, ILabelledCookbook, name='foo'))
     (<...Cookbook ...>, <...LabelledCookbook ...>)
 
 And we can see that the adapter is not returned if we omit the 'name'
 keyword argument:
 
-    >>> print nearest_adapter(recipe, ILabelledCookbook)
+    >>> print(nearest_adapter(recipe, ILabelledCookbook))
     None
 
 If we search for the adapter on the cookbook object, the lookup works as
@@ -163,5 +163,5 @@ expected:
 
 And searching for the adapter on the root object returns nothing:
 
-    >>> print nearest_adapter(root, ILabelledCookbook, name='foo')
+    >>> print(nearest_adapter(root, ILabelledCookbook, name='foo'))
     None

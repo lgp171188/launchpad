@@ -40,7 +40,7 @@ This time the upload will fail because the ACLs don't let
     >>> bar_failed.process()
     >>> bar_failed.is_rejected
     True
-    >>> print bar_failed.rejection_message
+    >>> print(bar_failed.rejection_message)
     The signer of this package has no upload rights to this distribution's
     primary archive.  Did you mean to upload to a PPA?
 
@@ -112,7 +112,7 @@ Let's retry the upload.
     >>> bar_failed.process()
     >>> bar_failed.is_rejected
     True
-    >>> print bar_failed.rejection_message
+    >>> print(bar_failed.rejection_message)
     The signer of this package is lacking the upload rights for the source
     package, component or package set in question.
 
@@ -135,7 +135,7 @@ Add 'bar' to the 'foo' package set.
 Now 'bar' is included by the 'foo' package set.
 
     >>> [ps] = ps_set.setsIncludingSource('bar', direct_inclusion=True)
-    >>> print ps.name
+    >>> print(ps.name)
     foo-pkg-set
 
 name16 has no package set based upload privileges for 'bar' yet.
@@ -169,5 +169,5 @@ With the authorization above the upload should work again.
     >>> bar2.is_rejected
     False
 
-    >>> print bar2.rejection_message
+    >>> print(bar2.rejection_message)
 

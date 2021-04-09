@@ -7,14 +7,16 @@ release nor can access the page directly.
 
     >>> user_browser.open('http://launchpad.test/firefox/+milestone/1.0')
     >>> user_browser.getLink('Create release').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.open(
     ...     'http://launchpad.test/firefox/+milestone/1.0/+addrelease')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 But Sample Person can use the 'Register a release' link to create a new
 release in the series.
@@ -88,9 +90,10 @@ has a productrelease.
 
     >>> browser.open('http://launchpad.test/firefox/+milestone/1.0')
     >>> browser.getLink('Create release').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.open('http://launchpad.test/firefox/+milestone/1.0/+addrelease')
     >>> browser.url

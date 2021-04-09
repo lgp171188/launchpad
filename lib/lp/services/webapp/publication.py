@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -495,10 +495,12 @@ class LaunchpadBrowserPublication(
                 publication_thread_duration)
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
-            'publication_duration,success=True,pageid={}'.format(
-                self._prepPageIDForMetrics(
-                    request._orig_env.get('launchpad.pageid'))),
-            publication_duration * 1000)
+            'publication_duration', publication_duration * 1000,
+            labels={
+                'success': True,
+                'pageid': self._prepPageIDForMetrics(
+                    request._orig_env.get('launchpad.pageid')),
+                })
 
         # Calculate SQL statement statistics.
         sql_statements = da.get_request_statements()
@@ -611,9 +613,11 @@ class LaunchpadBrowserPublication(
                 'launchpad.traversalthreadduration', traversal_thread_duration)
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
-            'traversal_duration,success=True,pageid={}'.format(
-                self._prepPageIDForMetrics(pageid)),
-            traversal_duration * 1000)
+            'traversal_duration', traversal_duration * 1000,
+            labels={
+                'success': True,
+                'pageid': self._prepPageIDForMetrics(pageid),
+                })
 
     def _maybePlacefullyAuthenticate(self, request, ob):
         """ This should never be called because we've excised it in
@@ -649,10 +653,12 @@ class LaunchpadBrowserPublication(
                     publication_thread_duration)
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
-                'publication_duration,success=False,pageid={}'.format(
-                    self._prepPageIDForMetrics(
-                        request._orig_env.get('launchpad.pageid'))),
-                publication_duration * 1000)
+                'publication_duration', publication_duration * 1000,
+                labels={
+                    'success': False,
+                    'pageid': self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid')),
+                    })
         elif (hasattr(request, '_traversal_start') and
               ('launchpad.traversalduration' not in orig_env)):
             # The traversal process has been started but hasn't completed.
@@ -667,10 +673,12 @@ class LaunchpadBrowserPublication(
                     traversal_thread_duration)
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
-                'traversal_duration,success=False,pageid={}'.format(
-                    self._prepPageIDForMetrics(
-                        request._orig_env.get('launchpad.pageid'))
-                ), traversal_duration * 1000)
+                'traversal_duration', traversal_duration * 1000,
+                labels={
+                    'success': False,
+                    'pageid': self._prepPageIDForMetrics(
+                        request._orig_env.get('launchpad.pageid')),
+                    })
         else:
             # The exception wasn't raised in the middle of the traversal nor
             # the publication, so there's nothing we need to do here.
@@ -875,6 +883,8 @@ def tracelog(request, prefix, msg):
     easier. ``prefix`` should be unique and contain no spaces, and
     preferably a single character to save space.
     """
-    tracelog = ITraceLog(request, None)
-    if tracelog is not None:
-        tracelog.log('%s %s' % (prefix, six.ensure_str(msg, 'US-ASCII')))
+    if not config.use_gunicorn:
+        msg = '%s %s' % (prefix, six.ensure_str(msg, 'US-ASCII'))
+        tracelog = ITraceLog(request, None)
+        if tracelog is not None:
+            tracelog.log(msg)

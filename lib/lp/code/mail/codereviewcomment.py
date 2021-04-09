@@ -111,7 +111,8 @@ class CodeReviewCommentMailer(BMPMailer):
                 self.code_review_comment)
         if inline_comment is not None:
             self.body_main += build_inline_comments_section(
-                inline_comment.comments, inline_comment.previewdiff.text)
+                inline_comment.comments,
+                inline_comment.previewdiff.text.encode('UTF-8'))
 
         self.proposal_url = canonical_url(self.merge_proposal)
 

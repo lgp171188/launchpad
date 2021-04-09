@@ -529,7 +529,7 @@ class TestSourcesList(TestCaseWithFactory):
         # Upload the tools archive key to the keyserver.
         tools_key_name = "ppa-sample-4096@canonical.com"
         tools_key_path = os.path.join(gpgkeysdir, "%s.sec" % tools_key_name)
-        with open(tools_key_path) as tools_key_file:
+        with open(tools_key_path, "rb") as tools_key_file:
             secret_key_export = tools_key_file.read()
         # Remove security proxy to avoid problems with running in a thread.
         gpghandler = removeSecurityProxy(getUtility(IGPGHandler))

@@ -475,7 +475,7 @@ template and thus is way simpler.
   >>> from zope.browserpage import ViewPageTemplateFile
   >>> file, filename = mkstemp()
   >>> f = open(filename, 'w')
-  >>> f.write(u'<div metal:use-macro="context/@@launchpad_form/form" />')
+  >>> _ = f.write(u'<div metal:use-macro="context/@@launchpad_form/form" />')
   >>> f.close()
 
 By default, all widgets are visible.
@@ -554,9 +554,10 @@ request:
   ...           'field.actions.change': 'Change'})
   >>> view = UnsafeActionTestView(context, request)
   >>> view.initialize()
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ...
-  UnsafeFormGetSubmissionError: field.actions.change
+  lp.services.webapp.interfaces.UnsafeFormGetSubmissionError: field.actions.change
 
   >>> request = LaunchpadTestRequest(
   ...     method='POST',

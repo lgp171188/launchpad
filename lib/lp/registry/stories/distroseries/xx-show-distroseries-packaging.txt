@@ -38,9 +38,10 @@ is linked, but the link to this page is not enabled.
       url='http://launchpad.test/ubuntu/hoary/+needs-packaging'>
 
     >>> anon_browser.getLink('All upstream links')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 The packaging links are batched so that users can view the thousands of
 links packages. Users can also hack the URL to set their own batch size.
@@ -117,6 +118,7 @@ linked, but the link to this page is not enabled.
       url='http://launchpad.test/ubuntu/hoary/+packaging'>
 
     >>> anon_browser.getLink('Needs upstream links')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError

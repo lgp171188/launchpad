@@ -35,9 +35,10 @@ When given a bug task ID that doesn't exist in the database, the method
 raises a NotFoundError:
 
     >>> no_such_task = task_set.get(0)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: ...
+    lp.app.errors.NotFoundError: ...
 
 
 Retrieving multiple bug tasks
@@ -81,10 +82,10 @@ those bug task IDs that are present in the database:
     >>> task_set.getMultiple([1, 2])
     {2: <BugTask ...>}
 
-    >>> task_set.get(1)
+    >>> task_set.get(1)  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: ...
+    lp.app.errors.NotFoundError: ...
     >>> task_set.get(2)
     <BugTask ...>
 

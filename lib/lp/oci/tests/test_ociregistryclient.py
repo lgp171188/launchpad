@@ -26,6 +26,7 @@ import responses
 from tenacity import RetryError
 from testtools.matchers import (
     AfterPreprocessing,
+    ContainsDict,
     Equals,
     Is,
     MatchesAll,
@@ -67,8 +68,10 @@ from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.compat import mock
 from lp.services.features.testing import FeatureFixture
+from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.testing import (
     admin_logged_in,
+    person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.fixture import ZopeUtilityFixture
@@ -86,9 +89,11 @@ class SpyProxyCallsMixin:
             self.proxy_call_count += 1
             return proxy_urlfetch(*args, **kwargs)
 
-        self.useFixture(MockPatch(
+        proxy_mock = self.useFixture(MockPatch(
             'lp.oci.model.ociregistryclient.proxy_urlfetch',
-            side_effect=count_proxy_call_count))
+            side_effect=count_proxy_call_count)).mock
+        # Avoid reference cycles with file objects passed to urlfetch.
+        self.addCleanup(proxy_mock.reset_mock)
 
 
 class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
@@ -117,7 +122,12 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             }
         }]
         self.config = {"rootfs": {"diff_ids": ["diff_id_1", "diff_id_2"]}}
-        self.build = self.factory.makeOCIRecipeBuild()
+        # This produces a git ref that does not match the 'valid' OCI branch
+        # format, so will not get multiple tags. Multiple tags are tested
+        # explicitly.
+        [git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.build = self.factory.makeOCIRecipeBuild(recipe=recipe)
         self.push_rule = self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.client = OCIRegistryClient()
 
@@ -259,6 +269,55 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertEqual(0, len(responses.calls))
 
     @responses.activate
+    def test_upload_with_distribution_credentials(self):
+        self._makeFiles()
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
+        credentials = self.factory.makeOCIRegistryCredentials()
+        image_name = self.factory.getUniqueUnicode()
+        self.build.recipe.image_name = image_name
+        distro = self.build.recipe.oci_project.distribution
+        with person_logged_in(distro.owner):
+            distro.oci_registry_credentials = credentials
+        # we have distribution credentials, we should have a 'push rule'
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
+        self.addManifestResponses(push_rule)
+
+        self.client.upload(self.build)
+
+        request = json.loads(responses.calls[1].request.body.decode("UTF-8"))
+
+        self.assertThat(request, MatchesDict({
+            "layers": MatchesListwise([
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_1"),
+                    "size": Equals(999)}),
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_2"),
+                    "size": Equals(999)})
+            ]),
+            "schemaVersion": Equals(2),
+            "config": MatchesDict({
+                "mediaType": Equals(
+                    "application/vnd.docker.container.image.v1+json"),
+                "digest": Equals(
+                    "sha256:33b69b4b6e106f9fc7a8b93409"
+                    "36c85cf7f84b2d017e7b55bee6ab214761f6ab"),
+                "size": Equals(52)
+            }),
+            "mediaType": Equals(
+                "application/vnd.docker.distribution.manifest.v2+json")
+        }))
+
+    @responses.activate
     def test_upload_formats_credentials(self):
         self._makeFiles()
         _upload_fixture = self.useFixture(MockPatch(
@@ -357,7 +416,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.build.recipe.git_ref = git_ref
         result = self.client._calculateTags(self.build.recipe)
         self.assertThat(result, MatchesListwise(
-            [Equals("v1.0-20.04_edge"), Equals("edge")]))
+            [Equals("v1.0-20.04_edge")]))
 
     def test_build_registry_manifest(self):
         self._makeFiles()
@@ -404,7 +463,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         push_rule = self.build.recipe.push_rules[0]
         push_rule.registry_credentials.setCredentials({})
         self.client._upload(
-            "test-digest", push_rule, None, http_client)
+            "test-digest", push_rule, None, 0, http_client)
 
         self.assertEqual(len(responses.calls), self.proxy_call_count)
         # There should be no auth headers for these calls
@@ -426,6 +485,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             "test-digest",
             push_rule,
             None,
+            0,
             http_client)
 
     @responses.activate
@@ -438,7 +498,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         push_rule.registry_credentials.setCredentials({
             "username": "user", "password": "password"})
         self.client._upload(
-            "test-digest", push_rule, None,
+            "test-digest", push_rule, None, 0,
             http_client)
 
         self.assertEqual(len(responses.calls), self.proxy_call_count)
@@ -466,7 +526,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             push_rule = self.build.recipe.push_rules[0]
             self.client._upload(
                 "test-digest", push_rule,
-                None, RegistryHTTPClient(push_rule))
+                None, 0, RegistryHTTPClient(push_rule))
         except RetryError:
             pass
         # Check that tenacity and our counting agree
@@ -497,7 +557,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertThat(
             partial(
                 self.client._upload,
-                "test-digest", push_rule, None, http_client),
+                "test-digest", push_rule, None, 0, http_client),
             Raises(MatchesException(
                 BlobUploadFailed,
                 MatchesAll(
@@ -523,7 +583,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertThat(
             partial(
                 self.client._upload,
-                "test-digest", push_rule, None, http_client),
+                "test-digest", push_rule, None, 0, http_client),
             Raises(MatchesException(
                 BlobUploadFailed,
                 MatchesAll(
@@ -595,6 +655,30 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                         str,
                         Equals(expected_msg)),
                     MatchesStructure(errors=Is(None))))))
+
+    @responses.activate
+    def test_upload_layer_put_blob_sends_content_length(self):
+        lfa = self.factory.makeLibraryFileAlias(
+            content=LaunchpadWriteTarFile.files_to_bytes(
+                {"layer.tar": b"test layer"}))
+        transaction.commit()
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
+        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        upload_url = "{}/blobs/uploads/{}".format(
+            http_client.api_url, uuid.uuid4())
+        responses.add("HEAD", blobs_url, status=404)
+        responses.add("POST", uploads_url, headers={"Location": upload_url})
+        responses.add("PUT", upload_url, status=201)
+        self.client._upload_layer("test-digest", push_rule, lfa, http_client)
+        self.assertThat(responses.calls[2].request, MatchesStructure(
+            method=Equals("PUT"),
+            headers=ContainsDict({
+                "Content-Length": Equals(str(len(b"test layer"))),
+                }),
+            ))
 
     @responses.activate
     def test_multi_arch_manifest_upload_skips_superseded_builds(self):

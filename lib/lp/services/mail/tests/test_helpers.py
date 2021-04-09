@@ -4,6 +4,7 @@
 __metaclass__ = type
 
 from doctest import DocTestSuite
+from textwrap import dedent
 import time
 import unittest
 
@@ -186,8 +187,16 @@ class TestEnsureNotWeaklyAuthenticated(TestCaseWithFactory):
             error.message)
 
     def test_weakly_authenticated_with_sig(self):
-        signed_msg = self.factory.makeSignedMessage()
-        signed_msg.signature = 'fakesig'
+        body = dedent("""\
+            -----BEGIN PGP SIGNED MESSAGE-----
+
+            fakecontent
+            -----BEGIN PGP SIGNATURE-----
+
+            fakesig
+            -----END PGP SIGNATURE-----
+            """"")
+        signed_msg = self.factory.makeSignedMessage(body=body)
         self._setWeakPrincipal()
         error = self.assertRaises(
             IncomingEmailError,

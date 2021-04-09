@@ -9,6 +9,8 @@ __all__ = [
     'BinaryPackageBuildBehaviour',
     ]
 
+from collections import OrderedDict
+
 from twisted.internet import defer
 from zope.interface import implementer
 
@@ -71,7 +73,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
                 makePoolPath(
                     self.build.source_package_release.sourcepackagename.name,
                     self.build.current_component.name))
-        filemap = {}
+        filemap = OrderedDict()
         for source_file in self.build.source_package_release.files:
             lfa = source_file.libraryfile
             if not self.build.archive.private:

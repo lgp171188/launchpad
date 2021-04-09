@@ -11,7 +11,7 @@ storage.
     >>> print('\n' + out)
     <BLANKLINE>
     ...
-    4866 bytes    hwsubmission in 2 files
+    45 kB         languagepack in 4 files
     ...
 
 
@@ -25,5 +25,5 @@ We can filter on date to produce deltas.
     >>> print('\n' + out)
     <BLANKLINE>
     ...
-    0 bytes      hwsubmission in 0 files
+    0 bytes      languagepack in 0 files
     ...

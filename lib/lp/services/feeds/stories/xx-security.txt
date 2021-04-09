@@ -51,21 +51,21 @@ these HTML feeds, since all the bugs are private.
     >>> len(BeautifulSoup(browser.contents, 'xml')('tr'))
     1
 
-    >>> print extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0])
+    >>> print(extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0]))
     Bugs in Jokosher
 
     >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.html')
     >>> len(BeautifulSoup(browser.contents, 'xml')('tr'))
     1
 
-    >>> print extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0])
+    >>> print(extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0]))
     Bugs in The Mozilla Project
 
     >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.html')
     >>> len(BeautifulSoup(browser.contents, 'xml')('tr'))
     1
 
-    >>> print extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0])
+    >>> print(extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0]))
     Bugs for Foo Bar
 
     >>> browser.open(
@@ -73,7 +73,7 @@ these HTML feeds, since all the bugs are private.
     >>> len(BeautifulSoup(browser.contents, 'xml')('tr'))
     1
 
-    >>> print extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0])
+    >>> print(extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0]))
     Bugs for Simple Team
 
     >>> browser.open('http://feeds.launchpad.test/bugs/+bugs.html?'
@@ -85,7 +85,7 @@ these HTML feeds, since all the bugs are private.
     >>> try:
     ...      browser.open('http://feeds.launchpad.test/bugs/1/bug.html')
     ... except Unauthorized:
-    ...     print "Shouldn't  raise Unauthorized exception"
+    ...     print("Shouldn't  raise Unauthorized exception")
     >>> BeautifulSoup(browser.contents, 'xml')('entry')
     []
 

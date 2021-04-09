@@ -74,12 +74,12 @@ will create login tokens for the revoked and expired test keys:
     ...     person, 'test@canonical.com', 'test@canonical.com',
     ...     LoginTokenType.VALIDATEGPG,
     ...     '84D205F03E1E67096CB54E262BE83793AACCD97C')
-    >>> revoked_key_token = logintoken.token.encode('ascii')
+    >>> revoked_key_token = logintoken.token
     >>> logintoken = tokenset.new(
     ...     person, 'test@canonical.com', 'test@canonical.com',
     ...     LoginTokenType.VALIDATEGPG,
     ...     '0DD64D28E5F41138533495200E3DB4D402F53CC6')
-    >>> expired_key_token = logintoken.token.encode('ascii')
+    >>> expired_key_token = logintoken.token
     >>> logout()
 
 

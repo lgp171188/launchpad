@@ -140,6 +140,8 @@ def fetch_information(spr, bprs, changes, previous_version=None):
         changelog = ChangesFile.formatChangesComment(
             sanitize_string(changes.get('Changes')))
         date = changes.get('Date')
+        if date is not None:
+            date = six.ensure_text(date)
         try:
             changedby = parse_maintainer_bytes(
                 changes.get('Changed-By'), 'Changed-By')
@@ -151,7 +153,7 @@ def fetch_information(spr, bprs, changes, previous_version=None):
         except ParseMaintError:
             pass
         notify_changed_by = changes.get(
-            'Launchpad-Notify-Changed-By', '') == 'yes'
+            'Launchpad-Notify-Changed-By', b'') == b'yes'
     elif spr or bprs:
         if not spr and bprs:
             spr = bprs[0].build.source_package_release

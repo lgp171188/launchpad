@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person/team merger implementation."""
@@ -660,16 +660,34 @@ def _mergeSnap(cur, from_person, to_person):
     existing_names = [
         s.name for s in getUtility(ISnapSet).findByOwner(to_person)]
     for snap in snaps:
-        new_name = snap.name
+        naked_snap = removeSecurityProxy(snap)
+        new_name = naked_snap.name
         count = 1
         while new_name in existing_names:
             new_name = '%s-%s' % (snap.name, count)
             count += 1
-        naked_snap = removeSecurityProxy(snap)
         naked_snap.owner = to_person
         naked_snap.name = new_name
     if not snaps.is_empty():
         IStore(snaps[0]).flush()
+
+
+def _mergeSnapSubscription(cur, from_id, to_id):
+    # Update only the SnapSubscription that will not conflict.
+    cur.execute('''
+        UPDATE SnapSubscription
+        SET person=%(to_id)d
+        WHERE person=%(from_id)d AND snap NOT IN
+            (
+            SELECT snap
+            FROM SnapSubscription
+            WHERE person = %(to_id)d
+            )
+        ''' % vars())
+    # and delete those left over.
+    cur.execute('''
+        DELETE FROM SnapSubscription WHERE person=%(from_id)d
+        ''' % vars())
 
 
 def _mergeOCIRecipe(cur, from_person, to_person):
@@ -917,8 +935,15 @@ def merge_people(from_person, to_person, reviewer, delete=False):
     _mergeSnap(cur, from_person, to_person)
     skip.append(('snap', 'owner'))
 
+    _mergeSnapSubscription(cur, from_id, to_id)
+    skip.append(('snapsubscription', 'person'))
+
     _mergeOCIRecipe(cur, from_person, to_person)
     skip.append(('ocirecipe', 'owner'))
+
+    # XXX pappacena 2021-03-05: We need to implement the proper handling for
+    # this once we have OCIRecipeSubscription implemented.
+    skip.append(('ocirecipesubscription', 'person'))
 
     # Sanity check. If we have a reference that participates in a
     # UNIQUE index, it must have already been handled by this point.

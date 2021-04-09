@@ -27,7 +27,7 @@ IStoreSelector utility.
     >>> store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
     >>> dbname = DatabaseLayer._db_fixture.dbname
     >>> active_name = store.execute("SELECT current_database()").get_one()[0]
-    >>> if active_name != dbname: print '%s != %s' % (active_name, dbname)
+    >>> if active_name != dbname: print('%s != %s' % (active_name, dbname))
     >>> active_name == dbname
     True
 
@@ -63,7 +63,7 @@ correctly, especially for the case of LIKE which uses % characters.
     >>> store.execute("SELECT * FROM person where name like '%d foo'||'%%'",
     ...     noresult=True)
     >>> for _, _, _, statement, _ in get_request_statements():
-    ...     print statement
+    ...     print(statement)
     SELECT 1
     SELECT 2
     SELECT * FROM person where name = E'fred'
@@ -78,7 +78,7 @@ A timeline is created too:
     >>> for action in timeline.actions:
     ...    if not action.category.startswith("SQL-"):
     ...        continue
-    ...    print action.detail
+    ...    print(action.detail)
     SELECT 1
     SELECT 2
     SELECT * FROM person where name = E'fred'
@@ -104,7 +104,7 @@ statements.
     >>> store.execute('SELECT 2', noresult=True)
     >>> store.execute('SELECT 3', noresult=True)
     >>> for _, _, _, statement, _ in get_request_statements():
-    ...     print statement
+    ...     print(statement)
     SELECT 2
     SELECT 3
     >>> clear_request_started()
@@ -120,7 +120,7 @@ that aborted transactions are still in the status "Active".
     >>> store.execute('SELECT 3', noresult=True)
     >>> transaction.abort()
     >>> for _, _, _, statement, _ in get_request_statements():
-    ...     print statement
+    ...     print(statement)
     SELECT 1
     SELECT 2
     Transaction completed, status: Committed
@@ -135,7 +135,7 @@ it pass.
     >>> import warnings
     >>> with warnings.catch_warnings(record=True) as no_request_warning:
     ...     clear_request_started()
-    >>> print no_request_warning[0].message
+    >>> print(no_request_warning[0].message)
     clear_request_started() called outside of a request
 
 Some requests are expected to log actions with very large details, such as
@@ -151,7 +151,7 @@ memory on logging.
     >>> store.execute('SELECT 1', noresult=True)
     >>> transaction.abort()
     >>> for _, _, _, statement, _ in get_request_statements():
-    ...     print statement
+    ...     print(statement)
     <redacted>
     Transaction completed, status: Active
     >>> clear_request_started()
@@ -163,7 +163,7 @@ Statement Timeout
 The timeout is set in launchpad.conf file.  By default it is unset,
 which corresponds to no timeout:
 
-    >>> print config.database.db_statement_timeout
+    >>> print(config.database.db_statement_timeout)
     None
 
 
@@ -193,7 +193,7 @@ the Postgres statement timeout (a value of zero means no timeout):
     ...     store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
 
     >>> set_request_started()
-    >>> print current_statement_timeout(store)
+    >>> print(current_statement_timeout(store))
     0ms
     >>> clear_request_started()
 
@@ -209,19 +209,17 @@ timeout by sleeping for 200ms with a 100ms statement timeout:
     >>> config.push('base_test_data', test_data)
     >>> reset_store()
     >>> set_request_started()
-    >>> print current_statement_timeout(store)
+    >>> print(current_statement_timeout(store))
     100ms
-    >>> store.execute('SELECT pg_sleep(0.200)', noresult=True)
+    >>> store.execute(six.ensure_str('SELECT pg_sleep(0.200)'), noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.200)'
-    Parameters:()
-    Original error: QueryCanceledError('canceling statement due to
-    statement timeout\n',)
+    lp.services.webapp.adapter.LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.200)' Parameters:() Original error: QueryCanceledError('canceling statement due to statement timeout\n',)
 
 Even though the statement timed out, it is recorded in the statement log:
 
-    >>> print get_request_statements()[-1][3]
+    >>> print(get_request_statements()[-1][3])
     SELECT pg_sleep(0.200)
 
     >>> clear_request_started()
@@ -231,7 +229,7 @@ set_request_started() is called in scripts.
 
     >>> reset_store()
     >>> set_request_started(enable_timeout=False)
-    >>> print current_statement_timeout(store)
+    >>> print(current_statement_timeout(store))
     0ms
     >>> store.execute('SELECT pg_sleep(0.200)', noresult=True)
     >>> clear_request_started()
@@ -263,12 +261,12 @@ to fake how long things take.
     >>> set_request_started()
 
     >>> store.execute('SELECT TRUE', noresult=True)
-    >>> print current_statement_timeout(store)
+    >>> print(current_statement_timeout(store))
     10000ms
     >>> time_travel(0.5) # Forward in time 0.5 seconds
 
     >>> store.execute('SELECT TRUE', noresult=True)
-    >>> print current_statement_timeout(store)
+    >>> print(current_statement_timeout(store))
     10000ms
     >>> time_travel(0.6) # Forward in time 0.6 seconds, now over precision
 
@@ -276,7 +274,7 @@ This invokation, the PostgreSQL statement timeout will be updated before
 issuing the SQL command as we have exceeded the precision period:
 
     >>> store.execute('SELECT TRUE', noresult=True)
-    >>> print current_statement_timeout(store)
+    >>> print(current_statement_timeout(store))
     8900ms
     >>> time_travel(8.89) # 0.01s remaining before hard timeout
 
@@ -284,13 +282,11 @@ issuing the SQL command as we have exceeded the precision period:
 This final invokation, we will actually sleep to ensure that the
 timeout being reported by PostgreSQL is actually working:
 
-    >>> store.execute('SELECT pg_sleep(0.2)', noresult=True)
+    >>> store.execute(six.ensure_str('SELECT pg_sleep(0.2)'), noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.2)'
-    Parameters:()
-    Original error: QueryCanceledError('canceling statement due to
-    statement timeout\n',)
+    lp.services.webapp.adapter.LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.2)' Parameters:() Original error: QueryCanceledError('canceling statement due to statement timeout\n',)
     >>> clear_request_started()
 
 
@@ -303,7 +299,7 @@ Set the timeout to 5000ms for the next tests:
     >>> config.push('test', test_data)
     >>> reset_store()
     >>> set_request_started()
-    >>> print current_statement_timeout(store)
+    >>> print(current_statement_timeout(store))
     5000ms
     >>> clear_request_started()
 
@@ -346,16 +342,17 @@ another query:
 
     >>> set_request_started(time.time() - 60)
     >>> store.execute('SELECT 2', noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    RequestExpired: request expired.
+    lp.services.webapp.adapter.RequestExpired: request expired.
 
 The statement about to be executed is not recorded in the statement log.
 The request time limit was exceeded before the statement was issued to
 the database.
 
-    >>> get_request_statements()
-    [(0, ..., u'SQL-main-master', u'SELECT 2', ...)]
+    >>> print(pretty(get_request_statements()))
+    [(0, ..., 'SQL-main-master', 'SELECT 2', ...)]
 
 
 When a RequestExpired exception is raised, the current
@@ -365,10 +362,10 @@ transaction will be doomed:
     >>> transaction.get().isDoomed()
     True
     >>> transaction.commit()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    DoomedTransaction: transaction doomed, cannot commit
-    <BLANKLINE>
+    transaction.interfaces.DoomedTransaction: transaction doomed, cannot commit
 
 Cleanup:
 
@@ -409,9 +406,10 @@ remove the timout:
     >>> thread.start()
     >>> _ = started_request.wait()
     >>> store.execute('SELECT 1', noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    RequestExpired: request expired.
+    lp.services.webapp.adapter.RequestExpired: request expired.
     >>> statement_issued.set()
     >>> thread.join()
     >>> clear_request_started()
@@ -438,41 +436,41 @@ The Launchpad store uses lp.services.config to configure its
 connection.  This can be adjusted by choosing a different database
 config section.  By default we connect as "launchpad"
 
-    >>> print store.execute("select current_user").get_one()[0]
+    >>> print(store.execute("select current_user").get_one()[0])
     launchpad_main
 
     >>> from lp.services.config import dbconfig
     >>> dbconfig.override(dbuser='statistician')
     >>> reset_store()
-    >>> print store.execute("select current_user").get_one()[0]
+    >>> print(store.execute("select current_user").get_one()[0])
     statistician
     >>> store.execute("""
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')
     ...     """, noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ProgrammingError: permission denied for relation sourcepackagename
-    <BLANKLINE>
+    storm.database.ProgrammingError: permission denied for relation sourcepackagename
 
 This is not reset at the end of the transaction:
 
     >>> transaction.abort()
-    >>> print store.execute("select current_user").get_one()[0]
+    >>> print(store.execute("select current_user").get_one()[0])
     statistician
     >>> store.execute("""
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')
     ...     """, noresult=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ProgrammingError: permission denied for relation sourcepackagename
-    <BLANKLINE>
+    storm.database.ProgrammingError: permission denied for relation sourcepackagename
     >>> transaction.abort()
 
 So you need to explicitly set the user back to the default:
 
     >>> dbconfig.override(dbuser=None)
     >>> reset_store()
-    >>> print store.execute("select current_user").get_one()[0]
+    >>> print(store.execute("select current_user").get_one()[0])
     launchpad_main
     >>> store.execute("""
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')

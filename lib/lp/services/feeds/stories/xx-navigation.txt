@@ -11,21 +11,25 @@ Trying to view a page which is not registered on the Feeds layer
 returns a 404.
 
     >>> browser.open('http://feeds.launchpad.test/jokosher')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
     >>> browser.open('http://feeds.launchpad.test/bugs')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
     >>> browser.open('http://feeds.launchpad.test/+dims')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
     >>> browser.open('http://feeds.launchpad.test/announcements.atom/foo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
 
 == Redirection ==
@@ -48,7 +52,7 @@ redirects to remote sites, but http() can be used instead.
    ... GET / HTTP/1.0
    ... Host: feeds.launchpad.test
    ... """)
-   >>> print response.getOutput()
+   >>> print(six.text_type(response))
    HTTP/1.0 301 Moved Permanently
    ...
    Location: https://help.launchpad.net/Feeds
@@ -90,7 +94,7 @@ on feeds.launchpad.test and does not work on all the other vhosts.
     ...     try:
     ...         browser.open(url)
     ...     except:
-    ...         print "Error accessing:", url
+    ...         print("Error accessing:", url)
     ...         raise
     ...     prefixes = ('', 'answers.', 'blueprints.', 'bugs.',
     ...         'code.', 'translations.')
@@ -101,7 +105,7 @@ on feeds.launchpad.test and does not work on all the other vhosts.
     ...         except NotFound:
     ...             pass
     ...         except:
-    ...             print "Error accessing:", url
+    ...             print("Error accessing:", url)
     ...             raise
     ...         else:
     ...             raise AssertionError("Page should not exist: %s" % url)
@@ -139,5 +143,5 @@ Revert configuration change after tests are finished.
 feeds.launchpad.test has a favicon.
 
     >>> browser.open('http://feeds.launchpad.test/favicon.ico')
-    >>> print browser.headers['Content-Type']
+    >>> print(browser.headers['Content-Type'])
     image/png

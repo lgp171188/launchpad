@@ -131,7 +131,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         Create an importer from the entry."""
         potemplate = self.factory.makePOTemplate()
         template_entry = self.translation_import_queue.addOrUpdateEntry(
-            potemplate.path, pot_content,
+            potemplate.path, six.ensure_binary(pot_content),
             by_maintainer, self.importer_person,
             productseries=potemplate.productseries,
             potemplate=potemplate)
@@ -151,7 +151,7 @@ class FileImporterTestCase(TestCaseWithFactory):
             pofile = existing_pofile
         person = person or self.importer_person
         translation_entry = self.translation_import_queue.addOrUpdateEntry(
-            pofile.path, po_content, by_maintainer, person,
+            pofile.path, six.ensure_binary(po_content), by_maintainer, person,
             productseries=potemplate.productseries, pofile=pofile)
         self.fake_librarian.pretendCommit()
         return POFileImporter(translation_entry, GettextPOImporter(), None)
@@ -174,7 +174,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         These tests don't care about Imported or Upstream."""
         potemplate = self.factory.makePOTemplate()
         template_entry = self.translation_import_queue.addOrUpdateEntry(
-            potemplate.path, TEST_TEMPLATE_EXPORTED,
+            potemplate.path, six.ensure_binary(TEST_TEMPLATE_EXPORTED),
             False, self.importer_person,
             productseries=potemplate.productseries,
             potemplate=potemplate)
@@ -538,7 +538,8 @@ class CreateFileImporterTestCase(TestCaseWithFactory):
                          "Content-Type: text/plain; charset=UTF-8\n")
         po_content = TEST_TRANSLATION_FILE % ("", "foo", "bar")
         queue_entry = self.translation_import_queue.addOrUpdateEntry(
-            pofile.path, po_content, by_maintainer, self.importer_person,
+            pofile.path, six.ensure_binary(po_content), by_maintainer,
+            self.importer_person,
             productseries=pofile.potemplate.productseries, pofile=pofile)
         self.fake_librarian.pretendCommit()
         return queue_entry

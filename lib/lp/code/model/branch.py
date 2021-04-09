@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -1041,7 +1041,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             subscription.review_level = code_review_level
         # Grant the subscriber access if they can't see the branch.
         service = getUtility(IService, 'sharing')
-        _, branches, _, _ = service.getVisibleArtifacts(
+        _, branches, _, _, _ = service.getVisibleArtifacts(
             person, branches=[self], ignore_permissions=True)
         if not branches:
             service.ensureAccessGrants(
@@ -1185,7 +1185,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         # in the database, so if the revision_date is a future date, then we
         # use the date created instead.
         if db_revision is None:
-            revision_id = NULL_REVISION
+            revision_id = six.ensure_text(NULL_REVISION)
             revision_date = UTC_NOW
         else:
             revision_id = db_revision.revision_id
@@ -1386,6 +1386,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             increment = getUtility(IBranchPuller).MIRROR_TIME_INCREMENT
             self.next_mirror_time = (
                 datetime.now(pytz.timezone('UTC')) + increment)
+        if isinstance(last_revision_id, bytes):
+            last_revision_id = last_revision_id.decode('ASCII')
         self.last_mirrored_id = last_revision_id
         if self.last_scanned_id != last_revision_id:
             from lp.code.model.branchjob import BranchScanJob

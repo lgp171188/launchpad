@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository interfaces."""
@@ -216,6 +216,23 @@ class IGitRepositoryView(IHasRecipes):
     shortened_path = Attribute(
         "The shortest reasonable version of the path to this repository.")
 
+    pack_count = exported(Int(
+        title=_("Pack count"), readonly=True, required=False,
+        description=_("The number of packs for this repository.")))
+
+    loose_object_count = exported(Int(
+        title=_("Loose object count"), readonly=True, required=False,
+        description=_("The number of loose objects for this repository.")))
+
+    date_last_repacked = exported(Datetime(
+        title=_("Date last repacked"), readonly=True, required=False,
+        description=_("The date that this repository was last repacked.")))
+
+    date_last_scanned = exported(Datetime(
+        title=_("Date last scanned"), readonly=True, required=False,
+        description=_("The date when pack statistics were last updated "
+                      "for this repository.")))
+
     def getClonedFrom():
         """Returns from which repository the given repo is a clone from."""
 
@@ -376,8 +393,12 @@ class IGitRepositoryView(IHasRecipes):
             otherwise False.
         """
 
-    def getCodebrowseUrl():
-        """Construct a browsing URL for this Git repository."""
+    def getCodebrowseUrl(username=None, password=None):
+        """Construct a browsing URL for this Git repository.
+
+        :param username: Include the given username in the URL (optional).
+        :param password: Include the given password in the URL (optional).
+        """
 
     def getCodebrowseUrlForRevision(commit):
         """The URL to the commit of the merge to the target branch"""
@@ -514,7 +535,7 @@ class IGitRepositoryView(IHasRecipes):
         "A collection of the merge proposals where this repository is "
         "the source.")
     _api_landing_targets = exported(
-        CollectionField(
+        doNotSnapshot(CollectionField(
             title=_("Landing targets"),
             description=_(
                 "A collection of the merge proposals where this repository is "
@@ -522,13 +543,13 @@ class IGitRepositoryView(IHasRecipes):
             readonly=True,
             # Really IBranchMergeProposal, patched in
             # _schema_circular_imports.py.
-            value_type=Reference(Interface)),
+            value_type=Reference(Interface))),
         exported_as="landing_targets")
     landing_candidates = Attribute(
         "A collection of the merge proposals where this repository is "
         "the target.")
     _api_landing_candidates = exported(
-        CollectionField(
+        doNotSnapshot(CollectionField(
             title=_("Landing candidates"),
             description=_(
                 "A collection of the merge proposals where this repository is "
@@ -536,16 +557,16 @@ class IGitRepositoryView(IHasRecipes):
             readonly=True,
             # Really IBranchMergeProposal, patched in
             # _schema_circular_imports.py.
-            value_type=Reference(Interface)),
+            value_type=Reference(Interface))),
         exported_as="landing_candidates")
-    dependent_landings = exported(CollectionField(
+    dependent_landings = exported(doNotSnapshot(CollectionField(
         title=_("Dependent landings"),
         description=_(
             "A collection of the merge proposals that are dependent on this "
             "repository."),
         readonly=True,
         # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
-        value_type=Reference(Interface)))
+        value_type=Reference(Interface))))
 
     def getPrecachedLandingTargets(user):
         """Return precached landing targets.
@@ -894,6 +915,15 @@ class IGitRepositoryEdit(IWebhookTarget):
         :return: A dict mapping reference paths to sets of
             `GitPermissionType`, corresponding to the requested person's
             effective permissions on each of the requested references.
+        """
+
+    def setRepackData(loose_object_count, pack_count):
+        """Sets the repack parameters received from Turnip.
+
+        :param loose_object_count: The number of loose objects that
+            this repository currently has.
+        :param pack_count: The number of packs that
+            this repository currently has.
         """
 
     @operation_parameters(

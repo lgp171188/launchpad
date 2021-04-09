@@ -28,6 +28,6 @@ All wiki names of a person can be obtained, ordered alphabetically by wiki URL
 and name, through IPerson.wiki_names.
 
     >>> for wiki in salgado.wiki_names:
-    ...     print "%s%s" % (wiki.wiki, wiki.wikiname)
+    ...     print("%s%s" % (wiki.wiki, wiki.wikiname))
     https://wiki.canonical.com/Salgado
     https://wiki.ubuntu.com/GuilhermeSalgado

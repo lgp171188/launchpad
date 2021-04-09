@@ -220,7 +220,7 @@ class ArchiveSubscriberSet:
         result = self._getBySubscriber(subscriber, archive, True, True)
 
         def eager_load(rows):
-            subscriptions = map(itemgetter(0), rows)
+            subscriptions = [row[0] for row in rows]
             precache_permission_for_objects(
                 None, 'launchpad.View', subscriptions)
             archives = load_related(Archive, subscriptions, ['archive_id'])

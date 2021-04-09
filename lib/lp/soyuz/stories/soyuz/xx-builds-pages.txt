@@ -19,7 +19,8 @@ according to the selected buildstate, by default All.
     ...     by state and "mismatch" if the page, erroneously,  provide only
     ...     part of the required arguments to enable filter by name.
     ...     """
-    ...     assert b'<input type="submit" value="Filter" />' in contents
+    ...     assert six.ensure_str(
+    ...         '<input type="submit" value="Filter" />') in contents
     ...
     ...     field_state = find_tag_by_id(contents, 'build_state') is not None
     ...     field_name = find_tag_by_id(contents, 'build_text') is not None
@@ -269,16 +270,17 @@ to the form:
     >>> anon_browser.getControl(name="build_state").value = ['foo']
     Traceback (most recent call last):
     ...
-    ValueError: Option u'foo' not found ...
+    ValueError: Option ...'foo' not found ...
 
 However even if anonymous user builds an URL with a incorrect value,
 code is prepared to raise the correct exception:
 
     >>> anon_browser.open(
     ...     "http://launchpad.test/+builds/bob/+history?build_state=foo")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: No suitable state found for value "foo"
+    lp.app.errors.UnexpectedFormData: No suitable state found for value "foo"
 
 The code also raises UnexpectedFormData when valid, but duplicated,
 form values are submitted:
@@ -287,10 +289,10 @@ form values are submitted:
     ...     "http://launchpad.test/ubuntu/+builds"
     ...     "?build_text=binutils&build_state=building"
     ...     "&build_text=binutils&build_state=all")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: No suitable state found for value
-    "[u'building', u'all']"
+    lp.app.errors.UnexpectedFormData: No suitable state found for value "[...'building', ...'all']"
 
 
 Builder history

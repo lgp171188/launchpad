@@ -10,12 +10,12 @@ import _pythonpath
 import logging
 import sys
 
+import six
+
 from lp.registry.scripts.listteammembers import (
     NoSuchTeamError,
     process_team,
     )
-from lp.services.config import config
-from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.scripts.base import (
     LaunchpadScript,
     LaunchpadScriptFailure,
@@ -56,9 +56,11 @@ class ListTeamMembersScript(LaunchpadScript):
                 member_details.update(process_team(teamname, display_option))
             except NoSuchTeamError:
                 raise LaunchpadScriptFailure("No such team: %s" % teamname)
-        print "\n".join(detail.encode('utf-8') for detail in
-                        sorted(member_details))
+        for detail in sorted(member_details):
+            print(six.ensure_str(detail))
+
 
 if __name__ == '__main__':
-    script = ListTeamMembersScript('lp.services.scripts.listteammembers', dbuser='listteammembers')
+    script = ListTeamMembersScript(
+        'lp.services.scripts.listteammembers', dbuser='listteammembers')
     script.run()

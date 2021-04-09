@@ -299,7 +299,7 @@ class TestUnicodePath(TestCaseWithFactory):
         self.assertRaises(
             NotFound,
             browser.open,
-            'http://launchpad.test/%ED%B4%B5')
+            'http://launchpad.test/%EC%B4%B5')
         self.assertEqual(0, len(self.oopses))
 
 
@@ -320,12 +320,12 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
             [x[0] for x in self.stats_client.timing.call_args_list],
             MatchesListwise(
                 [MatchesListwise(
-                    (Equals('traversal_duration,success=True,'
-                     'pageid=RootObject-index-html,env=test'),
+                    (Equals('traversal_duration,env=test,'
+                     'pageid=RootObject-index-html,success=True'),
                      GreaterThan(0))),
                  MatchesListwise(
-                     (Equals('publication_duration,success=True,'
-                      'pageid=RootObject-index-html,env=test'),
+                     (Equals('publication_duration,env=test,'
+                      'pageid=RootObject-index-html,success=True'),
                       GreaterThan(0)))]))
 
     def test_traversal_failure_stats(self):
@@ -344,8 +344,8 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
             [x[0] for x in self.stats_client.timing.call_args_list],
             MatchesListwise(
                 [MatchesListwise(
-                    (Equals('traversal_duration,success=False,'
-                     'pageid=None,env=test'),
+                    (Equals('traversal_duration,env=test,'
+                     'pageid=None,success=False'),
                      GreaterThan(0)))]))
 
     def test_publication_failure_stats(self):
@@ -364,12 +364,12 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
             [x[0] for x in self.stats_client.timing.call_args_list],
             MatchesListwise(
                 [MatchesListwise(
-                    (Equals('traversal_duration,success=True,'
-                     'pageid=RootObject-index-html,env=test'),
+                    (Equals('traversal_duration,env=test,'
+                     'pageid=RootObject-index-html,success=True'),
                      GreaterThan(0))),
                  MatchesListwise(
-                     (Equals('publication_duration,success=False,'
-                      'pageid=RootObject-index-html,env=test'),
+                     (Equals('publication_duration,env=test,'
+                      'pageid=RootObject-index-html,success=False'),
                       GreaterThan(0)))]))
 
     def test_prepPageIDForMetrics_none(self):

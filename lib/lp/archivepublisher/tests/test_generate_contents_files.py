@@ -63,13 +63,13 @@ class TestHelpers(TestCaseWithFactory):
     def test_differ_in_content_returns_true_if_one_file_does_not_exist(self):
         # A nonexistent file differs from an existing one.
         self.useTempDir()
-        write_file('one', self.factory.getUniqueString())
+        write_file('one', self.factory.getUniqueBytes())
         self.assertTrue(differ_in_content('one', 'other'))
 
     def test_differ_in_content_returns_false_for_identical_files(self):
         # Identical files do not differ.
         self.useTempDir()
-        text = self.factory.getUniqueString()
+        text = self.factory.getUniqueBytes()
         write_file('one', text)
         write_file('other', text)
         self.assertFalse(differ_in_content('one', 'other'))
@@ -77,8 +77,8 @@ class TestHelpers(TestCaseWithFactory):
     def test_differ_in_content_returns_true_for_differing_files(self):
         # Files with different contents differ.
         self.useTempDir()
-        write_file('one', self.factory.getUniqueString())
-        write_file('other', self.factory.getUniqueString())
+        write_file('one', self.factory.getUniqueBytes())
+        write_file('other', self.factory.getUniqueBytes())
         self.assertTrue(differ_in_content('one', 'other'))
 
     def test_differ_in_content_returns_false_if_neither_file_exists(self):
@@ -129,20 +129,6 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
         else:
             script.distribution = distribution
         return script
-
-    def writeMarkerFile(self, file_path):
-        """Create a marker file at location `file_path`.
-
-        An arbitrary string is written to the file, and flushed to the
-        filesystem.  Any surrounding directories are created as needed.
-
-        :param file_path: Full path to a file: optional directory prefix
-            followed by required file name.
-        :return: The arbitrary string that is also in the file.
-        """
-        marker_contents = self.factory.getUniqueString()
-        write_file(file_path, marker_contents)
-        return marker_contents
 
     def test_name_is_consistent(self):
         # Script instances for the same distro get the same name.

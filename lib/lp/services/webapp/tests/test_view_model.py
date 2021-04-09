@@ -123,7 +123,7 @@ class TestJsonModelView(BrowserTestCase):
         self.configZCML()
         browser = self.getUserBrowser(self.url)
         cache = loads(browser.contents)
-        self.assertEqual(['related_features', 'context'], list(cache))
+        self.assertThat(cache, KeysEqual('related_features', 'context'))
 
     def test_JsonModel_custom_cache(self):
         # Adding an item to the cache in the initialize method results in it

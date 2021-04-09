@@ -218,6 +218,27 @@ class GitAPI(LaunchpadXMLRPCView):
             # Internal services must authenticate using a macaroon.
             raise faults.Unauthorized()
 
+    def _isWritable(self, requester, repository, verified):
+        writable = False
+        naked_repository = removeSecurityProxy(repository)
+        if verified is not None and verified.user is NO_USER:
+            # We have verified that the authentication parameters correctly
+            # specify internal-services authentication with a suitable
+            # macaroon that specifically grants access to this repository.
+            # This is only permitted for macaroons not bound to a user.
+            writable = _can_internal_issuer_write(verified)
+        else:
+            # This isn't an authorised internal service, so perform normal
+            # user authorisation.
+            writable = (
+                    repository.repository_type == GitRepositoryType.HOSTED and
+                    check_permission("launchpad.Edit", repository))
+            if not writable:
+                grants = naked_repository.findRuleGrantsByGrantee(requester)
+                if not grants.is_empty():
+                    writable = True
+        return writable
+
     def _performLookup(self, requester, path, auth_params):
         """Perform a translation path lookup.
 
@@ -237,7 +258,6 @@ class GitAPI(LaunchpadXMLRPCView):
             # so we can bypass other checks.  This is only permitted for
             # macaroons not bound to a user.
             hosting_path = naked_repository.getInternalPath()
-            writable = _can_internal_issuer_write(verified)
             private = naked_repository.private
         else:
             # This isn't an authorised internal service, so perform normal
@@ -246,17 +266,8 @@ class GitAPI(LaunchpadXMLRPCView):
                 hosting_path = repository.getInternalPath()
             except Unauthorized:
                 return naked_repository, None
-            writable = (
-                repository.repository_type == GitRepositoryType.HOSTED and
-                check_permission("launchpad.Edit", repository))
-            # If we have any grants to this user, they are declared to have
-            # write access at this point. `_checkRefPermissions` will
-            # sort out access to individual refs at a later point in the push.
-            if not writable:
-                grants = naked_repository.findRuleGrantsByGrantee(requester)
-                if not grants.is_empty():
-                    writable = True
             private = repository.private
+        writable = self._isWritable(requester, repository, verified)
 
         return naked_repository, {
             "path": hosting_path,
@@ -450,19 +461,46 @@ class GitAPI(LaunchpadXMLRPCView):
             logger.info("translatePath succeeded: %s", result)
         return result
 
-    def notify(self, translated_path):
-        """See `IGitAPI`."""
+    @return_fault
+    def _notify(self, requester, translated_path, statistics, auth_params):
         logger = self._getLogger()
-        logger.info("Request received: notify('%s')", translated_path)
+        if requester == LAUNCHPAD_ANONYMOUS:
+            requester = None
         repository = getUtility(IGitLookup).getByHostingPath(translated_path)
         if repository is None:
             fault = faults.NotFound(
                 "No repository found for '%s'." % translated_path)
             logger.error("notify failed: %r", fault)
             return fault
+        if repository is None:
+            raise faults.GitRepositoryNotFound(translated_path)
+        if auth_params is not None:
+            verified = self._verifyAuthParams(
+                requester, repository, auth_params)
+            writable = self._isWritable(requester, repository, verified)
+            if writable and statistics:
+                removeSecurityProxy(repository).setRepackData(
+                    statistics.get('loose_object_count'),
+                    statistics.get('pack_count'))
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository))
-        logger.info("notify succeeded")
+
+    def notify(self, translated_path, statistics, auth_params):
+        """See `IGitAPI`."""
+        logger = self._getLogger()
+        logger.info("Request received: notify('%s', '%d', '%d')",
+                    translated_path, statistics.get('loose_object_count'),
+                    statistics.get('pack_count'))
+
+        requester_id = _get_requester_id(auth_params)
+        result = run_with_login(
+            requester_id, self._notify,
+            translated_path, statistics, auth_params)
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("notify failed: %r", result)
+        else:
+            logger.info("notify succeeded: %s" % result)
+        return result
 
     @return_fault
     def _getMergeProposalURL(self, requester, translated_path, branch,

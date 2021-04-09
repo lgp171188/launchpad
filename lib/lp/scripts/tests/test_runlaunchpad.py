@@ -15,11 +15,11 @@ __all__ = [
 import os
 import shutil
 import tempfile
-
-import testtools
+from textwrap import dedent
 
 from lp.scripts.runlaunchpad import (
     get_services_to_run,
+    gunicornify_zope_config_file,
     process_config_arguments,
     SERVICES,
     split_out_runlaunchpad_arguments,
@@ -28,10 +28,10 @@ from lp.scripts.runlaunchpad import (
 from lp.services.compat import mock
 import lp.services.config
 from lp.services.config import config
-import lp.testing
+from lp.testing import TestCase
 
 
-class CommandLineArgumentProcessing(lp.testing.TestCase):
+class CommandLineArgumentProcessing(TestCase):
     """runlaunchpad.py's command line arguments fall into two parts. The first
     part specifies which services to run, then second part is passed directly
     on to the Zope webserver start up.
@@ -75,7 +75,7 @@ class CommandLineArgumentProcessing(lp.testing.TestCase):
             split_out_runlaunchpad_arguments(['-o', 'foo', '--bar=baz']))
 
 
-class TestDefaultConfigArgument(lp.testing.TestCase):
+class TestDefaultConfigArgument(TestCase):
     """Tests for the processing of the -C argument."""
 
     def setUp(self):
@@ -124,12 +124,12 @@ class TestDefaultConfigArgument(lp.testing.TestCase):
         self.assertEqual('test', config.instance_name)
 
 
-class ServersToStart(testtools.TestCase):
+class ServersToStart(TestCase):
     """Test server startup control."""
 
     def setUp(self):
         """Make sure that only the Librarian is configured to launch."""
-        testtools.TestCase.setUp(self)
+        super(ServersToStart, self).setUp()
         launch_data = """
             [librarian_server]
             launch: True
@@ -144,7 +144,7 @@ class ServersToStart(testtools.TestCase):
     def test_nothing_explicitly_requested(self):
         """Implicitly start services based on the config.*.launch property.
         """
-        services = sorted(get_services_to_run([]))
+        services = get_services_to_run([])
         expected = [SERVICES['librarian']]
 
         # The search test services may or may not be asked to run.
@@ -155,8 +155,7 @@ class ServersToStart(testtools.TestCase):
         if config.rabbitmq.launch:
             expected.append(SERVICES['rabbitmq'])
 
-        expected = sorted(expected)
-        self.assertEqual(expected, services)
+        self.assertContentEqual(expected, services)
 
     def test_explicit_request_overrides(self):
         """Only start those services which are explicitly requested,
@@ -191,3 +190,55 @@ class TestAppServerStart(lp.testing.TestCase):
             start_launchpad([])
             self.assertEqual(0, gmain.call_count)
             self.assertEqual(1, zmain.call_count)
+
+    def test_gunicornify_config(self):
+        content = dedent("""
+        site-definition zcml/webapp.zcml
+        # With some comment
+        devmode off
+        interrupt-check-interval 200
+        <server>
+          type HTTP
+          address 8085
+        </server>
+        <server>
+          type XXX
+          address 123
+        </server>
+        
+        <zodb>
+          <mappingstorage/>
+        </zodb>
+        
+        <accesslog>
+          <logfile>
+            path logs/test-appserver-layer.log
+          </logfile>
+        </accesslog>
+        """)
+        config_filename = tempfile.mktemp()
+        with open(config_filename, "w") as fd:
+            fd.write(content)
+
+        patched_cfg = mock.patch(
+            'lp.services.config.LaunchpadConfig.zope_config_file',
+            new_callable=mock.PropertyMock)
+        with patched_cfg as mock_zope_config_file:
+            mock_zope_config_file.return_value = config_filename
+
+            gunicornify_zope_config_file()
+            self.assertEqual(2, mock_zope_config_file.call_count)
+            new_file = mock_zope_config_file.call_args[0][0]
+            self.assertEqual(dedent("""
+                site-definition zcml/webapp.zcml
+                # With some comment
+                devmode off
+                
+                
+                
+                <zodb>
+                  <mappingstorage/>
+                </zodb>
+
+
+                """), new_file.read())

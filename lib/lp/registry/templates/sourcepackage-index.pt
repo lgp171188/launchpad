@@ -86,7 +86,7 @@
 
             <div id="binaries" tal:define="binaries view/binaries">
               <ul tal:condition="binaries">
-                <li tal:repeat="bin_name binaries">
+                <li tal:repeat="bin_name python:sorted(binaries)">
                   <span tal:replace="bin_name" />
                   <span tal:repeat="archtag python:binaries[bin_name]">
                     (<a tal:content="archtag" tal:attributes="href

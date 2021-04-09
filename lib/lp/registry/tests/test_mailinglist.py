@@ -8,6 +8,7 @@ __all__ = []
 
 from textwrap import dedent
 
+import six
 from testtools.matchers import Equals
 import transaction
 from zope.component import getUtility
@@ -727,15 +728,15 @@ class MailingListMessageTestCase(TestCaseWithFactory):
         team, member = self.factory.makeTeamWithMailingListSubscribers(
             'team', auto_subscribe=True)
         sender = self.factory.makePerson()
-        email = dedent(str("""\
+        email = dedent("""\
             From: %s
             To: %s
             Subject: A question
             Message-ID: <first-post>
             Date: Fri, 01 Aug 2000 01:08:59 -0000\n
             I have a question about this team.
-            """ % (sender.preferredemail.email, team.mailing_list.address)))
-        message = getUtility(IMessageSet).fromEmail(email)
+            """ % (sender.preferredemail.email, team.mailing_list.address))
+        message = getUtility(IMessageSet).fromEmail(email.encode("ASCII"))
         held_message = team.mailing_list.holdMessage(message)
         transaction.commit()
         return team, member, sender, held_message
@@ -750,15 +751,15 @@ class MailingListHeldMessageTestCase(MailingListMessageTestCase):
         team, member = self.factory.makeTeamWithMailingListSubscribers(
             'team', auto_subscribe=False)
         sender = self.factory.makePerson()
-        email = dedent(str("""\
+        email = dedent("""\
             From: %s
             To: %s
             Subject:  =?iso-8859-1?q?Adi=C3=B3s?=
             Message-ID: <first-post>
             Date: Fri, 01 Aug 2000 01:08:59 -0000\n
             hi.
-            """ % (sender.preferredemail.email, team.mailing_list.address)))
-        message = getUtility(IMessageSet).fromEmail(email)
+            """ % (sender.preferredemail.email, team.mailing_list.address))
+        message = getUtility(IMessageSet).fromEmail(email.encode("ASCII"))
         pop_notifications()
         held_message = team.mailing_list.holdMessage(message)
         self.assertEqual(PostedMessageStatus.NEW, held_message.status)
@@ -828,7 +829,7 @@ class MessageApprovalTestCase(MailingListMessageTestCase):
         finally:
             held_message.posted_message.close()
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            '.*Message-ID: <first-post>.*', text)
+            '.*Message-ID: <first-post>.*', six.ensure_text(text))
 
     def test_approve(self):
         test_objects = self.makeMailingListAndHeldMessage()

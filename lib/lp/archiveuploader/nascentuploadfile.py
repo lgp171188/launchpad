@@ -17,6 +17,7 @@ __all__ = [
     'splitComponentAndSection',
     ]
 
+from collections import OrderedDict
 import hashlib
 import os
 import subprocess
@@ -85,8 +86,8 @@ class TarFileDateChecker:
 
     def reset(self):
         """Reset local values."""
-        self.future_files = {}
-        self.ancient_files = {}
+        self.future_files = OrderedDict()
+        self.ancient_files = OrderedDict()
 
     def callback(self, member, data):
         """Callback designed to cope with apt_inst.TarFile.go.
@@ -217,13 +218,12 @@ class NascentUploadFile:
         # Read in the file and compute its md5 and sha1 checksums and remember
         # the size of the file as read-in.
         digesters = dict((n, hashlib.new(n)) for n in self.checksums.keys())
-        ckfile = open(self.filepath, "r")
-        size = 0
-        for chunk in filechunks(ckfile):
-            for digester in six.itervalues(digesters):
-                digester.update(chunk)
-            size += len(chunk)
-        ckfile.close()
+        with open(self.filepath, "rb") as ckfile:
+            size = 0
+            for chunk in filechunks(ckfile):
+                for digester in six.itervalues(digesters):
+                    digester.update(chunk)
+                size += len(chunk)
 
         # Check the size and checksum match what we were told in __init__
         for n in sorted(self.checksums.keys()):
@@ -304,11 +304,10 @@ class CustomUploadFile(NascentUploadFile):
 
     def storeInDatabase(self):
         """Create and return the corresponding LibraryFileAlias reference."""
-        libraryfile = self.librarian.create(
-            self.filename, self.size,
-            open(self.filepath, "rb"),
-            self.content_type,
-            restricted=self.policy.archive.private)
+        with open(self.filepath, "rb") as f:
+            libraryfile = self.librarian.create(
+                self.filename, self.size, f, self.content_type,
+                restricted=self.policy.archive.private)
         return libraryfile
 
     def autoApprove(self):
@@ -345,12 +344,12 @@ class PackageUploadFile(NascentUploadFile):
 
         if self.section_name not in valid_sections:
             raise UploadError(
-                "%s: Unknown section %r" % (
+                "%s: Unknown section '%s'" % (
                 self.filename, self.section_name))
 
         if self.component_name not in valid_components:
             raise UploadError(
-                "%s: Unknown component %r" % (
+                "%s: Unknown component '%s'" % (
                 self.filename, self.component_name))
 
     @property
@@ -586,6 +585,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
         control_source = self.control.get("Source", None)
         if control_source is not None:
+            control_source = six.ensure_text(control_source)
             if "(" in control_source:
                 src_match = re_extract_src_version.match(control_source)
                 self.source_name = src_match.group(1)
@@ -596,14 +596,20 @@ class BaseBinaryUploadFile(PackageUploadFile):
         else:
             self.source_name = self.control.get("Package")
             self.source_version = self.control.get("Version")
+        if self.source_name is not None:
+            self.source_name = six.ensure_text(self.source_name)
+        if self.source_version is not None:
+            self.source_version = six.ensure_text(self.source_version)
 
         # Store control_version for external use (archive version consistency
         # checks in nascentupload.py)
         self.control_version = self.control.get("Version")
+        if self.control_version is not None:
+            self.control_version = six.ensure_text(self.control_version)
 
     def verifyPackage(self):
         """Check if the binary is in changesfile and its name is valid."""
-        control_package = self.control.get("Package", '')
+        control_package = six.ensure_text(self.control.get("Package", b''))
 
         # Since DDEBs are generated after the original DEBs are processed
         # and considered by `dpkg-genchanges` they are only half-incorporated
@@ -652,36 +658,37 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
         Also check if it is a valid architecture in LP context.
         """
-        control_arch = self.control.get("Architecture", '')
+        control_arch = six.ensure_text(self.control.get("Architecture", b''))
         valid_archs = [a.architecturetag
                        for a in self.policy.distroseries.architectures]
 
         if control_arch not in valid_archs and control_arch != "all":
             yield UploadError(
-                "%s: Unknown architecture: %r" % (
+                "%s: Unknown architecture: '%s'" % (
                 self.filename, control_arch))
 
         if control_arch not in self.changes.architectures:
             yield UploadError(
-                "%s: control file lists arch as %r which isn't "
+                "%s: control file lists arch as '%s' which isn't "
                 "in the changes file." % (self.filename, control_arch))
 
         if control_arch != self.architecture:
             yield UploadError(
-                "%s: control file lists arch as %r which doesn't "
-                "agree with version %r in the filename."
+                "%s: control file lists arch as '%s' which doesn't "
+                "agree with version '%s' in the filename."
                 % (self.filename, control_arch, self.architecture))
 
     def verifyDepends(self):
         """Check if control depends field is present and not empty."""
-        control_depends = self.control.get('Depends', "--unset-marker--")
+        control_depends = self.control.get('Depends', b"--unset-marker--")
         if not control_depends:
             yield UploadError(
                 "%s: Depends field present and empty." % self.filename)
 
     def verifySection(self):
         """Check the section & priority match those in changesfile."""
-        control_section_and_component = self.control.get('Section', '')
+        control_section_and_component = six.ensure_text(
+            self.control.get('Section', b''))
         control_component, control_section = splitComponentAndSection(
             control_section_and_component)
         if ((control_component, control_section) !=
@@ -694,7 +701,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
     def verifyPriority(self):
         """Check if priority matches changesfile."""
-        control_priority = self.control.get('Priority', '')
+        control_priority = six.ensure_text(self.control.get('Priority', b''))
         if control_priority and self.priority_name != control_priority:
             yield UploadError(
                 "%s control file lists priority as %s but changes file has "
@@ -713,7 +720,9 @@ class BaseBinaryUploadFile(PackageUploadFile):
             yield UploadError(
                 "%s: 'dpkg-deb -I' invocation failed." % self.filename)
             yield UploadError(
-                prefix_multi_line_string(e.output, " [dpkg-deb output:] "))
+                prefix_multi_line_string(
+                    six.ensure_text(e.output, errors="replace"),
+                    " [dpkg-deb output:] "))
 
         try:
             subprocess.check_output(
@@ -722,7 +731,9 @@ class BaseBinaryUploadFile(PackageUploadFile):
             yield UploadError(
                 "%s: 'dpkg-deb -c' invocation failed." % self.filename)
             yield UploadError(
-                prefix_multi_line_string(e.output, " [dpkg-deb output:] "))
+                prefix_multi_line_string(
+                    six.ensure_text(e.output, errors="replace"),
+                    " [dpkg-deb output:] "))
 
     def verifyDebTimestamp(self):
         """Check specific DEB format timestamp checks."""
@@ -897,7 +908,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
 
         is_essential = encoded.get('Essential', '').lower() == 'yes'
         architecturespecific = not self.is_archindep
-        installedsize = int(self.control.get('Installed-Size', '0'))
+        installedsize = int(self.control.get('Installed-Size', b'0'))
         binary_name = getUtility(
             IBinaryPackageNameSet).getOrCreateByName(self.package)
 
@@ -937,9 +948,10 @@ class BaseBinaryUploadFile(PackageUploadFile):
             user_defined_fields=user_defined_fields,
             debug_package=debug_package)
 
-        library_file = self.librarian.create(self.filename,
-             self.size, open(self.filepath, "rb"), self.content_type,
-             restricted=self.policy.archive.private)
+        with open(self.filepath, "rb") as f:
+            library_file = self.librarian.create(self.filename,
+                 self.size, f, self.content_type,
+                 restricted=self.policy.archive.private)
         binary.addFile(library_file)
         return binary
 

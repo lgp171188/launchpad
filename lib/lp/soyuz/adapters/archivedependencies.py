@@ -405,7 +405,8 @@ def _get_sources_list_for_dependencies(dependencies, logger=None):
 
             key = yield deferToThread(get_key)
             if key is not None:
-                trusted_keys[fingerprint] = base64.b64encode(key.export())
+                trusted_keys[fingerprint] = (
+                    base64.b64encode(key.export()).decode("ASCII"))
 
     defer.returnValue(
         (sources_list_lines, [v for k, v in sorted(trusted_keys.items())]))

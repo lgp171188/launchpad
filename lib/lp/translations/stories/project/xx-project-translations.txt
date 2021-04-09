@@ -32,8 +32,8 @@ It does show up among untranslated projects.
     >>> untranslated_projects = find_tag_by_id(
     ...     browser.contents, 'untranslatable-projects')
     >>> link = untranslated_projects.find(text='NetApplet').parent
-    >>> link['href']
-    u'http://launchpad.test/netapplet/+translations'
+    >>> print(link['href'])
+    http://launchpad.test/netapplet/+translations
 
 Let's confirm what we just stated.
 
@@ -59,9 +59,10 @@ shouldn't appear in GNOME project translations page.
 
     >>> browser.open('http://translations.launchpad.test/gnome')
     >>> browser.getLink('alsa-utils')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Let's confirm what we just stated.
 
@@ -72,9 +73,10 @@ Let's confirm what we just stated.
 alsa-utils does not belong to GNOME project.
 
     >>> browser.getLink('alsa-utils')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 It's using Launchpad Translations officially. And it has translations.
 

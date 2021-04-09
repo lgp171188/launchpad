@@ -45,7 +45,7 @@ As well as a link to the related distribution source package:
     >>> browser.open(
     ...     'http://launchpad.test/ubuntu/warty/i386/mozilla-firefox')
     >>> browser.getLink(id="source_package").click()
-    >>> print(browser.title.decode('ascii', 'ignore'))
+    >>> print(browser.title)
     iceweasel package : Ubuntu
 
 If the binary distribution does not have a current release, then the
@@ -54,9 +54,10 @@ link to the source package will not be present:
     >>> browser.open(
     ...     'http://launchpad.test/debian/woody/i386/pmount')
     >>> print(browser.getLink(id="source_package"))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 A BinaryPackageRelease once published in a DistroArchSeries is
 represented by a DistroArchSeriesBinaryPackageRelease and easily

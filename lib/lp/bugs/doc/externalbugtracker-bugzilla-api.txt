@@ -65,10 +65,10 @@ will raise an error:
     ...     xmlrpc_transport=transport)
 
     >>> non_auth_bugzilla._authenticate()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugTrackerAuthenticationError: http://thiswillfail.example.com:
-    No credentials found.
+    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://thiswillfail.example.com: No credentials found.
 
 Trying to log in to a Bugzilla with incorrect credentials will also
 raise an error.
@@ -82,10 +82,10 @@ raise an error.
     ...     xmlrpc_transport=transport)
 
     >>> non_auth_bugzilla._authenticate()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         ...
-    BugTrackerAuthenticationError: http://thiswillfail.example.com:
-    Fault 300: The username or password you entered is not valid.
+    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://thiswillfail.example.com: Fault 300: The username or password you entered is not valid.
 
 
 Getting the server time
@@ -305,9 +305,10 @@ severity as a string.
 If a bug can't be found a BugNotFound error will be raised.
 
     >>> bugzilla.getRemoteStatus('no-such-bug')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugNotFound: no-such-bug
+    lp.bugs.externalbugtracker.base.BugNotFound: no-such-bug
 
 If the data we've imported from Bugzilla is incomplete and doesn't
 contain either the bug's status or its resolution an UnparsableBugData
@@ -315,9 +316,10 @@ error will be raised. We can add a sample bug to demonstrate this.
 
     >>> bugzilla._bugs[999] = {}
     >>> bugzilla.getRemoteStatus(999)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnparsableBugData: No status or resolution defined for bug 999
+    lp.bugs.externalbugtracker.base.UnparsableBugData: No status or resolution defined for bug 999
 
     >>> del bugzilla._bugs[999]
 
@@ -404,9 +406,10 @@ If the product is requested for a bug that can't be found, BugNotFound
 is raised.
 
     >>> bugzilla.getRemoteProduct(12345)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    BugNotFound: 12345
+    lp.bugs.externalbugtracker.base.BugNotFound: 12345
 
 
 Importing remote comments
@@ -466,9 +469,10 @@ getCommentIds() can only be called if initializeRemoteBugDB() has been
 called and the bug exists locally.
 
     >>> bugzilla.getCommentIds(bug_watch_broken.remotebug)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugNotFound: 42
+    lp.bugs.externalbugtracker.base.BugNotFound: 42
 
 
 fetchComments()
@@ -615,9 +619,10 @@ then that instance does not provide ISupportsCommentPushing.
 
     >>> verifyObject(ISupportsCommentPushing, BugzillaAPI(
     ...     'http://unknown.example.com/', xmlrpc_transport=test_transport))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    DoesNotImplement: ...
+    zope.interface.exceptions.DoesNotImplement: ...
 
 ISupportsCommentPushing.addRemoteComment() is the method used to push a
 comment to the remote server. It takes three parameters: the remote bug
@@ -676,9 +681,10 @@ then that instance does not provide ISupportsBackLinking.
 
     >>> verifyObject(ISupportsBackLinking, BugzillaAPI(
     ...     'http://unknown.example.com/', xmlrpc_transport=test_transport))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    DoesNotImplement: ...
+    zope.interface.exceptions.DoesNotImplement: ...
 
 BugzillaAPI.setLaunchpadBugId() can be used to set the Launchpad bug ID
 for a given bug.

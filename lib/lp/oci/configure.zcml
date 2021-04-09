@@ -1,4 +1,4 @@
-<!-- Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 <configure
@@ -97,6 +97,14 @@
         factory="lp.oci.model.ocirecipebuildbehaviour.OCIRecipeBuildBehaviour"
         permission="zope.Public" />
 
+    <!-- OCIRecipeBuildMacaroonIssuer -->
+    <securedutility
+        class="lp.oci.model.ocirecipebuild.OCIRecipeBuildMacaroonIssuer"
+        provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
+        name="oci-recipe-build">
+        <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
+    </securedutility>
+
     <!-- OCIFile -->
     <class class="lp.oci.model.ocirecipebuild.OCIFile">
         <allow interface="lp.oci.interfaces.ocirecipebuild.IOCIFile" />
@@ -154,6 +162,18 @@
         <allow
             interface="lp.oci.interfaces.ocipushrule.IOCIPushRuleSet"/>
     </securedutility>
+
+    <!-- OCIDistributionPushRule -->
+    <class class="lp.oci.model.ocipushrule.OCIDistributionPushRule">
+        <require
+            permission="launchpad.View"
+            interface="lp.oci.interfaces.ocipushrule.IOCIPushRuleView
+                       lp.oci.interfaces.ocipushrule.IOCIPushRuleEditableAttributes" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.oci.interfaces.ocipushrule.IOCIPushRuleEdit"
+            set_schema="lp.oci.interfaces.ocipushrule.IOCIPushRuleEditableAttributes" />
+    </class>
 
     <!-- OCI related jobs -->
     <securedutility

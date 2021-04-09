@@ -73,10 +73,9 @@ class TestDscFile(TestCase):
 
     def testGoodDebianCopyright(self):
         """Test that a proper copyright file will be accepted"""
-        copyright = "copyright for dummies"
-        file = open(self.copyright_path, "w")
-        file.write(copyright)
-        file.close()
+        copyright = b"copyright for dummies"
+        with open(self.copyright_path, "wb") as f:
+            f.write(copyright)
 
         self.assertEqual(
             copyright, find_copyright(self.tmpdir, DevNullLogger()))
@@ -95,10 +94,9 @@ class TestDscFile(TestCase):
 
     def testGoodDebianChangelog(self):
         """Test that a proper changelog file will be accepted"""
-        changelog = "changelog for dummies"
-        file = open(self.changelog_path, "w")
-        file.write(changelog)
-        file.close()
+        changelog = b"changelog for dummies"
+        with open(self.changelog_path, "wb") as f:
+            f.write(changelog)
 
         self.assertEqual(
             changelog, find_changelog(self.tmpdir, DevNullLogger()))
@@ -143,7 +141,7 @@ class TestDSCFileWithDatabase(TestCaseWithFactory):
         dsc = DSCFile(
             path, {}, 426, 'main/editors', 'priority',
             'badhash', '1.0-1', FakeChangesFile(), policy, DevNullLogger())
-        errors = [e[0] for e in dsc.verify()]
+        errors = [e.args[0] for e in dsc.verify()]
         self.assertEqual(
             ['File badhash_1.0-1.tar.gz mentioned in the changes has a SHA256'
              ' mismatch. a29ec2370df83193c3fb2cc9e1287dbfe9feba04108ccfa490bb'

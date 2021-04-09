@@ -34,16 +34,16 @@ The default username and password for RT instances are 'guest' and
 specific credentials for will return the default credentials.
 
     >>> rt_one = RequestTracker('http://foobar.com')
-    >>> rt_one.credentials
-    {'user': 'guest', 'pass': 'guest'}
+    >>> print(pretty(rt_one.credentials))
+    {'pass': 'guest', 'user': 'guest'}
 
 However, if the RT instance is one for which we have a username and
 password, those credentials will be retrieved from the Launchpad
 configuration files. rt.example.com is known to Launchpad.
 
     >>> rt_two = RequestTracker('http://rt.example.com')
-    >>> rt_two.credentials
-    {'user': 'zaphod', 'pass': 'pangalacticgargleblaster'}
+    >>> print(pretty(rt_two.credentials))
+    {'pass': 'pangalacticgargleblaster', 'user': 'zaphod'}
 
 == Status Conversion ==
 
@@ -66,9 +66,10 @@ Passing a status which the RequestTracker instance can't understand will
 result in an UnknownRemoteStatusError being raised.
 
     >>> rt.convertRemoteStatus('spam').title
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnknownRemoteStatusError: spam
+    lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: spam
 
 
 == Importance Conversion ==
@@ -151,17 +152,19 @@ our test RT instance simulate such a situation.
 
     >>> with rt.responses(bad=True):
     ...     rt.initializeRemoteBugDB([1585])
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugTrackerConnectError...
+    lp.bugs.externalbugtracker.base.BugTrackerConnectError: ...
 
 This can also be demonstrated for importing bugs as a batch:
 
     >>> with rt.responses(bad=True):
     ...     rt.initializeRemoteBugDB([1585, 1586, 1587, 1588, 1589])
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugTrackerConnectError...
+    lp.bugs.externalbugtracker.base.BugTrackerConnectError: ...
 
 == Updating Bug Watches ==
 
@@ -264,9 +267,10 @@ If you try to get the remote product of a bug that doesn't exist you'll
 get a BugNotFound error.
 
     >>> print(rt.getRemoteProduct('this-doesnt-exist'))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    BugNotFound: this-doesnt-exist
+    lp.bugs.externalbugtracker.base.BugNotFound: this-doesnt-exist
 
 If for some reason the RT instance doesn't return a Queue name for a
 bug, getRemoteProduct() will return None.

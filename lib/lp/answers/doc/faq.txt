@@ -320,17 +320,19 @@ That change is also considered an answer:
 It is not possible to modify the faq attribute directly:
 
     >>> fnord_question.faq = None
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    ForbiddenAttribute: ...
+    zope.security.interfaces.ForbiddenAttribute: ...
 
 And it is not allowed to call linkFAQ() when the FAQ is already linked:
 
     >>> message = fnord_question.linkFAQ(
     ...     no_priv, firefox_faq, 'See the FAQ.')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    FAQTargetError: Cannot call linkFAQ() with already linked FAQ.
+    lp.answers.errors.FAQTargetError: Cannot call linkFAQ() with already linked FAQ.
 
 A FAQ can be linked to a 'solved' question, in which case, the status is
 not changed.

@@ -10,6 +10,7 @@ __metaclass__ = type
 import os
 
 from debian.deb822 import Changes
+import six
 from testtools.matchers import (
     Equals,
     MatchesDict,
@@ -179,11 +180,8 @@ class ChangesFileTests(TestCase):
     def createChangesFile(self, filename, changes):
         tempdir = self.makeTemporaryDirectory()
         path = os.path.join(tempdir, filename)
-        changes_fd = open(path, "w")
-        try:
+        with open(path, "wb") as changes_fd:
             changes.dump(changes_fd)
-        finally:
-            changes_fd.close()
         changesfile = ChangesFile(path, self.policy, self.logger)
         for error in changesfile.parseChanges():
             raise error
@@ -284,9 +282,9 @@ class ChangesFileTests(TestCase):
             "mypkg_0.1_i386.changes", contents)
         self.assertEqual([], list(changes.processAddresses()))
         self.assertEqual(
-            "Something changed\n\n"
-            " -- Somebody <somebody@ubuntu.com>  "
-            "Fri, 25 Jun 2010 11:20:22 -0600",
+            b"Something changed\n\n"
+            b" -- Somebody <somebody@ubuntu.com>  "
+            b"Fri, 25 Jun 2010 11:20:22 -0600",
             changes.simulated_changelog)
 
     def test_requires_changed_by(self):
@@ -348,7 +346,7 @@ class ChangesFileTests(TestCase):
         changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         [error] = list(changes.processFiles())
         self.assertEqual(
-            "Mismatch between Checksums-Sha1 and Files fields.", error[0])
+            "Mismatch between Checksums-Sha1 and Files fields.", error.args[0])
 
     def test_processFiles_rejects_duplicate_filenames(self):
         # processFiles ensures that Files lists each file only once.
@@ -356,7 +354,7 @@ class ChangesFileTests(TestCase):
         contents['Files'].append(contents['Files'][0])
         changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         [error] = list(changes.processFiles())
-        self.assertEqual("Duplicate filenames in Files field.", error[0])
+        self.assertEqual("Duplicate filenames in Files field.", error.args[0])
 
 
 class TestSignatureVerification(TestCase):
@@ -380,7 +378,7 @@ class TestSignatureVerification(TestCase):
         expected = "\\AFormat: 1.7\n.*foo_1.0-1.diff.gz\\Z"
         self.assertTextMatchesExpressionIgnoreWhitespace(
             expected,
-            changesfile.parsed_content)
+            six.ensure_text(changesfile.parsed_content))
 
     def test_no_signature_rejected(self):
         # An unsigned changes file is rejected.
@@ -402,6 +400,6 @@ class TestSignatureVerification(TestCase):
         expected = "\\AFormat: 1.7\n.*foo_1.0-1.diff.gz\\Z"
         self.assertTextMatchesExpressionIgnoreWhitespace(
             expected,
-            changesfile.parsed_content)
+            six.ensure_text(changesfile.parsed_content))
         self.assertEqual("breezy", changesfile.suite_name)
         self.assertNotIn("evil", changesfile.changes_comment)

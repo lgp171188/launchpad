@@ -8,7 +8,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'CSSComboFile',
-    'JSComboFile',
     ]
 
 from glob import glob
@@ -110,23 +109,6 @@ class ComboFile:
     def filter_file_content(self, file_content, path):
         """Hook to process the file content before being combined."""
         return file_content
-
-
-class JSComboFile(ComboFile):
-    """ComboFile for JavaScript files.
-
-    Outputs the filename before each combined file and make sure that
-    each file content has a new line.
-    """
-
-    def get_comment(self, msg):
-        return b"// %s\n" % msg.encode("UTF-8")
-
-    def get_file_header(self, path):
-        return self.get_comment(relative_path(self.target_file, path))
-
-    def filter_file_content(self, file_content, path):
-        return file_content + b'\n'
 
 
 class CSSComboFile(ComboFile):

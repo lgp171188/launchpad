@@ -14,7 +14,7 @@ PackageUploadCustomFormat.STATIC_TRANSLATIONS.
     ...     filepath="", checksums={}, size=1, priority_name="", policy=None,
     ...     component_and_section="main/raw-translations-static", logger=None)
 
-    >>> print custom_upload_file.custom_type.name
+    >>> print(custom_upload_file.custom_type.name)
     STATIC_TRANSLATIONS
 
 Static translations tarballs are not published, they only exist in the

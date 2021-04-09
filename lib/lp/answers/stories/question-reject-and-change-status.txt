@@ -9,18 +9,20 @@ don't have access to that feature.
 
     >>> user_browser.open('http://launchpad.test/firefox/+question/2')
     >>> user_browser.getLink('Reject question')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 Even when trying to access the page directly, they will get an unauthorized
 error.
 
     >>> user_browser.open(
     ...     'http://launchpad.test/firefox/+question/2/+reject')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 To reject the question, the user clicks on the 'Reject Question' link.
 
@@ -99,9 +101,10 @@ That action isn't available to a non-privileged user:
 
     >>> browser.open('http://launchpad.test/firefox/+question/2')
     >>> browser.getLink('Change status')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 The change status form is available to an administrator through the
 'Change status' link.

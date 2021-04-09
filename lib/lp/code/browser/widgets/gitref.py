@@ -107,6 +107,8 @@ class GitRefWidget(BrowserWidget, InputWidget):
     # If True, only allow reference paths to be branches (refs/heads/*).
     require_branch = False
 
+    branch_validator = None
+
     def setUpSubWidgets(self):
         if self._widgets_set_up:
             return
@@ -125,6 +127,9 @@ class GitRefWidget(BrowserWidget, InputWidget):
             setUpWidget(
                 self, field.__name__, field, IInputWidget, prefix=self.name)
         self._widgets_set_up = True
+
+    def setBranchFormatValidator(self, branch_validator):
+        self.branch_validator = branch_validator
 
     def setRenderedValue(self, value, with_path=True):
         """See `IWidget`."""
@@ -205,9 +210,16 @@ class GitRefWidget(BrowserWidget, InputWidget):
             ref = None
         if not ref and (repository or self.context.required):
             raise WidgetInputError(
+                self.name, self.label,
+                LaunchpadValidationError(
+                    "Please enter a Git branch path."))
+        if self.branch_validator and ref is not None:
+            valid, message = self.branch_validator(ref)
+            if not valid:
+                raise WidgetInputError(
                     self.name, self.label,
                     LaunchpadValidationError(
-                        "Please enter a Git branch path."))
+                        message))
         return ref
 
     def error(self):

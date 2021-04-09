@@ -26,10 +26,10 @@ forwarded, but is only required by the Zope machinery, not the view.
 
     >>> view = create_initialized_view(product_set, name='+new', form=form)
     >>> for error in view.view.errors:
-    ...     print(error)
+    ...     print(pretty(error.args))
     ('display_name', 'Name', RequiredMissing('display_name'))
     ('name', 'URL', RequiredMissing('name'))
-    ('summary', u'Summary', RequiredMissing('summary'))
+    ('summary', 'Summary', RequiredMissing('summary'))
 
     >>> form['field.display_name'] = 'Snowdog'
     >>> form['field.name'] = 'snowdog'
@@ -182,4 +182,4 @@ that's checked for duplicates is the 'name' field.
     >>> for error in view.errors:
     ...     print(error)
     ('name', 'URL',
-     LaunchpadValidationError(u'snowdog is already used by another project'))
+     LaunchpadValidationError(...'snowdog is already used by another project'))

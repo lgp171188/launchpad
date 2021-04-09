@@ -24,7 +24,7 @@ LaunchpadCronScript) also log warnings and and errors as OOPS reports.
     >>> p = subprocess.Popen(
     ...     [sys.executable, cronscript_crash_path, '-vq'],
     ...     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-    ...     stdin=subprocess.PIPE)
+    ...     stdin=subprocess.PIPE, universal_newlines=True)
     >>> print(p.communicate()[0])
     INFO    Creating lockfile: ...
     WARNING This is a warning

@@ -72,7 +72,7 @@ It sends a corresponding timing stat to statsd.
     >>> stats_client.timing.call_count
     1
     >>> print(stats_client.timing.call_args[0][0])
-    script_activity,name=script-name,env=test
+    script_activity,env=test,name=script-name
     >>> stats_client.timing.call_args[0][1]
     60000.0
 
@@ -110,7 +110,7 @@ result of successful runs.  This is intended for use by cron scripts
 and others where it is useful to monitor the result.
 
     >>> script_file = tempfile.NamedTemporaryFile()
-    >>> script_file.write("""
+    >>> _ = script_file.write(b"""
     ... from lp.services.scripts.base import LaunchpadCronScript
     ...
     ... class TestScript(LaunchpadCronScript):

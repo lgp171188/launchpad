@@ -18,6 +18,7 @@ from lp.code.mail.codereviewcomment import (
     build_inline_comments_section,
     CodeReviewCommentMailer,
     )
+from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.mail.sendmail import format_address
 from lp.services.messages.interfaces.message import IMessageSet
@@ -303,7 +304,8 @@ class TestCodeReviewComment(TestCaseWithFactory):
         self.assertEqual(expected_lines, ctrl.body.splitlines()[1:10])
 
     def makeComment(self, email_message):
-        message = getUtility(IMessageSet).fromEmail(email_message.as_string())
+        message = getUtility(IMessageSet).fromEmail(
+            message_as_bytes(email_message))
         bmp = self.factory.makeBranchMergeProposal()
         comment = bmp.createCommentFromMessage(
             message, None, None, email_message)
@@ -349,7 +351,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
             person.preferredemail.email, person).makeMessage()
         attachment = message.get_payload()[1]
         self.assertEqual(
-            'This is a diff.', attachment.get_payload(decode=True))
+            b'This is a diff.', attachment.get_payload(decode=True))
 
     def makeCommentAndParticipants(self):
         """Create a merge proposal and comment.

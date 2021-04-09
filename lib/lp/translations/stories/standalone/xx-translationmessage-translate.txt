@@ -76,14 +76,16 @@ right ones.
     ...     'evolution/+pots/evolution-2.2/es/1/+translate')
 
     >>> browser.getLink('First')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.getLink('Prev')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> next = browser.getLink('Next')
     >>> print(next.url)
@@ -131,14 +133,16 @@ And the last one.
     http://.../hoary/+source/evolution/+pots/evolution-2.2/es/21/+translate
 
     >>> browser.getLink('Next')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.getLink('Last')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 And the link to the IPOFile view should be there too:
 
@@ -325,7 +329,7 @@ Now, we will check suggestions in this form.
 
 Check that suggestions come in from other contexts:
 
-    >>> b"Suggested in" in browser.contents
+    >>> six.ensure_str("Suggested in") in browser.contents
     True
 
     >>> find_tag_by_id(browser.contents, 'msgset_143_es_suggestion_697_0')
@@ -334,15 +338,16 @@ Check that suggestions come in from other contexts:
 Check that no other suggestions are presented (since no others are
 relevant for this message):
 
-    >>> b"Suggested by" in browser.contents
+    >>> six.ensure_str("Suggested by") in browser.contents
     False
 
-    >>> b"Used in" in browser.contents
+    >>> six.ensure_str("Used in") in browser.contents
     False
 
 Check for the translator note:
 
-    >>> note = b"This is an example of commenttext for a multiline"
+    >>> note = six.ensure_str(
+    ...     "This is an example of commenttext for a multiline")
     >>> note in browser.contents
     True
 
@@ -361,9 +366,10 @@ UnexpectedFormData exception:
     ...  'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
     ...  '+pots/evolution-2.2/es/14/+translate?field.alternative_language=ca&'
     ...  'field.alternative_language=es')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: You specified...
+    lp.app.errors.UnexpectedFormData: You specified...
 
 Let's see what happens when we do a submission with a lock_timestamp
 older than the review date for current translation.
@@ -403,7 +409,7 @@ And submit it.
 Now, we check that the translation we are going to add is not yet in the
 form, so we can check later that it's added as a suggestion:
 
-    >>> b'foo!!' in fast_submission.contents
+    >>> six.ensure_str('foo!!') in fast_submission.contents
     False
 
 Now, we update the translation in slow_submission.
@@ -564,8 +570,10 @@ we do it directly in the database.
     >>> upstream_message = potmsgset.getCurrentTranslation(
     ...     evolution_potemplate, spanish,
     ...     side=TranslationSide.UPSTREAM)
-    >>> upstream_message.translations
-    [u' tarjetas']
+    >>> for translation in upstream_message.translations:
+    ...     print(translation)
+    ... # doctest: -NORMALIZE_WHITESPACE
+     tarjetas
 
 We replace it with an empty, imported translation:
 
@@ -575,8 +583,9 @@ We replace it with an empty, imported translation:
     >>> from zope.security.proxy import removeSecurityProxy
     >>> removeSecurityProxy(upstream_message).is_current_upstream = False
     >>> removeSecurityProxy(empty_upstream_message).is_current_upstream = True
-    >>> empty_upstream_message.translations
-    [u'']
+    >>> for translation in empty_upstream_message.translations:
+    ...     print(translation)
+    <BLANKLINE>
 
     >>> logout()
 
@@ -657,5 +666,5 @@ translation.
     >>> print(extract_text(shared_message_tag))
     shared translation
 
-    >>> extract_text(find_tag_by_id(browser.contents, html_id))
-    u'diverged'
+    >>> print(extract_text(find_tag_by_id(browser.contents, html_id)))
+    diverged

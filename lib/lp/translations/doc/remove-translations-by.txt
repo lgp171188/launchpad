@@ -146,8 +146,8 @@ database.
     >>> returncode
     0
 
-    >>> out
-    ''
+    >>> print(out)
+    <BLANKLINE>
 
     >>> print(err)
     WARNING Safety override in effect.  Deleting translations for template ...

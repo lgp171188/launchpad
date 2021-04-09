@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A build record for OCI Recipes."""
@@ -24,13 +24,12 @@ from storm.locals import (
     Or,
     Reference,
     Store,
-    Storm,
     Unicode,
     )
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import (
@@ -41,6 +40,7 @@ from lp.buildmaster.enums import (
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import (
     CannotScheduleRegistryUpload,
@@ -67,12 +67,19 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
+    NO_USER,
+    )
+from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -81,7 +88,7 @@ from lp.services.webapp.snapshot import notify_modified
 
 
 @implementer(IOCIFile)
-class OCIFile(Storm):
+class OCIFile(StormBase):
 
     __storm_table__ = 'OCIFile'
 
@@ -117,7 +124,7 @@ class OCIFileSet:
 
 
 @implementer(IOCIRecipeBuild)
-class OCIRecipeBuild(PackageBuildMixin, Storm):
+class OCIRecipeBuild(PackageBuildMixin, StormBase):
 
     __storm_table__ = 'OCIRecipeBuild'
 
@@ -179,11 +186,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         self.build_farm_job = build_farm_job
         if build_request is not None:
             self.build_request_id = build_request.id
-
-    def __eq__(self, other):
-        if not zope_isinstance(other, self.__class__):
-            return False
-        return self.id == other.id
 
     @property
     def build_request(self):
@@ -252,6 +254,22 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             BuildStatus.NEEDSBUILD,
             ]
         return self.status in cancellable_statuses
+
+    @property
+    def is_private(self):
+        """See `IBuildFarmJob`."""
+        # XXX pappacena 2021-01-28: We need to keep track of git
+        # repository's history in the build itself, in order to know if an
+        # OCIRecipeBuild was created while the repo was private, and even
+        # which repository it was using at that time (since the OCIRecipe's
+        # repo can be changed or deleted).
+        # There was some discussions about it for Snaps here:
+        # https://code.launchpad.net/
+        # ~cjwatson/launchpad/snap-build-record-code/+merge/365356
+        return (
+            self.recipe.owner.private or
+            self.recipe.git_repository is None or
+            self.recipe.git_repository.private)
 
     def retry(self):
         """See `IOCIRecipeBuild`."""
@@ -578,3 +596,62 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             OCIRecipeBuild, OCIRecipeBuild.build_farm_job_id.is_in(
                 bfj.id for bfj in build_farm_jobs))
         return DecoratedResultSet(rows, pre_iter_hook=self.preloadBuildsData)
+
+
+@implementer(IMacaroonIssuer)
+class OCIRecipeBuildMacaroonIssuer(MacaroonIssuerBase):
+
+    identifier = "oci-recipe-build"
+    issuable_via_authserver = True
+
+    def checkIssuingContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For issuing, the context is an `IOCIRecipeBuild`.
+        """
+        if not IOCIRecipeBuild.providedBy(context):
+            raise BadMacaroonContext(context)
+        if not removeSecurityProxy(context).is_private:
+            raise BadMacaroonContext(
+                context, "Refusing to issue macaroon for public build.")
+        return removeSecurityProxy(context).id
+
+    def checkVerificationContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if not IGitRepository.providedBy(context):
+            raise BadMacaroonContext(context)
+        return context
+
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, user=None,
+                            **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For verification, the context is an `IGitRepository`.  We check that
+        the repository is needed to build the `IOCIRecipeBuild` that is the
+        context of the macaroon, and that the context build is currently
+        building.
+        """
+        # Circular import.
+        from lp.oci.model.ocirecipe import OCIRecipe
+
+        # OCIRecipeBuild builds only support free-floating macaroons for Git
+        # authentication, not ones bound to a user.
+        if user:
+            return False
+        verified.user = NO_USER
+
+        if context is None:
+            # We're only verifying that the macaroon could be valid for some
+            # context.
+            return True
+
+        try:
+            build_id = int(caveat_value)
+        except ValueError:
+            return False
+        return not IStore(OCIRecipeBuild).find(
+            OCIRecipeBuild,
+            OCIRecipeBuild.id == build_id,
+            OCIRecipeBuild.recipe_id == OCIRecipe.id,
+            OCIRecipe.git_repository == context,
+            OCIRecipeBuild.status == BuildStatus.BUILDING).is_empty()

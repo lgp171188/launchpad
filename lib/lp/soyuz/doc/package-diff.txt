@@ -102,10 +102,10 @@ error:
 
     >>> dup_diff = pmount_from.requestDiffTo(
     ...     requester=cprov, to_sourcepackagerelease=pmount_to)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    PackageDiffAlreadyRequested: diff from 0.1-1 to 0.1-2 has already
-    been requested
+    lp.soyuz.interfaces.packagediff.PackageDiffAlreadyRequested: diff from 0.1-1 to 0.1-2 has already been requested
 
 
 Diff request for source uploads
@@ -290,7 +290,7 @@ The auxiliary function below will facilitate the viewing of diff results.
     ...     jail = tempfile.mkdtemp()
     ...     local = os.path.abspath('')
     ...     jail = tempfile.mkdtemp()
-    ...     fhandle = open(os.path.join(jail, "the.diff.gz"), 'w')
+    ...     fhandle = open(os.path.join(jail, "the.diff.gz"), 'wb')
     ...     copy_and_close(lfa, fhandle)
     ...     os.chdir(jail)
     ...     p = subprocess.Popen(
@@ -390,12 +390,11 @@ for users to view it.
     >>> con = http_client.HTTPConnection(netloc)
     >>> con.request("HEAD", path)
     >>> resp = con.getresponse()
-    >>> headers = dict(resp.getheaders())
 
-    >>> print(headers['content-encoding'])
+    >>> print(resp.getheader('content-encoding'))
     gzip
 
-    >>> print(headers['content-type'])
+    >>> print(resp.getheader('content-type'))
     text/plain
 
 
@@ -518,8 +517,8 @@ empty library file, which is what the user expects.
     >>> print(diff.diff_content.filename)
     staging_1.0-1_1.0-1.diff.gz
 
-    >>> get_diff_results(diff)
-    u''
+    >>> print(get_diff_results(diff))
+    <BLANKLINE>
 
 Now we will simulate a version collision when generating the diff.
 

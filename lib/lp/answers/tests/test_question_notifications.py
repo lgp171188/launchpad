@@ -69,13 +69,6 @@ class StubQuestion:
         self.messages = []
 
 
-class StubQuestionMessage:
-    """Question message with only a subject attribute."""
-
-    def __init__(self, subject='Message subject'):
-        self.subject = subject
-
-
 @implementer(IPerson)
 class FakeUser:
     """A fake user."""

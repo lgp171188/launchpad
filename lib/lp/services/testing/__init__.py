@@ -23,8 +23,6 @@ import unittest
 
 import scandir
 
-# This import registers the 'doctest' Unicode codec.
-import lp.services.testing.doctestcodec
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setUp,

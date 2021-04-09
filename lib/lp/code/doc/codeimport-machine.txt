@@ -107,9 +107,10 @@ permitted.
     OFFLINE
 
     >>> new_machine.state = CodeImportMachineState.ONLINE
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    ForbiddenAttribute: ...
+    zope.security.interfaces.ForbiddenAttribute: ...
 
 Instead, the setOnline() and related methods must be used.  These
 methods update the fields and in addition create events in the

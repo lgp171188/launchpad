@@ -15,13 +15,15 @@ permission on them. Mark is the owner of the archive-mirror.
 
     >>> user_browser.open(context_url)
     >>> user_browser.getLink('Change')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.open(context_url + "/+reassign")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> browser.addHeader('Authorization', 'Basic mark@example.com:test')
     >>> browser.open(context_url)

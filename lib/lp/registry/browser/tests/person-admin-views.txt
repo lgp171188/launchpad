@@ -96,8 +96,9 @@ The context is an IAccount, so the is_viewing_person property is False.
 The view displays non-editable user information too so that the admin does
 not need to look in the db.
 
-    >>> view.email_addresses
-    [u'zaphod@example.place']
+    >>> for email in view.email_addresses:
+    ...     print(email)
+    zaphod@example.place
 
 The admin can change the user's account information.
 
@@ -128,9 +129,8 @@ an account is suspended, the preferred email address is disabled.
     >>> transaction.commit()
     >>> user.account_status
     <DBItem AccountStatus.SUSPENDED, ...>
-    >>> user.account_status_history
-    u'... name16: Active -> Suspended:
-    Wanted by the galactic police.\n'
+    >>> six.ensure_str(user.account_status_history)
+    '... name16: Active -> Suspended: Wanted by the galactic police.\n'
     >>> print(user.preferredemail)
     None
 
@@ -142,8 +142,9 @@ No one can force account status to an invalid transition:
     ...     'field.actions.change': 'Change',
     ...     }
     >>> view = create_initialized_view(user, '+reviewaccount', form=form)
-    >>> [e[2] for e in view.errors]
-    [AccountStatusError(u'The status cannot change from Suspended to Active')]
+    >>> [e.args[2] for e in view.errors]
+    [AccountStatusError(...'The status cannot change from Suspended to
+    Active')]
 
 
 An admin can deactivate a suspended user's account too. Unlike the act of
@@ -160,8 +161,26 @@ user must log in to restore the email addresses using the reactivate step.
     []
     >>> user.account_status
     <DBItem AccountStatus.DEACTIVATED, ...>
-    >>> user.account_status_history
-    u"... name16: Active -> Suspended: Wanted by the galactic police.\n...
+    >>> six.ensure_str(user.account_status_history)
+    "... name16: Active -> Suspended: Wanted by the galactic police.\n...
     name16: Suspended -> Deactivated: Zaphod's a hoopy frood.\n"
     >>> print(user.preferredemail)
     None
+
+
+An admin can mark an account as belonging to a user who has died.
+
+    >>> form = {
+    ...     'field.status': 'DECEASED',
+    ...     'field.comment': 'In memoriam.',
+    ...     'field.actions.change': 'Change',
+    ...     }
+    >>> view = create_initialized_view(user, '+reviewaccount', form=form)
+    >>> print(view.errors)
+    []
+    >>> user.account_status
+    <DBItem AccountStatus.DECEASED, ...>
+    >>> six.ensure_str(user.account_status_history)
+    "... name16: Active -> Suspended: Wanted by the galactic police.\n...
+    name16: Suspended -> Deactivated: Zaphod's a hoopy frood.\n...
+    name16: Deactivated -> Deceased: In memoriam.\n"

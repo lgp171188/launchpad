@@ -32,8 +32,8 @@ To create a CVE, call ICveSet.new(sequence, description,
     >>> cve = cveset.new(sequence="2004-0276",
     ...     description="A new CVE", status=CveStatus.ENTRY,
     ...     )
-    >>> cve.displayname
-    u'CVE-2004-0276'
+    >>> print(cve.displayname)
+    CVE-2004-0276
 
 === Number of CVE links ===
 
@@ -106,9 +106,10 @@ linkCVE are bypassed.
     >>> private_bug = factory.makeBug(
     ...     information_type=InformationType.USERDATA)
     >>> private_bug.linkCVE(cve, user=no_priv)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
     >>> private_bug.findCvesInText('''
     ...     This bug is related to CVE-2004-0276
     ... ''', user=no_priv)
@@ -126,8 +127,8 @@ CVEs creation accepts 2014 format:
     >>> cve_2014 = cveset.new(sequence="2014-999999",
     ...     description="A new-style CVE sequence", status=CveStatus.ENTRY,
     ...     )
-    >>> cve_2014.displayname
-    u'CVE-2014-999999'
+    >>> print(cve_2014.displayname)
+    CVE-2014-999999
 
 Text references to CVEs using 2014 format can be found:
  
@@ -151,9 +152,10 @@ ICveSet.getBugCvesForBugTasks:
     >>> ubuntu = Distribution.selectOneBy(name="ubuntu")
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> bugcves = cveset.getBugCvesForBugTasks(ubuntu_tasks)
-    >>> [(bug.id, cve.title) for (bug, cve) in bugcves]
-    [(1, u'CVE-1999-8979 (Entry)'),
-     (2, u'CVE-1999-2345 (Candidate)')]
+    >>> for (bug, cve) in bugcves:
+    ...     print('%d: %s' % (bug.id, cve.title))
+    1: CVE-1999-8979 (Entry)
+    2: CVE-1999-2345 (Candidate)
 
 This method is used in the CVEReportView:
 
@@ -168,12 +170,12 @@ connects bugs to bugtasks and CVEs. The open_cve_bugtasks returned are, not
 surprisingly, the same the method above returned:
 
     >>> for bugtaskcve in cve_report.open_cve_bugtasks:
-    ...    ([bugtask.title for bugtask in bugtaskcve.bugtasks],
-    ...     [cve['displayname'] for cve in bugtaskcve.cves])
-    ([u'Bug #1 in mozilla-firefox (Ubuntu): "Firefox does not support SVG"'],
-     [u'CVE-1999-8979'])
-    ([u'Bug #2 in Ubuntu: "Blackhole Trash folder"'],
-     [u'CVE-1999-2345'])
+    ...     print(pretty([bugtask.title for bugtask in bugtaskcve.bugtasks]))
+    ...     print(pretty([cve['displayname'] for cve in bugtaskcve.cves]))
+    ['Bug #1 in mozilla-firefox (Ubuntu): "Firefox does not support SVG"']
+    ['CVE-1999-8979']
+    ['Bug #2 in Ubuntu: "Blackhole Trash folder"']
+    ['CVE-1999-2345']
 
 There are no resolved bugtasks linked to CVEs in Ubuntu:
 
