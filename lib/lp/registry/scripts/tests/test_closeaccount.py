@@ -347,6 +347,7 @@ class TestCloseAccount(TestCaseWithFactory):
     def test_skips_bug_watch_owner(self):
         person = self.factory.makePerson()
         self.factory.makeBugWatch(owner=person)
+        self.factory.makeBugWatch(owner=person)
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([six.ensure_str(person.name)])
