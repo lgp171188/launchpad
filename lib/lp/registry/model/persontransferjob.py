@@ -891,6 +891,9 @@ class PersonCloseAccountJob(PersonTransferJobDerived):
                 Archive.owner == person,
                 Archive.status == ArchiveStatus.DELETED).remove()
         except IntegrityError:
+            log.error(
+                "%s Can't delete non-trivial PPAs for user %s", self.log_name,
+                username)
             raise IntegrityError(
                 "Can't delete non-trivial PPAs for user %s" % username)
 
