@@ -115,9 +115,10 @@ in the past.
     >>> browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/en/+translate')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: Object: ... name: u'en'
+    zope.publisher.interfaces.NotFound: Object: ... name: 'en'
 
 See xx-pofile-translate-alternative-language.txt for details about
 the 'make suggestions from' feature.

@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap packages."""
@@ -34,6 +34,7 @@ from testtools.matchers import (
     Equals,
     GreaterThan,
     Is,
+    IsInstance,
     LessThan,
     MatchesAll,
     MatchesDict,
@@ -42,9 +43,11 @@ from testtools.matchers import (
     )
 import transaction
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.app.errors import SubscriptionPrivacyViolation
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import (
     BuildQueueStatus,
@@ -64,10 +67,19 @@ from lp.code.tests.helpers import (
     BranchHostingFixture,
     GitHostingFixture,
     )
-from lp.registry.enums import PersonVisibility
+from lp.registry.enums import (
+    BranchSharingPolicy,
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
+from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.accesspolicy import (
+    AccessArtifact,
+    AccessArtifactGrant,
+    )
 from lp.services.config import config
 from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.database.constants import (
@@ -120,6 +132,7 @@ from lp.snappy.interfaces.snapbuildjob import ISnapStoreUploadJobSource
 from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snap import (
+    get_snap_privacy_filter,
     Snap,
     SnapSet,
     )
@@ -131,6 +144,7 @@ from lp.testing import (
     ANONYMOUS,
     api_url,
     login,
+    login_admin,
     logout,
     person_logged_in,
     record_two_runs,
@@ -165,7 +179,8 @@ class TestSnapFeatureFlag(TestCaseWithFactory):
         self.assertRaises(
             SnapPrivateFeatureDisabled, getUtility(ISnapSet).new,
             person, person, None, None,
-            branch=self.factory.makeAnyBranch(), private=True)
+            branch=self.factory.makeAnyBranch(),
+            information_type=InformationType.PROPRIETARY)
 
 
 class TestSnap(TestCaseWithFactory):
@@ -1324,6 +1339,153 @@ class TestSnapDeleteWithBuilds(TestCaseWithFactory):
             self.assertRaises(LostObjectError, getattr, webhook, "target")
 
 
+class TestSnapVisibility(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestSnapVisibility, self).setUp()
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+
+    def getSnapGrants(self, snap, person=None):
+        conditions = [AccessArtifact.snap == snap]
+        if person is not None:
+            conditions.append(AccessArtifactGrant.grantee == person)
+        return IStore(AccessArtifactGrant).find(
+            AccessArtifactGrant,
+            AccessArtifactGrant.abstract_artifact_id == AccessArtifact.id,
+            *conditions)
+
+    def test_only_owner_can_grant_access(self):
+        owner = self.factory.makePerson()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, private=True)
+        other_person = self.factory.makePerson()
+        with person_logged_in(other_person):
+            self.assertRaises(Unauthorized, getattr, snap, 'subscribe')
+        with person_logged_in(owner):
+            snap.subscribe(other_person, owner)
+
+    def test_private_is_invisible_by_default(self):
+        owner = self.factory.makePerson()
+        person = self.factory.makePerson()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, private=True)
+        with person_logged_in(owner):
+            self.assertFalse(snap.visibleByUser(person))
+
+    def test_private_is_visible_by_team_member(self):
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(
+            members=[person], membership_policy=TeamMembershipPolicy.MODERATED)
+        snap = self.factory.makeSnap(private=True, owner=team,
+                                     registrant=person)
+        with person_logged_in(team):
+            self.assertTrue(snap.visibleByUser(person))
+
+    def test_subscribing_changes_visibility(self):
+        person = self.factory.makePerson()
+        owner = self.factory.makePerson()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, private=True)
+
+        with person_logged_in(owner):
+            self.assertFalse(snap.visibleByUser(person))
+            snap.subscribe(person, snap.owner)
+            self.assertThat(snap.getSubscription(person), MatchesStructure(
+                person=Equals(person),
+                snap=Equals(snap),
+                subscribed_by=Equals(snap.owner),
+                date_created=IsInstance(datetime)))
+            # Calling again should be a no-op.
+            snap.subscribe(person, snap.owner)
+            self.assertTrue(snap.visibleByUser(person))
+
+            snap.unsubscribe(person, snap.owner)
+            self.assertFalse(snap.visibleByUser(person))
+            self.assertIsNone(snap.getSubscription(person))
+
+    def test_snap_owner_can_unsubscribe_anyone(self):
+        person = self.factory.makePerson()
+        owner = self.factory.makePerson()
+        admin = self.factory.makeAdministrator()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, private=True)
+        with person_logged_in(admin):
+            snap.subscribe(person, admin)
+            self.assertTrue(snap.visibleByUser(person))
+        with person_logged_in(owner):
+            snap.unsubscribe(person, owner)
+            self.assertFalse(snap.visibleByUser(person))
+
+    def test_reconcile_set_public(self):
+        owner = self.factory.makePerson()
+        snap = self.factory.makeSnap(
+            registrant=owner, owner=owner, private=True)
+        another_user = self.factory.makePerson()
+        with admin_logged_in():
+            snap.subscribe(another_user, snap.owner)
+            self.assertEqual(1, self.getSnapGrants(snap, another_user).count())
+            self.assertThat(
+                snap.getSubscription(another_user),
+                MatchesStructure(
+                    person=Equals(another_user),
+                    snap=Equals(snap),
+                    subscribed_by=Equals(snap.owner),
+                    date_created=IsInstance(datetime)))
+
+            snap.information_type = InformationType.PUBLIC
+            self.assertEqual(0, self.getSnapGrants(snap, another_user).count())
+            self.assertThat(
+                snap.getSubscription(another_user),
+                MatchesStructure(
+                    person=Equals(another_user),
+                    snap=Equals(snap),
+                    subscribed_by=Equals(snap.owner),
+                    date_created=IsInstance(datetime)))
+
+    def test_reconcile_permissions_setting_project(self):
+        owner = self.factory.makePerson()
+        old_project = self.factory.makeProduct()
+        getUtility(IAccessPolicySource).create(
+            [(old_project, InformationType.PROPRIETARY)])
+
+        snap = self.factory.makeSnap(
+            project=old_project, private=True, registrant=owner, owner=owner)
+
+        # Owner automatically gets a grant.
+        with person_logged_in(owner):
+            self.assertTrue(snap.visibleByUser(snap.owner))
+            self.assertEqual(1, self.getSnapGrants(snap).count())
+
+        new_project = self.factory.makeProduct()
+        getUtility(IAccessPolicySource).create(
+            [(new_project, InformationType.PROPRIETARY)])
+        another_person = self.factory.makePerson()
+        with person_logged_in(owner):
+            snap.subscribe(another_person, owner)
+            self.assertTrue(snap.visibleByUser(another_person))
+            self.assertEqual(2, self.getSnapGrants(snap).count())
+            self.assertThat(
+                snap.getSubscription(another_person),
+                MatchesStructure(
+                    person=Equals(another_person),
+                    snap=Equals(snap),
+                    subscribed_by=Equals(snap.owner),
+                    date_created=IsInstance(datetime)))
+
+            snap.setProject(new_project)
+            self.assertTrue(snap.visibleByUser(another_person))
+            self.assertEqual(2, self.getSnapGrants(snap).count())
+            self.assertThat(
+                snap.getSubscription(another_person),
+                MatchesStructure(
+                    person=Equals(another_person),
+                    snap=Equals(snap),
+                    subscribed_by=Equals(snap.owner),
+                    date_created=IsInstance(datetime)))
+
+
 class TestSnapSet(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
@@ -1416,11 +1578,42 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertEqual(ref.path, snap.git_path)
         self.assertEqual(ref, snap.git_ref)
 
+    def test_create_private_snap_with_open_team_as_owner_fails(self):
+        components = self.makeSnapComponents()
+        with admin_logged_in():
+            components['owner'].membership_policy = TeamMembershipPolicy.OPEN
+            components['information_type'] = InformationType.PROPRIETARY
+        self.assertRaises(
+            SubscriptionPrivacyViolation,
+            getUtility(ISnapSet).new, **components)
+
+    def test_private_snap_information_type_compatibility(self):
+        login_admin()
+        private = InformationType.PROPRIETARY
+        public = InformationType.PUBLIC
+        components = self.makeSnapComponents()
+        components['owner'].membership_policy = TeamMembershipPolicy.MODERATED
+        private_snap = getUtility(ISnapSet).new(
+            information_type=private, **components)
+        self.assertEqual(
+            InformationType.PROPRIETARY, private_snap.information_type)
+
+        public_snap = getUtility(ISnapSet).new(
+            information_type=public, **self.makeSnapComponents())
+        self.assertEqual(
+            InformationType.PUBLIC, public_snap.information_type)
+
     def test_private_snap_for_public_sources(self):
         # Creating private snaps for public sources is allowed.
         [ref] = self.factory.makeGitRefs()
         components = self.makeSnapComponents(git_ref=ref)
-        components['private'] = True
+        with admin_logged_in():
+            components['information_type'] = InformationType.PROPRIETARY
+            components['owner'].membership_policy = (
+                TeamMembershipPolicy.MODERATED)
+        components['project'] = self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
         snap = getUtility(ISnapSet).new(**components)
         with person_logged_in(components['owner']):
             self.assertTrue(snap.private)
@@ -1491,6 +1684,22 @@ class TestSnapSet(TestCaseWithFactory):
             getUtility(ISnapSet).exists(self.factory.makePerson(), snap.name))
         self.assertFalse(getUtility(ISnapSet).exists(snap.owner, "different"))
 
+    def test_getByPillarAndName(self):
+        owner = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        project_snap = self.factory.makeSnap(
+            name='proj-snap', owner=owner, registrant=owner, project=project)
+        no_project_snap = self.factory.makeSnap(
+            name='no-proj-snap', owner=owner, registrant=owner)
+
+        snap_set = getUtility(ISnapSet)
+        self.assertEqual(
+            project_snap,
+            snap_set.getByPillarAndName(owner, project, 'proj-snap'))
+        self.assertEqual(
+            no_project_snap,
+            snap_set.getByPillarAndName(owner, None, 'no-proj-snap'))
+
     def test_findByOwner(self):
         # ISnapSet.findByOwner returns all Snaps with the given owner.
         owners = [self.factory.makePerson() for i in range(2)]
@@ -1518,9 +1727,49 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertContentEqual(snaps[:3], snap_set.findByPerson(owners[0]))
         self.assertContentEqual(snaps[3:], snap_set.findByPerson(owners[1]))
 
+    def test_get_snap_privacy_filter_includes_grants(self):
+        grantee, creator = [self.factory.makePerson() for i in range(2)]
+        # All snaps are owned by "creator", and "grantee" will later have
+        # access granted using sharing service.
+        snap_data = dict(registrant=creator, owner=creator, private=True)
+        private_snaps = [self.factory.makeSnap(**snap_data) for _ in range(2)]
+        shared_snaps = [self.factory.makeSnap(**snap_data) for _ in range(2)]
+        snap_data["private"] = False
+        public_snaps = [self.factory.makeSnap(**snap_data) for _ in range(3)]
+        # Backwards compatibility check: NULL on information_type db column
+        # should make us consider the "private" db column.
+        snap = removeSecurityProxy(public_snaps[-1])
+        snap._private = False
+        snap.information_type = None
+        Store.of(snap).flush()
+
+        with admin_logged_in():
+            for snap in shared_snaps:
+                snap.subscribe(grantee, creator)
+
+        def all_snaps_visible_by(person):
+            return IStore(Snap).find(
+                Snap, get_snap_privacy_filter(person))
+
+        # Creator should get all snaps.
+        self.assertContentEqual(
+            public_snaps + private_snaps + shared_snaps,
+            all_snaps_visible_by(creator))
+
+        # Grantee should get public and shared snaps.
+        self.assertContentEqual(
+            public_snaps + shared_snaps, all_snaps_visible_by(grantee))
+
+        with admin_logged_in():
+            # After revoking, Grantee should have no access to the shared ones.
+            for snap in shared_snaps:
+                snap.unsubscribe(grantee, creator)
+        self.assertContentEqual(public_snaps, all_snaps_visible_by(grantee))
+
     def test_findByProject(self):
         # ISnapSet.findByProject returns all Snaps based on branches or
-        # repositories for the given project.
+        # repositories for the given project, and snaps associated directly
+        # to the project.
         projects = [self.factory.makeProduct() for i in range(2)]
         snaps = []
         for project in projects:
@@ -1528,14 +1777,15 @@ class TestSnapSet(TestCaseWithFactory):
                 branch=self.factory.makeProductBranch(product=project)))
             [ref] = self.factory.makeGitRefs(target=project)
             snaps.append(self.factory.makeSnap(git_ref=ref))
+            snaps.append(self.factory.makeSnap(project=project))
         snaps.append(self.factory.makeSnap(
             branch=self.factory.makePersonalBranch()))
         [ref] = self.factory.makeGitRefs(target=None)
         snaps.append(self.factory.makeSnap(git_ref=ref))
         snap_set = getUtility(ISnapSet)
-        self.assertContentEqual(snaps[:2], snap_set.findByProject(projects[0]))
+        self.assertContentEqual(snaps[:3], snap_set.findByProject(projects[0]))
         self.assertContentEqual(
-            snaps[2:4], snap_set.findByProject(projects[1]))
+            snaps[3:6], snap_set.findByProject(projects[1]))
 
     def test_findByBranch(self):
         # ISnapSet.findByBranch returns all Snaps with the given Bazaar branch.
@@ -1730,6 +1980,15 @@ class TestSnapSet(TestCaseWithFactory):
                 getUtility(ISnapSet).findByStoreName(
                     store_names[0], owner=owners[1],
                     visible_by_user=owners[0]))
+
+    def test_getSnapcraftYaml_snap_no_source(self):
+        [git_ref] = self.factory.makeGitRefs()
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        with admin_logged_in():
+            git_ref.repository.destroySelf(break_references=True)
+        self.assertRaisesWithContent(
+            CannotFetchSnapcraftYaml, "Snap source is not defined",
+            getUtility(ISnapSet).getSnapcraftYaml, snap)
 
     def test_getSnapcraftYaml_bzr_snap_snapcraft_yaml(self):
         def getInventory(unique_name, dirname, *args, **kwargs):
@@ -1971,6 +2230,13 @@ class TestSnapSet(TestCaseWithFactory):
             self.assertRaises(
                 CannotFetchSnapcraftYaml,
                 getUtility(ISnapSet).getSnapcraftYaml, snap)
+
+    def test_getSnapcraftYaml_emoji(self):
+        self.useFixture(GitHostingFixture(blob="summary: \U0001f680\n"))
+        [git_ref] = self.factory.makeGitRefs()
+        self.assertEqual(
+            {"summary": "\U0001f680"},
+            getUtility(ISnapSet).getSnapcraftYaml(git_ref))
 
     def test__findStaleSnaps(self):
         # Stale; not built automatically.
@@ -2496,9 +2762,11 @@ class TestSnapWebservice(TestCaseWithFactory):
         if auto_build_pocket is not None:
             kwargs["auto_build_pocket"] = auto_build_pocket.title
         logout()
+        information_type = (InformationType.PROPRIETARY if private else
+                            InformationType.PUBLIC)
         response = webservice.named_post(
             "/+snaps", "new", owner=owner_url, distro_series=distroseries_url,
-            name="mir", private=private, **kwargs)
+            name="mir", information_type=information_type.title, **kwargs)
         self.assertEqual(201, response.status)
         return webservice.get(response.getHeader("Location")).jsonBody()
 
@@ -2553,7 +2821,9 @@ class TestSnapWebservice(TestCaseWithFactory):
 
     def test_new_private(self):
         # Ensure private Snap creation works.
-        team = self.factory.makeTeam(owner=self.person)
+        team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
+            owner=self.person)
         distroseries = self.factory.makeDistroSeries(registrant=team)
         [ref] = self.factory.makeGitRefs()
         private_webservice = webservice_for_person(
@@ -2632,9 +2902,13 @@ class TestSnapWebservice(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch(
             owner=self.person,
             information_type=InformationType.PRIVATESECURITY)
+        project = self.factory.makeProduct(
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, branch=branch,
-            private=True)
+            project=project, information_type=InformationType.PROPRIETARY)
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         with person_logged_in(self.person):
             snap_url = api_url(snap)
@@ -2642,11 +2916,12 @@ class TestSnapWebservice(TestCaseWithFactory):
         admin_webservice = webservice_for_person(
             admin, permission=OAuthPermission.WRITE_PRIVATE)
         admin_webservice.default_api_version = "devel"
-        response = admin_webservice.patch(
-            snap_url, "application/json", json.dumps({"private": False}))
+        data = json.dumps({"information_type": 'Public'})
+        content_type = "application/json"
+        response = admin_webservice.patch(snap_url, content_type, data)
         self.assertEqual(400, response.status)
         self.assertEqual(
-            b"Snap contains private information and cannot be public.",
+            b"Snap recipe contains private information and cannot be public.",
             response.body)
 
     def test_cannot_set_private_components_of_public_snap(self):
@@ -2783,8 +3058,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
 
         # Anonymous requests can only see public snaps.
@@ -2817,16 +3091,16 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = webservice.named_get(
             "/+snaps", "findByOwner", owner=person_urls[0],
             api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:2],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByOwner", owner=person_urls[1],
             api_version="devel")
         self.assertEqual(200, response.status)
@@ -2851,8 +3125,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
 
         # Anonymous requests can only see public snaps.
@@ -2890,15 +3163,15 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps with this URL.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = admin_webservice.named_get(
             "/+snaps", "findByURL", url=urls[0], api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:4],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByURL", url=urls[0], owner=person_urls[0],
             api_version="devel")
         self.assertEqual(200, response.status)
@@ -2929,8 +3202,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
         prefix = "https://git.example.org/foo/"
 
@@ -2971,16 +3243,16 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps with this URL prefix.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = admin_webservice.named_get(
             "/+snaps", "findByURLPrefix", url_prefix=prefix,
             api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:8],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByURLPrefix", url_prefix=prefix,
             owner=person_urls[0], api_version="devel")
         self.assertEqual(200, response.status)
@@ -3013,8 +3285,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
         prefixes = [
             "https://git.example.org/foo/", "https://git.example.org/bar/"]
@@ -3056,16 +3327,16 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps with any of these URL prefixes.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = admin_webservice.named_get(
             "/+snaps", "findByURLPrefixes", url_prefixes=prefixes,
             api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:16],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByURLPrefixes", url_prefixes=prefixes,
             owner=person_urls[0], api_version="devel")
         self.assertEqual(200, response.status)
@@ -3090,8 +3361,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ws_snaps = [
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
-        commercial_admin = (
-            getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         logout()
 
         # Anonymous requests can only see public snaps.
@@ -3131,16 +3401,16 @@ class TestSnapWebservice(TestCaseWithFactory):
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
 
         # Admins can see all snaps with this store name.
-        commercial_admin_webservice = webservice_for_person(
-            commercial_admin, permission=OAuthPermission.READ_PRIVATE)
-        response = commercial_admin_webservice.named_get(
+        admin_webservice = webservice_for_person(
+            admin, permission=OAuthPermission.READ_PRIVATE)
+        response = admin_webservice.named_get(
             "/+snaps", "findByStoreName", store_name=store_names[0],
             api_version="devel")
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ws_snaps[:4],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
-        response = commercial_admin_webservice.named_get(
+        response = admin_webservice.named_get(
             "/+snaps", "findByStoreName", store_name=store_names[0],
             owner=person_urls[0], api_version="devel")
         self.assertEqual(200, response.status)
@@ -3451,7 +3721,8 @@ class TestSnapWebservice(TestCaseWithFactory):
             self.assertThat(snap.store_secrets, MatchesDict({
                 "root": Equals(root_macaroon.serialize()),
                 "discharge_encrypted": AfterPreprocessing(
-                    container.decrypt, Equals(discharge_macaroon.serialize())),
+                    lambda data: container.decrypt(data).decode("UTF-8"),
+                    Equals(discharge_macaroon.serialize())),
                 }))
 
     def makeBuildableDistroArchSeries(self, **kwargs):

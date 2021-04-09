@@ -446,7 +446,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
             1, datetime(2011, 7, 25, 0, 0, 0, tzinfo=pytz.UTC), 'foo', 'bar']
         limits = range_factory.limitsGroupedByOrderDirection(order_by, limits)
         equals_expressions = range_factory.equalsExpressionsFromLimits(limits)
-        equals_expressions = map(compile, equals_expressions)
+        equals_expressions = [compile(expr) for expr in equals_expressions]
         self.assertEqual(
             ['Person.id = ?', 'Person.datecreated = ?', 'Person.name = ?',
              'Person.displayname = ?'],

@@ -154,19 +154,23 @@ class ProberProtocol(HTTPClient):
 
         Uses factory.connect_host and factory.connect_path
         """
-        self.sendCommand('HEAD', self.factory.connect_path)
-        self.sendHeader('HOST', self.factory.connect_host)
-        self.sendHeader('User-Agent',
-            'Launchpad Mirror Prober ( https://launchpad.net/ )')
+        self.sendCommand(b'HEAD', self.factory.connect_path.encode('UTF-8'))
+        self.sendHeader(b'HOST', self.factory.connect_host.encode('UTF-8'))
+        self.sendHeader(b'User-Agent',
+            b'Launchpad Mirror Prober ( https://launchpad.net/ )')
         self.endHeaders()
 
     def handleStatus(self, version, status, message):
         # According to http://lists.debian.org/deity/2001/10/msg00046.html,
         # apt intentionally handles only '200 OK' responses, so we do the
         # same here.
-        if status == str(http_client.OK):
-            self.factory.succeeded(status)
-        else:
+        try:
+            status = int(status)
+            if status == http_client.OK:
+                self.factory.succeeded(status)
+            else:
+                self.factory.failed(Failure(BadResponseCode(status)))
+        except ValueError:
             self.factory.failed(Failure(BadResponseCode(status)))
         self.transport.loseConnection()
 
@@ -261,7 +265,7 @@ class RedirectAwareProberProtocol(ProberProtocol):
             'All headers received but failed to find a result.')
 
         # Server responded redirecting us to another location.
-        location = self.headers.get('location')
+        location = self.headers.get(b'location')
         url = location[0]
         self.factory.redirect(url)
         self.transport.loseConnection()
@@ -298,7 +302,7 @@ class ProberFactory(protocol.ClientFactory):
         self._deferred = defer.Deferred()
         self.timeout = timeout
         self.timeoutCall = None
-        self.setURL(url.encode('ascii'))
+        self.setURL(url)
         self.logger = logging.getLogger('distributionmirror-prober')
         self._https_client = None
 
@@ -458,6 +462,7 @@ class RedirectAwareProberFactory(ProberFactory):
     def redirect(self, url):
         self.timeoutCall.reset(self.timeout)
 
+        url = six.ensure_text(url)
         scheme, host, port, orig_path = _parse(self.url)
         scheme, host, port, new_path = _parse(url)
         if (unquote(orig_path.split('/')[-1])
@@ -869,10 +874,11 @@ def get_expected_cdimage_paths():
     UnableToFetchCDImageFileList exception will be raised.
     """
     d = {}
-    for line in _get_cdimage_file_list().iter_lines():
-        flavour, seriesname, path, size = line.split('\t')
-        paths = d.setdefault((flavour, seriesname), [])
-        paths.append(path.lstrip('/'))
+    with _get_cdimage_file_list() as response:
+        for line in response.iter_lines():
+            flavour, seriesname, path, size = six.ensure_text(line).split('\t')
+            paths = d.setdefault((flavour, seriesname), [])
+            paths.append(path.lstrip('/'))
 
     ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
     paths = []

@@ -108,7 +108,7 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
 
     def test_verifyAndStore_unregistered(self):
         fingerprint = "0" * 40
-        signature = PymeSignature(fingerprint, "plain data")
+        signature = PymeSignature(fingerprint, b"plain data")
         self.useFixture(ZopeUtilityFixture(
             FakeGPGHandlerGood(signature), IGPGHandler))
         user = self.factory.makePerson()
@@ -120,7 +120,7 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
     def test_verifyAndStore_wrong_owner(self):
         other_user = self.factory.makePerson()
         gpgkey = self.factory.makeGPGKey(other_user)
-        signature = PymeSignature(gpgkey.fingerprint, "plain data")
+        signature = PymeSignature(gpgkey.fingerprint, b"plain data")
         self.useFixture(ZopeUtilityFixture(
             FakeGPGHandlerGood(signature), IGPGHandler))
         user = self.factory.makePerson()
@@ -133,7 +133,7 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
         user = self.factory.makePerson()
         gpgkey = self.factory.makeGPGKey(user)
         gpgkey.active = False
-        signature = PymeSignature(gpgkey.fingerprint, "plain data")
+        signature = PymeSignature(gpgkey.fingerprint, b"plain data")
         self.useFixture(ZopeUtilityFixture(
             FakeGPGHandlerGood(signature), IGPGHandler))
         self.assertThat(
@@ -144,7 +144,7 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
     def test_verifyAndStore_bad_plain_data(self):
         user = self.factory.makePerson()
         gpgkey = self.factory.makeGPGKey(user)
-        signature = PymeSignature(gpgkey.fingerprint, "plain data")
+        signature = PymeSignature(gpgkey.fingerprint, b"plain data")
         self.useFixture(ZopeUtilityFixture(
             FakeGPGHandlerGood(signature), IGPGHandler))
         self.assertThat(
@@ -156,9 +156,8 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
     def test_verifyAndStore_good(self):
         user = self.factory.makePerson()
         gpgkey = self.factory.makeGPGKey(user)
-        signature = PymeSignature(
-            gpgkey.fingerprint,
-            getUtility(ICodeOfConductSet).current_code_of_conduct.content)
+        current = getUtility(ICodeOfConductSet).current_code_of_conduct.content
+        signature = PymeSignature(gpgkey.fingerprint, current.encode("UTF-8"))
         self.useFixture(ZopeUtilityFixture(
             FakeGPGHandlerGood(signature), IGPGHandler))
         self.assertIsNone(
@@ -191,4 +190,4 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
                     'user': user.display_name,
                     'fingerprint': gpgkey.fingerprint,
                     },
-            notification.get_payload(decode=True))
+            notification.get_payload(decode=True).decode("UTF-8"))

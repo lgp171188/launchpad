@@ -56,7 +56,7 @@ And this is the POTemplate where the import will be done.
 
 This is the file that'll get imported.
 
-    >>> potemplate_contents = br'''
+    >>> potemplate_contents = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -86,7 +86,7 @@ This is the file that'll get imported.
     ...
     ... msgid "translator-credits"
     ... msgstr ""
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
 
 We sometimes saw deadlocks as POFile statistics were updated after
 importing a template.  The operation would read all translation messages
@@ -146,13 +146,19 @@ Since there was no error, the queue entry's error_output is blank.
 The correct message IDs now show up in the template.
 
     >>> potmsgsets = list(potemplate.getPOTMsgSets())
-    >>> [potmsgset.msgid_singular.msgid for potmsgset in potmsgsets]
-    [u'foo', u'bar', u'baz', u'Foo %s', u'Singular %d', u'translator-credits']
+    >>> for potmsgset in potmsgsets:
+    ...     print(potmsgset.msgid_singular.msgid)
+    foo
+    bar
+    baz
+    Foo %s
+    Singular %d
+    translator-credits
 
 The file references field should be there
 
-    >>> potmsgsets[2].filereferences
-    u'test.c:13'
+    >>> print(potmsgsets[2].filereferences)
+    test.c:13
 
 
 Import Preconditions
@@ -220,7 +226,7 @@ Import With Errors
 Here are the contents of the file we'll be importing. It has some
 validation errors.
 
-    >>> pofile_with_errors = br'''
+    >>> pofile_with_errors = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-03 19:41+0100\n"
@@ -251,7 +257,7 @@ validation errors.
     ... msgstr[1] "Bars %%d"
     ... msgstr[2] "Welsh power! %%d"
     ... msgstr[3] "We have four! %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
 
 This is the dbschema that controls the validation of a translation.
 
@@ -295,20 +301,23 @@ Three translations have been properly imported. Note that the translation
 "balloon" -> "blah" is considered as current, even though "balloon" does
 not appear in the POTemplate.
 
+    >>> from zope.security.proxy import removeSecurityProxy
+
     >>> def show_translation_details(translationmessage, pofile):
     ...     print(translationmessage.potmsgset.singular_text, end=' ')
-    ...     print(translationmessage.translations, end=' ')
+    ...     print(pretty(removeSecurityProxy(translationmessage.translations)),
+    ...           end=' ')
     ...     print(translationmessage.potmsgset.getSequence(pofile.potemplate))
     >>> for translationmessage in pofile.translation_messages:
     ...     if translationmessage.is_current_ubuntu:
     ...         show_translation_details(translationmessage, pofile)
     translator-credits
-        [u'This is a dummy translation so that the credits
+        ['This is a dummy translation so that the credits
          are counted as translated.'] 6
-    foo [u'blah'] 1
-    balloon [u'blah'] 0
+    foo ['blah'] 1
+    balloon ['blah'] 0
     Singular %d
-        [u'Foos %d', u'Bars %d', u'Welsh power! %d', u'We have four! %d'] 5
+        ['Foos %d', 'Bars %d', 'Welsh power! %d', 'We have four! %d'] 5
 
 And the statistics reflect it. (Note that only translations with a
 sequence number greater than 0 are counted, hence the translation
@@ -351,15 +360,19 @@ Check that the plural form was imported correctly.
     >>> print(imported_translationmessage.validation_status.name)
     OK
 
-    >>> imported_translationmessage.translations
-    [u'Foos %d', u'Bars %d', u'Welsh power! %d', u'We have four! %d']
+    >>> for translation in imported_translationmessage.translations:
+    ...     print(translation)
+    Foos %d
+    Bars %d
+    Welsh power! %d
+    We have four! %d
 
 The owner for those translations should be Carlos, instead of the person
 that did the upload, because the imported file states that Carlos is the
 translator.
 
-    >>> imported_translationmessage.submitter.displayname
-    u'Carlos Perell\xf3 Mar\xedn'
+    >>> print(imported_translationmessage.submitter.displayname)
+    Carlos Perelló Marín
 
 The import process produces an email warning us of partial failure, but
 doesn't send it out for published uploads (indicated with subject of
@@ -410,7 +423,7 @@ instance) and they don't mean that any messages failed to import.
 
 For example, here's a gettext PO file with two headers.
 
-    >>> pofile_with_warning = br'''
+    >>> pofile_with_warning = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "Content-Type: text/plain; charset=UTF-8\n"
@@ -426,7 +439,7 @@ For example, here's a gettext PO file with two headers.
     ...
     ... msgid "a"
     ... msgstr "b"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
     >>> eo_pofile = potemplate.newPOFile('eo')
     >>> warning_entry = translation_import_queue.addOrUpdateEntry(
     ...     'eo.po', pofile_with_warning, False, potemplate.owner,
@@ -471,7 +484,7 @@ Import Without Errors
 Now, let's import one without errors. This file changes one translation
 and adds another one.
 
-    >>> pofile_without_errors = br'''
+    >>> pofile_without_errors = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-03 20:41+0100\n"
@@ -489,7 +502,7 @@ and adds another one.
     ...
     ... msgid "translator-credits"
     ... msgstr "helpful@example.com"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path, pofile_without_errors, True, rosetta_experts,
     ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
@@ -532,10 +545,10 @@ we now have four current translations.
     ...         > 0):
     ...         show_translation_details(translationmessage, pofile)
     Singular %d
-        [u'Foos %d', u'Bars %d', u'Welsh power! %d', u'We have four! %d'] 5
-    foo [u'new translation'] 1
-    baz [u'zab'] 3
-    translator-credits [u'helpful@example.com'] 6
+        ['Foos %d', 'Bars %d', 'Welsh power! %d', 'We have four! %d'] 5
+    foo ['new translation'] 1
+    baz ['zab'] 3
+    translator-credits ['helpful@example.com'] 6
     >>> pofile.currentCount()
     4
 
@@ -563,12 +576,12 @@ credits for translations in Launchpad are generated automatically, non-
 upstream translations for these messages are ignored.
 
     >>> message = get_pofile_translation_message(pofile, 'foo')
-    >>> message.msgstr0.translation
-    u'new translation'
+    >>> print(message.msgstr0.translation)
+    new translation
 
     >>> message = get_pofile_translation_message(pofile, 'translator-credits')
-    >>> message.msgstr0.translation
-    u'helpful@example.com'
+    >>> print(message.msgstr0.translation)
+    helpful@example.com
 
 
 Import Preconditions
@@ -632,7 +645,7 @@ plural forms).
 
 We'll import a POFile with 3 plural forms into this POFile:
 
-    >>> pofile_with_plurals = br'''
+    >>> pofile_with_plurals = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-03 19:41+0100\n"
@@ -647,7 +660,7 @@ We'll import a POFile with 3 plural forms into this POFile:
     ... msgstr[0] "First form %%d"
     ... msgstr[1] "Second form %%d"
     ... msgstr[2] "Third form %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
 
 We now import this POFile as this language's translation for the soure
 package:
@@ -673,15 +686,17 @@ specified):
     ...     u'Singular %d', u'Plural %d')
     >>> current = potmsgset_plural.getCurrentTranslation(
     ...     potemplate, language, potemplate.translation_side)
-    >>> current.translations
-    [u'First form %d', u'Second form %d']
+    >>> for translation in current.translations:
+    ...     print(translation)
+    First form %d
+    Second form %d
 
 However, even the third form will be imported into database (this is
 useful for when we finally define the number of plural forms for the
 language, we should not have to reimport all translations):
 
-    >>> current.msgstr2.translation
-    u'Third form %d'
+    >>> print(current.msgstr2.translation)
+    Third form %d
 
 
 Upstream import notifications
@@ -738,5 +753,5 @@ Import fails and email is sent out even though it's an upstream upload.
     >>> entry.status == RosettaImportStatus.FAILED
     True
 
-    >>> subject
-    u'Import problem - Serbian (sr) - ...'
+    >>> print(subject)
+    Import problem - Serbian (sr) - ...

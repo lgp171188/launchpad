@@ -98,6 +98,7 @@ def open_for_writing(filename, mode, dirmode=0o777):
         if e.errno == errno.ENOENT:
             os.makedirs(os.path.dirname(filename), mode=dirmode)
             return open(filename, mode)
+        raise
 
 
 def _kill_may_race(pid, signal_number):

@@ -25,7 +25,7 @@ The IDistributionSet utility is accessed in the usual fashion:
 To retrieve a specific distribution, use IDistributionSet.get:
 
     >>> ubuntu = distroset.get(1)
-    >>> print ubuntu.name
+    >>> print(ubuntu.name)
     ubuntu
 
 The distribution has a useful string representation containing its display
@@ -38,21 +38,22 @@ Or, to grab one by name, use either getByName() or __getitem__().  They both
 can be used to look up distributions by their aliases too.
 
     >>> gentoo = distroset.getByName("gentoo")
-    >>> gentoo.name
-    u'gentoo'
-    >>> distroset["gentoo"].name
-    u'gentoo'
+    >>> print(gentoo.name)
+    gentoo
+    >>> print(distroset["gentoo"].name)
+    gentoo
 
     # Need to login as an LP admin to set a project's aliases.
     >>> login('foo.bar@canonical.com')
     >>> gentoo.setAliases(['jackass'])
-    >>> gentoo.aliases
-    [u'jackass']
+    >>> for alias in gentoo.aliases:
+    ...     print(alias)
+    jackass
     >>> login(ANONYMOUS)
-    >>> distroset['jackass'].name
-    u'gentoo'
-    >>> distroset.getByName('jackass').name
-    u'gentoo'
+    >>> print(distroset['jackass'].name)
+    gentoo
+    >>> print(distroset.getByName('jackass').name)
+    gentoo
 
 Let's make sure a distribution object properly implements its interfaces.
 
@@ -77,7 +78,7 @@ have a SourcePackageName object for it.
 
     >>> evo = SourcePackageName.byName("evolution")
     >>> evo_ubuntu = ubuntu.getSourcePackage(evo)
-    >>> print evo_ubuntu.name
+    >>> print(evo_ubuntu.name)
     evolution
 
     >>> IDistributionSourcePackage.providedBy(evo_ubuntu)
@@ -87,8 +88,8 @@ have a SourcePackageName object for it.
     ...                                           SourcePackageRelease)
     >>> sourcepackagerelease = SourcePackageRelease.selectOneBy(
     ...     sourcepackagenameID=evo.id, version='1.0')
-    >>> sourcepackagerelease.name
-    u'evolution'
+    >>> print(sourcepackagerelease.name)
+    evolution
 
     >>> evo_ubuntu_rel = ubuntu.getSourcePackageRelease(
     ...                    sourcepackagerelease)
@@ -98,26 +99,26 @@ have a SourcePackageName object for it.
 You can also get a release by name:
 
     >>> hoary = ubuntu.getSeries("hoary")
-    >>> print hoary.name
+    >>> print(hoary.name)
     hoary
 
 Or by version:
 
     >>> v504 = ubuntu.getSeries("5.04")
-    >>> print v504.name
+    >>> print(v504.name)
     hoary
 
 You can list development distroseriess:
 
     >>> devdists = ubuntu.getDevelopmentSeries()
     >>> for devdist in devdists:
-    ...     print devdist.name
+    ...     print(devdist.name)
     hoary
 
 You can list the series for a distribution,
 
     >>> for series in ubuntu.series:
-    ...     print series.name
+    ...     print(series.name)
     breezy-autotest
     grumpy
     hoary
@@ -126,7 +127,7 @@ You can list the series for a distribution,
 as well as the distribution architecture series for a distribution:
 
     >>> for architecture in ubuntu.architectures:
-    ...     print architecture.displayname
+    ...     print(architecture.displayname)
     Ubuntu Breezy Badger Autotest i386
     Ubuntu Hoary hppa
     Ubuntu Hoary i386
@@ -161,7 +162,7 @@ If you ask for all the distributions in the DistributionSet you should get
 Ubuntu (and all flavours of it) first and the rest alphabetically:
 
     >>> for item in distroset.getDistros():
-    ...     print item.name
+    ...     print(item.name)
     ubuntu
     kubuntu
     ubuntutest
@@ -184,35 +185,35 @@ a certain string through the magic of fti. For instance:
 
     >>> packages = ubuntu.searchSourcePackageCaches(u"mozilla")
     >>> for distro_source_package_cache, source_name, rank in packages:
-    ...     print "%-17s rank:%s" % (
+    ...     print("%-17s rank:%s" % (
     ...         distro_source_package_cache.name,
-    ...         type(rank))
-    mozilla-firefox   rank:<type 'float'>
+    ...         type(rank)))
+    mozilla-firefox   rank:<... 'float'>
 
 The search also matches on exact package names which fti doesn't like,
 and even on substrings:
 
     >>> packages = ubuntu.searchSourcePackageCaches(u"linux-source-2.6.15")
-    >>> print packages.count()
+    >>> print(packages.count())
     1
     >>> packages = ubuntu.searchSourcePackageCaches(u'a')
     >>> for distro_source_package_cache, source_name, rank in packages:
-    ...     print "%s: %-17s rank:%s" % (
+    ...     print("%s: %-17s rank:%s" % (
     ...         distro_source_package_cache.__class__.__name__,
     ...         distro_source_package_cache.name,
-    ...         type(rank))
-    DistributionSourcePackageCache: alsa-utils        rank:<type 'NoneType'>
-    DistributionSourcePackageCache: commercialpackage rank:<type 'NoneType'>
-    DistributionSourcePackageCache: foobar            rank:<type 'NoneType'>
-    DistributionSourcePackageCache: mozilla-firefox   rank:<type 'NoneType'>
-    DistributionSourcePackageCache: netapplet         rank:<type 'NoneType'>
+    ...         type(rank)))
+    DistributionSourcePackageCache: alsa-utils        rank:<... 'NoneType'>
+    DistributionSourcePackageCache: commercialpackage rank:<... 'NoneType'>
+    DistributionSourcePackageCache: foobar            rank:<... 'NoneType'>
+    DistributionSourcePackageCache: mozilla-firefox   rank:<... 'NoneType'>
+    DistributionSourcePackageCache: netapplet         rank:<... 'NoneType'>
 
 The searchSourcePackages() method just returns a decorated version
 of the results from searchSourcePackageCaches():
 
     >>> packages = ubuntu.searchSourcePackages(u'a')
     >>> for dsp in packages:
-    ...     print "%s: %s" % (dsp.__class__.__name__, dsp.name)
+    ...     print("%s: %s" % (dsp.__class__.__name__, dsp.name))
     DistributionSourcePackage: alsa-utils
     DistributionSourcePackage: commercialpackage
     DistributionSourcePackage: foobar
@@ -226,13 +227,13 @@ in the Packaging table linking it to an upstream project.
 
     >>> packages = ubuntu.searchSourcePackages(u'a', has_packaging=True)
     >>> for dsp in packages:
-    ...     print "%s: %s" % (dsp.__class__.__name__, dsp.name)
+    ...     print("%s: %s" % (dsp.__class__.__name__, dsp.name))
     DistributionSourcePackage: alsa-utils
     DistributionSourcePackage: mozilla-firefox
     DistributionSourcePackage: netapplet
     >>> packages = ubuntu.searchSourcePackages(u'a', has_packaging=False)
     >>> for dsp in packages:
-    ...     print "%s: %s" % (dsp.__class__.__name__, dsp.name)
+    ...     print("%s: %s" % (dsp.__class__.__name__, dsp.name))
     DistributionSourcePackage: commercialpackage
     DistributionSourcePackage: foobar
 
@@ -244,7 +245,7 @@ SourcePackagePublishingHistory table for the given distroseries.
     >>> packages = ubuntu.searchSourcePackages(
     ...     u'a', publishing_distroseries=ubuntu.currentseries)
     >>> for dsp in packages:
-    ...     print "%s: %s" % (dsp.__class__.__name__, dsp.name)
+    ...     print("%s: %s" % (dsp.__class__.__name__, dsp.name))
     DistributionSourcePackage: alsa-utils
     DistributionSourcePackage: netapplet
 
@@ -262,8 +263,9 @@ expected results:
 
     >>> results = ubuntu.searchBinaryPackages(
     ...     u"mozilla-firefox", exact_match=True)
-    >>> print [result.name for result in results]
-    [u'mozilla-firefox']
+    >>> for result in results:
+    ...     print(result.name)
+    mozilla-firefox
 
 An exact match search with no matches on any package name returns
 an empty result set:
@@ -275,20 +277,22 @@ an empty result set:
 Loosening to substring matches gives another result:
 
     >>> results = ubuntu.searchBinaryPackages(u"mozilla", exact_match=False)
-    >>> print results[0]
+    >>> print(results[0])
     <...DistributionSourcePackageCache instance ...
 
-    >>> print [result.name for result in results]
-    [u'mozilla-firefox']
-    >>> print [result.binpkgnames for result in results]
-    [u'mozilla-firefox mozilla-firefox-data']
+    >>> for result in results:
+    ...     print(result.name)
+    mozilla-firefox
+    >>> for result in results:
+    ...     print(result.binpkgnames)
+    mozilla-firefox mozilla-firefox-data
 
 The results of searchBinaryPackages() are simply ordered alphabetically
 for the moment until we have a better FTI rank to order with.
 
     >>> results = ubuntu.searchBinaryPackages(u"m")
     >>> for result in results:
-    ...     print result.name
+    ...     print(result.name)
     mozilla-firefox
     pmount
 
@@ -304,39 +308,41 @@ Distribution can do that for us.
 
 If we ask for a totally unknown distroseries, we raise NotFoundError
     >>> ubuntu.getDistroSeriesAndPocket('unknown')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: 'unknown'
+    lp.app.errors.NotFoundError: ...'unknown'
 
 If we ask for a plain distroseries, it should come back with the RELEASE
 pocket as the pocket.
     >>> dr, pocket = ubuntu.getDistroSeriesAndPocket('hoary')
-    >>> print dr.name
+    >>> print(dr.name)
     hoary
-    >>> print pocket.name
+    >>> print(pocket.name)
     RELEASE
 
 If we ask for a security pocket in a known distroseries it should come out
 on the other side.
     >>> dr, pocket = ubuntu.getDistroSeriesAndPocket('hoary-security')
-    >>> print dr.name
+    >>> print(dr.name)
     hoary
-    >>> print pocket.name
+    >>> print(pocket.name)
     SECURITY
 
 Find the backports pocket, too:
     >>> dr, pocket = ubuntu.getDistroSeriesAndPocket('hoary-backports')
-    >>> print dr.name
+    >>> print(dr.name)
     hoary
-    >>> print pocket.name
+    >>> print(pocket.name)
     BACKPORTS
 
 If we ask for a valid distroseries which doesn't have a given pocket it should
 raise NotFoundError for us
     >>> ubuntu.getDistroSeriesAndPocket('hoary-bullshit')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: 'hoary-bullshit'
+    lp.app.errors.NotFoundError: ...'hoary-bullshit'
 
 
 Upload related stuff
@@ -350,8 +356,8 @@ what component is uploadable to by what person or group of people.
     >>> for permission in sorted(
     ...     ubuntu.uploaders, key=attrgetter("id")):
     ...     assert not permission.archive.is_ppa
-    ...     print permission.component.name
-    ...     print permission.person.displayname
+    ...     print(permission.component.name)
+    ...     print(permission.person.displayname)
     universe
     Ubuntu Team
     restricted
@@ -373,27 +379,27 @@ officially. Ubuntu uses all of them:
     >>> ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
     >>> ubuntu.official_malone
     True
-    >>> print ubuntu.answers_usage.name
+    >>> print(ubuntu.answers_usage.name)
     LAUNCHPAD
-    >>> print ubuntu.blueprints_usage.name
+    >>> print(ubuntu.blueprints_usage.name)
     LAUNCHPAD
-    >>> print ubuntu.translations_usage.name
+    >>> print(ubuntu.translations_usage.name)
     LAUNCHPAD
 
 The bug_tracking_usage property currently only tracks official_malone.
 
-    >>> print ubuntu.bug_tracking_usage.name
+    >>> print(ubuntu.bug_tracking_usage.name)
     LAUNCHPAD
 
 While the other attributes track the other official_ attributes.
 
-    >>> print ubuntu.official_answers
+    >>> print(ubuntu.official_answers)
     True
-    >>> print ubuntu.answers_usage.name
+    >>> print(ubuntu.answers_usage.name)
     LAUNCHPAD
-    >>> print ubuntu.official_blueprints
+    >>> print(ubuntu.official_blueprints)
     True
-    >>> print ubuntu.blueprints_usage.name
+    >>> print(ubuntu.blueprints_usage.name)
     LAUNCHPAD
 
 If the official_ attributes are False and the enum hasn't been set,
@@ -401,14 +407,14 @@ the usage enums don't know anything.
 
     >>> ignored = login_person(ubuntu.owner.teamowner)
     >>> ubuntu.official_answers = False
-    >>> print ubuntu.answers_usage.name
+    >>> print(ubuntu.answers_usage.name)
     UNKNOWN
 
 A distribution *cannot* specify that it uses codehosting. Currently there's
 no way for a distribution to use codehosting.
 
     >>> from lp.app.enums import ServiceUsage
-    >>> print ubuntu.codehosting_usage.name
+    >>> print(ubuntu.codehosting_usage.name)
     NOT_APPLICABLE
     >>> ubuntu.codehosting_usage = ServiceUsage.LAUNCHPAD
     Traceback (most recent call last):
@@ -417,24 +423,24 @@ no way for a distribution to use codehosting.
 While Debian uses none:
 
     >>> debian = getUtility(ILaunchpadCelebrities).debian
-    >>> print debian.bug_tracking_usage.name
+    >>> print(debian.bug_tracking_usage.name)
     UNKNOWN
-    >>> print debian.translations_usage.name
+    >>> print(debian.translations_usage.name)
     UNKNOWN
-    >>> print debian.answers_usage.name
+    >>> print(debian.answers_usage.name)
     UNKNOWN
-    >>> print debian.codehosting_usage.name
+    >>> print(debian.codehosting_usage.name)
     NOT_APPLICABLE
-    >>> print debian.blueprints_usage.name
+    >>> print(debian.blueprints_usage.name)
     UNKNOWN
 
 Gentoo only uses Malone
 
-    >>> print gentoo.bug_tracking_usage.name
+    >>> print(gentoo.bug_tracking_usage.name)
     LAUNCHPAD
-    >>> print gentoo.translations_usage.name
+    >>> print(gentoo.translations_usage.name)
     UNKNOWN
-    >>> print gentoo.answers_usage.name
+    >>> print(gentoo.answers_usage.name)
     UNKNOWN
 
 Launchpad admins and the distro owner can set these fields.
@@ -443,7 +449,7 @@ Launchpad admins and the distro owner can set these fields.
     >>> login('mark@example.com')
     >>> debian = getUtility(ILaunchpadCelebrities).debian
     >>> debian.blueprints_usage = ServiceUsage.LAUNCHPAD
-    >>> print debian.blueprints_usage.name
+    >>> print(debian.blueprints_usage.name)
     LAUNCHPAD
     >>> debian.official_malone = True
     >>> debian.official_malone
@@ -456,21 +462,24 @@ Launchpad admins and the distro owner can set these fields.
     >>> debian.owner = debian_owner
     >>> ignored = login_person(debian_owner)
     >>> debian.blueprints_usage = ServiceUsage.NOT_APPLICABLE
-    >>> print debian.blueprints_usage.name
+    >>> print(debian.blueprints_usage.name)
     NOT_APPLICABLE
 
 But others can't.
 
     >>> login('no-priv@canonical.com')
     >>> debian.blueprints_usage = ServiceUsage.LAUNCHPAD
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    Unauthorized: (..., 'blueprints_usage', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (..., 'blueprints_usage', 'launchpad.Edit')
     >>> debian.official_malone = True
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    Unauthorized: (..., 'official_malone', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (..., 'official_malone', 'launchpad.Edit')
     >>> debian.translations_usage = ServiceUsage.LAUNCHPAD
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    Unauthorized: (..., 'translations_usage', 'launchpad.TranslationsAdmin')
+    zope.security.interfaces.Unauthorized: (..., 'translations_usage', 'launchpad.TranslationsAdmin')
 
 
 Specification Listings
@@ -502,7 +511,7 @@ There are 2 completed specs for Kubuntu:
 
     >>> filter = [SpecificationFilter.COMPLETE]
     >>> for spec in kubuntu.specifications(None, filter=filter):
-    ...    print spec.name, spec.is_complete
+    ...    print(spec.name, spec.is_complete)
     thinclient-local-devices True
     usplash-on-hibernation True
 
@@ -511,7 +520,7 @@ And there are four incomplete specs:
 
     >>> filter = [SpecificationFilter.INCOMPLETE]
     >>> for spec in kubuntu.specifications(None, filter=filter):
-    ...    print spec.name, spec.is_complete
+    ...    print(spec.name, spec.is_complete)
     cluster-installation False
     revu False
     kde-desktopfile-langpacks False
@@ -522,7 +531,7 @@ If we ask for all specs, we get them in the order of priority.
 
     >>> filter = [SpecificationFilter.ALL]
     >>> for spec in kubuntu.specifications(None, filter=filter):
-    ...    print spec.priority.title, spec.name
+    ...    print(spec.priority.title, spec.name)
     Essential cluster-installation
     High revu
     Medium thinclient-local-devices
@@ -534,7 +543,7 @@ If we ask for all specs, we get them in the order of priority.
 And if we ask just for specs, we get the incomplete ones.
 
     >>> for spec in kubuntu.specifications(None):
-    ...     print spec.name, spec.is_complete
+    ...     print(spec.name, spec.is_complete)
     cluster-installation False
     revu False
     kde-desktopfile-langpacks False
@@ -543,7 +552,7 @@ And if we ask just for specs, we get the incomplete ones.
 We can filter for specifications that contain specific text:
 
     >>> for spec in kubuntu.specifications(None, filter=[u'package']):
-    ...     print spec.name
+    ...     print(spec.name)
     revu
 
 We can get only valid specs (those that are not obsolete or superseded):
@@ -563,7 +572,7 @@ We can get only valid specs (those that are not obsolete or superseded):
     ...             SpecificationDefinitionStatus.SUPERSEDED)
     ...     shim = spec.updateLifecycleStatus(owner)
     >>> for spec in kubuntu.valid_specifications():
-    ...     print spec.name
+    ...     print(spec.name)
     kde-desktopfile-langpacks
 
 
@@ -574,8 +583,10 @@ We can use IDistribution.milestones to get all milestones associated with any
 series of a distribution.
 
     >>> from datetime import datetime
-    >>> [milestone.name for milestone in debian.milestones]
-    [u'3.1', u'3.1-rc1']
+    >>> for milestone in debian.milestones:
+    ...     print(milestone.name)
+    3.1
+    3.1-rc1
 
     >>> woody = debian['woody']
 
@@ -584,31 +595,39 @@ Milestones for distros can only be created by distro owners or admins.
     >>> login('no-priv@canonical.com')
     >>> woody.newMilestone(
     ...     name='impossible', dateexpected=datetime(2028, 10, 1))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<DistroSeries u'woody'>, 'newMilestone', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (<DistroSeries ...'woody'>, 'newMilestone', 'launchpad.Edit')
     >>> login('mark@example.com')
     >>> debian_milestone = woody.newMilestone(
     ...     name='woody-rc1', dateexpected=datetime(2028, 10, 1))
 
 They're ordered by dateexpected.
 
-    >>> [(milestone.name, milestone.dateexpected.strftime('%Y-%m-%d'))
-    ...  for milestone in debian.milestones]
-    [(u'3.1', '2056-05-16'), (u'3.1-rc1', '2056-02-16'),
-     (u'woody-rc1', '2028-10-01')]
+    >>> for milestone in debian.milestones:
+    ...     print('%s: %s' % (
+    ...         milestone.name, milestone.dateexpected.strftime('%Y-%m-%d')))
+    3.1: 2056-05-16
+    3.1-rc1: 2056-02-16
+    woody-rc1: 2028-10-01
 
 Only milestones which have visible=True are returned by the .milestones
 property.
 
     >>> debian_milestone.active = False
-    >>> [milestone.name for milestone in debian.milestones]
-    [u'3.1', u'3.1-rc1']
+    >>> for milestone in debian.milestones:
+    ...     print(milestone.name)
+    3.1
+    3.1-rc1
 
 To get all milestones of a given distro we have the .all_milestones property.
 
-    >>> [milestone.name for milestone in debian.all_milestones]
-    [u'3.1', u'3.1-rc1', u'woody-rc1']
+    >>> for milestone in debian.all_milestones:
+    ...     print(milestone.name)
+    3.1
+    3.1-rc1
+    woody-rc1
 
 
 Archives
@@ -618,8 +637,8 @@ A distribution archive (primary, partner, debug or copy) can be retrieved
 by name using IDistribution.getArchive.
 
     >>> def display_archive(archive):
-    ...     print '%s %s %s' % (
-    ...         archive.distribution.name, archive.owner.name, archive.name)
+    ...     print('%s %s %s' % (
+    ...         archive.distribution.name, archive.owner.name, archive.name))
     >>> display_archive(ubuntu.getArchive('primary'))
     ubuntu ubuntu-team primary
     >>> display_archive(ubuntu.getArchive('partner'))

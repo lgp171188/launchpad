@@ -322,6 +322,4 @@ class EditBugSubscriptionFilter(AuthorizationBase):
     usedfor = IBugSubscriptionFilter
 
     def checkAuthenticated(self, user):
-        return (
-            self.obj.structural_subscription is None or
-            user.inTeam(self.obj.structural_subscription.subscriber))
+        return user.inTeam(self.obj.structural_subscription.subscriber)

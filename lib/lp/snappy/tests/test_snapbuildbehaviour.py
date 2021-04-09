@@ -137,10 +137,10 @@ class InProcessAuthServerFixture(fixtures.Fixture, xmlrpc.XMLRPC):
     def _setUp(self):
         listener = reactor.listenTCP(0, server.Site(InProcessAuthServer()))
         self.addCleanup(listener.stopListening)
-        config.push("in-process-auth-server-fixture", (dedent("""
+        config.push("in-process-auth-server-fixture", dedent("""
             [builddmaster]
             authentication_endpoint: http://localhost:%d/
-            """) % listener.getHost().port).encode("UTF-8"))
+            """) % listener.getHost().port)
         self.addCleanup(config.pop, "in-process-auth-server-fixture")
 
 
@@ -784,7 +784,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('build.count,job_type=SNAPBUILD,builder_name={},env=test'.format(
+            ('build.count,builder_name={},env=test,job_type=SNAPBUILD'.format(
                 builder.name),))
 
     @defer.inlineCallbacks

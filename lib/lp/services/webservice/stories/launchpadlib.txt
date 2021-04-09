@@ -79,9 +79,10 @@ But trying to access information that requires a logged in user
 results in an error.
 
     >>> print(lp_anon.me.name)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: HTTP Error 401: Unauthorized...
+    lazr.restfulclient.errors.Unauthorized: HTTP Error 401: Unauthorized...
 
 
 Caching
@@ -106,10 +107,10 @@ Now create a Launchpad object and observe how it populates the cache.
     >>> launchpad = Launchpad(
     ...     credentials, None, None, 'http://api.launchpad.test/',
     ...     cache=cache)
-    send: 'GET /1.0/ ...accept: application/vnd.sun.wadl+xml...'
+    send: ...'GET /1.0/ ...accept: application/vnd.sun.wadl+xml...'
     reply: 'HTTP/1.0 200 Ok\n'
     ...
-    send: 'GET /1.0/ ...accept: application/json...'
+    send: ...'GET /1.0/ ...accept: application/json...'
     reply: 'HTTP/1.0 200 Ok\n'
     ...
 

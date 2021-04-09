@@ -15,18 +15,25 @@ contributors on a given context and the top contributors by category.
     >>> view = create_initialized_view(
     ...     product, '+topcontributors', principal=user)
     >>> contributors = view._getTopContributorsWithLimit(limit=3)
-    >>> [(contrib.person.name, contrib.karmavalue)
-    ...     for contrib in contributors]
-    [(u'name16', 175), (u'mark', 22), (u'carlos', 9)]
+    >>> for contrib in contributors:
+    ...     print(contrib.person.name, contrib.karmavalue)
+    name16 175
+    mark 22
+    carlos 9
 
     >>> contributors = view.top_contributors_by_category
     >>> categories = sorted(contributors.keys())
     >>> for category in categories:
-    ...     print(category, [(contrib.person.name, contrib.karmavalue)
-    ...                      for contrib in contributors[category]])
-    Bug Management [(u'name16', 11)]
-    Specification Tracking [(u'mark', 22)]
-    Translations in Rosetta [(u'name16', 164), (u'carlos', 9)]
+    ...     print(category)
+    ...     for contrib in contributors[category]:
+    ...         print(contrib.person.name, contrib.karmavalue)
+    Bug Management
+    name16 11
+    Specification Tracking
+    mark 22
+    Translations in Rosetta
+    name16 164
+    carlos 9
 
 The view renders summaries by category.
 

@@ -1,4 +1,4 @@
-# Copyright 2012-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -1101,7 +1101,7 @@ class TestSharingService(TestCaseWithFactory):
         # Check that grantees have expected access grants and subscriptions.
         for person in [team_grantee, person_grantee]:
             (visible_bugs, visible_branches, visible_gitrepositories,
-             visible_specs) = (
+             visible_snaps, visible_specs) = (
                 self.service.getVisibleArtifacts(
                     person, bugs=bugs, branches=branches,
                     gitrepositories=gitrepositories,
@@ -1133,7 +1133,7 @@ class TestSharingService(TestCaseWithFactory):
             for bug in bugs or []:
                 self.assertNotIn(person, bug.getDirectSubscribers())
             (visible_bugs, visible_branches, visible_gitrepositories,
-             visible_specs) = (
+             visible_snaps, visible_specs) = (
                 self.service.getVisibleArtifacts(
                     person, bugs=bugs, branches=branches,
                     gitrepositories=gitrepositories))
@@ -1459,7 +1459,7 @@ class TestSharingService(TestCaseWithFactory):
 
         # Check the results.
         (shared_bugtasks, shared_branches, shared_gitrepositories,
-         shared_specs) = (
+         shared_snaps, shared_specs) = (
             self.service.getSharedArtifacts(product, grantee, user))
         self.assertContentEqual(bug_tasks[:9], shared_bugtasks)
         self.assertContentEqual(branches[:9], shared_branches)
@@ -1783,7 +1783,8 @@ class TestSharingService(TestCaseWithFactory):
         grantee, ignore, bugs, branches, gitrepositories, specs = (
             self._make_Artifacts())
         # Check the results.
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
+        (shared_bugs, shared_branches, shared_gitrepositories,
+         shared_snaps, shared_specs) = (
             self.service.getVisibleArtifacts(
                 grantee, bugs=bugs, branches=branches,
                 gitrepositories=gitrepositories, specifications=specs))
@@ -1797,7 +1798,8 @@ class TestSharingService(TestCaseWithFactory):
         # user has a policy grant for the pillar of the specification.
         _, owner, bugs, branches, gitrepositories, specs = (
             self._make_Artifacts())
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
+        (shared_bugs, shared_branches, shared_gitrepositories,
+         shared_snaps, shared_specs) = (
             self.service.getVisibleArtifacts(
                 owner, bugs=bugs, branches=branches,
                 gitrepositories=gitrepositories, specifications=specs))
@@ -1840,7 +1842,8 @@ class TestSharingService(TestCaseWithFactory):
                 information_type=InformationType.USERDATA)
             bugs.append(bug)
 
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
+        (shared_bugs, shared_branches, shared_gitrepositories,
+         visible_snaps, shared_specs) = (
             self.service.getVisibleArtifacts(grantee, bugs=bugs))
         self.assertContentEqual(bugs, shared_bugs)
 
@@ -1848,7 +1851,8 @@ class TestSharingService(TestCaseWithFactory):
         for x in range(0, 5):
             change_callback(bugs[x], owner)
         # Check the results.
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
+        (shared_bugs, shared_branches, shared_gitrepositories,
+         visible_snaps, shared_specs) = (
             self.service.getVisibleArtifacts(grantee, bugs=bugs))
         self.assertContentEqual(bugs[5:], shared_bugs)
 

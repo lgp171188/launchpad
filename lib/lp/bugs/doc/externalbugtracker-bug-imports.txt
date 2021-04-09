@@ -72,10 +72,10 @@ distributions are supported as the bug target.
 The summary and descriptions of the imported bugs are what was returned
 by getBugSummaryAndDescription().
 
-    >>> bug.title
-    u'Sample summary 3'
-    >>> bug.description
-    u'Sample description 3.'
+    >>> print(bug.title)
+    Sample summary 3
+    >>> print(bug.description)
+    Sample description 3.
 
 The bug reporter, as returned by getBugReporter(), got automatically created.
 
@@ -101,8 +101,8 @@ account is marked as NEW, since we don't know whether it's valid.
 
     >>> bug.owner.creation_rationale.name
     'BUGIMPORT'
-    >>> bug.owner.creation_comment
-    u'when importing bug #3 from http://...'
+    >>> print(bug.owner.creation_comment)
+    when importing bug #3 from http://...
 
 No one got subscribed to the created bug, since the relevant people
 already get email notifications via the external bug tracker.
@@ -115,13 +115,13 @@ bug watch pointing to the original remote bug, so that the bug report is
 kept in sync.
 
     >>> [added_task] = bug.bugtasks
-    >>> added_task.bugtargetname
-    u'evolution (Debian)'
+    >>> print(added_task.bugtargetname)
+    evolution (Debian)
 
-    >>> added_task.bugwatch.bugtracker.name
-    u'bugzilla-checkwatches-1'
-    >>> added_task.bugwatch.remotebug
-    u'3'
+    >>> print(added_task.bugwatch.bugtracker.name)
+    bugzilla-checkwatches-1
+    >>> print(added_task.bugwatch.remotebug)
+    3
 
 
 Non-existent source package
@@ -144,8 +144,8 @@ the script gets notified about it.
     (OOPS-...)
 
     >>> [added_task] = bug.bugtasks
-    >>> added_task.distribution.name
-    u'debian'
+    >>> print(added_task.distribution.name)
+    debian
     >>> print(added_task.sourcepackagename)
     None
 
@@ -179,10 +179,10 @@ valid email address), they still won't be subscribed to the imported bug.
     >>> bug = bug_watch_updater.importBug(
     ...     external_bugtracker, bugtracker, debian, '7')
 
-    >>> bug.owner.name
-    u'no-priv'
-    >>> bug.owner.displayname
-    u'No Privileges Person'
+    >>> print(bug.owner.name)
+    no-priv
+    >>> print(bug.owner.displayname)
+    No Privileges Person
 
     >>> [person.name for person in bug.getDirectSubscribers()]
     []

@@ -65,10 +65,7 @@ from lp.registry.model.milestone import milestone_sort_key
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.vocabularies import DistributionVocabulary
 from lp.services.database.interfaces import IStore
-from lp.services.helpers import (
-    ensure_unicode,
-    shortlist,
-    )
+from lp.services.helpers import shortlist
 from lp.services.webapp.escaping import (
     html_escape,
     structured,
@@ -138,7 +135,7 @@ class BugTrackerVocabulary(SQLObjectVocabularyBase):
 
     def search(self, query, vocab_filter=None):
         """Search for web bug trackers."""
-        query = ensure_unicode(query).lower()
+        query = query.lower()
         results = IStore(self._table).find(
             self._table, And(
             self._filter,

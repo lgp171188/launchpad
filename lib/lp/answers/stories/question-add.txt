@@ -18,9 +18,10 @@ The user sees an involvement link to ask a question.
 Asking a new question requires logging in:
 
     >>> browser.getLink('Ask a question').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
     >>> user_browser.open('http://answers.launchpad.test/ubuntu/')
     >>> user_browser.getLink('Ask a question').click()
     >>> print(user_browser.title)
@@ -89,8 +90,7 @@ For now, use a closer search:
     http://answers.launchpad.test/ubuntu/+faq/...
 
     >>> similar_questions = contents.find(id='similar-questions')
-    >>> print(extract_text(similar_questions).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(similar_questions)))
     8: Installation of Java Runtime Environment for Mozilla  (Answered)
         posted on ... in ...mozilla-firefox... package in Ubuntu
     >>> print(similar_questions.a['href'])

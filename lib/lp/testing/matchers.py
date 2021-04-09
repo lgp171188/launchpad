@@ -9,6 +9,7 @@ __all__ = [
     'DoesNotCorrectlyProvide',
     'DoesNotProvide',
     'EqualsIgnoringWhitespace',
+    'FileContainsBytes',
     'HasQueryCount',
     'IsNotProxied',
     'IsProxied',
@@ -27,9 +28,11 @@ from testtools.content import text_content
 from testtools.matchers import (
     DocTestMatches as OriginalDocTestMatches,
     Equals,
+    FileContains,
     LessThan,
     Matcher,
     Mismatch,
+    PathExists,
     )
 from testtools.matchers._higherorder import MismatchesAll
 from zope.interface.exceptions import (
@@ -472,11 +475,30 @@ class EqualsIgnoringWhitespace(Equals):
     """
 
     def __init__(self, expected):
-        if isinstance(expected, six.string_types):
+        if isinstance(expected, (bytes, six.text_type)):
             expected = normalize_whitespace(expected)
         super(EqualsIgnoringWhitespace, self).__init__(expected)
 
     def match(self, observed):
-        if isinstance(observed, six.string_types):
+        if isinstance(observed, (bytes, six.text_type)):
             observed = normalize_whitespace(observed)
         return super(EqualsIgnoringWhitespace, self).match(observed)
+
+
+class FileContainsBytes(FileContains):
+    """Matches if the given file has the specified contents as bytes.
+
+    Like `FileContains`, but opens the file in binary mode rather than text
+    mode.
+    """
+
+    def match(self, path):
+        mismatch = PathExists().match(path)
+        if mismatch is not None:
+            return mismatch
+        f = open(path, "rb")
+        try:
+            actual_contents = f.read()
+            return self.matcher.match(actual_contents)
+        finally:
+            f.close()

@@ -17,8 +17,12 @@ total size of the collection.
   ...     return collection.jsonBody()
 
   >>> collection = get_collection("devel")
-  >>> print(sorted(collection.keys()))
-  [u'entries', u'next_collection_link', u'start', u'total_size_link']
+  >>> for key in sorted(collection.keys()):
+  ...     print(key)
+  entries
+  next_collection_link
+  start
+  total_size_link
   >>> print(webservice.get(collection['total_size_link']).jsonBody())
   9
 
@@ -26,8 +30,12 @@ In previous versions, the same named operations will return a
 'total_size' containing the actual size of the collection.
 
   >>> collection = get_collection("1.0")
-  >>> print(sorted(collection.keys()))
-  [u'entries', u'next_collection_link', u'start', u'total_size']
+  >>> for key in sorted(collection.keys()):
+  ...     print(key)
+  entries
+  next_collection_link
+  start
+  total_size
   >>> print(collection['total_size'])
   9
 
@@ -38,11 +46,14 @@ In the 'beta' version of the web service, mutator methods like
 IBugTask.transitionToStatus are published as named operations. In
 subsequent versions, those named operations are not published.
 
+  >>> from operator import itemgetter
+
   >>> def get_bugtask_path(version):
   ...     bug_one = webservice.get("/bugs/1", api_version=version).jsonBody()
   ...     bug_one_bugtasks_url = bug_one['bug_tasks_collection_link']
   ...     bug_one_bugtasks = sorted(webservice.get(
-  ...         bug_one_bugtasks_url).jsonBody()['entries'])
+  ...         bug_one_bugtasks_url).jsonBody()['entries'],
+  ...         key=itemgetter('self_link'))
   ...     bugtask_path = bug_one_bugtasks[0]['self_link']
   ...     return bugtask_path
 

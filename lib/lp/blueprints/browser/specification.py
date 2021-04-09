@@ -1424,10 +1424,7 @@ class SpecificationTreeGraphView(LaunchpadView):
         process = Popen(
             cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE,
             close_fds=True)
-        process.stdin.write(input)
-        process.stdin.close()
-        output = process.stdout.read()
-        err = process.stderr.read()
+        output, err = process.communicate(input)
         # XXX Abel Deuring 2012-12-06, bug 1087314
         # err may just contain a warning, while the image might be rendered
         # correctly. We should not raise an error in this case.

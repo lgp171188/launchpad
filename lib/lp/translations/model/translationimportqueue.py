@@ -1,7 +1,12 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+    )
 
 __metaclass__ = type
 __all__ = [
@@ -839,8 +844,8 @@ class TranslationImportQueueEntry(StormBase):
         elapsedtime = (
             datetime.datetime.now(UTC) - self.dateimported)
         elapsedtime_text = ''
-        hours = elapsedtime.seconds / 3600
-        minutes = (elapsedtime.seconds % 3600) / 60
+        hours = elapsedtime.seconds // 3600
+        minutes = (elapsedtime.seconds % 3600) // 60
         if elapsedtime.days > 0:
             elapsedtime_text += '%d days ' % elapsedtime.days
         if hours > 0:

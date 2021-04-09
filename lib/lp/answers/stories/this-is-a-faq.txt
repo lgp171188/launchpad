@@ -134,9 +134,8 @@ A link to the FAQ appears under the question's description:
 
 The answer message was added to the question's discussion:
 
-    >>> print(extract_text(find_tags_by_class(
-    ...     user_browser.contents, 'boardCommentBody')[-1]).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_tags_by_class(
+    ...     user_browser.contents, 'boardCommentBody')[-1])))
     No Privileges Person suggests this article as an answer to your question:
     FAQ #10: \u201cHow do I install plugins...
 
@@ -183,9 +182,8 @@ submit the form again.
 
 The new message was added to the question:
 
-    >>> print(extract_text(find_tags_by_class(
-    ...     user_browser.contents, 'boardCommentBody')[-1]).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_tags_by_class(
+    ...     user_browser.contents, 'boardCommentBody')[-1])))
     Sorry, this document doesn't really answer your question.
 
 The link was also removed from the details portlet:
@@ -206,21 +204,24 @@ Since No Privileges Person isn't an answer contact for the project nor
 the project owner, they don't have the possibility to create a new FAQ.
 
     >>> user_browser.getLink('Create a FAQ')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink('Link to a FAQ').click()
     >>> user_browser.getLink('create a new FAQ')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...     'http://answers.launchpad.test/firefox/+question/2/+createfaq')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Sample Person who is the project owner does have that ability.
 
@@ -275,9 +276,8 @@ returned to the question page.
 
 The answer message was added to the question's discussion:
 
-    >>> print(extract_text(find_tags_by_class(
-    ...     owner_browser.contents, 'boardCommentBody')[-1]).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_tags_by_class(
+    ...     owner_browser.contents, 'boardCommentBody')[-1])))
     Read the Fine Answer:
     FAQ...: \u201cDisplaying SVG in Firefox\u201d.
 
@@ -391,9 +391,8 @@ discussion.
     Related FAQ:
     How can I play MP3/Divx/DVDs/Quicktime/Realmedia files ...
 
-    >>> print(extract_text(find_tags_by_class(
-    ...     user_browser.contents, 'boardCommentBody')[-1]).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_tags_by_class(
+    ...     user_browser.contents, 'boardCommentBody')[-1])))
     The FAQ mentions this:
     FAQ #6: ...How can I play MP3/Divx/DVDs/Quicktime/Realmedia files...
 

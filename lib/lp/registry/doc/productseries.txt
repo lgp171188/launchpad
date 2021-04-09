@@ -44,7 +44,7 @@ And verify that it looks like the series we think it should be.
 
     >>> trunk.product == firefox
     True
-    >>> print trunk.name
+    >>> print(trunk.name)
     trunk
 
 It's also possible to ask a product for all its associated series.
@@ -58,9 +58,9 @@ A ProductSeries can also be fetched with the IProductSeriesSet utility.
     >>> from lp.registry.interfaces.productseries import IProductSeriesSet
 
     >>> firefox_1_0 = getUtility(IProductSeriesSet).get(2)
-    >>> print firefox_1_0.product.name
+    >>> print(firefox_1_0.product.name)
     firefox
-    >>> print firefox_1_0.name
+    >>> print(firefox_1_0.name)
     1.0
 
 New ProductSeries are created using Product.newSeries(). Only the product
@@ -69,21 +69,22 @@ owner or driver can call Product.newSeries().
     >>> series_driver = factory.makePerson(name="driver")
     >>> summary = "Port of Firefox to the Emacs operating system."
     >>> emacs = firefox.newSeries(series_driver , 'emacs', summary)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (..., 'newSeries', 'launchpad.Driver')
+    zope.security.interfaces.Unauthorized: (..., 'newSeries', 'launchpad.Driver')
 
     >>> ignored = login_person(firefox.owner)
     >>> emacs_series = firefox.newSeries(
     ...     firefox.owner , 'emacs', summary,
     ...     releasefileglob='ftp://gnu.org/emacs*.gz')
-    >>> print emacs_series.name
+    >>> print(emacs_series.name)
     emacs
 
-    >>> print emacs_series.summary
+    >>> print(emacs_series.summary)
     Port of Firefox to the Emacs operating system.
 
-    >>> print emacs_series.releasefileglob
+    >>> print(emacs_series.releasefileglob)
     ftp://gnu.org/emacs*.gz
 
 When a driver creates a series, they are also the driver of the new series
@@ -92,13 +93,13 @@ to make them the release manager.
     >>> firefox.driver = series_driver
     >>> ignored = login_person(series_driver)
     >>> emacs2 = firefox.newSeries(series_driver , 'emacs2', summary)
-    >>> print emacs2.driver.name
+    >>> print(emacs2.driver.name)
     driver
 
 A newly created series is assumed to be in the development state.
 
     >>> login(ANONYMOUS)
-    >>> print emacs_series.status.title
+    >>> print(emacs_series.status.title)
     Active Development
 
 Let's check that the new series is properly associated to its product.
@@ -162,21 +163,24 @@ that the url uses one of the supported schemes (ftp, http, http).
 Invalid URLs and unsupported schemes raise a LaunchpadValidationError.
 
     >>> validate_release_glob('ftp.gnu.org/gnu/emacs/emacs-21.*.gz')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    LaunchpadValidationError: ...
+    lp.app.validators.LaunchpadValidationError: ...
 
     >>> validate_release_glob('wais://ftp.gnu.org/gnu/emacs/emacs-21.*.gz')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    LaunchpadValidationError: ...
+    lp.app.validators.LaunchpadValidationError: ...
 
 The URL must contain a glob (*) or , and may contain more than one.
 
     >>> validate_release_glob('http://ftp.gnu.org/gnu/emacs/emacs-21.10.1.gz')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    LaunchpadValidationError: ...
+    lp.app.validators.LaunchpadValidationError: ...
 
     >>> validate_release_glob('http://ftp.gnu.org/gnu/*/emacs-21.*.gz')
     True
@@ -230,7 +234,7 @@ If we ask for ALL specs we should see them both.
 
     >>> filter = [SpecificationFilter.ALL]
     >>> for s in onezero.specifications(None, filter=filter):
-    ...     print s.name
+    ...     print(s.name)
     a
     b
 
@@ -239,7 +243,7 @@ specs:
 
     >>> filter=[SpecificationFilter.ACCEPTED]
     >>> for spec in onezero.specifications(None, filter=filter):
-    ...     print spec.name, spec.goalstatus.title
+    ...     print(spec.name, spec.goalstatus.title)
     a Accepted
 
     >>> filter=[SpecificationFilter.PROPOSED]
@@ -255,7 +259,7 @@ accepted one.
 
     >>> filter = [SpecificationFilter.INFORMATIONAL]
     >>> for s in onezero.specifications(None, filter=filter):
-    ...     print s.name
+    ...     print(s.name)
     a
 
 If we specifically ask for declined informational, we will get that:
@@ -263,21 +267,21 @@ If we specifically ask for declined informational, we will get that:
     >>> filter = [
     ...    SpecificationFilter.INFORMATIONAL, SpecificationFilter.DECLINED]
     >>> for s in onezero.specifications(None, filter=filter):
-    ...     print s.name
+    ...     print(s.name)
     b
 
 There are is one completed, accepted spec for 1.0:
 
     >>> filter = [SpecificationFilter.COMPLETE]
     >>> for spec in onezero.specifications(None, filter=filter):
-    ...    print spec.name, spec.is_complete, spec.goalstatus.title
+    ...    print(spec.name, spec.is_complete, spec.goalstatus.title)
     a True Accepted
 
 There is one completed, declined spec:
 
     >>> filter = [SpecificationFilter.COMPLETE, SpecificationFilter.DECLINED]
     >>> for spec in onezero.specifications(None, filter=filter):
-    ...    print spec.name, spec.is_complete, spec.goalstatus.title
+    ...    print(spec.name, spec.is_complete, spec.goalstatus.title)
     b True Declined
 
 Now lets make b incomplete, but accepted.
@@ -292,14 +296,14 @@ And if we ask just for specs, we get BOTH the incomplete and the
 complete ones that have been accepted.
 
     >>> for spec in onezero.specifications(None):
-    ...     print spec.name, spec.is_complete, spec.goalstatus.title
+    ...     print(spec.name, spec.is_complete, spec.goalstatus.title)
     a True Accepted
     b False Accepted
 
 We can search for text in specifications (in this case there are no
 matches):
 
-    >>> print len(list(onezero.specifications(None, filter=[u'new'])))
+    >>> print(len(list(onezero.specifications(None, filter=[u'new']))))
     0
 
 
@@ -311,8 +315,8 @@ through each relevant stage of its existence.
 
     >>> b.goal_decider is None
     False
-    >>> b.goal_decider.name
-    u'carlos'
+    >>> print(b.goal_decider.name)
+    carlos
     >>> b.date_completed is None
     True
 
@@ -322,10 +326,10 @@ change the overall state of the spec to "completed".
     >>> jdub = getUtility(IPersonSet).getByName('jdub')
     >>> b.definition_status = SpecificationDefinitionStatus.APPROVED
     >>> b.implementation_status = SpecificationImplementationStatus.INFORMATIONAL
-    >>> print b.updateLifecycleStatus(jdub).title
+    >>> print(b.updateLifecycleStatus(jdub).title)
     Complete
-    >>> b.completer.name
-    u'jdub'
+    >>> print(b.completer.name)
+    jdub
     >>> b.date_completed is None
     False
 
@@ -383,10 +387,10 @@ anything actually set.
 If there is a project group on the product, we would expect the project
 group owner:
 
-    >>> print series.product.projectgroup.name
+    >>> print(series.product.projectgroup.name)
     testproj
     >>> for d in series.drivers:
-    ...     print d.name
+    ...     print(d.name)
     carlos
 
 If there is NO project group on the product, then we expect the product
@@ -394,7 +398,7 @@ owner:
 
     >>> product.projectgroup = None
     >>> for d in series.drivers:
-    ...     print d.name
+    ...     print(d.name)
     mark
 
 Now let's put the project group back:
@@ -412,14 +416,14 @@ series.
 
     >>> projectgroup.driver = edgar
     >>> for d in series.drivers:
-    ...     print d.name
+    ...     print(d.name)
     edgar
 
 In addition cprov is made driver of the series. Both are drivers now.
 
     >>> series.driver = cprov
     >>> for d in series.drivers:
-    ...     print d.name
+    ...     print(d.name)
     cprov
     edgar
 
@@ -428,7 +432,7 @@ as driver, too.
 
     >>> projectgroup.driver = None
     >>> for d in series.drivers:
-    ...     print d.name
+    ...     print(d.name)
     carlos
     cprov
 
@@ -436,6 +440,6 @@ Without a project group, the driver role falls back to the product owner.
 
     >>> product.projectgroup = None
     >>> for d in series.drivers:
-    ...     print d.name
+    ...     print(d.name)
     cprov
     mark

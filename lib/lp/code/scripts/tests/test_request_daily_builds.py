@@ -142,7 +142,10 @@ class FakeTurnipApplication:
         if filename not in self.contents[repository_id]:
             return self._not_found(start_response)
         blob = self.contents[repository_id][filename]
-        response = {'size': len(blob), 'data': base64.b64encode(blob)}
+        response = {
+            'size': len(blob),
+            'data': base64.b64encode(blob).decode('ASCII'),
+            }
         start_response(
             '200 OK', [('Content-Type', 'application/octet-stream')])
         return [json.dumps(response).encode('UTF-8')]

@@ -149,8 +149,8 @@ to said documentation.
     instructions.
 
     >>> links = notification.findAll('a')
-    >>> links[0]['href']
-    u'https://help.launchpad.net/'
+    >>> print(links[0]['href'])
+    https://help.launchpad.net/
 
 Adding the Spanish team documentation URL adds another link.
 
@@ -162,10 +162,10 @@ Adding the Spanish team documentation URL adds another link.
     instructions and Spanish guidelines.
 
     >>> links = notification.findAll('a')
-    >>> links[0]['href']
-    u'https://help.launchpad.net/'
-    >>> links[1]['href']
-    u'https://help.launchpad.net/Spanish'
+    >>> print(links[0]['href'])
+    https://help.launchpad.net/
+    >>> print(links[1]['href'])
+    https://help.launchpad.net/Spanish
 
 When there is no group documentation, but only team documentation,
 the narrative is changed a bit to include the full team name.
@@ -178,5 +178,5 @@ the narrative is changed a bit to include the full team name.
     guidelines.
 
     >>> links = notification.findAll('a')
-    >>> links[0]['href']
-    u'https://help.launchpad.net/Spanish'
+    >>> print(links[0]['href'])
+    https://help.launchpad.net/Spanish

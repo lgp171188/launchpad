@@ -210,10 +210,10 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
 def parse_maintainer_bytes(content, fieldname):
     """Wrapper for parse_maintainer to handle both Unicode and bytestrings.
 
-    It verifies the content type and transforms it to a unicode with
+    It verifies the content type and transforms it to text with
     guess().  Then we can safely call parse_maintainer().
     """
-    if type(content) != unicode:
+    if not isinstance(content, six.text_type):
         content = guess_encoding(content)
     return parse_maintainer(content, fieldname)
 
@@ -262,7 +262,8 @@ def extract_dpkg_source(dsc_filepath, target, vendor=None):
     output, unused = dpkg_source.communicate()
     result = dpkg_source.wait()
     if result != 0:
-        dpkg_output = prefix_multi_line_string(output, "  ")
+        dpkg_output = prefix_multi_line_string(
+            output.decode("UTF-8", errors="replace"), "  ")
         raise DpkgSourceError(result=result, output=dpkg_output, command=args)
 
 
@@ -270,7 +271,7 @@ def parse_file_list(s, field_name, count):
     if s is None:
         return None
     processed = []
-    for line in s.strip().split('\n'):
+    for line in six.ensure_text(s).strip().split('\n'):
         split = line.strip().split()
         if len(split) != count:
             raise UploadError(

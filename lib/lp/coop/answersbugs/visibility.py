@@ -10,6 +10,7 @@ __all__ = [
     'TestMessageVisibilityMixin',
     ]
 
+import six
 
 from lp.services.webapp.escaping import html_escape
 from lp.testing.pages import find_tag_by_id
@@ -18,7 +19,7 @@ from lp.testing.pages import find_tag_by_id
 class TestMessageVisibilityMixin:
 
     comment_text = "You can't see me."
-    html_comment_text = html_escape(comment_text).encode('utf-8')
+    html_comment_text = six.ensure_str(html_escape(comment_text))
 
     def makeHiddenMessage(self):
         """To be overwridden by subclasses.

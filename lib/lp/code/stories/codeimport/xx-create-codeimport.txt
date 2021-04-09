@@ -32,9 +32,10 @@ link on the main branch listing page for the product.
 
     >>> browser.open('http://code.launchpad.test/firefox')
     >>> browser.getLink('Import a branch').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 The owner can configure code hosting for the project and then
 importing will be available to any user.

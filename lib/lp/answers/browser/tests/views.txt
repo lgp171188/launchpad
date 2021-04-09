@@ -809,7 +809,7 @@ searchResults() method. The returned results are batched.
     <lp.services.webapp.batching.BatchNavigator ...>
 
     >>> for question in questions.batch:
-    ...     print(question.title.encode('us-ascii', 'backslashreplace'))
+    ...     print(backslashreplace(question.title))
     Problema al recompilar kernel con soporte smp (doble-n\xfacleo)
     Continue playing after shutdown
     Play DVDs in Totem

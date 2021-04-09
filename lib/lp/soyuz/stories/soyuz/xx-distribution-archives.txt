@@ -160,9 +160,10 @@ when it's accessed anonymously.
 
     >>> anon_browser.open(
     ...     "http://launchpad.test/ubuntu/+archive/disabled-security-rebuild")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ... 'launchpad.SubscriberView')
+    zope.security.interfaces.Unauthorized: ... 'launchpad.SubscriberView')
 
 Disabled copy archives have the title rendered in gray colour
 (class="disabled") and a warning message stating that the archive
@@ -199,7 +200,7 @@ it and the 'disabled' styling is gone.
     >>> main_content = find_main_content(nopriv_browser.contents)
     >>> print(main_content.h1['class'])
     Traceback (most recent call last):
-    KeyError: u'class'
+    KeyError: ...'class'
 
     >>> print(first_tag_by_class(nopriv_browser.contents, 'warning message'))
     None

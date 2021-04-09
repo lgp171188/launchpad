@@ -29,7 +29,7 @@ class TestLaunchpadServe(TestCaseWithSubprocess):
 
     def assertFinishedCleanly(self, result):
         """Assert that a server process finished cleanly."""
-        self.assertEqual((0, '', ''), tuple(result))
+        self.assertEqual((0, b'', b''), tuple(result))
 
     def finish_lpserve_subprocess(self, process):
         """Shut down the server process.

@@ -703,7 +703,7 @@ receive notifications related to it.
     ...     language=getUtility(ILanguageSet)['pt_BR'])
     >>> notifications = pop_questionemailjobs()
 
-    >>> print(notifications[0].subject.encode('ASCII', 'backslashreplace'))
+    >>> print(backslashreplace(notifications[0].subject))
     [Question #...]: Abrir uma p\xe1gina que requer java quebra o firefox
 
 Similarly, when a question in a non-English language is modified or its
@@ -740,7 +740,7 @@ sent to the support list about that question:
     # Effectively replace u'\xe9' by '\\e9'.
 
     >>> def recode_text(notification):
-    ...     return notification.body.encode('ASCII', 'backslashreplace')
+    ...     return backslashreplace(notification.body)
 
     >>> notification_body = recode_text(notifications[1])
     >>> print(notification_body)

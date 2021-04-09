@@ -31,7 +31,6 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
-from lp.services.helpers import ensure_unicode
 
 
 @six.python_2_unicode_compatible
@@ -66,7 +65,7 @@ class SourcePackageNameSet:
 
     def __getitem__(self, name):
         """See `ISourcePackageNameSet`."""
-        name = ensure_unicode(name)
+        name = six.ensure_text(name, 'ASCII')
         try:
             return SourcePackageName.byName(name)
         except SQLObjectNotFound:

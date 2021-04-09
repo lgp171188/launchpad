@@ -14,22 +14,23 @@ To get hold of a PO translation, use POTranslation.getByTranslation.
     >>> got = POTranslation.getByTranslation("This is a launchpad test")
     >>> got == created
     True
-    >>> got.translation
-    u'This is a launchpad test'
+    >>> print(got.translation)
+    This is a launchpad test
 
 However, if the translation doesn't already exist, you'll get an error.
 
     >>> got = POTranslation.getByTranslation("In Xanadu did Kubla Khan")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError: 'In Xanadu did Kubla Khan'
+    lp.app.errors.NotFoundError: 'In Xanadu did Kubla Khan'
 
 If you want to get hold of one, and have it automatically created if it
 doesn't already exist, use POTranslation.getOrCreateTranslation.
 
     >>> got = POTranslation.getOrCreateTranslation("In Xanadu did Kubla Khan")
-    >>> got.translation
-    u'In Xanadu did Kubla Khan'
+    >>> print(got.translation)
+    In Xanadu did Kubla Khan
 
 If you want to pass non-ascii characters to either of these, it had better be
 either UTF-8 string or, better, a unicode object.
@@ -40,4 +41,4 @@ either UTF-8 string or, better, a unicode object.
     >>> got = POTranslation.getOrCreateTranslation(b'\xc0')
     Traceback (most recent call last):
     ...
-    UnicodeDecodeError: 'utf8' codec can't decode byte 0xc0 in position...
+    UnicodeDecodeError: 'utf...8' codec can't decode byte 0xc0 in position...

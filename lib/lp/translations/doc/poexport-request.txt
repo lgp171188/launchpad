@@ -52,7 +52,7 @@ The user receives a confirmation email.
     >>> emails = pop_notifications()
     >>> len(emails)
     1
-    >>> print_emails(notifications=emails)
+    >>> print_emails(notifications=emails, decode=True)
     From: ...
     To: downloader@example.com
     Subject: Launchpad translation download: Ubuntu Hoary pmount -
@@ -70,7 +70,7 @@ The user receives a confirmation email.
     <BLANKLINE>
       http://translations.launchpad.../hoary/+source/pmount/+pots/p...
     <BLANKLINE>
-    -- =
+    -- 
     Automatic message from Launchpad.net.
     ----------------------------------------
 
@@ -248,7 +248,7 @@ The script is run.
     >>> process = subprocess.Popen([
     ...     sys.executable, 'cronscripts/rosetta-export-queue.py', '-v'
     ...     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.STDOUT
+    ...     stderr=subprocess.STDOUT, universal_newlines=True,
     ...     )
     >>> (output, empty) = process.communicate()
     >>> print(output)

@@ -13,9 +13,10 @@ An unprivileged user cannot reach the POTemplate administration page.
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/+admin')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Jordi, a Rosetta expert, can.
 

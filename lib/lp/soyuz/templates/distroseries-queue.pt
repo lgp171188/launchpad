@@ -156,7 +156,7 @@
                    style="border: 0"></td>
 
                <td colspan="8" style="border: 0">
-                 <span tal:content="log/new_status"></span>
+                 <span tal:content="log/new_status/title"></span>
                  <span tal:attributes="title log/date_created/fmt:datetime"
                        tal:content="log/date_created/fmt:displaydate" />
                  by <span tal:content="structure log/reviewer/fmt:link" />

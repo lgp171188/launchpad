@@ -171,25 +171,27 @@ def escape_nonascii_uniquely(bogus_string):
     all the nonascii characters have been replaced with the same ascii
     character.
 
-    >>> print(len('\xa9'), len('\\xa9'))
+    >>> print(len(b'\xa9'), len(b'\\xa9'))
     1 4
-    >>> print(escape_nonascii_uniquely('hello \xa9'))
+    >>> print(six.ensure_str(escape_nonascii_uniquely(b'hello \xa9')))
     hello \xa9
 
     This string only has ascii characters, so escape_nonascii_uniquely()
     actually has no effect.
 
-    >>> print(escape_nonascii_uniquely('hello \\xa9'))
+    >>> print(six.ensure_str(escape_nonascii_uniquely(b'hello \\xa9')))
     hello \xa9
+
+    :type bogus_string: bytes
     """
-    nonascii_regex = re.compile(r'[\200-\377]')
+    nonascii_regex = re.compile(br'[\200-\377]')
 
     # By encoding the invalid ascii with a backslash, x, and then the
     # hex value, it makes it easy to decode it by pasting into a python
     # interpreter. quopri() is not used, since that could caused the
     # decoding of an email to fail.
     def quote(match):
-        return '\\x%x' % ord(match.group(0))
+        return b'\\x%x' % ord(match.group(0))
 
     return nonascii_regex.sub(quote, bogus_string)
 

@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the product view classes and templates."""
@@ -430,13 +430,38 @@ class TestCanConfigureBranches(TestCaseWithFactory):
         self.assertTrue(view.can_configure_branches())
 
 
-class TestProductOverviewOCIProject(TestCaseWithFactory):
+class TestProductOverviewLinks(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
     def setUp(self, user=ANONYMOUS):
-        super(TestProductOverviewOCIProject, self).setUp(user)
+        super(TestProductOverviewLinks, self).setUp(user)
         self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: True}))
+
+    def test_displays_create_and_list_snaps(self):
+        project = self.factory.makeProduct()
+        self.factory.makeSnap(project=project)
+
+        browser = self.getUserBrowser(
+            canonical_url(project), user=project.owner)
+        text = extract_text(
+            find_tag_by_id(browser.contents, 'project-link-info'))
+
+        # Search link should be available because we have an Snap created.
+        self.assertIn("View snap packages", text)
+        self.assertIn("Create snap package", text)
+
+    def test_hides_list_snaps_if_no_snap_is_available(self):
+        project = self.factory.makeProduct()
+
+        browser = self.getUserBrowser(
+            canonical_url(project), user=project.owner)
+        text = extract_text(
+            find_tag_by_id(browser.contents, 'project-link-info'))
+
+        # Search link should not be available.
+        self.assertNotIn("View snap packages", text)
+        self.assertIn("Create snap package", text)
 
     def test_displays_create_and_list_oci_project_link_for_owner(self):
         product = self.factory.makeProduct()

@@ -17,7 +17,7 @@ pocket.
     >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
     >>> hoary = ubuntu.getSeries('hoary')
 
-    >>> print hoary.status.name
+    >>> print(hoary.status.name)
     DEVELOPMENT
 
 
@@ -68,7 +68,7 @@ Upload 'epoched' bar version:
     >>> bar_src_upload = getUploadForSource(
     ...     'suite/bar_1.0-1_epoched/bar_1.0-1_source.changes')
     >>> bar_src_upload.process()
-    >>> print bar_src_upload.rejection_message
+    >>> print(bar_src_upload.rejection_message)
     File bar_1.0-1.diff.gz already exists in Primary Archive for Ubuntu
         Linux, but uploaded version has different contents. See more
         information about this error in
@@ -151,10 +151,10 @@ Published the 'non-epoched' bar source version as the base package:
 When publishing the 'epoched' bar source the collision is detected:
 
     >>> bar_src_queue_epoch.realiseUpload()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    QueueInconsistentStateError: bar_1.0-1.diff.gz is already published in
-    archive for hoary
+    lp.soyuz.interfaces.queue.QueueInconsistentStateError: bar_1.0-1.diff.gz is already published in archive for hoary
     >>> bar_src_queue_epoch.status.name
     'ACCEPTED'
 
@@ -170,12 +170,10 @@ containing a orig file with diferent contents than the one already
 published in 'non-epoched' version:
 
     >>> bar_src_queue_epoch2.realiseUpload()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    QueueInconsistentStateError: bar_1.0.orig.tar.gz is already published in
-    archive for hoary with a different SHA1 hash
-    (e918d6f5ec2184ae1d795a130da36c9a82c4beaf !=
-    73a04163fee97fd2257ab266bd48f1d3d528e012)
+    lp.soyuz.interfaces.queue.QueueInconsistentStateError: bar_1.0.orig.tar.gz is already published in archive for hoary with a different SHA1 hash (e918d6f5ec2184ae1d795a130da36c9a82c4beaf != 73a04163fee97fd2257ab266bd48f1d3d528e012)
 
     >>> bar_src_queue_epoch2.status.name
     'ACCEPTED'
@@ -206,11 +204,11 @@ SourcePackageRelease record store a proper 'version':
 
 For source uploads, Changes.version == DSC.version == SPR.version:
 
-    >>> bar_src_upload.changes.version
-    '1:1.0-9'
+    >>> print(bar_src_upload.changes.version)
+    1:1.0-9
 
-    >>> bar_src_upload.changes.dsc.dsc_version
-    '1:1.0-9'
+    >>> print(bar_src_upload.changes.dsc.dsc_version)
+    1:1.0-9
 
     >>> bar_src_queue = bar_src_upload.queue_root
     >>> bar_spr = bar_src_queue.sources[0].sourcepackagerelease
@@ -249,21 +247,21 @@ The Changesfile version always refers to the source version and the
 binary versions included in the upload can diverge between themselves
 and from the source version.
 
-    >>> bar_bin_upload.changes.version
-    '1:1.0-9'
+    >>> print(bar_bin_upload.changes.version)
+    1:1.0-9
 
     >>> deb_file = bar_bin_upload.changes.files[0]
-    >>> deb_file.filename
-    'bar_6.6.6_i386.deb'
+    >>> print(deb_file.filename)
+    bar_6.6.6_i386.deb
 
-    >>> deb_file.version
-    '1:1.0-9'
+    >>> print(deb_file.version)
+    1:1.0-9
 
-    >>> deb_file.source_version
-    '1:1.0-9'
+    >>> print(deb_file.source_version)
+    1:1.0-9
 
-    >>> deb_file.control_version
-    '1:6.6.6'
+    >>> print(deb_file.control_version)
+    1:6.6.6
 
 Anyway, the proper value for BinaryPackageRelease.version is the
 version stored in the binary control file:

@@ -1,0 +1,21 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_only"
+  i18n:domain="launchpad">
+
+  <body>
+    <div class="top-portlet" metal:fill-slot="main">
+
+      <h1>This account belongs to a deceased user and has been archived</h1>
+      <p class="error">
+        If you are the user in question and we have received incorrect
+        information, then please contact
+        <a href="mailto:feedback@launchpad.net">Launchpad staff</a>.
+      </p>
+
+    </div>
+  </body>
+</html>

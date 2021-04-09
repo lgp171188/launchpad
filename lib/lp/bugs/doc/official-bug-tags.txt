@@ -41,8 +41,9 @@ But bug tags must be unique for each product and distribution.
     >>> store.add(distro_tag3)
     <lp.bugs.model.bugtarget.OfficialBugTag object at...
     >>> store.flush()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    IntegrityError: ...
+    storm.database.IntegrityError: ...
 
     >>> import transaction
     >>> transaction.abort()
@@ -115,31 +116,34 @@ Ordinary users cannot add and remove official bug tags.
 
     >>> login('no-priv@canonical.com')
     >>> ubuntu.addOfficialBugTag(u'foo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'addOfficialBugTag',
-    'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'addOfficialBugTag', 'launchpad.Edit')
 
     >>> ubuntu.removeOfficialBugTag(u'foo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'removeOfficialBugTag',
-    'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'removeOfficialBugTag', 'launchpad.Edit')
 
     >>> firefox.addOfficialBugTag(u'foo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<Product at ...>, 'addOfficialBugTag', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (<Product at ...>, 'addOfficialBugTag', 'launchpad.Edit')
 
     >>> firefox.removeOfficialBugTag(u'foo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<Product at ...>, 'removeOfficialBugTag', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (<Product at ...>, 'removeOfficialBugTag', 'launchpad.Edit')
 
 Official tags are accessible as a list property of official tag targets.
 
-    >>> ubuntu.official_bug_tags
-    [u'bar']
+    >>> for tag in ubuntu.official_bug_tags:
+    ...     print(tag)
+    bar
 
 To set the list, the user must have edit permissions for the target.
 
@@ -148,37 +152,43 @@ To set the list, the user must have edit permissions for the target.
 Setting the list creates any new tags appearing in the list.
 
     >>> ubuntu.official_bug_tags = [u'foo', u'bar']
-    >>> ubuntu.official_bug_tags
-    [u'bar', u'foo']
+    >>> for tag in ubuntu.official_bug_tags:
+    ...     print(tag)
+    bar
+    foo
 
 Any existing tags missing from the list are removed.
 
     >>> ubuntu.official_bug_tags = [u'foo']
-    >>> ubuntu.official_bug_tags
-    [u'foo']
+    >>> for tag in ubuntu.official_bug_tags:
+    ...     print(tag)
+    foo
 
 The list is publicly readable.
 
     >>> login(ANONYMOUS)
-    >>> ubuntu.official_bug_tags
-    [u'foo']
+    >>> for tag in ubuntu.official_bug_tags:
+    ...     print(tag)
+    foo
 
 But only writable for users with edit permissions.
 
     >>> login('no-priv@canonical.com')
     >>> ubuntu.official_bug_tags = [u'foo', u'bar']
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>,
-                   'official_bug_tags', 'launchpad.BugSupervisor')
+    zope.security.interfaces.Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'official_bug_tags', 'launchpad.BugSupervisor')
 
 The same is available for products.
 
     >>> login('test@canonical.com')
     >>> firefox.official_bug_tags = [u'foo', u'bar']
     >>> login(ANONYMOUS)
-    >>> firefox.official_bug_tags
-    [u'bar', u'foo']
+    >>> for tag in firefox.official_bug_tags:
+    ...     print(tag)
+    bar
+    foo
 
 
 Official tags for additional bug targets
@@ -190,22 +200,27 @@ taken from the relevant distribution or product.
 Distribution series and distribution source package get the official tags of
 their parent distribution.
 
-    >>> ubuntu.getSeries('hoary').official_bug_tags
-    [u'foo']
+    >>> for tag in ubuntu.getSeries('hoary').official_bug_tags:
+    ...     print(tag)
+    foo
 
     >>> login('test@canonical.com')
-    >>> ubuntu.getSeries(
-    ...     'hoary').getSourcePackage('alsa-utils').official_bug_tags
-    [u'foo']
+    >>> for tag in ubuntu.getSeries(
+    ...         'hoary').getSourcePackage('alsa-utils').official_bug_tags:
+    ...     print(tag)
+    foo
     >>> login(ANONYMOUS)
 
-    >>> ubuntu.getSourcePackage('alsa-utils').official_bug_tags
-    [u'foo']
+    >>> for tag in ubuntu.getSourcePackage('alsa-utils').official_bug_tags:
+    ...     print(tag)
+    foo
 
 Product series gets the tags of the parent product.
 
-    >>> firefox.getSeries('1.0').official_bug_tags
-    [u'bar', u'foo']
+    >>> for tag in firefox.getSeries('1.0').official_bug_tags:
+    ...     print(tag)
+    bar
+    foo
 
 Project group gets the union of all the tags available for its products.
 
@@ -215,12 +230,16 @@ Project group gets the union of all the tags available for its products.
     >>> thunderbird.official_bug_tags = [u'baz']
     >>> login('no-priv@canonical.com')
     >>> mozilla = getUtility(IProjectGroupSet).getByName('mozilla')
-    >>> list(mozilla.official_bug_tags)
-    [u'bar', u'baz', u'foo']
+    >>> for tag in mozilla.official_bug_tags:
+    ...     print(tag)
+    bar
+    baz
+    foo
     >>> login(ANONYMOUS)
 
 Milestone gets the tags of the relevant product.
 
-    >>> firefox.getMilestone('1.0').official_bug_tags
-    [u'bar', u'foo']
-
+    >>> for tag in firefox.getMilestone('1.0').official_bug_tags:
+    ...     print(tag)
+    bar
+    foo

@@ -266,12 +266,10 @@ dimensions smaller than person_mugshot.dimensions, it must be rejected.
     >>> form = {'field.mugshot.action': 'change', 'field.mugshot.image': logo}
     >>> widget = ImageChangeWidget(
     ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
-    >>> widget.getInputValue()
+    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('field.mugshot', u'Mugshot',
-                       LaunchpadValidationError(u'\nThis image is not exactly
-                                                  192x192\npixels in size.'))
+    zope.formlib.interfaces.WidgetInputError: ('field.mugshot', ...'Mugshot', LaunchpadValidationError(...'\nThis image is not exactly 192x192\npixels in size.'))
 
 This is what we see when the image is the correct dimensions, and within
 the max_size:
@@ -312,13 +310,10 @@ image, we'll get a validation error.
     >>> _ = mugshot.seek(0)
     >>> widget = ImageChangeWidget(
     ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
-    >>> widget.getInputValue()
+    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('field.mugshot', u'Mugshot',
-                       LaunchpadValidationError(u'\nThis image exceeds the
-                                                  maximum allowed size in
-                                                  bytes.'))
+    zope.formlib.interfaces.WidgetInputError: ('field.mugshot', ...'Mugshot', LaunchpadValidationError(...'\nThis image exceeds the maximum allowed size in bytes.'))
 
 A similar error will be raised if the image's dimensions are bigger than
 the maximum we allow.
@@ -328,23 +323,19 @@ the maximum we allow.
     >>> _ = mugshot.seek(0)
     >>> widget = ImageChangeWidget(
     ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
-    >>> widget.getInputValue()
+    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('field.mugshot', u'Mugshot',
-                       LaunchpadValidationError(u'\nThis image is not exactly
-                                                  191x193\npixels in size.'))
+    zope.formlib.interfaces.WidgetInputError: ('field.mugshot', ...'Mugshot', LaunchpadValidationError(...'\nThis image is not exactly 191x193\npixels in size.'))
 
     >>> person_mugshot.dimensions = (image.size[0] + 1, image.size[1] - 1)
     >>> _ = mugshot.seek(0)
     >>> widget = ImageChangeWidget(
     ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
-    >>> widget.getInputValue()
+    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('field.mugshot', u'Mugshot',
-                       LaunchpadValidationError(u'\nThis image is not exactly
-                                                  193x191\npixels in size.'))
+    zope.formlib.interfaces.WidgetInputError: ('field.mugshot', ...'Mugshot', LaunchpadValidationError(...'\nThis image is not exactly 193x191\npixels in size.'))
 
 Finally, if the user specifies the 'change' action they must also provide
 a file to be uploaded.
@@ -352,12 +343,10 @@ a file to be uploaded.
     >>> form = {'field.mugshot.action': 'change', 'field.mugshot.image': ''}
     >>> widget = ImageChangeWidget(
     ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
-    >>> widget.getInputValue()
+    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('field.mugshot', u'Mugshot',
-                       LaunchpadValidationError(u'Please specify the image you
-                                                  want to use.'))
+    zope.formlib.interfaces.WidgetInputError: ('field.mugshot', ...'Mugshot', LaunchpadValidationError(...'Please specify the image you want to use.'))
 
 
 Non-exact Image Dimensions
@@ -376,12 +365,10 @@ by setting the exact_dimensions attribute of the field to False:
     ...         'field.mugshot.image': mugshot}
     >>> widget = ImageChangeWidget(
     ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
-    >>> widget.getInputValue()
+    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('field.mugshot', u'Mugshot',
-                       LaunchpadValidationError(u'\nThis image is larger than
-                                                  64x64\npixels in size.'))
+    zope.formlib.interfaces.WidgetInputError: ('field.mugshot', ...'Mugshot', LaunchpadValidationError(...'\nThis image is larger than 64x64\npixels in size.'))
 
 If the image is smaller than the dimensions, the input validates:
 

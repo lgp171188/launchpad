@@ -12,6 +12,7 @@ __all__ = [
 from collections import OrderedDict
 from operator import methodcaller
 
+import six
 import transaction
 from zope.component import getUtility
 
@@ -24,7 +25,6 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.services.database import bulk
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.sqlbase import sqlvalues
-from lp.services.helpers import ensure_unicode
 from lp.services.scripts import log
 from lp.soyuz.adapters.packagelocation import PackageLocation
 from lp.soyuz.enums import (
@@ -125,7 +125,8 @@ class InitializeDistroSeries:
             self.packagesets = None
         else:
             self.packagesets_ids = [
-                ensure_unicode(packageset) for packageset in packagesets]
+                six.ensure_text(packageset, 'ASCII')
+                for packageset in packagesets]
             self.packagesets = bulk.load(
                 Packageset, [int(packageset) for packageset in packagesets])
         self.rebuild = rebuild

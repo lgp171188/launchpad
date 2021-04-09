@@ -109,7 +109,9 @@ class TestIsolation(unittest.TestCase):
         script = os.path.join(
                 os.path.dirname(__file__), 'script_isolation.py')
         cmd = [sys.executable, script]
-        process = Popen(cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE)
+        process = Popen(
+            cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE,
+            universal_newlines=True)
         (script_output, _empty) = process.communicate()
         self.assertEqual(process.returncode, 0, 'Error: ' + script_output)
         self.assertEqual(script_output, dedent("""\

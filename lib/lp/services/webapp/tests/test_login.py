@@ -459,6 +459,17 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         main_content = extract_text(find_main_content(html))
         self.assertIn('This account has been suspended', main_content)
 
+    def test_deceased_account(self):
+        # There's a chance that our OpenID Provider lets a deceased account
+        # login, but we must not allow that.
+        person = self.factory.makePerson(
+            account_status=AccountStatus.DECEASED)
+        with SRegResponse_fromSuccessResponse_stubbed():
+            view, html = self._createViewWithResponse(person.account)
+        self.assertFalse(view.login_called)
+        main_content = extract_text(find_main_content(html))
+        self.assertIn('This account belongs to a deceased user', main_content)
+
     def test_account_with_team_email_address(self):
         # If the email address from the OpenID provider is owned by a
         # team, there's not much we can do. See bug #556680 for
@@ -784,7 +795,7 @@ class ForwardsCorrectly:
         request._app_names = ['foo']
         view = StubbedOpenIDLogin(object(), request)
         view()
-        escaped_args = tuple(map(quote, args.items()[0]))
+        escaped_args = tuple(map(quote, list(args.items())[0]))
         expected_fragment = quote('%s=%s' % escaped_args)
         return Contains(
             expected_fragment).match(view.openid_request.return_to)

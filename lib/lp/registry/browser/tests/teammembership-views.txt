@@ -72,5 +72,5 @@ is applied during the stepto traversal--it is not a named view in ZCML.
 The view provides page_title to create a breadcrumb that describes this
 use the TeamMembership.
 
-    >>> print(view.page_title.encode('ascii', 'backslashreplace'))
+    >>> print(backslashreplace(view.page_title))
     \u201cUs\u201d team invitation

@@ -5,8 +5,9 @@
 
 __metaclass__ = type
 
+import json
+
 from lazr.restful.interfaces import IWebServiceClientRequest
-from simplejson import dumps
 from storm.store import Store
 from testtools.matchers import Equals
 from zope.component import getUtility
@@ -528,7 +529,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
     def test_data_no_subscriptions(self):
         bug = self._makeBugWithNoSubscribers()
         harness = LaunchpadFormHarness(bug, BugPortletSubscribersWithDetails)
-        self.assertEqual(dumps([]), harness.view.subscriber_data_js)
+        self.assertEqual([], json.loads(harness.view.subscriber_data_js))
 
     def test_data_person_subscription(self):
         # subscriber_data_js returns JSON string of a list
@@ -556,7 +557,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             'subscription_level': "Lifecycle",
             }
         self.assertEqual(
-            dumps([expected_result]), harness.view.subscriber_data_js)
+            [expected_result], json.loads(harness.view.subscriber_data_js))
 
     def test_data_person_subscription_other_subscriber(self):
         # Ensure subscriber_data_js does the correct thing when the person who
@@ -586,7 +587,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             'subscription_level': "Lifecycle",
             }
         self.assertEqual(
-            dumps([expected_result]), harness.view.subscriber_data_js)
+            [expected_result], json.loads(harness.view.subscriber_data_js))
 
     def test_data_person_subscription_other_subscriber_query_count(self):
         # All subscriber data should be retrieved with a single query.
@@ -634,7 +635,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             'subscription_level': "Lifecycle",
             }
         self.assertEqual(
-            dumps([expected_result]), harness.view.subscriber_data_js)
+            [expected_result], json.loads(harness.view.subscriber_data_js))
 
     def _test_data_private_team_subscription(self, authenticated_user):
         # For a private team subscription, the team name and url are rendered
@@ -700,7 +701,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
                 'subscription_level': "Maybe",
                 }]
         self.assertEqual(
-            dumps(expected_result), view.subscriber_data_js)
+            expected_result, json.loads(view.subscriber_data_js))
 
     def test_data_private_team_subscription_authenticated_user(self):
         # For a logged in user, private team subscriptions are rendered.
@@ -740,7 +741,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             }
         with person_logged_in(subscriber.teamowner):
             self.assertEqual(
-                dumps([expected_result]), harness.view.subscriber_data_js)
+                [expected_result], json.loads(harness.view.subscriber_data_js))
 
     def test_data_team_subscription_member_looks(self):
         # For a team subscription, subscriber_data_js has can_edit
@@ -774,7 +775,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             }
         with person_logged_in(subscriber.teamowner):
             self.assertEqual(
-                dumps([expected_result]), harness.view.subscriber_data_js)
+                [expected_result], json.loads(harness.view.subscriber_data_js))
 
     def test_data_subscription_lp_admin(self):
         # For a subscription, subscriber_data_js has can_edit
@@ -807,7 +808,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
         admin = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
         with person_logged_in(admin):
             self.assertEqual(
-                dumps([expected_result]), harness.view.subscriber_data_js)
+                [expected_result], json.loads(harness.view.subscriber_data_js))
 
     def test_data_person_subscription_subscriber(self):
         # For a subscription, subscriber_data_js has can_edit
@@ -837,7 +838,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
             }
         with person_logged_in(subscribed_by):
             self.assertEqual(
-                dumps([expected_result]), harness.view.subscriber_data_js)
+                [expected_result], json.loads(harness.view.subscriber_data_js))
 
     def test_data_person_subscription_user_excluded(self):
         # With the subscriber logged in, they are not included in the results.
@@ -850,4 +851,4 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
                           level=BugNotificationLevel.LIFECYCLE)
             harness = LaunchpadFormHarness(
                 bug, BugPortletSubscribersWithDetails)
-            self.assertEqual(dumps([]), harness.view.subscriber_data_js)
+            self.assertEqual([], json.loads(harness.view.subscriber_data_js))

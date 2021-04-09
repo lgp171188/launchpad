@@ -65,13 +65,13 @@
 <p>Don&#8217;t do this:</p>
 <pre>
     if bug.person is not None:
-        print bug.person.name
+        print(bug.person.name)
 </pre>
 <p>instead</p>
 <pre>
     p = bug.person
     if p is not None:
-        print p.name
+        print(p.name)
 </pre>
 <p>In the first case, the client may fetch the Person object twice.  (We may fix this in future.)</p>
 ]]></content:encoded>

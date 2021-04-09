@@ -58,6 +58,7 @@ Foo Bar sees the private bug they filed.
 
 Foo Bar is subscribed to the bug.
 
+    >>> from operator import attrgetter
     >>> from zope.component import getUtility
     >>> from lp.testing import login, logout
     >>> from lp.bugs.interfaces.bug import IBugSet
@@ -66,8 +67,10 @@ Foo Bar is subscribed to the bug.
 
     >>> bug = getUtility(IBugSet).get(bug_id)
 
-    >>> sorted(subscriber.name for subscriber in bug.getDirectSubscribers())
-    [u'name16']
+    >>> for subscriber in sorted(
+    ...         bug.getDirectSubscribers(), key=attrgetter('name')):
+    ...     print(subscriber.name)
+    name16
 
     >>> logout()
 
@@ -77,9 +80,10 @@ Anonymous users cannot see private bugs filed on distros, of course!
 Not directly.
 
     >>> anon_browser.open("http://launchpad.test/bugs/14")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
 And not in bug listings.
 
@@ -93,9 +97,10 @@ Neither directly.
 
     >>> browser = setupBrowser("Basic no-privs@canonical.com:test")
     >>> browser.open("http://launchpad.test/bugs/14")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFound: ...
+    zope.publisher.interfaces.NotFound: ...
 
 Nor in a search listing.
 

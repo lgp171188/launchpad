@@ -429,7 +429,7 @@ class ExternalBugTrackerForThreads(TestExternalBugTracker):
         self.output_file = output_file
 
     def getRemoteStatus(self, bug_id):
-        self.output_file.write("getRemoteStatus(bug_id=%r)" % bug_id)
+        self.output_file.write("getRemoteStatus(bug_id='%s')" % bug_id)
         return 'UNKNOWN'
 
     def getCurrentDBTime(self):
@@ -497,12 +497,12 @@ class TestTwistedThreadSchedulerInPlace(TestCaseWithFactory):
             ['butterscotch', 'strawberry'], sorted(output_file.output))
         # Check that getRemoteStatus() was called.
         self.assertEqual(
-            ["getRemoteStatus(bug_id=u'butterscotch-1')",
-             "getRemoteStatus(bug_id=u'butterscotch-2')",
-             "getRemoteStatus(bug_id=u'butterscotch-3')"],
+            ["getRemoteStatus(bug_id='butterscotch-1')",
+             "getRemoteStatus(bug_id='butterscotch-2')",
+             "getRemoteStatus(bug_id='butterscotch-3')"],
             output_file.output['butterscotch'])
         self.assertEqual(
-            ["getRemoteStatus(bug_id=u'strawberry-1')",
-             "getRemoteStatus(bug_id=u'strawberry-2')",
-             "getRemoteStatus(bug_id=u'strawberry-3')"],
+            ["getRemoteStatus(bug_id='strawberry-1')",
+             "getRemoteStatus(bug_id='strawberry-2')",
+             "getRemoteStatus(bug_id='strawberry-3')"],
             output_file.output['strawberry'])

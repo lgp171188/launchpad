@@ -108,13 +108,13 @@ Filename with spaces work.
 
 Unicode filenames work, but must be encoded as UTF-8 on the socket.
 
-    >>> filename = 'Yow\N{INTERROBANG}'.encode('utf-8')
-    >>> upload_request(b"""STORE 14 %s
+    >>> filename = 'Yow\N{INTERROBANG}'
+    >>> upload_request(("""STORE 14 %s
     ... Content-Type: text/plain
     ... File-Content-ID: 123
     ... File-Alias-ID: 456
     ... Database-Name: right_database
     ...
-    ... Cats and dogs.""" % filename)
+    ... Cats and dogs.""" % filename).encode('UTF-8'))
     reply: '200'
     file 'Yow‽' stored as text/plain, contents: 'Cats and dogs.'

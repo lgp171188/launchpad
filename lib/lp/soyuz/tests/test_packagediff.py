@@ -43,7 +43,7 @@ def create_proper_job(factory, sourcepackagename=None):
         '%s/foo_1.0-1.5/foo_1.0-1.5.dsc' % suite_dir: None}
     for name in files:
         filename = os.path.split(name)[-1]
-        with open(name, 'r') as content:
+        with open(name, 'rb') as content:
             files[name] = factory.makeLibraryFileAlias(
                 filename=filename, content=content.read())
     transaction.commit()

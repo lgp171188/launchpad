@@ -194,6 +194,20 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
                 url=url,
                 credentials=credentials)
 
+    def test_new_owner_override(self):
+        # In certain sitations, we might want to be able to create
+        # credentials for other people
+        registrant = self.factory.makePerson()
+        other_person = self.factory.makePerson()
+        url = self.factory.getUniqueURL()
+        credentials = {'username': 'foo', 'password': 'bar'}
+        oci_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            registrant=registrant, owner=other_person, url=url,
+            credentials=credentials, override_owner=True)
+        self.assertEqual(oci_credentials.owner, other_person)
+        self.assertEqual(oci_credentials.url, url)
+        self.assertEqual(oci_credentials.getCredentials(), credentials)
+
     def test_getOrCreate_existing(self):
         owner = self.factory.makePerson()
         url = self.factory.getUniqueURL()

@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Auth-Server XML-RPC API ."""
@@ -19,11 +19,13 @@ from zope.component import (
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.authserver.interfaces import (
     IAuthServer,
     IAuthServerApplication,
     )
+from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
@@ -44,6 +46,8 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
         person = getUtility(IPersonSet).getByName(name)
         if person is None:
             return faults.NoSuchPersonWithName(name)
+        if person.account_status != AccountStatus.ACTIVE:
+            return faults.InactiveAccount(name)
         return {
             'id': person.id,
             'name': person.name,
@@ -68,6 +72,9 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
         elif context_type == 'SnapBuild':
             # The context is a `SnapBuild` ID.
             return getUtility(ISnapBuildSet).getByID(context)
+        elif context_type == 'OCIRecipeBuild':
+            # The context is an OCIRecipe ID.
+            return getUtility(IOCIRecipeBuildSet).getByID(context)
         else:
             return None
 

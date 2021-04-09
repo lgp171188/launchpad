@@ -23,15 +23,15 @@ output we will get.
     ...             file = tar.extractfile(member)
     ...
     ...             if file is not None:
-    ...                 print format % (
-    ...                     member.name, six.ensure_text(file.read()))
+    ...                 print(format % (
+    ...                     member.name, six.ensure_text(file.read())))
     ...             else:
-    ...                 print format % (member.name, '')
+    ...                 print(format % (member.name, ''))
     ...         elif member.type == tarfile.SYMTYPE:
-    ...             print format % (
-    ...                 member.name, "<link to %s>" % member.linkname)
+    ...             print(format % (
+    ...                 member.name, "<link to %s>" % member.linkname))
     ...         elif member.type == tarfile.DIRTYPE:
-    ...             print format % (member.name, "<directory>")
+    ...             print(format % (member.name, "<directory>"))
 
     # Start off by creating a blank archive.
     # We'll need a filehandle to store it in.
@@ -98,9 +98,9 @@ files_to_tarfile...
     drei | vier
     eins | zwei
 
-...or a data string.
+...or a byte string.
 
-    >>> data = LaunchpadWriteTarFile.files_to_string(files)
+    >>> data = LaunchpadWriteTarFile.files_to_bytes(files)
     >>> archive = tarfile.open('', 'r', io.BytesIO(data))
     >>> examine_tarfile(archive)
     drei | vier

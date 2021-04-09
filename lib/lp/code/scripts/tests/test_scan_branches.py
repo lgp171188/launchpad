@@ -40,9 +40,9 @@ class TestScanBranches(TestCaseWithFactory):
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
-            target_tree.commit('First commit', rev_id='rev1')
-            target_tree.commit('Second commit', rev_id='rev2')
-            target_tree.commit('Third commit', rev_id='rev3')
+            target_tree.commit('First commit', rev_id=b'rev1')
+            target_tree.commit('Second commit', rev_id=b'rev2')
+            target_tree.commit('Third commit', rev_id=b'rev3')
         BranchScanJob.create(db_branch)
         transaction.commit()
 

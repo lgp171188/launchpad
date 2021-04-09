@@ -39,7 +39,7 @@ in a specified external location.
 
 Firefox has not yet selected a bug tracker.
 
-    >>> print firefox.projectgroup.bugtracker
+    >>> print(firefox.projectgroup.bugtracker)
     None
 
     >>> from bs4.element import Tag
@@ -51,9 +51,9 @@ Firefox has not yet selected a bug tracker.
     ...     for label in labels:
     ...         control = label.previous.previous
     ...         if control['type'] == 'radio' and control.get('checked'):
-    ...             print '[X]', extract_text(label)
+    ...             print('[X]', extract_text(label))
     ...         elif control['type'] == 'radio':
-    ...             print '[ ]', extract_text(label)
+    ...             print('[ ]', extract_text(label))
     ...         else:
     ...             pass
     >>> print_items(widget())
@@ -141,7 +141,7 @@ Launchpad.
 The bugtracker value passed to the widget caused the sub-widget used to select
 the bug tracker to have the correct value.
 
-    >>> print widget.bugtracker_widget.getInputValue().name
+    >>> print(widget.bugtracker_widget.getInputValue().name)
     debbugs
 
 By indicating an external bug tracker, the selected bug tracker will be
@@ -152,13 +152,13 @@ returned.
     ...     product_bugtracker, product_bugtracker.vocabulary,
     ...     LaunchpadTestRequest(form=form))
     >>> debbugs = widget.getInputValue()
-    >>> print debbugs.name
+    >>> print(debbugs.name)
     debbugs
 
 The sub-widget for selecting the external bug tracker also has debbugs as its
 input value.
 
-    >>> print widget.getInputValue().name
+    >>> print(widget.getInputValue().name)
     debbugs
 
 The project's bug tracker, or no bug tracker, at all is selected.
@@ -167,7 +167,7 @@ The project's bug tracker, or no bug tracker, at all is selected.
     >>> widget = ProductBugTrackerWidget(
     ...     product_bugtracker, product_bugtracker.vocabulary,
     ...     LaunchpadTestRequest(form=form))
-    >>> print widget.getInputValue()
+    >>> print(widget.getInputValue())
     None
 
 We can't use the value returned from getInputValue() to set an attribute on
@@ -180,7 +180,7 @@ marker object.
 
     >>> firefox.official_malone
     True
-    >>> print firefox.bugtracker
+    >>> print(firefox.bugtracker)
     None
     >>> product_bugtracker.get(firefox) is product_bugtracker.malone_marker
     True
@@ -192,7 +192,7 @@ set the bug tracker.
     >>> product_bugtracker.set(firefox, debbugs)
     >>> firefox.official_malone
     False
-    >>> print firefox.bugtracker.name
+    >>> print(firefox.bugtracker.name)
     debbugs
 
 Choosing to use Malone again, the changes above will be reverted.
@@ -200,7 +200,7 @@ Choosing to use Malone again, the changes above will be reverted.
     >>> product_bugtracker.set(firefox, product_bugtracker.malone_marker)
     >>> firefox.official_malone
     True
-    >>> print firefox.bugtracker
+    >>> print(firefox.bugtracker)
     None
 
 Passing None to the field's set method, Firefox will once again switch to not
@@ -209,7 +209,7 @@ using Malone, and its bug tracker will be set to None.
     >>> product_bugtracker.set(firefox, None)
     >>> firefox.official_malone
     False
-    >>> print firefox.bugtracker
+    >>> print(firefox.bugtracker)
     None
 
 The ProductBugTrackerWidget renders two fields that are subordinate to
@@ -221,8 +221,8 @@ the 4 choices.
     ...     for control in controls:
     ...         if control['type'] != 'hidden':
     ...             if 'subordinate' in control.parent.get('class', ''):
-    ...                 print '--'
-    ...             print control['id'], control['type']
+    ...                 print('--')
+    ...             print(control['id'], control['type'])
 
     >>> print_controls(widget())
     field.bugtracker.0 radio
@@ -257,7 +257,7 @@ presented ordered to appear in a 3 column list.
     >>> from lp.testing.pages import find_tag_by_id
 
     >>> html = license_widget()
-    >>> print extract_text(find_tag_by_id(html, 'recommended'))
+    >>> print(extract_text(find_tag_by_id(html, 'recommended')))
     Apache Licence view licence
     GNU Affero GPL v3 view licence
     GNU LGPL v2.1 view licence
@@ -268,7 +268,7 @@ presented ordered to appear in a 3 column list.
     GNU GPL v3 view licence
     MIT / X / Expat Licence view licence
 
-    >>> print extract_text(find_tag_by_id(html, 'more'))
+    >>> print(extract_text(find_tag_by_id(html, 'more')))
     Academic Free Licence view licence
     Eclipse Public Licence view licence
     PHP Licence view licence
@@ -287,14 +287,14 @@ presented ordered to appear in a 3 column list.
     Open Software Licence v 3.0 view licence
 
 
-    >>> print extract_text(find_tag_by_id(html, 'special'))
+    >>> print(extract_text(find_tag_by_id(html, 'special')))
     I don't know yet
     Other/Proprietary
     Other/Open Source
 
 There is a deprecated section that is generally not visible...
 
-    >>> print find_tag_by_id(html, 'deprecated')
+    >>> print(find_tag_by_id(html, 'deprecated'))
     None
 
 ...unless the old "Perl licence" is selected.
@@ -303,7 +303,7 @@ There is a deprecated section that is generally not visible...
     >>> request = LaunchpadTestRequest(form=form)
     >>> license_widget = LicenseWidget(licenses_field, vtype, request)
     >>> html = license_widget()
-    >>> print extract_text(find_tag_by_id(html, 'deprecated'))
+    >>> print(extract_text(find_tag_by_id(html, 'deprecated')))
     Perl Licence
 
 One licence, the GNU GPL v2, is selected.
@@ -318,14 +318,14 @@ One licence, the GNU GPL v2, is selected.
     ...         if not isinstance(label.next, Tag):
     ...             continue
     ...         if label.next.get('checked'):
-    ...             print '[X]',
+    ...             print('[X]', end=' ')
     ...         else:
-    ...             print '[ ]',
-    ...         print extract_text(label),
+    ...             print('[ ]', end=' ')
+    ...         print(extract_text(label), end='')
     ...         if links and label.a is not None:
-    ...             print '<%s>' % label.a.get('href')
+    ...             print(' <%s>' % label.a.get('href'))
     ...         else:
-    ...             print
+    ...             print()
 
     >>> for item in license_widget.getInputValue():
     ...     print(repr(item))
@@ -418,5 +418,6 @@ Launchpad form macros do not generate table rows for the GhostWidget.
     >>> request.setPrincipal(factory.makePerson())
     >>> view = GhostWidgetView(firefox, request)
     >>> view.initialize()
-    >>> extract_text(find_tag_by_id(view.render(), 'launchpad-form-widgets'))
-    u''
+    >>> print(extract_text(find_tag_by_id(
+    ...     view.render(), 'launchpad-form-widgets')))
+    <BLANKLINE>

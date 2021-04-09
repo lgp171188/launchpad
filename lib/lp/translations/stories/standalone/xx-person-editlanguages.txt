@@ -117,8 +117,8 @@ equivalent information is known.
     ...     'http://translations.launchpad.test/~name12/+editlanguages')
     >>> country_portlet = find_tag_by_id(browser.contents,
     ...                                  'portlet-country-languages')
-    >>> print(find_spoken_languages(country_portlet))
-    [[u'Portuguese (Brazil)']]
+    >>> print(pretty(find_spoken_languages(country_portlet)))
+    [['Portuguese (Brazil)']]
 
 We also have a page under the launchpad root, called +editmylanguages,
 with launchpad.AnyPerson as permission. This is the page to which we
@@ -128,9 +128,10 @@ The launchpad.AnyPerson permission means that when an anonymous user goes
 to that page, they'll be asked to login.
 
     >>> anon_browser.open('http://launchpad.test/+editmylanguages')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 But a logged in user will be sent straight to their /~user/+editlanguages
 page.

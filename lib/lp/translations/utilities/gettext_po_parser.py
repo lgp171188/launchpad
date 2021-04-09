@@ -691,7 +691,12 @@ class POParser(object):
         # We found some text escaped that should be recoded to Unicode.
         # First, we unescape it.
         escaped_string, string = string[:position], string[position:]
-        unescaped_string = escaped_string.decode('string-escape')
+        # Effectively a bytes-to-bytes string-escape decoding, but
+        # compatible with Python 3.  This works because we've already
+        # ensured above that escaped_string only includes hexadecimal or
+        # octal escapes (not \uXXXX etc.).
+        unescaped_string = escaped_string.encode('ascii').decode(
+            'unicode-escape').encode('iso-8859-1')
 
         if (self._translation_file is not None and
             self._translation_file.header is not None):
@@ -725,15 +730,18 @@ class POParser(object):
     def _parseQuotedString(self, string):
         r"""Parse a quoted string, interpreting escape sequences.
 
+          >>> from lp.services.helpers import backslashreplace
+
           >>> parser = POParser()
-          >>> parser._parseQuotedString(u'\"abc\"')
-          u'abc'
-          >>> parser._parseQuotedString(u'\"abc\\ndef\"')
-          u'abc\ndef'
-          >>> parser._parseQuotedString(u'\"ab\x63\"')
-          u'abc'
-          >>> parser._parseQuotedString(u'\"ab\143\"')
-          u'abc'
+          >>> print(parser._parseQuotedString(u'\"abc\"'))
+          abc
+          >>> print(parser._parseQuotedString(u'\"abc\\ndef\"'))
+          abc
+          def
+          >>> print(parser._parseQuotedString(u'\"ab\x63\"'))
+          abc
+          >>> print(parser._parseQuotedString(u'\"ab\143\"'))
+          abc
 
           After the string has been converted to unicode, the backslash
           escaped sequences are still in the encoding that the charset header
@@ -744,9 +752,11 @@ class POParser(object):
           just recoded as Unicode so it's a TranslationFormatInvalidInputError
           >>> utf8_string = u'"view \\302\\253${version_title}\\302\\273"'
           >>> parser._parseQuotedString(utf8_string)
+          ... # doctest: +NORMALIZE_WHITESPACE
+          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
           ...
-          TranslationFormatInvalidInputError: Could not decode escaped string: (\302\253)
+          lp.translations.interfaces.translationimporter.TranslationFormatInvalidInputError: Could not decode escaped string: (\302\253)
 
           Now, we note the original encoding so we get the right Unicode
           string.
@@ -755,8 +765,8 @@ class POParser(object):
           ...     charset = 'UTF-8'
           >>> parser._translation_file = TranslationFileData()
           >>> parser._translation_file.header = FakeHeader()
-          >>> parser._parseQuotedString(utf8_string)
-          u'view \xab${version_title}\xbb'
+          >>> print(backslashreplace(parser._parseQuotedString(utf8_string)))
+          view \xab${version_title}\xbb
 
           Let's see that we raise a TranslationFormatInvalidInputError
           exception when we have an escaped char that is not valid in the
@@ -764,25 +774,33 @@ class POParser(object):
 
           >>> iso8859_1_string = u'"foo \\xf9"'
           >>> parser._parseQuotedString(iso8859_1_string)
+          ... # doctest: +NORMALIZE_WHITESPACE
+          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
           ...
-          TranslationFormatInvalidInputError: Could not decode escaped string as UTF-8: (\xf9)
+          lp.translations.interfaces.translationimporter.TranslationFormatInvalidInputError: Could not decode escaped string as UTF-8: (\xf9)
 
           An error will be raised if the entire string isn't contained in
           quotes properly:
 
           >>> parser._parseQuotedString(u'abc')
+          ... # doctest: +NORMALIZE_WHITESPACE
+          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
-          TranslationFormatSyntaxError: String is not quoted
+          lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: String is not quoted
           >>> parser._parseQuotedString(u'\"ab')
+          ... # doctest: +NORMALIZE_WHITESPACE
+          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
-          TranslationFormatSyntaxError: String not terminated
+          lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: String not terminated
           >>> parser._parseQuotedString(u'\"ab\"x')
+          ... # doctest: +NORMALIZE_WHITESPACE
+          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
-          TranslationFormatSyntaxError: Extra content found after string: (x)
+          lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: Extra content found after string: (x)
         """
         if self._escaped_line_break:
             # Continuing a line after an escaped newline.  Strip indentation.

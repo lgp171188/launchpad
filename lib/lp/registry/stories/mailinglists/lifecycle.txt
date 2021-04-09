@@ -230,25 +230,28 @@ Anonymous users cannot see the link, because they cannot even see the
 private team.
 
     >>> anon_browser.open('http://launchpad.test/~bassists')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: Object: <...>, name: u'~bassists'
+    zope.publisher.interfaces.NotFound: Object: <...>, name: '~bassists'
 
 The same is true for normal users who are not team members.
 
     >>> browser.open('http://launchpad.test/~bassists')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: Object: <...>, name: u'~bassists'
+    zope.publisher.interfaces.NotFound: Object: <...>, name: '~bassists'
 
 Members who are not owners can see the link.
 
     >>> cprov_browser = setupBrowser(
     ...     auth='Basic celso.providelo@canonical.com:test')
     >>> cprov_browser.open('http://launchpad.test/~bassists')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound: Object: <...>, name: u'~bassists'
+    zope.publisher.interfaces.NotFound: Object: <...>, name: '~bassists'
 
     >>> admin_browser.open('http://launchpad.test/~bassists/+addmember')
     >>> admin_browser.getControl('New member').value = 'cprov'

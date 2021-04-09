@@ -42,8 +42,11 @@ def text_replaced(text, replacements, _cache={}):
 
     Unicode strings work too.
 
-    >>> text_replaced(u'1 2 3 4', {u'1': u'2', u'2': u'1'})
-    u'2 1 3 4'
+    >>> replaced = text_replaced(u'1 2 3 4', {u'1': u'2', u'2': u'1'})
+    >>> isinstance(replaced, six.text_type)
+    True
+    >>> print(replaced)
+    2 1 3 4
 
     The argument _cache is used as a cache of replacements that were requested
     before, so we only compute regular expressions once.
@@ -135,9 +138,10 @@ def shortlist(sequence, longest_expected=15, hardlimit=None):
     sequences with no more than 2 items.  There were 3 items.
 
     >>> shortlist([1, 2, 3, 4], hardlimit=2)
+    ... # doctest: +NORMALIZE_WHITESPACE,+IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ShortListTooBigError: Hard limit of 2 exceeded.
+    lp.services.helpers.ShortListTooBigError: Hard limit of 2 exceeded.
 
     >>> shortlist(
     ...     [1, 2, 3, 4], 2, hardlimit=4) #doctest: +NORMALIZE_WHITESPACE
@@ -153,10 +157,11 @@ def shortlist(sequence, longest_expected=15, hardlimit=None):
     ...
     TypeError: ...
 
-    >>> shortlist(iter(range(10)), 5, hardlimit=8) #doctest: +ELLIPSIS
+    >>> shortlist(iter(range(10)), 5, hardlimit=8)
+    ... # doctest: +ELLIPSIS,+IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ShortListTooBigError: ...
+    lp.services.helpers.ShortListTooBigError: ...
 
     """
     if hardlimit is not None:
@@ -317,48 +322,3 @@ def english_list(items, conjunction='and'):
     else:
         items[-1] = '%s %s' % (conjunction, items[-1])
         return ', '.join(items)
-
-
-def ensure_unicode(string):
-    r"""Return input as unicode. None is passed through unharmed.
-
-    Do not use this method. This method exists only to help migration
-    of legacy code where str objects were being passed into contexts
-    where unicode objects are required. All invokations of
-    ensure_unicode() should eventually be removed.
-
-    This differs from the builtin unicode() function, as a TypeError
-    exception will be raised if the parameter is not a string type or if
-    a raw string is not ASCII.
-
-    >>> ensure_unicode(u'hello')
-    u'hello'
-
-    >>> ensure_unicode('hello')
-    u'hello'
-
-    >>> ensure_unicode(u'A'.encode('utf-16')) # Not ASCII
-    Traceback (most recent call last):
-    ...
-    TypeError: '\xff\xfeA\x00' is not US-ASCII
-
-    >>> ensure_unicode(42)
-    Traceback (most recent call last):
-    ...
-    TypeError: 42 is not a string type (<type 'int'>)
-
-    >>> ensure_unicode(None) is None
-    True
-    """
-    if string is None:
-        return None
-    elif isinstance(string, six.text_type):
-        return string
-    elif isinstance(string, bytes):
-        try:
-            return string.decode('US-ASCII')
-        except UnicodeDecodeError:
-            raise TypeError("%s is not US-ASCII" % repr(string))
-    else:
-        raise TypeError(
-            "%r is not a string type (%r)" % (string, type(string)))

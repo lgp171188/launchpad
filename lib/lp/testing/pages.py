@@ -62,6 +62,7 @@ from lp.services.beautifulsoup import (
     )
 from lp.services.config import config
 from lp.services.encoding import wsgi_native_string
+from lp.services.helpers import backslashreplace
 from lp.services.oauth.interfaces import (
     IOAuthConsumerSet,
     OAUTH_REALM,
@@ -541,7 +542,7 @@ def print_comments(page):
 def print_batch_header(soup):
     """Print the batch navigator header."""
     navigation = soup.find('td', {'class': 'batch-navigation-index'})
-    print(extract_text(navigation).encode('ASCII', 'backslashreplace'))
+    print(backslashreplace(extract_text(navigation)))
 
 
 def print_self_link_of_entries(json_body):
@@ -892,6 +893,7 @@ def setUpGlobs(test, future=False):
     test.globs['page_log_location'] = PageTestLayer.log_location
     test.globs['stop'] = stop
     test.globs['six'] = six
+    test.globs['backslashreplace'] = backslashreplace
 
     if future:
         import __future__
@@ -927,10 +929,8 @@ def PageTestSuite(storydir, package=None, setUp=setUpGlobs, **kw):
     suite = unittest.TestSuite()
     # Add tests to the suite individually.
     if filenames:
-        checker = doctest.OutputChecker()
         paths = [os.path.join(storydir, filename) for filename in filenames]
         suite.addTest(LayeredDocFileSuite(
-            paths=paths,
-            package=package, checker=checker, stdout_logging=False,
+            paths=paths, package=package, stdout_logging=False,
             layer=PageTestLayer, setUp=setUp, **kw))
     return suite

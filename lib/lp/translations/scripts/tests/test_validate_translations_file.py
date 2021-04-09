@@ -40,7 +40,7 @@ class TestValidateTranslationsFile(TestCase):
         # Unknown filename extensions result in UnknownFileType.
         validator = self._makeValidator()
         self.assertRaises(
-            UnknownFileType, validator._validateContent, 'foo.bar', 'content')
+            UnknownFileType, validator._validateContent, 'foo.bar', b'content')
 
     def test_validate_po_good(self):
         validator = self._makeValidator()
@@ -53,7 +53,7 @@ class TestValidateTranslationsFile(TestCase):
 
             msgid "foo"
             msgstr "bar"
-            """))
+            """).encode("UTF-8"))
         self.assertTrue(result)
 
     def test_validate_po_bad(self):
@@ -61,7 +61,7 @@ class TestValidateTranslationsFile(TestCase):
         result = validator._validateContent('nl.po', self._strip("""
             msgid "no header here"
             msgstr "hier geen kopje"
-            """))
+            """).encode("UTF-8"))
         self.assertFalse(result)
 
     def test_validate_pot_good(self):
@@ -75,12 +75,12 @@ class TestValidateTranslationsFile(TestCase):
 
             msgid "foo"
             msgstr ""
-            """))
+            """).encode("UTF-8"))
         self.assertTrue(result)
 
     def test_validate_pot_bad(self):
         validator = self._makeValidator()
-        result = validator._validateContent('test.pot', 'garble')
+        result = validator._validateContent('test.pot', b'garble')
         self.assertFalse(result)
 
     def test_script(self):

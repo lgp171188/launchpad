@@ -22,7 +22,6 @@ __all__ = [
 from datetime import datetime
 from functools import partial
 from io import BytesIO
-from operator import itemgetter
 
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
@@ -1228,7 +1227,7 @@ class BugTargetBugTagsView(LaunchpadView):
                 url=self._getSearchURL(tag),
                 )
             for (tag, count) in six.iteritems(tags)],
-            key=itemgetter('count'), reverse=True)
+            key=lambda item: (-item['count'], item['tag']))
 
     @property
     def show_manage_tags_link(self):

@@ -33,12 +33,6 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 
 
-class FakeConfig:
-    """A fake publisher configuration."""
-    def __init__(self, archiveroot):
-        self.archiveroot = archiveroot
-
-
 class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer

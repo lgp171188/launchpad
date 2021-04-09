@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An `IBuildFarmJobBehaviour` for `SnapBuild`.
@@ -17,10 +17,6 @@ __all__ = [
 import base64
 import time
 
-from six.moves.urllib.parse import (
-    urlsplit,
-    urlunsplit,
-    )
 from twisted.internet import defer
 from zope.component import adapter
 from zope.interface import implementer
@@ -98,7 +94,7 @@ class SnapProxyMixin:
             build_id=self.build.build_cookie,
             timestamp=timestamp)
         auth_string = '{}:{}'.format(admin_username, secret).strip()
-        auth_header = b'Basic ' + base64.b64encode(auth_string)
+        auth_header = b'Basic ' + base64.b64encode(auth_string.encode('ASCII'))
 
         token = yield self._slave.process_pool.doWork(
             RequestProxyTokenCommand,
@@ -190,16 +186,9 @@ class SnapBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
                     self._authserver.callRemote(
                         "issueMacaroon", "snap-build", "SnapBuild", build.id),
                     config.builddmaster.authentication_timeout)
-                # XXX cjwatson 2019-03-07: This is ugly and needs
-                # refactoring once we support more general HTTPS
-                # authentication; see also comment in
-                # GitRepository.git_https_url.
-                split = urlsplit(build.snap.git_repository.getCodebrowseUrl())
-                netloc = ":%s@%s" % (macaroon_raw, split.hostname)
-                if split.port:
-                    netloc += ":%s" % split.port
-                args["git_repository"] = urlunsplit([
-                    split.scheme, netloc, split.path, "", ""])
+                url = build.snap.git_repository.getCodebrowseUrl(
+                    username=None, password=macaroon_raw)
+                args["git_repository"] = url
             else:
                 args["git_repository"] = (
                     build.snap.git_repository.git_https_url)
