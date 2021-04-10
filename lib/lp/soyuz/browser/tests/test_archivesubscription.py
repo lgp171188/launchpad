@@ -13,12 +13,17 @@ from soupmatchers import (
     )
 from zope.component import getUtility
 
+from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.webapp import canonical_url
 from lp.testing import (
+    login_person,
     person_logged_in,
+    record_two_runs,
     TestCaseWithFactory,
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.matchers import HasQueryCount
 from lp.testing.views import create_initialized_view
 
 
@@ -49,3 +54,21 @@ class TestArchiveSubscribersView(TestCaseWithFactory):
             Tag('batch navigation links', 'td',
                 attrs={'class': 'batch-navigation-links'}, count=2))
         self.assertThat(html, has_batch_navigation)
+
+    def test_constant_query_count(self):
+        def create_subscribers():
+            self.private_ppa.newSubscription(
+                self.factory.makePerson(), self.p3a_owner)
+            self.private_ppa.newSubscription(
+                self.factory.makeTeam(
+                    visibility=PersonVisibility.PRIVATE,
+                    members=[self.p3a_owner]),
+                self.p3a_owner)
+
+        self.pushConfig('launchpad', default_batch_size=75)
+        url = canonical_url(self.private_ppa, view_name='+subscriptions')
+        recorder1, recorder2 = record_two_runs(
+            lambda: self.getUserBrowser(url, user=self.p3a_owner),
+            create_subscribers, 2,
+            login_method=lambda: login_person(self.p3a_owner))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
