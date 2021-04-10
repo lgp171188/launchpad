@@ -30,6 +30,7 @@ from storm.expr import (
     Cast,
     Count,
     Desc,
+    Exists,
     Join,
     Not,
     Or,
@@ -2954,13 +2955,14 @@ class ArchiveSet:
             extra_exprs.append(Archive._enabled == True)
 
         if exclude_pristine:
-            extra_exprs.append(
-                SourcePackagePublishingHistory.archive == Archive.id)
+            extra_exprs.append(Exists(Select(
+                1, tables=[SourcePackagePublishingHistory],
+                where=(SourcePackagePublishingHistory.archive == Archive.id))))
 
         query = Store.of(distribution).find(
             Archive,
             Archive.distribution == distribution,
-            *extra_exprs).config(distinct=True)
+            *extra_exprs)
 
         return query.order_by(Archive.name)
 
