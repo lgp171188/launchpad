@@ -9,10 +9,10 @@ ALTER TABLE BugTask VALIDATE CONSTRAINT bugtask_assignment_checks;
 ALTER TABLE BugSummary VALIDATE CONSTRAINT bugtask_assignment_checks;
 
 -- BugTask indexes.
-CREATE UNIQUE INDEX bugtask__ociproject__bug__idx
+CREATE UNIQUE INDEX bugtask__ociproject__bug__key
     ON BugTask (ociproject, bug)
     WHERE ociproject IS NOT NULL;
-CREATE UNIQUE INDEX bugtask__ociprojectseries__bug__idx
+CREATE UNIQUE INDEX bugtask__ociprojectseries__bug__key
     ON BugTask (ociprojectseries, bug)
     WHERE ociprojectseries IS NOT NULL;
 
