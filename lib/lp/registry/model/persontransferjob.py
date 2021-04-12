@@ -16,7 +16,6 @@ from lazr.delegates import delegate_to
 import pytz
 import simplejson
 import six
-from storm.exceptions import IntegrityError
 from storm.expr import (
     And,
     LeftJoin,
@@ -34,18 +33,13 @@ from zope.interface import (
     implementer,
     provider,
     )
-from zope.security.proxy import removeSecurityProxy
 
-from lp.answers.enums import QuestionStatus
-from lp.answers.model.question import Question
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.bugs.model.bugtask import BugTask
 from lp.registry.enums import PersonTransferJobType
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
     ITeam,
-    PersonCreationRationale,
     )
 from lp.registry.interfaces.persontransferjob import (
     IExpiringMembershipNotificationJob,
@@ -69,29 +63,17 @@ from lp.registry.interfaces.persontransferjob import (
     )
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.registry.mail.teammembership import TeamMembershipMailer
-from lp.registry.model.person import (
-    Person,
-    PersonSettings,
-    )
-from lp.registry.model.product import Product
-from lp.registry.model.productseries import ProductSeries
+from lp.registry.model.person import Person
 from lp.registry.personmerge import merge_people
 from lp.registry.scripts.closeaccount import close_account
 from lp.services.config import config
-from lp.services.database import postgresql
-from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.database.sqlbase import cursor
 from lp.services.database.stormbase import StormBase
-from lp.services.identity.interfaces.account import (
-    AccountCreationRationale,
-    AccountStatus,
-    )
 from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.job.model.job import (
     EnumeratedSubclass,
@@ -99,16 +81,7 @@ from lp.services.job.model.job import (
     )
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
-from lp.services.openid.model.openididentifier import OpenIdIdentifier
 from lp.services.scripts import log
-from lp.services.scripts.base import LaunchpadScriptFailure
-from lp.soyuz.enums import (
-    ArchiveStatus,
-    ArchiveSubscriberStatus,
-    )
-from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriberSet
-from lp.soyuz.model.archive import Archive
-from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
 
 
 @implementer(IPersonTransferJob)
@@ -501,7 +474,7 @@ class PersonCloseAccountJob(PersonTransferJobDerived):
             raise TypeError("User %s does not exist" % username)
         person_name = person.name
 
-        # We don't do teams
+        # We don't delete teams
         if person.is_team:
             raise TypeError("%s is a team" % person_name)
 
@@ -545,7 +518,7 @@ class PersonCloseAccountJob(PersonTransferJobDerived):
             transaction.commit()
         except Exception:
             log.error(
-                "%s Account clossure failed for user %s", self.log_name,
+                "%s Account closure failed for user %s", self.log_name,
                 self.person.name)
             transaction.abort()
 
@@ -556,6 +529,7 @@ class PersonCloseAccountJob(PersonTransferJobDerived):
 
     def getOperationDescription(self):
         return 'closing account for ~%s' % self.person.name
+
 
 @implementer(ITeamInvitationNotificationJob)
 @provider(ITeamInvitationNotificationJobSource)
