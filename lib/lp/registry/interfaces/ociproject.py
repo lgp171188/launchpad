@@ -221,7 +221,7 @@ class IOCIProjectLegitimate(Interface):
     publish_web_link=True, as_of="devel", singular_name="oci_project")
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
                   IOCIProjectEditableAttributes, IOCIProjectLegitimate,
-                  IHasBugSupervisor, IHasExpirableBugs):
+                  IHasBugSupervisor):
     """A project containing Open Container Initiative recipes."""
 
 
