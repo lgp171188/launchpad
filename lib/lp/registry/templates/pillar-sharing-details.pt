@@ -26,21 +26,31 @@
   <div metal:fill-slot="main">
 
     <div id="observer-summary">
-      <p>
-      <tal:bugs replace="view/shared_bugs_count">0</tal:bugs> bugs,
-      <tal:branches replace="view/shared_branches_count">0</tal:branches> Bazaar branches,
-      <tal:gitrepositories replace="view/shared_gitrepositories_count">0</tal:gitrepositories> Git repositories,
-      <tal:snaps replace="view/shared_snaps_count">0</tal:snaps> snaps,
-      and  <tal:specifications
-      replace="view/shared_specifications_count">0</tal:specifications>
-      blueprints shared with <tal:name replace="view/person/displayname">
-      grantee</tal:name>.<br />
-
       <tal:is-team condition="view/person/is_team">
-        <tal:members>3</tal:members> team members can view these bugs,
-        Bazaar branches, Git repositories, and blueprints.
+        <tal:members tal:replace="view/person/active_member_count" />
+        team members can view these artifacts.
       </tal:is-team>
-      </p>
+      Shared with <tal:name replace="view/person/displayname">grantee</tal:name>:
+      <ul class="bulleted">
+        <li tal:condition="view/shared_bugs_count">
+          <span tal:replace="view/shared_bugs_count" /> bugs
+        </li>
+        <li tal:condition="view/shared_branches_count">
+          <span tal:replace="view/shared_branches_count" /> Bazaar branches
+        </li>
+        <li tal:condition="view/shared_gitrepositories_count">
+          <span tal:replace="view/shared_gitrepositories_count" /> Git repositories
+        </li>
+        <li tal:condition="view/shared_ocirecipe_count">
+          <span tal:replace="view/shared_ocirecipe_count" /> OCI recipes
+        </li>
+        <li tal:condition="view/shared_snaps_count">
+          <span tal:replace="view/shared_snaps_count" /> snap recipes
+        </li>
+        <li tal:condition="view/shared_specifications_count">
+          <span tal:replace="view/shared_specifications_count" /> blueprints
+        </li>
+      </ul>
     </div>
 
     <table id="shared-table" class="listing sortable">
@@ -50,7 +60,8 @@
       <thead>
         <tr>
           <th colspan="2" width="">
-            Subscribed Bug Report, Bazaar Branch, Git Repository, or Blueprint
+            Subscribed bug report, Bazaar branch, Git repository, snap recipe,
+            OCI recipe or blueprint
           </th>
           <th>
             Information Type
@@ -61,7 +72,7 @@
           <tr>
               <td colspan="3">
                   There are no shared bugs, Bazaar branches, Git repositories,
-                  or blueprints.
+                  snap recipes, OCI recipes or blueprints.
               </td>
           </tr>
       </tbody>
