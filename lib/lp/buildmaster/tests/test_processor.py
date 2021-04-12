@@ -16,11 +16,10 @@ from lp.buildmaster.model.processor import Processor
 from lp.services.database.interfaces import IStore
 from lp.testing import (
     ExpectedException,
-    logout,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.pages import LaunchpadWebServiceCaller
+from lp.testing.pages import webservice_for_person
 
 
 class ProcessorSetTests(TestCaseWithFactory):
@@ -59,15 +58,11 @@ class ProcessorSetTests(TestCaseWithFactory):
 class ProcessorSetWebServiceTests(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        super(ProcessorSetWebServiceTests, self).setUp()
-        self.webservice = LaunchpadWebServiceCaller()
-
     def test_getByName(self):
         self.factory.makeProcessor(name='transmeta')
-        logout()
 
-        processor = self.webservice.named_get(
+        webservice = webservice_for_person(None)
+        processor = webservice.named_get(
             '/+processors', 'getByName', name='transmeta',
             api_version='devel').jsonBody()
         self.assertEqual('transmeta', processor['name'])
@@ -80,9 +75,8 @@ class ProcessorSetWebServiceTests(TestCaseWithFactory):
         self.factory.makeProcessor(name='i686')
         self.factory.makeProcessor(name='g4')
 
-        logout()
-
-        collection = self.webservice.get(
+        webservice = webservice_for_person(None)
+        collection = webservice.get(
             '/+processors?ws.size=10', api_version='devel').jsonBody()
         self.assertEqual(
             ['g4', 'i686', 'q1'],

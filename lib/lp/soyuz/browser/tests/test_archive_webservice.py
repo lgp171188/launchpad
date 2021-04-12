@@ -46,10 +46,7 @@ from lp.testing import (
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import webservice_for_person
 
 
 class TestArchiveWebservice(TestCaseWithFactory):
@@ -727,6 +724,7 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         # getPublishedBinaries has a query count constant in the number of
         # packages returned.
         archive_url = api_url(self.archive)
+        webservice = webservice_for_person(None)
 
         def create_bpph():
             with admin_logged_in():
@@ -734,7 +732,7 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
                     archive=self.archive)
 
         def get_binaries():
-            LaunchpadWebServiceCaller('consumer', '').named_get(
+            webservice.named_get(
                 archive_url, 'getPublishedBinaries').jsonBody()
 
         recorder1, recorder2 = record_two_runs(get_binaries, create_bpph, 1)
@@ -814,7 +812,7 @@ class TestArchiveSet(TestCaseWithFactory):
 
     def test_getByReference(self):
         random = self.factory.makePerson()
-        body = LaunchpadWebServiceCaller('consumer', '').named_get(
+        body = webservice_for_person(None).named_get(
             '/archives', 'getByReference', reference='ubuntu',
             api_version='devel').jsonBody()
         self.assertEqual(body['reference'], 'ubuntu')
@@ -824,13 +822,13 @@ class TestArchiveSet(TestCaseWithFactory):
         self.assertEqual(body['reference'], 'ubuntu')
 
     def test_getByReference_ppa(self):
-        body = LaunchpadWebServiceCaller('consumer', '').named_get(
+        body = webservice_for_person(None).named_get(
             '/archives', 'getByReference', reference='~cprov/ubuntu/ppa',
             api_version='devel').jsonBody()
         self.assertEqual(body['reference'], '~cprov/ubuntu/ppa')
 
     def test_getByReference_invalid(self):
-        body = LaunchpadWebServiceCaller('consumer', '').named_get(
+        body = webservice_for_person(None).named_get(
             '/archives', 'getByReference', reference='~cprov/ubuntu',
             api_version='devel').jsonBody()
         self.assertIs(None, body)
@@ -841,7 +839,7 @@ class TestArchiveSet(TestCaseWithFactory):
             owner = archive.owner
             reference = archive.reference
             random = self.factory.makePerson()
-        body = LaunchpadWebServiceCaller('consumer', '').named_get(
+        body = webservice_for_person(None).named_get(
             '/archives', 'getByReference', reference=reference,
             api_version='devel').jsonBody()
         self.assertIs(None, body)

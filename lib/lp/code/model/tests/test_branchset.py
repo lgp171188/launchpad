@@ -23,13 +23,12 @@ from lp.code.model.branch import BranchSet
 from lp.services.propertycache import clear_property_cache
 from lp.testing import (
     login_person,
-    logout,
     RequestTimelineCollector,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import LaunchpadWebServiceCaller
+from lp.testing.pages import webservice_for_person
 
 
 class TestBranchSet(TestCaseWithFactory):
@@ -101,14 +100,13 @@ class TestBranchSet(TestCaseWithFactory):
                 None, order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST)))
 
     def test_api_branches_query_count(self):
-        webservice = LaunchpadWebServiceCaller()
+        webservice = webservice_for_person(None)
         collector = RequestTimelineCollector()
         collector.register()
         self.addCleanup(collector.unregister)
         # Get 'all' of the 50 branches this collection is limited to - rather
         # than the default in-test-suite pagination size of 5.
         url = "/branches?ws.size=50"
-        logout()
         response = webservice.get(url,
             headers={'User-Agent': 'AnonNeedsThis'})
         self.assertEqual(response.status, 200,

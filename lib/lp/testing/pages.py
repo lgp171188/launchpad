@@ -750,20 +750,24 @@ def webservice_for_person(person, consumer_key=u'launchpad-library',
     Use this method to create a way to test the webservice that doesn't depend
     on sample data.
     """
-    if person.is_team:
-        raise AssertionError('This cannot be used with teams.')
-    login(ANONYMOUS)
-    oacs = getUtility(IOAuthConsumerSet)
-    consumer = oacs.getByKey(consumer_key)
-    if consumer is None:
-        consumer = oacs.new(consumer_key)
-    request_token, _ = consumer.newRequestToken()
-    request_token.review(person, permission, context)
-    access_token, access_secret = request_token.createAccessToken()
+    kwargs = {}
+    if person is not None:
+        if person.is_team:
+            raise AssertionError('This cannot be used with teams.')
+        login(ANONYMOUS)
+        oacs = getUtility(IOAuthConsumerSet)
+        consumer = oacs.getByKey(consumer_key)
+        if consumer is None:
+            consumer = oacs.new(consumer_key)
+        request_token, _ = consumer.newRequestToken()
+        request_token.review(person, permission, context)
+        access_token, access_secret = request_token.createAccessToken()
+        kwargs['oauth_consumer_key'] = consumer_key
+        kwargs['oauth_access_key'] = access_token.key
+        kwargs['oauth_access_secret'] = access_secret
+    kwargs['default_api_version'] = default_api_version
     logout()
-    service = LaunchpadWebServiceCaller(
-        consumer_key, access_token.key, access_secret,
-        default_api_version=default_api_version)
+    service = LaunchpadWebServiceCaller(**kwargs)
     service.user = person
     return service
 

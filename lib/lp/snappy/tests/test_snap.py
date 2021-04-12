@@ -163,10 +163,7 @@ from lp.testing.matchers import (
     DoesNotSnapshot,
     HasQueryCount,
     )
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import webservice_for_person
 
 
 class TestSnapFeatureFlag(TestCaseWithFactory):
@@ -3078,10 +3075,9 @@ class TestSnapWebservice(TestCaseWithFactory):
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
-        logout()
 
         # Anonymous requests can only see public snaps.
-        anon_webservice = LaunchpadWebServiceCaller("test", "")
+        anon_webservice = webservice_for_person(None)
         response = anon_webservice.named_get(
             "/+snaps", "findByOwner", owner=person_urls[0],
             api_version="devel")
@@ -3145,10 +3141,9 @@ class TestSnapWebservice(TestCaseWithFactory):
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
-        logout()
 
         # Anonymous requests can only see public snaps.
-        anon_webservice = LaunchpadWebServiceCaller("test", "")
+        anon_webservice = webservice_for_person(None)
         response = anon_webservice.named_get(
             "/+snaps", "findByURL", url=urls[0], api_version="devel")
         self.assertEqual(200, response.status)
@@ -3222,11 +3217,10 @@ class TestSnapWebservice(TestCaseWithFactory):
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
-        logout()
         prefix = "https://git.example.org/foo/"
 
         # Anonymous requests can only see public snaps.
-        anon_webservice = LaunchpadWebServiceCaller("test", "")
+        anon_webservice = webservice_for_person(None)
         response = anon_webservice.named_get(
             "/+snaps", "findByURLPrefix", url_prefix=prefix,
             api_version="devel")
@@ -3305,12 +3299,11 @@ class TestSnapWebservice(TestCaseWithFactory):
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
-        logout()
         prefixes = [
             "https://git.example.org/foo/", "https://git.example.org/bar/"]
 
         # Anonymous requests can only see public snaps.
-        anon_webservice = LaunchpadWebServiceCaller("test", "")
+        anon_webservice = webservice_for_person(None)
         response = anon_webservice.named_get(
             "/+snaps", "findByURLPrefixes", url_prefixes=prefixes,
             api_version="devel")
@@ -3381,10 +3374,9 @@ class TestSnapWebservice(TestCaseWithFactory):
                 self.webservice.getAbsoluteUrl(api_url(snap))
                 for snap in snaps]
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
-        logout()
 
         # Anonymous requests can only see public snaps.
-        anon_webservice = LaunchpadWebServiceCaller("test", "")
+        anon_webservice = webservice_for_person(None)
         response = anon_webservice.named_get(
             "/+snaps", "findByStoreName", store_name=store_names[0],
             api_version="devel")
