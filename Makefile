@@ -28,8 +28,10 @@ PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheels/ file://$(WD)/download-cache/dist
 VIRTUALENV := $(PIP_ENV) virtualenv
 PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
 
+VENV_PYTHON := env/bin/$(PYTHON)
+
 SITE_PACKAGES := \
-	$$(env/bin/python -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
+	$$($(VENV_PYTHON) -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
 
 TESTFLAGS=-p $(VERBOSITY)
 TESTOPTS=
@@ -73,6 +75,7 @@ API_INDEX = $(APIDOC_DIR)/index.html
 # NB: It's important PIP_BIN only mentions things genuinely produced by pip.
 PIP_BIN = \
     $(PY) \
+    $(VENV_PYTHON) \
     bin/bingtestservice \
     bin/build-twisted-plugin-cache \
     bin/harness \
@@ -277,8 +280,8 @@ build_eggs: build_wheels
 #
 # If we listed every target on the left-hand side, a parallel make would try
 # multiple copies of this rule to build them all.  Instead, we nominally build
-# just $(PY), and everything else is implicitly updated by that.
-$(PY): download-cache requirements/combined.txt setup.py
+# just $(VENV_PYTHON), and everything else is implicitly updated by that.
+$(VENV_PYTHON): download-cache requirements/combined.txt setup.py
 	rm -rf env
 	mkdir -p env
 	$(VIRTUALENV) \
@@ -294,11 +297,11 @@ $(PY): download-cache requirements/combined.txt setup.py
 		|| { code=$$?; rm -f $@; exit $$code; }
 	touch $@
 
-$(subst $(PY),,$(PIP_BIN)): $(PY)
+$(subst $(VENV_PYTHON),,$(PIP_BIN)): $(VENV_PYTHON)
 
 # Explicitly update version-info.py rather than declaring $(VERSION_INFO) as
 # a prerequisite, to make sure it's up to date when doing deployments.
-compile: $(PY)
+compile: $(VENV_PYTHON)
 	${SHHH} utilities/relocate-virtualenv env
 	$(PYTHON) utilities/link-system-packages.py \
 		"$(SITE_PACKAGES)" system-packages.txt
