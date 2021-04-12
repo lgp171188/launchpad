@@ -8,7 +8,7 @@ __all__ = [
     ]
 
 import base64
-
+import sys
 
 try:
     import xml.etree.cElementTree as ET
@@ -16,13 +16,21 @@ except ImportError:
     import cElementTree as ET
 
 from zope.component import getUtility
+
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
+from lp.bugs.browser.bugtask import get_comments_for_bugtask
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
-from lp.bugs.browser.bugtask import get_comments_for_bugtask
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
+
 
 BUGS_XMLNS = 'https://launchpad.net/xmlns/2006/bugs'
+
+
+if sys.version_info[0] >= 3:
+    encodebytes = base64.encodebytes
+else:
+    encodebytes = base64.encodestring
 
 
 def addnode(parent, elementname, content, **attrs):
@@ -95,7 +103,7 @@ def serialise_bugtask(bugtask):
                     attachment.libraryfile.mimetype)
             # Attach the attachment file contents, base 64 encoded.
             addnode(attachment_node, 'contents',
-                    base64.encodestring(attachment.libraryfile.read()))
+                    encodebytes(attachment.libraryfile.read()).decode('ASCII'))
 
     return bug_node
 
@@ -110,13 +118,14 @@ def export_bugtasks(ztm, bugtarget, output, include_private=False):
     ids = [task.id for task in bugtarget.searchTasks(
         BugTaskSearchParams(user=user, omit_dupes=False, orderby='id'))]
     bugtaskset = getUtility(IBugTaskSet)
-    output.write('<launchpad-bugs xmlns="%s">\n' % BUGS_XMLNS)
+    output.write(
+        ('<launchpad-bugs xmlns="%s">\n' % BUGS_XMLNS).encode('UTF-8'))
     for count, taskid in enumerate(ids):
         task = bugtaskset.get(taskid)
         tree = ET.ElementTree(serialise_bugtask(task))
-        tree.write(output)
+        tree.write(output, encoding="UTF-8", xml_declaration=False)
         # Periodically abort the transaction so that we don't lock
         # everyone else out.
         if count % 100:
             ztm.abort()
-    output.write('</launchpad-bugs>\n')
+    output.write(b'</launchpad-bugs>\n')

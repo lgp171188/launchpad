@@ -22,21 +22,38 @@ IScriptActivitySet.recordSuccess():
     >>> import socket
     >>> import subprocess
     >>> import tempfile
+    >>> from textwrap import dedent
+
+    >>> from fixtures import MockPatchObject
     >>> import pytz
     >>> import transaction
     >>> from zope.component import getUtility
+
+    >>> from lp.services.compat import mock
+    >>> from lp.services.config import config
     >>> from lp.services.scripts.interfaces.scriptactivity import (
     ...     IScriptActivitySet)
+    >>> from lp.services.statsd.interfaces.statsd_client import IStatsdClient
     >>> from lp.testing.dbuser import switch_dbuser
 
     >>> UTC = pytz.timezone('UTC')
     >>> switch_dbuser('garbo_daily') # A script db user
 
-    >>> activity = getUtility(IScriptActivitySet).recordSuccess(
-    ...     name='script-name',
-    ...     date_started=datetime.datetime(2007,2,1,10,0,tzinfo=UTC),
-    ...     date_completed=datetime.datetime(2007,2,1,10,1,tzinfo=UTC),
-    ...     hostname='script-host')
+    >>> config.push('statsd_test', dedent('''
+    ...     [statsd]
+    ...     environment: test
+    ...     '''))
+    >>> statsd_client = getUtility(IStatsdClient)
+    >>> stats_client = mock.Mock()
+
+    >>> with MockPatchObject(statsd_client, '_client', stats_client):
+    ...     activity = getUtility(IScriptActivitySet).recordSuccess(
+    ...         name='script-name',
+    ...         date_started=datetime.datetime(2007,2,1,10,0,tzinfo=UTC),
+    ...         date_completed=datetime.datetime(2007,2,1,10,1,tzinfo=UTC),
+    ...         hostname='script-host')
+
+    >>> _ = config.pop('statsd_test')
 
 The activity object records the script name, the host name it ran on
 and the start and end timestamps:
@@ -49,6 +66,15 @@ and the start and end timestamps:
     2007-02-01 10:00:00+00:00
     >>> print(activity.date_completed)
     2007-02-01 10:01:00+00:00
+
+It sends a corresponding timing stat to statsd.
+
+    >>> stats_client.timing.call_count
+    1
+    >>> print(stats_client.timing.call_args[0][0])
+    script_activity,env=test,name=script-name
+    >>> stats_client.timing.call_args[0][1]
+    60000.0
 
 We can also query for the last activity for a particular script, which
 will match the activity we just created:
@@ -84,7 +110,7 @@ result of successful runs.  This is intended for use by cron scripts
 and others where it is useful to monitor the result.
 
     >>> script_file = tempfile.NamedTemporaryFile()
-    >>> script_file.write("""
+    >>> _ = script_file.write(b"""
     ... from lp.services.scripts.base import LaunchpadCronScript
     ...
     ... class TestScript(LaunchpadCronScript):

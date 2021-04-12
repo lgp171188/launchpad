@@ -1,4 +1,4 @@
-# Copyright 2012-2015 Canonical Ltd. This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd. This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test views that manage sharing."""
@@ -20,17 +20,23 @@ from zope.traversing.browser.absoluteurl import absoluteURL
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.services import IService
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
+    PersonVisibility,
+    TeamMembershipPolicy,
     )
 from lp.registry.interfaces.accesspolicy import IAccessPolicyGrantFlatSource
 from lp.registry.model.pillar import PillarPerson
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import StormRangeFactoryError
 from lp.services.webapp.publisher import canonical_url
+from lp.snappy.interfaces.snap import SNAP_PRIVATE_FEATURE_FLAG
 from lp.testing import (
+    admin_logged_in,
     login_person,
     logout,
     normalize_whitespace,
@@ -41,7 +47,11 @@ from lp.testing import (
     )
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import setupBrowserForUser
+from lp.testing.pages import (
+    extract_text,
+    find_tag_by_id,
+    setupBrowserForUser,
+    )
 from lp.testing.views import (
     create_initialized_view,
     create_view,
@@ -170,8 +180,9 @@ class PillarSharingDetailsMixin:
             pillarperson.pillar.name, pillarperson.person.name)
         browser = self.getUserBrowser(user=self.owner, url=url)
         self.assertIn(
-            'There are no shared bugs, Bazaar branches, Git repositories, or '
-            'blueprints.', normalize_whitespace(browser.contents))
+            'There are no shared bugs, Bazaar branches, Git repositories, '
+            'snap recipes, OCI recipes or blueprints.',
+            normalize_whitespace(browser.contents))
 
     def test_init_works(self):
         # The view works with a feature flag.
@@ -360,6 +371,99 @@ class PillarSharingViewTestMixin:
         # information".
         self.run_sharing_message_test(
             self.pillar, self.pillar.owner, public=True)
+
+    def test_shared_with_normally_invisible_private_team(self):
+        # If a pillar is shared with a private team, then we disclose
+        # information about the share to users who can see +sharing even if
+        # they can't normally see that private team.
+        self.pushConfig('launchpad', default_batch_size=75)
+        with admin_logged_in():
+            team = self.factory.makeTeam(visibility=PersonVisibility.PRIVATE)
+            team_name = team.name
+            self.factory.makeAccessPolicyGrant(self.access_policy, team)
+        with person_logged_in(self.pillar.owner):
+            view = create_initialized_view(self.pillar, name='+sharing')
+            cache = IJSONRequestCache(view.request)
+            self.assertIn(
+                team_name,
+                [grantee['name'] for grantee in cache.objects['grantee_data']])
+
+    def test_pillar_person_sharing_with_team(self):
+        self.useFixture(FeatureFixture({
+            SNAP_PRIVATE_FEATURE_FLAG: 'on',
+            OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED)
+        # Add 4 members to the team, so we should have the team owner + 4
+        # other members with access to the artifacts.
+        for i in range(4):
+            self.factory.makePerson(member_of=[team])
+
+        items = [
+            self.factory.makeOCIRecipe(
+                owner=self.owner, registrant=self.owner,
+                information_type=InformationType.USERDATA,
+                oci_project=self.factory.makeOCIProject(pillar=self.pillar))]
+        expected_text = """
+            5 team members can view these artifacts.
+            Shared with %s:
+            1 OCI recipes
+            """ % team.displayname
+
+        if self.pillar_type == 'product':
+            items.append(self.factory.makeSnap(
+                information_type=InformationType.USERDATA,
+                owner=self.owner, registrant=self.owner, project=self.pillar))
+            expected_text += "\n1 snap recipes"
+
+        with person_logged_in(self.owner):
+            for item in items:
+                item.subscribe(team, self.owner)
+
+        pillarperson = PillarPerson(self.pillar, team)
+        url = 'http://launchpad.test/%s/+sharing/%s' % (
+            pillarperson.pillar.name, pillarperson.person.name)
+        browser = self.getUserBrowser(user=self.owner, url=url)
+        content = extract_text(
+            find_tag_by_id(browser.contents, "observer-summary"))
+
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            expected_text, content)
+
+    def test_pillar_person_sharing(self):
+        self.useFixture(FeatureFixture({
+            SNAP_PRIVATE_FEATURE_FLAG: 'on',
+            OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        person = self.factory.makePerson()
+        items = [
+            self.factory.makeOCIRecipe(
+                owner=self.owner, registrant=self.owner,
+                information_type=InformationType.USERDATA,
+                oci_project=self.factory.makeOCIProject(pillar=self.pillar))]
+        expected_text = """
+        Shared with %s:
+        1 OCI recipes
+        """ % person.displayname
+
+        if self.pillar_type == 'product':
+            items.append(self.factory.makeSnap(
+                information_type=InformationType.USERDATA,
+                owner=self.owner, registrant=self.owner, project=self.pillar))
+            expected_text += "\n1 snap recipes"
+
+        with person_logged_in(self.owner):
+            for item in items:
+                item.subscribe(person, self.owner)
+
+        pillarperson = PillarPerson(self.pillar, person)
+        url = 'http://launchpad.test/%s/+sharing/%s' % (
+            pillarperson.pillar.name, pillarperson.person.name)
+        browser = self.getUserBrowser(user=self.owner, url=url)
+        content = extract_text(
+            find_tag_by_id(browser.contents, "observer-summary"))
+
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            expected_text, content)
 
 
 class TestProductSharingView(PillarSharingViewTestMixin,

@@ -21,9 +21,10 @@ If non-existant bug number is entered, an error is raised.
     >>> request = LaunchpadTestRequest(form={'field.bug': '1234567'})
     >>> bug_widget = BugWidget(bug_field, request)
     >>> bug_widget.getInputValue()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ConversionError: ('Not a valid bug number or nickname.', None)
+    zope.formlib.interfaces.ConversionError: ('Not a valid bug number or nickname.', None)
 
 It's quite common that bug ids are prefixed by '#', so such inputs are
 accepted as well.

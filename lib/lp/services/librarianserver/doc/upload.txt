@@ -11,7 +11,7 @@ Database check
 The Database-Name header is now mandatory.  If it isn't present, an otherwise
 well-formed request will be rejected:
 
-    >>> upload_request("""STORE 14 hello.txt
+    >>> upload_request(b"""STORE 14 hello.txt
     ... Content-Type: text/plain
     ... File-Content-ID: 123
     ... File-Alias-ID: 456
@@ -23,7 +23,7 @@ well-formed request will be rejected:
 If Database-Name is specified by the client, and doesn't match the database name
 of the server, the upload is rejected.
 
-    >>> upload_request("""STORE 14 hello.txt
+    >>> upload_request(b"""STORE 14 hello.txt
     ... Content-Type: text/plain
     ... File-Content-ID: 123
     ... File-Alias-ID: 456
@@ -35,7 +35,7 @@ of the server, the upload is rejected.
 
 If the database name matches, it's accepted as usual.
 
-    >>> upload_request("""STORE 14 hello.txt
+    >>> upload_request(b"""STORE 14 hello.txt
     ... Content-Type: text/plain
     ... File-Content-ID: 123
     ... File-Alias-ID: 456
@@ -43,7 +43,7 @@ If the database name matches, it's accepted as usual.
     ...
     ... Cats and dogs.""")
     reply: '200'
-    file u'hello.txt' stored as text/plain, contents: 'Cats and dogs.'
+    file 'hello.txt' stored as text/plain, contents: 'Cats and dogs.'
 
 
 Error conditions
@@ -52,30 +52,30 @@ Error conditions
 Errors receive a 400 status code in the reply, and the connection will be
 closed.
 
+Invalid UTF-8 lines are rejected.
+
+    >>> upload_request(b"STORE 10000 \xff\n")
+    reply: '400 Non-data lines must be in UTF-8'
+    connection closed
+
 Unknown commands are rejected.
 
-    >>> upload_request("FROB the chicken\n")
+    >>> upload_request(b"FROB the chicken\n")
     reply: '400 Unknown command: FROB the chicken'
     connection closed
 
 Incomplete STORE commands are rejected.
 
-    >>> upload_request("STORE bad-arg!\n")
+    >>> upload_request(b"STORE bad-arg!\n")
     reply: '400 STORE command expects a size and file name'
     connection closed
 
 Invalid headers are rejected.
 
-    >>> upload_request("""STORE 10000 foo.txt
+    >>> upload_request(b"""STORE 10000 foo.txt
     ... Some garbage.
     ... """)
     reply: '400 Invalid header: Some garbage.'
-    connection closed
-
-Invalid UTF-8 filenames are rejected.
-
-    >>> upload_request("STORE 10000 \xff\n")
-    reply: '400 STORE command expects the filename to be in UTF-8'
     connection closed
 
 
@@ -84,7 +84,7 @@ Uploading corner cases
 
 Empty files work, rather than hang the connection.
 
-    >>> upload_request("""STORE 0 foo.txt
+    >>> upload_request(b"""STORE 0 foo.txt
     ... Content-Type: text/plain
     ... File-Content-ID: 123
     ... File-Alias-ID: 456
@@ -92,11 +92,11 @@ Empty files work, rather than hang the connection.
     ...
     ... """)
     reply: '200'
-    file u'foo.txt' stored as text/plain, contents: ''
+    file 'foo.txt' stored as text/plain, contents: ''
 
 Filename with spaces work.
 
-    >>> upload_request("""STORE 14 cats and dogs.txt
+    >>> upload_request(b"""STORE 14 cats and dogs.txt
     ... Content-Type: text/plain
     ... File-Content-ID: 123
     ... File-Alias-ID: 456
@@ -104,19 +104,17 @@ Filename with spaces work.
     ...
     ... Cats and dogs.""")
     reply: '200'
-    file u'cats and dogs.txt' stored as text/plain, contents: 'Cats and dogs.'
+    file 'cats and dogs.txt' stored as text/plain, contents: 'Cats and dogs.'
 
 Unicode filenames work, but must be encoded as UTF-8 on the socket.
 
-    >>> filename = u'Yow\N{INTERROBANG}'.encode('utf-8')
-    >>> upload_request("""STORE 14 %s
+    >>> filename = 'Yow\N{INTERROBANG}'
+    >>> upload_request(("""STORE 14 %s
     ... Content-Type: text/plain
     ... File-Content-ID: 123
     ... File-Alias-ID: 456
     ... Database-Name: right_database
     ...
-    ... Cats and dogs.""" % filename)
+    ... Cats and dogs.""" % filename).encode('UTF-8'))
     reply: '200'
-    file u'Yow\u203d' stored as text/plain, contents: 'Cats and dogs.'
-
-
+    file 'Yow‽' stored as text/plain, contents: 'Cats and dogs.'

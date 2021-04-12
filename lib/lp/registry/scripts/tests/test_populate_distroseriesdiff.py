@@ -565,8 +565,7 @@ class TestPopulateDistroSeriesDiffScript(TestCaseWithFactory, FactoryHelper):
             '--distribution', spph.distroseries.distribution.name,
             '--series', spph.distroseries.name,
             ])
-        self.assertEqual(
-            [spph.distroseries], script.getDistroSeries().keys())
+        self.assertEqual([spph.distroseries], list(script.getDistroSeries()))
 
     def test_finds_all_distroseries(self):
         spphs = []

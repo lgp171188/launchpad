@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 import datetime
+from functools import cmp_to_key
 from operator import attrgetter
 
 import apt_pkg
@@ -559,7 +560,8 @@ class TestGeneralizedPublication(TestCaseWithFactory):
             '1.1v3',
             ]
         spphs = make_spphs_for_versions(self.factory, versions)
-        sorted_spphs = sorted(spphs, cmp=GeneralizedPublication().compare)
+        sorted_spphs = sorted(
+            spphs, key=cmp_to_key(GeneralizedPublication().compare))
         self.assertEqual(
             sorted(versions), list_source_versions(sorted_spphs))
 
@@ -572,16 +574,18 @@ class TestGeneralizedPublication(TestCaseWithFactory):
             ]
         spphs = make_spphs_for_versions(self.factory, versions)
 
-        debian_sorted_versions = sorted(versions, cmp=apt_pkg.version_compare)
+        debian_sorted_versions = sorted(
+            versions, key=cmp_to_key(apt_pkg.version_compare))
 
         # Assumption: in this case, Debian version ordering is not the
         # same as alphabetical version ordering.
         self.assertNotEqual(sorted(versions), debian_sorted_versions)
 
         # The compare method produces the Debian ordering.
-        sorted_spphs = sorted(spphs, cmp=GeneralizedPublication().compare)
+        sorted_spphs = sorted(
+            spphs, key=cmp_to_key(GeneralizedPublication().compare))
         self.assertEqual(
-            sorted(versions, cmp=apt_pkg.version_compare),
+            sorted(versions, key=cmp_to_key(apt_pkg.version_compare)),
             list_source_versions(sorted_spphs))
 
     def test_compare_breaks_tie_with_creation_date(self):
@@ -605,7 +609,7 @@ class TestGeneralizedPublication(TestCaseWithFactory):
 
         self.assertEqual(
             [spphs[2], spphs[0], spphs[1]],
-            sorted(spphs, cmp=GeneralizedPublication().compare))
+            sorted(spphs, key=cmp_to_key(GeneralizedPublication().compare)))
 
     def test_compare_breaks_tie_for_releases_with_same_version(self):
         # When two publications are tied for comparison because they
@@ -629,7 +633,7 @@ class TestGeneralizedPublication(TestCaseWithFactory):
 
         self.assertEqual(
             [spphs[2], spphs[0], spphs[1]],
-            sorted(spphs, cmp=GeneralizedPublication().compare))
+            sorted(spphs, key=cmp_to_key(GeneralizedPublication().compare)))
 
 
 def jumble(ordered_list):
@@ -910,7 +914,7 @@ class TestDominatorMethods(TestCaseWithFactory):
                 pocket=pocket, status=status))
             for status in PackagePublishingStatus.items)
         published_spph = spphs[PackagePublishingStatus.PUBLISHED]
-        dominator = self.makeDominator(spphs.values())
+        dominator = self.makeDominator(list(spphs.values()))
         self.assertContentEqual(
             [(published_spph.sourcepackagerelease.sourcepackagename.name, 1)],
             dominator.findPublishedSourcePackageNames(series, pocket))
@@ -995,7 +999,7 @@ class TestDominatorMethods(TestCaseWithFactory):
                 sourcepackagerelease=self.factory.makeSourcePackageRelease(
                     sourcepackagename=package)))
             for status in PackagePublishingStatus.items)
-        dominator = self.makeDominator(spphs.values())
+        dominator = self.makeDominator(list(spphs.values()))
         self.assertContentEqual(
             [spphs[PackagePublishingStatus.PUBLISHED]],
             dominator.findPublishedSPPHs(series, pocket, package.name))

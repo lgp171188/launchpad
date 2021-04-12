@@ -48,16 +48,17 @@ the system detects it and warns the user.
     http://translations.launchpad.test/+languages/+add
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     There is already a language with that code.
 
 But, with a new language, it will succeed.
 
     >>> browser.open('http://translations.launchpad.test/+languages/foos')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound:...
+    zope.publisher.interfaces.NotFound: ...
 
     >>> admin_browser.getControl('The ISO 639').value = 'foos'
     >>> admin_browser.getControl('English name').value = 'Foos'
@@ -75,15 +76,17 @@ A normal user will not be able to see or use the url to add languages.
     http://translations.launchpad.test/+languages
 
     >>> user_browser.getLink('Add new language')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/+languages/+add')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 
 Searching for a language
@@ -113,7 +116,7 @@ about the selected language.
     http://translations.launchpad.test/+languages/es
 
     >>> print(extract_text(find_portlet(browser.contents, 'Plural forms'
-    ...     ).renderContents()))
+    ...     ).decode_contents()))
     Plural forms
     Spanish has 2 plural forms:
     Form 0 for 1.
@@ -166,7 +169,7 @@ form.
 
     >>> browser.open('http://translations.launchpad.test/+languages/ab')
     >>> print(extract_text(find_portlet(browser.contents, 'Plural forms'
-    ...     ).renderContents()))
+    ...     ).decode_contents()))
     Plural forms
     Unfortunately, Launchpad doesn't know the plural
     form information for this language...
@@ -201,15 +204,17 @@ Finally, there is the edit form to change language basic information.
 A plain user is not able to reach it.
 
     >>> user_browser.getLink('Administer')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/+languages/es/+admin')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 An admin, though, will see the link and will be able to edit it.
 
@@ -265,7 +270,7 @@ so the user can fix it.
     http://translations.launchpad.test/+languages/es/+admin
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     There is already a language with that code.
 
@@ -274,8 +279,9 @@ Changing values to correct content works:
     >>> admin_browser.getControl('ISO 639').value = 'bars'
     >>> admin_browser.getControl('English name').value = 'Changed field'
     >>> spokenin_control = admin_browser.getControl(name='field.countries')
-    >>> spokenin_control.getControl(b'Argentina').selected = False
-    >>> spokenin_control.getControl(b'France').selected = True
+    >>> spokenin_control.getControl(
+    ...     six.ensure_str('Argentina')).selected = False
+    >>> spokenin_control.getControl(six.ensure_str('France')).selected = True
     >>> admin_browser.getControl('Admin Language').click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/+languages/bars
@@ -304,6 +310,7 @@ That was a renaming action, which means that language code 'es' doesn't
 exist anymore.
 
     >>> browser.open('http://translations.launchpad.test/+languages/es')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound:...
+    zope.publisher.interfaces.NotFound: ...

@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helpers for doing natural language phrase search using the
@@ -11,11 +11,22 @@ __all__ = ['nl_phrase_search']
 
 import re
 
-from lp.services.database.sqlbase import (
-    cursor,
-    quote,
-    sqlvalues,
+import six
+from storm.databases.postgres import Case
+from storm.locals import (
+    Count,
+    Select,
+    SQL,
     )
+from zope.component import getUtility
+
+from lp.services.database.interfaces import (
+    DEFAULT_FLAVOR,
+    IStore,
+    IStoreSelector,
+    MAIN_STORE,
+    )
+from lp.services.database.stormexpr import fti_search
 
 # Regular expression to extract terms from the printout of a ts_query
 TS_QUERY_TERM_RE = re.compile(r"'([^']+)'")
@@ -28,9 +39,9 @@ def nl_term_candidates(phrase):
 
     :phrase: a search phrase
     """
-    cur = cursor()
-    cur.execute("SELECT ftq(%(phrase)s)::text" % sqlvalues(phrase=phrase))
-    rs = cur.fetchall()
+    phrase = six.ensure_text(phrase)
+    store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+    rs = store.execute(Select(SQL("ftq(?)::text", params=(phrase,)))).get_all()
     assert len(rs) == 1, "ftq() returned more than one row"
     terms = rs[0][0]
     if not terms:
@@ -39,8 +50,7 @@ def nl_term_candidates(phrase):
     return TS_QUERY_TERM_RE.findall(terms)
 
 
-def nl_phrase_search(phrase, table, constraints='',
-                     extra_constraints_tables=None,
+def nl_phrase_search(phrase, table, constraint_clauses=None,
                      fast_enabled=True):
     """Return the tsearch2 query that should be used to do a phrase search.
 
@@ -54,11 +64,9 @@ def nl_phrase_search(phrase, table, constraints='',
     for full text searching.
 
     :param phrase: A search phrase.
-    :param table: This should be the SQLBase class representing the base type.
-    :param constraints: Additional SQL clause that limits the rows to a subset
-        of the table.
-    :param extra_constraints_tables: A list of additional table names that are
-        needed by the constraints clause.
+    :param table: This should be the Storm class representing the base type.
+    :param constraint_clauses: Additional Storm clauses that limit the rows
+        to a subset of the table.
     :param fast_enabled: If true use a fast, but less precise, code path. When
         feature flags are available this will be converted to a feature flag.
     :return: A tsearch2 query string.
@@ -67,14 +75,12 @@ def nl_phrase_search(phrase, table, constraints='',
     if len(terms) == 0:
         return ''
     if fast_enabled:
-        return _nl_phrase_search(terms, table, constraints,
-            extra_constraints_tables)
+        return _nl_phrase_search(terms, table, constraint_clauses)
     else:
-        return _slow_nl_phrase_search(terms, table, constraints,
-            extra_constraints_tables)
+        return _slow_nl_phrase_search(terms, table, constraint_clauses)
 
 
-def _nl_phrase_search(terms, table, constraints, extra_constraints_tables):
+def _nl_phrase_search(terms, table, constraint_clauses):
     """Perform a very simple pruning of the phrase, letting fti do ranking.
 
     This function groups the terms with & clause, and creates an additional
@@ -101,8 +107,7 @@ def _nl_phrase_search(terms, table, constraints, extra_constraints_tables):
     return '|'.join(and_clauses)
 
 
-def _slow_nl_phrase_search(terms, table, constraints,
-    extra_constraints_tables):
+def _slow_nl_phrase_search(terms, table, constraint_clauses):
     """Return the tsearch2 query that should be use to do a phrase search.
 
     This function implement an algorithm similar to the one used by MySQL
@@ -110,8 +115,7 @@ def _slow_nl_phrase_search(terms, table, constraints,
     http://dev.mysql.com/doc/refman/5.0/en/fulltext-search.html).
 
     It eliminates stop words from the phrase and normalize each terms
-    according to the full text indexation rules (lowercasing and stemming).
-
+    according to the full text indexation rules (lowercasing and stemming)
     Each term that is present in more than 50% of the candidate rows is also
     eliminated from the query. That term eliminatation is only done when there
     are 5 candidate rows or more.
@@ -124,19 +128,19 @@ def _slow_nl_phrase_search(terms, table, constraints,
 
     :terms: Some candidate search terms.
 
-    :table: This should be the SQLBase class representing the base type.
+    :table: This should be the Storm class representing the base type.
 
-    :constraints: Additional SQL clause that limits the rows to a
-    subset of the table.
-
-    :extra_constraints_tables: A list of additional table names that are
-    needed by the constraints clause.
+    :constraints: Additional Storm clause that limits the rows to a subset
+        of the table.
 
     Caveat: The model class must define a 'fti' column which is then used
     for full text searching.
     """
-    total = table.select(
-        constraints, clauseTables=extra_constraints_tables).count()
+    if constraint_clauses is None:
+        constraint_clauses = []
+
+    store = IStore(table)
+    total = store.find(table, *constraint_clauses).count()
     term_candidates = terms
     if total < 5:
         return '|'.join(term_candidates)
@@ -144,23 +148,11 @@ def _slow_nl_phrase_search(terms, table, constraints,
     # Build the query to get all the counts. We get all the counts in
     # one query, using COUNT(CASE ...), since issuing separate queries
     # with COUNT(*) is a lot slower.
-    count_template = (
-        'COUNT(CASE WHEN %(table)s.fti @@ ftq(%(term)s)'
-        ' THEN TRUE ELSE null END)')
-    select_counts = [
-        count_template % {'table': table.__storm_table__, 'term': quote(term)}
-        for term in term_candidates
-        ]
-    select_tables = [table.__storm_table__]
-    if extra_constraints_tables is not None:
-        select_tables.extend(extra_constraints_tables)
-    count_query = "SELECT %s FROM %s" % (
-        ', '.join(select_counts), ', '.join(select_tables))
-    if constraints != '':
-        count_query += " WHERE %s" % constraints
-    cur = cursor()
-    cur.execute(count_query)
-    counts = cur.fetchone()
+    counts = store.find(
+        tuple(
+            Count(Case([(fti_search(table, term), True)], default=None))
+            for term in term_candidates),
+        *constraint_clauses).one()
 
     # Remove words that are too common.
     terms = [

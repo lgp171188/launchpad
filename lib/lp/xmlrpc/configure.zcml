@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -20,6 +20,19 @@
       class="lp.xmlrpc.application.SelfTest"
       permission="zope.Public"
       />
+
+  <securedutility
+    class="lp.systemhomes.ArchiveApplication"
+    provides="lp.soyuz.interfaces.archiveapi.IArchiveApplication">
+    <allow interface="lp.soyuz.interfaces.archiveapi.IArchiveApplication"/>
+  </securedutility>
+
+  <xmlrpc:view
+    for="lp.soyuz.interfaces.archiveapi.IArchiveApplication"
+    interface="lp.soyuz.interfaces.archiveapi.IArchiveAPI"
+    class="lp.soyuz.xmlrpc.archive.ArchiveAPI"
+    permission="zope.Public"
+    />
 
   <securedutility
     class="lp.systemhomes.CodehostingApplication"

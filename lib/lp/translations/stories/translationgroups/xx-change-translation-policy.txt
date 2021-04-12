@@ -58,18 +58,20 @@ to translations policy page.
     >>> dtc_browser.open(
     ...     'http://translations.launchpad.test/chestii')
     >>> dtc_browser.getLink('Configure Translations')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 An attempt to access the translations policy url will not be authorized.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/'
     ...     'chestii/+configure-translations')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 
 Translations policy for distributions

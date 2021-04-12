@@ -53,10 +53,10 @@ The help folder is registered on the ILaunchpadRoot interface.
     >>> isinstance(help_view, HelpFolder)
     True
 
-    >>> print help_view.__name__
+    >>> print(help_view.__name__)
     +help
 
-    >>> print help_view.__class__.__name__
+    >>> print(help_view.__class__.__name__)
     +help for /tmp/help...
 
 

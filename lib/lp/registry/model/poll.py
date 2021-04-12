@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -33,6 +33,7 @@ from zope.interface import implementer
 
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.poll import (
+    CannotCreatePoll,
     IPoll,
     IPollOption,
     IPollOptionSet,
@@ -51,6 +52,7 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormbase import StormBase
 from lp.services.tokens import create_token
+from lp.services.webapp.authorization import check_permission
 
 
 @implementer(IPoll)
@@ -292,8 +294,13 @@ class PollSet:
     """See IPollSet."""
 
     def new(self, team, name, title, proposition, dateopens, datecloses,
-            secrecy, allowspoilt, poll_type=PollAlgorithm.SIMPLE):
+            secrecy, allowspoilt, poll_type=PollAlgorithm.SIMPLE,
+            check_permissions=True):
         """See IPollSet."""
+        if (check_permissions and
+                not check_permission("launchpad.AnyLegitimatePerson", team)):
+            raise CannotCreatePoll(
+                "You do not have permission to create polls.")
         poll = Poll(
             team=team, name=name, title=title,
             proposition=proposition, dateopens=dateopens,

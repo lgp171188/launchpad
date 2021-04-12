@@ -17,8 +17,8 @@ person icon in front of the name.
     >>> from lp.bugs.interfaces.bug import IBugSet, IBugTask
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> firefox_bugtask = bug_one.bugtasks[0]
-    >>> firefox_bugtask.assignee.displayname
-    u'Mark Shuttleworth'
+    >>> print(firefox_bugtask.assignee.displayname)
+    Mark Shuttleworth
 
     >>> assignee_field = IBugTask['assignee'].bind(firefox_bugtask)
     >>> assignee_widget = AssigneeDisplayWidget(assignee_field, None, None)

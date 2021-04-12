@@ -437,7 +437,7 @@ class TestTranslationImportQueue(TestCaseWithFactory):
         self.import_queue.addOrUpdateEntriesFromTarball(
             tarfile_content, True, self.importer,
             productseries=self.productseries)
-        self.assertEqual(files.keys(), self._getQueuePaths())
+        self.assertEqual(list(files), self._getQueuePaths())
 
     def test_addOrUpdateEntriesFromTarball_path_leading_slash(self):
         # Leading slashes are stripped from path names.

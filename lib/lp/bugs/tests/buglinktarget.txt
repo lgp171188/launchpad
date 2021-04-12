@@ -76,10 +76,10 @@ Of course, if no new link is created, no events should be fired:
 Anonymous users cannot use linkBug():
 
     >>> login(ANONYMOUS)
-    >>> target.linkBug(bug2)
+    >>> target.linkBug(bug2)  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
 A user can only link to a private bug if they are subscribed to the bug or
 if they are an administrator:
@@ -89,9 +89,10 @@ if they are an administrator:
     >>> private_bug.setPrivate(True, factory.makePerson())
     True
     >>> target.linkBug(private_bug, factory.makePerson())
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> admin = getUtility(IPersonSet).getByEmail('admin@canonical.com')
@@ -116,9 +117,10 @@ This method is only available to registered users:
 
     >>> login(ANONYMOUS)
     >>> target.unlinkBug(bug2, None)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> login('no-priv@canonical.com')
 
@@ -158,9 +160,10 @@ A user can only remove a link to a private bug if they are subscribed to
 the bug or if they are an administrator.
 
     >>> target.unlinkBug(private_bug)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized...
+    zope.security.interfaces.Unauthorized: ...
 
     >>> login('foo.bar@canonical.com')
     >>> target.unlinkBug(private_bug, admin)

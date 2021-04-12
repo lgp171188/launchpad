@@ -52,9 +52,10 @@ do not get an Edit link.
 Because it's an svn:// URL, it doesn't get linkified:
 
     >>> anon_browser.getLink("svn://svn.example.com/fooix/trunk")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 
 == Not authorized versus 404 ==
@@ -64,12 +65,14 @@ they will get a not authorised page if the branch has a code import,
 and a 404 if the branch doesn't have an import.
 
     >>> anon_browser.open(svn_import_location + '/+edit-import')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    Unauthorized: (... 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized: (... 'launchpad.Edit')
 
     >>> admin_browser.open(hosted_branch_location + '/+edit-import')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    NotFoundError
+    lp.app.errors.NotFoundError
 
 
 == Editing details ==
@@ -128,7 +131,7 @@ Anonymous users cannot see this button.
     >>> anon_browser.getControl('Import Now')
     Traceback (most recent call last):
       ...
-    LookupError: label u'Import Now'
+    LookupError: label ...'Import Now'
     ...
 
 If the logged in user clicks this button, the import will be scheduled

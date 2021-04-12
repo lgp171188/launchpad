@@ -103,7 +103,3 @@ class RosettaStats(object):
     def updatesPercentage(self, language=None):
         """See IRosettaStats."""
         return self.asPercentage(self.updatesCount(language))
-
-    def rosettaPercentage(self, language=None):
-        """See IRosettaStats."""
-        return self.asPercentage(self.rosettaCount(language))

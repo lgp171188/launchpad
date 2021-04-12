@@ -11,9 +11,9 @@ __all__ = [
     "TestUploadProcessorBase",
     ]
 
+import io
 import os
 import shutil
-from StringIO import StringIO
 import tempfile
 
 from fixtures import MonkeyPatch
@@ -63,6 +63,7 @@ from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import (
     BufferLogger,
@@ -290,10 +291,10 @@ class TestUploadProcessorBase(TestCaseWithFactory):
 
         self.switchToUploader()
 
-    def addMockFile(self, filename, content="anything"):
+    def addMockFile(self, filename, content=b"anything"):
         """Return a librarian file."""
         return getUtility(ILibraryFileAliasSet).create(
-            filename, len(content), StringIO(content),
+            filename, len(content), io.BytesIO(content),
             'application/x-gtar')
 
     def queueUpload(self, upload_name, relative_path="", test_files_dir=None,
@@ -402,15 +403,15 @@ class TestUploadProcessorBase(TestCaseWithFactory):
             bar.first().sourcepackagerelease)
         changes_file = changes_lfa.read()
         self.assertTrue(
-            "Format: " in changes_file, "Does not look like a changes file")
+            b"Format: " in changes_file, "Does not look like a changes file")
         self.assertTrue(
-            "-----BEGIN PGP SIGNED MESSAGE-----" not in changes_file,
+            b"-----BEGIN PGP SIGNED MESSAGE-----" not in changes_file,
             "Unexpected PGP header found")
         self.assertTrue(
-            "-----BEGIN PGP SIGNATURE-----" not in changes_file,
+            b"-----BEGIN PGP SIGNATURE-----" not in changes_file,
             "Unexpected start of PGP signature found")
         self.assertTrue(
-            "-----END PGP SIGNATURE-----" not in changes_file,
+            b"-----END PGP SIGNATURE-----" not in changes_file,
             "Unexpected end of PGP signature found")
 
 
@@ -1022,8 +1023,9 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.publishPackage("foocomm", "1.0-1", archive=partner_archive)
 
         # Check the publishing record's archive and component.
-        foocomm_spph = SourcePackagePublishingHistory.selectOneBy(
-            sourcepackagerelease=foocomm_spr)
+        foocomm_spph = IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            sourcepackagerelease=foocomm_spr).one()
         self.assertEqual(foocomm_spph.archive.description,
             'Partner archive')
         self.assertEqual(foocomm_spph.component.name,
@@ -1066,8 +1068,9 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.publishPackage("foocomm", "1.0-1", source=False)
 
         # Check the publishing record's archive and component.
-        foocomm_bpph = BinaryPackagePublishingHistory.selectOneBy(
-            binarypackagerelease=foocomm_bpr)
+        foocomm_bpph = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            binarypackagerelease=foocomm_bpr).one()
         self.assertEqual(foocomm_bpph.archive.description,
             'Partner archive')
         self.assertEqual(foocomm_bpph.component.name,
@@ -2136,7 +2139,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
         # A buildinfo file is attached to the SPR.
         uploadprocessor = self.setupBreezyAndGetUploadProcessor()
         upload_dir = self.queueUpload("bar_1.0-1_buildinfo")
-        with open(os.path.join(upload_dir, "bar_1.0-1_source.buildinfo")) as f:
+        with open(os.path.join(upload_dir, "bar_1.0-1_source.buildinfo"),
+                  "rb") as f:
             buildinfo_contents = f.read()
         self.processUpload(uploadprocessor, upload_dir)
         source_pub = self.publishPackage("bar", "1.0-1")
@@ -2166,7 +2170,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
         leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         upload_dir = self.queueUpload(
             "bar_1.0-1_binary_buildinfo", queue_entry=leaf_name)
-        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo")) as f:
+        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo"),
+                  "rb") as f:
             buildinfo_contents = f.read()
         self.options.context = "buildd"
         self.options.builds = True
@@ -2197,7 +2202,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
         leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         upload_dir = self.queueUpload(
             "bar_1.0-1_binary_buildinfo_indep", queue_entry=leaf_name)
-        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo")) as f:
+        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo"),
+                  "rb") as f:
             buildinfo_contents = f.read()
         self.options.context = "buildd"
         self.options.builds = True
@@ -2275,10 +2281,9 @@ class TestUploadHandler(TestUploadProcessorBase):
         self.assertEqual(builder, build.builder)
         self.assertIsNot(None, build.duration)
         log_contents = build.upload_log.read()
-        self.assertTrue('ERROR Exception while processing upload '
-            in log_contents)
-        self.assertFalse('DEBUG Moving upload directory '
-            in log_contents)
+        self.assertIn(
+            b'ERROR Exception while processing upload ', log_contents)
+        self.assertNotIn(b'DEBUG Moving upload directory ', log_contents)
 
     def testBinaryPackageBuilds(self):
         # Properly uploaded binaries should result in the

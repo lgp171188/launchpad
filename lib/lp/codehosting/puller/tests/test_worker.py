@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function
 __metaclass__ = type
 
 import gc
-from StringIO import StringIO
+import io
 
 import breezy.branch
 from breezy.bzr.branch import BranchReferenceFormat
@@ -30,6 +30,7 @@ from breezy.url_policy_open import (
     BranchOpener,
     BranchOpenPolicy,
     )
+import six
 
 from lp.code.enums import BranchType
 from lp.codehosting.puller.tests import (
@@ -57,16 +58,16 @@ from lp.testing.factory import (
 def get_netstrings(line):
     """Parse `line` as a sequence of netstrings.
 
-    :return: A list of strings.
+    :return: A list of byte strings.
     """
     strings = []
     while len(line) > 0:
-        colon_index = line.find(':')
+        colon_index = line.find(b':')
         length = int(line[:colon_index])
         strings.append(line[(colon_index + 1):(colon_index + 1 + length)])
-        assert ',' == line[colon_index + 1 + length], (
-            'Expected %r == %r' % (',', line[colon_index + 1 + length]))
-        line = line[colon_index + length + 2:]
+        line = line[colon_index + 1 + length:]
+        assert b',' == line[:1], 'Expected %r == %r' % (b',', line[:1])
+        line = line[1:]
     return strings
 
 
@@ -229,15 +230,15 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
 
     def getStackedOnUrlFromNetStringOutput(self, netstring_output):
         netstrings = get_netstrings(netstring_output)
-        branchChanged_index = netstrings.index('branchChanged')
-        return netstrings[branchChanged_index + 2]
+        branchChanged_index = netstrings.index(b'branchChanged')
+        return six.ensure_text(netstrings[branchChanged_index + 2])
 
     def testSendsStackedInfo(self):
         # When the puller worker stacks a branch, it reports the stacked on
         # URL to the master.
         base_branch = self.make_branch('base_branch', format='1.9')
         stacked_branch = self.make_branch('stacked-branch', format='1.9')
-        protocol_output = StringIO()
+        protocol_output = io.BytesIO()
         to_mirror = self.makePullerWorker(
             stacked_branch.base, self.get_url('destdir'),
             protocol=PullerWorkerProtocol(protocol_output),
@@ -251,7 +252,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
         # Mirroring an unstackable branch sends '' as the stacked-on location
         # to the master.
         source_branch = self.make_branch('source-branch', format='pack-0.92')
-        protocol_output = StringIO()
+        protocol_output = io.BytesIO()
         to_mirror = self.makePullerWorker(
             source_branch.base, self.get_url('destdir'),
             protocol=PullerWorkerProtocol(protocol_output))
@@ -264,7 +265,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
         # Mirroring a non-stacked branch sends '' as the stacked-on location
         # to the master.
         source_branch = self.make_branch('source-branch', format='1.9')
-        protocol_output = StringIO()
+        protocol_output = io.BytesIO()
         to_mirror = self.makePullerWorker(
             source_branch.base, self.get_url('destdir'),
             protocol=PullerWorkerProtocol(protocol_output))
@@ -296,7 +297,7 @@ class TestReferenceOpener(TestCaseWithTransport):
         branch_reference_format = BranchReferenceFormat()
         branch_transport = a_bzrdir.get_branch_transport(
             branch_reference_format)
-        branch_transport.put_bytes('location', url)
+        branch_transport.put_bytes('location', six.ensure_binary(url))
         branch_transport.put_bytes(
             'format', branch_reference_format.get_format_string())
         return a_bzrdir.root_transport.base
@@ -431,7 +432,7 @@ class TestWorkerProtocol(TestCaseInTempDir, PullerWorkerMixin):
 
     def setUp(self):
         TestCaseInTempDir.setUp(self)
-        self.output = StringIO()
+        self.output = io.BytesIO()
         self.protocol = PullerWorkerProtocol(self.output)
         self.factory = ObjectFactory()
 
@@ -443,7 +444,8 @@ class TestWorkerProtocol(TestCaseInTempDir, PullerWorkerMixin):
     def resetBuffers(self):
         # Empty the test output and error buffers.
         self.output.truncate(0)
-        self.assertEqual('', self.output.getvalue())
+        self.output.seek(0)
+        self.assertEqual(b'', self.output.getvalue())
 
     def test_nothingSentOnConstruction(self):
         # The protocol sends nothing until it receives an event.
@@ -453,15 +455,15 @@ class TestWorkerProtocol(TestCaseInTempDir, PullerWorkerMixin):
     def test_startMirror(self):
         # Calling startMirroring sends 'startMirroring' as a netstring.
         self.protocol.startMirroring()
-        self.assertSentNetstrings(['startMirroring', '0'])
+        self.assertSentNetstrings([b'startMirroring', b'0'])
 
     def test_branchChanged(self):
         # Calling 'branchChanged' sends the arguments.
-        arbitrary_args = [self.factory.getUniqueString() for x in range(6)]
+        arbitrary_args = [self.factory.getUniqueBytes() for x in range(6)]
         self.protocol.startMirroring()
         self.resetBuffers()
         self.protocol.branchChanged(*arbitrary_args)
-        self.assertSentNetstrings(['branchChanged', '6'] + arbitrary_args)
+        self.assertSentNetstrings([b'branchChanged', b'6'] + arbitrary_args)
 
     def test_mirrorFailed(self):
         # Calling 'mirrorFailed' sends the error message.
@@ -469,19 +471,19 @@ class TestWorkerProtocol(TestCaseInTempDir, PullerWorkerMixin):
         self.resetBuffers()
         self.protocol.mirrorFailed('Error Message', 'OOPS')
         self.assertSentNetstrings(
-            ['mirrorFailed', '2', 'Error Message', 'OOPS'])
+            [b'mirrorFailed', b'2', b'Error Message', b'OOPS'])
 
     def test_progressMade(self):
         # Calling 'progressMade' sends an arbitrary string indicating
         # progress.
         self.protocol.progressMade('test')
-        self.assertSentNetstrings(['progressMade', '0'])
+        self.assertSentNetstrings([b'progressMade', b'0'])
 
     def test_log(self):
         # Calling 'log' sends 'log' as a netstring and its arguments, after
         # formatting as a string.
         self.protocol.log('logged %s', 'message')
-        self.assertSentNetstrings(['log', '1', 'logged message'])
+        self.assertSentNetstrings([b'log', b'1', b'logged message'])
 
 
 class TestWorkerProgressReporting(TestCaseWithTransport):

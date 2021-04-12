@@ -168,7 +168,7 @@
               <a tal:replace="structure overview_menu/edit/fmt:icon" />
             </p>
 
-            <ul class="horizontal">
+            <ul class="horizontal" id="project-link-info">
               <li tal:condition="overview_menu/series_add/enabled">
                 <a tal:replace="structure overview_menu/series_add/fmt:link" />
               </li>
@@ -180,6 +180,10 @@
                 <a tal:replace="structure link/fmt:link" />
               </li>
               <li tal:define="link context/menu:overview/view_snaps"
+                  tal:condition="link/enabled">
+                <a tal:replace="structure link/fmt:link" />
+              </li>
+              <li tal:define="link context/menu:overview/create_snap"
                   tal:condition="link/enabled">
                 <a tal:replace="structure link/fmt:link" />
               </li>

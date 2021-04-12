@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -1109,7 +1110,7 @@ class BaseValidateNewBranchMixin:
     def test_permitted_first_character(self):
         # The first character of a branch name must be a letter or a number.
         namespace = self._getNamespace(self.factory.makePerson())
-        for c in [chr(i) for i in range(128)]:
+        for c in [six.unichr(i) for i in range(128)]:
             if c.isalnum():
                 namespace.validateBranchName(c)
             else:
@@ -1121,7 +1122,7 @@ class BaseValidateNewBranchMixin:
         # After the first character, letters, numbers and certain punctuation
         # is permitted.
         namespace = self._getNamespace(self.factory.makePerson())
-        for c in [chr(i) for i in range(128)]:
+        for c in [six.unichr(i) for i in range(128)]:
             if c.isalnum() or c in '+-_@.':
                 namespace.validateBranchName('a' + c)
             else:

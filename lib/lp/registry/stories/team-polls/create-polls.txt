@@ -20,9 +20,10 @@ administrator. There's no link leading to the +newpoll page, but the user can
 easily guess it.
 
     >>> no_priv_browser.open('http://launchpad.test/~ubuntu-team/+newpoll')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Now we're logged in as Jeff Waugh which is a team administrator and thus can
 create a new poll.
@@ -109,10 +110,10 @@ We're redirected to the newly created poll
 
     >>> team_admin_browser.url
     'http://launchpad.test/~ubuntu-team/+poll/dpl-2080'
-    >>> team_admin_browser.title
-    'Debian Project Leader Election 2080 : \xe2\x80\x9cUbuntu Team\xe2\x80\x9d team'
+    >>> print(team_admin_browser.title)
+    Debian Project Leader Election 2080 : “Ubuntu Team” team
     >>> print_location(team_admin_browser.contents)
-    Hierarchy:  ?Ubuntu Team? team
+    Hierarchy: “Ubuntu Team” team
     Tabs:
     * Overview (selected) - http://launchpad.test/~ubuntu-team
     * Code - http://code.launchpad.test/~ubuntu-team

@@ -9,7 +9,7 @@ even if the user was trying to set the milestone value.
     >>> browser.getControl("Save Changes").click()
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     The milestone setting was ignored because you reassigned the bug
     to...Evolution...
 
@@ -37,6 +37,6 @@ milestone value, if one was set.
     >>> browser.getControl("Save Changes").click()
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     The Mozilla Firefox 1.0 milestone setting has been removed
     because you reassigned the bug to Evolution.

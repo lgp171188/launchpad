@@ -13,7 +13,7 @@ the question's description and the title is empty.
 
   >>> browser.addHeader('Authorization', 'Basic foo.bar@canonical.com:test')
   >>> createLink.click()
-  >>> print browser.title
+  >>> print(browser.title)
   Create bug report based on question #2...
   >>> browser.getControl('Summary').value
   ''
@@ -27,7 +27,7 @@ bug.
   >>> browser.getControl('Create').click()
   >>> soup = find_main_content(browser.contents)
   >>> for tag in soup('div', 'message'):
-  ...   print tag.string
+  ...   print(tag.string)
   Required input is missing.
   Required input is missing.
 
@@ -43,9 +43,9 @@ and description and redirects the user to the bug page.
   '.../firefox/+bug/...'
   >>> soup = find_main_content(browser.contents)
   >>> for tag in soup('h1'):
-  ...     print extract_text(tag)
+  ...     print(extract_text(tag))
   W3C SVG demo doesn't work in Firefox Edit
-  >>> print extract_text(find_tag_by_id(browser.contents, 'edit-description'))
+  >>> print(extract_text(find_tag_by_id(browser.contents, 'edit-description')))
   Edit Bug Description
   Browsing to the W3C SVG demo results in a blank page.
 
@@ -54,7 +54,7 @@ questions' portlet:
 
   >>> portlet = find_portlet(browser.contents, 'Related questions')
   >>> for question in portlet.findAll('li', 'question-row'):
-  ...     print question.renderContents()
+  ...     print(question.decode_contents())
   <span class="sprite question">Mozilla Firefox</span>: ...<a href=".../firefox/+question/2">Problem...
 
 A user can't create a bug report when a question has already a bug linked
@@ -64,9 +64,10 @@ to it.
   >>> browser.contents
   '...<h3>Related bugs</h3>...'
   >>> browser.getLink('Create bug report')
+  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
     ..
-  LinkNotFoundError...
+  zope.testbrowser.browser.LinkNotFoundError
 
 It works with distribution questions as well.
 
@@ -78,5 +79,5 @@ It works with distribution questions as well.
   '.../ubuntu/+bug/...'
   >>> soup = find_main_content(browser.contents)
   >>> for tag in soup('div', 'informational message'):
-  ...   print tag.string
+  ...   print(tag.string)
   Thank you! Bug...created.

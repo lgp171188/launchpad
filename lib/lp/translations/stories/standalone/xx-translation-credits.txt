@@ -14,14 +14,15 @@ which has so far been untranslated.
 
 GNOME-style credits string is 'translation-credits'.
 
-    >>> extract_text(find_tag_by_id(browser.contents, 'msgset_199_singular'))
-    u'translation-credits'
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'msgset_199_singular')))
+    translation-credits
 
 This has no translation yet:
 
-    >>> extract_text(find_tag_by_id(browser.contents,
-    ...                             'msgset_199_sr_translation_0'))
-    u'(no translation yet)'
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'msgset_199_sr_translation_0')))
+    (no translation yet)
 
 And there is no input field allowing changing this message.
 
@@ -32,10 +33,12 @@ And there is no input field allowing changing this message.
 KDE-style translation credits are split into two messages, with emails
 in one, and names in other.
 
-    >>> extract_text(find_tag_by_id(browser.contents, 'msgset_200_singular'))
-    u'_: EMAIL OF TRANSLATORS...Your emails'
-    >>> extract_text(find_tag_by_id(browser.contents, 'msgset_201_singular'))
-    u'_: NAME OF TRANSLATORS...Your names'
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'msgset_200_singular')))
+    _: EMAIL OF TRANSLATORS...Your emails
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'msgset_201_singular')))
+    _: NAME OF TRANSLATORS...Your names
 
 These are locked as well:
 
@@ -60,20 +63,21 @@ displayed credits once we submit the translation.
 
 Translation has been updated.
 
-    >>> extract_text(find_tag_by_id(browser.contents,
-    ...                             'msgset_198_sr_translation_0'))
-    u'Test translation'
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'msgset_198_sr_translation_0')))
+    Test translation
 
 And translation credits now list Carlos.
 
-    >>> extract_text(find_tag_by_id(browser.contents,
-    ...                             'msgset_199_sr_translation_0'))
-    u'Launchpad Contributions:\nCarlos Perell\xf3 Mar\xedn http://translations.launchpad.test/~carlos'
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'msgset_199_sr_translation_0')))
+    Launchpad Contributions:
+    Carlos Perelló Marín http://translations.launchpad.test/~carlos
 
-    >>> extract_text(find_tag_by_id(browser.contents,
-    ...                             'msgset_200_sr_translation_0'))
-    u',,carlos@canonical.com'
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'msgset_200_sr_translation_0')))
+    ,,carlos@canonical.com
 
-    >>> extract_text(find_tag_by_id(browser.contents,
-    ...                             'msgset_201_sr_translation_0'))
-    u',Launchpad Contributions:,Carlos Perell\xf3 Mar\xedn'
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'msgset_201_sr_translation_0')))
+    ,Launchpad Contributions:,Carlos Perelló Marín

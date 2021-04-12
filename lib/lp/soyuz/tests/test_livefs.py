@@ -620,8 +620,8 @@ class TestLiveFSWebservice(TestCaseWithFactory):
             metadata={})
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "There is already a live filesystem with the same name, owner, "
-            "and distroseries.", response.body)
+            b"There is already a live filesystem with the same name, owner, "
+            b"and distroseries.", response.body)
 
     def test_not_owner(self):
         # If the registrant is not the owner or a member of the owner team,
@@ -640,14 +640,14 @@ class TestLiveFSWebservice(TestCaseWithFactory):
             distro_series=distroseries_url, name="dummy", metadata={})
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "Test Person cannot create live filesystems owned by Other "
-            "Person.", response.body)
+            b"Test Person cannot create live filesystems owned by Other "
+            b"Person.", response.body)
         response = self.webservice.named_post(
             "/livefses", "new", owner=other_team_url,
             distro_series=distroseries_url, name="dummy", metadata={})
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "Test Person is not a member of Other Team.", response.body)
+            b"Test Person is not a member of Other Team.", response.body)
 
     def test_getByName(self):
         # lp.livefses.getByName returns a matching LiveFS.
@@ -670,8 +670,8 @@ class TestLiveFSWebservice(TestCaseWithFactory):
             distro_series=distroseries_url, name="nonexistent")
         self.assertEqual(404, response.status)
         self.assertEqual(
-            "No such live filesystem with this owner/distroseries: "
-            "'nonexistent'.", response.body)
+            b"No such live filesystem with this owner/distroseries: "
+            b"'nonexistent'.", response.body)
 
     def test_requestBuild(self):
         # Build requests can be performed and end up in livefs.builds and
@@ -712,8 +712,8 @@ class TestLiveFSWebservice(TestCaseWithFactory):
             distro_arch_series=distroarchseries_url, pocket="Release")
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "An identical build of this live filesystem image is already "
-            "pending.", response.body)
+            b"An identical build of this live filesystem image is already "
+            b"pending.", response.body)
 
     def test_requestBuild_not_owner(self):
         # If the requester is not the owner or a member of the owner team,
@@ -736,8 +736,8 @@ class TestLiveFSWebservice(TestCaseWithFactory):
             distro_arch_series=distroarchseries_url, pocket="Release")
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "Test Person cannot create live filesystem builds owned by Other "
-            "Team.", response.body)
+            b"Test Person cannot create live filesystem builds owned by Other "
+            b"Team.", response.body)
 
     def test_requestBuild_archive_disabled(self):
         # Build requests against a disabled archive are rejected.
@@ -756,7 +756,7 @@ class TestLiveFSWebservice(TestCaseWithFactory):
             livefs["self_link"], "requestBuild", archive=archive_url,
             distro_arch_series=distroarchseries_url, pocket="Release")
         self.assertEqual(403, response.status)
-        self.assertEqual("Disabled Archive is disabled.", response.body)
+        self.assertEqual(b"Disabled Archive is disabled.", response.body)
 
     def test_requestBuild_archive_private_owners_match(self):
         # Build requests against a private archive are allowed if the LiveFS
@@ -798,8 +798,9 @@ class TestLiveFSWebservice(TestCaseWithFactory):
             distro_arch_series=distroarchseries_url, pocket="Release")
         self.assertEqual(403, response.status)
         self.assertEqual(
-            "Live filesystem builds against private archives are only allowed "
-            "if the live filesystem owner and the archive owner are equal.",
+            b"Live filesystem builds against private archives are only "
+            b"allowed if the live filesystem owner and the archive owner are "
+            b"equal.",
             response.body)
 
     def test_getBuilds(self):

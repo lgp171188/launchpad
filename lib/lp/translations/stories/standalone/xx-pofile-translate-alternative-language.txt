@@ -89,8 +89,8 @@ The Spanish translations now show up as suggestions.  For example, where
 "cards" might translate to Catalan as "targetas," the Spanish equivalent is
 "tarjetas."
 
-    >>> print(extract_text(find_main_content(
-    ...     browser.contents)).encode('ASCII', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_main_content(
+    ...     browser.contents))))
     Translating into Catalan...
     ...
     English: cards
@@ -138,8 +138,8 @@ languages are defined.  Suggestions just work for anonymous users.
     ...     anon_browser.toStr('Spanish (es)')).selected = True
     >>> anon_browser.getControl('Change').click()
 
-    >>> print(extract_text(find_main_content(
-    ...     anon_browser.contents)).encode('ASCII', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_main_content(
+    ...     anon_browser.contents))))
     Browsing Catalan translation
     ...
     English: cards
@@ -242,9 +242,10 @@ get an UnexpectedFormData exception:
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/+translate'
     ...     '?field.alternative_language=ja&field.alternative_language=aj')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: You specified...
+    lp.app.errors.UnexpectedFormData: You specified...
 
 
 Requests for a non-translatable alternative language

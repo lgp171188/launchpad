@@ -191,9 +191,10 @@ Ensure a non-owner doesn't see the 'Add download file' link.
 
     >>> non_owner.open('http://launchpad.test/firefox/+download')
     >>> non_owner.getLink('1.0.0')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 To add a download file the release version link is used.
 
@@ -207,9 +208,10 @@ navigating to the product release page.
 
     >>> non_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
     >>> non_owner.getLink('Add download file')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 To add a download file the +adddownloadfile page is accessed.
 
@@ -418,12 +420,12 @@ XXX Mon May  7 10:02:49 2007 -- bac
     >>> redirect_resp = http("""
     ...     GET %s HTTP/1.1""" % url_path)
     >>> redirect_url = None
-    >>> for line in redirect_resp.getOutput().splitlines()[1:]:
+    >>> for line in six.text_type(redirect_resp).splitlines()[1:]:
     ...     key, value = line.split(": ", 1)
     ...     if key.lower() == "location":
     ...         redirect_url = value
     ...         break
-    >>> print(urlopen(redirect_url).read())
+    >>> print(six.ensure_text(urlopen(redirect_url).read()))
     Foo2 installer package...
 
 Delete the file foo2.txt.

@@ -51,32 +51,32 @@ class Process(object):
 
 
 class Watcher(object):
-    _line_re = re.compile("""
+    _line_re = re.compile(r"""
         ^\d{4}-\d\d-\d\d \s \d\d:\d\d:\d\d \s 
         \[(?P<pid>\d+)\] \s (?P<type>LOG|ERROR|DETAIL): \s+ (?P<rest>.*)$
         """, re.X)
 
-    _statement_re = re.compile("""
+    _statement_re = re.compile(r"""
         ^statement: \s (?P<statement>.*)$
         """, re.X)
 
-    _duration_re = re.compile("""
+    _duration_re = re.compile(r"""
         ^duration: \s (?P<duration>\d+\.\d+) \s ms$
         """, re.X)
 
-    _connection_received_re = re.compile("""
+    _connection_received_re = re.compile(r"""
         ^connection \s received: \s+ (?P<connection>.*)$
         """, re.X)
 
-    _connection_authorized_re = re.compile("""
+    _connection_authorized_re = re.compile(r"""
         ^connection \s authorized: \s+ (?P<auth>.*)$
         """, re.X)
 
-    _ignored_rest_re = re.compile("""
+    _ignored_rest_re = re.compile(r"""
         ^(received \s | ERROR: \s | unexpected \s EOF \s) .*$
         """, re.X)
 
-    _ignored_statements_re = re.compile("""
+    _ignored_statements_re = re.compile(r"""
         ^(BEGIN.*|END)$
         """, re.X)
 

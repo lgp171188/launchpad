@@ -3,6 +3,8 @@
 
 """Test CodeReviewComment emailing functionality."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import testtools
 import transaction
 from zope.component import getUtility
@@ -16,6 +18,7 @@ from lp.code.mail.codereviewcomment import (
     build_inline_comments_section,
     CodeReviewCommentMailer,
     )
+from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.mail.sendmail import format_address
 from lp.services.messages.interfaces.message import IMessageSet
@@ -77,7 +80,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
 
     def assertRecipientsMatches(self, recipients, mailer):
         """Assert that `mailer` will send to the people in `recipients`."""
-        persons = zip(*(mailer._recipients.getRecipientPersons()))[1]
+        persons = list(zip(*(mailer._recipients.getRecipientPersons())))[1]
         self.assertEqual(set(recipients), set(persons))
 
     def test_forCreation(self):
@@ -243,7 +246,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
     def test_generateEmailWithVoteAndTag(self):
         """Ensure that vote tags are displayed."""
         mailer, subscriber = self.makeMailer(
-            vote=CodeReviewVote.APPROVE, vote_tag=u'DBTAG')
+            vote=CodeReviewVote.APPROVE, vote_tag='DBTAG')
         ctrl = mailer.generateEmail(
             subscriber.preferredemail.email, subscriber)
         self.assertEqual('Review: Approve dbtag', ctrl.body.splitlines()[0])
@@ -278,7 +281,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
         See `build_inline_comments_section` tests for formatting details.
         """
         comment = self.makeCommentWithInlineComments(
-            inline_comments={'3': u'Is this from Pl\u00e4net Earth ?'})
+            inline_comments={'3': 'Is this from Pl\u00e4net Earth ?'})
         switch_dbuser(config.IBranchMergeProposalJobSource.dbuser)
         mailer = CodeReviewCommentMailer.forCreation(comment)
         commenter = comment.branch_merge_proposal.registrant
@@ -295,13 +298,14 @@ class TestCodeReviewComment(TestCaseWithFactory):
             ('> +++ yvo/yc/pbqr/vagresnprf/qvss.cl      '
              '2010-02-02 15:48:56 +0000'),
             '',
-            u'Is this from Pl\u00e4net Earth ?',
+            'Is this from Pl\u00e4net Earth ?',
             '',
         ]
         self.assertEqual(expected_lines, ctrl.body.splitlines()[1:10])
 
     def makeComment(self, email_message):
-        message = getUtility(IMessageSet).fromEmail(email_message.as_string())
+        message = getUtility(IMessageSet).fromEmail(
+            message_as_bytes(email_message))
         bmp = self.factory.makeBranchMergeProposal()
         comment = bmp.createCommentFromMessage(
             message, None, None, email_message)
@@ -347,7 +351,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
             person.preferredemail.email, person).makeMessage()
         attachment = message.get_payload()[1]
         self.assertEqual(
-            'This is a diff.', attachment.get_payload(decode=True))
+            b'This is a diff.', attachment.get_payload(decode=True))
 
     def makeCommentAndParticipants(self):
         """Create a merge proposal and comment.
@@ -423,76 +427,76 @@ class TestInlineCommentsSection(testtools.TestCase):
     """Tests for `build_inline_comments_section`."""
 
     diff_text = (
-        "=== added directory 'foo/bar'\n"
-        "=== modified file 'foo/bar/bar.py'\n"
-        "--- bar.py\t2009-08-26 15:53:34.000000000 -0400\n"
-        "+++ bar.py\t1969-12-31 19:00:00.000000000 -0500\n"
-        "@@ -1,3 +0,0 @@ msgstr \"\xc3\xa5\"\n"
-        "-\xc3\xa5\n"
-        "-b\n"
-        "-c\n"
-        "--- baz\t1969-12-31 19:00:00.000000000 -0500\n"
-        "+++ baz\t2009-08-26 15:53:57.000000000 -0400\n"
-        "@@ -0,0 +1,2 @@\n"
-        "+a\n"
-        "+b\n"
-        "@@ -1,2 +0,0 @@\n"
-        "-x\n"
-        "-y\n"
-        "--- foo\t2009-08-26 15:53:23.000000000 -0400\n"
-        "+++ foo\t2009-08-26 15:56:43.000000000 -0400\n"
-        "@@ -1,3 +1,4 @@\n"
-        " a\n"
-        "-b\n"
-        " c\n"
-        "+d\n"
-        "+e\n"
-        "\\ No newline at end of file\n"
-        "\n"
-        "=== modified file 'fulango.py'\n"
-        "--- fulano.py\t2014-08-26 15:53:34.000000000 -0400\n"
-        "+++ fulano.py\t2015-12-31 19:00:00.000000000 -0500\n"
-        "@@ -1,3 +1,4 @@\n"
-        " a\n"
-        "-fulano\n"
-        " c\n"
-        "+mengano\n"
-        "+zutano\n")
+        b"=== added directory 'foo/bar'\n"
+        b"=== modified file 'foo/bar/bar.py'\n"
+        b"--- bar.py\t2009-08-26 15:53:34.000000000 -0400\n"
+        b"+++ bar.py\t1969-12-31 19:00:00.000000000 -0500\n"
+        b"@@ -1,3 +0,0 @@ msgstr \"\xc3\xa5\"\n"
+        b"-\xc3\xa5\n"
+        b"-b\n"
+        b"-c\n"
+        b"--- baz\t1969-12-31 19:00:00.000000000 -0500\n"
+        b"+++ baz\t2009-08-26 15:53:57.000000000 -0400\n"
+        b"@@ -0,0 +1,2 @@\n"
+        b"+a\n"
+        b"+b\n"
+        b"@@ -1,2 +0,0 @@\n"
+        b"-x\n"
+        b"-y\n"
+        b"--- foo\t2009-08-26 15:53:23.000000000 -0400\n"
+        b"+++ foo\t2009-08-26 15:56:43.000000000 -0400\n"
+        b"@@ -1,3 +1,4 @@\n"
+        b" a\n"
+        b"-b\n"
+        b" c\n"
+        b"+d\n"
+        b"+e\n"
+        b"\\ No newline at end of file\n"
+        b"\n"
+        b"=== modified file 'fulango.py'\n"
+        b"--- fulano.py\t2014-08-26 15:53:34.000000000 -0400\n"
+        b"+++ fulano.py\t2015-12-31 19:00:00.000000000 -0500\n"
+        b"@@ -1,3 +1,4 @@\n"
+        b" a\n"
+        b"-fulano\n"
+        b" c\n"
+        b"+mengano\n"
+        b"+zutano\n")
 
     git_diff_text = (
-        "diff --git a/foo b/foo\n"
-        "index 5716ca5..7601807 100644\n"
-        "--- a/foo\n"
-        "+++ b/foo\n"
-        "@@ -1 +1 @@\n"
-        "-bar\n"
-        "+baz\n"
-        "diff --git a/fulano b/fulano\n"
-        "old mode 100644\n"
-        "new mode 100755\n"
-        "index 5716ca5..7601807\n"
-        "--- a/fulano\n"
-        "+++ b/fulano\n"
-        "@@ -1,3 +1,3 @@\n"
-        " fulano\n"
-        " \n"
-        "-mengano\n"
-        "+zutano\n")
+        b"diff --git a/foo b/foo\n"
+        b"index 5716ca5..7601807 100644\n"
+        b"--- a/foo\n"
+        b"+++ b/foo\n"
+        b"@@ -1 +1 @@\n"
+        b"-bar\n"
+        b"+baz\n"
+        b"diff --git a/fulano b/fulano\n"
+        b"old mode 100644\n"
+        b"new mode 100755\n"
+        b"index 5716ca5..7601807\n"
+        b"--- a/fulano\n"
+        b"+++ b/fulano\n"
+        b"@@ -1,3 +1,3 @@\n"
+        b" fulano\n"
+        b" \n"
+        b"-mengano\n"
+        b"+zutano\n")
 
     binary_diff_text = (
-        "=== added file 'lib/canonical/launchpad/images/foo.png'\n"
-        "Binary files lib/canonical/launchpad/images/foo.png\t"
-        "1970-01-01 00:00:00 +0000 and "
-        "lib/canonical/launchpad/images/foo.png\t"
-        "2015-06-21 22:07:50 +0000 differ\n"
-        "\n"
-        "=== modified file 'foo/bar/bar.py'\n"
-        "--- bar.py\t2009-08-26 15:53:34.000000000 -0400\n"
-        "+++ bar.py\t1969-12-31 19:00:00.000000000 -0500\n"
-        "@@ -1,3 +0,0 @@\n"
-        "-a\n"
-        "-b\n"
-        "-c\n")
+        b"=== added file 'lib/canonical/launchpad/images/foo.png'\n"
+        b"Binary files lib/canonical/launchpad/images/foo.png\t"
+        b"1970-01-01 00:00:00 +0000 and "
+        b"lib/canonical/launchpad/images/foo.png\t"
+        b"2015-06-21 22:07:50 +0000 differ\n"
+        b"\n"
+        b"=== modified file 'foo/bar/bar.py'\n"
+        b"--- bar.py\t2009-08-26 15:53:34.000000000 -0400\n"
+        b"+++ bar.py\t1969-12-31 19:00:00.000000000 -0500\n"
+        b"@@ -1,3 +0,0 @@\n"
+        b"-a\n"
+        b"-b\n"
+        b"-c\n")
 
     def getSection(self, comments, diff_text=None):
         """Call `build_inline_comments_section` with the test-diff."""
@@ -520,7 +524,7 @@ class TestInlineCommentsSection(testtools.TestCase):
         comments = {'1': 'Updated the png', '2': 'foo', '9': 'bar'}
         section = self.getSection(comments, diff_text=self.binary_diff_text)
         self.assertEqual(
-            map(unicode, [
+            [
                 "> === added file 'lib/canonical/launchpad/images/foo.png'",
                 "",
                 "Updated the png",
@@ -542,26 +546,26 @@ class TestInlineCommentsSection(testtools.TestCase):
                 "",
                 "bar",
                 "",
-                "> -c"]),
+                "> -c"],
             section.splitlines()[4:23])
 
     def test_single_line_comment(self):
         # The inline comments are correctly contextualized in the diff.
         # and prefixed with '>>> '
-        comments = {'4': u'\u03b4\u03bf\u03ba\u03b9\u03bc\u03ae'}
+        comments = {'4': '\u03b4\u03bf\u03ba\u03b9\u03bc\u03ae'}
         self.assertEqual(
-            map(unicode, [
+            [
                 '> +++ bar.py\t1969-12-31 19:00:00.000000000 -0500',
                 '',
-                u'\u03b4\u03bf\u03ba\u03b9\u03bc\u03ae',
-                '']),
+                '\u03b4\u03bf\u03ba\u03b9\u03bc\u03ae',
+                ''],
             self.getSection(comments).splitlines()[7:11])
 
     def test_comments_in_git_diff(self):
         comments = {'1': 'foo', '5': 'bar', '17': 'baz'}
         section = self.getSection(comments, diff_text=self.git_diff_text)
         self.assertEqual(
-            map(unicode, [
+            [
                 "> diff --git a/foo b/foo",
                 "",
                 "foo",
@@ -588,14 +592,14 @@ class TestInlineCommentsSection(testtools.TestCase):
                 "",
                 "baz",
                 "",
-                "> +zutano"]),
+                "> +zutano"],
             section.splitlines()[4:31])
 
     def test_commentless_hunks_ignored(self):
         # Hunks without inline comments are not returned in the diff text.
         comments = {'16': 'A comment', '21': 'Another comment'}
         self.assertEqual(
-            map(unicode, [
+            [
                 '> --- baz\t1969-12-31 19:00:00.000000000 -0500',
                 '> +++ baz\t2009-08-26 15:53:57.000000000 -0400',
                 '> @@ -1,2 +0,0 @@',
@@ -614,7 +618,7 @@ class TestInlineCommentsSection(testtools.TestCase):
                 '',
                 '>  c',
                 '> +d',
-                '> +e']),
+                '> +e'],
             self.getSection(comments).splitlines()[4:23])
 
     def test_patch_header_comment(self):
@@ -622,7 +626,7 @@ class TestInlineCommentsSection(testtools.TestCase):
         # include the patch's hunk(s).
         comments = {'17': 'A comment in the patch header', '18': 'aardvark'}
         self.assertEqual(
-            map(unicode, [
+            [
                 '> --- foo\t2009-08-26 15:53:23.000000000 -0400',
                 '',
                 'A comment in the patch header',
@@ -636,7 +640,7 @@ class TestInlineCommentsSection(testtools.TestCase):
                 '> -b',
                 '>  c',
                 '> +d',
-                '> +e']),
+                '> +e'],
             self.getSection(comments).splitlines()[4:18])
 
     def test_dirty_header_comment(self):
@@ -644,17 +648,17 @@ class TestInlineCommentsSection(testtools.TestCase):
         # are rendered correctly
         comments = {'1': 'A comment for a dirty header'}
         self.assertEqual(
-            map(unicode, [
+            [
                 "> === added directory 'foo/bar'",
                 '',
                 'A comment for a dirty header',
-                '']),
+                ''],
             self.getSection(comments).splitlines()[4:8])
 
     def test_non_last_hunk_comment(self):
         comments = {'12': 'A comment in the non-last hunk'}
         self.assertEqual(
-            map(unicode, [
+            [
                 '> --- baz\t1969-12-31 19:00:00.000000000 -0500',
                 '> +++ baz\t2009-08-26 15:53:57.000000000 -0400',
                 '> @@ -0,0 +1,2 @@',
@@ -662,13 +666,13 @@ class TestInlineCommentsSection(testtools.TestCase):
                 '',
                 'A comment in the non-last hunk',
                 '',
-                '> +b']),
+                '> +b'],
             self.getSection(comments).splitlines()[4:12])
 
     def test_comment_in_patch_after_linebreak(self):
         comments = {'32': 'que?'}
         self.assertEqual(
-            map(unicode, [
+            [
                 "> ",
                 "> === modified file 'fulango.py'",
                 "> --- fulano.py\t2014-08-26 15:53:34.000000000 -0400",
@@ -681,20 +685,20 @@ class TestInlineCommentsSection(testtools.TestCase):
                 "",
                 ">  c",
                 "> +mengano",
-                "> +zutano"]),
+                "> +zutano"],
             self.getSection(comments).splitlines()[4:17])
 
     def test_multi_line_comment(self):
         # Inline comments with multiple lines are rendered appropriately.
         comments = {'4': 'Foo\nBar'}
         self.assertEqual(
-            map(unicode, [
+            [
                 '> --- bar.py\t2009-08-26 15:53:34.000000000 -0400',
                 '> +++ bar.py\t1969-12-31 19:00:00.000000000 -0500',
                 '',
                 'Foo',
                 'Bar',
-                '']),
+                ''],
             self.getSection(comments).splitlines()[6:12])
 
     def test_multiple_comments(self):
@@ -705,7 +709,7 @@ class TestInlineCommentsSection(testtools.TestCase):
              '',
              'Foo',
              '',
-             u'> @@ -1,3 +0,0 @@ msgstr "\xe5"',
+             '> @@ -1,3 +0,0 @@ msgstr "\xe5"',
              '',
              'Bar',
              ''],

@@ -11,8 +11,8 @@ to demonstrate this:
     >>> import subprocess
     >>> import tempfile
     >>> from textwrap import dedent
-    >>> script_file = tempfile.NamedTemporaryFile()
-    >>> script_file.write(dedent("""\
+    >>> script_file = tempfile.NamedTemporaryFile(mode='w')
+    >>> _ = script_file.write(dedent("""\
     ...     from __future__ import absolute_import, print_function
     ...
     ...     from lp.services.scripts import execute_zcml_for_scripts
@@ -29,7 +29,8 @@ Run the script (making sure it uses the testrunner configuration).
     >>> from lp.services.config import config
     >>> bin_py = os.path.join(config.root, 'bin', 'py')
     >>> proc = subprocess.Popen(
-    ...     [bin_py, script_file.name], stdout=subprocess.PIPE, stderr=None)
+    ...     [bin_py, script_file.name], stdout=subprocess.PIPE, stderr=None,
+    ...     universal_newlines=True)
 
 Check that we get the expected output.
 

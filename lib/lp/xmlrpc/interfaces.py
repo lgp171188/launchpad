@@ -1,4 +1,4 @@
-# Copyright 2011-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for the Launchpad application."""
@@ -16,6 +16,8 @@ from lp.services.webapp.interfaces import ILaunchpadApplication
 
 class IPrivateApplication(ILaunchpadApplication):
     """Launchpad private XML-RPC application root."""
+
+    archive = Attribute("Archive XML-RPC end point.""")
 
     authserver = Attribute("""Old Authserver API end point.""")
 

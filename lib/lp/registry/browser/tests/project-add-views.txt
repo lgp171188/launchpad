@@ -26,10 +26,10 @@ forwarded, but is only required by the Zope machinery, not the view.
 
     >>> view = create_initialized_view(product_set, name='+new', form=form)
     >>> for error in view.view.errors:
-    ...     print error
+    ...     print(pretty(error.args))
     ('display_name', 'Name', RequiredMissing('display_name'))
     ('name', 'URL', RequiredMissing('name'))
-    ('summary', u'Summary', RequiredMissing('summary'))
+    ('summary', 'Summary', RequiredMissing('summary'))
 
     >>> form['field.display_name'] = 'Snowdog'
     >>> form['field.name'] = 'snowdog'
@@ -49,9 +49,9 @@ count.  The first step has no search results.
     >>> view = ProjectAddStepOne(product_set, request)
     >>> view.initialize()
 
-    >>> print view.label
+    >>> print(view.label)
     Register a project in Launchpad
-    >>> print view.step_description
+    >>> print(view.step_description)
     Project basics
     >>> view.search_results_count
     0
@@ -73,9 +73,9 @@ information in the label.
     >>> view = ProjectAddStepTwo(product_set, request)
     >>> view.initialize()
 
-    >>> print view.label
+    >>> print(view.label)
     Register Snowdog (snowdog) in Launchpad
-    >>> print view.step_description
+    >>> print(view.step_description)
     Registration details
     >>> view.search_results_count
     0
@@ -96,13 +96,13 @@ can see that there are search results available.
     >>> view = ProjectAddStepTwo(product_set, request)
     >>> view.initialize()
 
-    >>> print view.label
+    >>> print(view.label)
     Register Snowdog (snowdog) in Launchpad
 
 Because there are search results, the description used on the page is
 different.
 
-    >>> print view.step_description
+    >>> print(view.step_description)
     Check for duplicate projects
 
 The search results are displayed on the page.
@@ -110,7 +110,7 @@ The search results are displayed on the page.
     >>> view.search_results_count
     2
     >>> for project in view.search_results:
-    ...     print project.name
+    ...     print(project.name)
     firefox
     mozilla
 
@@ -127,7 +127,7 @@ result in an error, since the licence is required.
     >>> view = ProjectAddStepTwo(product_set, request)
     >>> view.initialize()
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     You must select at least one licence.  If you select Other/Proprietary
     or Other/OpenSource you must include a description of the licence.
     ...
@@ -157,7 +157,7 @@ When an open source licence is selected, the project is created.
     >>> view.errors
     []
 
-    >>> print product_set.getByName('snowdog').display_name
+    >>> print(product_set.getByName('snowdog').display_name)
     Snowdog
 
 
@@ -180,6 +180,6 @@ that's checked for duplicates is the 'name' field.
     >>> view.initialize()
 
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     ('name', 'URL',
-     LaunchpadValidationError(u'snowdog is already used by another project'))
+     LaunchpadValidationError(...'snowdog is already used by another project'))

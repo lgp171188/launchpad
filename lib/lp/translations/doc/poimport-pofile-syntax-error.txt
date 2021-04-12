@@ -40,8 +40,8 @@ Now, is time to create the new potemplate
 
     >>> from lp.registry.model.productrelease import ProductRelease
     >>> release = ProductRelease.get(3)
-    >>> release.milestone.productseries.product.name
-    u'firefox'
+    >>> print(release.milestone.productseries.product.name)
+    firefox
 
     >>> series = release.milestone.productseries
     >>> subset = POTemplateSubset(productseries=series)
@@ -58,7 +58,7 @@ We create the POFile object where we are going to attach the .po file.
 Let's import a .po file that misses the '"' char after msgstr. That's a
 syntax error.
 
-    >>> pofile_contents = br'''
+    >>> pofile_contents = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-03 20:41+0100\n"
@@ -70,7 +70,7 @@ syntax error.
     ... 
     ... msgid "foo"
     ... msgstr blah"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path, pofile_contents, by_maintainer, person,
@@ -92,8 +92,8 @@ The import fails.
 
 And the code composed an email with the notification of the error.
 
-    >>> subject
-    u'Import problem - Welsh (cy) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Welsh (cy) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -148,8 +148,8 @@ explanatory text.
 
 An email describes the problem in relatively helpful terms.
 
-    >>> subject
-    u'Import problem - Frisian (fy) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Frisian (fy) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -194,7 +194,7 @@ In his rush to be the first Sumerian translator for Firefox, Mark
 submits a translation with a nonsensical plurals definition.
 
     >>> pofile = potemplate.newPOFile('sux')
-    >>> pofile_contents = br'''
+    >>> pofile_contents = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-29 11:44+0100\n"
@@ -205,7 +205,7 @@ submits a translation with a nonsensical plurals definition.
     ... 
     ... msgid "foo"
     ... msgstr "bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path, pofile_contents, False, person,
     ...     productseries=series, potemplate=potemplate, pofile=pofile)
@@ -218,8 +218,8 @@ The submission is rejected with a syntax error.
     >>> print(entry.status.name)
     FAILED
 
-    >>> subject
-    u'Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -238,7 +238,7 @@ Not enough forms
 Mark mistakenly attempts to import a translation with "zero" plural
 forms.  He receives an email notifying him of a syntax error.
 
-    >>> pofile_contents = br'''
+    >>> pofile_contents = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-14 18:33+0100\n"
@@ -249,7 +249,7 @@ forms.  He receives an email notifying him of a syntax error.
     ... 
     ... msgid "foo"
     ... msgstr "bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path, pofile_contents, False, person,
     ...     productseries=series, potemplate=potemplate, pofile=pofile)
@@ -260,8 +260,8 @@ forms.  He receives an email notifying him of a syntax error.
     >>> print(entry.status.name)
     FAILED
 
-    >>> subject
-    u'Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -276,7 +276,7 @@ forms.  He receives an email notifying him of a syntax error.
 On his next attempt, Mark accidentally types a negative number of plural
 forms.  The same error is given.
 
-    >>> pofile_contents = br'''
+    >>> pofile_contents = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-15 19:04+0100\n"
@@ -287,7 +287,7 @@ forms.  The same error is given.
     ... 
     ... msgid "foo"
     ... msgstr "bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path, pofile_contents, False, person,
     ...     productseries=series, potemplate=potemplate, pofile=pofile)
@@ -298,8 +298,8 @@ forms.  The same error is given.
     >>> print(entry.status.name)
     FAILED
 
-    >>> subject
-    u'Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Sumerian (sux) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -325,7 +325,7 @@ to get that information corrected if need be.
     >>> pofile = potemplate.newPOFile('ar')
 
     # PO file with nplurals=7, a value we can't handle.
-    >>> pofile_contents = br'''
+    >>> pofile_contents = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-07-01 08:35+0100\n"
@@ -343,7 +343,7 @@ to get that information corrected if need be.
     ... msgstr[4] "baros %%d"
     ... msgstr[5] "barorum %%d"
     ... msgstr[6] "barim %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path, pofile_contents, False, person,
     ...     productseries=series, potemplate=potemplate, pofile=pofile)
@@ -354,8 +354,8 @@ to get that information corrected if need be.
     >>> print(entry.status.name)
     FAILED
 
-    >>> subject
-    u'Import problem - Arabic (ar) - firefox in Mozilla Firefox trunk'
+    >>> print(subject)
+    Import problem - Arabic (ar) - firefox in Mozilla Firefox trunk
 
     >>> print(message)
     Hello Mark Shuttleworth,
@@ -389,7 +389,7 @@ Once Mark has checked the language page and corrected the number of
 plural forms, the file imports just fine.
 
     # Same PO file as before, but with nplurals=6.
-    >>> pofile_contents = br'''
+    >>> pofile_contents = six.ensure_binary(r'''
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-07-01 08:35+0100\n"
@@ -406,7 +406,7 @@ plural forms, the file imports just fine.
     ... msgstr[3] "baribus %%d"
     ... msgstr[4] "baros %%d"
     ... msgstr[5] "barorum %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat()
+    ... ''' % datetime.datetime.now(UTC).isoformat())
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path, pofile_contents, False, person,
     ...     productseries=series, potemplate=potemplate, pofile=pofile)

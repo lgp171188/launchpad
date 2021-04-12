@@ -13,17 +13,21 @@ __all__ = [
 import hashlib
 import operator
 
+import six
 from sqlobject import (
     ForeignKey,
     StringCol,
     )
+from storm.expr import Lower
 from zope.interface import implementer
 
 from lp.app.validators.email import valid_email
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 from lp.services.database.sqlbase import (
-    quote,
     SQLBase,
     sqlvalues,
     )
@@ -90,7 +94,8 @@ class EmailAddress(SQLBase, HasOwnerMixin):
     @property
     def rdf_sha1(self):
         """See `IEmailAddress`."""
-        return hashlib.sha1('mailto:' + self.email).hexdigest().upper()
+        return hashlib.sha1(
+            ('mailto:' + self.email).encode('UTF-8')).hexdigest().upper()
 
 
 @implementer(IEmailAddressSet)
@@ -110,8 +115,10 @@ class EmailAddressSet:
 
     def getByEmail(self, email):
         """See `IEmailAddressSet`."""
-        return EmailAddress.selectOne(
-            "lower(email) = %s" % quote(email.strip().lower()))
+        return IStore(EmailAddress).find(
+            EmailAddress,
+            Lower(EmailAddress.email) ==
+                six.ensure_text(email).strip().lower()).one()
 
     def new(self, email, person=None, status=EmailAddressStatus.NEW):
         """See IEmailAddressSet."""

@@ -25,8 +25,8 @@ request is querying the master or slave database.
     >>> dbname == master.execute("SELECT current_database()").get_one()[0]
     True
     >>> slave = ISlaveStore(Person)
-    >>> slave.execute("SELECT current_database()").get_one()[0]
-    u'launchpad_empty'
+    >>> print(slave.execute("SELECT current_database()").get_one()[0])
+    launchpad_empty
 
 We should confirm that the empty database is as empty as we hope it is.
 

@@ -15,12 +15,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import base64
 from contextlib import contextmanager
 import json
 import re
 
 from lazr.restful.utils import get_current_browser_request
 import responses
+import six
 from six.moves.urllib.parse import (
     parse_qsl,
     urlsplit,
@@ -36,13 +38,13 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.errors import (
+    CannotRepackRepository,
     GitReferenceDeletionFault,
     GitRepositoryBlobNotFound,
     GitRepositoryCreationFault,
     GitRepositoryDeletionFault,
     GitRepositoryScanFault,
     GitTargetError,
-    NoSuchGitReference,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.model.githosting import RefCopyOperation
@@ -113,7 +115,8 @@ class TestGitHostingClient(TestCase):
             method=Equals(method),
             **{key: Equals(value) for key, value in kwargs.items()}))
         if json_data is not None:
-            self.assertEqual(json_data, json.loads(request.body))
+            self.assertEqual(
+                json_data, json.loads(request.body.decode("UTF-8")))
         timeline = get_request_timeline(get_current_browser_request())
         action = timeline.actions[-1]
         self.assertEqual("git-hosting-%s" % method.lower(), action.category)
@@ -287,8 +290,11 @@ class TestGitHostingClient(TestCase):
         # pygit2 tries to decode the diff as UTF-8 with errors="replace".
         # In some cases this can result in unpaired surrogates, which older
         # versions of json/simplejson don't like.
-        body = json.dumps(
-            {"patch": "卷。".encode("GBK").decode("UTF-8", errors="replace")})
+        # This is u"卷。".encode("GBK").decode("UTF-8", errors="replace") on
+        # Python 2.  Python 3 decodes this differently, but we don't mind
+        # how we get there as long as the input contains an unpaired
+        # surrogate.
+        body = json.dumps({"patch": "\uFFFD\uD863"})
         with self.mockRequests("GET", body=body):
             diff = self.client.getMergeDiff("123", "a", "b")
         self.assertEqual({"patch": "\uFFFD\uD863"}, diff)
@@ -332,8 +338,11 @@ class TestGitHostingClient(TestCase):
                 self.client.delete, "123")
 
     def test_getBlob(self):
-        blob = b''.join(chr(i) for i in range(256))
-        payload = {"data": blob.encode("base64"), "size": len(blob)}
+        blob = b''.join(six.int2byte(i) for i in range(256))
+        payload = {
+            "data": base64.b64encode(blob).decode("UTF-8"),
+            "size": len(blob),
+            }
         with self.mockRequests("GET", json=payload):
             response = self.client.getBlob("123", "dir/path/file/name")
         self.assertEqual(blob, response)
@@ -341,8 +350,11 @@ class TestGitHostingClient(TestCase):
             "repo/123/blob/dir/path/file/name", method="GET")
 
     def test_getBlob_revision(self):
-        blob = b''.join(chr(i) for i in range(256))
-        payload = {"data": blob.encode("base64"), "size": len(blob)}
+        blob = b''.join(six.int2byte(i) for i in range(256))
+        payload = {
+            "data": base64.b64encode(blob).decode("UTF-8"),
+            "size": len(blob),
+            }
         with self.mockRequests("GET", json=payload):
             response = self.client.getBlob("123", "dir/path/file/name", "dev")
         self.assertEqual(blob, response)
@@ -373,8 +385,11 @@ class TestGitHostingClient(TestCase):
                 self.client.getBlob, "123", "dir/path/file/name")
 
     def test_getBlob_url_quoting(self):
-        blob = b''.join(chr(i) for i in range(256))
-        payload = {"data": blob.encode("base64"), "size": len(blob)}
+        blob = b''.join(six.int2byte(i) for i in range(256))
+        payload = {
+            "data": base64.b64encode(blob).decode("UTF-8"),
+            "size": len(blob),
+            }
         with self.mockRequests("GET", json=payload):
             self.client.getBlob("123", "dir/+file name?.txt", "+rev/ no?")
         self.assertRequest(
@@ -403,8 +418,8 @@ class TestGitHostingClient(TestCase):
                 self.client.getBlob, "123", "dir/path/file/name")
 
     def test_getBlob_wrong_size(self):
-        blob = b''.join(chr(i) for i in range(256))
-        payload = {"data": blob.encode("base64"), "size": 0}
+        blob = b''.join(six.int2byte(i) for i in range(256))
+        payload = {"data": base64.b64encode(blob).decode("UTF-8"), "size": 0}
         with self.mockRequests("GET", json=payload):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
@@ -474,3 +489,16 @@ class TestGitHostingClient(TestCase):
         JobRunner([job]).runAll()
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
         self.assertEqual({"refs/heads/master": {}}, job.refs)
+
+    def test_repack(self):
+        with self.mockRequests("POST", status=200):
+            repack = self.client.repackRepository("/repo/123")
+        self.assertEqual(None, repack)
+
+    def test_repack_failure(self):
+        with self.mockRequests("POST", status=400):
+            self.assertRaisesWithContent(
+                CannotRepackRepository,
+                "Failed to repack Git repository /repo/123: "
+                "400 Client Error: Bad Request",
+                self.client.repackRepository, "/repo/123")

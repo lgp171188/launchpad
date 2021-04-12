@@ -69,7 +69,7 @@ class TestMenuBaseLinkCaching(TestCase):
         link = menu._get_link('test_link')
         request = get_current_browser_request()
         cache = request.annotations.get(MENU_ANNOTATION_KEY)
-        self.assertEqual([link], cache.values())
+        self.assertEqual([link], list(cache.values()))
 
     def test_cache_key_is_unique(self):
         # The cache key must include the link name, the context of the link
@@ -82,4 +82,4 @@ class TestMenuBaseLinkCaching(TestCase):
             MENU_ANNOTATION_KEY)
         self.assertEqual(len(cache.keys()), 1)
         self.assertContentEqual(
-            cache.keys()[0], (menu.__class__, context, 'test_link'))
+            list(cache.keys())[0], (menu.__class__, context, 'test_link'))

@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the transport-backed SFTP server implementation."""
@@ -16,10 +16,9 @@ from breezy.tests import TestCaseInTempDir
 from breezy.transport import get_transport
 from breezy.transport.memory import MemoryTransport
 from lazr.sshserver.sftp import FileIsADirectory
-from testtools.twistedsupport import (
-    assert_fails_with,
-    AsynchronousDeferredRunTest,
-    )
+from testtools.matchers import MatchesStructure
+from testtools.testcase import ExpectedException
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.conch.interfaces import ISFTPServer
 from twisted.conch.ls import lsLine
 from twisted.conch.ssh import filetransfer
@@ -73,8 +72,8 @@ class TestFatLocalTransport(TestCaseInTempDir):
         # writeChunk writes a chunk of data to a file at a given offset.
         filename = 'foo'
         self.transport.put_bytes(filename, b'content')
-        self.transport.writeChunk(filename, 1, 'razy')
-        self.assertEqual('crazynt', self.transport.get_bytes(filename))
+        self.transport.writeChunk(filename, 1, b'razy')
+        self.assertEqual(b'crazynt', self.transport.get_bytes(filename))
 
     def test_localRealPath(self):
         # localRealPath takes a URL-encoded relpath and returns a URL-encoded
@@ -139,7 +138,8 @@ class TestSFTPAdapter(TestCase):
         product = self.factory.makeProduct()
         branch_name = self.factory.getUniqueString()
         deferred = server.makeDirectory(
-            '~%s/%s/%s' % (avatar.username, product.name, branch_name),
+            ('~%s/%s/%s' % (
+                avatar.username, product.name, branch_name)).encode('UTF-8'),
             {'permissions': 0o777})
         return deferred
 
@@ -156,8 +156,8 @@ class SFTPTestMixin:
         self.assertEqual(os.getuid(), attrs['uid'])
         self.assertEqual(os.getgid(), attrs['gid'])
         self.assertEqual(stat_value.st_mode, attrs['permissions'])
-        self.assertEqual(stat_value.st_mtime, attrs['mtime'])
-        self.assertEqual(stat_value.st_atime, attrs['atime'])
+        self.assertEqual(int(stat_value.st_mtime), attrs['mtime'])
+        self.assertEqual(int(stat_value.st_atime), attrs['atime'])
 
     def getPathSegment(self):
         """Return a unique path segment for testing.
@@ -184,19 +184,16 @@ class TestSFTPFile(TestCaseInTempDir, SFTPTestMixin):
             FatLocalTransport(urlutils.local_path_to_url('.')))
         self._sftp_server = TransportSFTPServer(transport)
 
+    @defer.inlineCallbacks
     def assertSFTPError(self, sftp_code, function, *args, **kwargs):
         """Assert that calling functions fails with `sftp_code`."""
-        deferred = defer.maybeDeferred(function, *args, **kwargs)
-        deferred = assert_fails_with(deferred, filetransfer.SFTPError)
-
-        def check_sftp_code(exception):
-            self.assertEqual(sftp_code, exception.code)
-            return exception
-
-        return deferred.addCallback(check_sftp_code)
+        with ExpectedException(
+                filetransfer.SFTPError,
+                MatchesStructure.byEquality(code=sftp_code)):
+            yield function(*args, **kwargs)
 
     def openFile(self, path, flags, attrs):
-        return self._sftp_server.openFile(path, flags, attrs)
+        return self._sftp_server.openFile(path.encode('UTF-8'), flags, attrs)
 
     def test_openFileInNonexistingDirectory(self):
         # openFile fails with a no such file error if we try to open a file in
@@ -212,219 +209,189 @@ class TestSFTPFile(TestCaseInTempDir, SFTPTestMixin):
         # that has another file as one of its "parents". The flags passed to
         # openFile() do not have any effect.
         nondirectory = self.getPathSegment()
-        self.build_tree_contents([(nondirectory, 'content')])
+        self.build_tree_contents([(nondirectory, b'content')])
         return self.assertSFTPError(
             filetransfer.FX_NO_SUCH_FILE,
             self.openFile,
             '%s/%s' % (nondirectory, self.getPathSegment()), 0, {})
 
+    @defer.inlineCallbacks
     def test_createEmptyFile(self):
         # Opening a file with create flags and then closing it will create a
         # new, empty file.
         filename = self.getPathSegment()
-        deferred = self.openFile(filename, filetransfer.FXF_CREAT, {})
-        return deferred.addCallback(
-            self._test_createEmptyFile_callback, filename)
+        handle = yield self.openFile(filename, filetransfer.FXF_CREAT, {})
+        yield handle.close()
+        self.assertFileEqual(b'', filename)
 
-    def _test_createEmptyFile_callback(self, handle, filename):
-        deferred = handle.close()
-        return deferred.addCallback(
-            lambda ignored: self.assertFileEqual('', filename))
-
+    @defer.inlineCallbacks
     def test_createFileWithData(self):
         # writeChunk writes data to the file.
         filename = self.getPathSegment()
-        deferred = self.openFile(
+        handle = yield self.openFile(
             filename, filetransfer.FXF_CREAT | filetransfer.FXF_WRITE, {})
-        return deferred.addCallback(
-            self._test_createFileWithData_callback, filename)
+        yield handle.writeChunk(0, b'bar')
+        yield handle.close()
+        self.assertFileEqual(b'bar', filename)
 
-    def _test_createFileWithData_callback(self, handle, filename):
-        deferred = handle.writeChunk(0, 'bar')
-        deferred.addCallback(lambda ignored: handle.close())
-        return deferred.addCallback(
-            lambda ignored: self.assertFileEqual('bar', filename))
-
+    @defer.inlineCallbacks
     def test_writeChunkToFile(self):
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'contents')])
-        deferred = self.openFile(filename, filetransfer.FXF_WRITE, {})
-        return deferred.addCallback(
-            self._test_writeChunkToFile_callback, filename)
+        self.build_tree_contents([(filename, b'contents')])
+        handle = yield self.openFile(filename, filetransfer.FXF_WRITE, {})
+        yield handle.writeChunk(1, b'qux')
+        yield handle.close()
+        self.assertFileEqual(b'cquxents', filename)
 
-    def _test_writeChunkToFile_callback(self, handle, filename):
-        deferred = handle.writeChunk(1, 'qux')
-        deferred.addCallback(lambda ignored: handle.close())
-        return deferred.addCallback(
-            lambda ignored: self.assertFileEqual('cquxents', filename))
-
+    @defer.inlineCallbacks
     def test_writeTwoChunks(self):
         # We can write one chunk after another.
         filename = self.getPathSegment()
-        deferred = self.openFile(
+        handle = yield self.openFile(
             filename, filetransfer.FXF_WRITE | filetransfer.FXF_TRUNC, {})
+        yield handle.writeChunk(1, b'a')
+        yield handle.writeChunk(2, b'a')
+        yield handle.close()
+        self.assertFileEqual(b'\0aa', filename)
 
-        def write_chunks(handle):
-            deferred = handle.writeChunk(1, 'a')
-            deferred.addCallback(lambda ignored: handle.writeChunk(2, 'a'))
-            deferred.addCallback(lambda ignored: handle.close())
-
-        deferred.addCallback(write_chunks)
-        return deferred.addCallback(
-            lambda ignored: self.assertFileEqual(chr(0) + 'aa', filename))
-
+    @defer.inlineCallbacks
     def test_writeChunkToNonexistentFile(self):
         # Writing a chunk of data to a non-existent file creates the file even
         # if the create flag is not set. NOTE: This behaviour is unspecified
         # in the SFTP drafts at
         # http://tools.ietf.org/wg/secsh/draft-ietf-secsh-filexfer/
         filename = self.getPathSegment()
-        deferred = self.openFile(filename, filetransfer.FXF_WRITE, {})
-        return deferred.addCallback(
-            self._test_writeChunkToNonexistentFile_callback, filename)
+        handle = yield self.openFile(filename, filetransfer.FXF_WRITE, {})
+        yield handle.writeChunk(1, b'qux')
+        yield handle.close()
+        self.assertFileEqual(b'\0qux', filename)
 
-    def _test_writeChunkToNonexistentFile_callback(self, handle, filename):
-        deferred = handle.writeChunk(1, 'qux')
-        deferred.addCallback(lambda ignored: handle.close())
-        return deferred.addCallback(
-            lambda ignored: self.assertFileEqual(chr(0) + 'qux', filename))
-
+    @defer.inlineCallbacks
     def test_writeToReadOpenedFile(self):
         # writeChunk raises an error if we try to write to a file that has
         # been opened only for reading.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        deferred = self.openFile(filename, filetransfer.FXF_READ, {})
-        return deferred.addCallback(
-            self._test_writeToReadOpenedFile_callback)
-
-    def _test_writeToReadOpenedFile_callback(self, handle):
-        return self.assertSFTPError(
+        self.build_tree_contents([(filename, b'bar')])
+        handle = yield self.openFile(filename, filetransfer.FXF_READ, {})
+        yield self.assertSFTPError(
             filetransfer.FX_PERMISSION_DENIED,
-            handle.writeChunk, 0, 'new content')
+            handle.writeChunk, 0, b'new content')
 
+    @defer.inlineCallbacks
     def test_overwriteFile(self):
         # writeChunk overwrites a file if write, create and trunk flags are
         # set.
-        self.build_tree_contents([('foo', 'contents')])
-        deferred = self.openFile(
+        self.build_tree_contents([('foo', b'contents')])
+        handle = yield self.openFile(
             'foo', filetransfer.FXF_CREAT | filetransfer.FXF_TRUNC |
             filetransfer.FXF_WRITE, {})
-        return deferred.addCallback(self._test_overwriteFile_callback)
+        yield handle.writeChunk(0, b'bar')
+        self.assertFileEqual(b'bar', 'foo')
 
-    def _test_overwriteFile_callback(self, handle):
-        deferred = handle.writeChunk(0, 'bar')
-        return deferred.addCallback(
-            lambda ignored: self.assertFileEqual('bar', 'foo'))
-
+    @defer.inlineCallbacks
     def test_writeToAppendingFileIgnoresOffset(self):
         # If a file is opened with the 'append' flag, writeChunk ignores its
         # offset parameter.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        deferred = self.openFile(filename, filetransfer.FXF_APPEND, {})
-        return deferred.addCallback(
-            self._test_writeToAppendingFileIgnoresOffset_cb, filename)
+        self.build_tree_contents([(filename, b'bar')])
+        handle = yield self.openFile(filename, filetransfer.FXF_APPEND, {})
+        yield handle.writeChunk(0, b'baz')
+        self.assertFileEqual(b'barbaz', filename)
 
-    def _test_writeToAppendingFileIgnoresOffset_cb(self, handle, filename):
-        deferred = handle.writeChunk(0, 'baz')
-        return deferred.addCallback(
-            lambda ignored: self.assertFileEqual('barbaz', filename))
-
+    @defer.inlineCallbacks
     def test_openAndCloseExistingFileLeavesUnchanged(self):
         # If we open a file with the 'create' flag and without the 'truncate'
         # flag, the file remains unchanged.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        deferred = self.openFile(filename, filetransfer.FXF_CREAT, {})
-        return deferred.addCallback(
-            self._test_openAndCloseExistingFileUnchanged_cb, filename)
+        self.build_tree_contents([(filename, b'bar')])
+        handle = yield self.openFile(filename, filetransfer.FXF_CREAT, {})
+        yield handle.close()
+        self.assertFileEqual(b'bar', filename)
 
-    def _test_openAndCloseExistingFileUnchanged_cb(self, handle, filename):
-        deferred = handle.close()
-        return deferred.addCallback(
-            lambda ignored: self.assertFileEqual('bar', filename))
-
+    @defer.inlineCallbacks
     def test_openAndCloseExistingFileTruncation(self):
         # If we open a file with the 'create' flag and the 'truncate' flag,
         # the file is reset to empty.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        deferred = self.openFile(
+        self.build_tree_contents([(filename, b'bar')])
+        handle = yield self.openFile(
             filename, filetransfer.FXF_TRUNC | filetransfer.FXF_CREAT, {})
-        return deferred.addCallback(
-            self._test_openAndCloseExistingFileTruncation_cb, filename)
+        yield handle.close()
+        self.assertFileEqual(b'', filename)
 
-    def _test_openAndCloseExistingFileTruncation_cb(self, handle, filename):
-        deferred = handle.close()
-        return deferred.addCallback(
-            lambda ignored: self.assertFileEqual('', filename))
-
+    @defer.inlineCallbacks
     def test_writeChunkOnDirectory(self):
         # Errors in writeChunk are translated to SFTPErrors.
         directory = self.getPathSegment()
         os.mkdir(directory)
-        deferred = self.openFile(directory, filetransfer.FXF_WRITE, {})
-        deferred.addCallback(lambda handle: handle.writeChunk(0, 'bar'))
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        handle = yield self.openFile(directory, filetransfer.FXF_WRITE, {})
+        with ExpectedException(filetransfer.SFTPError):
+            yield handle.writeChunk(0, b'bar')
 
+    @defer.inlineCallbacks
     def test_readChunk(self):
         # readChunk reads a chunk of data from the file.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        deferred = self.openFile(filename, 0, {})
-        deferred.addCallback(lambda handle: handle.readChunk(1, 2))
-        return deferred.addCallback(self.assertEqual, 'ar')
+        self.build_tree_contents([(filename, b'bar')])
+        handle = yield self.openFile(filename, 0, {})
+        chunk = yield handle.readChunk(1, 2)
+        self.assertEqual(b'ar', chunk)
 
+    @defer.inlineCallbacks
     def test_readChunkPastEndOfFile(self):
         # readChunk returns the rest of the file if it is asked to read past
         # the end of the file.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        deferred = self.openFile(filename, 0, {})
-        deferred.addCallback(lambda handle: handle.readChunk(2, 10))
-        return deferred.addCallback(self.assertEqual, 'r')
+        self.build_tree_contents([(filename, b'bar')])
+        handle = yield self.openFile(filename, 0, {})
+        chunk = yield handle.readChunk(2, 10)
+        self.assertEqual(b'r', chunk)
 
+    @defer.inlineCallbacks
     def test_readChunkEOF(self):
         # readChunk returns the empty string if it encounters end-of-file
         # before reading any data.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        deferred = self.openFile(filename, 0, {})
-        deferred.addCallback(lambda handle: handle.readChunk(3, 10))
-        return deferred.addCallback(self.assertEqual, '')
+        self.build_tree_contents([(filename, b'bar')])
+        handle = yield self.openFile(filename, 0, {})
+        chunk = yield handle.readChunk(3, 10)
+        self.assertEqual(b'', chunk)
 
+    @defer.inlineCallbacks
     def test_readChunkError(self):
         # Errors in readChunk are translated to SFTPErrors.
         filename = self.getPathSegment()
-        deferred = self.openFile(filename, 0, {})
-        deferred.addCallback(lambda handle: handle.readChunk(1, 2))
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        handle = yield self.openFile(filename, 0, {})
+        with ExpectedException(filetransfer.SFTPError):
+            yield handle.readChunk(1, 2)
 
+    @defer.inlineCallbacks
     def test_setAttrs(self):
         # setAttrs on TransportSFTPFile does nothing.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        deferred = self.openFile(filename, 0, {})
-        return deferred.addCallback(lambda handle: handle.setAttrs({}))
+        self.build_tree_contents([(filename, b'bar')])
+        handle = yield self.openFile(filename, 0, {})
+        yield handle.setAttrs({})
 
+    @defer.inlineCallbacks
     def test_getAttrs(self):
         # getAttrs on TransportSFTPFile returns a dictionary consistent
         # with the results of os.stat.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
+        self.build_tree_contents([(filename, b'bar')])
         stat_value = os.stat(filename)
-        deferred = self.openFile(filename, 0, {})
-        deferred.addCallback(lambda handle: handle.getAttrs())
-        return deferred.addCallback(self.checkAttrs, stat_value)
+        handle = yield self.openFile(filename, 0, {})
+        attrs = yield handle.getAttrs()
+        self.checkAttrs(attrs, stat_value)
 
+    @defer.inlineCallbacks
     def test_getAttrsError(self):
         # Errors in getAttrs on TransportSFTPFile are translated into
         # SFTPErrors.
         filename = self.getPathSegment()
-        deferred = self.openFile(filename, 0, {})
-        deferred.addCallback(lambda handle: handle.getAttrs())
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        handle = yield self.openFile(filename, 0, {})
+        with ExpectedException(filetransfer.SFTPError):
+            yield handle.getAttrs()
 
 
 class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
@@ -439,109 +406,109 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
             FatLocalTransport(urlutils.local_path_to_url('.')))
         self.sftp_server = TransportSFTPServer(transport)
 
+    @defer.inlineCallbacks
     def test_serverSetAttrs(self):
         # setAttrs on the TransportSFTPServer doesn't do anything either.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        self.sftp_server.setAttrs(filename, {})
+        self.build_tree_contents([(filename, b'bar')])
+        yield self.sftp_server.setAttrs(filename.encode('UTF-8'), {})
 
+    @defer.inlineCallbacks
     def test_serverGetAttrs(self):
         # getAttrs on the TransportSFTPServer also returns a dictionary
         # consistent with the results of os.stat.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
+        self.build_tree_contents([(filename, b'bar')])
         stat_value = os.stat(filename)
-        deferred = self.sftp_server.getAttrs(filename, False)
-        return deferred.addCallback(self.checkAttrs, stat_value)
+        attrs = yield self.sftp_server.getAttrs(
+            filename.encode('UTF-8'), False)
+        self.checkAttrs(attrs, stat_value)
 
+    @defer.inlineCallbacks
     def test_serverGetAttrsError(self):
         # Errors in getAttrs on the TransportSFTPServer are translated into
         # SFTPErrors.
         nonexistent_file = self.getPathSegment()
-        deferred = self.sftp_server.getAttrs(nonexistent_file, False)
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        with ExpectedException(filetransfer.SFTPError):
+            yield self.sftp_server.getAttrs(
+                nonexistent_file.encode('UTF-8'), False)
 
+    @defer.inlineCallbacks
     def test_removeFile(self):
         # removeFile removes the file.
         filename = self.getPathSegment()
-        self.build_tree_contents([(filename, 'bar')])
-        deferred = self.sftp_server.removeFile(filename)
+        self.build_tree_contents([(filename, b'bar')])
+        yield self.sftp_server.removeFile(filename.encode('UTF-8'))
+        self.assertFalse(file_exists(filename))
 
-        def assertFileRemoved(ignored):
-            self.assertFalse(file_exists(filename))
-
-        return deferred.addCallback(assertFileRemoved)
-
+    @defer.inlineCallbacks
     def test_removeFileError(self):
         # Errors in removeFile are translated into SFTPErrors.
         filename = self.getPathSegment()
-        deferred = self.sftp_server.removeFile(filename)
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        with ExpectedException(filetransfer.SFTPError):
+            yield self.sftp_server.removeFile(filename.encode('UTF-8'))
 
+    @defer.inlineCallbacks
     def test_removeFile_directory(self):
         # Errors in removeFile are translated into SFTPErrors.
         filename = self.getPathSegment()
         self.build_tree_contents([(filename + '/',)])
-        deferred = self.sftp_server.removeFile(filename)
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        with ExpectedException(filetransfer.SFTPError):
+            yield self.sftp_server.removeFile(filename.encode('UTF-8'))
 
+    @defer.inlineCallbacks
     def test_renameFile(self):
         # renameFile renames the file.
         orig_filename = self.getPathSegment()
         new_filename = self.getPathSegment()
-        self.build_tree_contents([(orig_filename, 'bar')])
-        deferred = self.sftp_server.renameFile(orig_filename, new_filename)
+        self.build_tree_contents([(orig_filename, b'bar')])
+        yield self.sftp_server.renameFile(
+            orig_filename.encode('UTF-8'), new_filename.encode('UTF-8'))
+        self.assertFalse(file_exists(orig_filename))
+        self.assertTrue(file_exists(new_filename))
 
-        def assertFileRenamed(ignored):
-            self.assertFalse(file_exists(orig_filename))
-            self.assertTrue(file_exists(new_filename))
-
-        return deferred.addCallback(assertFileRenamed)
-
+    @defer.inlineCallbacks
     def test_renameFileError(self):
         # Errors in renameFile are translated into SFTPErrors.
         orig_filename = self.getPathSegment()
         new_filename = self.getPathSegment()
-        deferred = self.sftp_server.renameFile(orig_filename, new_filename)
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        with ExpectedException(filetransfer.SFTPError):
+            yield self.sftp_server.renameFile(
+                orig_filename.encode('UTF-8'), new_filename.encode('UTF-8'))
 
+    @defer.inlineCallbacks
     def test_makeDirectory(self):
         # makeDirectory makes the directory.
         directory = self.getPathSegment()
-        deferred = self.sftp_server.makeDirectory(
-            directory, {'permissions': 0o777})
+        yield self.sftp_server.makeDirectory(
+            directory.encode('UTF-8'), {'permissions': 0o777})
+        self.assertTrue(
+            os.path.isdir(directory), '%r is not a directory' % directory)
+        self.assertEqual(0o40777, os.stat(directory).st_mode)
 
-        def assertDirectoryExists(ignored):
-            self.assertTrue(
-                os.path.isdir(directory), '%r is not a directory' % directory)
-            self.assertEqual(0o40777, os.stat(directory).st_mode)
-
-        return deferred.addCallback(assertDirectoryExists)
-
+    @defer.inlineCallbacks
     def test_makeDirectoryError(self):
         # Errors in makeDirectory are translated into SFTPErrors.
         nonexistent = self.getPathSegment()
         nonexistent_child = '%s/%s' % (nonexistent, self.getPathSegment())
-        deferred = self.sftp_server.makeDirectory(
-            nonexistent_child, {'permissions': 0o777})
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        with ExpectedException(filetransfer.SFTPError):
+            yield self.sftp_server.makeDirectory(
+                nonexistent_child.encode('UTF-8'), {'permissions': 0o777})
 
+    @defer.inlineCallbacks
     def test_removeDirectory(self):
         # removeDirectory removes the directory.
         directory = self.getPathSegment()
         os.mkdir(directory)
-        deferred = self.sftp_server.removeDirectory(directory)
+        yield self.sftp_server.removeDirectory(directory.encode('UTF-8'))
+        self.assertFalse(file_exists(directory))
 
-        def assertDirectoryRemoved(ignored):
-            self.assertFalse(file_exists(directory))
-
-        return deferred.addCallback(assertDirectoryRemoved)
-
+    @defer.inlineCallbacks
     def test_removeDirectoryError(self):
         # Errors in removeDirectory are translated into SFTPErrors.
         directory = self.getPathSegment()
-        deferred = self.sftp_server.removeDirectory(directory)
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        with ExpectedException(filetransfer.SFTPError):
+            yield self.sftp_server.removeDirectory(directory.encode('UTF-8'))
 
     def test_gotVersion(self):
         # gotVersion returns an empty dictionary.
@@ -552,27 +519,30 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         # We don't support any extensions.
         self.assertRaises(
             NotImplementedError, self.sftp_server.extendedRequest,
-            'foo', 'bar')
+            b'foo', b'bar')
 
+    @defer.inlineCallbacks
     def test_realPath(self):
         # realPath returns the absolute path of the file.
         src, dst = self.getPathSegment(), self.getPathSegment()
         os.symlink(src, dst)
-        deferred = self.sftp_server.realPath(dst)
-        return deferred.addCallback(self.assertEqual, os.path.abspath(src))
+        path = yield self.sftp_server.realPath(dst.encode('UTF-8'))
+        self.assertEqual(os.path.abspath(src).encode('UTF-8'), path)
 
     def test_makeLink(self):
         # makeLink is not supported.
         self.assertRaises(
             NotImplementedError, self.sftp_server.makeLink,
-            self.getPathSegment(), self.getPathSegment())
+            self.getPathSegment().encode('UTF-8'),
+            self.getPathSegment().encode('UTF-8'))
 
     def test_readLink(self):
         # readLink is not supported.
         self.assertRaises(
             NotImplementedError, self.sftp_server.readLink,
-            self.getPathSegment())
+            self.getPathSegment().encode('UTF-8'))
 
+    @defer.inlineCallbacks
     def test_openDirectory(self):
         # openDirectory returns an iterator that iterates over the contents of
         # the directory.
@@ -583,47 +553,46 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
             parent_dir + '/',
             '%s/%s/' % (parent_dir, child_dir),
             '%s/%s' % (parent_dir, child_file)])
-        deferred = self.sftp_server.openDirectory(parent_dir)
+        directory = yield self.sftp_server.openDirectory(
+            parent_dir.encode('UTF-8'))
+        entries = list(directory)
+        directory.close()
+        names = [entry[0] for entry in entries]
+        self.assertEqual(
+            set(names),
+            set([child_dir.encode('UTF-8'), child_file.encode('UTF-8')]))
 
         def check_entry(entries, filename):
             t = get_transport('.')
             stat = t.stat(urlutils.escape('%s/%s' % (parent_dir, filename)))
             named_entries = [
-                entry for entry in entries if entry[0] == filename]
+                entry for entry in entries
+                if entry[0] == filename.encode('UTF-8')]
             self.assertEqual(1, len(named_entries))
             name, longname, attrs = named_entries[0]
             self.assertEqual(lsLine(name, stat), longname)
             self.assertEqual(self.sftp_server._translate_stat(stat), attrs)
 
-        def check_open_directory(directory):
-            entries = list(directory)
-            directory.close()
-            names = [entry[0] for entry in entries]
-            self.assertEqual(set(names), set([child_dir, child_file]))
-            check_entry(entries, child_dir)
-            check_entry(entries, child_file)
+        check_entry(entries, child_dir)
+        check_entry(entries, child_file)
 
-        return deferred.addCallback(check_open_directory)
-
+    @defer.inlineCallbacks
     def test_openDirectoryError(self):
         # Errors in openDirectory are translated into SFTPErrors.
         nonexistent = self.getPathSegment()
-        deferred = self.sftp_server.openDirectory(nonexistent)
-        return assert_fails_with(deferred, filetransfer.SFTPError)
+        with ExpectedException(filetransfer.SFTPError):
+            yield self.sftp_server.openDirectory(nonexistent.encode('UTF-8'))
 
+    @defer.inlineCallbacks
     def test_openDirectoryMemory(self):
         """openDirectory works on MemoryTransport."""
         transport = MemoryTransport()
         transport.put_bytes('hello', b'hello')
         sftp_server = TransportSFTPServer(AsyncTransport(transport))
-        deferred = sftp_server.openDirectory('.')
-
-        def check_directory(directory):
-            with closing(directory):
-                names = [entry[0] for entry in directory]
-            self.assertEqual(['hello'], names)
-
-        return deferred.addCallback(check_directory)
+        directory = yield sftp_server.openDirectory(b'.')
+        with closing(directory):
+            names = [entry[0] for entry in directory]
+        self.assertEqual([b'hello'], names)
 
     def test__format_directory_entries_with_MemoryStat(self):
         """format_directory_entries works with MemoryStat.
@@ -636,7 +605,7 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         entries = self.sftp_server._format_directory_entries(
             [stat_result], ['filename'])
         self.assertEqual(list(entries), [
-            ('filename', 'drwxr-xr-x    0 0        0               0 '
+            (b'filename', 'drwxr-xr-x    0 0        0               0 '
              'Jan 01  1970 filename',
              {'atime': 0,
               'gid': 0,

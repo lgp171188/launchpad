@@ -64,7 +64,8 @@ and check the list of interested people:
 
     >>> essential=False
     >>> ext_spec.subscribe(sampleperson, sampleperson, essential)
-    <SpecificationSubscription at ...>
+    <lp.blueprints.model.specificationsubscription.SpecificationSubscription
+    object at ...>
 
     >>> view = getMultiAdapter((ubz, request), name='+temp-meeting-export')
     >>> view.initialize()
@@ -73,9 +74,11 @@ The person does not show up as interested in the spec though. Only the
 specification assignee is listed (the drafter would be too if one was
 assigned).
 
-    >>> sorted(person['name']
-    ...     for person in view.specifications[1]['interested'])
-    [u'carlos']
+    >>> from operator import itemgetter
+    >>> for person in sorted(
+    ...         view.specifications[1]['interested'], key=itemgetter('name')):
+    ...     print(person['name'])
+    carlos
 
 This is because sample person has not registered as an attendee of the
 sprint.  If we add them as an attendee, then they will be available:
@@ -90,9 +93,11 @@ sprint.  If we add them as an attendee, then they will be available:
     >>> login(ANONYMOUS)
     >>> view = getMultiAdapter((ubz, request), name='+temp-meeting-export')
     >>> view.initialize()
-    >>> sorted(person['name']
-    ...     for person in view.specifications[1]['interested'])
-    [u'carlos', u'name12']
+    >>> for person in sorted(
+    ...         view.specifications[1]['interested'], key=itemgetter('name')):
+    ...     print(person['name'])
+    carlos
+    name12
 
 The person is also included in the list of attendees:
 

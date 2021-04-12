@@ -20,6 +20,7 @@ from six.moves.urllib.error import (
     URLError,
     )
 from six.moves.urllib.request import urlopen
+from testtools.testcase import ExpectedException
 import transaction
 
 from lp.services.config import config
@@ -171,8 +172,11 @@ class LibrarianFileWrapperTestCase(TestCase):
 
     def test_unbounded_read_incorrect_length(self):
         file = self.makeFile(extra_content_length=1)
-        self.assertEqual(b"abcdef", file.read())
-        self.assertRaises(http_client.IncompleteRead, file.read)
+        with ExpectedException(http_client.IncompleteRead):
+            # Python 3 notices the short response on the first read.
+            self.assertEqual(b"abcdef", file.read())
+            # Python 2 only notices the short response on the next read.
+            file.read()
 
     def test_bounded_read_correct_length(self):
         file = self.makeFile()
@@ -301,7 +305,7 @@ class LibrarianClientTestCase(TestCase):
                 'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()
         f = client.getFileByAlias(alias_id)
-        self.assertEqual(f.read(), 'sample')
+        self.assertEqual(f.read(), b'sample')
 
     def test_addFile_no_response_check_at_end_headers_for_empty_file(self):
         # When addFile() sends the request header, it checks if the
@@ -428,7 +432,7 @@ class LibrarianClientTestCase(TestCase):
         self.assertFalse(client.called_getURLForDownload)
         # (Test:)
         f = client.getFileByAlias(alias_id)
-        self.assertEqual(f.read(), 'sample')
+        self.assertEqual(f.read(), b'sample')
         self.assertTrue(client.called_getURLForDownload)
 
     def test_getFileByAliasLookupError(self):

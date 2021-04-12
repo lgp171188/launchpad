@@ -117,9 +117,9 @@ class TestWebServiceObfuscation(TestCaseWithFactory):
         webservice = webservice_for_person(user)
         result = webservice(
             ws_url(bug), headers={'Accept': 'application/xhtml+xml'})
-        self.assertIn(self.email_address, result.body)
+        self.assertIn(self.email_address.encode('UTF-8'), result.body)
         self.assertNotIn(
-            self.email_address_obfuscated_escaped, result.body)
+            self.email_address_obfuscated_escaped.encode('UTF-8'), result.body)
 
     def test_xhtml_email_address_obfuscated(self):
         # Email addresses are obfuscated in the XML representation for
@@ -129,8 +129,9 @@ class TestWebServiceObfuscation(TestCaseWithFactory):
         webservice = LaunchpadWebServiceCaller()
         result = webservice(
             ws_url(bug), headers={'Accept': 'application/xhtml+xml'})
-        self.assertNotIn(self.email_address, result.body)
-        self.assertIn(self.email_address_obfuscated_escaped, result.body)
+        self.assertNotIn(self.email_address.encode('UTF-8'), result.body)
+        self.assertIn(
+            self.email_address_obfuscated_escaped.encode('UTF-8'), result.body)
 
     def test_etags_differ_for_anon_and_non_anon_represetations(self):
         # When a webservice client retrieves data anonymously, this

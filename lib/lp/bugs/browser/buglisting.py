@@ -1194,7 +1194,8 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
             'only_resolved_upstream': 'resolved_upstream'}
 
         status_upstream = self.request.get('field.status_upstream')
-        if status_upstream in old_upstream_status_values_to_new_values.keys():
+        if (not isinstance(status_upstream, list) and
+                status_upstream in old_upstream_status_values_to_new_values):
             self.request.form['field.status_upstream'] = [
                 old_upstream_status_values_to_new_values[status_upstream]]
         elif status_upstream == '':

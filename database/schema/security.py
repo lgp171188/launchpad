@@ -54,8 +54,8 @@ POSTGRES_ACL_MAP = {
 # PostgreSQL's putid emits an unquoted string if every character in the role
 # name isalnum or is _. Otherwise the name is enclosed in double quotes, and
 # any embedded double quotes are doubled.
-QUOTED_STRING_RE = '(?:([A-Za-z0-9_]+)|"([^"]*(?:""[^"]*)*)")?'
-ACLITEM_RE = re.compile('^%(qs)s=([\w*]*)/%(qs)s$' % {'qs': QUOTED_STRING_RE})
+QUOTED_STRING_RE = r'(?:([A-Za-z0-9_]+)|"([^"]*(?:""[^"]*)*)")?'
+ACLITEM_RE = re.compile(r'^%(qs)s=([\w*]*)/%(qs)s$' % {'qs': QUOTED_STRING_RE})
 
 
 def _split_postgres_aclitem(aclitem):
@@ -541,7 +541,7 @@ def reset_permissions(con, config, options):
             if '.' not in obj_name:
                 continue
             if obj_name not in valid_objs:
-                log.warn('Bad object name %r', obj_name)
+                log.warning('Bad object name %r', obj_name)
                 continue
             obj = schema[obj_name]
 
@@ -659,7 +659,7 @@ def reset_permissions(con, config, options):
     forgotten = [obj.fullname for obj in forgotten
         if obj.type in ['table', 'function', 'view']]
     if forgotten:
-        log.warn('No permissions specified for %r', forgotten)
+        log.warning('No permissions specified for %r', forgotten)
 
     if options.dryrun:
         log.info("Dry run - rolling back changes")

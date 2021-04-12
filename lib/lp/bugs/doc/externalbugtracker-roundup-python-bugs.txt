@@ -75,6 +75,7 @@ If the status isn't something that our Python_Bugs ExternalBugTracker can
 understand an UnknownRemoteStatusError will be raised.
 
     >>> python_bugs.convertRemoteStatus('7:13').title
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    UnknownRemoteStatusError: 7:13
+    lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: 7:13

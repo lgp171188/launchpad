@@ -42,9 +42,8 @@ Sample Person and the Landscape team are now subscribed.
 
     >>> browser.open(
     ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+subscribe')
-    >>> print(extract_text(find_portlet(
-    ...     browser.contents, 'Subscribers')).encode(
-    ...     'ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(find_portlet(
+    ...     browser.contents, 'Subscribers'))))
     Subscribers
       To all bugs in mozilla-firefox in Ubuntu:
         Foo Bar
@@ -104,7 +103,7 @@ to subscribe other people.
 No Privileges Person is now subscribed...
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     No Privileges Person will now receive an email each time someone reports
     or changes a public bug in "mozilla-firefox in Ubuntu".
 
@@ -145,7 +144,7 @@ the page.
     >>> remove_other = browser.getControl('\xa0No Privileges Person')
     Traceback (most recent call last):
     ...
-    LookupError: label u'\xa0No Privileges Person'
+    LookupError: label ...'\xa0No Privileges Person'
     ...
 
 We clean up by removing Sample Person as the distribution driver.
@@ -188,13 +187,13 @@ the UI elements for the subscription/unsubscription of arbitrary persons.
     >>> browser.getControl('Subscribe someone else:')
     Traceback (most recent call last):
     ...
-    LookupError: label u'Subscribe someone else:'
+    LookupError: label ...'Subscribe someone else:'
     ...
 
     >>> print(browser.getControl('\xa0Foo Bar'))
     Traceback (most recent call last):
     ...
-    LookupError: label u'\xa0Foo Bar'
+    LookupError: label ...'\xa0Foo Bar'
     ...
 
 

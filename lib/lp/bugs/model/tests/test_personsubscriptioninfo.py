@@ -502,7 +502,7 @@ class TestPersonSubscriptionInfo(TestCaseWithFactory):
         with StormStatementRecorder() as recorder:
             self.subscriptions.reload()
         # This should produce a very small number of queries.
-        self.assertThat(recorder, HasQueryCount(LessThan(6)))
+        self.assertThat(recorder, HasQueryCount(LessThan(7)))
         count_with_one_subscribed_duplicate = recorder.count
         # It should have the correct result.
         self.assertCollectionsAreEmpty(except_='from_duplicate')

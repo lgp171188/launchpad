@@ -11,8 +11,7 @@ from datetime import (
     )
 
 import pytz
-from testtools.content import Content
-from testtools.content_type import UTF8_TEXT
+from testtools.content import text_content
 import transaction
 from zope.component import getUtility
 from zope.interface import (
@@ -155,8 +154,8 @@ class DailyProductJobsTestCase(TestCaseWithFactory, CommercialHelpers):
         transaction.commit()
         stdout, stderr, retcode = run_script(
             'cronscripts/daily_product_jobs.py')
-        self.addDetail("stdout", Content(UTF8_TEXT, lambda: [stdout]))
-        self.addDetail("stderr", Content(UTF8_TEXT, lambda: [stderr]))
+        self.addDetail("stdout", text_content(stdout))
+        self.addDetail("stderr", text_content(stderr))
         self.assertEqual(0, retcode)
         self.assertIn('Requested 3 total product jobs.', stderr)
 
@@ -590,8 +589,8 @@ class CommericialExpirationMixin(CommercialHelpers):
         out, err, exit_code = run_script(
             "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s" %
              self.JOB_SOURCE_INTERFACE.getName())
-        self.addDetail("stdout", Content(UTF8_TEXT, lambda: [out]))
-        self.addDetail("stderr", Content(UTF8_TEXT, lambda: [err]))
+        self.addDetail("stdout", text_content(out))
+        self.addDetail("stderr", text_content(err))
         self.assertEqual(0, exit_code)
         self.assertTrue(
             'Traceback (most recent call last)' not in err)

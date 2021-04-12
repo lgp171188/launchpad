@@ -360,11 +360,14 @@ class TestBugPortletSubscribers(TestCaseWithFactory):
             removeSecurityProxy(dupe).subscribe(user, dupe.owner)
         Store.of(bug).invalidate()
         with person_logged_in(user):
+            launchbag = getUtility(IOpenLaunchBag)
+            launchbag.add(bug)
+            launchbag.add(bug.default_bugtask)
             with StormStatementRecorder() as recorder:
                 view = create_initialized_view(
                     bug, name='+portlet-subscription', principal=user)
                 view.render()
-        self.assertThat(recorder, HasQueryCount(Equals(21)))
+        self.assertThat(recorder, HasQueryCount(Equals(14)))
 
 
 class TestBugSecrecyViews(TestCaseWithFactory):
@@ -609,7 +612,7 @@ class TestBugTextViewPrivateTeams(TestCaseWithFactory):
         self.assertIn(
             "assignee: %s" % assignee.unique_displayname, view_text)
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            "subscribers:\n.*%s \(%s\)"
+            "subscribers:\n.*%s \\(%s\\)"
             % (naked_subscriber.displayname, naked_subscriber.name),
             view_text)
 

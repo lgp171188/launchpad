@@ -7,12 +7,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from collections import OrderedDict
 from datetime import datetime
 import hashlib
 import os
 import shutil
 import tempfile
 
+import six
 from testtools import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
@@ -71,7 +73,7 @@ class FakeBuildFarmJob:
 class FakeLibraryFileContent:
 
     def __init__(self, filename):
-        self.sha1 = hashlib.sha1(filename).hexdigest()
+        self.sha1 = hashlib.sha1(six.ensure_binary(filename)).hexdigest()
 
 
 class FakeLibraryFileAlias:
@@ -163,11 +165,12 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     def makeBehaviour(self, das):
-        files = {
-            'foo.dsc': {'url': 'http://host/foo.dsc', 'sha1': '0'},
-            'bar.tar': {
+        files = OrderedDict([
+            ('foo.dsc', {'url': 'http://host/foo.dsc', 'sha1': '0'}),
+            ('bar.tar', {
                 'url': 'http://host/bar.tar', 'sha1': '0',
-                'username': 'admin', 'password': 'sekrit'}}
+                'username': 'admin', 'password': 'sekrit'}),
+            ])
 
         behaviour = BuildFarmJobBehaviourBase(FakeBuildFarmJob())
         behaviour.composeBuildRequest = FakeMethod(
@@ -181,10 +184,10 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         expected_calls = [
             ('ensurepresent',
              'http://librarian.test/%s' % chroot_filename, '', ''),
-            ('ensurepresent', 'http://host/bar.tar', 'admin', 'sekrit'),
             ('ensurepresent', 'http://host/foo.dsc', '', ''),
+            ('ensurepresent', 'http://host/bar.tar', 'admin', 'sekrit'),
             ('build', 'PACKAGEBUILD-1', 'foobuild',
-             hashlib.sha1(chroot_filename).hexdigest(),
+             hashlib.sha1(six.ensure_binary(chroot_filename)).hexdigest(),
              ['foo.dsc', 'bar.tar'],
              {'archives': ['http://admin:sekrit@blah/'],
               'image_type': image_type,
@@ -275,8 +278,8 @@ class TestDispatchBuildToSlave(StatsMixin, TestCase):
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('build.count,job_type=UNKNOWN,'
-             'builder_name=mock-builder,env=test',))
+            ('build.count,builder_name=mock-builder,env=test,'
+             'job_type=UNKNOWN',))
 
 
 class TestGetUploadMethodsMixin:
@@ -400,7 +403,7 @@ class TestHandleStatusMixin:
         # directory will not be collected.
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned a file named u'/tmp/myfile.py'."):
+                "Build returned a file named '/tmp/myfile.py'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, 'OK',
@@ -412,7 +415,7 @@ class TestHandleStatusMixin:
         # the upload directory will not be collected.
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned a file named u'../myfile.py'."):
+                "Build returned a file named '../myfile.py'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, 'OK',
@@ -473,7 +476,7 @@ class TestHandleStatusMixin:
             self.build.updateStatus(BuildStatus.BUILDING)
             with ExpectedException(
                     BuildDaemonError,
-                    "Build returned unexpected status: u'ABORTED'"):
+                    "Build returned unexpected status: %r" % 'ABORTED'):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "ABORTED", {})
 
@@ -501,7 +504,7 @@ class TestHandleStatusMixin:
     def test_givenback_collection(self):
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned unexpected status: u'GIVENBACK'"):
+                "Build returned unexpected status: %r" % 'GIVENBACK'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "GIVENBACK", {})
@@ -510,7 +513,7 @@ class TestHandleStatusMixin:
     def test_builderfail_collection(self):
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned unexpected status: u'BUILDERFAIL'"):
+                "Build returned unexpected status: %r" % 'BUILDERFAIL'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "BUILDERFAIL", {})
@@ -519,7 +522,7 @@ class TestHandleStatusMixin:
     def test_invalid_status_collection(self):
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned unexpected status: u'BORKED'"):
+                "Build returned unexpected status: %r" % 'BORKED'):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, "BORKED", {})

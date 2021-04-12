@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """ DSCFile and related.
@@ -31,6 +31,7 @@ from debian.deb822 import (
     PkgRelation,
     )
 import scandir
+import six
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -126,7 +127,7 @@ class SignableTagFile:
         if self.signingkey is not None:
             return self.signingkey.owner
 
-    def parse(self, verify_signature=True, as_bytes=False):
+    def parse(self, verify_signature=True):
         """Parse the tag file, optionally verifying the signature.
 
         If verify_signature is True, signingkey will be set to the signing
@@ -168,7 +169,7 @@ class SignableTagFile:
             self.parsed_content = self.raw_content
         try:
             self._dict = parse_tagfile_content(
-                self.parsed_content, filename=self.filepath, as_bytes=as_bytes)
+                self.parsed_content, filename=self.filepath)
         except TagFileParseError as error:
             raise UploadError(
                 "Unable to parse %s: %s" % (self.filename, error))
@@ -214,7 +215,7 @@ class SignableTagFile:
         try:
             (name, email) = parse_maintainer_bytes(addr, fieldname)
         except ParseMaintError as error:
-            raise UploadError(str(error))
+            raise UploadError(six.text_type(error))
 
         person = getUtility(IPersonSet).getByEmail(email)
         if person and person.private:
@@ -222,8 +223,8 @@ class SignableTagFile:
             raise UploadError("Invalid Maintainer.")
 
         if person is None and self.policy.create_people:
-            package = self._dict['Source']
-            version = self._dict['Version']
+            package = six.ensure_text(self._dict['Source'])
+            version = six.ensure_text(self._dict['Version'])
             if self.policy.distroseries and self.policy.pocket:
                 policy_suite = ('%s/%s' % (self.policy.distroseries.name,
                                            self.policy.pocket.name))
@@ -294,7 +295,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         SourceUploadFile.__init__(
             self, filepath, checksums, size, component_and_section, priority,
             package, version, changes, policy, logger)
-        self.parse(verify_signature=not policy.unsigned_dsc_ok, as_bytes=True)
+        self.parse(verify_signature=not policy.unsigned_dsc_ok)
 
         self.logger.debug("Performing DSC verification.")
         for mandatory_field in self.mandatory_fields:
@@ -309,11 +310,12 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         # the wild generates dsc files with format missing, and we need
         # to accept them.
         if 'Format' not in self._dict:
-            self._dict['Format'] = "1.0"
+            self._dict['Format'] = b"1.0"
 
         if self.format is None:
             raise EarlyReturnUploadError(
-                "Unsupported source format: %s" % self._dict['Format'])
+                "Unsupported source format: %s" %
+                six.ensure_str(self._dict['Format']))
 
     #
     # Useful properties.
@@ -321,31 +323,31 @@ class DSCFile(SourceUploadFile, SignableTagFile):
     @property
     def source(self):
         """Return the DSC source name."""
-        return self._dict['Source']
+        return six.ensure_text(self._dict['Source'])
 
     @property
     def dsc_version(self):
         """Return the DSC source version."""
-        return self._dict['Version']
+        return six.ensure_text(self._dict['Version'])
 
     @property
     def format(self):
         """Return the DSC format."""
         try:
             return SourcePackageFormat.getTermByToken(
-                self._dict['Format']).value
+                six.ensure_text(self._dict['Format'])).value
         except LookupError:
             return None
 
     @property
     def architecture(self):
         """Return the DSC source architecture."""
-        return self._dict['Architecture']
+        return six.ensure_text(self._dict['Architecture'])
 
     @property
     def binary(self):
         """Return the DSC claimed binary line."""
-        return self._dict['Binary']
+        return six.ensure_text(self._dict['Binary'])
 
     #
     # DSC file checks.
@@ -409,6 +411,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         for field_name in ['Build-Depends', 'Build-Depends-Indep']:
             field = self._dict.get(field_name, None)
             if field is not None:
+                field = six.ensure_text(field)
                 if field.startswith("ARRAY"):
                     yield UploadError(
                         "%s: invalid %s field produced by a broken version "
@@ -724,12 +727,13 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         # SourcePackageFiles should contain also the DSC
         source_files = self.files + [self]
         for uploaded_file in source_files:
-            library_file = self.librarian.create(
-                uploaded_file.filename,
-                uploaded_file.size,
-                open(uploaded_file.filepath, "rb"),
-                uploaded_file.content_type,
-                restricted=self.policy.archive.private)
+            with open(uploaded_file.filepath, "rb") as uploaded_file_obj:
+                library_file = self.librarian.create(
+                    uploaded_file.filename,
+                    uploaded_file.size,
+                    uploaded_file_obj,
+                    uploaded_file.content_type,
+                    restricted=self.policy.archive.private)
             release.addFile(library_file)
 
         return release
@@ -803,7 +807,7 @@ def find_copyright(source_dir, logger):
         raise UploadWarning("No copyright file found.")
 
     logger.debug("Copying copyright contents.")
-    with open(copyright_file) as f:
+    with open(copyright_file, "rb") as f:
         return f.read().strip()
 
 

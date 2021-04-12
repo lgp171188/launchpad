@@ -8,15 +8,17 @@ owner, on the +select-language-pack-admin page.
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> browser.open('http://translations.launchpad.test/ubuntu/')
     >>> browser.getLink('Set language pack administrator')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
     >>> browser.open(
     ...     'http://translations.launchpad.test/ubuntu/'
     ...     '+select-language-pack-admin')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Mark is one of the distribution owners, so he's able to reach that page.
 

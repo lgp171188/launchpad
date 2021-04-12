@@ -92,8 +92,9 @@ Use a valid fingerprint to import a new key.
 
 This new key will be pending validation, though.
 
-    >>> view.context.pending_gpg_keys
-    [u'A419AE861E88BC9E04B9C26FBA2B9389DFD20543']
+    >>> for fingerprint in view.context.pending_gpg_keys:
+    ...     print(fingerprint)
+    A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 And while the validation is not finished, it's possible to cancel the
 validation, removing the key from the list of pending validation keys.
@@ -106,11 +107,12 @@ an error message.
     >>> request.method = "POST"
     >>> view = getMultiAdapter((sample_user, request), name="+editpgpkeys")
     >>> view.form_action()
-    >>> view.error_message.escapedtext
-    u'No key(s) pending validation selected.'
+    >>> print(view.error_message.escapedtext)
+    No key(s) pending validation selected.
 
-    >>> view.context.pending_gpg_keys
-    [u'A419AE861E88BC9E04B9C26FBA2B9389DFD20543']
+    >>> for fingerprint in view.context.pending_gpg_keys:
+    ...     print(fingerprint)
+    A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 Now we specify the key and it's removed from the list of keys pending
 validation.
@@ -122,8 +124,8 @@ validation.
     >>> request.method = "POST"
     >>> view = getMultiAdapter((sample_user, request), name="+editpgpkeys")
     >>> view.form_action()
-    >>> view.info_message.escapedtext
-    u'Cancelled validation of key(s): A419AE861E88BC9E04B9C26FBA2B9389DFD20543'
+    >>> print(view.info_message.escapedtext)
+    Cancelled validation of key(s): A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
     >>> view.context.pending_gpg_keys
     []
@@ -131,8 +133,9 @@ validation.
 In some unknown way, the action sent to the form can be None (see bug 520476).
 
     >>> view = post_fingerprint(good_fingerprint, action=None)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
-    UnexpectedFormData: Action not permitted: None
+    lp.app.errors.UnexpectedFormData: Action not permitted: None
 
     >>> tac.tearDown()

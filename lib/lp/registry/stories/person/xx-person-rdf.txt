@@ -10,7 +10,7 @@ We export FOAF RDF metadata from the /~Person.name/+index document.
     >>> anon_browser.open("http://launchpad.test/~name16")
     >>> strainer = SoupStrainer(['link'], {'type': ['application/rdf+xml']})
     >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
-    >>> print(soup.renderContents())
+    >>> print(soup.decode_contents())
     <link href="+rdf" rel="meta" title="FOAF" type="application/rdf+xml"/>
 
 
@@ -104,8 +104,8 @@ Note how ascii and non-ascii names are rendered properly:
     >>> strainer = SoupStrainer(['foaf:name'])
     >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> for tag in soup:
-    ...   tag.renderContents()
-    'Carlos Perell\xc3\xb3 Mar\xc3\xadn'
+    ...     print(tag.decode_contents())
+    Carlos Perelló Marín
 
 If the team has no active members no <foaf:member> elements will be
 present:

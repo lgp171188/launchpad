@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -208,12 +208,7 @@ class GitSubscriptionAddOtherView(_GitSubscriptionView):
 
     @action("Subscribe", name="subscribe_action")
     def subscribe_action(self, action, data):
-        """Subscribe the specified user to the repository.
-
-        The user must be a member of a team in order to subscribe that team
-        to the repository.  Launchpad Admins are special and they can
-        subscribe any team.
-        """
+        """Subscribe the specified user to the repository."""
         notification_level = data["notification_level"]
         max_diff_lines = self.optional_max_diff_lines(
             notification_level, data["max_diff_lines"])
@@ -280,9 +275,9 @@ class GitSubscriptionEditView(LaunchpadEditFormView):
         # If the subscriber can no longer see the repository, redirect them
         # away.
         service = getUtility(IService, "sharing")
-        _, _, repositories, _ = service.getVisibleArtifacts(
+        repositories = service.getVisibleArtifacts(
             self.person, gitrepositories=[self.repository],
-            ignore_permissions=True)
+            ignore_permissions=True)["gitrepositories"]
         if not repositories:
             url = canonical_url(self.repository.target)
         return url

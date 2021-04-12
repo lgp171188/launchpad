@@ -41,7 +41,7 @@ Only PPAs with at least one source publication are considered.
 
     >>> archive_set = getUtility(IArchiveSet)
     >>> for ppa in archive_set.getPPAsPendingSigningKey():
-    ...     print ppa.displayname
+    ...     print(ppa.displayname)
     PPA for Celso Providelo
     PPA for Mark Shuttleworth
 
@@ -52,13 +52,13 @@ why it's skipped in the getPPAsPendingSigningKey() results.
     >>> cprov = getUtility(IPersonSet).getByName('cprov')
     >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
 
-    >>> print no_priv.archive.displayname
+    >>> print(no_priv.archive.displayname)
     PPA for No Privileges Person
 
     >>> no_priv.archive.enabled
     True
 
-    >>> print no_priv.archive.signing_key
+    >>> print(no_priv.archive.signing_key)
     None
 
     >>> no_priv.archive.number_of_sources
@@ -72,7 +72,7 @@ we copy an arbitrary source into it.
     ...     a_source.distroseries, a_source.pocket, no_priv.archive)
 
     >>> for ppa in archive_set.getPPAsPendingSigningKey():
-    ...     print ppa.displayname
+    ...     print(ppa.displayname)
     PPA for Celso Providelo
     PPA for Mark Shuttleworth
     PPA for No Privileges Person
@@ -82,37 +82,37 @@ Disabled PPAs are excluded from the 'PendingSigningKey' pool:
     >>> no_priv.archive.disable()
 
     >>> for ppa in archive_set.getPPAsPendingSigningKey():
-    ...     print ppa.displayname
+    ...     print(ppa.displayname)
     PPA for Celso Providelo
     PPA for Mark Shuttleworth
 
 Indeed, Marks's PPA does not have a defined 'signing_key'.
 
     >>> mark = getUtility(IPersonSet).getByName('mark')
-    >>> print mark.archive.signing_key
+    >>> print(mark.archive.signing_key)
     None
 
-    >>> print mark.archive.signing_key_fingerprint
+    >>> print(mark.archive.signing_key_fingerprint)
     None
 
 We will select the only available IGPGKey from the sampledata.
 
     >>> foo_bar = getUtility(IPersonSet).getByName('name16')
     >>> [a_key] = foo_bar.gpg_keys
-    >>> print a_key.displayname
+    >>> print(a_key.displayname)
     1024D/ABCDEF0123456789ABCDDCBA0000111112345678
 
 And use it as the Mark's PPA signing key.
 
     >>> mark.archive.signing_key_owner = a_key.owner
     >>> mark.archive.signing_key_fingerprint = a_key.fingerprint
-    >>> print mark.archive.signing_key_fingerprint
+    >>> print(mark.archive.signing_key_fingerprint)
     ABCDEF0123456789ABCDDCBA0000111112345678
 
 It will exclude Mark's PPA from the 'PendingSigningKey' pool as well.
 
     >>> for ppa in archive_set.getPPAsPendingSigningKey():
-    ...     print ppa.displayname
+    ...     print(ppa.displayname)
     PPA for Celso Providelo
 
 
@@ -123,7 +123,7 @@ As mentioned above, generated signing_keys will be stored in a
 location defined by the system configuration.
 
     >>> from lp.services.config import config
-    >>> print config.personalpackagearchive.signing_keys_root
+    >>> print(config.personalpackagearchive.signing_keys_root)
     /var/tmp/ppa-signing-keys.test
 
 In order to manipulate 'signing_keys' securily the target archive
@@ -153,7 +153,7 @@ Once adapted `IArchiveGPGSigningKey` is properly implemented.
 `IArchiveGPGSigningKey` object contain the corresponding IArchive
 object.
 
-    >>> print archive_signing_key.archive.displayname
+    >>> print(archive_signing_key.archive.displayname)
     PPA for Celso Providelo
 
 It also implements exportSecretKey() which receive a `PymeKey` and
@@ -167,7 +167,7 @@ to test the export funtions
     ...         self.secret = secret
     ...         self.fingerprint = 'fpr'
     ...     def export(self):
-    ...         return "Secret %s" % self.secret
+    ...         return six.ensure_binary("Secret %s" % self.secret)
 
 exportSecretKey() raises an error if given a public key.
 
@@ -181,8 +181,8 @@ in the expected path.
 
     >>> mock_key = MockKey(True)
     >>> archive_signing_key.exportSecretKey(mock_key)
-    >>> print open(
-    ...     archive_signing_key.getPathForSecretKey(mock_key)).read()
+    >>> with open(archive_signing_key.getPathForSecretKey(mock_key)) as f:
+    ...     print(f.read())
     Secret True
 
 At this point we can use the `IArchiveGPGSigningKey` to generate and
@@ -210,19 +210,19 @@ by the 'PPA key guard' celebrity and represented by a IGPGKey record.
     >>> verifyObject(IGPGKey, signing_key)
     True
 
-    >>> print signing_key.owner.name
+    >>> print(signing_key.owner.name)
     ppa-key-guard
 
-    >>> print signing_key.algorithm.description
+    >>> print(signing_key.algorithm.description)
     RSA
 
-    >>> print signing_key.keysize
+    >>> print(signing_key.keysize)
     1024
 
-    >>> print signing_key.active
+    >>> print(signing_key.active)
     True
 
-    >>> print signing_key.can_encrypt
+    >>> print(signing_key.can_encrypt)
     False
 
 The generated key UID follows the "Launchpad PPA for %(person.displayname)s"
@@ -235,14 +235,14 @@ format.
     ...    signing_key.fingerprint)
 
     >>> [uid] = retrieved_key.uids
-    >>> uid.name
-    u'Launchpad PPA for Celso \xe1\xe9\xed\xf3\xfa Providelo'
+    >>> print(uid.name)
+    Launchpad PPA for Celso áéíóú Providelo
 
 The secret key is securily stored in the designed configuration
 path. So only the IGPGHandler itself can access it.
 
-    >>> print open(
-    ...     archive_signing_key.getPathForSecretKey(signing_key)).read()
+    >>> with open(archive_signing_key.getPathForSecretKey(signing_key)) as f:
+    ...     print(f.read())
     -----BEGIN PGP PRIVATE KEY BLOCK-----
     ...
     -----END PGP PRIVATE KEY BLOCK-----
@@ -276,10 +276,10 @@ default PPA. We will create a named-ppa for Celso.
 
 As expected it will use the same key used in Celso's default PPA.
 
-    >>> print cprov.archive.signing_key.fingerprint
+    >>> print(cprov.archive.signing_key.fingerprint)
     0D57E99656BEFB0897606EE9A022DD1F5001B46D
 
-    >>> print named_ppa.signing_key.fingerprint
+    >>> print(named_ppa.signing_key.fingerprint)
     0D57E99656BEFB0897606EE9A022DD1F5001B46D
 
 We will reset the signing key of the just created named PPA,
@@ -293,7 +293,7 @@ created within the same cycle of the key-generator process.
     >>> del get_property_cache(named_ppa).signing_key
     >>> login(ANONYMOUS)
 
-    >>> print named_ppa.signing_key
+    >>> print(named_ppa.signing_key)
     None
 
 Default PPAs are always created first and thus get their keys generated
@@ -306,10 +306,10 @@ the key generation procedure, as it would be normally in production.
 Instead of generating a new key, the signing key from the default ppa
 (Celso's default PPA) gets reused.
 
-    >>> print cprov.archive.signing_key.fingerprint
+    >>> print(cprov.archive.signing_key.fingerprint)
     0D57E99656BEFB0897606EE9A022DD1F5001B46D
 
-    >>> print named_ppa.signing_key.fingerprint
+    >>> print(named_ppa.signing_key.fingerprint)
     0D57E99656BEFB0897606EE9A022DD1F5001B46D
 
 We will reset the signing-keys for both PPA of Celso.
@@ -323,10 +323,10 @@ We will reset the signing-keys for both PPA of Celso.
     >>> del get_property_cache(named_ppa).signing_key
     >>> login(ANONYMOUS)
 
-    >>> print cprov.archive.signing_key
+    >>> print(cprov.archive.signing_key)
     None
 
-    >>> print named_ppa.signing_key
+    >>> print(named_ppa.signing_key)
     None
 
 Then modify the GPGHandler utility to return a sampledata key instead
@@ -334,9 +334,10 @@ of generating a new one, mainly for running the test faster and for
 printing the context the key is generated.
 
     >>> def mock_key_generator(name, logger=None):
-    ...     print 'Generating:', name
+    ...     print('Generating:', name)
     ...     key_path = os.path.join(gpgkeysdir, 'sign.only@canonical.com.sec')
-    ...     return gpghandler.importSecretKey(open(key_path).read())
+    ...     with open(key_path, 'rb') as f:
+    ...         return gpghandler.importSecretKey(f.read())
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> naked_gpghandler = removeSecurityProxy(gpghandler)
@@ -352,10 +353,10 @@ named after the user, even if the default PPA name is something different.
     >>> named_ppa_signing_key.generateSigningKey()
     Generating: Launchpad PPA for Not Celso Providelo
 
-    >>> print cprov.archive.signing_key.fingerprint
+    >>> print(cprov.archive.signing_key.fingerprint)
     447DBF38C4F9C4ED752246B77D88913717B05A8F
 
-    >>> print named_ppa.signing_key.fingerprint
+    >>> print(named_ppa.signing_key.fingerprint)
     447DBF38C4F9C4ED752246B77D88913717B05A8F
 
 Restore the original functionality of GPGHandler.
@@ -398,19 +399,21 @@ file contents, and a clearsigned InRelease file.
     >>> release_path = os.path.join(suite_path, 'Release')
 
     >>> release_file = open(release_path, 'w')
-    >>> release_file.write('This is a fake release file.')
+    >>> _ = release_file.write('This is a fake release file.')
     >>> release_file.close()
 
     >>> _ = archive_signing_key.signRepository(test_suite)
 
-    >>> print open(release_path + '.gpg').read()
+    >>> with open(release_path + '.gpg') as f:
+    ...     print(f.read())
     -----BEGIN PGP SIGNATURE-----
     ...
     -----END PGP SIGNATURE-----
     <BLANKLINE>
 
     >>> inline_release_path = os.path.join(suite_path, 'InRelease')
-    >>> print open(inline_release_path).read()
+    >>> with open(inline_release_path) as f:
+    ...     print(f.read())
     -----BEGIN PGP SIGNED MESSAGE-----
     ...
     -----BEGIN PGP SIGNATURE-----
@@ -426,20 +429,23 @@ keyserver.
     >>> retrieved_key = gpghandler.retrieveKey(
     ...    signing_key.fingerprint)
 
-    >>> signature = gpghandler.getVerifiedSignature(
-    ...     content=open(release_path).read(),
-    ...     signature=open(release_path + '.gpg').read())
+    >>> with open(release_path, 'rb') as release_file:
+    ...     with open(release_path + '.gpg', 'rb') as signature_file:
+    ...         signature = gpghandler.getVerifiedSignature(
+    ...             content=release_file.read(),
+    ...             signature=signature_file.read())
 
     >>> expected_fingerprint = (
     ...     archive_signing_key.archive.signing_key.fingerprint)
     >>> signature.fingerprint == expected_fingerprint
     True
 
-    >>> inline_signature = gpghandler.getVerifiedSignature(
-    ...     content=open(inline_release_path).read())
+    >>> with open(inline_release_path, 'rb') as inline_release_file:
+    ...     inline_signature = gpghandler.getVerifiedSignature(
+    ...         content=inline_release_file.read())
     >>> inline_signature.fingerprint == expected_fingerprint
     True
-    >>> print inline_signature.plain_data
+    >>> print(inline_signature.plain_data.decode('UTF-8'))
     This is a fake release file.
     <BLANKLINE>
 
@@ -451,9 +457,10 @@ have a 'signing_key' set,  it raises an error.
     >>> del get_property_cache(cprov.archive).signing_key
 
     >>> archive_signing_key.signRepository(test_suite)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    CannotSignArchive: No signing key available for PPA for Celso Providelo
+    lp.archivepublisher.interfaces.archivegpgsigningkey.CannotSignArchive: No signing key available for PPA for Celso Providelo
 
 We'll purge 'signing_keys_root' and the PPA repository root so that
 other tests don't choke on it, and shut down the server.

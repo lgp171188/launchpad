@@ -16,6 +16,7 @@ import signal
 import tempfile
 
 from lpbuildd.builder import BuilderStatus
+import six
 from six.moves import xmlrpc_client
 from testtools.matchers import ContainsAll
 from testtools.testcase import ExpectedException
@@ -116,7 +117,7 @@ class MockBuilderFactory(BaseBuilderFactory):
 
 class TestBuilderInteractor(TestCase):
 
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestBuilderInteractor, self).setUp()
@@ -161,7 +162,7 @@ class TestBuilderInteractor(TestCase):
             url="http://crackle.ppa/", virtualized=True, vm_host="pop"))
 
         def got_resume(output):
-            self.assertEqual(('snap crackle pop', ''), output)
+            self.assertEqual((b'snap crackle pop', b''), output)
         return d.addCallback(got_resume)
 
     def test_resumeSlaveHost_command_failed(self):
@@ -353,7 +354,7 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
     """BuilderInteractor tests that need a DB."""
 
     layer = ZopelessDatabaseLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def test_getBuildBehaviour_idle(self):
         """An idle builder has no build behaviour."""
@@ -635,7 +636,7 @@ class TestSlave(TestCase):
         # XXX: JonathanLange 2010-09-23: We should instead pass the
         # expected vm_host into the client slave. Not doing this now,
         # since the SlaveHelper is being moved around.
-        self.assertEqual("%s\n" % slave._vm_host, out)
+        self.assertEqual("%s\n" % slave._vm_host, six.ensure_str(out))
 
     def test_resumeHost_failure(self):
         # On a failed resume, 'resumeHost' fires the returned deferred
@@ -698,13 +699,13 @@ class TestSlaveTimeouts(TestCase):
     # as required.
 
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=10)
+        timeout=30)
 
     def setUp(self):
         super(TestSlaveTimeouts, self).setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.clock = Clock()
-        self.proxy = DeadProxy("url")
+        self.proxy = DeadProxy(b"url")
         self.slave = self.slave_helper.getClientSlave(
             reactor=self.clock, proxy=self.proxy)
         self.addCleanup(shut_down_default_process_pool)
@@ -745,7 +746,7 @@ class TestSlaveConnectionTimeouts(TestCase):
     # The timeouts in test_connection_timeout are relative to the artificial
     # Clock rather than to true wallclock time, so it's not a problem for
     # this timeout to be shorter than them.
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
         super(TestSlaveConnectionTimeouts, self).setUp()
@@ -777,7 +778,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=20)
+        timeout=30)
 
     def setUp(self):
         super(TestSlaveWithLibrarian, self).setUp()
@@ -805,7 +806,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         # filename made from the sha1 of the content underneath the
         # 'filecache' directory.
         from twisted.internet import reactor
-        content = "Hello World"
+        content = b"Hello World"
         lf = self.factory.makeLibraryFileAlias(
             'HelloWorld.txt', content=content)
         self.layer.txn.commit()
@@ -910,5 +911,5 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         empty_sha1 = hashlib.sha1(b'').hexdigest()
         self.slave_helper.makeCacheFile(tachandler, empty_sha1, contents=b'')
         yield slave.getFiles([(empty_sha1, temp_name)])
-        with open(temp_name) as f:
+        with open(temp_name, 'rb') as f:
             self.assertEqual(b'', f.read())

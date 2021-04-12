@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Generic Python utilities.
@@ -10,9 +10,7 @@ stuff.
 __metaclass__ = type
 __all__ = [
     'AutoDecorate',
-    'base',
     'CachingIterator',
-    'compress_hash',
     'decorate_with',
     'docstring_dedent',
     'file_exists',
@@ -22,6 +20,7 @@ __all__ = [
     'obfuscate_email',
     'obfuscate_structure',
     're_email_address',
+    'round_half_up',
     'run_capturing_output',
     'sanitise_urls',
     'save_bz2_pickle',
@@ -34,13 +33,13 @@ __all__ = [
 
 import bz2
 from datetime import datetime
+import decimal
 from itertools import (
     islice,
     tee,
     )
 import os
 import re
-import string
 import sys
 from textwrap import dedent
 from types import FunctionType
@@ -79,44 +78,6 @@ def AutoDecorate(*decorators):
             return type.__new__(cls, class_name, bases, new_class_dict)
 
     return AutoDecorateMetaClass
-
-
-def base(number, radix):
-    """Convert 'number' to an arbitrary base numbering scheme, 'radix'.
-
-    This function is based on work from the Python Cookbook and is under the
-    Python licence.
-
-    Inverse function to int(str, radix) and long(str, radix)
-    """
-    if not 2 <= radix <= 62:
-        raise ValueError("radix must be between 2 and 62: %s" % (radix,))
-
-    if number < 0:
-        raise ValueError("number must be non-negative: %s" % (number,))
-
-    result = []
-    addon = result.append
-    if number == 0:
-        addon('0')
-
-    ABC = string.digits + string.ascii_letters
-    while number:
-        number, rdigit = divmod(number, radix)
-        addon(ABC[rdigit])
-
-    result.reverse()
-    return ''.join(result)
-
-
-def compress_hash(hash_obj):
-    """Compress a hash_obj using `base`.
-
-    Given an ``md5`` or ``sha1`` hash object, compress it down to either 22 or
-    27 characters in a way that's safe to be used in URLs. Takes the hex of
-    the hash and converts it to base 62.
-    """
-    return base(int(hash_obj.hexdigest(), 16), 62)
 
 
 def iter_split(string, splitter, splits=None):
@@ -358,7 +319,8 @@ def save_bz2_pickle(obj, filename):
     """Save a bz2 compressed pickle of `obj` to `filename`."""
     fout = bz2.BZ2File(filename, "w")
     try:
-        pickle.dump(obj, fout, pickle.HIGHEST_PROTOCOL)
+        # Use protocol 2 for Python 2 compatibility.
+        pickle.dump(obj, fout, protocol=2)
     finally:
         fout.close()
 
@@ -405,3 +367,15 @@ def sanitise_urls(s):
     # Remove credentials from URLs.
     password_re = re.compile(r'://([^:@/]*:[^@/]*@)(\S+)')
     return password_re.sub(r'://<redacted>@\2', s)
+
+
+def round_half_up(number):
+    """Round `number` to the nearest integer, with ties going away from zero.
+
+    This is equivalent to `int(round(number))` on Python 2; Python 3's
+    `round` prefers round-to-even in the case of ties, which does a better
+    job of avoiding statistical bias in many cases but isn't always what we
+    want.
+    """
+    return int(decimal.Decimal(number).to_integral_value(
+        rounding=decimal.ROUND_HALF_UP))

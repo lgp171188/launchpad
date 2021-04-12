@@ -19,19 +19,26 @@ somebody are subject to expiration.
 
     # Sanity check in case somebody modifies the question sampledata and
     # forget to update this script.
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.answers.enums import QuestionStatus
     >>> from lp.answers.model.question import Question
-    >>> Question.select('status IN (%i,%i)' % (
-    ...     QuestionStatus.OPEN.value,
-    ...     QuestionStatus.NEEDSINFO.value)).count()
+    >>> IStore(Question).find(
+    ...     Question, Question.status.is_in(
+    ...         (QuestionStatus.OPEN, QuestionStatus.NEEDSINFO))).count()
     9
 
     # By default, all open and needs info question should expire. Make
     # sure that no new questions were recently added and will make this
     # test fails in the future.
-    >>> Question.select(
-    ...     "datelastresponse >= current_timestamp - interval '15 days' OR "
-    ...    "datelastquery >= current_timestamp - interval '15 days'").count()
+    >>> from datetime import datetime, timedelta
+    >>> import pytz
+    >>> from storm.locals import Or
+    >>> interval = datetime.now(pytz.UTC) - timedelta(days=15)
+    >>> IStore(Question).find(
+    ...     Question,
+    ...     Or(
+    ...         Question.datelastresponse >= interval,
+    ...         Question.datelastquery >= interval)).count()
     0
 
     # We need to massage sample data a little. Since all expiration
@@ -133,7 +140,7 @@ somebody are subject to expiration.
     >>> process = subprocess.Popen(
     ...     'cronscripts/expire-questions.py', shell=True,
     ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE)
+    ...     stderr=subprocess.PIPE, universal_newlines=True)
     >>> (out, err) = process.communicate()
     >>> print(err)
     INFO    Creating lockfile: /var/lock/launchpad-expire-questions.lock

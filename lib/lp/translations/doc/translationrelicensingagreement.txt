@@ -5,6 +5,7 @@ Launchpad can decide whether they want their translations relicensed
 under BSD or not.
 
     >>> from zope.component import getUtility
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing import verifyObject
     >>> from lp.translations.model.translationrelicensingagreement \
     ...     import TranslationRelicensingAgreement
@@ -23,7 +24,8 @@ When Karl has not made his selection yet, it is marked as None.
 
     >>> print(translations_person.translations_relicensing_agreement)
     None
-    >>> choice = TranslationRelicensingAgreement.selectOneBy(person=person)
+    >>> choice = IStore(TranslationRelicensingAgreement).find(
+    ...     TranslationRelicensingAgreement, person=person).one()
     >>> print(choice)
     None
 
@@ -33,7 +35,8 @@ object.
     >>> translations_person.translations_relicensing_agreement = True
     >>> print(translations_person.translations_relicensing_agreement)
     True
-    >>> choice = TranslationRelicensingAgreement.selectOneBy(person=person)
+    >>> choice = IStore(TranslationRelicensingAgreement).find(
+    ...     TranslationRelicensingAgreement, person=person).one()
     >>> print(choice.allow_relicensing)
     True
 
@@ -47,6 +50,7 @@ A translator can also change their mind later.
     >>> translations_person.translations_relicensing_agreement = False
     >>> print(translations_person.translations_relicensing_agreement)
     False
-    >>> choice = TranslationRelicensingAgreement.selectOneBy(person=person)
+    >>> choice = IStore(TranslationRelicensingAgreement).find(
+    ...     TranslationRelicensingAgreement, person=person).one()
     >>> print(choice.allow_relicensing)
     False

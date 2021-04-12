@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the OCI Registry client."""
@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 import base64
+from datetime import timedelta
 from functools import partial
 import io
 import json
@@ -25,6 +26,7 @@ import responses
 from tenacity import RetryError
 from testtools.matchers import (
     AfterPreprocessing,
+    ContainsDict,
     Equals,
     Is,
     MatchesAll,
@@ -38,7 +40,12 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.interfaces.ocirecipebuild import (
+    OCIRecipeBuildRegistryUploadStatus,
+    )
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistryclient import (
     BlobUploadFailed,
@@ -47,16 +54,26 @@ from lp.oci.interfaces.ociregistryclient import (
     )
 from lp.oci.model.ocirecipe import OCIRecipeBuildRequest
 from lp.oci.model.ociregistryclient import (
+    AWSAuthenticatorMixin,
+    AWSRegistryBearerTokenClient,
     AWSRegistryHTTPClient,
     BearerTokenRegistryClient,
+    OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG,
     OCIRegistryAuthenticationError,
     OCIRegistryClient,
     proxy_urlfetch,
     RegistryHTTPClient,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.compat import mock
-from lp.testing import TestCaseWithFactory
+from lp.services.features.testing import FeatureFixture
+from lp.services.tarfile_helpers import LaunchpadWriteTarFile
+from lp.testing import (
+    admin_logged_in,
+    person_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
@@ -72,9 +89,11 @@ class SpyProxyCallsMixin:
             self.proxy_call_count += 1
             return proxy_urlfetch(*args, **kwargs)
 
-        self.useFixture(MockPatch(
+        proxy_mock = self.useFixture(MockPatch(
             'lp.oci.model.ociregistryclient.proxy_urlfetch',
-            side_effect=count_proxy_call_count))
+            side_effect=count_proxy_call_count)).mock
+        # Avoid reference cycles with file objects passed to urlfetch.
+        self.addCleanup(proxy_mock.reset_mock)
 
 
 class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
@@ -103,7 +122,12 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             }
         }]
         self.config = {"rootfs": {"diff_ids": ["diff_id_1", "diff_id_2"]}}
-        self.build = self.factory.makeOCIRecipeBuild()
+        # This produces a git ref that does not match the 'valid' OCI branch
+        # format, so will not get multiple tags. Multiple tags are tested
+        # explicitly.
+        [git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        self.build = self.factory.makeOCIRecipeBuild(recipe=recipe)
         self.push_rule = self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.client = OCIRegistryClient()
 
@@ -167,6 +191,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         )
         responses.add("PUT", manifests_url, status=status_code, json=json)
 
+        # recipes that the git branch name matches the correct format
+        manifests_url = "{}/v2/{}/manifests/{}_edge".format(
+            push_rule.registry_credentials.url,
+            push_rule.image_name,
+            push_rule.recipe.git_ref.name
+        )
+        responses.add("PUT", manifests_url, status=status_code, json=json)
+
     @responses.activate
     def test_upload(self):
         self._makeFiles()
@@ -183,7 +215,81 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         self.client.upload(self.build)
 
-        request = json.loads(responses.calls[1].request.body)
+        request = json.loads(responses.calls[1].request.body.decode("UTF-8"))
+
+        self.assertThat(request, MatchesDict({
+            "layers": MatchesListwise([
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_1"),
+                    "size": Equals(999)}),
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_2"),
+                    "size": Equals(999)})
+            ]),
+            "schemaVersion": Equals(2),
+            "config": MatchesDict({
+                "mediaType": Equals(
+                    "application/vnd.docker.container.image.v1+json"),
+                "digest": Equals(
+                    "sha256:33b69b4b6e106f9fc7a8b93409"
+                    "36c85cf7f84b2d017e7b55bee6ab214761f6ab"),
+                "size": Equals(52)
+            }),
+            "mediaType": Equals(
+                "application/vnd.docker.distribution.manifest.v2+json")
+        }))
+
+    @responses.activate
+    def test_upload_ignores_superseded_builds(self):
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        recipe = self.build.recipe
+        processor = self.build.processor
+        distribution = recipe.oci_project.distribution
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag=processor.name,
+            processor=processor)
+
+        # Creates another build, more recent.
+        self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distro_arch_series,
+            status=BuildStatus.FULLYBUILT,
+            date_created=self.build.date_created + timedelta(seconds=1))
+
+        self.client.upload(self.build)
+        self.assertEqual(BuildStatus.SUPERSEDED, self.build.status)
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.SUPERSEDED,
+            self.build.registry_upload_status)
+        self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_upload_with_distribution_credentials(self):
+        self._makeFiles()
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer",
+            return_value=999))
+        credentials = self.factory.makeOCIRegistryCredentials()
+        image_name = self.factory.getUniqueUnicode()
+        self.build.recipe.image_name = image_name
+        distro = self.build.recipe.oci_project.distribution
+        with person_logged_in(distro.owner):
+            distro.oci_registry_credentials = credentials
+        # we have distribution credentials, we should have a 'push rule'
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add("GET", "%s/v2/" % push_rule.registry_url, status=200)
+        self.addManifestResponses(push_rule)
+
+        self.client.upload(self.build)
+
+        request = json.loads(responses.calls[1].request.body.decode("UTF-8"))
 
         self.assertThat(request, MatchesDict({
             "layers": MatchesListwise([
@@ -299,10 +405,25 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 'diff_id_1': Equals(self.layer_files[0].library_file),
                 'diff_id_2': Equals(self.layer_files[1].library_file)})}))
 
-    def test_calculateTag(self):
-        result = self.client._calculateTag(
-            self.build, self.build.recipe.push_rules[0])
-        self.assertEqual("edge", result)
+    def test_calculateTags_invalid_format(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/invalid"])
+        self.build.recipe.git_ref = git_ref
+        result = self.client._calculateTags(self.build.recipe)
+        self.assertThat(result, MatchesListwise([Equals("edge")]))
+
+    def test_calculateTags_valid_format(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0-20.04"])
+        self.build.recipe.git_ref = git_ref
+        result = self.client._calculateTags(self.build.recipe)
+        self.assertThat(result, MatchesListwise(
+            [Equals("v1.0-20.04_edge")]))
+
+    def test_calculateTags_valid_tag(self):
+        [git_ref] = self.factory.makeGitRefs(paths=["refs/tags/v1.0-20.04"])
+        self.build.recipe.git_ref = git_ref
+        result = self.client._calculateTags(self.build.recipe)
+        self.assertThat(result, MatchesListwise(
+            [Equals("v1.0-20.04_edge")]))
 
     def test_build_registry_manifest(self):
         self._makeFiles()
@@ -349,7 +470,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         push_rule = self.build.recipe.push_rules[0]
         push_rule.registry_credentials.setCredentials({})
         self.client._upload(
-            "test-digest", push_rule, None, http_client)
+            "test-digest", push_rule, None, 0, http_client)
 
         self.assertEqual(len(responses.calls), self.proxy_call_count)
         # There should be no auth headers for these calls
@@ -371,6 +492,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             "test-digest",
             push_rule,
             None,
+            0,
             http_client)
 
     @responses.activate
@@ -383,7 +505,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         push_rule.registry_credentials.setCredentials({
             "username": "user", "password": "password"})
         self.client._upload(
-            "test-digest", push_rule, None,
+            "test-digest", push_rule, None, 0,
             http_client)
 
         self.assertEqual(len(responses.calls), self.proxy_call_count)
@@ -411,7 +533,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             push_rule = self.build.recipe.push_rules[0]
             self.client._upload(
                 "test-digest", push_rule,
-                None, RegistryHTTPClient(push_rule))
+                None, 0, RegistryHTTPClient(push_rule))
         except RetryError:
             pass
         # Check that tenacity and our counting agree
@@ -442,7 +564,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertThat(
             partial(
                 self.client._upload,
-                "test-digest", push_rule, None, http_client),
+                "test-digest", push_rule, None, 0, http_client),
             Raises(MatchesException(
                 BlobUploadFailed,
                 MatchesAll(
@@ -468,7 +590,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertThat(
             partial(
                 self.client._upload,
-                "test-digest", push_rule, None, http_client),
+                "test-digest", push_rule, None, 0, http_client),
             Raises(MatchesException(
                 BlobUploadFailed,
                 MatchesAll(
@@ -542,7 +664,57 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                     MatchesStructure(errors=Is(None))))))
 
     @responses.activate
-    def test_multi_arch_manifest_upload(self):
+    def test_upload_layer_put_blob_sends_content_length(self):
+        lfa = self.factory.makeLibraryFileAlias(
+            content=LaunchpadWriteTarFile.files_to_bytes(
+                {"layer.tar": b"test layer"}))
+        transaction.commit()
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
+        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        upload_url = "{}/blobs/uploads/{}".format(
+            http_client.api_url, uuid.uuid4())
+        responses.add("HEAD", blobs_url, status=404)
+        responses.add("POST", uploads_url, headers={"Location": upload_url})
+        responses.add("PUT", upload_url, status=201)
+        self.client._upload_layer("test-digest", push_rule, lfa, http_client)
+        self.assertThat(responses.calls[2].request, MatchesStructure(
+            method=Equals("PUT"),
+            headers=ContainsDict({
+                "Content-Length": Equals(str(len(b"test layer"))),
+                }),
+            ))
+
+    @responses.activate
+    def test_multi_arch_manifest_upload_skips_superseded_builds(self):
+        recipe = self.build.recipe
+        processor = self.build.processor
+        distribution = recipe.oci_project.distribution
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag=processor.name,
+            processor=processor)
+
+        # Creates another build for the same arch and recipe, more recent.
+        self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distro_arch_series,
+            status=BuildStatus.FULLYBUILT,
+            date_created=self.build.date_created + timedelta(seconds=1))
+
+        build_request = OCIRecipeBuildRequest(recipe, -1)
+        self.client.uploadManifestList(build_request, [self.build])
+
+        self.assertEqual(BuildStatus.SUPERSEDED, self.build.status)
+        self.assertEqual(
+            OCIRecipeBuildRegistryUploadStatus.SUPERSEDED,
+            self.build.registry_upload_status)
+        self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_multi_arch_manifest_upload_new_manifest(self):
         """Ensure that multi-arch manifest upload works and tags correctly
         the uploaded image."""
         # Creates a build request with 2 builds.
@@ -576,15 +748,21 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
+            "GET", "{}/v2/{}/manifests/edge".format(
+                push_rule.registry_url, push_rule.image_name),
+            status=404)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        responses.add(
             "GET", "{}/v2/".format(push_rule.registry_url), status=200)
         self.addManifestResponses(push_rule, status_code=201)
 
         # Let's try to generate the manifest for just 2 of the 3 builds:
         self.client.uploadManifestList(build_request, [build1, build2])
-        self.assertEqual(2, len(responses.calls))
-        auth_call, manifest_call = responses.calls
+        self.assertEqual(3, len(responses.calls))
+        auth_call, get_manifest_call, send_manifest_call = responses.calls
         self.assertEndsWith(
-            manifest_call.request.url,
+            send_manifest_call.request.url,
             "/v2/%s/manifests/edge" % push_rule.image_name)
         self.assertEqual({
             "schemaVersion": 2,
@@ -603,7 +781,185 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "digest": "build2digest",
                 "size": 321
             }]
-        }, json.loads(manifest_call.request.body))
+        }, json.loads(send_manifest_call.request.body.decode("UTF-8")))
+
+    @responses.activate
+    def test_multi_arch_manifest_upload_update_manifest(self):
+        """Makes sure we update only new architectures if there is already
+        a manifest file in registry.
+        """
+        current_manifest = {
+            "schemaVersion": 2,
+            "mediaType": "application/"
+                         "vnd.docker.distribution.manifest.list.v2+json",
+            "manifests": [{
+                "platform": {"os": "linux", "architecture": "386"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "initial-386-digest",
+                "size": 110
+            }, {
+                "platform": {"os": "linux", "architecture": "amd64"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "initial-amd64-digest",
+                "size": 220
+            }]
+        }
+
+        # Creates a build request with 2 builds: amd64 (which is already in
+        # the manifest) and hppa (that should be added)
+        recipe = self.build.recipe
+        build1 = self.build
+        build2 = self.factory.makeOCIRecipeBuild(
+            recipe=recipe)
+        naked_build1 = removeSecurityProxy(build1)
+        naked_build2 = removeSecurityProxy(build2)
+        naked_build1.processor = getUtility(IProcessorSet).getByName('amd64')
+        naked_build2.processor = getUtility(IProcessorSet).getByName('hppa')
+
+        # Creates a mock IOCIRecipeRequestBuildsJobSource, as it was created
+        # by the celery job and triggered the 3 registry uploads already.
+        job = mock.Mock()
+        job.builds = [build1, build2]
+        job.uploaded_manifests = {
+            build1.id: {"digest": "new-build1-digest", "size": 1111},
+            build2.id: {"digest": "new-build2-digest", "size": 2222},
+        }
+        job_source = mock.Mock()
+        job_source.getByOCIRecipeAndID.return_value = job
+        self.useFixture(
+            ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
+        build_request = OCIRecipeBuildRequest(recipe, -1)
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/{}/manifests/edge".format(
+                push_rule.registry_url, push_rule.image_name),
+            json=current_manifest,
+            status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        self.client.uploadManifestList(build_request, [build1, build2])
+        self.assertEqual(3, len(responses.calls))
+        auth_call, get_manifest_call, send_manifest_call = responses.calls
+        self.assertEndsWith(
+            send_manifest_call.request.url,
+            "/v2/%s/manifests/edge" % push_rule.image_name)
+        self.assertEqual({
+            "schemaVersion": 2,
+            "mediaType": "application/"
+                         "vnd.docker.distribution.manifest.list.v2+json",
+            "manifests": [{
+                "platform": {"os": "linux", "architecture": "386"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "initial-386-digest",
+                "size": 110
+            }, {
+                "platform": {"os": "linux", "architecture": "amd64"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "new-build1-digest",
+                "size": 1111
+            }, {
+                "platform": {"os": "linux", "architecture": "hppa"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "new-build2-digest",
+                "size": 2222
+            }]
+        }, json.loads(send_manifest_call.request.body.decode("UTF-8")))
+
+    @responses.activate
+    def test_multi_arch_manifest_upload_invalid_current_manifest(self):
+        """Makes sure we create a new multi-arch manifest if existing manifest
+        file is using another unknown format.
+        """
+        current_manifest = {'schemaVersion': 1, 'layers': []}
+
+        # Creates a build request with 1 build for amd64.
+        recipe = self.build.recipe
+        build1 = self.build
+        naked_build1 = removeSecurityProxy(build1)
+        naked_build1.processor = getUtility(IProcessorSet).getByName('amd64')
+
+        job = mock.Mock()
+        job.builds = [build1]
+        job.uploaded_manifests = {
+            build1.id: {"digest": "new-build1-digest", "size": 1111},
+        }
+        job_source = mock.Mock()
+        job_source.getByOCIRecipeAndID.return_value = job
+        self.useFixture(
+            ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
+        build_request = OCIRecipeBuildRequest(recipe, -1)
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/{}/manifests/edge".format(
+                push_rule.registry_url, push_rule.image_name),
+            json=current_manifest,
+            status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        self.client.uploadManifestList(build_request, [build1])
+        self.assertEqual(3, len(responses.calls))
+        auth_call, get_manifest_call, send_manifest_call = responses.calls
+        self.assertEndsWith(
+            send_manifest_call.request.url,
+            "/v2/%s/manifests/edge" % push_rule.image_name)
+        self.assertEqual({
+            "schemaVersion": 2,
+            "mediaType": "application/"
+                         "vnd.docker.distribution.manifest.list.v2+json",
+            "manifests": [{
+                "platform": {"os": "linux", "architecture": "amd64"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "new-build1-digest",
+                "size": 1111
+            }]
+        }, json.loads(send_manifest_call.request.body.decode("UTF-8")))
+
+    @responses.activate
+    def test_multi_arch_manifest_upload_registry_error_fetching_current(self):
+        """Makes sure we abort the image upload if we get an error that is
+        not 404 when fetching the current manifest file.
+        """
+        job = mock.Mock()
+        job.builds = [self.build]
+        job.uploaded_manifests = {
+            self.build.id: {"digest": "new-build1-digest", "size": 1111},
+        }
+        job_source = mock.Mock()
+        job_source.getByOCIRecipeAndID.return_value = job
+        self.useFixture(
+            ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
+        build_request = OCIRecipeBuildRequest(self.build.recipe, -1)
+
+        push_rule = self.build.recipe.push_rules[0]
+        responses.add(
+            "GET", "{}/v2/{}/manifests/edge".format(
+                push_rule.registry_url, push_rule.image_name),
+            json={"error": "Unknown"},
+            status=503)
+
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        self.assertRaises(
+            HTTPError, self.client.uploadManifestList,
+            build_request, [self.build])
 
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
@@ -677,7 +1033,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertEqual("%s/v2/" % push_rule.registry_url, call.request.url)
 
     @responses.activate
-    def test_get_aws_client_instance(self):
+    def test_get_aws_basic_auth_client_instance(self):
         credentials = self.factory.makeOCIRegistryCredentials(
             url="https://123456789.dkr.ecr.sa-east-1.amazonaws.com",
             credentials={
@@ -689,10 +1045,33 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         instance = RegistryHTTPClient.getInstance(push_rule)
         self.assertEqual(AWSRegistryHTTPClient, type(instance))
+        self.assertFalse(instance.is_public_ecr)
+        self.assertIsInstance(instance, RegistryHTTPClient)
+
+    @responses.activate
+    def test_get_aws_bearer_token_auth_client_instance(self):
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: 'on',
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: (
+                'foo.example.com fake.example.com'),
+        }))
+        credentials = self.factory.makeOCIRegistryCredentials(
+            url="https://fake.example.com",
+            credentials={
+                'username': 'aws_access_key_id',
+                'password': "aws_secret_access_key"})
+        push_rule = removeSecurityProxy(self.factory.makeOCIPushRule(
+            registry_credentials=credentials,
+            image_name="ecr-test"))
+
+        instance = RegistryHTTPClient.getInstance(push_rule)
+        self.assertEqual(AWSRegistryBearerTokenClient, type(instance))
+        self.assertTrue(instance.is_public_ecr)
         self.assertIsInstance(instance, RegistryHTTPClient)
 
     @responses.activate
     def test_aws_credentials(self):
+        self.pushConfig('launchpad', http_proxy='http://proxy.example.com:123')
         boto_patch = self.useFixture(
             MockPatch('lp.oci.model.ociregistryclient.boto3'))
         boto = boto_patch.mock
@@ -724,8 +1103,12 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             self.assertEqual(mock.call(
                 'ecr', aws_access_key_id="my_aws_access_key_id",
                 aws_secret_access_key="my_aws_secret_access_key",
-                region_name="sa-east-1"),
+                region_name="sa-east-1", config=mock.ANY),
                 boto.client.call_args)
+            config = boto.client.call_args[-1]['config']
+            self.assertEqual({
+                u'http': u'http://proxy.example.com:123',
+                u'https': u'http://proxy.example.com:123'}, config.proxies)
 
     @responses.activate
     def test_aws_malformed_url_region(self):
@@ -914,3 +1297,97 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin,
 
         self.assertRaises(OCIRegistryAuthenticationError,
                           client.authenticate, previous_request)
+
+
+class TestAWSAuthenticator(OCIConfigHelperMixin, TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestAWSAuthenticator, self).setUp()
+        self.setConfig()
+
+    def test_get_region_from_credential(self):
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://example.com", credentials={"region": "sa-east-1"})
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertEqual("sa-east-1", auth._getRegion())
+
+    def test_get_region_from_url(self):
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://123456789.dkr.ecr.sa-west-1.amazonaws.com")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertEqual("sa-west-1", auth._getRegion())
+
+    def test_get_region_invalid_url(self):
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://something.example.com")
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertRaises(OCIRegistryAuthenticationError, auth._getRegion)
+
+    def test_should_use_public_ecr_boto_model(self):
+        self.setConfig({
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.example.com'})
+        boto_client_mock = self.useFixture(
+            MockPatch('lp.oci.model.ociregistryclient.boto3.client')).mock
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://myregistry.bearertoken.example.com",
+            credentials=dict(
+                region='us-east-1', username='user1', password='passwd1'))
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertTrue(auth.is_public_ecr)
+
+            client = auth._getBotoClient()
+            self.assertEqual(boto_client_mock.return_value, client)
+            self.assertEqual(1, boto_client_mock.call_count)
+            call = boto_client_mock.call_args
+            self.assertEqual(
+                mock.call(
+                    'ecr-public', config=mock.ANY,
+                    region_name='us-east-1', aws_secret_access_key='passwd1',
+                    aws_access_key_id='user1'), call)
+            self.assertThat(
+                call[1]['config'], MatchesStructure.byEquality(proxies=None))
+
+    def test_should_not_use_public_ecr_boto_model(self):
+        self.setConfig({
+            OCI_AWS_BEARER_TOKEN_DOMAINS_FLAG: 'bearertoken.example.com'})
+        boto_client_mock = self.useFixture(
+            MockPatch('lp.oci.model.ociregistryclient.boto3.client')).mock
+        cred = self.factory.makeOCIRegistryCredentials(
+            url="https://123456789.dkr.ecr.sa-west-1.amazonaws.com",
+            credentials=dict(
+                region='us-east-1', username='user1', password='passwd1'))
+        push_rule = self.factory.makeOCIPushRule(registry_credentials=cred)
+
+        with admin_logged_in():
+            auth = AWSAuthenticatorMixin()
+            auth.push_rule = push_rule
+            self.assertFalse(auth.is_public_ecr)
+
+            client = auth._getBotoClient()
+            self.assertEqual(boto_client_mock.return_value, client)
+            self.assertEqual(1, boto_client_mock.call_count)
+            call = boto_client_mock.call_args
+            self.assertEqual(
+                mock.call(
+                    'ecr', config=mock.ANY, region_name='us-east-1',
+                    aws_secret_access_key='passwd1',
+                    aws_access_key_id='user1'), call)
+            self.assertThat(
+                call[1]['config'], MatchesStructure.byEquality(proxies=None))

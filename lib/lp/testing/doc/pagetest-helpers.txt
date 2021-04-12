@@ -132,9 +132,10 @@ exception.
     ... </body>
     ... '''
     >>> find_tag_by_id(duplicate_id_content, 'duplicate')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    DuplicateIdError: Found 2 elements with id 'duplicate'
+    lp.testing.pages.DuplicateIdError: Found 2 elements with id 'duplicate'
 
 A BeautifulSoup PageElement can be passed instead of a string so that
 content can be retrieved without reparsing the entire page.

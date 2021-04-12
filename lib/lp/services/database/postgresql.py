@@ -21,6 +21,28 @@ from lp.services.database.sqlbase import (
     )
 
 
+def _py3ish_repr(value):
+    """Like `repr`, but uses Python 3 spelling of text.
+
+    This is a local helper for doctests.
+    """
+    if isinstance(value, six.text_type):
+        value = value.encode('unicode_escape').decode('ASCII')
+        if "'" in value and '"' not in value:
+            return '"%s"' % value
+        else:
+            return "'%s'" % value.replace("'", "\\'")
+    elif isinstance(value, tuple):
+        if len(value) == 1:
+            return '(' + _py3ish_repr(value[0]) + ',)'
+        else:
+            return '(' + ', '.join(_py3ish_repr(item) for item in value) + ')'
+    elif isinstance(value, list):
+        return '[' + ', '.join(_py3ish_repr(item) for item in value) + ']'
+    else:
+        return repr(value)
+
+
 def listReferences(cur, table, column, indirect=True, _state=None):
     """Return a list of all foreign key references to the given table column
 
@@ -43,11 +65,11 @@ def listReferences(cur, table, column, indirect=True, _state=None):
     to change keys.
 
     >>> for r in listReferences(cur, 'a', 'aid'):
-    ...     print(repr(r))
-    (u'a', u'selfref', u'a', u'aid', u'a', u'a')
-    (u'b', u'aid', u'a', u'aid', u'c', u'c')
-    (u'c', u'aid', u'b', u'aid', u'a', u'a')
-    (u'd', u'aid', u'b', u'aid', u'a', u'a')
+    ...     print(_py3ish_repr(r))
+    ('a', 'selfref', 'a', 'aid', 'a', 'a')
+    ('b', 'aid', 'a', 'aid', 'c', 'c')
+    ('c', 'aid', 'b', 'aid', 'a', 'a')
+    ('d', 'aid', 'b', 'aid', 'a', 'a')
 
     Of course, there might not be any references
 
@@ -105,41 +127,47 @@ def listReferences(cur, table, column, indirect=True, _state=None):
     return _state
 
 
-def listUniques(cur, table, column):
-    '''Return a list of unique indexes on `table` that include the `column`
+def listIndexes(cur, table, column, only_unique=False):
+    '''Return a list of indexes on `table` that include the `column`
 
     `cur` must be an open DB-API cursor.
 
     Returns [ (column, [...]) ]. The column passed in will always be
     included in the tuple.
 
-    Simple UNIQUE index
+    Simple indexes
 
-    >>> listUniques(cur, 'b', 'aid')
-    [(u'aid',)]
+    >>> print(_py3ish_repr(listIndexes(cur, 'b', 'aid')))
+    [('aid',)]
+    >>> print(_py3ish_repr(listIndexes(cur, 'a', 'name')))
+    [('name',)]
 
-    Primary keys are UNIQUE indexes too
+    Primary keys are indexes too
 
-    >>> listUniques(cur, 'a', 'aid')
-    [(u'aid',)]
+    >>> print(_py3ish_repr(listIndexes(cur, 'a', 'aid')))
+    [('aid',)]
 
     Compound indexes
 
-    >>> listUniques(cur, 'c', 'aid')
-    [(u'aid', u'bid')]
-    >>> listUniques(cur, 'c', 'bid')
-    [(u'aid', u'bid')]
+    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'aid')))
+    [('aid', 'bid')]
+    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'bid')))
+    [('aid', 'bid')]
+    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'name')))
+    [('name', 'description')]
+    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'description')))
+    [('name', 'description')]
 
     And any combination
 
-    >>> l = listUniques(cur, 'd', 'aid')
+    >>> l = listIndexes(cur, 'd', 'aid')
     >>> l.sort()
-    >>> l
-    [(u'aid',), (u'aid', u'bid')]
+    >>> print(_py3ish_repr(l))
+    [('aid',), ('aid', 'bid')]
 
-    If there are no UNIQUE indexes using the secified column
+    If there are no indexes using the secified column
 
-    >>> listUniques(cur, 'a', 'selfref')
+    >>> listIndexes(cur, 'a', 'selfref')
     []
 
     '''
@@ -163,16 +191,17 @@ def listUniques(cur, table, column):
     # Initialize our return value
     rv = []
 
-    # Retrive the UNIQUE indexes.
+    # Retrieve the indexes.
     sql = '''
         SELECT
             i.indkey
         FROM
             pg_class AS t JOIN pg_index AS i ON i.indrelid = t.oid
         WHERE
-            i.indisunique = true
-            AND t.relname = %(table)s
+            t.relname = %(table)s
         '''
+    if only_unique:
+        sql += ' AND i.indisunique = true'
     cur.execute(sql, dict(table=table))
     for indkey, in cur.fetchall():
         # We have a space separated list of integer keys into the attribute
@@ -188,6 +217,53 @@ def listUniques(cur, table, column):
     return rv
 
 
+def listUniques(cur, table, column):
+    '''Return a list of unique indexes on `table` that include the `column`
+
+    `cur` must be an open DB-API cursor.
+
+    Returns [ (column, [...]) ]. The column passed in will always be
+    included in the tuple.
+
+    Simple UNIQUE index
+
+    >>> print(_py3ish_repr(listUniques(cur, 'b', 'aid')))
+    [('aid',)]
+
+    Primary keys are UNIQUE indexes too
+
+    >>> print(_py3ish_repr(listUniques(cur, 'a', 'aid')))
+    [('aid',)]
+
+    Compound indexes
+
+    >>> print(_py3ish_repr(listUniques(cur, 'c', 'aid')))
+    [('aid', 'bid')]
+    >>> print(_py3ish_repr(listUniques(cur, 'c', 'bid')))
+    [('aid', 'bid')]
+
+    And any combination
+
+    >>> l = listUniques(cur, 'd', 'aid')
+    >>> l.sort()
+    >>> print(_py3ish_repr(l))
+    [('aid',), ('aid', 'bid')]
+
+    If there are no UNIQUE indexes using the secified column
+
+    >>> listUniques(cur, 'a', 'selfref')
+    []
+    >>> listUniques(cur, 'a', 'name')
+    []
+    >>> listUniques(cur, 'c', 'name')
+    []
+    >>> listUniques(cur, 'c', 'description')
+    []
+
+    '''
+    return listIndexes(cur, table, column, only_unique=True)
+
+
 def listSequences(cur):
     """Return a list of (schema, sequence, table, column) tuples.
 
@@ -196,9 +272,9 @@ def listSequences(cur):
     standalone.
 
     >>> for r in listSequences(cur):
-    ...     print(repr(r))
-    (u'public', u'a_aid_seq', u'a', u'aid')
-    (u'public', u'standalone', None, None)
+    ...     print(_py3ish_repr(r))
+    ('public', 'a_aid_seq', 'a', 'aid')
+    ('public', 'standalone', None, None)
 
     """
     sql = """

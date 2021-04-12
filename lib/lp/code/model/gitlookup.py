@@ -142,6 +142,19 @@ class ProjectGitTraversable(_BaseGitTraversable):
     From here, you can traverse to a named project repository.
     """
 
+    def traverse(self, owner, name, segments):
+        if name == "+oci":
+            try:
+                ociproject_name = next(segments)
+            except StopIteration:
+                raise InvalidNamespace("/".join(segments.traversed))
+            oci_project = self.context.getOCIProject(ociproject_name)
+            if oci_project is None:
+                raise NoSuchOCIProjectName(ociproject_name)
+            return owner, oci_project, None
+        return super(ProjectGitTraversable, self).traverse(
+            owner, name, segments)
+
     def getNamespace(self, owner):
         return getUtility(IGitNamespaceSet).get(owner, project=self.context)
 

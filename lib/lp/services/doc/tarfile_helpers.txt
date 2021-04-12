@@ -4,7 +4,7 @@ Launchpad helper to write tar files
 LaunchpadWriteTarFile is a helper class to make .tar.gz generation
 easy.
 
-    >>> from StringIO import StringIO
+    >>> import io
     >>> import tarfile
     >>> from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 
@@ -23,18 +23,19 @@ output we will get.
     ...             file = tar.extractfile(member)
     ...
     ...             if file is not None:
-    ...                 print format % (member.name, file.read())
+    ...                 print(format % (
+    ...                     member.name, six.ensure_text(file.read())))
     ...             else:
-    ...                 print format % (member.name, '')
+    ...                 print(format % (member.name, ''))
     ...         elif member.type == tarfile.SYMTYPE:
-    ...             print format % (
-    ...                 member.name, "<link to %s>" % member.linkname)
+    ...             print(format % (
+    ...                 member.name, "<link to %s>" % member.linkname))
     ...         elif member.type == tarfile.DIRTYPE:
-    ...             print format % (member.name, "<directory>")
+    ...             print(format % (member.name, "<directory>"))
 
     # Start off by creating a blank archive.
     # We'll need a filehandle to store it in.
-    >>> buffer = StringIO()
+    >>> buffer = io.BytesIO()
     >>> archive = LaunchpadWriteTarFile(buffer)
 
 We can add files individually. First argument is the file name, second
@@ -61,7 +62,7 @@ Once we are done adding files, the archive needs to be closed.
 
 And now we can inspect the produced file.
 
-    >>> buffer.seek(0)
+    >>> _ = buffer.seek(0)
     >>> archive = tarfile.open('', 'r', buffer)
     >>> examine_tarfile(archive)
     foo  | 1
@@ -97,10 +98,10 @@ files_to_tarfile...
     drei | vier
     eins | zwei
 
-...or a data string.
+...or a byte string.
 
-    >>> data = LaunchpadWriteTarFile.files_to_string(files)
-    >>> archive = tarfile.open('', 'r', StringIO(data))
+    >>> data = LaunchpadWriteTarFile.files_to_bytes(files)
+    >>> archive = tarfile.open('', 'r', io.BytesIO(data))
     >>> examine_tarfile(archive)
     drei | vier
     eins | zwei

@@ -369,8 +369,9 @@ the bug to the question.
 
     >>> new_bug_id = int(question_three.bugs[0].id)
     >>> message = [n.message for n in request.notifications]
-    >>> message
-    [u'Thank you! Bug #... created.']
+    >>> for m in message:
+    ...     print(m)
+    Thank you! Bug #... created.
 
     >>> 'Bug #%s created.' % new_bug_id in message[0]
     True
@@ -478,11 +479,11 @@ contact) to change the title or description, launchpad.Append (target
 answer contact) to change the assignee and launchpad.Admin (target
 owner) to change status whiteboard, the values are unchanged.
 
-    >>> question_three.title
-    u'Firefox is slow and consumes too much RAM'
+    >>> print(question_three.title)
+    Firefox is slow and consumes too much RAM
 
-    >>> question_three.description
-    u"I'm running on a 486 with 32 MB ram. And Firefox is slow! What should I do?"
+    >>> print(question_three.description)
+    I'm running on a 486 with 32 MB ram. And Firefox is slow! What should I do?
 
     >>> question_three.assignee is None
     True
@@ -507,11 +508,11 @@ fields will be updated:
     >>> request.method = 'POST'
     >>> view = getMultiAdapter((question_three, request), name='+edit')
     >>> view.initialize()
-    >>> question_three.title
-    u'Better Title'
+    >>> print(question_three.title)
+    Better Title
 
-    >>> question_three.description
-    u'A better description.'
+    >>> print(question_three.description)
+    A better description.
 
     >>> print(question_three.assignee.displayname)
     Foo Bar
@@ -579,6 +580,8 @@ accept Brazilian Portuguese, and their request appears to come from a South
 African IP address, the vocabulary will contain the languages spoken in
 South Africa.
 
+    >>> from operator import attrgetter
+
     >>> login(ANONYMOUS)
     >>> request = LaunchpadTestRequest(
     ...     HTTP_ACCEPT_LANGUAGE='pt_BR', REMOTE_ADDR='196.36.161.227')
@@ -587,8 +590,14 @@ South Africa.
     >>> view = getMultiAdapter((firefox, request), name='+addticket')
     >>> vocab = QuestionLanguageVocabularyFactory(view)(None)
     >>> languages = [term.value for term in vocab]
-    >>> sorted([lang.code for lang in languages])
-    [u'af', u'en', u'pt_BR', u'st', u'xh', u'zu']
+    >>> for lang in sorted(languages, key=attrgetter('code')):
+    ...     print(lang.code)
+    af
+    en
+    pt_BR
+    st
+    xh
+    zu
 
 If the user logs in but didn't configure their preferred languages, the
 same logic is used to find the languages:
@@ -600,20 +609,32 @@ same logic is used to find the languages:
 
     >>> vocab = QuestionLanguageVocabularyFactory(view)(None)
     >>> languages = [term.value for term in vocab]
-    >>> sorted(lang.code for lang in languages)
-    [u'af', u'en', u'pt_BR', u'st', u'xh', u'zu']
+    >>> for lang in sorted(languages, key=attrgetter('code')):
+    ...     print(lang.code)
+    af
+    en
+    pt_BR
+    st
+    xh
+    zu
 
 But if the user configured their preferred languages, only these are used:
 
     >>> login('carlos@canonical.com')
     >>> user = getUtility(ILaunchBag).user
-    >>> sorted(lang.code for lang in user.languages)
-    [u'ca', u'en', u'es']
+    >>> for lang in sorted(user.languages, key=attrgetter('code')):
+    ...     print(lang.code)
+    ca
+    en
+    es
 
     >>> vocab = QuestionLanguageVocabularyFactory(view)(None)
     >>> languages = [term.value for term in vocab]
-    >>> sorted(lang.code for lang in languages)
-    [u'ca', u'en', u'es']
+    >>> for lang in sorted(languages, key=attrgetter('code')):
+    ...     print(lang.code)
+    ca
+    en
+    es
 
 Note that all variants of English are always excluded from the
 vocabulary (since we don't want to confuse people by providing multiple
@@ -623,16 +644,22 @@ Daf has en_GB listed among his languages:
 
     >>> login('daf@canonical.com')
     >>> user = getUtility(ILaunchBag).user
-    >>> sorted(lang.code for lang in user.languages)
-    [u'cy', u'en_GB', u'ja']
+    >>> for lang in sorted(user.languages, key=attrgetter('code')):
+    ...     print(lang.code)
+    cy
+    en_GB
+    ja
 
 But the vocabulary made from this languages has substituted the English
 variant with English:
 
     >>> vocab = QuestionLanguageVocabularyFactory(view)(None)
     >>> languages = [term.value for term in vocab]
-    >>> sorted(lang.code for lang in languages)
-    [u'cy', u'en', u'ja']
+    >>> for lang in sorted(languages, key=attrgetter('code')):
+    ...     print(lang.code)
+    cy
+    en
+    ja
 
 Note also that the vocabulary will always contain the current question's
 language in the vocabulary, even if this language would not be selected
@@ -686,32 +713,54 @@ For this request, the set of support languages contains French (from the
 request), and the languages spoken in South Africa (inferred from the
 GeoIP location of the request).
 
-    >>> sorted(language.code for language in view.user_support_languages)
-    [u'af', u'en', u'fr', u'st', u'xh', u'zu']
+    >>> for language in sorted(
+    ...         view.user_support_languages, key=attrgetter('code')):
+    ...     print(language.code)
+    af
+    en
+    fr
+    st
+    xh
+    zu
 
 Same thing if the logged in user didn't have any preferred languages
 set:
 
     >>> login('test@canonical.com')
     >>> view = UserSupportLanguagesView(None, request)
-    >>> sorted(language.code for language in view.user_support_languages)
-    [u'af', u'en', u'fr', u'st', u'xh', u'zu']
+    >>> for language in sorted(
+    ...         view.user_support_languages, key=attrgetter('code')):
+    ...     print(language.code)
+    af
+    en
+    fr
+    st
+    xh
+    zu
 
 But when the user has some preferred languages set, these will be used
 instead of the ones inferred from the request:
 
     >>> login('carlos@canonical.com')
     >>> view = UserSupportLanguagesView(None, request)
-    >>> sorted(language.code for language in view.user_support_languages)
-    [u'ca', u'en', u'es']
+    >>> for language in sorted(
+    ...         view.user_support_languages, key=attrgetter('code')):
+    ...     print(language.code)
+    ca
+    en
+    es
 
 English variants included in the user's preferred languages are
 excluded:
 
     >>> login('daf@canonical.com')
     >>> view = UserSupportLanguagesView(None, request)
-    >>> sorted(language.code for language in view.user_support_languages)
-    [u'cy', u'en', u'ja']
+    >>> for language in sorted(
+    ...         view.user_support_languages, key=attrgetter('code')):
+    ...     print(language.code)
+    cy
+    en
+    ja
 
 
 SearchQuestionsView
@@ -760,7 +809,7 @@ searchResults() method. The returned results are batched.
     <lp.services.webapp.batching.BatchNavigator ...>
 
     >>> for question in questions.batch:
-    ...     print(question.title.encode('us-ascii', 'backslashreplace'))
+    ...     print(backslashreplace(question.title))
     Problema al recompilar kernel con soporte smp (doble-n\xfacleo)
     Continue playing after shutdown
     Play DVDs in Totem
@@ -982,9 +1031,11 @@ himself or the Ubuntu Team as answer contact for ubuntu:
     >>> view = getMultiAdapter((ubuntu, request), name="+answer-contact")
     >>> view.initialize()
 
-    >>> sorted(
-    ...     [person.displayname for person in ubuntu.direct_answer_contacts])
-    [u'Jeff Waugh', u'Ubuntu Team']
+    >>> for person in sorted(
+    ...         ubuntu.direct_answer_contacts, key=attrgetter('displayname')):
+    ...     print(person.displayname)
+    Jeff Waugh
+    Ubuntu Team
 
 The view adds notifications about the answer contacts added:
 
@@ -1010,9 +1061,12 @@ can only subscribe himself:
     >>> view = getMultiAdapter((ubuntu, request), name="+answer-contact")
     >>> view.initialize()
 
-    >>> sorted(
-    ...     [person.displayname for person in ubuntu.direct_answer_contacts])
-    [u'Daniel Silverstone', u'Jeff Waugh', u'Ubuntu Team']
+    >>> for person in sorted(
+    ...         ubuntu.direct_answer_contacts, key=attrgetter('displayname')):
+    ...     print(person.displayname)
+    Daniel Silverstone
+    Jeff Waugh
+    Ubuntu Team
 
     >>> for notification in request.notifications:
     ...     print(notification.message)
@@ -1029,9 +1083,11 @@ can only remove their own registration.
     >>> view = getMultiAdapter((ubuntu, request), name="+answer-contact")
     >>> view.initialize()
 
-    >>> sorted(
-    ...     [person.displayname for person in ubuntu.direct_answer_contacts])
-    [u'Jeff Waugh', u'Ubuntu Team']
+    >>> for person in sorted(
+    ...         ubuntu.direct_answer_contacts, key=attrgetter('displayname')):
+    ...     print(person.displayname)
+    Jeff Waugh
+    Ubuntu Team
 
     >>> for notification in request.notifications:
     ...     print(notification.message)
@@ -1049,9 +1105,10 @@ team administrator:
     >>> view = getMultiAdapter((ubuntu, request), name="+answer-contact")
     >>> view.initialize()
 
-    >>> sorted(
-    ...     [person.displayname for person in ubuntu.direct_answer_contacts])
-    [u'Jeff Waugh']
+    >>> for person in sorted(
+    ...         ubuntu.direct_answer_contacts, key=attrgetter('displayname')):
+    ...     print(person.displayname)
+    Jeff Waugh
 
     >>> for notification in request.notifications:
     ...     print(notification.message)

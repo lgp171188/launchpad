@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces related to recipes for OCI Images."""
@@ -20,6 +20,7 @@ __all__ = [
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeFeatureDisabled',
     'OCIRecipeNotOwner',
+    'OCIRecipePrivacyMismatch',
     'OCI_RECIPE_ALLOW_CREATE',
     'OCI_RECIPE_BUILD_DISTRIBUTION',
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
@@ -61,6 +62,7 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
@@ -71,6 +73,7 @@ from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import (
@@ -83,6 +86,7 @@ from lp.services.webhooks.interfaces import IWebhookTarget
 OCI_RECIPE_WEBHOOKS_FEATURE_FLAG = "oci.recipe.webhooks.enabled"
 OCI_RECIPE_ALLOW_CREATE = 'oci.recipe.create.enabled'
 OCI_RECIPE_BUILD_DISTRIBUTION = 'oci.default_build_distribution'
+OCI_RECIPE_PRIVATE_FEATURE_FLAG = "oci.recipe.allow_private"
 
 
 @error_status(http_client.UNAUTHORIZED)
@@ -138,6 +142,16 @@ class CannotModifyOCIRecipeProcessor(Exception):
     def __init__(self, processor):
         super(CannotModifyOCIRecipeProcessor, self).__init__(
             self._fmt % {'processor': processor.name})
+
+
+@error_status(http_client.BAD_REQUEST)
+class OCIRecipePrivacyMismatch(Exception):
+    """OCI recipe privacy does not match its content."""
+
+    def __init__(self, message=None):
+        super(OCIRecipePrivacyMismatch, self).__init__(
+            message or
+            "OCI recipe contains private information and cannot be public.")
 
 
 @exported_as_webservice_entry(
@@ -227,6 +241,13 @@ class IOCIRecipeView(Interface):
         description=_("True if this recipe is official for its OCI project."),
         readonly=True)
 
+    private = Bool(
+        title=_("Is this OCI recipe private?"),
+        required=True, readonly=True,
+        description=_("True if this recipe is private. False otherwise."))
+
+    pillar = Attribute('The pillar of this OCI recipe.')
+
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(
         processors=List(
@@ -280,6 +301,24 @@ class IOCIRecipeView(Interface):
             "Whether everything is set up to allow uploading builds of "
             "this OCI recipe to a registry."))
 
+    is_valid_branch_format = Bool(
+        title=_("Is valid branch format"), required=True, readonly=True,
+        description=_("Whether the git branch name is the correct "
+                      "format for using as a tag name."))
+
+    use_distribution_credentials = Bool(
+        title=_("Use Distribution credentials"), required=True, readonly=True,
+        description=_("Use the credentials on a Distribution for "
+                      "registry upload"))
+
+    subscriptions = CollectionField(
+        title=_("OCIRecipeSubscriptions associated with this OCI recipe."),
+        readonly=True, value_type=Reference(Interface))
+
+    subscribers = CollectionField(
+        title=_("Persons subscribed to this snap recipe."),
+        readonly=True, value_type=Reference(IPerson))
+
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
 
@@ -314,6 +353,27 @@ class IOCIRecipeView(Interface):
     def getBuildRequest(job_id):
         """Get an OCIRecipeBuildRequest object for the given job_id.
         """
+
+    def getAllowedInformationTypes(user):
+        """Get a list of acceptable `InformationType`s for this OCI recipe.
+
+        If the user is a Launchpad admin, any type is acceptable.
+        """
+
+    def userCanBeSubscribed(user):
+        """Checks if a user can be subscribed to the current OCI recipe."""
+
+    def visibleByUser(user):
+        """Can the specified user see this snap recipe?"""
+
+    def getSubscription(person):
+        """Returns the OCIRecipeSubscription for the given user."""
+
+    def subscribe(person, subscribed_by):
+        """Subscribe a person to this snap recipe."""
+
+    def unsubscribe(person, unsubscribed_by):
+        """Unsubscribe a person to this snap recipe."""
 
 
 class IOCIRecipeEdit(IWebhookTarget):
@@ -368,6 +428,12 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         vocabulary="AllUserTeamsParticipationPlusSelf",
         description=_("The owner of this OCI recipe."),
         readonly=False))
+
+    information_type = exported(Choice(
+        title=_("Information type"), vocabulary=InformationType,
+        required=True, readonly=False, default=InformationType.PUBLIC,
+        description=_(
+            "The type of information contained in this OCI recipe.")))
 
     oci_project = exported(Reference(
         IOCIProject,
@@ -434,6 +500,14 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         description=_("If True, this recipe should be built daily."),
         readonly=False))
 
+    image_name = exported(TextLine(
+        title=_("Image name"),
+        description=_("Image name to use on upload to registry. "
+                      "Defaults to recipe name if not set. "
+                      "Only used when Distribution credentials are set."),
+        required=False,
+        readonly=False))
+
 
 class IOCIRecipeAdminAttributes(Interface):
     """`IOCIRecipe` attributes that can be edited by admins.
@@ -473,11 +547,15 @@ class IOCIRecipeSet(Interface):
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
             build_daily=False, processors=None, date_created=DEFAULT,
-            allow_internet=True, build_args=None):
+            allow_internet=True, build_args=None,
+            information_type=InformationType.PUBLIC):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):
         """Check to see if an existing OCI Recipe exists."""
+
+    def findByIds(ocirecipe_ids, visible_by_user=None):
+        """Returns the OCI recipes with the given IDs."""
 
     def getByName(owner, oci_project, name):
         """Return the appropriate `OCIRecipe` for the given objects."""
@@ -485,8 +563,11 @@ class IOCIRecipeSet(Interface):
     def findByOwner(owner):
         """Return all OCI Recipes with the given `owner`."""
 
-    def findByOCIProject(oci_project):
+    def findByOCIProject(oci_project, visible_by_user=None):
         """Return all OCI recipes with the given `oci_project`."""
+
+    def findByContext(context, visible_by_user=None):
+        """Returns all OCI recipes for a given context."""
 
     def preloadDataForOCIRecipes(recipes, user):
         """Load the data related to a list of OCI Recipes."""

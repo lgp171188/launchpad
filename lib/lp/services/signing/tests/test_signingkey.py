@@ -88,7 +88,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         self.assertEqual(
             self.signing_service.generated_fingerprint, db_key.fingerprint)
         self.assertEqual(
-            self.signing_service.b64_generated_public_key,
+            self.signing_service.b64_generated_public_key.encode("UTF-8"),
             base64.b64encode(db_key.public_key))
         self.assertEqual("this is my key", db_key.description)
 
@@ -215,6 +215,29 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
                             base64.b64encode(
                                 b"another message").decode("UTF-8")),
                         "mode": Equals("CLEAR"),
+                        }))))
+
+    @responses.activate
+    def test_addAuthorization(self):
+        self.signing_service.addResponses(self)
+
+        s = SigningKey(
+            SigningKeyType.UEFI, u"a fingerprint",
+            bytes(self.signing_service.generated_public_key),
+            description=u"This is my key!")
+        self.assertIsNone(s.addAuthorization(u"another-client"))
+
+        self.assertEqual(3, len(responses.calls))
+        self.assertThat(
+            responses.calls[2].request,
+            MatchesStructure(
+                url=Equals(self.signing_service.getUrl("/authorizations/add")),
+                body=AfterPreprocessing(
+                    self.signing_service._decryptPayload,
+                    MatchesDict({
+                        "key-type": Equals("UEFI"),
+                        "fingerprint": Equals(u"a fingerprint"),
+                        "client-name": Equals(u"another-client"),
                         }))))
 
 

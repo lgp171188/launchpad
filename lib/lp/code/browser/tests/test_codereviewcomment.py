@@ -9,6 +9,7 @@ __metaclass__ = type
 
 import re
 
+import six
 from soupmatchers import (
     HTMLContains,
     Tag,
@@ -196,7 +197,7 @@ class TestCodeReviewCommentHtmlMixin:
         comment = self.makeCodeReviewComment(body='\u1234')
         browser = self.getViewBrowser(comment, view_name='+download')
         contents = '\u1234'.encode('utf-8')
-        self.assertEqual(contents, browser.contents)
+        self.assertEqual(contents, six.ensure_binary(browser.contents))
         self.assertEqual(
             'text/plain;charset=utf-8', browser.headers['Content-type'])
         self.assertEqual(
@@ -206,10 +207,10 @@ class TestCodeReviewCommentHtmlMixin:
 
     def test_parent_comment_in_reply(self):
         """The reply view has the expected contents from the parent comment."""
-        contents = 'test-comment'.encode('utf-8')
+        contents = 'test-comment'
         comment = self.makeCodeReviewComment(body=contents)
         browser = self.getViewBrowser(comment, view_name='+reply')
-        self.assertIn(contents, browser.contents)
+        self.assertIn(six.ensure_str(contents), browser.contents)
 
     def test_footer_for_mergeable_and_admin(self):
         """An admin sees Hide/Reply links for a comment on a mergeable MP."""

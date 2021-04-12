@@ -635,11 +635,6 @@ class IPOTemplateSet(Interface):
         arguments.
         """
 
-    def getSubsetFromImporterSourcePackageName(
-        distroseries, sourcepackagename, iscurrent=None):
-        """Return a POTemplateSubset based on the origin sourcepackagename.
-        """
-
     def getPOTemplateByPathAndOrigin(path, productseries=None,
         distroseries=None, sourcepackagename=None):
         """Return an `IPOTemplate` that is stored at 'path' in source code and

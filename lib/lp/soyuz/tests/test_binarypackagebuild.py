@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test Build features."""
@@ -170,11 +170,14 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
             ]
-        for status in BuildStatus:
+        for status in BuildStatus.items:
+            build = self.factory.makeBinaryPackageBuild()
+            build.queueBuild()
+            build.updateStatus(status)
             if status in ok_cases:
-                self.assertTrue(self.build.can_be_cancelled)
+                self.assertTrue(build.can_be_cancelled)
             else:
-                self.assertFalse(self.build.can_be_cancelled)
+                self.assertFalse(build.can_be_cancelled)
 
     def test_can_be_cancelled_virtuality(self):
         # Both virtual and non-virtual builds can be cancelled.
@@ -625,7 +628,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
             entry["self_link"], "application/json",
             dumps({"external_dependencies": "random"}))
         self.assertEqual(400, response.status)
-        self.assertIn("Invalid external dependencies", response.body)
+        self.assertIn(b"Invalid external dependencies", response.body)
 
     def test_external_dependencies_ppa_owner_valid(self):
         # PPA admins can look and touch.
@@ -972,6 +975,28 @@ class TestBinaryPackageBuildMacaroonIssuer(
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(issuer, macaroon, sprf.libraryfile)
 
+    def test_verifyMacaroon_good_direct_archive(self):
+        build = self.factory.makeBinaryPackageBuild(
+            archive=self.factory.makeArchive(private=True))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "binary-package-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, build.archive)
+
+    def test_verifyMacaroon_good_indirect_archive(self):
+        build = self.factory.makeBinaryPackageBuild(
+            archive=self.factory.makeArchive(private=True))
+        dependency = self.factory.makeArchive(
+            distribution=build.archive.distribution, private=True)
+        build.archive.addArchiveDependency(
+            dependency, PackagePublishingPocket.RELEASE)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "binary-package-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, dependency)
+
     def test_verifyMacaroon_wrong_location(self):
         build = self.factory.makeBinaryPackageBuild(
             archive=self.factory.makeArchive(private=True))
@@ -1043,3 +1068,17 @@ class TestBinaryPackageBuildMacaroonIssuer(
             ["Caveat check for 'lp.principal.binary-package-build %s' "
              "failed." % build.id],
             issuer, macaroon, lfa)
+
+    def test_verifyMacaroon_wrong_archive(self):
+        build = self.factory.makeBinaryPackageBuild(
+            archive=self.factory.makeArchive(private=True))
+        archive = self.factory.makeArchive(
+            distribution=build.archive.distribution, private=True)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "binary-package-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.principal.binary-package-build %s' "
+             "failed." % build.id],
+            issuer, macaroon, archive)

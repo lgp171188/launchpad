@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Publisher script class."""
@@ -10,6 +10,7 @@ __all__ = [
 from optparse import OptionValueError
 
 from six.moves import filter as ifilter
+from storm.store import Store
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -178,7 +179,7 @@ class PublishDistro(PublisherScript):
             self.options.private_ppa,
             self.options.copy_archive,
             ]
-        return len(filter(None, exclusive_options))
+        return len(list(filter(None, exclusive_options)))
 
     def logOptions(self):
         """Dump the selected options to the debug log."""
@@ -351,33 +352,53 @@ class PublishDistro(PublisherScript):
         if self.options.enable_apt:
             publisher.createSeriesAliases()
 
-    def main(self):
+    def processArchive(self, archive_id, reset_store=True):
+        set_request_started(
+            request_statements=LimitedList(10000),
+            txn=self.txn, enable_timeout=False)
+        try:
+            archive = getUtility(IArchiveSet).get(archive_id)
+            distribution = archive.distribution
+            allowed_suites = self.findAllowedSuites(distribution)
+            if archive.status == ArchiveStatus.DELETING:
+                publisher = self.getPublisher(
+                    distribution, archive, allowed_suites)
+                work_done = self.deleteArchive(archive, publisher)
+            elif archive.can_be_published:
+                publisher = self.getPublisher(
+                    distribution, archive, allowed_suites)
+                self.publishArchive(archive, publisher)
+                work_done = True
+            else:
+                work_done = False
+        finally:
+            clear_request_started()
+
+        if work_done:
+            self.txn.commit()
+            if reset_store:
+                # Reset the store after processing each dirty archive, as
+                # otherwise the process of publishing large archives can
+                # accumulate a large number of alive objects in the Storm
+                # store and cause performance problems.
+                Store.of(archive).reset()
+
+    def main(self, reset_store_between_archives=True):
         """See `LaunchpadScript`."""
         self.validateOptions()
         self.logOptions()
 
+        archive_ids = []
         for distribution in self.findDistros():
-            allowed_suites = self.findAllowedSuites(distribution)
             for archive in self.getTargetArchives(distribution):
-                set_request_started(
-                    request_statements=LimitedList(10000),
-                    txn=self.txn, enable_timeout=False)
-                try:
-                    if archive.status == ArchiveStatus.DELETING:
-                        publisher = self.getPublisher(
-                            distribution, archive, allowed_suites)
-                        work_done = self.deleteArchive(archive, publisher)
-                    elif archive.can_be_published:
-                        publisher = self.getPublisher(
-                            distribution, archive, allowed_suites)
-                        self.publishArchive(archive, publisher)
-                        work_done = True
-                    else:
-                        work_done = False
-                finally:
-                    clear_request_started()
+                if archive.distribution != distribution:
+                    raise AssertionError(
+                        "Archive %s does not match distribution %r" %
+                        (archive.reference, distribution))
+                archive_ids.append(archive.id)
 
-                if work_done:
-                    self.txn.commit()
+        for archive_id in archive_ids:
+            self.processArchive(
+                archive_id, reset_store=reset_store_between_archives)
 
         self.logger.debug("Ciao")

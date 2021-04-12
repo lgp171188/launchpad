@@ -1,6 +1,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from datetime import datetime
@@ -159,7 +161,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         # displaying Ubuntu build logs in the browser.  The mimetype should be
         # "text/plain" for these files.
         client = LibrarianClient()
-        contents = u'Build log \N{SNOWMAN}...'.encode('UTF-8')
+        contents = 'Build log \N{SNOWMAN}...'.encode('UTF-8')
         build_log = BytesIO()
         with GzipFile(mode='wb', fileobj=build_log) as f:
             f.write(contents)
@@ -441,7 +443,8 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         store = session_store()
         tokens = store.find(
             TimeLimitedToken,
-            TimeLimitedToken.token == hashlib.sha256(token).hexdigest())
+            TimeLimitedToken.token == hashlib.sha256(
+                token.encode('ASCII')).hexdigest())
         tokens.set(
             TimeLimitedToken.created == SQL("created - interval '1 week'"))
         # Now, as per test_restricted_no_token we should get a 404.

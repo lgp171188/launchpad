@@ -18,9 +18,10 @@ First, let's make sure we can see the link called "Subscribe..."
 If I try to go to the subscription page I will be told to login.
 
     >>> subscribe_link.click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized...AnyP...
+    zope.security.interfaces.Unauthorized: ...AnyP...
 
 And let's make sure we can see the subscription page. We will log in as
 Carlos.

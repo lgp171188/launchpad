@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -43,6 +43,7 @@ from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import smartquote
 import pytz
 import simplejson
+import six
 from six.moves.urllib.parse import unquote
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -93,6 +94,7 @@ from lp.app.widgets.itemswidgets import (
 from lp.app.widgets.owner import HiddenUserWidget
 from lp.app.widgets.popup import PersonPickerWidget
 from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
+from lp.oci.browser.hasocirecipes import HasOCIRecipesMenuMixin
 from lp.registry.browser.branding import BrandingChangeView
 from lp.registry.browser.mailinglists import enabled_with_active_mailing_list
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
@@ -176,6 +178,7 @@ from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import (
     ILaunchBag,
     IMultiFacetedBreadcrumb,
+    IStructuredString,
     )
 from lp.snappy.browser.hassnaps import HasSnapsMenuMixin
 
@@ -520,8 +523,10 @@ class TeamContactAddressView(MailingListTeamBaseView):
                     # We need to wrap this in structured, so that the
                     # markup is preserved.  Note that this puts the
                     # responsibility for security on the exception thrower.
-                    self.setFieldError('contact_address',
-                                       structured(str(error)))
+                    msg = error.args[0]
+                    if not IStructuredString.providedBy(msg):
+                        msg = structured(six.text_type(msg))
+                    self.setFieldError('contact_address', msg)
         elif data['contact_method'] == TeamContactMethod.HOSTED_LIST:
             mailing_list = getUtility(IMailingListSet).get(self.context.name)
             if mailing_list is None or not mailing_list.is_usable:
@@ -1537,11 +1542,13 @@ class TeamMenuMixin(PPANavigationMenuMixIn, CommonMenuLinks):
         text = 'Show polls'
         return Link(target, text, icon='info')
 
-    @enabled_with_permission('launchpad.Edit')
     def add_poll(self):
         target = '+newpoll'
         text = 'Create a poll'
-        return Link(target, text, icon='add')
+        enabled = (
+            check_permission('launchpad.Edit', self.context) and
+            check_permission('launchpad.AnyLegitimatePerson', self.context))
+        return Link(target, text, icon='add', enabled=enabled)
 
     @enabled_with_permission('launchpad.Edit')
     def editemail(self):
@@ -1617,7 +1624,7 @@ class TeamMenuMixin(PPANavigationMenuMixIn, CommonMenuLinks):
 
 
 class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin,
-                       HasSnapsMenuMixin):
+                       HasSnapsMenuMixin, HasOCIRecipesMenuMixin):
 
     usedfor = ITeam
     facet = 'overview'
@@ -1647,6 +1654,7 @@ class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin,
         'related_software_summary',
         'view_recipes',
         'view_snaps',
+        'view_oci_recipes',
         'subscriptions',
         'structural_subscriptions',
         'upcomingwork',

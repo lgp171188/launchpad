@@ -11,8 +11,6 @@ __all__ = [
     'PageMatches',
     ]
 
-import json
-
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import requests
@@ -219,7 +217,12 @@ class BingSearchService:
                 "The response errored: %s" % str(error))
         finally:
             action.finish()
-        page_matches = self._parse_search_response(response.content, start)
+        try:
+            bing_doc = response.json()
+        except ValueError:
+            raise SiteSearchResponseError(
+                "The response was incomplete, no JSON.")
+        page_matches = self._parse_search_response(bing_doc, start)
         return page_matches
 
     def _checkParameter(self, name, value, is_int=False):
@@ -252,20 +255,15 @@ class BingSearchService:
             'Ocp-Apim-Subscription-Key': self.subscription_key,
             }
 
-    def _parse_search_response(self, bing_json, start=0):
+    def _parse_search_response(self, bing_doc, start=0):
         """Return a `PageMatches` object.
 
-        :param bing_json: A string containing Bing Custom Search API v7 JSON.
+        :param bing_doc: A JSON object containing Bing Custom Search API v7
+            data.
         :return: `ISearchResults` (PageMatches).
-        :raise: `SiteSearchResponseError` if the json response is incomplete or
-            cannot be parsed.
+        :raise: `SiteSearchResponseError` if the JSON object is incomplete
+            or cannot be parsed.
         """
-        try:
-            bing_doc = json.loads(bing_json)
-        except (TypeError, ValueError):
-            raise SiteSearchResponseError(
-                "The response was incomplete, no JSON.")
-
         try:
             response_type = bing_doc['_type']
         except (AttributeError, KeyError, ValueError):

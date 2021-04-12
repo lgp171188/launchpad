@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Enums for signing keys management."""
@@ -60,6 +60,12 @@ class SigningKeyType(DBEnumeratedType):
         OpenPGP
 
         An OpenPGP signing key.
+        """)
+
+    CV2_KERNEL = DBItem(7, """
+        CV2 Kernel
+
+        An Ambarella CV2 kernel signing key.
         """)
 
 

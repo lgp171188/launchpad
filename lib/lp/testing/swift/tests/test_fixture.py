@@ -11,7 +11,6 @@ from hashlib import md5
 
 from requests.exceptions import ConnectionError
 from swiftclient import client as swiftclient
-from swiftclient.exceptions import ClientException
 from testtools.matchers import (
     GreaterThan,
     LessThan,

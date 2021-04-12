@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -10,24 +10,42 @@ __all__ = [
 
 import socket
 
-from sqlobject import StringCol
+import pytz
+import six
+from storm.locals import (
+    DateTime,
+    Int,
+    Unicode,
+    )
+from zope.component import getUtility
 from zope.interface import implementer
 
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.scripts.interfaces.scriptactivity import (
     IScriptActivity,
     IScriptActivitySet,
     )
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 
 @implementer(IScriptActivity)
-class ScriptActivity(SQLBase):
+class ScriptActivity(StormBase):
 
-    name = StringCol(notNull=True)
-    hostname = StringCol(notNull=True)
-    date_started = UtcDateTimeCol(notNull=True)
-    date_completed = UtcDateTimeCol(notNull=True)
+    __storm_table__ = 'ScriptActivity'
+
+    id = Int(primary=True)
+    name = Unicode(allow_none=False)
+    hostname = Unicode(allow_none=False)
+    date_started = DateTime(tzinfo=pytz.UTC, allow_none=False)
+    date_completed = DateTime(tzinfo=pytz.UTC, allow_none=False)
+
+    def __init__(self, name, hostname, date_started, date_completed):
+        super(ScriptActivity, self).__init__()
+        self.name = name
+        self.hostname = hostname
+        self.date_started = date_started
+        self.date_completed = date_completed
 
 
 @implementer(IScriptActivitySet)
@@ -38,11 +56,20 @@ class ScriptActivitySet:
         """See IScriptActivitySet"""
         if hostname is None:
             hostname = socket.gethostname()
-        return ScriptActivity(
-            name=name, hostname=hostname, date_started=date_started,
-            date_completed=date_completed)
+        activity = ScriptActivity(
+            name=six.ensure_text(name), hostname=six.ensure_text(hostname),
+            date_started=date_started, date_completed=date_completed)
+        IStore(ScriptActivity).add(activity)
+        # Pass equivalent information through to statsd as well.  (Don't
+        # bother with the hostname, since telegraf adds that.)
+        getUtility(IStatsdClient).timing(
+            'script_activity',
+            (date_completed - date_started).total_seconds() * 1000,
+            labels={'name': name})
+        return activity
 
     def getLastActivity(self, name):
         """See IScriptActivitySet"""
-        return ScriptActivity.selectFirstBy(
-            name=name, orderBy='-date_started')
+        rows = IStore(ScriptActivity).find(
+            ScriptActivity, name=six.ensure_text(name))
+        return rows.order_by(ScriptActivity.date_started).last()

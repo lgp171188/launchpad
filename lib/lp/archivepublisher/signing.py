@@ -1,4 +1,4 @@
-# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The processing of Signing tarballs.
@@ -297,6 +297,8 @@ class SigningUpload(CustomUpload):
                     key_type = SigningKeyType.SIPL
                 elif filename.endswith(".fit"):
                     key_type = SigningKeyType.FIT
+                elif filename.endswith(".cv2-kernel"):
+                    key_type = SigningKeyType.CV2_KERNEL
                 else:
                     continue
 
@@ -305,9 +307,12 @@ class SigningUpload(CustomUpload):
                         key_type, self.archive, self.distro_series)
                     handler = partial(
                         self.signUsingSigningService, key_type, key)
-                    fallback_handler = partial(
-                        self.signUsingLocalKey, key_type,
-                        fallback_handlers.get(key_type))
+                    if key_type in fallback_handlers:
+                        fallback_handler = partial(
+                            self.signUsingLocalKey, key_type,
+                            fallback_handlers.get(key_type))
+                    else:
+                        fallback_handler = None
                     yield file_path, handler, fallback_handler
                 else:
                     yield file_path, fallback_handlers.get(key_type), None
@@ -344,7 +349,7 @@ class SigningUpload(CustomUpload):
             SigningKeyType.FIT: [self.fit_cert, self.fit_key],
             }
         # If we are missing local key files, do not proceed.
-        key_files = [i for i in fallback_keys[key_type] if i]
+        key_files = [i for i in fallback_keys.get(key_type, []) if i]
         return all(os.path.exists(key_file) for key_file in key_files)
 
     def signUsingSigningService(self, key_type, signing_key, filename):
@@ -398,10 +403,14 @@ class SigningUpload(CustomUpload):
             public_key_suffix = ".crt"
         else:
             file_suffix = ".sig"
-            public_key_suffix = ".x509"
+            if key_type == SigningKeyType.CV2_KERNEL:
+                public_key_suffix = ".pub"
+            else:
+                public_key_suffix = ".x509"
 
         signed_filename = filename + file_suffix
-        public_key_filename = key_type.name.lower() + public_key_suffix
+        public_key_filename = (
+            key_type.name.lower().replace("_", "-") + public_key_suffix)
 
         with open(signed_filename, 'wb') as fd:
             fd.write(signed_content)
@@ -583,7 +592,7 @@ class SigningUpload(CustomUpload):
         old_mask = os.umask(0o077)
         try:
             with tempfile.NamedTemporaryFile(suffix='.keygen') as tf:
-                print(genkey_text, file=tf)
+                tf.write(genkey_text.encode('UTF-8'))
 
                 # Close out the underlying file so we know it is complete.
                 tf.file.close()

@@ -69,12 +69,11 @@ class SigningServiceResponseFactory:
 
         self.generated_public_key = PrivateKey.generate().public_key
         self.b64_generated_public_key = base64.b64encode(
-            bytes(self.generated_public_key))
+            bytes(self.generated_public_key)).decode("UTF-8")
         self.generated_fingerprint = (
             u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
-        self.b64_signed_msg = base64.b64encode(b"the-signed-msg")
 
-        self.signed_msg_template = "%s::signed!"
+        self.signed_msg_template = b"%d::signed!"
 
     @classmethod
     def getUrl(cls, path):
@@ -87,7 +86,8 @@ class SigningServiceResponseFactory:
         lp-signing would do."""
         box = Box(self.service_private_key, self.client_public_key)
         return box.encrypt(
-            json.dumps(data), nonce, encoder=Base64Encoder).ciphertext
+            json.dumps(data).encode("UTF-8"), nonce,
+            encoder=Base64Encoder).ciphertext
 
     def _decryptPayload(self, value):
         """Decrypt a payload we encrypted.
@@ -138,18 +138,18 @@ class SigningServiceResponseFactory:
 
         responses.add(
             responses.GET, self.getUrl("/service-key"),
-            json={"service-key": self.b64_service_public_key.decode('utf8')},
+            json={"service-key": self.b64_service_public_key},
             status=200)
 
         responses.add(
             responses.POST, self.getUrl("/nonce"),
-            json={"nonce": self.b64_nonce.decode('utf8')}, status=201)
+            json={"nonce": self.b64_nonce}, status=201)
 
         responses.add(
             responses.POST, self.getUrl("/generate"),
             body=self._encryptPayload({
                 'fingerprint': self.generated_fingerprint,
-                'public-key': self.b64_generated_public_key.decode('utf8')
+                'public-key': self.b64_generated_public_key,
             }, nonce=self.response_nonce),
             status=201)
 
@@ -160,14 +160,19 @@ class SigningServiceResponseFactory:
             }, nonce=self.response_nonce),
             status=200)
 
+        responses.add(
+            responses.POST, self.getUrl("/authorizations/add"),
+            body=self._encryptPayload({}, nonce=self.response_nonce),
+            status=200)
+
         call_counts = {'/sign': 0}
 
         def sign_callback(request):
             call_counts['/sign'] += 1
-            signed = base64.b64encode(
-                self.signed_msg_template % call_counts['/sign'])
+            signed_msg = self.signed_msg_template % call_counts['/sign']
+            signed = base64.b64encode(signed_msg)
             data = {'signed-message': signed.decode('utf8'),
-                    'public-key': self.b64_generated_public_key.decode('utf8')}
+                    'public-key': self.b64_generated_public_key}
             return 201, {}, self._encryptPayload(data, self.response_nonce)
 
         responses.add_callback(
@@ -218,7 +223,7 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
         self.assertIsInstance(key, PublicKey)
         self.assertEqual(
             key.encode(Base64Encoder),
-            self.response_factory.b64_service_public_key)
+            self.response_factory.b64_service_public_key.encode("UTF-8"))
 
         # Checks that the HTTP call was made
         self.assertEqual(1, len(responses.calls))
@@ -237,7 +242,8 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
         nonce = signing.getNonce()
 
         self.assertEqual(
-            base64.b64encode(nonce), self.response_factory.b64_nonce)
+            base64.b64encode(nonce),
+            self.response_factory.b64_nonce.encode("UTF-8"))
 
         # Checks that the HTTP call was made
         self.assertEqual(1, len(responses.calls))
@@ -418,7 +424,7 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
         key_type = SigningKeyType.KMOD
         mode = SigningMode.DETACHED
         message_name = 'my test msg'
-        message = 'this is the message content'
+        message = b'this is the message content'
 
         signing = getUtility(ISigningServiceClient)
         data = signing.sign(
@@ -563,3 +569,68 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
             'shrug', bytes(private_key), bytes(public_key),
             "This is a test key injected.", datetime.now())
         self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_addAuthorization_invalid_key_type(self):
+        signing = getUtility(ISigningServiceClient)
+        self.assertRaises(
+            ValueError, signing.addAuthorization,
+            "shrug", "fingerprint", "test-client")
+        self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_addAuthorization(self):
+        # Replace GET /service-key response by our mock.
+        resp_factory = self.response_factory
+        resp_factory.addResponses(self)
+
+        fingerprint = self.factory.getUniqueHexString(40).upper()
+        key_type = SigningKeyType.KMOD
+        client_name = "test-client"
+
+        signing = getUtility(ISigningServiceClient)
+        self.assertIsNone(
+            signing.addAuthorization(key_type, fingerprint, client_name))
+
+        self.assertEqual(3, len(responses.calls))
+        # expected order of HTTP calls
+        http_nonce, http_service_key, http_add_authorization = responses.calls
+
+        self.assertEqual("POST", http_nonce.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/nonce"), http_nonce.request.url)
+
+        self.assertEqual("GET", http_service_key.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/service-key"),
+            http_service_key.request.url)
+        self.assertThat(http_add_authorization.request.headers, ContainsDict({
+            "Content-Type": Equals("application/x-boxed-json"),
+            "X-Client-Public-Key": Equals(config.signing.client_public_key),
+            "X-Nonce": Equals(self.response_factory.b64_nonce),
+            "X-Response-Nonce": Equals(
+                self.response_factory.b64_response_nonce),
+            }))
+        self.assertThat(
+            http_add_authorization.request.body,
+            AfterPreprocessing(
+                self.response_factory._decryptPayload,
+                MatchesDict({
+                    "key-type": Equals("KMOD"),
+                    "fingerprint": Equals(fingerprint),
+                    "client-name": Equals(client_name),
+                    })))
+
+        self.assertTimeline([
+            ("POST", "/nonce", {}),
+            ("GET", "/service-key", {}),
+            ("POST", "/authorizations/add", {
+                "headers": {
+                    "Content-Type": "application/x-boxed-json",
+                    "X-Client-Public-Key": config.signing.client_public_key,
+                    "X-Nonce": self.response_factory.b64_nonce,
+                    "X-Response-Nonce":
+                        self.response_factory.b64_response_nonce,
+                    },
+                }),
+            ])

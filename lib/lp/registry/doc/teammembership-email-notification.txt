@@ -7,8 +7,7 @@ where we might want to notify only the team admins, but in most of the
 cases we'll be sending two similar (but not identical) notifications:
 one for all team admins and another for the member.
 
-    >>> def by_to_addrs(a, b):
-    ...     return cmp(a[1], b[1])
+    >>> from operator import itemgetter
 
     >>> def setStatus(membership, status, reviewer=None, comment=None,
     ...               silent=False):
@@ -82,7 +81,7 @@ generates a notification email only to Ubuntu Team administrators.
     >>> len(stub.test_emails)
     5
 
-    >>> print_distinct_emails(include_reply_to=True)
+    >>> print_distinct_emails(include_reply_to=True, decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -100,7 +99,7 @@ generates a notification email only to Ubuntu Team administrators.
     <BLANKLINE>
         http://launchpad.test/~ubuntu-team/+member/lifeless
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
@@ -132,7 +131,7 @@ job now.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -148,7 +147,7 @@ job now.
     Proposed to Declined.
     <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
@@ -163,7 +162,7 @@ job now.
     changed by Mark Shuttleworth (mark) from Proposed to Declined.
     <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are the affected member.
     <BLANKLINE>
@@ -186,11 +185,11 @@ The same goes for approving a proposed member.
     >>> setStatus(daf_membership, TeamMembershipStatus.APPROVED,
     ...           reviewer=mark, comment='This is a nice guy; I like him')
     >>> run_mail_jobs()
-    >>> stub.test_emails.sort(by_to_addrs)
+    >>> stub.test_emails.sort(key=itemgetter(1))
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -208,7 +207,7 @@ The same goes for approving a proposed member.
     <BLANKLINE>
     Mark Shuttleworth said:
      This is a nice guy; I like him
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
@@ -225,7 +224,7 @@ The same goes for approving a proposed member.
     <BLANKLINE>
     Mark Shuttleworth said:
      This is a nice guy; I like him
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are the affected member.
     <BLANKLINE>
@@ -236,11 +235,11 @@ The same for deactivating a membership.
     >>> setStatus(daf_membership, TeamMembershipStatus.DEACTIVATED,
     ...           reviewer=mark)
     >>> run_mail_jobs()
-    >>> stub.test_emails.sort(by_to_addrs)
+    >>> stub.test_emails.sort(key=itemgetter(1))
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -255,7 +254,7 @@ The same for deactivating a membership.
     (ubuntu-team) was changed by Mark Shuttleworth (mark) from Approved to
     Deactivated.
     <http://launchpad.test/~ubuntu-team>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
@@ -269,7 +268,7 @@ The same for deactivating a membership.
     The status of your membership in the team Ubuntu Team (ubuntu-team) was
     changed by Mark Shuttleworth (mark) from Approved to Deactivated.
     <http://launchpad.test/~ubuntu-team>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are the affected member.
     <BLANKLINE>
@@ -286,7 +285,7 @@ message sent.
     >>> len(stub.test_emails)
     5
 
-    >>> print_distinct_emails(include_reply_to=True)
+    >>> print_distinct_emails(include_reply_to=True, decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -304,7 +303,7 @@ message sent.
     <BLANKLINE>
         http://launchpad.test/~ubuntu-team/+member/admins
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
@@ -338,7 +337,7 @@ Now, the emails have been sent.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Marilize Coetzee <marilize@hbd.com>
     X-Launchpad-Message-Rationale: Member (ubuntu-team)
@@ -349,7 +348,7 @@ Now, the emails have been sent.
     team).
       <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are the new member.
     <BLANKLINE>
@@ -369,7 +368,7 @@ Now, the emails have been sent.
     <BLANKLINE>
         http://launchpad.test/~ubuntu-team/+member/marilize
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
@@ -397,7 +396,7 @@ membership will only be activated if they accept the invitation.
     >>> len(stub.test_emails)
     1
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Mark Shuttleworth <mark@example.com>
     X-Launchpad-Message-Rationale: Admin (ubuntu-mirror-admins)
@@ -416,11 +415,10 @@ membership will only be activated if they accept the invitation.
     Regards,
     The Launchpad team
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Mirror
-    Administrato=
-    rs team.
+    Administrators team.
     <BLANKLINE>
     ----------------------------------------
 
@@ -436,7 +434,7 @@ team.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -454,7 +452,7 @@ team.
     Mark Shuttleworth said:
      Of course I want to be part of ubuntu!
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
@@ -474,11 +472,10 @@ team.
     Mark Shuttleworth said:
      Of course I want to be part of ubuntu!
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because your team Mirror Administrators is the
-    affe=
-    cted member.
+    affected member.
     <BLANKLINE>
     ----------------------------------------
 
@@ -501,7 +498,7 @@ Similarly, a notification is sent if the invitation is declined.
     >>> len(stub.test_emails)
     7
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -519,7 +516,7 @@ Similarly, a notification is sent if the invitation is declined.
     Mark Shuttleworth said:
      Landscape has nothing to do with ubuntu, unfortunately.
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
@@ -538,11 +535,10 @@ Similarly, a notification is sent if the invitation is declined.
     Mark Shuttleworth said:
      Landscape has nothing to do with ubuntu, unfortunately.
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because your team Landscape Developers is the
-    affec=
-    ted member.
+    affected member.
     <BLANKLINE>
     ----------------------------------------
 
@@ -557,7 +553,7 @@ passing force_team_add=True to the addMember() method.
     >>> len(stub.test_emails)
     5
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Foo Bar <foo.bar@canonical.com>
     X-Launchpad-Message-Rationale: Member (ubuntu-team) @launchpad
@@ -565,8 +561,7 @@ passing force_team_add=True to the addMember() method.
     Subject: launchpad joined ubuntu-team
      ...
     You received this email because your team Launchpad Developers is the
-    new m=
-    ember.
+    new member.
     <BLANKLINE>
     ----------------------------------------
     From: Ubuntu Team <noreply@launchpad.net>
@@ -583,7 +578,7 @@ passing force_team_add=True to the addMember() method.
     <BLANKLINE>
         http://launchpad.test/~ubuntu-team/+member/launchpad
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
@@ -626,7 +621,7 @@ ubuntu-team's admins.
     >>> flush_database_updates()
     >>> beta_testers_on_ubuntu_team.sendExpirationWarningEmail()
     >>> run_mail_jobs()
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Launchpad Beta Testers Owner <beta-admin@launchpad.net>
     X-Launchpad-Message-Rationale: Member (ubuntu-team)
@@ -636,8 +631,8 @@ ubuntu-team's admins.
     <BLANKLINE>
     On ..., 9 days from now, the membership
     of Launchpad Beta Testers (launchpad-beta-testers) (which you are the
-    owner=
-    of) in the Ubuntu Team (ubuntu-team) Launchpad team is due to expire.
+    owner of) in the Ubuntu Team (ubuntu-team) Launchpad team is due to
+    expire.
     <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     To prevent this membership from expiring, you should get in touch
@@ -653,11 +648,10 @@ ubuntu-team's admins.
     <BLANKLINE>
     Thanks for using Launchpad!
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because your team Launchpad Beta Testers is the
-    aff=
-    ected member.
+    affected member.
     <BLANKLINE>
     ----------------------------------------
 
@@ -673,7 +667,7 @@ to renew their own membership.
     >>> flush_database_updates()
     >>> kamion_on_ubuntu_team.sendExpirationWarningEmail()
     >>> run_mail_jobs()
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Colin Watson <colin.watson@ubuntulinux.com>
     X-Launchpad-Message-Rationale: Member (ubuntu-team)
@@ -693,7 +687,7 @@ to renew their own membership.
     <BLANKLINE>
     Thanks for using Launchpad!
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are the affected member.
     <BLANKLINE>
@@ -701,7 +695,7 @@ to renew their own membership.
 
     >>> beta_testers_on_ubuntu_team.sendExpirationWarningEmail()
     >>> run_mail_jobs()
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Launchpad Beta Testers Owner <beta-admin@launchpad.net>
     X-Launchpad-Message-Rationale: Member (ubuntu-team)
@@ -711,8 +705,8 @@ to renew their own membership.
     <BLANKLINE>
     On ..., 9 days from now, the membership
     of Launchpad Beta Testers (launchpad-beta-testers) (which you are the
-    owner=
-    of) in the Ubuntu Team (ubuntu-team) Launchpad team is due to expire.
+    owner of) in the Ubuntu Team (ubuntu-team) Launchpad team is due to
+    expire.
     <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     If you want, you can renew this membership at
@@ -723,11 +717,10 @@ to renew their own membership.
     <BLANKLINE>
     Thanks for using Launchpad!
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because your team Launchpad Beta Testers is the
-    aff=
-    ected member.
+    affected member.
     <BLANKLINE>
     ----------------------------------------
 
@@ -737,8 +730,8 @@ being the team's owner), the notification they get will contain a link to
 their membership page, where they can extend it.
 
     >>> landscape.renewal_policy = TeamMembershipRenewalPolicy.NONE
-    >>> landscape.teamowner.preferredemail.email
-    u'test@canonical.com'
+    >>> print(landscape.teamowner.preferredemail.email)
+    test@canonical.com
 
     >>> sampleperson_on_landscape = membershipset.getByPersonAndTeam(
     ...     sampleperson, landscape)
@@ -747,7 +740,7 @@ their membership page, where they can extend it.
     >>> flush_database_updates()
     >>> sampleperson_on_landscape.sendExpirationWarningEmail()
     >>> run_mail_jobs()
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Landscape Developers <noreply@launchpad.net>
     To: Sample Person <test@canonical.com>
     X-Launchpad-Message-Rationale: Member (landscape-developers)
@@ -756,8 +749,7 @@ their membership page, where they can extend it.
     <BLANKLINE>
     On ..., 9 days from now, your membership
     in the Landscape Developers (landscape-developers) Launchpad team is due
-    to=
-    expire.
+    to expire.
     <http://launchpad.test/~landscape-developers>
     <BLANKLINE>
     To stay a member of this team you should extend your membership at
@@ -768,7 +760,7 @@ their membership page, where they can extend it.
     <BLANKLINE>
     Thanks for using Launchpad!
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are the affected member.
     <BLANKLINE>
@@ -788,10 +780,10 @@ notification is sent to all team admins.
     >>> karl_on_mirroradmins = membershipset.getByPersonAndTeam(
     ...     karl, mirror_admins)
     >>> tomorrow = datetime.now(pytz.timezone('UTC')) + timedelta(days=1)
-    >>> print karl_on_mirroradmins.status.title
+    >>> print(karl_on_mirroradmins.status.title)
     Approved
 
-    >>> print karl_on_mirroradmins.dateexpires
+    >>> print(karl_on_mirroradmins.dateexpires)
     None
 
     >>> ignored = login_person(mirror_admins.teamowner)
@@ -808,7 +800,7 @@ notification is sent to all team admins.
     >>> len(stub.test_emails)
     1
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Mirror Administrators <noreply@launchpad.net>
     To: Mark Shuttleworth <mark@example.com>
     X-Launchpad-Message-Rationale: Admin (ubuntu-mirror-admins)
@@ -822,11 +814,10 @@ notification is sent to all team admins.
     Regards,
     The Launchpad team
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are an admin of the Mirror
-    Administrato=
-    rs team.
+    Administrators team.
     <BLANKLINE>
     ----------------------------------------
 
@@ -861,7 +852,7 @@ email notification.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -877,7 +868,7 @@ email notification.
     Administrator.
     <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
-    -- =
+    -- 
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
     ----------------------------------------
@@ -891,7 +882,7 @@ email notification.
     changed by Mark Shuttleworth (mark) from Approved to Administrator.
     <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
-    -- =
+    -- 
     You received this email because you are the affected member.
     <BLANKLINE>
     ----------------------------------------
@@ -908,7 +899,7 @@ will only be sent to the team administrators.
     >>> len(stub.test_emails)
     5
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Celso Providelo <celso.providelo@canonical.com>,
@@ -924,7 +915,7 @@ will only be sent to the team administrators.
     Approved.
     <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
-    -- =
+    -- 
     You received this email because you are an admin of the Ubuntu Team team.
     <BLANKLINE>
     ----------------------------------------
@@ -943,7 +934,7 @@ wouldn't make sense to the members of the team reading it.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Celso Providelo <celso.providelo@canonical.com>,
@@ -958,7 +949,7 @@ wouldn't make sense to the members of the team reading it.
     (mark) from Approved to Deactivated.
     <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
-    -- =
+    -- 
     You received this email because you are an admin of the Ubuntu Team team.
     ----------------------------------------
     From: Ubuntu Team <noreply@launchpad.net>
@@ -973,10 +964,9 @@ wouldn't make sense to the members of the team reading it.
     (mark) from Approved to Deactivated.
     <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
-    -- =
+    -- 
     You received this email because your team Mirror Administrators is the
-    affe=
-    cted member.
+    affected member.
     ----------------------------------------
 
 Deactivating memberships can also be done silently (no email
@@ -986,7 +976,7 @@ notifications sent) by Launchpad Administrators.
     >>> hwdb_admins = personset.getByName('hwdb-team')
     >>> dumper_hwdb_membership = membershipset.getByPersonAndTeam(dumper,
     ...     hwdb_admins)
-    >>> print dumper_hwdb_membership.status.title
+    >>> print(dumper_hwdb_membership.status.title)
     Approved
 
     >>> ignored = login_person(admin_person)
@@ -996,7 +986,7 @@ notifications sent) by Launchpad Administrators.
     >>> len(stub.test_emails)
     0
 
-    >>> print dumper_hwdb_membership.status.title
+    >>> print(dumper_hwdb_membership.status.title)
     Deactivated
 
 People who are not Launchpad Administrators, may not change other's
@@ -1010,18 +1000,19 @@ membership statues silently.
     ...     kamion, ubuntu_team)
     >>> stevea_ubuntu_team_membership = membershipset.getByPersonAndTeam(
     ...     stevea, ubuntu_team)
-    >>> print kamion_ubuntu_team_membership.status.title
+    >>> print(kamion_ubuntu_team_membership.status.title)
     Administrator
 
-    >>> print stevea_ubuntu_team_membership.status.title
+    >>> print(stevea_ubuntu_team_membership.status.title)
     Approved
 
     >>> setStatus(stevea_ubuntu_team_membership,
     ...     TeamMembershipStatus.DEACTIVATED, reviewer=kamion, silent=True)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    UserCannotChangeMembershipSilently: ...
+    lp.registry.errors.UserCannotChangeMembershipSilently: ...
 
-    >>> print stevea_ubuntu_team_membership.status.title
+    >>> print(stevea_ubuntu_team_membership.status.title)
     Approved
 
 
@@ -1040,7 +1031,7 @@ notification email contain subscription information.
     ...     name='team-member', email='team-member@example.com')
     >>> ignored = team_one.addMember(member, owner)
     >>> run_mail_jobs()
-    >>> print_distinct_emails()
+    >>> print_distinct_emails(decode=True)
     From: Team One ...
     To: Team-member <team-member...>
     X-Launchpad-Message-Rationale: Member (team-one)
@@ -1054,7 +1045,7 @@ notification email contain subscription information.
     to update your Mailing List Subscription preferences.
       <http://launchpad.test/~/+editmailinglists>
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because you are the new member.
     <BLANKLINE>
@@ -1067,7 +1058,7 @@ emails contain subscription information.
     ...     name='team-two', email='team-two@example.com', owner=owner)
     >>> ignored = team_one.addMember(team_two, owner, force_team_add=True)
     >>> run_mail_jobs()
-    >>> print_distinct_emails(include_for=True)
+    >>> print_distinct_emails(include_for=True, decode=True)
     From: Team One ...
     To: Team Two <team-two...>
     X-Launchpad-Message-Rationale: Member (team-one) @team-two
@@ -1083,7 +1074,7 @@ emails contain subscription information.
     to update your Mailing List Subscription preferences.
       <http://launchpad.test/~/+editmailinglists>
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     You received this email because your team Team Two is the new member.
     <BLANKLINE>

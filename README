@@ -89,8 +89,8 @@ You can spend years hacking on Launchpad full-time and not know what all of
 the files in the top-level directory are for.  However, here's a guide to some
 of the ones that come up from time to time.
 
-  bzrplugins/
-    Bazaar plugins used in running Launchpad.
+  brzplugins/
+    Breezy plugins used in running Launchpad.
 
   sourcecode/
     A directory into which we symlink branches of some of Launchpad's

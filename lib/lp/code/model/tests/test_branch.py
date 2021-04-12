@@ -18,6 +18,7 @@ from breezy.bzr.bzrdir import BzrDir
 from breezy.revision import NULL_REVISION
 from breezy.url_policy_open import BadUrl
 from pytz import UTC
+import six
 from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
 from storm.locals import Store
@@ -2260,7 +2261,8 @@ class TestRevisionHistory(TestCaseWithFactory):
         # breezy.revision.NULL_REVISION.
         branch = self.factory.makeBranch()
         branch.updateScannedDetails(None, 0)
-        self.assertEqual(NULL_REVISION, branch.last_scanned_id)
+        self.assertEqual(
+            six.ensure_text(NULL_REVISION), branch.last_scanned_id)
         self.assertIs(None, branch.getTipRevision())
 
     def test_tip_revision_is_updated(self):
@@ -2388,7 +2390,7 @@ class TestPendingWritesAndUpdates(TestCaseWithFactory):
         # are pending writes but no pending updates.
         self.useBzrBranches(direct_database=True)
         branch, bzr_tree = self.create_branch_and_tree()
-        rev_id = self.factory.getUniqueString(b'rev-id')
+        rev_id = self.factory.getUniqueBytes('rev-id')
         bzr_tree.commit('Commit', committer='me@example.com', rev_id=rev_id)
         removeSecurityProxy(branch).branchChanged('', rev_id, None, None, None)
         transaction.commit()
@@ -2406,7 +2408,7 @@ class TestPendingWritesAndUpdates(TestCaseWithFactory):
         # are pending writes and pending updates.
         self.useBzrBranches(direct_database=True)
         branch, bzr_tree = self.create_branch_and_tree()
-        rev_id = self.factory.getUniqueString(b'rev-id')
+        rev_id = self.factory.getUniqueBytes('rev-id')
         bzr_tree.commit('Commit', committer='me@example.com', rev_id=rev_id)
         removeSecurityProxy(branch).branchChanged('', rev_id, None, None, None)
         transaction.commit()
@@ -2444,7 +2446,7 @@ class TestPendingWritesAndUpdates(TestCaseWithFactory):
         # pending writes and pending updates.
         branch = self.factory.makeAnyBranch(branch_type=BranchType.MIRRORED)
         branch.startMirroring()
-        rev_id = self.factory.getUniqueString('rev-id')
+        rev_id = self.factory.getUniqueBytes('rev-id')
         removeSecurityProxy(branch).branchChanged(
             '', rev_id, None, None, None)
         self.assertTrue(branch.pending_writes)
@@ -2455,13 +2457,13 @@ class TestPendingWritesAndUpdates(TestCaseWithFactory):
         # writes or pending updates.
         branch = self.factory.makeAnyBranch(branch_type=BranchType.MIRRORED)
         branch.startMirroring()
-        rev_id = self.factory.getUniqueString('rev-id')
+        rev_id = self.factory.getUniqueBytes('rev-id')
         removeSecurityProxy(branch).branchChanged(
             '', rev_id, None, None, None)
         # Cheat! The actual API for marking a branch as scanned is to run
         # the BranchScanJob. That requires a revision in the database
         # though.
-        removeSecurityProxy(branch).last_scanned_id = rev_id
+        removeSecurityProxy(branch).last_scanned_id = six.ensure_text(rev_id)
         [job] = getUtility(IBranchScanJobSource).iterReady()
         removeSecurityProxy(job).job._status = JobStatus.COMPLETED
         self.assertFalse(branch.pending_writes)
@@ -2480,7 +2482,7 @@ class TestPendingWritesAndUpdates(TestCaseWithFactory):
         # pending writes and pending updates.
         branch = self.factory.makeAnyBranch(branch_type=BranchType.MIRRORED)
         branch.startMirroring()
-        rev_id = self.factory.getUniqueString('rev-id')
+        rev_id = self.factory.getUniqueBytes('rev-id')
         removeSecurityProxy(branch).branchChanged(
             '', rev_id, None, None, None)
         # Cheat! We can only tell if mirroring has started if the last
@@ -3310,7 +3312,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         hosting_fixture = self.useFixture(BranchHostingFixture(
             file_list={'README.txt': 'some-file-id'}, blob=b'Some text'))
         blob = branch.getBlob('src/README.txt')
-        self.assertEqual('Some text', blob)
+        self.assertEqual(b'Some text', blob)
         self.assertEqual(
             [((branch.id, 'src'), {'rev': None})],
             hosting_fixture.getInventory.calls)
@@ -3325,7 +3327,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         hosting_fixture = self.useFixture(BranchHostingFixture(
             file_list={'README.txt': 'some-file-id'}, blob=b'Some text'))
         blob = branch.getBlob('src/README.txt')
-        self.assertEqual('Some text', blob)
+        self.assertEqual(b'Some text', blob)
         self.assertEqual(
             [((branch.id, 'src'), {'rev': 'scanned-id'})],
             hosting_fixture.getInventory.calls)
@@ -3343,7 +3345,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         hosting_fixture = self.useFixture(BranchHostingFixture(
             file_list={'README.txt': 'some-file-id'}, blob=b'Some text'))
         blob = branch.getBlob('src/README.txt', revision_id='some-rev')
-        self.assertEqual('Some text', blob)
+        self.assertEqual(b'Some text', blob)
         self.assertEqual(
             [((branch.id, 'src'), {'rev': 'some-rev'})],
             hosting_fixture.getInventory.calls)
@@ -3363,7 +3365,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         getUtility(IMemcacheClient).set(
             key.encode('UTF-8'), json.dumps({'README.txt': 'some-file-id'}))
         blob = branch.getBlob('src/README.txt', revision_id='some-rev')
-        self.assertEqual('Some text', blob)
+        self.assertEqual(b'Some text', blob)
         self.assertEqual([], hosting_fixture.getInventory.calls)
         self.assertEqual(
             [((branch.id, 'some-file-id'), {'rev': 'some-rev'})],
@@ -3378,7 +3380,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         key = 'bazaar.launchpad.test:bzr-file-list:%s:some-rev:src' % branch.id
         getUtility(IMemcacheClient).set(key.encode('UTF-8'), '{}')
         blob = branch.getBlob('src/README.txt', revision_id='some-rev')
-        self.assertEqual('Some text', blob)
+        self.assertEqual(b'Some text', blob)
         self.assertEqual(
             [((branch.id, 'src'), {'rev': 'some-rev'})],
             hosting_fixture.getInventory.calls)
@@ -3390,7 +3392,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         hosting_fixture = self.useFixture(BranchHostingFixture(
             file_list={'README.txt': 'some-file-id'}, blob=b'Some text'))
         blob = branch.getBlob('README.txt', revision_id='some-rev')
-        self.assertEqual('Some text', blob)
+        self.assertEqual(b'Some text', blob)
         self.assertEqual(
             [((branch.id, ''), {'rev': 'some-rev'})],
             hosting_fixture.getInventory.calls)

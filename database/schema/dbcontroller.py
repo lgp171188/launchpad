@@ -62,7 +62,8 @@ class DBController:
         if not pgbouncer_conn_str.dbname:
             pgbouncer_conn_str.dbname = 'pgbouncer'
         if pgbouncer_conn_str.dbname != 'pgbouncer':
-            log.warn("pgbouncer administrative database not named 'pgbouncer'")
+            log.warning(
+                "pgbouncer administrative database not named 'pgbouncer'")
         self.pgbouncer_con = pg_connect(pgbouncer_conn_str)
 
         self.master_name = None
@@ -143,7 +144,8 @@ class DBController:
                 cur.execute("SELECT pg_is_wal_replay_paused()")
                 replication_paused = cur.fetchone()[0]
                 if replication_paused:
-                    self.log.warn("Replication paused on %s. Resuming.", name)
+                    self.log.warning(
+                        "Replication paused on %s. Resuming.", name)
                     cur.execute("SELECT pg_wal_replay_resume()")
                     wait_for_sync = True
             except psycopg2.Error as x:

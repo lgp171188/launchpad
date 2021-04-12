@@ -5,7 +5,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from cStringIO import StringIO
+import io
 from itertools import product
 from textwrap import dedent
 
@@ -68,7 +68,7 @@ class TestBugIDsFromChangesFile(TestCaseWithFactory):
         """Serialize self.changes and use get_bug_ids_from_changes_file to
         extract bug IDs from it.
         """
-        stream = StringIO()
+        stream = io.BytesIO()
         self.changes.dump(stream)
         stream.seek(0)
         return get_bug_ids_from_changes_file(stream)
@@ -237,7 +237,7 @@ class TestClosingPrivateBugs(TestCaseWithFactory):
         dsp = series.distribution.getSourcePackage(spr.sourcepackagename)
         bug = self.factory.makeBug(
             target=dsp, information_type=InformationType.USERDATA)
-        changes = StringIO(changes_file_template % bug.id)
+        changes = io.BytesIO((changes_file_template % bug.id).encode("UTF-8"))
 
         with person_logged_in(archive_admin):
             # The archive admin user can't normally see this bug.

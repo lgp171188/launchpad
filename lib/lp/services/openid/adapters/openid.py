@@ -10,6 +10,7 @@ __all__ = [
     'OpenIDPersistentIdentity',
     ]
 
+import six
 from zope.component import adapter
 from zope.interface import implementer
 
@@ -55,8 +56,8 @@ class OpenIDPersistentIdentity:
         if openid_identifier is None:
             return None
         return (
-            config.launchpad.openid_provider_root +
-            openid_identifier.encode('ascii'))
+            six.ensure_text(config.launchpad.openid_provider_root) +
+            openid_identifier)
 
     @property
     def openid_identifier(self):

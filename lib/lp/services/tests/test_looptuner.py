@@ -28,10 +28,6 @@ class CleanupException(Exception):
     """Exception raised from the cleanup method of an ITunableLoop."""
 
 
-class IsDoneException(Exception):
-    """Exception raised from the isDone method of an ITunableLoop."""
-
-
 @implementer(ITunableLoop)
 class FailingLoop:
 

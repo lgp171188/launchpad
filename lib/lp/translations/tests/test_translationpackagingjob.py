@@ -50,7 +50,7 @@ from lp.translations.tests.test_translationsplitter import (
 
 
 def make_translation_merge_job(factory, not_ubuntu=False):
-    singular = factory.getUniqueString()
+    singular = factory.getUniqueUnicode()
     upstream_pofile = factory.makePOFile(side=TranslationSide.UPSTREAM)
     upstream_potmsgset = factory.makePOTMsgSet(
         upstream_pofile.potemplate, singular)

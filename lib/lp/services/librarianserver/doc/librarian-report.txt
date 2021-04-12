@@ -5,13 +5,13 @@ storage.
     >>> script = 'scripts/librarian-report.py'
 
     >>> rv, out, err = run_script(script)
-    >>> print rv
+    >>> print(rv)
     0
-    >>> print err
-    >>> print '\n' + out
+    >>> print(err)
+    >>> print('\n' + out)
     <BLANKLINE>
     ...
-    4866 bytes    hwsubmission in 2 files
+    45 kB         languagepack in 4 files
     ...
 
 
@@ -19,13 +19,11 @@ We can filter on date to produce deltas.
 
     >>> rv, out, err = run_script(
     ...     script, ['--from=2005/01/01', '--until=2005/12/31'])
-    >>> print rv
+    >>> print(rv)
     0
-    >>> print err
-    >>> print '\n' + out
+    >>> print(err)
+    >>> print('\n' + out)
     <BLANKLINE>
     ...
-    0 bytes      hwsubmission in 0 files
+    0 bytes      languagepack in 0 files
     ...
-
-

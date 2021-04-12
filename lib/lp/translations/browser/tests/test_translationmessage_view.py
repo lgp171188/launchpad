@@ -158,7 +158,8 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
         # If there is a suggestion on a plural message, it is dismissed
         # in yet a different place.
         self.potmsgset = self.factory.makePOTMsgSet(
-            self.potemplate, singular="msgid_singular", plural="msgid_plural")
+            self.potemplate,
+            singular=u"msgid_singular", plural=u"msgid_plural")
         message = self._makeTranslation(["singular_trans", "plural_trans"])
         self._makeTranslation(
             ["singular_sugg", "plural_sugg"], suggestion=True)
@@ -184,7 +185,8 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
         # If there is a suggestion on a plural message, it is dismissed
         # in yet a different place.
         self.potmsgset = self.factory.makePOTMsgSet(
-            self.potemplate, singular="msgid_singular", plural="msgid_plural")
+            self.potemplate,
+            singular=u"msgid_singular", plural=u"msgid_plural")
         message = self._makeTranslation(["singular_trans", "plural_trans"])
         self._makeTranslation(["singular_new", "plural_new"], is_other=True)
         self._createView(message)

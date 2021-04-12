@@ -64,10 +64,9 @@ class TestPersonEmailSecurity(TestCaseWithFactory):
         accessor = self.factory.makePerson()
         lp = launchpadlib_for("test", accessor.name)
         person = lp.people['target']
-        emails = sorted(list(person.confirmed_email_addresses))
-        self.assertNotEqual(
-                sorted([self.email_one, self.email_two]),
-                len(emails))
+        emails = [entry.email for entry in person.confirmed_email_addresses]
+        self.assertContentEqual(
+            ['test1@example.com', 'test2@example.com'], emails)
 
     def test_anonymous_cannot_access(self):
         # An anonymous launchpadlib connection cannot see email addresses.
@@ -160,7 +159,7 @@ class TestPersonRepresentation(TestCaseWithFactory):
         rendered_comment = response.body
         self.assertEqual(
             rendered_comment,
-            '<a href="/~test-person" class="sprite person">Test Person</a>')
+            b'<a href="/~test-person" class="sprite person">Test Person</a>')
 
 
 class PersonWebServiceTests(TestCaseWithFactory):
@@ -336,7 +335,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
                 '/people?ws.op=getByEmail&email=foo@').jsonBody)
         # XXX wgrant bug=1088358: This escaping shouldn't be here; it's
         # not HTML.
-        self.assertEqual("email: Invalid email &#x27;foo@&#x27;.", e[0])
+        self.assertEqual("email: Invalid email &#x27;foo@&#x27;.", e.args[0])
 
     def test_getByOpenIDIdentifier(self):
         # You can get a person by their OpenID identifier URL.
@@ -402,6 +401,20 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
             existing = self.factory.makePerson(
                 email='somebody@example.com',
                 account_status=AccountStatus.SUSPENDED)
+            oid = OpenIdIdentifier()
+            oid.account = existing.account
+            oid.identifier = u'somebody'
+            Store.of(existing).add(oid)
+            sca = getUtility(IPersonSet).getByName('software-center-agent')
+        response = self.getOrCreateSoftwareCenterCustomer(sca)
+        self.assertEqual(400, response.status)
+
+    def test_getOrCreateSoftwareCenterCustomer_rejects_deceased(self):
+        # Deceased accounts are not returned.
+        with admin_logged_in():
+            existing = self.factory.makePerson(
+                email='somebody@example.com',
+                account_status=AccountStatus.DECEASED)
             oid = OpenIdIdentifier()
             oid.account = existing.account
             oid.identifier = u'somebody'
@@ -499,23 +512,23 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
             sso, 'foo', 'taken-name', dry_run=dry_run)
         self.assertEqual(400, response.status)
         self.assertEqual(
-            'name: taken-name is already in use by another person or team.',
+            b'name: taken-name is already in use by another person or team.',
             response.body)
 
         response = self.setUsernameFromSSO(
             sso, 'foo', 'private-name', dry_run=dry_run)
         self.assertEqual(400, response.status)
         self.assertEqual(
-            'name: The name &#x27;private-name&#x27; has been blocked by the '
-            'Launchpad administrators. Contact Launchpad Support if you want '
-            'to use this name.',
+            b'name: The name &#x27;private-name&#x27; has been blocked by the '
+            b'Launchpad administrators. Contact Launchpad Support if you want '
+            b'to use this name.',
             response.body)
 
         response = self.setUsernameFromSSO(
             sso, taken_openid, 'bar', dry_run=dry_run)
         self.assertEqual(400, response.status)
         self.assertEqual(
-            'An account for that OpenID identifier already exists.',
+            b'An account for that OpenID identifier already exists.',
             response.body)
 
     def test_setUsernameFromSSO_rejects_bad_input_in_dry_run(self):
@@ -562,7 +575,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
         response = self.addSSHKeyForPerson('doesnotexist', 'sdf')
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "No account found for openid identifier 'doesnotexist'",
+            b"No account found for openid identifier 'doesnotexist'",
             response.body)
 
     def test_addSSHKeyFromSSO_rejects_bad_key_data(self):
@@ -572,7 +585,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
         response = self.addSSHKeyForPerson(openid_id, 'bad_data')
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "Invalid SSH key data: 'bad_data'",
+            b"Invalid SSH key data: 'bad_data'",
             response.body)
 
     def test_addSSHKeyFromSSO_rejects_bad_key_type(self):
@@ -582,7 +595,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
         response = self.addSSHKeyForPerson(openid_id, 'foo keydata comment')
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "Invalid SSH key type: 'foo'",
+            b"Invalid SSH key type: 'foo'",
             response.body)
 
     def test_addSSHKeyFromSSO_rejects_bad_key_type_dry_run(self):
@@ -593,7 +606,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
             openid_id, 'foo keydata comment', True)
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "Invalid SSH key type: 'foo'",
+            b"Invalid SSH key type: 'foo'",
             response.body)
 
     def test_addSSHKeyFromSSO_works(self):
@@ -648,7 +661,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
             'doesnotexist', 'sdf', dry_run)
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "No account found for openid identifier 'doesnotexist'",
+            b"No account found for openid identifier 'doesnotexist'",
             response.body)
 
     def test_deleteSSHKeyFromSSO_nonexistant_dry_run(self):
@@ -663,7 +676,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
             openid_id, 'bad_data', dry_run)
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "Invalid SSH key data: 'bad_data'",
+            b"Invalid SSH key data: 'bad_data'",
             response.body)
 
     def test_deleteSSHKeyFromSSO_rejects_bad_key_data_dry_run(self):
@@ -678,7 +691,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
             openid_id, 'foo keydata comment', dry_run)
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "Invalid SSH key type: 'foo'",
+            b"Invalid SSH key type: 'foo'",
             response.body)
 
     def test_deleteSSHKeyFromSSO_rejects_bad_key_type_dry_run(self):

@@ -103,15 +103,15 @@ three members of the vcs-imports team.
     >>> vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
     >>> len(get_contact_email_addresses(vcs_imports))
     3
-    >>> import email
-    >>> message = email.message_from_string(stub.test_emails[0][2])
+    >>> from lp.services.compat import message_from_bytes
+    >>> message = message_from_bytes(stub.test_emails[0][2])
     >>> print(message['subject'])
     New code import: ~import-person/widget/trunk-cvs
     >>> print(message['X-Launchpad-Message-Rationale'])
     Operator @vcs-imports
     >>> print(message['X-Launchpad-Message-For'])
     vcs-imports
-    >>> print(message.get_payload(decode=True))
+    >>> print(six.ensure_text(message.get_payload(decode=True)))
     A new CVS code import has been requested by Code Import Person:
         http://code.launchpad.test/~import-person/widget/trunk-cvs
     from
@@ -258,7 +258,7 @@ created if done through the web UI, so we'll add nopriv here.
     ...     {'review_status': CodeImportReviewStatus.REVIEWED,
     ...      'url': 'http://svn.example.com/project/trunk'},
     ...     nopriv)
-    >>> print_emails(group_similar=True)
+    >>> print_emails(group_similar=True, decode=True)
     From: Code Import Person <import@example.com>
     To: david.allouche@canonical.com, ...
     Subject: Code import ~person-name-.../product.../name... status: Reviewed
@@ -268,7 +268,7 @@ created if done through the web UI, so we'll add nopriv here.
     instead of:
         http://svn.example.com/project
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     http://code.launchpad.test/~person.../product.../name...
     You are getting this email because you are a member of the vcs-imports
@@ -284,7 +284,7 @@ created if done through the web UI, so we'll add nopriv here.
     instead of:
         http://svn.example.com/project
     <BLANKLINE>
-    -- =
+    -- 
     <BLANKLINE>
     http://code.launchpad.test/~person.../product.../name...
     You are receiving this email as you are subscribed to the branch.
@@ -421,18 +421,19 @@ Passing both paramters is combined as "and".
 You can also retrive an import by id and by branch, which will be used
 to present the import's details on the page of the branch.
 
-    >>> code_import_set.get(svn_import.id).url
-    u'svn://svn.example.com/trunk'
-    >>> code_import_set.getByBranch(cvs_import.branch).cvs_root
-    u':pserver:anonymous@cvs.example.com:/cvsroot'
+    >>> print(code_import_set.get(svn_import.id).url)
+    svn://svn.example.com/trunk
+    >>> print(code_import_set.getByBranch(cvs_import.branch).cvs_root)
+    :pserver:anonymous@cvs.example.com:/cvsroot
 
 When you ask for an id that is not present ICodeImportSet.get() raises
 lp.app.errors.NotFoundError, rather than some internal database exception.
 
     >>> code_import_set.get(-10)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    NotFoundError: -10
+    lp.app.errors.NotFoundError: -10
 
 
 Canonical URLs
@@ -467,26 +468,27 @@ Even though David can access CodeImportObjects, he cannot set attributes
 on those objects.
 
     >>> login('david.allouche@canonical.com')
-    >>> svn_import.url
-    u'svn://svn.example.com/trunk'
+    >>> print(svn_import.url)
+    svn://svn.example.com/trunk
     >>> svn_import.url = 'svn://svn.example.com/branch/1.0'
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    ForbiddenAttribute: ('url', <CodeImport ...>)
+    zope.security.interfaces.ForbiddenAttribute: ('url', <CodeImport ...>)
 
 Modifications can be done using the CodeImport.updateFromData
 method. If any change were made, this method creates and returns a
 CodeImportEvent describing them. The CodeImportEvent records the user
 that made the change, so we need to pass the user as an argument.
 
-    >>> svn_import.url
-    u'svn://svn.example.com/trunk'
+    >>> print(svn_import.url)
+    svn://svn.example.com/trunk
     >>> data = {'url': 'svn://svn.example.com/branch/1.0'}
     >>> modify_event = svn_import.updateFromData(data, nopriv)
     >>> modify_event.event_type.name
     'MODIFY'
-    >>> svn_import.url
-    u'svn://svn.example.com/branch/1.0'
+    >>> print(svn_import.url)
+    svn://svn.example.com/branch/1.0
     >>> svn_events = event_set.getEventsForCodeImport(svn_import)
     >>> [event.event_type.name for event in svn_events]
     ['CREATE', 'MODIFY']
@@ -495,9 +497,10 @@ The launchpad.Edit privilege is required to use CodeImport.updateFromData.
 
     >>> login(ANONYMOUS)
     >>> svn_import.updateFromData({}, nopriv)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: (<CodeImport ...>, 'updateFromData', 'launchpad.Moderate')
+    zope.security.interfaces.Unauthorized: (<CodeImport ...>, 'updateFromData', 'launchpad.Moderate')
 
 We saw above how changes to SVN details are displayed in emails above.
 CVS details are displayed in a similar way.

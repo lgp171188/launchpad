@@ -38,7 +38,7 @@ if len(args) > 0:
 log = logger(options, 'loglevels')
 
 log.error("This is an error")
-log.warn("This is a warning")
+log.warning("This is a warning")
 log.info("This is info")
 log.debug("This is debug")
 log.debug2("This is debug2")

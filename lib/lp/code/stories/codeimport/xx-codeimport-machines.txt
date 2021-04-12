@@ -66,7 +66,7 @@ The heading of the page shows the import machine name, and the machine's
 current status.
 
     >>> def print_heading(browser):
-    ...     print(find_main_content(browser.contents).h1.renderContents())
+    ...     print(find_main_content(browser.contents).h1.decode_contents())
     >>> print_heading(browser)
     apollo: Online
 
@@ -103,7 +103,7 @@ the status of the machine.
     >>> admin_browser.open(browser.url)
 
     >>> print(find_tag_by_id(admin_browser.contents,
-    ...     'update-status').h2.renderContents())
+    ...     'update-status').h2.decode_contents())
     Update machine status
 
     >>> admin_browser.getControl('Reason').value = (

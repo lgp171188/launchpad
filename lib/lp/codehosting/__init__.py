@@ -3,8 +3,8 @@
 
 """Launchpad code-hosting system.
 
-NOTE: Importing this package will load any system Bazaar plugins, as well as
-all plugins in the bzrplugins/ directory underneath the rocketfuel checkout.
+NOTE: Importing this package will load any system Breezy plugins, as well as
+all plugins in the brzplugins/ directory underneath the rocketfuel checkout.
 """
 
 from __future__ import absolute_import, print_function
@@ -12,7 +12,6 @@ from __future__ import absolute_import, print_function
 __metaclass__ = type
 __all__ = [
     'get_brz_path',
-    'get_BZR_PLUGIN_PATH_for_subprocess',
     ]
 
 
@@ -25,37 +24,14 @@ from breezy.library_state import BzrLibraryState as BrzLibraryState
 from breezy.plugin import load_plugins as brz_load_plugins
 # This import is needed so that brz's logger gets registered.
 import breezy.trace
-import six
 from zope.security import checker
 
 from lp.services.config import config
-
-if six.PY2:
-    from bzrlib.plugin import load_plugins as bzr_load_plugins
-    # This import is needed so that bzr's logger gets registered.
-    import bzrlib.trace
 
 
 def get_brz_path():
     """Find the path to the copy of Breezy for this rocketfuel instance"""
     return os.path.join(config.root, 'bin', 'brz')
-
-
-def _get_bzr_plugins_path():
-    """Find the path to the Bazaar plugins for this rocketfuel instance."""
-    return os.path.join(config.root, 'bzrplugins')
-
-
-def get_BZR_PLUGIN_PATH_for_subprocess():
-    """Calculate the appropriate value for the BZR_PLUGIN_PATH environment.
-
-    The '-site' token tells bzrlib not to include the 'site specific plugins
-    directory' (which is usually something like
-    /usr/lib/pythonX.Y/dist-packages/bzrlib/plugins/) in the plugin search
-    path, which would be inappropriate for Launchpad, which may be using a bzr
-    egg of an incompatible version.
-    """
-    return ":".join((_get_bzr_plugins_path(), "-site"))
 
 
 def _get_brz_plugins_path():
@@ -83,9 +59,6 @@ if breezy._global_state is None:
     brz_state._start()
 
 
-# XXX cjwatson 2019-06-13: Remove BZR_PLUGIN_PATH and supporting code once
-# all of Launchpad has been ported to Breezy.
-os.environ['BZR_PLUGIN_PATH'] = get_BZR_PLUGIN_PATH_for_subprocess()
 os.environ['BRZ_PLUGIN_PATH'] = get_BRZ_PLUGIN_PATH_for_subprocess()
 
 # Disable some Breezy plugins that are likely to cause trouble if used on
@@ -100,8 +73,6 @@ os.environ['BRZ_DISABLE_PLUGINS'] = ':'.join([
 
 # We want to have full access to Launchpad's Breezy plugins throughout the
 # codehosting package.
-if six.PY2:
-    bzr_load_plugins([_get_bzr_plugins_path()])
 brz_load_plugins()
 
 

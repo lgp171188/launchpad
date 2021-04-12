@@ -73,7 +73,11 @@ from lp.bugs.interfaces.bugtarget import (
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
-from lp.registry.enums import VCSType
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
+from lp.registry.enums import (
+    DistributionDefaultTraversalPolicy,
+    VCSType,
+    )
 from lp.registry.interfaces.announcement import IMakesAnnouncements
 from lp.registry.interfaces.distributionmirror import IDistributionMirror
 from lp.registry.interfaces.distroseries import DistroSeriesNameField
@@ -390,6 +394,20 @@ class IDistributionPublic(
             description=_(
                 "Version control system for this distribution's code.")))
 
+    default_traversal_policy = exported(Choice(
+        title=_("Default traversal policy"),
+        description=_(
+            "The type of object that /{distro}/{name} URLs for this "
+            "distribution resolve to."),
+        vocabulary=DistributionDefaultTraversalPolicy,
+        readonly=False, required=False))
+    redirect_default_traversal = exported(Bool(
+        title=_("Redirect the default traversal"),
+        description=_(
+            "If true, the default traversal is for migration and redirects "
+            "to a different canonical URL."),
+        readonly=False, required=False))
+
     def getArchiveIDList(archive=None):
         """Return a list of archive IDs suitable for sqlvalues() or quote().
 
@@ -702,6 +720,13 @@ class IDistributionPublic(
     def newOCIProject(registrant, name, description=None):
         """Create an `IOCIProject` for this distro."""
 
+    oci_registry_credentials = Reference(
+        IOCIRegistryCredentials,
+        title=_("OCI registry credentials"),
+        description=_("Credentials and URL to use for uploading all OCI "
+                      "images in this distribution to a registry."),
+        required=False, readonly=False)
+
 
 @exported_as_webservice_entry(as_of="beta")
 class IDistribution(
@@ -717,9 +742,9 @@ class IDistribution(
         ubuntu = launchpad.distributions["ubuntu"]
         archive = ubuntu.main_archive
         series = ubuntu.current_series
-        print archive.getPublishedSources(exact_match=True,
+        print(archive.getPublishedSources(exact_match=True,
             source_name="apport",
-            distro_series=series)[0].source_package_version
+            distro_series=series)[0].source_package_version)
     """
 
 

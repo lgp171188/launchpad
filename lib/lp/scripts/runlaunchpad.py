@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -10,7 +10,9 @@ try:
     from contextlib import ExitStack
 except ImportError:
     from contextlib2 import ExitStack
+from io import StringIO
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -18,8 +20,9 @@ import sys
 import fixtures
 from lazr.config import as_host_port
 from rabbitfixture.server import RabbitServerResources
+from talisker import run_gunicorn
 from testtools.testresult.real import _details_to_str
-from zope.app.server.main import main
+from zope.app.server.main import main as zope_main
 
 from lp.services.config import config
 from lp.services.daemons import tachandler
@@ -331,6 +334,42 @@ def start_testapp(argv=list(sys.argv)):
                 pass
 
 
+def gunicornify_zope_config_file():
+    """Creates a new launchpad.config file removing directives related to
+    Zope Server that shouldn't be used when running on gunicorn.
+    """
+    original_filename = config.zope_config_file
+    with open(original_filename) as fd:
+        content = fd.read()
+
+    # Remove unwanted tags.
+    for tag in ['server', 'accesslog']:
+        content = re.sub(
+            r"<%s>(.*)</%s>" % (tag, tag), "", content, flags=re.S)
+
+    # Remove unwanted single-line directives.
+    for directive in ['interrupt-check-interval']:
+        content = re.sub(r"%s .*" % directive, "", content)
+
+    new_file = StringIO(content)
+    config.zope_config_file = new_file
+
+
+def gunicorn_main():
+    gunicornify_zope_config_file()
+    orig_argv = sys.argv
+    try:
+        sys.argv = [
+            os.path.join(config.root, "bin", "talisker.gunicorn"),
+            "lp.startwsgi",
+            "-c", os.path.join(config.config_dir, "gunicorn.conf.py")
+        ]
+        run_gunicorn()
+        return
+    finally:
+        sys.argv = orig_argv
+
+
 def start_launchpad(argv=list(sys.argv), setup=None):
     # We really want to replace this with a generic startup harness.
     # However, this should last us until this is developed
@@ -352,7 +391,10 @@ def start_launchpad(argv=list(sys.argv), setup=None):
             # Store our process id somewhere
             make_pidfile('launchpad')
             if config.launchpad.launch:
-                main(argv)
+                if config.use_gunicorn:
+                    gunicorn_main()
+                else:
+                    zope_main(argv)
             else:
                 # We just need the foreground process to sit around forever
                 # waiting for the signal to shut everything down.  Normally,

@@ -105,6 +105,7 @@ from lp.bugs.model.structuralsubscription import (
     get_structural_subscriptions_for_bug,
     )
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.compat import message_as_bytes
 from lp.services.features import getFeatureFlag
 from lp.services.fields import DuplicateBug
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
@@ -193,7 +194,7 @@ class BugNavigation(Navigation):
         """Traverse to a nomination by id."""
         if nomination_id.isdigit():
             try:
-                return getUtility(IBugNominationSet).get(nomination_id)
+                return getUtility(IBugNominationSet).get(int(nomination_id))
             except NotFoundError:
                 return None
 
@@ -1163,13 +1164,12 @@ class BugTextView(LaunchpadView):
 
         for comment in comments:
             message = build_message(comment.text_for_display)
-            message['Author'] = comment.owner.unique_displayname.encode(
-                'utf-8')
+            message['Author'] = comment.owner.unique_displayname
             message['Date'] = format_rfc2822_date(comment.datecreated)
             message['Message-Id'] = comment.rfc822msgid
             comment_mime.attach(message)
 
-        return comment_mime.as_string().decode('utf-8')
+        return message_as_bytes(comment_mime).decode('utf-8')
 
     def render(self):
         """Return a text representation of the bug."""

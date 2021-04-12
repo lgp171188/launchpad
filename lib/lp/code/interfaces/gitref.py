@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git reference ("ref") interfaces."""
@@ -8,6 +8,7 @@ __metaclass__ = type
 __all__ = [
     'IGitRef',
     'IGitRefBatchNavigator',
+    'IGitRefRemote',
     'IGitRefRemoteSet',
     'IGitRefSet',
     ]
@@ -466,6 +467,14 @@ class IGitRefEdit(Interface):
 @exported_as_webservice_entry(as_of="beta")
 class IGitRef(IGitRefView, IGitRefEdit):
     """A reference in a Git repository."""
+
+
+class IGitRefRemote(Interface):
+    """Marker interface for a reference in a remote Git repository."""
+    # XXX cjwatson 2020-12-16: Implementers of this don't implement IGitRef
+    # correctly: several required properties will raise NotImplementedError.
+    # We may need to split out the parts of IGitRef that don't apply to
+    # remote references, and make this a full (non-marker) interface.
 
 
 class IGitRefSet(Interface):

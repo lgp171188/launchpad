@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -676,7 +676,7 @@
     <browser:url
         for="lp.soyuz.interfaces.archivedependency.IArchiveDependency"
         path_expression="string:+dependency/${dependency/id}"
-        attribute_to_parent="archive"
+        attribute_to_parent="parent"
         />
     <browser:url
         for="lp.soyuz.interfaces.binarypackagerelease.IBinaryPackageReleaseDownloadCount"

@@ -9,6 +9,7 @@ __metaclass__ = type
 
 from textwrap import dedent
 
+import six
 from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
@@ -201,7 +202,7 @@ class TestSnapRequestBuildsJob(TestCaseWithFactory):
         self.assertEqual(
             "Launchpad encountered an error during the following operation: "
             "requesting builds of %s.  Nonsense on stilts" % snap.name,
-            notification.get_payload(decode=True))
+            six.ensure_text(notification.get_payload(decode=True)))
         self.assertThat(job, MatchesStructure(
             job=MatchesStructure.byEquality(status=JobStatus.FAILED),
             date_created=Equals(expected_date_created),
@@ -235,7 +236,7 @@ class TestSnapRequestBuildsJob(TestCaseWithFactory):
             "Launchpad encountered an error during the following operation: "
             "requesting builds of %s.  No such base: "
             "'nonexistent'." % snap.name,
-            notification.get_payload(decode=True))
+            six.ensure_text(notification.get_payload(decode=True)))
         self.assertThat(job, MatchesStructure(
             job=MatchesStructure.byEquality(status=JobStatus.FAILED),
             date_created=Equals(expected_date_created),

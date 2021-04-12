@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -65,6 +65,7 @@ from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitref import (
     IGitRef,
+    IGitRefRemote,
     IGitRefRemoteSet,
     IGitRefSet,
     )
@@ -102,6 +103,22 @@ class GitRefMixin:
     """
 
     repository_url = None
+
+    def __eq__(self, other):
+        return (
+            IGitRef.providedBy(other) and
+            not IGitRefRemote.providedBy(other) and
+            self.repository == other.repository and
+            self.repository_url == other.repository_url and
+            self.path == other.path and
+            self.commit_sha1 == other.commit_sha1)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash((
+            self.repository, self.repository_url, self.path, self.commit_sha1))
 
     @property
     def display_name(self):
@@ -488,7 +505,7 @@ class GitRefMixin:
 
 @implementer(IGitRef)
 @provider(IGitRefSet)
-class GitRef(StormBase, GitRefMixin):
+class GitRef(GitRefMixin, StormBase):
     """See `IGitRef`."""
 
     __storm_table__ = 'GitRef'
@@ -617,7 +634,7 @@ class GitRef(StormBase, GitRefMixin):
         if len(reviewers) != len(review_types):
             raise WrongNumberOfReviewTypeArguments(
                 'reviewers and review_types must be equal length.')
-        review_requests = zip(reviewers, review_types)
+        review_requests = list(zip(reviewers, review_types))
         return self.addLandingTarget(
             registrant, merge_target, merge_prerequisite,
             needs_review=needs_review, description=initial_comment,
@@ -676,17 +693,10 @@ class GitRefDatabaseBackedMixin(GitRefMixin):
         else:
             setattr(self._self_in_database, name, value)
 
-    def __eq__(self, other):
-        return (
-            self.repository == other.repository and
-            self.path == other.path and
-            self.commit_sha1 == other.commit_sha1)
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __hash__(self):
-        return hash(self.repository) ^ hash(self.path) ^ hash(self.commit_sha1)
+    # zope.interface tries to use this during adaptation (e.g. to
+    # ITraversable), and we don't want that to attempt a database lookup via
+    # __getattr__.
+    __conform__ = None
 
 
 @implementer(IGitRef)
@@ -796,7 +806,7 @@ def _fetch_blob_from_launchpad(repository_url, ref_path, filename):
     return response.content
 
 
-@implementer(IGitRef)
+@implementer(IGitRef, IGitRefRemote)
 @provider(IGitRefRemoteSet)
 class GitRefRemote(GitRefMixin):
     """A reference in a remotely-hosted Git repository.
@@ -814,6 +824,18 @@ class GitRefRemote(GitRefMixin):
     def new(cls, repository_url, path):
         """See `IGitRefRemoteSet`."""
         return cls(repository_url, path)
+
+    def __eq__(self, other):
+        return (
+            IGitRefRemote.providedBy(other) and
+            self.repository_url == other.repository_url and
+            self.path == other.path)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash((self.repository_url, self.path))
 
     def _unimplemented(self, *args, **kwargs):
         raise NotImplementedError("Not implemented for remote repositories.")
@@ -930,11 +952,3 @@ class GitRefRemote(GitRefMixin):
 
     setGrants = _unimplemented
     checkPermissions = _unimplemented
-
-    def __eq__(self, other):
-        return (
-            self.repository_url == other.repository_url and
-            self.path == other.path)
-
-    def __ne__(self, other):
-        return not self == other

@@ -638,7 +638,7 @@ an error:
     >>> user_browser.url
     'http://blueprints.launchpad.test/ubuntu/+addspec'
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
-    ...      print(message.renderContents())
+    ...      print(message.decode_contents())
     There is 1 error...already in use by another blueprint...
 
 Attempting to register a duplicate blueprint from a non-target context
@@ -656,7 +656,7 @@ produces the same error:
     >>> print(user_browser.url)
     http://blueprints.launchpad.test/sprints/rome/+addspec
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
-    ...      print(message.renderContents())
+    ...      print(message.decode_contents())
     There is 1 error...already in use by another blueprint...
 
 
@@ -674,7 +674,7 @@ Blueprint names must conform to a set pattern:
     >>> user_browser.url
     'http://blueprints.launchpad.test/ubuntu/+addspec'
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
-    ...      print(message.renderContents())
+    ...      print(message.decode_contents())
     There is 1 error...Invalid name...
 
 However, some invalid names can be transformed into valid names. When it is
@@ -709,7 +709,7 @@ blueprint:
     >>> user_browser.url
     'http://blueprints.launchpad.test/ubuntu/+addspec'
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
-    ...      print(message.renderContents())
+    ...      print(message.decode_contents())
     There is 1 error...is already registered by...
     ...Network Magic: Auto Network Detection...
 
@@ -723,15 +723,17 @@ individual user's blueprint listing page:
 
     >>> user_browser.open('http://blueprints.launchpad.test/~mark')
     >>> print(user_browser.getLink('Register a blueprint'))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
 It's also not possible to register a blueprint from a group's blueprint
 listing page:
 
     >>> user_browser.open('http://blueprints.launchpad.test/~admins')
     >>> print(user_browser.getLink('Register a blueprint'))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError

@@ -6,6 +6,7 @@ to the remote bug tracker.
 In order to demonstrate this we need to create example Bug, BugTracker,
 BugWatch, Message and BugMessage instances with which to work.
 
+    >>> import six
     >>> from zope.interface import implementer
     >>> from lp.bugs.tests.externalbugtracker import (
     ...     new_bugtracker)
@@ -55,7 +56,7 @@ ISupportsCommentPushing interface.
     ...     remote_comments = {}
     ...
     ...     def addRemoteComment(self, remote_bug, comment_body, rfc822msgid):
-    ...         remote_comment_id = str(self.next_comment_id)
+    ...         remote_comment_id = six.ensure_text(str(self.next_comment_id))
     ...         self.remote_comments[remote_comment_id] = comment_body
     ...
     ...         print("Comment added as remote comment %s" % (
@@ -84,8 +85,9 @@ remote server.
     >>> comments = [
     ...     comment.message.text_contents
     ...     for comment in bug_watch.unpushed_comments]
-    >>> print(comments)
-    [u'Pushing, for the purpose of.']
+    >>> for comment in comments:
+    ...     print(comment)
+    Pushing, for the purpose of.
 
 The CheckwatchesMaster method pushBugComments() is responsible for
 calling the addRemoteComment() method of ISupportsCommentPushing for

@@ -60,6 +60,7 @@ class BranchRewriteScript(LaunchpadScript):
                 # Mod-rewrite always gives us a newline terminated string.
                 if line:
                     print(rewriter.rewriteLine(line.strip()))
+                    sys.stdout.flush()
                 else:
                     # Standard input has been closed, so die.
                     return
@@ -68,6 +69,7 @@ class BranchRewriteScript(LaunchpadScript):
             except Exception:
                 self.logger.exception('Exception occurred:')
                 print("NULL")
+                sys.stdout.flush()
                 # The exception might have been a DisconnectionError or
                 # similar. Cleanup such as database reconnection will
                 # not happen until the transaction is rolled back.

@@ -284,12 +284,13 @@ class TestBranchRewriterScript(TestCaseWithFactory):
             config.root, 'scripts', 'branch-rewrite.py')
         proc = subprocess.Popen(
             [script_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, bufsize=0)
+            stderr=subprocess.PIPE, bufsize=0, universal_newlines=True)
         output_lines = []
         # For each complete line of input, the script should, without
         # buffering, write a complete line of output.
         for input_line in input_lines:
             proc.stdin.write(input_line + '\n')
+            proc.stdin.flush()
             output_lines.append(
                 nonblocking_readline(proc.stdout, 60).rstrip('\n'))
         # If we create a new branch after the branch-rewrite.py script has
@@ -305,6 +306,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
             'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(new_branch.id))
         proc.stdin.write(new_branch_input + '\n')
+        proc.stdin.flush()
         output_lines.append(
             nonblocking_readline(proc.stdout, 60).rstrip('\n'))
 
@@ -313,6 +315,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
             'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(edited_branch.id))
         proc.stdin.write(edited_branch_input + '\n')
+        proc.stdin.flush()
         output_lines.append(
             nonblocking_readline(proc.stdout, 60).rstrip('\n'))
 
@@ -333,7 +336,7 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
 
         self.rewriter_proc = subprocess.Popen(
             [script_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, bufsize=0)
+            stderr=subprocess.PIPE, bufsize=0, universal_newlines=True)
 
         self.addCleanup(self.rewriter_proc.terminate)
 

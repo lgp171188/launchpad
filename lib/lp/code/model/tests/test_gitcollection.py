@@ -220,10 +220,10 @@ class TestGitCollectionFilters(TestCaseWithFactory):
         person = self.factory.makePerson()
         repository_c = self.factory.makeGitRepository(
             owner=person, target=person)
-        self.assertEqual(
-            sorted([repository_a, repository_b, repository_c]),
-            sorted(self.all_repositories.getRepositories()
-                 .order_by(GitRepository.name)))
+        self.assertContentEqual(
+            [repository_a, repository_b, repository_c],
+            self.all_repositories.getRepositories()
+                .order_by(GitRepository.name))
 
     def test_count_respects_visibleByUser_filter(self):
         # IGitCollection.count() returns the number of repositories that
@@ -393,9 +393,8 @@ class TestGitCollectionFilters(TestCaseWithFactory):
         # And a project repository.
         self.factory.makeGitRepository()
         collection = self.all_repositories.inDistribution(distro)
-        self.assertEqual(
-            sorted([repository, repository2]),
-            sorted(collection.getRepositories()))
+        self.assertContentEqual(
+            [repository, repository2], collection.getRepositories())
 
     def test_in_distribution_source_package(self):
         # 'inDistributionSourcePackage' returns a new collection that only
@@ -408,9 +407,8 @@ class TestGitCollectionFilters(TestCaseWithFactory):
         self.factory.makeGitRepository(target=dsp_other_distro)
         self.factory.makeGitRepository()
         collection = self.all_repositories.inDistributionSourcePackage(dsp)
-        self.assertEqual(
-            sorted([repository, repository2]),
-            sorted(collection.getRepositories()))
+        self.assertContentEqual(
+            [repository, repository2], collection.getRepositories())
 
     def test_in_oci_project(self):
         # 'inOCIProject' returns a new collection that only
@@ -422,9 +420,8 @@ class TestGitCollectionFilters(TestCaseWithFactory):
         self.factory.makeGitRepository(target=ocip_other_distro)
         self.factory.makeGitRepository()
         collection = self.all_repositories.inOCIProject(ocip)
-        self.assertEqual(
-            sorted([repository, repository2]),
-            sorted(collection.getRepositories()))
+        self.assertContentEqual(
+            [repository, repository2], collection.getRepositories())
 
     def test_withIds(self):
         # 'withIds' returns a new collection that only has repositories with
@@ -434,9 +431,8 @@ class TestGitCollectionFilters(TestCaseWithFactory):
         self.factory.makeGitRepository()
         ids = [repository1.id, repository2.id]
         collection = self.all_repositories.withIds(*ids)
-        self.assertEqual(
-            sorted([repository1, repository2]),
-            sorted(collection.getRepositories()))
+        self.assertContentEqual(
+            [repository1, repository2], collection.getRepositories())
 
     def test_registeredBy(self):
         # 'registeredBy' returns a new collection that only has repositories
@@ -538,7 +534,7 @@ class TestBranchMergeProposals(TestCaseWithFactory):
             target_ref=target, source_ref=ref3)
         collection = self.all_repositories.ownedBy(person)
         proposals = collection.getMergeProposals()
-        self.assertEqual(sorted([mp1, mp2]), sorted(proposals))
+        self.assertContentEqual([mp1, mp2], proposals)
 
     def test_preloading_for_previewdiff(self):
         project = self.factory.makeProduct()
@@ -615,7 +611,7 @@ class TestBranchMergeProposals(TestCaseWithFactory):
         proposals = self.all_repositories.getMergeProposals(
             [BranchMergeProposalStatus.WORK_IN_PROGRESS,
              BranchMergeProposalStatus.NEEDS_REVIEW])
-        self.assertEqual(sorted([mp1, mp2]), sorted(proposals))
+        self.assertContentEqual([mp1, mp2], proposals)
 
     def test_status_restriction_with_project_filter(self):
         # getMergeProposals returns the merge proposals with a particular
@@ -648,7 +644,7 @@ class TestBranchMergeProposals(TestCaseWithFactory):
         self.factory.makeBranchMergeProposalForGit()
         proposals = self.all_repositories.getMergeProposals(
             target_repository=mp1.target_git_repository)
-        self.assertEqual(sorted([mp1, mp2]), sorted(proposals))
+        self.assertContentEqual([mp1, mp2], proposals)
 
     def test_specifying_target_ref(self):
         # If the target_repository and target_path are specified, only merge
@@ -671,7 +667,7 @@ class TestBranchMergeProposals(TestCaseWithFactory):
         self.factory.makeBranchMergeProposalForGit()
         proposals = self.all_repositories.getMergeProposals(
             prerequisite_repository=ref1.repository)
-        self.assertEqual(sorted([mp1, mp2]), sorted(proposals))
+        self.assertContentEqual([mp1, mp2], proposals)
 
     def test_specifying_prerequisite_ref(self):
         # If the prerequisite_repository and prerequisite_path are
@@ -773,9 +769,9 @@ class TestGenericGitCollectionVisibleFilter(TestCaseWithFactory):
     def test_all_repositories(self):
         # Without the visibleByUser filter, all repositories are in the
         # collection.
-        self.assertEqual(
-            sorted([self.public_repository, self.private_repository]),
-            sorted(self.all_repositories.getRepositories()))
+        self.assertContentEqual(
+            [self.public_repository, self.private_repository],
+            self.all_repositories.getRepositories())
 
     def test_anonymous_sees_only_public(self):
         # Anonymous users can see only public repositories.
@@ -804,16 +800,16 @@ class TestGenericGitCollectionVisibleFilter(TestCaseWithFactory):
         # public repositories.
         owner = removeSecurityProxy(self.private_repository).owner
         repositories = self.all_repositories.visibleByUser(owner)
-        self.assertEqual(
-            sorted([self.public_repository, self.private_repository]),
-            sorted(repositories.getRepositories()))
+        self.assertContentEqual(
+            [self.public_repository, self.private_repository],
+            repositories.getRepositories())
 
     def test_launchpad_services_sees_all(self):
         # The LAUNCHPAD_SERVICES special user sees *everything*.
         repositories = self.all_repositories.visibleByUser(LAUNCHPAD_SERVICES)
-        self.assertEqual(
-            sorted(self.all_repositories.getRepositories()),
-            sorted(repositories.getRepositories()))
+        self.assertContentEqual(
+            self.all_repositories.getRepositories(),
+            repositories.getRepositories())
 
     def test_admins_see_all(self):
         # Launchpad administrators see *everything*.
@@ -822,9 +818,9 @@ class TestGenericGitCollectionVisibleFilter(TestCaseWithFactory):
             getUtility(ILaunchpadCelebrities).admin)
         admin_team.addMember(admin, admin_team.teamowner)
         repositories = self.all_repositories.visibleByUser(admin)
-        self.assertEqual(
-            sorted(self.all_repositories.getRepositories()),
-            sorted(repositories.getRepositories()))
+        self.assertContentEqual(
+            self.all_repositories.getRepositories(),
+            repositories.getRepositories())
 
     def test_subscribers_can_see_repositories(self):
         # A person subscribed to a repository can see it, even if it's
@@ -836,9 +832,9 @@ class TestGenericGitCollectionVisibleFilter(TestCaseWithFactory):
             CodeReviewNotificationLevel.NOEMAIL,
             subscriber)
         repositories = self.all_repositories.visibleByUser(subscriber)
-        self.assertEqual(
-            sorted([self.public_repository, self.private_repository]),
-            sorted(repositories.getRepositories()))
+        self.assertContentEqual(
+            [self.public_repository, self.private_repository],
+            repositories.getRepositories())
 
     def test_subscribed_team_members_can_see_repositories(self):
         # A person in a team that is subscribed to a repository can see that
@@ -856,9 +852,9 @@ class TestGenericGitCollectionVisibleFilter(TestCaseWithFactory):
         # Members of the team can see the private repository that the team
         # is subscribed to.
         repositories = self.all_repositories.visibleByUser(team_owner)
-        self.assertEqual(
-            sorted([self.public_repository, self.private_repository]),
-            sorted(repositories.getRepositories()))
+        self.assertContentEqual(
+            [self.public_repository, self.private_repository],
+            repositories.getRepositories())
 
     def test_private_teams_see_own_private_personal_repositories(self):
         # Private teams are given an access grant to see their private
@@ -883,9 +879,9 @@ class TestGenericGitCollectionVisibleFilter(TestCaseWithFactory):
                 owner=other_person, target=other_person,
                 information_type=InformationType.USERDATA)
             repositories = self.all_repositories.visibleByUser(team)
-        self.assertEqual(
-            sorted([self.public_repository, personal_repository]),
-            sorted(repositories.getRepositories()))
+        self.assertContentEqual(
+            [self.public_repository, personal_repository],
+            repositories.getRepositories())
 
 
 class TestSearch(TestCaseWithFactory):
@@ -993,8 +989,7 @@ class TestSearch(TestCaseWithFactory):
         repository2 = self.factory.makeGitRepository(name='foo')
         self.factory.makeGitRepository()
         search_results = self.collection.search('foo')
-        self.assertEqual(
-            sorted([repository1, repository2]), sorted(search_results))
+        self.assertContentEqual([repository1, repository2], search_results)
 
     def disabled_test_match_against_unique_name(self):
         # XXX cjwatson 2015-02-06: Disabled until the URL format settles
@@ -1011,8 +1006,7 @@ class TestSearch(TestCaseWithFactory):
         repository2 = self.factory.makeGitRepository(name='foob')
         self.factory.makeGitRepository()
         search_results = self.collection.search('foo')
-        self.assertEqual(
-            sorted([repository1, repository2]), sorted(search_results))
+        self.assertContentEqual([repository1, repository2], search_results)
 
     def test_match_ignores_case(self):
         repository = self.factory.makeGitRepository(name='foobar')

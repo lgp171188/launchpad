@@ -131,7 +131,7 @@ class BranchMergeProposalDelta:
         if merge_proposal_delta is not None:
             merge_proposal_event = ObjectModifiedEvent(
                 merge_proposal, merge_proposal_snapshot,
-                vars(merge_proposal_delta).keys())
+                list(vars(merge_proposal_delta)))
             notify(merge_proposal_event)
 
 

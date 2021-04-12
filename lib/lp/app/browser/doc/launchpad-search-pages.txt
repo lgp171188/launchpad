@@ -39,11 +39,10 @@ When text is not None, the title indicates what was searched.
     ...     search_param_list = []
     ...     for name in sorted(form):
     ...         value = form[name]
-    ...         if isinstance(value, six.text_type):
-    ...             value = wsgi_native_string(value)
-    ...         search_param_list.append(b'%s=%s' % (
-    ...             wsgi_native_string(name), value))
-    ...     query_string = b'&'.join(search_param_list)
+    ...         search_param_list.append(
+    ...             wsgi_native_string(name) + wsgi_native_string('=') +
+    ...             wsgi_native_string(value))
+    ...     query_string = wsgi_native_string('&').join(search_param_list)
     ...     request = LaunchpadTestRequest(
     ...         SERVER_URL='https://launchpad.test/+search',
     ...         QUERY_STRING=query_string, form=form, PATH_INFO='/+search')
@@ -54,12 +53,12 @@ When text is not None, the title indicates what was searched.
     >>> search_view = getSearchView(
     ...     form={'field.text': 'albatross'})
 
-    >>> search_view.text
-    u'albatross'
-    >>> search_view.page_title
-    u'Pages matching "albatross" in Launchpad'
-    >>> search_view.page_heading
-    u'Pages matching "albatross" in Launchpad'
+    >>> print(search_view.text)
+    albatross
+    >>> print(search_view.page_title)
+    Pages matching "albatross" in Launchpad
+    >>> print(search_view.page_heading)
+    Pages matching "albatross" in Launchpad
 
 
 No matches
@@ -92,14 +91,14 @@ matched by their id.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': '5'})
-    >>> search_view._getNumericToken(search_view.text)
-    u'5'
+    >>> print(search_view._getNumericToken(search_view.text))
+    5
     >>> search_view.has_matches
     True
-    >>> search_view.bug.title
-    u'Firefox install instructions should be complete'
-    >>> search_view.question.title
-    u'Installation failed'
+    >>> print(search_view.bug.title)
+    Firefox install instructions should be complete
+    >>> print(search_view.question.title)
+    Installation failed
 
 Bugs and questions are matched independent of each other. The number
 extracted may only match one kind of object. For example, there are
@@ -107,12 +106,12 @@ more bugs than questions.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': '15'})
-    >>> search_view._getNumericToken(search_view.text)
-    u'15'
+    >>> print(search_view._getNumericToken(search_view.text))
+    15
     >>> search_view.has_matches
     True
-    >>> search_view.bug.title
-    u'Nonsensical bugs are useless'
+    >>> print(search_view.bug.title)
+    Nonsensical bugs are useless
     >>> print(search_view.question)
     None
 
@@ -129,7 +128,7 @@ created because they are the owner.
     ...     owner=sample_person, information_type=InformationType.USERDATA)
 
     >>> search_view = getSearchView(
-    ...     form={'field.text': private_bug.id})
+    ...     form={'field.text': str(private_bug.id)})
     >>> search_view.bug.private
     True
 
@@ -137,7 +136,7 @@ But anonymous and unprivileged users cannot see the private bug.
 
     >>> login(ANONYMOUS)
     >>> search_view = getSearchView(
-    ...     form={'field.text': private_bug.id})
+    ...     form={'field.text': str(private_bug.id)})
     >>> print(search_view.bug)
     None
 
@@ -149,12 +148,12 @@ numbers do match questions, but they are not used.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': 'Question #15, #7, and 5.'})
-    >>> search_view._getNumericToken(search_view.text)
-    u'15'
+    >>> print(search_view._getNumericToken(search_view.text))
+    15
     >>> search_view.has_matches
     True
-    >>> search_view.bug.title
-    u'Nonsensical bugs are useless'
+    >>> print(search_view.bug.title)
+    Nonsensical bugs are useless
     >>> print(search_view.question)
     None
 
@@ -162,8 +161,8 @@ It is not an error to search for a non-existent bug or question.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': '55555'})
-    >>> search_view._getNumericToken(search_view.text)
-    u'55555'
+    >>> print(search_view._getNumericToken(search_view.text))
+    55555
     >>> search_view.has_matches
     False
     >>> print(search_view.bug)
@@ -208,14 +207,14 @@ product, or project group. A person is a person or a team.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': 'launchpad'})
-    >>> search_view._getNameToken(search_view.text)
-    u'launchpad'
+    >>> print(search_view._getNameToken(search_view.text))
+    launchpad
     >>> search_view.has_matches
     True
-    >>> search_view.pillar.displayname
-    u'Launchpad'
-    >>> search_view.person_or_team.displayname
-    u'Launchpad Developers'
+    >>> print(search_view.pillar.displayname)
+    Launchpad
+    >>> print(search_view.person_or_team.displayname)
+    Launchpad Developers
 
 A launchpad name is constructed from the search text. The letters are
 converted to lowercase. groups of spaces and punctuation are replaced
@@ -223,12 +222,12 @@ with a hyphen.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': 'Gnome Terminal'})
-    >>> search_view._getNameToken(search_view.text)
-    u'gnome-terminal'
+    >>> print(search_view._getNameToken(search_view.text))
+    gnome-terminal
     >>> search_view.has_matches
     True
-    >>> search_view.pillar.displayname
-    u'GNOME Terminal'
+    >>> print(search_view.pillar.displayname)
+    GNOME Terminal
     >>> print(search_view.person_or_team)
     None
 
@@ -242,12 +241,12 @@ by any of its aliases.
     >>> login(ANONYMOUS)
     >>> search_view = getSearchView(
     ...     form={'field.text': 'iceweasel'})
-    >>> search_view._getNameToken(search_view.text)
-    u'iceweasel'
+    >>> print(search_view._getNameToken(search_view.text))
+    iceweasel
     >>> search_view.has_matches
     True
-    >>> search_view.pillar.displayname
-    u'Mozilla Firefox'
+    >>> print(search_view.pillar.displayname)
+    Mozilla Firefox
 
 This is a harder example that illustrates that text that is clearly not
 the name of a pillar will none-the-less be tried. See the `Page searches`
@@ -255,8 +254,8 @@ section for how this kind of search can return matches.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': "YAHOO! webservice's Python API."})
-    >>> search_view._getNameToken(search_view.text)
-    u'yahoo-webservices-python-api.'
+    >>> print(search_view._getNameToken(search_view.text))
+    yahoo-webservices-python-api.
     >>> search_view.has_matches
     False
     >>> print(search_view.pillar)
@@ -268,14 +267,14 @@ Leading and trailing punctuation and whitespace are stripped.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': "~name12"})
-    >>> search_view._getNameToken(search_view.text)
-    u'name12'
+    >>> print(search_view._getNameToken(search_view.text))
+    name12
     >>> search_view.has_matches
     True
     >>> print(search_view.pillar)
     None
-    >>> search_view.person_or_team.displayname
-    u'Sample Person'
+    >>> print(search_view.person_or_team.displayname)
+    Sample Person
 
 Pillars, persons and teams are only returned for the first page of
 search, when the start param is 0.
@@ -305,22 +304,22 @@ pillar, nor will nsv match Nicolas Velin's unclaimed account.
     >>> search_view = getSearchView(
     ...     form={'field.text': 'python-gnome2-dev',
     ...           'start': '0'})
-    >>> search_view._getNameToken(search_view.text)
-    u'python-gnome2-dev'
+    >>> print(search_view._getNameToken(search_view.text))
+    python-gnome2-dev
     >>> print(search_view.pillar)
     None
 
     >>> nsv = getUtility(IPersonSet).getByName('nsv')
-    >>> nsv.displayname
-    u'Nicolas Velin'
+    >>> print(nsv.displayname)
+    Nicolas Velin
     >>> nsv.is_valid_person_or_team
     False
 
     >>> search_view = getSearchView(
     ...     form={'field.text': 'nsv',
     ...           'start': '0'})
-    >>> search_view._getNameToken(search_view.text)
-    u'nsv'
+    >>> print(search_view._getNameToken(search_view.text))
+    nsv
     >>> print(search_view.person_or_team)
     None
 
@@ -416,8 +415,8 @@ search terms.
 
     >>> search_view = getSearchView(
     ...     form={'field.text': " bug"})
-    >>> search_view.text
-    u'bug'
+    >>> print(search_view.text)
+    bug
     >>> search_view.has_matches
     True
     >>> search_view.pages
@@ -436,8 +435,10 @@ is a heading when there are only Search Service page matches...
 
     >>> search_view.has_exact_matches
     False
-    >>> search_view.batch_heading
-    (u'page matching "bug"', u'pages matching "bug"')
+    >>> for heading in search_view.batch_heading:
+    ...     print(heading)
+    page matching "bug"
+    pages matching "bug"
 
 ...and a heading for when there are exact matches and Search Service page
 matches.
@@ -446,8 +447,10 @@ matches.
     ...     form={'field.text': " launchpad"})
     >>> search_view.has_exact_matches
     True
-    >>> search_view.batch_heading
-    (u'other page matching "launchpad"', u'other pages matching "launchpad"')
+    >>> for heading in search_view.batch_heading:
+    ...     print(heading)
+    other page matching "launchpad"
+    other pages matching "launchpad"
 
 The SiteSearchBatchNavigator behaves like most BatchNavigators, except that
 its batch size is always 20. The size restriction conforms to Google's
@@ -461,12 +464,12 @@ maximum number of results that can be returned per request.
     >>> len(pages)
     20
     >>> for page in pages[0:5]:
-    ...     six.ensure_text(page.title)
-    u'Launchpad Bugs'
-    u'Bugs in Ubuntu Linux'
-    u'Bugs related to Sample Person'
-    u'...Bug... #1 in Mozilla Firefox: ...Firefox does not support SVG...'
-    u'Bugs in Source Package ...thunderbird... in Ubuntu Linux'
+    ...     print("'%s'" % page.title)
+    'Launchpad Bugs'
+    'Bugs in Ubuntu Linux'
+    'Bugs related to Sample Person'
+    '...Bug... #1 in Mozilla Firefox: ...Firefox does not support SVG...'
+    'Bugs in Source Package ...thunderbird... in Ubuntu Linux'
 
 The batch navigator provides access to the other batches. There are two
 batches of pages that match the search text 'bugs'. The navigator
@@ -486,8 +489,8 @@ is 20. That is because there were only 25 matching pages.
     ...           'start': '20'})
     >>> search_view.start
     20
-    >>> search_view.text
-    u'bug'
+    >>> print(search_view.text)
+    bug
     >>> search_view.has_matches
     True
 
@@ -497,12 +500,12 @@ is 20. That is because there were only 25 matching pages.
     >>> len(pages)
     5
     >>> for page in pages:
-    ...     six.ensure_text(page.title)
-    u'...Bug... #2 in Ubuntu Hoary: \u201cBlackhole Trash folder\u201d'
-    u'...Bug... #2 in mozilla-firefox (Debian): ...Blackhole Trash folder...'
-    u'...Bug... #3 in mozilla-firefox (Debian): \u201cBug Title Test\u201d'
-    u'...Bug... trackers registered in Launchpad'
-    u'...Bug... tracker \u201cDebian Bug tracker\u201d'
+    ...     print("'%s'" % page.title)
+    '...Bug... #2 in Ubuntu Hoary: “Blackhole Trash folder”'
+    '...Bug... #2 in mozilla-firefox (Debian): ...Blackhole Trash folder...'
+    '...Bug... #3 in mozilla-firefox (Debian): “Bug Title Test”'
+    '...Bug... trackers registered in Launchpad'
+    '...Bug... tracker “Debian Bug tracker”'
 
     >>> search_view.pages.nextBatchURL()
     ''
@@ -516,12 +519,12 @@ showing the matching terms in context of the page text.
     >>> page = pages[0]
     >>> page
     <...PageMatch ...>
-    >>> page.title
-    u'...Bug... #2 in Ubuntu Hoary: \u201cBlackhole Trash folder\u201d'
+    >>> print("'%s'" % page.title)
+    '...Bug... #2 in Ubuntu Hoary: “Blackhole Trash folder”'
     >>> page.url
     'http://bugs.launchpad.test/ubuntu/hoary/+bug/2'
-    >>> page.summary
-    u'...Launchpad\u2019s ...bug... tracker allows collaboration...'
+    >>> print("'%s'" % page.summary)
+    '...Launchpad’s ...bug... tracker allows collaboration...'
 
 
 No page matches
@@ -562,8 +565,8 @@ matching pages.
     >>> search_view = getSearchView(form={'field.text': 'gnomebaker'})
     >>> search_view.has_matches
     True
-    >>> search_view.pillar.displayname
-    u'gnomebaker'
+    >>> print(search_view.pillar.displayname)
+    gnomebaker
     >>> search_view.has_page_service
     False
 
@@ -656,8 +659,8 @@ the first 20 items are None. Only the last 5 items are PageMatches.
     25
     >>> print(results[0])
     None
-    >>> results[24].title
-    u'...Bug... tracker \u201cDebian Bug tracker\u201d'
+    >>> print("'%s'" % results[24].title)
+    '...Bug... tracker “Debian Bug tracker”'
     >>> results[18, 22]
     [None, None, <...PageMatch ...>, <...PageMatch ...>]
 

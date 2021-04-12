@@ -10,18 +10,18 @@ Source packages can be obtained from the context of a distribution.
     ...     name='mozilla-firefox').jsonBody()
 
     >>> print(pretty(mozilla_firefox))
-    {u'bug_reported_acknowledgement': None,
-     u'bug_reporting_guidelines': None,
-     u'display_name': u'mozilla-firefox in Debian',
-     u'distribution_link': u'http://.../debian',
-     u'http_etag': u'...',
-     u'name': u'mozilla-firefox',
-     u'official_bug_tags': [],
-     u'resource_type_link': u'http://.../#distribution_source_package',
-     u'self_link': u'http://.../debian/+source/mozilla-firefox',
-     u'title': u'mozilla-firefox package in Debian',
-     u'upstream_product_link': None,
-     u'web_link': u'http://launchpad.../debian/+source/mozilla-firefox'}
+    {'bug_reported_acknowledgement': None,
+     'bug_reporting_guidelines': None,
+     'display_name': 'mozilla-firefox in Debian',
+     'distribution_link': 'http://.../debian',
+     'http_etag': '...',
+     'name': 'mozilla-firefox',
+     'official_bug_tags': [],
+     'resource_type_link': 'http://.../#distribution_source_package',
+     'self_link': 'http://.../debian/+source/mozilla-firefox',
+     'title': 'mozilla-firefox package in Debian',
+     'upstream_product_link': None,
+     'web_link': 'http://launchpad.../debian/+source/mozilla-firefox'}
 
 It's also possible to search for tasks with the "searchTasks" method:
 
@@ -53,8 +53,8 @@ package.
 
     >>> print(pretty(upstream_product))
     {...
-     u'display_name': u'Mozilla Firefox'...
-     u'self_link': u'http://.../firefox'...}
+     'display_name': 'Mozilla Firefox'...
+     'self_link': 'http://.../firefox'...}
 
 If the package isn't linked to an upstream product its
 upstream_product_link will be None.

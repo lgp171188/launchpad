@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repositories."""
@@ -15,7 +15,6 @@ from datetime import (
     datetime,
     timedelta,
     )
-import email
 from functools import partial
 import hashlib
 import json
@@ -147,11 +146,13 @@ from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.services.authserver.xmlrpc import AuthServerAPIView
+from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features.testing import FeatureFixture
+from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import JobRunner
@@ -209,7 +210,13 @@ class TestGitRepository(TestCaseWithFactory):
         verifyObject(IGitRepository, repository)
 
     def test_avoids_large_snapshots(self):
-        large_properties = ['refs', 'branches']
+        large_properties = [
+            'refs',
+            'branches',
+            '_api_landing_targets',
+            '_api_landing_candidates',
+            'dependent_landings',
+            ]
         self.assertThat(
             self.factory.makeGitRepository(),
             DoesNotSnapshot(large_properties, IGitRepositoryView))
@@ -868,7 +875,10 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
 
     def test_related_GitJobs_deleted(self):
         # A repository with an associated job will delete those jobs.
-        GitAPI(None, None).notify(self.repository.getInternalPath())
+        with person_logged_in(self.repository.owner):
+            GitAPI(None, None).notify(self.repository.getInternalPath(),
+                                  {'loose_object_count': 5, 'pack_count': 2},
+                                  {'uid': self.repository.owner.id})
         store = Store.of(self.repository)
         self.repository.destroySelf()
         # Need to commit the transaction to fire off the constraint checks.
@@ -1295,9 +1305,9 @@ class TestGitRepositoryModificationNotifications(TestCaseWithFactory):
                 getUtility(IGitRepositoryModifiedMailJobSource)).runAll()
         bodies_by_recipient = {}
         for from_addr, to_addrs, message in stub.test_emails:
-            body = email.message_from_string(message).get_payload(decode=True)
+            body = message_from_bytes(message).get_payload(decode=True)
             for to_addr in to_addrs:
-                bodies_by_recipient[to_addr] = body
+                bodies_by_recipient[to_addr] = six.ensure_text(body)
         # Both the owner and the unprivileged subscriber receive email.
         self.assertContentEqual(
             [owner_address, subscriber_address], bodies_by_recipient.keys())
@@ -1334,6 +1344,23 @@ class TestGitRepositoryURLs(TestCaseWithFactory):
         expected_url = urlutils.join(
             config.codehosting.git_browse_root, repository.shortened_path)
         self.assertEqual(expected_url, repository.getCodebrowseUrl())
+
+    def test_codebrowser_url_with_username_and_password(self):
+        self.pushConfig(
+            "codehosting", git_browse_root="http://git.launchpad.test:99")
+        repository = self.factory.makeGitRepository()
+        expected_url = lambda usr, passw: urlutils.join(
+            "http://%s:%s@git.launchpad.test:99" % (usr, passw),
+            repository.shortened_path)
+        self.assertEqual(
+            expected_url("foo", "bar"),
+            repository.getCodebrowseUrl("foo", "bar"))
+        self.assertEqual(
+            expected_url("", "bar"),
+            repository.getCodebrowseUrl(None, "bar"))
+        self.assertEqual(
+            expected_url("foo", ""),
+            repository.getCodebrowseUrl("foo", ""))
 
     def test_codebrowse_url_for_default(self):
         # The codebrowse URL for the default repository for a target is an
@@ -1448,7 +1475,11 @@ class TestGitRepositoryPendingUpdates(TestCaseWithFactory):
         # clears that flag.
         git_api = GitAPI(None, None)
         repository = self.factory.makeGitRepository()
-        self.assertIsNone(git_api.notify(repository.getInternalPath()))
+        with person_logged_in(repository.owner):
+            self.assertIsNone(git_api.notify(
+                repository.getInternalPath(),
+                {'loose_object_count': 5, 'pack_count': 2},
+                {'uid': repository.owner.id}))
         self.assertTrue(repository.pending_updates)
         [job] = list(getUtility(IGitRefScanJobSource).iterReady())
         with dbuser("branchscanner"):
@@ -1523,7 +1554,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
 
     def test__convertRefInfo(self):
         # _convertRefInfo converts a valid info dictionary.
-        sha1 = six.ensure_text(hashlib.sha1("").hexdigest())
+        sha1 = six.ensure_text(hashlib.sha1(b"").hexdigest())
         info = {"object": {"sha1": sha1, "type": "commit"}}
         expected_info = {"sha1": sha1, "type": GitObjectType.COMMIT}
         self.assertEqual(expected_info, GitRepository._convertRefInfo(info))
@@ -1568,7 +1599,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             MatchesStructure.byEquality(
                 repository=repository,
                 path=path,
-                commit_sha1=six.ensure_text(hashlib.sha1(path).hexdigest()),
+                commit_sha1=six.ensure_text(hashlib.sha1(
+                    path.encode("UTF-8")).hexdigest()),
                 object_type=GitObjectType.COMMIT)
             for path in paths]
         self.assertThat(refs, MatchesSetwise(*matchers))
@@ -1717,12 +1749,12 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 },
             "refs/heads/foo": {
                 "sha1": six.ensure_text(
-                    hashlib.sha1("refs/heads/foo").hexdigest()),
+                    hashlib.sha1(b"refs/heads/foo").hexdigest()),
                 "type": GitObjectType.COMMIT,
                 },
             "refs/tags/1.0": {
                 "sha1": six.ensure_text(
-                    hashlib.sha1("refs/heads/master").hexdigest()),
+                    hashlib.sha1(b"refs/heads/master").hexdigest()),
                 "type": GitObjectType.COMMIT,
                 },
             }
@@ -1734,7 +1766,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # non-commits.
         repository = self.factory.makeGitRepository()
         blob_sha1 = six.ensure_text(
-            hashlib.sha1("refs/heads/blob").hexdigest())
+            hashlib.sha1(b"refs/heads/blob").hexdigest())
         refs_info = {
             "refs/heads/blob": {
                 "sha1": blob_sha1,
@@ -1808,8 +1840,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # fetchRefCommits fetches detailed tip commit metadata for the
         # requested refs.
         master_sha1 = six.ensure_text(
-            hashlib.sha1("refs/heads/master").hexdigest())
-        foo_sha1 = six.ensure_text(hashlib.sha1("refs/heads/foo").hexdigest())
+            hashlib.sha1(b"refs/heads/master").hexdigest())
+        foo_sha1 = six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
@@ -1830,7 +1862,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                     "time": int(seconds_since_epoch(committer_date)),
                     },
                 "parents": [],
-                "tree": six.ensure_text(hashlib.sha1("").hexdigest()),
+                "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
                 }]))
         refs = {
             "refs/heads/master": {
@@ -1906,9 +1938,9 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         expected_sha1s = [
             ("refs/heads/master", "1111111111111111111111111111111111111111"),
             ("refs/heads/foo",
-             six.ensure_text(hashlib.sha1("refs/heads/foo").hexdigest())),
+             six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())),
             ("refs/tags/1.0",
-             six.ensure_text(hashlib.sha1("refs/heads/master").hexdigest())),
+             six.ensure_text(hashlib.sha1(b"refs/heads/master").hexdigest())),
             ]
         matchers = [
             MatchesStructure.byEquality(
@@ -2858,7 +2890,7 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         notifications = pop_notifications()
         self.assertIn(
             "Work in progress => Merged",
-            notifications[0].get_payload(decode=True))
+            notifications[0].get_payload(decode=True).decode("UTF-8"))
         self.assertEqual(
             config.canonical.noreply_from_address, notifications[0]["From"])
         recipients = set(msg["x-envelope-to"] for msg in notifications)
@@ -2932,15 +2964,15 @@ class TestGitRepositoryGetBlob(TestCaseWithFactory):
 
     def test_getBlob_with_default_rev(self):
         repository = self.factory.makeGitRepository()
-        self.useFixture(GitHostingFixture(blob='Some text'))
+        self.useFixture(GitHostingFixture(blob=b'Some text'))
         ret = repository.getBlob('src/README.txt')
-        self.assertEqual('Some text', ret)
+        self.assertEqual(b'Some text', ret)
 
     def test_getBlob_with_rev(self):
         repository = self.factory.makeGitRepository()
-        self.useFixture(GitHostingFixture(blob='Some text'))
+        self.useFixture(GitHostingFixture(blob=b'Some text'))
         ret = repository.getBlob('src/README.txt', 'some-rev')
-        self.assertEqual('Some text', ret)
+        self.assertEqual(b'Some text', ret)
 
 
 class TestGitRepositoryRules(TestCaseWithFactory):
@@ -3824,6 +3856,83 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    def test_repackRepository_owner(self):
+        # Repository owner cannot repack
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+
+        with person_logged_in(owner_db):
+            self.assertRaises(
+                Unauthorized, getattr, repository_db, 'repackRepository')
+        self.assertEqual(0, hosting_fixture.repackRepository.call_count)
+
+    def test_repackRepository_admin(self):
+        # Admins can trigger a repack
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        with person_logged_in(admin):
+            repository_db.repackRepository()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.repackRepository.calls)
+        self.assertEqual(1, hosting_fixture.repackRepository.call_count)
+
+    def test_repackRepository_registry_expert(self):
+        # Registry experts can trigger a repack
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        person = self.factory.makePerson()
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        with admin_logged_in():
+            getUtility(ILaunchpadCelebrities).registry_experts.addMember(
+                person, admin)
+        with person_logged_in(person):
+            repository_db.repackRepository()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.repackRepository.calls)
+        self.assertEqual(1, hosting_fixture.repackRepository.call_count)
+
+    def test_repack_data(self):
+        owner_db = self.factory.makePerson(name="person")
+        project_db = self.factory.makeProduct(name="project")
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, target=project_db, name="repository")
+        webservice = webservice_for_person(
+            repository_db.owner, permission=OAuthPermission.READ_PUBLIC)
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository_db)
+        repository = webservice.get(repository_url).jsonBody()
+        self.assertThat(repository, ContainsDict({
+            'loose_object_count': Is(None),
+            'pack_count': Is(None),
+            'date_last_repacked': Is(None),
+            'date_last_scanned': Is(None),
+            }))
+
+        repository_db = removeSecurityProxy(repository_db)
+        repository_db.loose_object_count = 45
+        repository_db.pack_count = 523
+        repository_db.date_last_repacked = UTC_NOW
+        repository_db.date_last_scanned = UTC_NOW
+
+        repository = webservice.get(repository_url).jsonBody()
+
+        self.assertThat(repository, ContainsDict({
+            'loose_object_count': Equals(45),
+            'pack_count': Equals(523),
+            'date_last_repacked': Equals(UTC_NOW),
+            'date_last_scanned': Equals(UTC_NOW),
+            }))
+
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")
         project_db = self.factory.makeProduct(name="project")
@@ -4325,7 +4434,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             repository.owner, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_get(repository_url, "getRules")
-        self.assertThat(json.loads(response.body), MatchesListwise([
+        self.assertThat(response.jsonBody(), MatchesListwise([
             MatchesDict({
                 "ref_pattern": Equals("refs/heads/stable/*"),
                 "grants": MatchesSetwise(
@@ -4440,7 +4549,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=owner_url,
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
-        self.assertThat(json.loads(response.body), MatchesDict({
+        self.assertThat(response.jsonBody(), MatchesDict({
             "refs/heads/master": Equals(["create", "push"]),
             "refs/heads/next": Equals(["create", "push"]),
             "refs/other": Equals(["create", "push", "force-push"]),
@@ -4448,7 +4557,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=grantee_urls[0],
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
-        self.assertThat(json.loads(response.body), MatchesDict({
+        self.assertThat(response.jsonBody(), MatchesDict({
             "refs/heads/master": Equals(["create"]),
             "refs/heads/next": Equals([]),
             "refs/other": Equals([]),
@@ -4456,7 +4565,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=grantee_urls[1],
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
-        self.assertThat(json.loads(response.body), MatchesDict({
+        self.assertThat(response.jsonBody(), MatchesDict({
             "refs/heads/master": Equals(["push"]),
             "refs/heads/next": Equals(["push", "force-push"]),
             "refs/other": Equals([]),
@@ -4477,7 +4586,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         webservice.default_api_version = "devel"
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(200, response.status)
-        macaroon = Macaroon.deserialize(json.loads(response.body))
+        macaroon = Macaroon.deserialize(response.jsonBody())
         with person_logged_in(ANONYMOUS):
             self.assertThat(macaroon, MatchesStructure(
                 location=Equals(config.vhost.mainsite.hostname),
@@ -4503,8 +4612,8 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(401, response.status)
         self.assertEqual(
-            "git-repository macaroons may only be issued for a logged-in "
-            "user.", response.body)
+            b"git-repository macaroons may only be issued for a logged-in "
+            b"user.", response.body)
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
@@ -4636,6 +4745,21 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
             ["Caveat check for 'lp.principal.openid-identifier %s' failed." %
              identifier],
             issuer, macaroon, repository, user=self.factory.makePerson())
+
+    def test_verifyMacaroon_inactive_account(self):
+        repository = self.factory.makeGitRepository()
+        issuer = getUtility(IMacaroonIssuer, "git-repository")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
+        naked_account = removeSecurityProxy(repository.owner).account
+        identifier = naked_account.openid_identifiers.any().identifier
+        with admin_logged_in():
+            repository.owner.setAccountStatus(
+                AccountStatus.SUSPENDED, None, "Bye")
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.principal.openid-identifier %s' failed." %
+             identifier],
+            issuer, macaroon, repository, user=repository.owner)
 
     def test_verifyMacaroon_closed_account(self):
         # A closed account no longer has an OpenID identifier, so the

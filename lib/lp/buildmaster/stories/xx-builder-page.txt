@@ -16,15 +16,15 @@ builder state. In the sampledata, the builder 'bob' is building
     >>> anon_browser.open("http://launchpad.test/builders")
     >>> anon_browser.getLink("bob").click()
 
-    >>> print extract_text(find_main_content(anon_browser.contents))
+    >>> print(extract_text(find_main_content(anon_browser.contents)))
     Bob The Builder
     ...
     Bob The Builder builds 386 binaries and is owned by Launchpad Buildd
     Admins.
     ...
 
-    >>> print extract_text(find_portlet(
-    ...     anon_browser.contents, 'View full history Current status'))
+    >>> print(extract_text(find_portlet(
+    ...     anon_browser.contents, 'View full history Current status')))
     View full history Current status
     Building i386 build of mozilla-firefox 0.9 in ubuntu hoary RELEASE
     Started ... ago.
@@ -37,8 +37,8 @@ timezone. This way they can easily find out if they are reading
 outdated information.
 
     >>> user_browser.open(anon_browser.url)
-    >>> print extract_text(find_portlet(
-    ...     user_browser.contents, 'View full history Current status'))
+    >>> print(extract_text(find_portlet(
+    ...     user_browser.contents, 'View full history Current status')))
     View full history Current status
     Building i386 build of mozilla-firefox 0.9 in ubuntu hoary RELEASE
     Started ... ago.
@@ -50,8 +50,8 @@ The anonymous user can see the builder details portlet and it contains
 information about the builder itself, like name, architecture and
 location.
 
-    >>> print extract_text(
-    ...     find_portlet(anon_browser.contents, 'Builder information'))
+    >>> print(extract_text(
+    ...     find_portlet(anon_browser.contents, 'Builder information')))
     Builder information
     Architectures: 386
     Location: http://localhost:8221/
@@ -73,22 +73,22 @@ Idle builders show more details of their status.
     ...     builder = factory.makeBuilder(name='victim')
     ...     builder.setCleanStatus(BuilderCleanStatus.DIRTY)
     >>> anon_browser.open('http://launchpad.test/builders/victim')
-    >>> print extract_text(find_portlet(
-    ...     anon_browser.contents, 'View full history Current status'))
+    >>> print(extract_text(find_portlet(
+    ...     anon_browser.contents, 'View full history Current status')))
     View full history Current status
     Cleaning
     >>> with admin_logged_in():
     ...     builder.setCleanStatus(BuilderCleanStatus.CLEANING)
     >>> anon_browser.open(anon_browser.url)
-    >>> print extract_text(find_portlet(
-    ...     anon_browser.contents, 'View full history Current status'))
+    >>> print(extract_text(find_portlet(
+    ...     anon_browser.contents, 'View full history Current status')))
     View full history Current status
     Cleaning
     >>> with admin_logged_in():
     ...     builder.setCleanStatus(BuilderCleanStatus.CLEAN)
     >>> anon_browser.open(anon_browser.url)
-    >>> print extract_text(find_portlet(
-    ...     anon_browser.contents, 'View full history Current status'))
+    >>> print(extract_text(find_portlet(
+    ...     anon_browser.contents, 'View full history Current status')))
     View full history Current status
     Idle
 
@@ -149,7 +149,7 @@ effect immediately.
 
     # We use backslashreplace because the page title includes smart quotes.
     >>> from lp.services.helpers import backslashreplace
-    >>> print backslashreplace(cprov_browser.title)
+    >>> print(backslashreplace(cprov_browser.title))
     Change details for...
 
     >>> title = cprov_browser.getControl(name="field.title")
@@ -161,7 +161,7 @@ effect immediately.
 
     # Submitting the change details form redirects to the index page
     # for the builder.
-    >>> print backslashreplace(cprov_browser.title)
+    >>> print(backslashreplace(cprov_browser.title))
     Donkey builder : Build Farm
 
 Then restores it once he realises his mistake.
@@ -176,7 +176,7 @@ automatic (AUTO) mode.
 
     >>> details_portlet = find_portlet(
     ...     cprov_browser.contents, "Builder information")
-    >>> print str(extract_text(details_portlet))
+    >>> print(str(extract_text(details_portlet)))
     Builder information
     Architectures: amd64 hppa
     Location: http://localhost:8221/
@@ -193,7 +193,7 @@ He can see now, in the details portlet that the builder is in manual-mode.
 
     >>> details_portlet = find_portlet(
     ...     cprov_browser.contents, "Builder information")
-    >>> print str(extract_text(details_portlet))
+    >>> print(str(extract_text(details_portlet)))
     Builder information
     ...
     Mode: This builder is in manual-mode and not accepting jobs from the
@@ -234,7 +234,7 @@ transient failures or is used for another purpose.
 
     >>> cprov_browser.open('http://launchpad.test/builders')
     >>> cprov_browser.getLink('bob').click()
-    >>> print backslashreplace(cprov_browser.title)
+    >>> print(backslashreplace(cprov_browser.title))
     Bob The Builder : Build Farm
 
 Celso can toggle the active bit using the Change details form.
@@ -252,7 +252,7 @@ Farm list. Celso cannot see the link to it.
 
     >>> cprov_browser.getLink("Build Farm").click()
 
-    >>> print extract_text(find_main_content(cprov_browser.contents))
+    >>> print(extract_text(find_main_content(cprov_browser.contents)))
     The Launchpad build farm
     Register a new build machine
     1 available build machine, 1 disabled and 0 building of a total
@@ -266,14 +266,15 @@ Farm list. Celso cannot see the link to it.
     386          1        empty
 
     >>> cprov_browser.getLink('bob').click()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 But Celso can access the deactivated builder via its URL.
 
     >>> cprov_browser.open('http://launchpad.test/+builds/bob')
-    >>> print backslashreplace(cprov_browser.title)
+    >>> print(backslashreplace(cprov_browser.title))
     Bob The Builder : Build Farm
 
 
@@ -285,38 +286,41 @@ Change details link.
 
     >>> user_browser.open("http://localhost/+builds/bob")
     >>> user_browser.getLink('Change details')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Nor is the toggle mode control included on the index page.
 
     >>> user_browser.getControl(name="field.actions.update")
     Traceback (most recent call last):
-    LookupError: name 'field.actions.update'
-    ...
+    LookupError: name ...'field.actions.update' ...
 
 Nor can they access the edit page directly via URL.
 
     >>> user_browser.open("http://localhost/+builds/bob/+edit")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 The same is true for the anonymous user:
 
     >>> anon_browser.open("http://localhost/+builds/bob")
     >>> anon_browser.getLink('Change details')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.getControl(name="field.actions.update")
     Traceback (most recent call last):
-    LookupError: name 'field.actions.update'
+    LookupError: name ...'field.actions.update'
     ...
 
     >>> anon_browser.open("http://localhost/+builds/bob/+edit")
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 

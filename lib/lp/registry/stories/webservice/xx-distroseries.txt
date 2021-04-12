@@ -66,7 +66,7 @@ For distroseries we publish a subset of its attributes.
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
     changeslist: 'hoary-changes@ubuntu.com'
-    component_names: [u'main', u'restricted']
+    component_names: ['main', 'restricted']
     date_created: '2006-10-16T18:31:43.483559+00:00'
     datereleased: None
     description: 'Hoary is the ...
@@ -76,7 +76,7 @@ For distroseries we publish a subset of its attributes.
     drivers_collection_link: 'http://.../ubuntu/hoary/drivers'
     fullseriesname: 'Ubuntu Hoary'
     include_long_descriptions: True
-    index_compressors: [u'gzip', u'bzip2']
+    index_compressors: ['gzip', 'bzip2']
     language_pack_full_export_requested: False
     main_archive_link: 'http://.../ubuntu/+archive/primary'
     name: 'hoary'
@@ -89,8 +89,7 @@ For distroseries we publish a subset of its attributes.
     resource_type_link: ...
     self_link: 'http://.../ubuntu/hoary'
     status: 'Active Development'
-    suite_names:
-        [u'Release', u'Security', u'Updates', u'Proposed', u'Backports']
+    suite_names: ['Release', 'Security', 'Updates', 'Proposed', 'Backports']
     summary: 'Hoary is the ...
     supported: False
     title: 'The Hoary Hedgehog Release'
@@ -106,24 +105,24 @@ parent_series_link:
 
     >>> current_series_beta = webservice.get(
     ...     "/ubuntu/hoary", api_version="beta").jsonBody()
-    >>> current_series_beta["parent_series_link"]
-    u'http://.../ubuntu/warty'
+    >>> print(current_series_beta["parent_series_link"])
+    http://.../ubuntu/warty
 
 In the 1.0 version of the API the previous series is obtained via
 parent_series_link:
 
     >>> current_series_1_0 = webservice.get(
     ...     "/ubuntu/hoary", api_version="1.0").jsonBody()
-    >>> current_series_1_0["parent_series_link"]
-    u'http://.../ubuntu/warty'
+    >>> print(current_series_1_0["parent_series_link"])
+    http://.../ubuntu/warty
 
 In the devel version of the API the previous series is obtained via
 parent_series_link:
 
     >>> current_series_devel = webservice.get(
     ...     "/ubuntu/hoary", api_version="devel").jsonBody()
-    >>> current_series_devel["previous_series_link"]
-    u'http://.../ubuntu/warty'
+    >>> print(current_series_devel["previous_series_link"])
+    http://.../ubuntu/warty
 
 
 Creating a milestone on the distroseries

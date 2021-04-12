@@ -35,8 +35,8 @@ we trust it, there's really no simple way to map that reliably to persons.
 
     >>> from lp.code.model.revision import RevisionAuthor
     >>> author = RevisionAuthor(name='ddaa@localhost')
-    >>> author.name
-    u'ddaa@localhost'
+    >>> print(author.name)
+    ddaa@localhost
 
 The log-body of a revision is the commit message of that revision.
 
@@ -112,7 +112,9 @@ sequence attribute is None.
     >>> ancestry = IStore(BranchRevision).find(
     ...     BranchRevision, BranchRevision.branch == branch)
     >>> for branch_revision in sorted(ancestry,
-    ...         key=lambda r:(r.sequence, r.revision.id), reverse=True):
+    ...         key=lambda r: (
+    ...             0 if r.sequence is None else 1, r.sequence, r.revision.id),
+    ...         reverse=True):
     ...     print(branch_revision.sequence, branch_revision.revision.id)
     6 9
     5 8
@@ -234,5 +236,6 @@ as needed.
     ...     print(parent_id)
     rev-1
     rev-2
-    >>> print(revision.getProperties())
-    {u'key': u'value'}
+    >>> for key, value in sorted(revision.getProperties().items()):
+    ...     print('%s: %s' % (key, value))
+    key: value

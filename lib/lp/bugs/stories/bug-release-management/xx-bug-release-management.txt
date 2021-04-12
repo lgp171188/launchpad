@@ -29,7 +29,7 @@ Approving a nomination displays a feedback message.
 
     >>> feedback_msg = find_tags_by_class(
     ...     admin_browser.contents, "informational message")[0]
-    >>> print(feedback_msg.renderContents())
+    >>> print(feedback_msg.decode_contents())
     Approved nomination for Mozilla Firefox 1.0
 
 After a productseries task has been created, it's editable.
@@ -58,7 +58,7 @@ Declining a nomination displays a feedback message.
 
     >>> feedback_msg = find_tags_by_class(
     ...     admin_browser.contents, "informational message")[0]
-    >>> print(feedback_msg.renderContents())
+    >>> print(feedback_msg.decode_contents())
     Declined nomination for Ubuntu Hoary
 
 Nominate a bug to a distribution release
@@ -114,7 +114,7 @@ raised.
 
     >>> for tag in find_tags_by_class(nominater_other_browser.contents,
     ...     'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     This bug has already been nominated for these series: Aqua
 
@@ -178,7 +178,7 @@ accidentally nominates the bug for Beta a second time, an error is raised.
 
     >>> for tag in find_tags_by_class(nominater_other_browser.contents,
     ...     'message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     This bug has already been nominated for these series: Beta
 
@@ -203,9 +203,10 @@ in the release task.
     >>> ubuntu_edit_url = (
     ...     'http://bugs.launchpad.test/ubuntu/+bug/2/+editstatus')
     >>> user_browser.getLink(url=ubuntu_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> ubuntu_hoary_edit_url = (
     ...     'http://bugs.launchpad.test/ubuntu/hoary/+bug/2/+editstatus')
@@ -254,9 +255,10 @@ the distribution task won't be editable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=ubuntu_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url) is not None
     True
@@ -270,9 +272,10 @@ general distribution task will remain uneditable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=ubuntu_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url) is not None
     True
@@ -290,9 +293,10 @@ in the series task.
     >>> firefox_edit_url = (
     ...     'http://bugs.launchpad.test/firefox/+bug/4/+editstatus')
     >>> user_browser.getLink(url=firefox_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> firefox_trunk_edit_url = (
     ...     'http://bugs.launchpad.test/firefox/trunk/+bug/4/+editstatus')
@@ -343,9 +347,10 @@ the distribution task won't be editable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=firefox_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink(url=firefox_trunk_edit_url) is not None
     True
@@ -359,9 +364,10 @@ general distribution task will remain uneditable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=firefox_edit_url)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink(url=firefox_trunk_edit_url) is not None
     True

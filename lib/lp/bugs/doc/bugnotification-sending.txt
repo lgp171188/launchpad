@@ -31,7 +31,7 @@ easier.
     ...     print_notification_headers(
     ...         email_notification, extra_headers=extra_headers)
     ...     print()
-    ...     print(email_notification.get_payload(decode=True))
+    ...     print(six.ensure_str(email_notification.get_payload(decode=True)))
     ...     print("-" * 70)
 
 We'll also import a helper function to help us with database users.
@@ -273,7 +273,7 @@ lp/bugs/tests/test_bugnotification.py), and not demonstrated here.
 Another thing worth noting is that there's a blank line before the
 signature, and the signature marker has a trailing space.
 
-    >>> message.get_payload(decode=True).splitlines()
+    >>> six.ensure_str(message.get_payload(decode=True)).splitlines()
     [...,
      '',
      '-- ',
@@ -534,7 +534,7 @@ makes it write out the emails it sends.
     >>> process = subprocess.Popen(
     ...     'cronscripts/send-bug-notifications.py -v', shell=True,
     ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE)
+    ...     stderr=subprocess.PIPE, universal_newlines=True)
     >>> (out, err) = process.communicate()
     >>> process.returncode
     0
@@ -586,11 +586,11 @@ makes it write out the emails it sends.
     another comment.
     <BLANKLINE>
     ** Summary changed:
+    <BLANKLINE>
     - Summary #431
     + Summary bleugh I'm going mad
     <BLANKLINE>
-    -- =
-    <BLANKLINE>
+    --...
     You received this bug notification because...
     INFO    Notifying mark@example.com about bug 1.
     ...
@@ -662,10 +662,11 @@ X-Launchpad-Bug headers were added:
     >>> email_notifications = get_email_notifications(notifications)
     >>> for bug_notifications, omitted, messages in email_notifications:
     ...     for message in messages:
-    ...         sorted(message.get_all('X-Launchpad-Bug'))
-    [u'distribution=debian; distroseries=sarge;... milestone=3.1;...',
-     u'distribution=debian; distroseries=woody;...',
-     u'distribution=debian; sourcepackage=mozilla-firefox; component=...']
+    ...         for line in sorted(message.get_all('X-Launchpad-Bug')):
+    ...             print(line)
+    distribution=debian; distroseries=sarge;... milestone=3.1;...
+    distribution=debian; distroseries=woody;...
+    distribution=debian; sourcepackage=mozilla-firefox; component=...
 
 The milestone field in X-Launchpad-Bug won't be filled where no milestone is
 specified:
@@ -707,12 +708,14 @@ email messages, and a third that combines the first two.
 If a bug is tagged, those tags will be included in the message in the
 X-Launchpad-Bug-Tags header.
 
-    >>> bug_three.tags
-    [u'layout-test']
+    >>> for tag in bug_three.tags:
+    ...     print(tag)
+    layout-test
 
     >>> for message in trigger_and_get_email_messages(bug_three):
-    ...     message.get_all('X-Launchpad-Bug-Tags')
-    [u'layout-test']
+    ...     for line in message.get_all('X-Launchpad-Bug-Tags'):
+    ...         print(line)
+    layout-test
 
 If we add a tag to bug three that will also be included in the header.
 The tags will be space-separated to allow the list to be wrapped if it
@@ -723,8 +726,9 @@ gets over-long.
 
     >>> bug_three = getUtility(IBugSet).get(3)
     >>> for message in trigger_and_get_email_messages(bug_three):
-    ...     message.get_all('X-Launchpad-Bug-Tags')
-    [u'another-tag layout-test yet-another']
+    ...     for line in message.get_all('X-Launchpad-Bug-Tags'):
+    ...         print(line)
+    another-tag layout-test yet-another
 
 If we remove the tags from the bug, the X-Launchpad-Bug-Tags header
 won't be included.
@@ -1059,26 +1063,26 @@ It's important to note that the bug title and description are wrapped
 and indented correctly in verbose notifications.
 
     >>> message = collated_messages['conciseteam@example.com'][0]
-    >>> payload = message.get_payload(decode=True)
-    >>> print(payload.split('\n'))
+    >>> payload = six.ensure_str(message.get_payload(decode=True))
+    >>> print(payload.splitlines())
     [...
-     u'Title:',
-     u'  In the beginning, the universe was created. This has made a lot of',
-     u'  people very angry and has been widely regarded as a bad move',
+     'Title:',
+     '  In the beginning, the universe was created. This has made a lot of',
+     '  people very angry and has been widely regarded as a bad move',
      ...
-     u'Bug description:',
-     u'  This is a long description of the bug, which will be automatically',
-     u"  wrapped by the BugNotification machinery. Ain't technology great?"...]
+     'Bug description:',
+     '  This is a long description of the bug, which will be automatically',
+     "  wrapped by the BugNotification machinery. Ain't technology great?"...]
 
 The title is also wrapped and indented in normal notifications.
 
     >>> message = collated_messages['verboseteam@example.com'][0]
-    >>> payload = message.get_payload(decode=True)
-    >>> print(payload.strip().split('\n'))
+    >>> payload = six.ensure_str(message.get_payload(decode=True))
+    >>> print(payload.strip().splitlines())
     [...
-     u'Title:',
-     u'  In the beginning, the universe was created. This has made a lot of',
-     u'  people very angry and has been widely regarded as a bad move'...]
+     'Title:',
+     '  In the beginning, the universe was created. This has made a lot of',
+     '  people very angry and has been widely regarded as a bad move'...]
 
 Self-Generated Bug Notifications
 --------------------------------

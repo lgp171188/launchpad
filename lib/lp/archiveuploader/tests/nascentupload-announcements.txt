@@ -38,17 +38,14 @@ We need to be logged into the security model in order to get any further
     >>> switch_dbuser('launchpad')
     >>> login('foo.bar@canonical.com')
 
-Helper functions to examine emails that were sent:
+A helper function to examine emails that were sent:
 
     >>> from lp.services.mail import stub
     >>> from lp.testing.mail_helpers import pop_notifications
 
-    >>> def by_to_addrs(a, b):
-    ...     return cmp(a[1], b[1])
-
     >>> def print_addrlist(field):
     ...    for entry in sorted([addr.strip() for addr in field.split(',')]):
-    ...        print entry
+    ...        print(entry)
 
 Import the test keys to use 'insecure' policy.
 
@@ -179,17 +176,16 @@ header however.
 This is the body of the rejection email.
 
     >>> body = notification.get_payload()[0]
-    >>> print body.as_string() # doctest: -NORMALIZE_WHITESPACE
-    Content-Type: text/plain; charset="utf-8"
-    MIME-Version: 1.0
-    Content-Transfer-Encoding: quoted-printable
-    <BLANKLINE>
+    >>> print(body.get('Content-Disposition'))
+    None
+    >>> print(body.get('Content-Type'))
+    text/plain; charset="utf-8"
+    >>> print(body.get_payload(decode=True).decode('UTF-8'))
+    ... # doctest: -NORMALIZE_WHITESPACE
     Rejected:
-    The source bar - 1.0-1 is already accepted in ubuntu/hoary and you cannot u=
-    pload the same version within the same distribution. You have to modify the=
-     source version and re-upload.
+    The source bar - 1.0-1 is already accepted in ubuntu/hoary and you cannot upload the same version within the same distribution. You have to modify the source version and re-upload.
     <BLANKLINE>
-    bar (1.0-1) breezy; urgency=3Dlow
+    bar (1.0-1) breezy; urgency=low
     <BLANKLINE>
       * Initial version
     <BLANKLINE>
@@ -197,14 +193,13 @@ This is the body of the rejection email.
     Changed-By: Daniel Silverstone <daniel.silverstone@canonical.com>
     Maintainer: Launchpad team <launchpad@lists.canonical.com>
     <BLANKLINE>
-    =3D=3D=3D
+    ===
     <BLANKLINE>
     If you don't understand why your files were rejected, or if the
     override file requires editing, please go to:
     http://answers.launchpad.net/soyuz
     <BLANKLINE>
-    -- =
-    <BLANKLINE>
+    -- 
     You are receiving this email because you are the most recent person
     listed in this package's changelog.
     <BLANKLINE>
@@ -213,15 +208,12 @@ In order to facilitate automated processing of announcement emails, the
 changes file is enclosed as an attachment.
 
     >>> attachment = notification.get_payload()[1]
-    >>> print attachment.as_string() # doctest: -NORMALIZE_WHITESPACE
-    Content-Disposition: attachment; filename="changesfile"
-    MIME-Version: 1.0
-    Content-Type: text/plain; charset="utf-8"
-    Content-Transfer-Encoding: quoted-printable
-    <BLANKLINE>
-    -----BEGIN PGP SIGNED MESSAGE-----
-    Hash: SHA1
-    <BLANKLINE>
+    >>> print(attachment.get('Content-Disposition'))
+    attachment; filename="changesfile"
+    >>> print(attachment.get('Content-Type'))
+    text/plain; charset="utf-8"
+    >>> print(attachment.get_payload(decode=True).decode('UTF-8'))
+    ... # doctest: -NORMALIZE_WHITESPACE
     Format: 1.7
     Date: Thu, 16 Feb 2006 15:34:09 +0000
     Source: bar
@@ -232,27 +224,16 @@ changes file is enclosed as an attachment.
     Urgency: low
     Maintainer: Launchpad team <launchpad@lists.canonical.com>
     Changed-By: Daniel Silverstone <daniel.silverstone@canonical.com>
-    Description: =
-    <BLANKLINE>
+    Description: 
      bar        - Stuff for testing
-    Changes: =
-    <BLANKLINE>
-     bar (1.0-1) breezy; urgency=3Dlow
+    Changes: 
+     bar (1.0-1) breezy; urgency=low
      .
        * Initial version
-    Files: =
-    <BLANKLINE>
+    Files: 
      5d533778b698edc1a122098a98c8490e 512 devel optional bar_1.0-1.dsc
      fc1464e5985b962a042d5354452f361d 164 devel optional bar_1.0.orig.tar.gz
      1e35b810764f140af9616de8274e6e73 537 devel optional bar_1.0-1.diff.gz
-    <BLANKLINE>
-    -----BEGIN PGP SIGNATURE-----
-    Version: GnuPG v1.4.3 (GNU/Linux)
-    <BLANKLINE>
-    iD8DBQFFt7D9jn63CGxkqMURAk1BAJwIQfOMS+l9lDDwPORtuZb3hFI2OgCaArNc
-    oH5uIHeKtedJa5Ekpcfi2bY=3D
-    =3DDMqI
-    -----END PGP SIGNATURE-----
     <BLANKLINE>
 
 A PPA upload will contain the X-Launchpad-PPA header.
@@ -666,10 +647,12 @@ permitted, but RFC2047-encoded.  UTF-8 in the mail content is preserved.
     >>> len(msgs)
     3
 
-    >>> [message['From'].replace('\n ', ' ') for message in msgs]
-    ['Root <root@localhost>', 'Root <root@localhost>',
-    '=?utf-8?q?Non-ascii_changed-by_=C4=8Ciha=C5=99?=
-    <daniel.silverstone@canonical.com>']
+    >>> for message in msgs:
+    ...     print(message['From'].replace('\n ', ' '))
+    Root <root@localhost>
+    Root <root@localhost>
+    =?utf-8?q?Non-ascii_changed-by_=C4=8Ciha=C5=99?=
+    <daniel.silverstone@canonical.com>
 
 UTF-8 text in the changes file that is sent on the email is preserved
 in the MIME encoding. Please note also that the person that signed the
@@ -680,27 +663,26 @@ changes file is mentioned toward the end of the email.
     True
 
     >>> body = announcement_email.get_payload()[0]
-    >>> print body.as_string() # doctest: -NORMALIZE_WHITESPACE
-    Content-Type: text/plain; charset="utf-8"
-    MIME-Version: 1.0
-    Content-Transfer-Encoding: quoted-printable
-    <BLANKLINE>
-    bar (1.0-10) breezy; urgency=3Dlow
+    >>> print(body.get('Content-Disposition'))
+    None
+    >>> print(body.get('Content-Type'))
+    text/plain; charset="utf-8"
+    >>> print(body.get_payload(decode=True).decode('UTF-8'))
+    ... # doctest: -NORMALIZE_WHITESPACE
+    bar (1.0-10) breezy; urgency=low
     <BLANKLINE>
       * Changes file that contains UTF-8
     <BLANKLINE>
-      * Non-ascii text: =C4=8Ciha=C5=99
+      * Non-ascii text: Čihař
     <BLANKLINE>
     <BLANKLINE>
     Date: Thu, 30 Mar 2006 01:36:14 +0100
-    Changed-By: Non-ascii changed-by =C4=8Ciha=C5=99 <daniel.silverstone@canoni=
-    cal.com>
-    Maintainer: Non-ascii maintainer =C4=8Ciha=C5=99 <launchpad@lists.canonical=
-    .com>
+    Changed-By: Non-ascii changed-by Čihař <daniel.silverstone@canonical.com>
+    Maintainer: Non-ascii maintainer Čihař <launchpad@lists.canonical.com>
     Signed-By: Foo Bar <foo.bar@canonical.com>
     http://launchpad.test/ubuntu/+source/bar/1.0-10
     <BLANKLINE>
-    =3D=3D
+    ==
     <BLANKLINE>
      OK: bar_1.0.orig.tar.gz
      OK: bar_1.0-10.diff.gz
@@ -711,8 +693,7 @@ changes file is mentioned toward the end of the email.
     <BLANKLINE>
     Thank you for your contribution to Ubuntu.
     <BLANKLINE>
-    -- =
-    <BLANKLINE>
+    -- 
     You are receiving this email because you are the most recent person
     listed in this package's changelog.
     <BLANKLINE>
@@ -729,15 +710,12 @@ Here's the attachment metadata.
 
 And what follows is the content of the attachment.
 
-    >>> print attachment.as_string() # doctest: -NORMALIZE_WHITESPACE
-    Content-Disposition: attachment; filename="changesfile"
-    MIME-Version: 1.0
-    Content-Type: text/plain; charset="utf-8"
-    Content-Transfer-Encoding: quoted-printable
-    <BLANKLINE>
-    -----BEGIN PGP SIGNED MESSAGE-----
-    Hash: SHA1
-    <BLANKLINE>
+    >>> print(attachment.get('Content-Disposition'))
+    attachment; filename="changesfile"
+    >>> print(attachment.get('Content-Type'))
+    text/plain; charset="utf-8"
+    >>> print(attachment.get_payload(decode=True).decode('UTF-8'))
+    ... # doctest: -NORMALIZE_WHITESPACE
     Format: 1.7
     Date: Thu, 30 Mar 2006 01:36:14 +0100
     Source: bar
@@ -746,33 +724,20 @@ And what follows is the content of the attachment.
     Version: 1.0-10
     Distribution: breezy
     Urgency: low
-    Maintainer: Non-ascii maintainer =C4=8Ciha=C5=99 <launchpad@lists.canonical=
-    .com>
-    Changed-By: Non-ascii changed-by =C4=8Ciha=C5=99 <daniel.silverstone@canoni=
-    cal.com>
-    Description: =
-    <BLANKLINE>
+    Maintainer: Non-ascii maintainer Čihař <launchpad@lists.canonical.com>
+    Changed-By: Non-ascii changed-by Čihař <daniel.silverstone@canonical.com>
+    Description: 
      bar        - Stuff for testing
-    Changes: =
-    <BLANKLINE>
-     bar (1.0-10) breezy; urgency=3Dlow
+    Changes: 
+     bar (1.0-10) breezy; urgency=low
      .
        * Changes file that contains UTF-8
      .
-       * Non-ascii text: =C4=8Ciha=C5=99
+       * Non-ascii text: Čihař
      .
-    Files: =
-    <BLANKLINE>
+    Files: 
      a4932aa84fdb62819b49f3dda163fc0d 514 devel optional bar_1.0-10.dsc
      ac6b4efe44e31f47ec9f0d0fac6935f4 622 devel optional bar_1.0-10.diff.gz
-    <BLANKLINE>
-    -----BEGIN PGP SIGNATURE-----
-    Version: GnuPG v1.4.6 (GNU/Linux)
-    <BLANKLINE>
-    iD8DBQFGjOzNjn63CGxkqMURAlDZAJ9CusNQWwbTJr7JHYV4Ka1JbWwmJACeLbs5
-    Hzkb2pxxwYzKs7uyCiFONlo=3D
-    =3D9dL/
-    -----END PGP SIGNATURE-----
     <BLANKLINE>
 
 The attempt to upload a package with a malformed changes file name will
@@ -783,17 +748,16 @@ We first create a misnamed copy of the changes file.
     >>> import shutil
     >>> originalp = datadir('suite/bar_1.0-1/bar_1.0-1_source.changes')
     >>> copyp = datadir('suite/bar_1.0-1/z-z_0.4.12-2~ppa2.changes')
-    >>> shutil.copyfile(originalp, copyp)
+    >>> _ = shutil.copyfile(originalp, copyp)
 
 And then try to upload using the changes file with the malformed name.
 
     >>> bar_src = NascentUpload.from_changesfile_path(
     ...     copyp, sync_policy, DevNullLogger())
-    >>> bar_src.process()
+    >>> bar_src.process()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    EarlyReturnUploadError: An error occurred that prevented further
-    processing.
+    lp.archiveuploader.nascentupload.EarlyReturnUploadError: An error occurred that prevented further processing.
 
     >>> bar_src.logger = FakeLogger()
     >>> result = bar_src.do_accept()

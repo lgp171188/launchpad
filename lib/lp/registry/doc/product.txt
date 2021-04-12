@@ -60,8 +60,8 @@ and the IHasTranslationImports.
 Let's get a product from the sample data. We happen to know that product
 with id 5 should be evolution:
 
-    >>> p.name
-    u'evolution'
+    >>> print(p.name)
+    evolution
 
 Let's call that evo from now onwards just so the tests can be clearer.
 
@@ -73,34 +73,36 @@ later returns only active ones. Both can be used to look up products by their
 aliases, though.
 
     >>> a52dec = productset.getByName('a52dec')
-    >>> a52dec.name
-    u'a52dec'
-    >>> productset['a52dec'].name
-    u'a52dec'
+    >>> print(a52dec.name)
+    a52dec
+    >>> print(productset['a52dec'].name)
+    a52dec
 
     >>> a52dec.setAliases(['a51dec'])
-    >>> a52dec.aliases
-    [u'a51dec']
-    >>> productset['a51dec'].name
-    u'a52dec'
-    >>> productset.getByName('a51dec').name
-    u'a52dec'
+    >>> for alias in a52dec.aliases:
+    ...     print(alias)
+    a51dec
+    >>> print(productset['a51dec'].name)
+    a52dec
+    >>> print(productset.getByName('a51dec').name)
+    a52dec
 
 Since we have some POTemplates for evolution, we should have a primary
 translatable for that product:
 
-    >>> evo.primary_translatable.displayname
-    u'trunk'
+    >>> print(evo.primary_translatable.displayname)
+    trunk
 
 We can also see how many translatables it has:
 
-    >>> print [series.displayname for series in evo.translatable_series]
-    [u'trunk']
+    >>> for series in evo.translatable_series:
+    ...     print(series.displayname)
+    trunk
 
 But for a52dec, where we have no translatable series or Ubuntu package, the
 primary_translatable is nonexistent:
 
-    >>> print a52dec.primary_translatable
+    >>> print(a52dec.primary_translatable)
     None
 
 Now, to test the active flag. If we disabled a product:
@@ -119,12 +121,12 @@ It should no longer be retrievable via ProductSet's __getitem__:
 
 But it should be retrievable via getByname().
 
-    >>> productset.getByName('a52dec').name
-    u'a52dec'
+    >>> print(productset.getByName('a52dec').name)
+    a52dec
 
 getByName() also accepts an argument to ignore inactive products.
 
-    >>> print productset.getByName('a52dec', ignore_inactive=True)
+    >>> print(productset.getByName('a52dec', ignore_inactive=True))
     None
 
 You can also use the IProductSet to see some statistics on products.
@@ -144,11 +146,11 @@ ILaunchpadStatisticSet is stored in the 'stats' attribute.
     ...     """Provide fake statistics, not to depend on sample data."""
     ...     stats = FakeStatistics()
 
-    >>> print FakeStatsProductSet().count_translatable()
+    >>> print(FakeStatsProductSet().count_translatable())
     1000
-    >>> print FakeStatsProductSet().count_buggy()
+    >>> print(FakeStatsProductSet().count_buggy())
     2000
-    >>> print FakeStatsProductSet().count_reviewed()
+    >>> print(FakeStatsProductSet().count_reviewed())
     3000
 
 IProductSet can also retrieve the latest products registered.  By
@@ -157,7 +159,7 @@ default the latest five are returned.
     >>> latest = productset.latest(None)
     >>> projects = [project.displayname for project in latest]
     >>> for project in sorted(projects):
-    ...     print project
+    ...     print(project)
     Bazaar
     Derby
     Mega Money Maker
@@ -170,7 +172,7 @@ returned.
     >>> latest = productset.latest(None, quantity=3)
     >>> projects = [project.displayname for project in latest]
     >>> for project in sorted(projects):
-    ...     print project
+    ...     print(project)
     Derby
     Mega Money Maker
     Obsolete Junk
@@ -182,7 +184,7 @@ Translatable Products
 IProductSet will also tell us which products can be translated:
 
     >>> for product in productset.getTranslatables():
-    ...    print product.name
+    ...    print(product.name)
     evolution
     alsa-utils
 
@@ -193,7 +195,7 @@ Only active products are listed as translatables.
     >>> unlink_source_packages(evo)
     >>> evo.active = False
     >>> for product in productset.getTranslatables():
-    ...    print product.name
+    ...    print(product.name)
     alsa-utils
 
     >>> evo.active = True
@@ -206,15 +208,20 @@ The packaging table allows us to list source and distro source packages
 related to a certain upstream:
 
     >>> alsa = productset.getByName('alsa-utils')
-    >>> [(sp.name, sp.distroseries.name) for sp in alsa.sourcepackages]
-    [(u'alsa-utils', u'sid'), (u'alsa-utils', u'warty')]
-    >>> [(sp.name, sp.distribution.name) for sp in alsa.distrosourcepackages]
-    [(u'alsa-utils', u'debian'), (u'alsa-utils', u'ubuntu')]
+    >>> for sp in alsa.sourcepackages:
+    ...     print(sp.name, sp.distroseries.name)
+    alsa-utils sid
+    alsa-utils warty
+    >>> for sp in alsa.distrosourcepackages:
+    ...     print(sp.name, sp.distribution.name)
+    alsa-utils debian
+    alsa-utils ubuntu
 
 For convenience, you can get just the distro source packages for Ubuntu.
 
-    >>> [(sp.name, sp.distribution.name) for sp in alsa.ubuntu_packages]
-    [(u'alsa-utils', u'ubuntu')]
+    >>> for sp in alsa.ubuntu_packages:
+    ...     print(sp.name, sp.distribution.name)
+    alsa-utils ubuntu
 
 
 External Bug Tracker
@@ -233,7 +240,7 @@ one.
     >>> firefox = getUtility(IProductSet).getByName('firefox')
     >>> firefox.bug_tracking_usage
     <DBItem ServiceUsage.LAUNCHPAD, (20) Launchpad>
-    >>> print firefox.bug_tracking_usage.name
+    >>> print(firefox.bug_tracking_usage.name)
     LAUNCHPAD
     >>> firefox.getExternalBugTracker() is None
     True
@@ -255,10 +262,10 @@ tracker will be returned.
     >>> firefox.official_malone = False
     >>> firefox.bugtracker is None
     True
-    >>> print firefox.bug_tracking_usage.name
+    >>> print(firefox.bug_tracking_usage.name)
     UNKNOWN
-    >>> firefox.getExternalBugTracker().name
-    u'gnome-bugzilla'
+    >>> print(firefox.getExternalBugTracker().name)
+    gnome-bugzilla
 
 
 If Firefox isn't happy with its project group's bug tracker it can choose to
@@ -266,9 +273,9 @@ specify its own.
 
     >>> debbugs = getUtility(IBugTrackerSet).getByName('debbugs')
     >>> firefox.bugtracker = debbugs
-    >>> firefox.getExternalBugTracker().name
-    u'debbugs'
-    >>> print firefox.bug_tracking_usage.name
+    >>> print(firefox.getExternalBugTracker().name)
+    debbugs
+    >>> print(firefox.bug_tracking_usage.name)
     EXTERNAL
 
 
@@ -287,12 +294,12 @@ Answer Tracking
 Firefox uses the Answer Tracker as the official application to provide
 answers to questions.
 
-    >>> print firefox.answers_usage.name
+    >>> print(firefox.answers_usage.name)
     LAUNCHPAD
 
 Alsa does not use Launchpad to track answers.
 
-    >>> print alsa.answers_usage.name
+    >>> print(alsa.answers_usage.name)
     UNKNOWN
 
 Product Creation
@@ -319,7 +326,7 @@ When creating a product, a default product series is created for it:
     >>> product.series.count()
     1
     >>> trunk = product.series[0]
-    >>> print trunk.name
+    >>> print(trunk.name)
     trunk
 
 This series is set as the development focus for the product:
@@ -335,14 +342,14 @@ We should be able to set whether or not a Product uses specifications
 officially.  It defaults to UNKNOWN.
 
     >>> firefox = productset.getByName('firefox')
-    >>> print firefox.blueprints_usage.name
+    >>> print(firefox.blueprints_usage.name)
     UNKNOWN
 
 We can change it to use LAUNCHPAD.
 
     >>> from lp.app.enums import ServiceUsage
     >>> firefox.blueprints_usage = ServiceUsage.LAUNCHPAD
-    >>> print firefox.blueprints_usage.name
+    >>> print(firefox.blueprints_usage.name)
     LAUNCHPAD
 
 We should be able to get lists of specifications in different states
@@ -358,7 +365,7 @@ First, there should be only one informational spec for firefox:
 
     >>> filter = [SpecificationFilter.INFORMATIONAL]
     >>> for spec in firefox.specifications(None, filter=filter):
-    ...    print spec.name
+    ...    print(spec.name)
     extension-manager-upgrades
 
 
@@ -366,7 +373,7 @@ There are no completed specs for firefox:
 
     >>> filter = [SpecificationFilter.COMPLETE]
     >>> for spec in firefox.specifications(None, filter=filter):
-    ...    print spec.name
+    ...    print(spec.name)
 
 
 And there are five incomplete specs:
@@ -378,7 +385,7 @@ And there are five incomplete specs:
 We can filter for specifications that contain specific text:
 
     >>> for spec in firefox.specifications(None, filter=[u'new']):
-    ...     print spec.name
+    ...     print(spec.name)
     canvas
     e4x
 
@@ -389,8 +396,9 @@ Milestones
 We can use IProduct.milestones to get all milestones associated with any
 ProductSeries of a product.
 
-    >>> [milestone.name for milestone in firefox.milestones]
-    [u'1.0']
+    >>> for milestone in firefox.milestones:
+    ...     print(milestone.name)
+    1.0
 
 Milestones for products can only be created by product/project group owners,
 registry experts, or admins.
@@ -406,7 +414,7 @@ registry experts, or admins.
 They're ordered by dateexpected.
 
     >>> for milestone in firefox.milestones:
-    ...     print '%-7s %s' % (milestone.name, milestone.dateexpected)
+    ...     print('%-7s %s' % (milestone.name, milestone.dateexpected))
     1.0     2056-10-16
     1.0-rc1 2018-10-01
 
@@ -414,13 +422,20 @@ Only milestones which have active=True are returned by the .milestones
 property.
 
     >>> firefox_milestone.active = False
-    >>> [milestone.name for milestone in firefox.milestones]
-    [u'1.0']
+    >>> for milestone in firefox.milestones:
+    ...     print(milestone.name)
+    1.0
 
 To get all milestones of a given product we have the .all_milestones property.
 
-    >>> [milestone.name for milestone in firefox.all_milestones]
-    [u'1.0.0', u'0.9.2', u'0.9.1', u'0.9', u'1.0', u'1.0-rc1']
+    >>> for milestone in firefox.all_milestones:
+    ...     print(milestone.name)
+    1.0.0
+    0.9.2
+    0.9.1
+    0.9
+    1.0
+    1.0-rc1
 
 
 Release
@@ -429,7 +444,7 @@ Release
 All the releases for a Product can be retrieved through the releases property.
 
     >>> for release in firefox.releases:
-    ...     print release.version
+    ...     print(release.version)
     0.9
     0.9.1
     0.9.2
@@ -439,7 +454,7 @@ A single release can be retrieved via the getRelease() method by passing the
 version argument.
 
     >>> release = firefox.getRelease('0.9.1')
-    >>> print release.version
+    >>> print(release.version)
     0.9.1
 
 
@@ -450,16 +465,16 @@ Products are considered to officially support Launchpad as a location
 for their branches after a branch is set for the development focus
 series.
 
-    >>> print firefox.development_focus.branch
+    >>> print(firefox.development_focus.branch)
     None
-    >>> print firefox.official_codehosting
+    >>> print(firefox.official_codehosting)
     False
-    >>> print firefox.codehosting_usage.name
+    >>> print(firefox.codehosting_usage.name)
     UNKNOWN
     >>> firefox.development_focus.branch = factory.makeBranch(product=firefox)
-    >>> print firefox.official_codehosting
+    >>> print(firefox.official_codehosting)
     True
-    >>> print firefox.codehosting_usage.name
+    >>> print(firefox.codehosting_usage.name)
     LAUNCHPAD
 
 We can also find all the products that have branches.
@@ -467,7 +482,7 @@ We can also find all the products that have branches.
     >>> productset.getProductsWithBranches().count()
     6
     >>> for product in productset.getProductsWithBranches():
-    ...     print product.name
+    ...     print(product.name)
     evolution
     firefox
     gnome-terminal
@@ -494,7 +509,7 @@ no longer appear in the result set.
     ...     branch.lifecycle_status = BranchLifecycleStatus.ABANDONED
 
     >>> for product in productset.getProductsWithBranches():
-    ...     print product.name
+    ...     print(product.name)
     evolution
     firefox
     gnome-terminal
@@ -505,7 +520,7 @@ The getProductsWithBranches method takes an optional parameter that limits
 the number of products returned.
 
     >>> for product in productset.getProductsWithBranches(3):
-    ...     print product.name
+    ...     print(product.name)
     evolution
     firefox
     gnome-terminal
@@ -514,7 +529,7 @@ Only active products are returned.
 
     >>> evo.active = False
     >>> for product in productset.getProductsWithBranches():
-    ...     print product.name
+    ...     print(product.name)
     firefox
     gnome-terminal
     iso-codes
@@ -529,15 +544,15 @@ their code if they have a default Git repository.
 
     >>> from lp.code.interfaces.gitrepository import IGitRepositorySet
     >>> firefox.development_focus.branch = None
-    >>> print firefox.official_codehosting
+    >>> print(firefox.official_codehosting)
     False
-    >>> print firefox.codehosting_usage.name
+    >>> print(firefox.codehosting_usage.name)
     UNKNOWN
     >>> getUtility(IGitRepositorySet).setDefaultRepository(
     ...     firefox, factory.makeGitRepository(target=firefox))
-    >>> print firefox.official_codehosting
+    >>> print(firefox.official_codehosting)
     True
-    >>> print firefox.codehosting_usage.name
+    >>> print(firefox.codehosting_usage.name)
     LAUNCHPAD
 
 
@@ -566,18 +581,18 @@ Firefox has two series, but no translatable series either:
 
     >>> firefox = productset.getByName('firefox')
     >>> for firefoxseries in firefox.series:
-    ...     print '%s %s' % (
+    ...     print('%s %s' % (
     ...         firefoxseries.displayname,
-    ...         list(firefoxseries.getCurrentTranslationTemplates()))
+    ...         list(firefoxseries.getCurrentTranslationTemplates())))
     1.0 []
     trunk []
-    >>> print firefox.primary_translatable
+    >>> print(firefox.primary_translatable)
     None
 
 Development focus series for Firefox is trunk.
 
     >>> firefox_trunk = firefox.development_focus
-    >>> print firefox_trunk.displayname
+    >>> print(firefox_trunk.displayname)
     trunk
 
 But, there's also a 1.0 series for Firefox.
@@ -600,7 +615,7 @@ translations are available.
 
 The primary_translatable now points at firefox 1.0:
 
-    >>> print firefox.primary_translatable.displayname
+    >>> print(firefox.primary_translatable.displayname)
     1.0
 
 If we associate a potemplate with Firefox trunk, it will become the primary
@@ -612,13 +627,13 @@ translatable because it's a series with development focus.
     ...                                          'firefox',
     ...                                          'firefox.pot',
     ...                                          translations_admin)
-    >>> print firefox.primary_translatable.displayname
+    >>> print(firefox.primary_translatable.displayname)
     trunk
 
 If we change the development_focus, primary_translatable changes as well.
 
     >>> firefox.development_focus = firefox_10
-    >>> print firefox.primary_translatable.displayname
+    >>> print(firefox.primary_translatable.displayname)
     1.0
 
 
@@ -631,7 +646,7 @@ exception that the current development focus is first.
     >>> firefox_view = create_initialized_view(firefox, '+index')
     >>> sorted_series = firefox_view.sorted_series_list
     >>> for series in sorted_series:
-    ...     print series.name
+    ...     print(series.name)
     1.0
     trunk
 
@@ -644,7 +659,7 @@ view to see the data change reflected.
     >>> firefox_view = create_initialized_view(firefox, '+index')
     >>> sorted_series = firefox_view.sorted_series_list
     >>> for series in sorted_series:
-    ...     print series.name
+    ...     print(series.name)
     trunk
     1.0
 
@@ -653,7 +668,7 @@ It is also possible to view just the set of sorted active series.
     >>> firefox_view = create_initialized_view(firefox, '+index')
     >>> sorted_series = firefox_view.sorted_active_series_list
     >>> for series in sorted_series:
-    ...     print series.name
+    ...     print(series.name)
     trunk
     1.0
 
@@ -666,7 +681,7 @@ sorted active series.
     >>> last_series.status = SeriesStatus.OBSOLETE
     >>> firefox_view = create_initialized_view(firefox, '+index')
     >>> for series in firefox_view.sorted_active_series_list:
-    ...     print series.name
+    ...     print(series.name)
     trunk
 
 It is possible for the development series to be obsolete, and in that case, it
@@ -675,7 +690,7 @@ still shows up in the list.
     >>> firefox.development_focus.status = SeriesStatus.OBSOLETE
     >>> firefox_view = create_initialized_view(firefox, '+index')
     >>> for series in firefox_view.sorted_active_series_list:
-    ...     print series.name
+    ...     print(series.name)
     trunk
 
 
@@ -684,15 +699,15 @@ Changing ownership
 
 A product owner can be changed by the current owner.
 
-    >>> print firefox.owner.name
+    >>> print(firefox.owner.name)
     name12
 
     >>> mark = getUtility(IPersonSet).getByEmail('mark@example.com')
-    >>> print mark.name
+    >>> print(mark.name)
     mark
 
     >>> ignored = login_person(firefox.owner)
     >>> firefox.owner = mark
 
-    >>> print firefox.owner.name
+    >>> print(firefox.owner.name)
     mark

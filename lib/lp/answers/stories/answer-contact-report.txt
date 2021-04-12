@@ -14,7 +14,7 @@ Since No Privileges Person is not an answer contact, the report states
 that.
 
     >>> content = find_main_content(anon_browser.contents)
-    >>> print(content.find('p').renderContents())
+    >>> print(content.find('p').decode_contents())
     No Privileges Person is not an answer contact for any project.
 
 But when the person is an answer contact, the page displays the project
@@ -27,7 +27,7 @@ they registered for.
 
     >>> content = find_tag_by_id(
     ...     anon_browser.contents, "direct-answer-contacts-for-list")
-    >>> print(extract_text(content).encode('ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(content)))
     gnomebaker
     ...mozilla-firefox... package in Ubuntu
 
@@ -75,6 +75,6 @@ see the link for other users.
 
     >>> content = find_tag_by_id(
     ...     browser.contents, "direct-answer-contacts-for-list")
-    >>> print(extract_text(content).encode('ascii', 'backslashreplace'))
+    >>> print(backslashreplace(extract_text(content)))
     gnomebaker
     ...mozilla-firefox... package in Ubuntu

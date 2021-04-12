@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -207,12 +207,7 @@ class BranchSubscriptionAddOtherView(_BranchSubscriptionView):
 
     @action("Subscribe", name="subscribe_action")
     def subscribe_action(self, action, data):
-        """Subscribe the specified user to the branch.
-
-        The user must be a member of a team in order to subscribe that team to
-        the branch.  Launchpad Admins are special and they can subscribe any
-        team.
-        """
+        """Subscribe the specified user to the branch."""
         notification_level = data['notification_level']
         max_diff_lines = self.optional_max_diff_lines(
             notification_level, data['max_diff_lines'])
@@ -276,8 +271,9 @@ class BranchSubscriptionEditView(LaunchpadEditFormView):
         url = canonical_url(self.branch)
         # If the subscriber can no longer see the branch, redirect them away.
         service = getUtility(IService, 'sharing')
-        _, branches, _, _ = service.getVisibleArtifacts(
-            self.person, branches=[self.branch], ignore_permissions=True)
+        branches = service.getVisibleArtifacts(
+            self.person, branches=[self.branch],
+            ignore_permissions=True)["branches"]
         if not branches:
             url = canonical_url(self.branch.target)
         return url

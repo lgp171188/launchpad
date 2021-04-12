@@ -113,7 +113,7 @@ class ServerAvailableResource(resource.Resource):
             request.setResponseCode(200)
         else:
             request.setResponseCode(503)
-        request.setHeader('Content-Type', 'text/plain')
+        request.setHeader(b'Content-Type', b'text/plain')
         return service_available
 
     def render_GET(self, request):
@@ -127,15 +127,16 @@ class ServerAvailableResource(resource.Resource):
             state_text = 'Available'
         else:
             state_text = 'Unavailable'
-        return '%s\n\n%d connections: \n\n%s\n' % (
+        text = '%s\n\n%d connections: \n\n%s\n' % (
             state_text, len(tracked_connections),
             '\n'.join(
                 [str(c.transport.getPeer()) for c in tracked_connections]))
+        return text.encode('UTF-8')
 
     def render_HEAD(self, request):
         """Handler for HEAD requests.  See resource.Resource.render."""
         self._render_common(request)
-        return ''
+        return b''
 
 
 @implementer(service.IServiceCollection)

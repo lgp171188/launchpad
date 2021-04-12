@@ -32,8 +32,9 @@ owner, Launchpad administrators or members of the Bazaar Experts team.
     >>> nopriv_browser.open(
     ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
     >>> link = nopriv_browser.getLink('Change branch details')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> browser.open(
@@ -217,7 +218,7 @@ Check that when editing a hosted branch the URL field is not shown.
     ...     'http://acme.example.com/~foo/bar/baz')
     Traceback (most recent call last):
     ...
-    LookupError: label u'Branch URL'
+    LookupError: label ...'Branch URL'
     ...
 
 

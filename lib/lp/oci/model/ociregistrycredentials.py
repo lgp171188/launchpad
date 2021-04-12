@@ -87,6 +87,10 @@ class OCIRegistryCredentials(Storm):
 
     _credentials = JSON(name="credentials", allow_none=True)
 
+    # The list of dict keys that should not be encrypted when storing
+    # _credentials attribute.
+    _UNENCRYPTED_CREDENTIALS_FIELDS = ['username', 'region']
+
     def __init__(self, owner, url, credentials):
         self.owner = owner
         self.url = url
@@ -111,12 +115,19 @@ class OCIRegistryCredentials(Storm):
     def setCredentials(self, value):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         copy = value.copy()
-        username = copy.pop("username", None)
+        # Remove fields that should not be encrypted.
+        unencrypted_fields = {}
+        for field in self._UNENCRYPTED_CREDENTIALS_FIELDS:
+            unencrypted_fields[field] = copy.pop(field, None)
+        # Encrypt the rest of the dict.
         data = {
             "credentials_encrypted": removeSecurityProxy(
                 container.encrypt(json.dumps(copy).encode('UTF-8')))}
-        if username is not None:
-            data["username"] = username
+        # Put back the fields that shouldn't be encrypted.
+        for field in self._UNENCRYPTED_CREDENTIALS_FIELDS:
+            value = unencrypted_fields[field]
+            if value is not None:
+                data[field] = value
         self._credentials = data
 
     @property
@@ -126,6 +137,14 @@ class OCIRegistryCredentials(Storm):
     @username.setter
     def username(self, value):
         self._credentials['username'] = value
+
+    @property
+    def region(self):
+        return self._credentials.get('region')
+
+    @region.setter
+    def region(self, value):
+        self._credentials['region'] = value
 
     def destroySelf(self):
         """See `IOCIRegistryCredentials`."""
@@ -150,24 +169,29 @@ class OCIRegistryCredentialsSet:
         for existing in self.findByOwner(owner):
             url_match = existing.url == url
             username_match = existing.username == credentials.get('username')
-            if (url_match and username_match):
+            region_match = existing.region == credentials.get('region')
+            if url_match and username_match and region_match:
                 return existing
         return None
 
-    def new(self, registrant, owner, url, credentials):
+    def new(self, registrant, owner, url, credentials, override_owner=False):
         """See `IOCIRegistryCredentialsSet`."""
-        self._checkOwner(registrant, owner)
+        if not override_owner:
+            self._checkOwner(registrant, owner)
         if self._checkForExisting(owner, url, credentials):
             raise OCIRegistryCredentialsAlreadyExist()
         return OCIRegistryCredentials(owner, url, credentials)
 
-    def getOrCreate(self, registrant, owner, url, credentials):
+    def getOrCreate(self, registrant, owner, url, credentials,
+                    override_owner=False):
         """See `IOCIRegistryCredentialsSet`."""
-        self._checkOwner(registrant, owner)
+        if not override_owner:
+            self._checkOwner(registrant, owner)
         existing = self._checkForExisting(owner, url, credentials)
         if existing:
             return existing
-        return self.new(registrant, owner, url, credentials)
+        return self.new(
+            registrant, owner, url, credentials, override_owner=override_owner)
 
     def findByOwner(self, owner):
         """See `IOCIRegistryCredentialsSet`."""

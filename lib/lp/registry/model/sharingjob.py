@@ -1,4 +1,4 @@
-# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Job classes related to the sharing feature are in here."""
@@ -69,6 +69,12 @@ from lp.code.model.gitrepository import (
     GitRepository,
     )
 from lp.code.model.gitsubscription import GitSubscription
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.model.ocirecipe import (
+    get_ocirecipe_privacy_filter,
+    OCIRecipe,
+    )
+from lp.oci.model.ocirecipesubscription import OCIRecipeSubscription
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.sharingjob import (
@@ -78,6 +84,7 @@ from lp.registry.interfaces.sharingjob import (
     ISharingJobSource,
     )
 from lp.registry.model.distribution import Distribution
+from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.teammembership import TeamParticipation
@@ -91,6 +98,12 @@ from lp.services.job.model.job import (
     )
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
+from lp.snappy.interfaces.snap import ISnap
+from lp.snappy.model.snap import (
+    get_snap_privacy_filter,
+    Snap,
+    )
+from lp.snappy.model.snapsubscription import SnapSubscription
 
 
 class SharingJobType(DBEnumeratedType):
@@ -193,10 +206,6 @@ class SharingJobDerived(
             return self.distro
 
     @property
-    def pillar_text(self):
-        return self.pillar.displayname if self.pillar else 'all pillars'
-
-    @property
     def log_name(self):
         return self.__class__.__name__
 
@@ -267,7 +276,9 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
         bug_ids = []
         branch_ids = []
         gitrepository_ids = []
+        snap_ids = []
         specification_ids = []
+        ocirecipe_ids = []
         if artifacts:
             for artifact in artifacts:
                 if IBug.providedBy(artifact):
@@ -276,8 +287,12 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     branch_ids.append(artifact.id)
                 elif IGitRepository.providedBy(artifact):
                     gitrepository_ids.append(artifact.id)
+                elif ISnap.providedBy(artifact):
+                    snap_ids.append(artifact.id)
                 elif ISpecification.providedBy(artifact):
                     specification_ids.append(artifact.id)
+                elif IOCIRecipe.providedBy(artifact):
+                    ocirecipe_ids.append(artifact.id)
                 else:
                     raise ValueError(
                         'Unsupported artifact: %r' % artifact)
@@ -288,7 +303,9 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
             'bug_ids': bug_ids,
             'branch_ids': branch_ids,
             'gitrepository_ids': gitrepository_ids,
+            'snap_ids': snap_ids,
             'specification_ids': specification_ids,
+            'ocirecipe_ids': ocirecipe_ids,
             'information_types': information_types,
             'requestor.id': requestor.id
         }
@@ -324,8 +341,16 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
         return self.metadata.get('gitrepository_ids', [])
 
     @property
+    def snap_ids(self):
+        return self.metadata.get('snap_ids', [])
+
+    @property
     def specification_ids(self):
         return self.metadata.get('specification_ids', [])
+
+    @property
+    def ocirecipe_ids(self):
+        return self.metadata.get('ocirecipe_ids', [])
 
     @property
     def information_types(self):
@@ -353,7 +378,9 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
             'bug_ids': self.bug_ids,
             'branch_ids': self.branch_ids,
             'gitrepository_ids': self.gitrepository_ids,
+            'snap_ids': self.snap_ids,
             'specification_ids': self.specification_ids,
+            'ocirecipe_ids': self.ocirecipe_ids,
             'pillar': getattr(self.pillar, 'name', None),
             'grantee': getattr(self.grantee, 'name', None)
             }
@@ -369,16 +396,22 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
         bug_filters = []
         branch_filters = []
         gitrepository_filters = []
+        snap_filters = []
         specification_filters = []
+        ocirecipe_filters = []
 
         if self.branch_ids:
             branch_filters.append(Branch.id.is_in(self.branch_ids))
         if self.gitrepository_ids:
             gitrepository_filters.append(GitRepository.id.is_in(
                 self.gitrepository_ids))
+        if self.snap_ids:
+            snap_filters.append(Snap.id.is_in(self.snap_ids))
         if self.specification_ids:
             specification_filters.append(Specification.id.is_in(
                 self.specification_ids))
+        if self.ocirecipe_ids:
+            ocirecipe_filters.append(OCIRecipe.id.is_in(self.ocirecipe_ids))
         if self.bug_ids:
             bug_filters.append(BugTaskFlat.bug_id.is_in(self.bug_ids))
         else:
@@ -391,9 +424,13 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                 gitrepository_filters.append(
                     GitRepository.information_type.is_in(
                         self.information_types))
+                snap_filters.append(Snap._information_type.is_in(
+                    self.information_types))
                 specification_filters.append(
                     Specification.information_type.is_in(
                         self.information_types))
+                ocirecipe_filters.append(OCIRecipe._information_type.is_in(
+                    self.information_types))
             if self.product:
                 bug_filters.append(
                     BugTaskFlat.product == self.product)
@@ -402,6 +439,11 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     GitRepository.project == self.product)
                 specification_filters.append(
                     Specification.product == self.product)
+                ocirecipe_filters.append(
+                    In(OCIRecipe.id,
+                       Select(OCIRecipe.id,
+                              And(OCIRecipe.oci_project_id == OCIProject.id,
+                                  OCIProject.project == self.product))))
             if self.distro:
                 bug_filters.append(
                     BugTaskFlat.distribution == self.distro)
@@ -410,6 +452,11 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     GitRepository.distribution == self.distro)
                 specification_filters.append(
                     Specification.distribution == self.distro)
+                ocirecipe_filters.append(
+                    In(OCIRecipe.id,
+                       Select(OCIRecipe.id,
+                              And(OCIRecipe.oci_project_id == OCIProject.id,
+                                  OCIProject.distribution == self.distro))))
 
         if self.grantee:
             bug_filters.append(
@@ -427,11 +474,21 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                     Select(
                         TeamParticipation.personID,
                         where=TeamParticipation.team == self.grantee)))
+            snap_filters.append(
+                In(SnapSubscription.person_id,
+                   Select(
+                       TeamParticipation.personID,
+                       where=TeamParticipation.team == self.grantee)))
             specification_filters.append(
-                In(SpecificationSubscription.personID,
-                    Select(
-                        TeamParticipation.personID,
-                        where=TeamParticipation.team == self.grantee)))
+                In(SpecificationSubscription.person_id,
+                   Select(
+                       TeamParticipation.personID,
+                       where=TeamParticipation.team == self.grantee)))
+            ocirecipe_filters.append(
+                In(OCIRecipeSubscription.person_id,
+                   Select(
+                       TeamParticipation.personID,
+                       where=TeamParticipation.team == self.grantee)))
 
         if bug_filters:
             bug_filters.append(Not(
@@ -470,19 +527,42 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
             for sub in gitrepository_subscriptions:
                 sub.repository.unsubscribe(
                     sub.person, self.requestor, ignore_permissions=True)
+        if snap_filters:
+            snap_filters.append(
+                Not(get_snap_privacy_filter(SnapSubscription.person_id)))
+            snap_subscriptions = IStore(SnapSubscription).using(
+                SnapSubscription,
+                Join(Snap, Snap.id == SnapSubscription.snap_id)
+            ).find(SnapSubscription, *snap_filters).config(distinct=True)
+            for sub in snap_subscriptions:
+                sub.snap.unsubscribe(
+                    sub.person, self.requestor, ignore_permissions=True)
         if specification_filters:
             specification_filters.append(Not(*get_specification_privacy_filter(
-                SpecificationSubscription.personID)))
+                SpecificationSubscription.person_id)))
             tables = (
                 SpecificationSubscription,
                 Join(
                     Specification,
                     Specification.id ==
-                        SpecificationSubscription.specificationID))
+                        SpecificationSubscription.specification_id))
             specifications_subscriptions = IStore(
                 SpecificationSubscription).using(*tables).find(
                 SpecificationSubscription, *specification_filters).config(
                 distinct=True)
             for sub in specifications_subscriptions:
                 sub.specification.unsubscribe(
+                    sub.person, self.requestor, ignore_permissions=True)
+        if ocirecipe_filters:
+            ocirecipe_filters.append(
+                Not(get_ocirecipe_privacy_filter(
+                    OCIRecipeSubscription.person_id)))
+            ocirecipe_subscriptions = IStore(OCIRecipeSubscription).using(
+                OCIRecipeSubscription,
+                Join(OCIRecipe,
+                     OCIRecipe.id == OCIRecipeSubscription.recipe_id)
+            ).find(OCIRecipeSubscription, *ocirecipe_filters).config(
+                distinct=True)
+            for sub in ocirecipe_subscriptions:
+                sub.recipe.unsubscribe(
                     sub.person, self.requestor, ignore_permissions=True)

@@ -96,7 +96,7 @@ class TranslationBranchApprover(object):
         # The simplest case of exactly one file and one POTemplate object is
         # always approved.
         if len(self._potemplateset) == len(self._potemplates) == 1:
-            self._potemplates[self._potemplates.keys()[0]] = (
+            self._potemplates[list(self._potemplates)[0]] = (
                 list(self._potemplateset)[0])
             self.is_approval_possible = True
 
@@ -178,7 +178,7 @@ class TranslationBuildApprover(object):
 
         importer = TranslationImporter()
         # We only care for templates.
-        self.filenames = filter(importer.isTemplateName, filenames)
+        self.filenames = list(filter(importer.isTemplateName, filenames))
         self._potemplateset = getUtility(IPOTemplateSet).getSubset(
             productseries=productseries,
             distroseries=distroseries,

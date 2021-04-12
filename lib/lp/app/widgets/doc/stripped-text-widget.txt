@@ -43,8 +43,8 @@ We pass a string with leading and trailing whitespaces to the widget
 
 And check that the leading and trailing whitespaces were correctly stripped.
 
-  >>> widget.getInputValue()
-  u'123456'
+  >>> print(widget.getInputValue())
+  123456
 
 If only whitespace is provided, the widget acts like no input was
 provided.
@@ -60,7 +60,7 @@ provided.
   ...     __name__=six.ensure_str('field'), title=u'Title', required=True)
   >>> request = LaunchpadTestRequest(form={'field.field':'    \n    '})
   >>> widget = StrippedTextWidget(required_field, request)
-  >>> widget.getInputValue()
+  >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
   Traceback (most recent call last):
   ...
-  WidgetInputError: ('field', u'Title', RequiredMissing('field'))
+  zope.formlib.interfaces.WidgetInputError: ('field', ...'Title', RequiredMissing('field'))

@@ -7,10 +7,8 @@ from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
-import codecs
 import os
 import re
-from StringIO import StringIO
 import sys
 
 from breezy import errors
@@ -37,6 +35,7 @@ from breezy.urlutils import (
     escape,
     local_path_to_url,
     )
+from fixtures import MonkeyPatch
 import six
 from six.moves import xmlrpc_client
 from testtools.twistedsupport import (
@@ -149,7 +148,7 @@ class TestTransportDispatch(TestCase):
         transport = self.factory._makeControlTransport(
             default_stack_on='/~foo/bar/baz')
         control_conf = transport.get_bytes('.bzr/control.conf')
-        self.assertEqual('default_stack_on = /~foo/bar/baz\n', control_conf)
+        self.assertEqual(b'default_stack_on = /~foo/bar/baz\n', control_conf)
 
     def test_control_conf_with_no_stacking(self):
         transport = self.factory._makeControlTransport(
@@ -262,7 +261,8 @@ class TestLaunchpadServer(MixinBaseLaunchpadServerTests, BzrTestCase):
             '~%s/%s/.bzr/control.conf'
             % (branch.owner.name, branch.product.name))
         self.assertEqual(
-            'default_stack_on = %s\n' % branch_id_alias(branch),
+            six.ensure_binary(
+                'default_stack_on = %s\n' % branch_id_alias(branch)),
             transport.get_bytes(path))
 
     @defer.inlineCallbacks
@@ -281,7 +281,7 @@ class TestLaunchpadServer(MixinBaseLaunchpadServerTests, BzrTestCase):
         self.assertEqual(expected_path, path)
         # Can't test for equality of transports, since URLs and object
         # identity differ.
-        file_data = self.factory.getUniqueString()
+        file_data = self.factory.getUniqueBytes()
         transport.mkdir(os.path.dirname(path))
         transport.put_bytes(path, file_data)
         self.assertEqual(file_data, expected_transport.get_bytes(path))
@@ -335,7 +335,7 @@ class LaunchpadInternalServerTests:
         self.assertEqual(expected_path, path)
         # Can't test for equality of transports, since URLs and object
         # identity differ.
-        file_data = self.factory.getUniqueString()
+        file_data = self.factory.getUniqueBytes()
         transport.mkdir(os.path.dirname(path))
         transport.put_bytes(path, file_data)
         self.assertEqual(file_data, expected_transport.get_bytes(path))
@@ -432,11 +432,11 @@ class TestAsyncVirtualTransport(TestCaseInTempDir):
         self.addCleanup(self.server.stop_server)
         self.transport = get_transport(self.server.get_url())
 
+    @defer.inlineCallbacks
     def test_writeChunk(self):
-        deferred = self.transport.writeChunk('foo', 0, 'content')
-        return deferred.addCallback(
-            lambda ignored:
-            self.assertEqual('content', open('prefix_foo').read()))
+        yield self.transport.writeChunk('foo', 0, b'content')
+        with open('prefix_foo', 'rb') as f:
+            self.assertEqual(b'content', f.read())
 
     def test_realPath(self):
         # local_realPath returns the real, absolute path to a file, resolving
@@ -474,10 +474,9 @@ class TestAsyncVirtualTransport(TestCaseInTempDir):
         #
         # This test added in response to https://launchpad.net/bugs/236380.
         escaped_disk_path = 'prefix_%43razy'
-        content = 'content\n'
-        escaped_file = open(escaped_disk_path, 'w')
-        escaped_file.write(content)
-        escaped_file.close()
+        content = b'content\n'
+        with open(escaped_disk_path, 'wb') as escaped_file:
+            escaped_file.write(content)
 
         deferred = self.transport.get_bytes(escape('%43razy'))
         return deferred.addCallback(self.assertEqual, content)
@@ -582,7 +581,7 @@ class LaunchpadTransportTests:
         backing_transport.put_bytes('hello.txt', b'Hello World!')
         deferred = self._ensureDeferred(
             transport.get_bytes, '%s/.bzr/hello.txt' % branch.unique_name)
-        return deferred.addCallback(self.assertEqual, 'Hello World!')
+        return deferred.addCallback(self.assertEqual, b'Hello World!')
 
     def test_get_mapped_file_escaped_url(self):
         # Getting a file from a public branch URL gets the file as stored on
@@ -594,7 +593,7 @@ class LaunchpadTransportTests:
         url = escape('%s/.bzr/hello.txt' % branch.unique_name)
         transport = self.getTransport()
         deferred = self._ensureDeferred(transport.get_bytes, url)
-        return deferred.addCallback(self.assertEqual, 'Hello World!')
+        return deferred.addCallback(self.assertEqual, b'Hello World!')
 
     def test_readv_mapped_file(self):
         # Using readv on a public branch URL gets chunks of the file as stored
@@ -627,7 +626,7 @@ class LaunchpadTransportTests:
 
         def check_bytes_written(ignored):
             self.assertEqual(
-                "Goodbye", backing_transport.get_bytes('goodbye.txt'))
+                b"Goodbye", backing_transport.get_bytes('goodbye.txt'))
         return deferred.addCallback(check_bytes_written)
 
     def test_cloning_updates_base(self):
@@ -665,7 +664,7 @@ class LaunchpadTransportTests:
         deferred = self._ensureDeferred(
             transport.get_bytes,
             '%s/%s/.bzr/hello.txt' % (branch.product.name, branch.name))
-        return deferred.addCallback(self.assertEqual, 'Hello World!')
+        return deferred.addCallback(self.assertEqual, b'Hello World!')
 
     def test_abspath(self):
         # abspath for a relative path is the same as the base URL for a clone
@@ -943,7 +942,7 @@ class TestBranchChangedNotification(TestCaseWithTransport):
         branch.unlock()
         self.assertEqual(1, len(self._branch_changed_log))
         self.assertEqual(
-            revid,
+            six.ensure_text(revid),
             self._branch_changed_log[0]['last_revision'])
 
     def assertStackedOnIsRewritten(self, input, output):
@@ -1021,9 +1020,7 @@ class TestBranchChangedErrorHandling(TestCaseWithTransport, TestCase):
         self.disable_directory_isolation()
 
         # Trap stderr.
-        self.addCleanup(setattr, sys, 'stderr', sys.stderr)
-        self._real_stderr = sys.stderr
-        sys.stderr = codecs.getwriter('utf8')(StringIO())
+        self.useFixture(MonkeyPatch('sys.stderr', six.StringIO()))
 
         # To record generated oopsids
         self.generated_oopsids = []

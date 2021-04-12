@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -21,10 +21,6 @@ warnings.filterwarnings('ignore', category=UserWarning, append=True,
                         message=r'Module .*? is being added to sys.path')
 
 
-def text_lines_to_set(text):
-    return set(line.strip() for line in text.splitlines() if line.strip())
-
-
 # Sometimes, third-party modules don't export all of their public APIs through
 # __all__. The following dict maps from such modules to a list of attributes
 # that are allowed to be imported, whether or not they are in __all__.
@@ -32,8 +28,6 @@ valid_imports_not_in_all = {
     # Exported in Python 3, but missing and so not exported in Python 2.
     'contextlib': set(['ExitStack']),
     'importlib': set(['resources']),
-    # Exported in Python 3, but missing and so not exported in Python 2.
-    'json.decoder': set(['JSONDecodeError']),
     'openid.fetchers': set(['Urllib2Fetcher']),
     'openid.message': set(['NamespaceAliasRegistrationError']),
     # Exported as shlex.quote in Python 3.
@@ -42,6 +36,7 @@ valid_imports_not_in_all = {
     'shlex': set(['quote']),
     'six.moves.http_cookiejar': set(['domain_match']),
     'storm.database': set(['STATE_DISCONNECTED']),
+    'talisker': set(['run_gunicorn']),
     'textwrap': set(['dedent']),
     'testtools.testresult.real': set(['_details_to_str']),
     'twisted.internet.threads': set(['deferToThreadPool']),

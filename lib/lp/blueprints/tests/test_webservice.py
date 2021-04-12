@@ -332,7 +332,8 @@ class SpecificationMutationTests(TestCaseWithFactory):
             json.dumps(dict(target_link=new_target_url)), api_version='devel')
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "There is already a blueprint named foo for Fooix.", response.body)
+            b"There is already a blueprint named foo for Fooix.",
+            response.body)
 
 
 class SpecificationTargetTests(TestCaseWithFactory):

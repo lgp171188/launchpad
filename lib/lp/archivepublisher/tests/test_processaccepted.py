@@ -166,6 +166,7 @@ class TestProcessAccepted(TestCaseWithFactory):
         switch_dbuser(self.dbuser)
         synch = UploadCheckingSynchronizer()
         transaction.manager.registerSynch(synch)
+        self.addCleanup(transaction.manager.unregisterSynch, synch)
         script.main()
         self.assertThat(len(uploads), LessThan(synch.commit_count))
 

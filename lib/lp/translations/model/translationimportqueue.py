@@ -1,7 +1,12 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+    )
 
 __metaclass__ = type
 __all__ = [
@@ -23,16 +28,18 @@ import posixpath
 import pytz
 import six
 from storm.expr import (
+    Alias,
     And,
+    Func,
     Or,
     Select,
+    SQL,
     )
 from storm.locals import (
     Bool,
     DateTime,
     Int,
     Reference,
-    Store,
     Unicode,
     )
 from zope.component import (
@@ -65,10 +72,7 @@ from lp.services.database.interfaces import (
     ISlaveStore,
     IStore,
     )
-from lp.services.database.sqlbase import (
-    quote,
-    quote_like,
-    )
+from lp.services.database.sqlbase import quote
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import IsFalse
 from lp.services.librarian.interfaces.client import ILibrarianClient
@@ -616,7 +620,7 @@ class TranslationImportQueueEntry(StormBase):
                            "because entry %d is in the way." % (
                                potemplate.title, self.id, self.path,
                                existing_entry.id))
-                logging.warn(warning)
+                logging.warning(warning)
                 return None
 
             # We got the potemplate, try to guess the language from
@@ -804,11 +808,6 @@ class TranslationImportQueueEntry(StormBase):
                 lang_code, translation_domain,
                 sourcepackagename=self.sourcepackagename)
 
-    def getFileContent(self):
-        """See ITranslationImportQueueEntry."""
-        client = getUtility(ILibrarianClient)
-        return client.getFileByAlias(self.content.id).read()
-
     def getTemplatesOnSameDirectory(self):
         """See ITranslationImportQueueEntry."""
         importer = getUtility(ITranslationImporter)
@@ -845,8 +844,8 @@ class TranslationImportQueueEntry(StormBase):
         elapsedtime = (
             datetime.datetime.now(UTC) - self.dateimported)
         elapsedtime_text = ''
-        hours = elapsedtime.seconds / 3600
-        minutes = (elapsedtime.seconds % 3600) / 60
+        hours = elapsedtime.seconds // 3600
+        minutes = (elapsedtime.seconds % 3600) // 60
         if elapsedtime.days > 0:
             elapsedtime_text += '%d days ' % elapsedtime.days
         if hours > 0:
@@ -1421,29 +1420,29 @@ class TranslationImportQueue:
         returned by this method.
         """
         importer = getUtility(ITranslationImporter)
-        template_patterns = "(%s)" % ' OR '.join([
-            "path LIKE ('%%' || %s)" % quote_like(suffix)
-            for suffix in importer.template_suffixes])
 
         store = self._getSlaveStore()
-        result = store.execute("""
-            SELECT
-                distroseries,
-                sourcepackagename,
-                productseries,
-                regexp_replace(
-                    regexp_replace(path, '^[^/]*$', ''),
-                    '/[^/]*$',
-                    '') AS directory
-            FROM TranslationImportQueueEntry
-            WHERE %(is_template)s
-            GROUP BY distroseries, sourcepackagename, productseries, directory
-            HAVING bool_and(status = %(blocked)s)
-            ORDER BY distroseries, sourcepackagename, productseries, directory
-            """ % {
-                'blocked': quote(RosettaImportStatus.BLOCKED),
-                'is_template': template_patterns,
-            })
+        TIQE = TranslationImportQueueEntry
+        result = store.find(
+            (TIQE.distroseries_id, TIQE.sourcepackagename_id,
+             TIQE.productseries_id,
+             Alias(
+                 Func("regexp_replace",
+                      Func("regexp_replace", TIQE.path, r"^[^/]*$", ""),
+                      r"/[^/]*$",
+                      ""),
+                 "directory")),
+            Or(*(
+                TIQE.path.endswith(suffix)
+                for suffix in importer.template_suffixes)))
+        result = result.group_by(
+            TIQE.distroseries_id, TIQE.sourcepackagename_id,
+            TIQE.productseries_id, SQL("directory"))
+        result = result.having(
+            Func("bool_and", TIQE.status == RosettaImportStatus.BLOCKED))
+        result = result.order_by(
+            TIQE.distroseries_id, TIQE.sourcepackagename_id,
+            TIQE.productseries_id, SQL("directory"))
 
         return set(result)
 

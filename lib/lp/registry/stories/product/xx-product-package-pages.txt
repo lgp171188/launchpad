@@ -44,9 +44,10 @@ Any logged in users can still see the links to create a packaging link.
 
     >>> anon_browser.open('http://launchpad.test/evolution/+packages')
     >>> anon_browser.getLink(url='/evolution/trunk/+ubuntupkg')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 
 Deleting packaging links

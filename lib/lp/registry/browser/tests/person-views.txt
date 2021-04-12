@@ -25,8 +25,8 @@ anyone in Launchpad..
     >>> person_set = getUtility(IPersonSet)
     >>> login('test@canonical.com')
     >>> mark = person_set.getByEmail('mark@example.com')
-    >>> mark.preferredemail.email
-    u'mark@example.com'
+    >>> print(mark.preferredemail.email)
+    mark@example.com
 
     >>> mark.hide_email_addresses
     False
@@ -40,7 +40,7 @@ are there any email addresses.
     >>> view.email_address_visibility.is_login_required
     True
 
-    >>> print view.visible_email_address_description
+    >>> print(view.visible_email_address_description)
     None
 
     >>> view.visible_email_addresses
@@ -58,8 +58,9 @@ addresses.
     >>> view.visible_email_address_description
     'This email address is only visible to Launchpad users.'
 
-    >>> view.visible_email_addresses
-    [u'mark@example.com']
+    >>> for email in view.visible_email_addresses:
+    ...     print(email)
+    mark@example.com
 
 As for Sample Person, they have chosen not to disclose their email addresses.
 
@@ -86,7 +87,7 @@ them.
     >>> view.email_address_visibility.are_hidden
     True
 
-    >>> print view.visible_email_address_description
+    >>> print(view.visible_email_address_description)
     None
 
     >>> view.visible_email_addresses
@@ -104,16 +105,20 @@ description states that the email addresses are not disclosed to others.
     >>> view.visible_email_address_description
     'This email address is not disclosed to others.'
 
-    >>> view.visible_email_addresses
-    [u'test@canonical.com', u'testing@canonical.com']
+    >>> for email in view.visible_email_addresses:
+    ...     print(email)
+    test@canonical.com
+    testing@canonical.com
 
     >>> login('commercial-member@canonical.com')
     >>> view = create_initialized_view(sample_person, '+index')
     >>> view.email_address_visibility.are_allowed
     True
 
-    >>> view.visible_email_addresses
-    [u'test@canonical.com', u'testing@canonical.com']
+    >>> for email in view.visible_email_addresses:
+    ...     print(email)
+    test@canonical.com
+    testing@canonical.com
 
 Teams are like Persons. No email address is disclosed when the user is
 anonymous.
@@ -135,8 +140,9 @@ hidden.
     >>> view.email_address_visibility.are_public
     True
 
-    >>> view.visible_email_addresses
-    [u'support@ubuntu.com']
+    >>> for email in view.visible_email_addresses:
+    ...     print(email)
+    support@ubuntu.com
 
 It is possible for a team to have more than two addresses (from a
 mailing list), but only the preferred address is listed in the
@@ -148,8 +154,9 @@ visible_email_addresses property.
     >>> mailing_list = factory.makeMailingList(
     ...     ubuntu_team, ubuntu_team.teamowner)
     >>> view = create_initialized_view(ubuntu_team, '+index')
-    >>> view.visible_email_addresses
-    [u'ubuntu_team@canonical.com']
+    >>> for email in view.visible_email_addresses:
+    ...     print(email)
+    ubuntu_team@canonical.com
 
 When the user or team does not have a validated contact address, the
 email addresses state is NONE_AVAILABLE.
@@ -159,7 +166,7 @@ email addresses state is NONE_AVAILABLE.
     >>> view.email_address_visibility.are_none_available
     True
 
-    >>> print view.visible_email_address_description
+    >>> print(view.visible_email_address_description)
     None
 
     >>> view.visible_email_addresses
@@ -180,7 +187,7 @@ their preferred languages, English is used.
 
     >>> login(ANONYMOUS)
     >>> view = create_view(sample_person, '+portlet-contact-details')
-    >>> print view.languages
+    >>> print(view.languages)
     English
 
 This assumption is visible to the user when they view their own profile
@@ -194,7 +201,7 @@ correction. The list of languages is alphabetized.
     >>> sample_person.addLanguage(languageset.getLanguageByCode('fr'))
 
     >>> view = create_view(sample_person, '+portlet-contact-details')
-    >>> print view.languages
+    >>> print(view.languages)
     French, Somali
 
 Teams may have languages too. English is the default if the team has not
@@ -204,7 +211,7 @@ set a language.
     []
 
     >>> view = create_view(landscape_developers, '+portlet-contact-details')
-    >>> print view.languages
+    >>> print(view.languages)
     English
 
 Teams most often set just one language that is used for the Answers
@@ -214,7 +221,7 @@ parenthesis.
     >>> landscape_developers.addLanguage(
     ...     languageset.getLanguageByCode('pt_BR'))
     >>> view = create_view(landscape_developers, '+portlet-contact-details')
-    >>> print view.languages
+    >>> print(view.languages)
     Portuguese (Brazil)
 
 
@@ -284,7 +291,7 @@ working on.
     >>> len(view.assigned_specs_in_progress)
     1
 
-    >>> print view.render()
+    >>> print(view.render())
     <div id="working-on"...
     <a href="/~ken/+specs?role=assignee"> All assigned blueprints </a>...
     ...<a ...href="http://blueprints.launchpad.test/tool/+spec/..."...>Specs
@@ -323,7 +330,7 @@ status is in INPROGRESS.
     >>> len(view.assigned_specs_in_progress)
     1
 
-    >>> print view.render()
+    >>> print(view.render())
     <div id="working-on"...
     <a href="http://launchpad.test/~ken/+assignedbugs?...">
       All bugs in progress </a>...
@@ -439,7 +446,7 @@ If the PPA is private, only the owner will see the section.
 For a user with no PPAs, nobody will see the section apart from themselves.
 This aspect allows them to access the 'Create a new PPA' link.
 
-    >>> print sample_person.archive
+    >>> print(sample_person.archive)
     None
 
     >>> ignored = login_person(sample_person)

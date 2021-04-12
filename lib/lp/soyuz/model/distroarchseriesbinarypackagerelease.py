@@ -10,9 +10,10 @@ __all__ = [
     'DistroArchSeriesBinaryPackageRelease',
     ]
 
+from storm.locals import Desc
 from zope.interface import implementer
 
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.interfaces import IStore
 from lp.soyuz.interfaces.distroarchseriesbinarypackagerelease import (
     IDistroArchSeriesBinaryPackageRelease,
     )
@@ -87,33 +88,40 @@ class DistroArchSeriesBinaryPackageRelease:
 # content classes in order to be better maintained. In this specific case
 # the publishing queries should live in publishing.py.
     def _latest_publishing_record(self, status=None):
-        query = """
-            binarypackagerelease = %s AND
-            distroarchseries = %s AND
-            archive IN %s
-        """ % sqlvalues(self.binarypackagerelease, self.distroarchseries,
-                        self.distribution.all_distro_archive_ids)
+        clauses = [
+            BinaryPackagePublishingHistory.binarypackagerelease ==
+                self.binarypackagerelease,
+            BinaryPackagePublishingHistory.distroarchseries ==
+                self.distroarchseries,
+            BinaryPackagePublishingHistory.archiveID.is_in(
+                self.distribution.all_distro_archive_ids),
+            ]
 
         if status is not None:
             if not isinstance(status, (tuple, list)):
                 status = [status]
-            query += " AND status IN %s" % sqlvalues(status)
+            clauses.append(BinaryPackagePublishingHistory.status.is_in(status))
 
-        return BinaryPackagePublishingHistory.selectFirst(
-            query, orderBy=['-datecreated', '-id'])
+        return IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            *clauses).order_by(
+                Desc(BinaryPackagePublishingHistory.datecreated),
+                Desc(BinaryPackagePublishingHistory.id)).first()
 
     @property
     def publishing_history(self):
         """See `IDistroArchSeriesBinaryPackage`."""
-        return BinaryPackagePublishingHistory.select("""
-            distroarchseries = %s AND
-            archive IN %s AND
-            binarypackagerelease = %s
-            """ % sqlvalues(
-                    self.distroarchseries,
-                    self.distribution.all_distro_archive_ids,
-                    self.binarypackagerelease),
-            orderBy=['-datecreated', '-id'])
+        return IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            BinaryPackagePublishingHistory.distroarchseries ==
+                self.distroarchseries,
+            BinaryPackagePublishingHistory.archiveID.is_in(
+                self.distribution.all_distro_archive_ids),
+            BinaryPackagePublishingHistory.binarypackagerelease ==
+                self.binarypackagerelease,
+            ).order_by(
+                Desc(BinaryPackagePublishingHistory.datecreated),
+                Desc(BinaryPackagePublishingHistory.id))
 
     @property
     def pocket(self):

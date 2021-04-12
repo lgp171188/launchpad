@@ -51,10 +51,10 @@ If the widget is required, getInputValue() raises UnexpectedFormData if
 there is no input.
 
     >>> widget.required = True
-    >>> widget.getInputValue()
+    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: No valid option was selected.
+    lp.app.errors.UnexpectedFormData: No valid option was selected.
 
 By default, the 'All projects' scope is selected:
 
@@ -104,8 +104,8 @@ by getInputValue().
     >>> selected_scope = widget.getInputValue()
     >>> IProjectGroup.providedBy(selected_scope)
     True
-    >>> selected_scope.name
-    u'mozilla'
+    >>> print(selected_scope.name)
+    mozilla
 
 If an non-existant distribution name is provided, a widget error is
 raised:
@@ -117,11 +117,10 @@ raised:
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('field.scope', u'',
-    LaunchpadValidationError(u'There is no project named
-    &#x27;invalid&#x27; registered in Launchpad'))
+    zope.formlib.interfaces.WidgetInputError: ('field.scope', ...'', LaunchpadValidationError(...'There is no project named &#x27;invalid&#x27; registered in Launchpad'))
 
 The same error text is returned by error():
 
@@ -137,10 +136,10 @@ If no project name is given at all, a widget error is also raised:
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('field.scope', u'',
-    LaunchpadValidationError(u'Please enter a project name'))
+    zope.formlib.interfaces.WidgetInputError: ('field.scope', ...'', LaunchpadValidationError(...'Please enter a project name'))
 
     >>> print(widget.error())
     Please enter a project name
@@ -152,10 +151,10 @@ If no project name is given at all, a widget error is also raised:
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    WidgetInputError: ('field.scope', u'',
-    LaunchpadValidationError(u'Please enter a project name'))
+    zope.formlib.interfaces.WidgetInputError: ('field.scope', ...'', LaunchpadValidationError(...'Please enter a project name'))
 
     >>> print(widget.error())
     Please enter a project name

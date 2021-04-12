@@ -50,7 +50,7 @@ def make_translationmessage(factory, pofile=None, potmsgset=None,
         potmsgset = factory.makePOTMsgSet(
             potemplate=pofile.potemplate)
     if translations is None:
-        translations = [factory.getUniqueString()]
+        translations = [factory.getUniqueUnicode()]
     if diverged:
         potemplate = pofile.potemplate
     else:

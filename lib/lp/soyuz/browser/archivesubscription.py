@@ -14,7 +14,6 @@ __all__ = [
     ]
 
 import datetime
-from operator import attrgetter
 
 import pytz
 from zope.component import getUtility
@@ -44,6 +43,7 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
+from lp.services.webapp.authorization import precache_permission_for_objects
 from lp.services.webapp.batching import (
     BatchNavigator,
     StormRangeFactory,
@@ -164,9 +164,18 @@ class ArchiveSubscribersView(LaunchpadFormView):
         Bulk loads the related Person records.
         """
         batch = list(self.batchnav.currentBatch())
-        ids = map(attrgetter('subscriber_id'), batch)
-        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(ids,
-            need_validity=True))
+        # If the user can see this view, then they must have Append
+        # permission on the archive, which grants View permission on all its
+        # subscriptions.  Skip slow privacy checks.
+        precache_permission_for_objects(self.request, 'launchpad.View', batch)
+        ids = [subscription.subscriber_id for subscription in batch]
+        subscribers = list(
+            getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                ids, need_validity=True))
+        # People who can manage subscriptions to this archive are entitled
+        # to at least limited visibility of its existing subscribers.
+        precache_permission_for_objects(
+            self.request, 'launchpad.LimitedView', subscribers)
         return batch
 
     @cachedproperty

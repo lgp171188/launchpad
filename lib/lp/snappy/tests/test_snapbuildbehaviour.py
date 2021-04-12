@@ -9,7 +9,6 @@ __metaclass__ = type
 
 import base64
 from datetime import datetime
-import json
 import os.path
 from textwrap import dedent
 import time
@@ -102,6 +101,7 @@ from lp.soyuz.adapters.archivedependencies import (
     )
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.archive import ArchiveDisabled
+from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.tests.soyuz import Base64KeyMatches
 from lp.testing import (
     TestCase,
@@ -138,10 +138,10 @@ class InProcessAuthServerFixture(fixtures.Fixture, xmlrpc.XMLRPC):
     def _setUp(self):
         listener = reactor.listenTCP(0, server.Site(InProcessAuthServer()))
         self.addCleanup(listener.stopListening)
-        config.push("in-process-auth-server-fixture", (dedent("""
+        config.push("in-process-auth-server-fixture", dedent("""
             [builddmaster]
             authentication_endpoint: http://localhost:%d/
-            """) % listener.getHost().port).encode("UTF-8"))
+            """) % listener.getHost().port)
         self.addCleanup(config.pop, "in-process-auth-server-fixture")
 
 
@@ -292,7 +292,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     def setUp(self):
         super(TestAsyncSnapBuildBehaviour, self).setUp()
         build_username = 'SNAPBUILD-1'
-        self.token = {'secret': uuid.uuid4().get_hex(),
+        self.token = {'secret': uuid.uuid4().hex,
                       'username': build_username,
                       'timestamp': datetime.utcnow().isoformat()}
         self.proxy_url = ("http://{username}:{password}"
@@ -349,11 +349,12 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         branch = self.factory.makeBranch()
         job = self.makeJob(branch=branch)
         yield job.extraBuildArgs()
+        expected_uri = urlsplit(
+            config.snappy.builder_proxy_auth_api_endpoint).path.encode("UTF-8")
         self.assertThat(self.proxy_api.tokens.requests, MatchesListwise([
             MatchesDict({
-                "method": Equals("POST"),
-                "uri": Equals(urlsplit(
-                    config.snappy.builder_proxy_auth_api_endpoint).path),
+                "method": Equals(b"POST"),
+                "uri": Equals(expected_uri),
                 "headers": ContainsDict({
                     b"Authorization": MatchesListwise([
                         Equals(b"Basic " + base64.b64encode(
@@ -362,9 +363,9 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
                         Equals(b"application/json"),
                         ]),
                     }),
-                "content": AfterPreprocessing(json.loads, MatchesDict({
+                "json": MatchesDict({
                     "username": StartsWith(job.build.build_cookie + "-"),
-                    })),
+                    }),
                 }),
             ]))
 
@@ -700,6 +701,190 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         self.assertNotIn("channels", args)
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_primary(self):
+        # If the build is configured to use the primary archive as its
+        # source, then by default it uses the release, security, and updates
+        # pockets.
+        job = self.makeJob()
+        expected_archives = [
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_primary_non_default_pocket(self):
+        # If the build is configured to use the primary archive as its
+        # source, and it uses a non-default pocket, then it uses the
+        # corresponding expanded pockets in the primary archive.
+        job = self.makeJob(pocket=PackagePublishingPocket.SECURITY)
+        expected_archives = [
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_ppa(self):
+        # If the build is configured to use a PPA as its source, then by
+        # default it uses the release pocket in its source PPA, and the
+        # release, security, and updates pockets in the primary archive.
+        archive = self.factory.makeArchive()
+        job = self.makeJob(archive=archive)
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            distroarchseries=job.build.distro_series.architectures[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        primary = job.build.distribution.main_archive
+        expected_archives = [
+            "deb %s %s main" % (
+                archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archives_ppa_with_archive_dependencies(self):
+        # If the build is configured to use a PPA as its source, and it has
+        # archive dependencies, then they are honoured.
+        archive = self.factory.makeArchive()
+        lower_archive = self.factory.makeArchive(
+            distribution=archive.distribution)
+        job = self.makeJob(archive=archive)
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            distroarchseries=job.build.distro_series.architectures[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=lower_archive,
+            distroarchseries=job.build.distro_series.architectures[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        primary = job.build.distribution.main_archive
+        archive.addArchiveDependency(
+            lower_archive, PackagePublishingPocket.RELEASE)
+        archive.addArchiveDependency(primary, PackagePublishingPocket.SECURITY)
+        expected_archives = [
+            "deb %s %s main" % (
+                archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main" % (
+                lower_archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_snap_base_with_archive_dependencies(self):
+        # If the build is using a snap base that has archive dependencies,
+        # extraBuildArgs sends them.
+        snap_base = self.factory.makeSnapBase()
+        job = self.makeJob(snap_base=snap_base)
+        dependency = self.factory.makeArchive(
+            distribution=job.archive.distribution)
+        snap_base.addArchiveDependency(
+            dependency, PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"])
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=dependency, distroarchseries=job.build.distro_arch_series,
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        expected_archives = [
+            "deb %s %s main" % (
+                dependency.archive_url, job.build.distro_series.name),
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_ppa_and_snap_base_with_archive_dependencies(self):
+        # If the build is using a PPA and a snap base that both have archive
+        # dependencies, extraBuildArgs sends them all.
+        snap_base = self.factory.makeSnapBase()
+        upper_archive = self.factory.makeArchive()
+        lower_archive = self.factory.makeArchive(
+            distribution=upper_archive.distribution)
+        snap_base_archive = self.factory.makeArchive(
+            distribution=upper_archive.distribution)
+        job = self.makeJob(archive=upper_archive, snap_base=snap_base)
+        primary = job.build.distribution.main_archive
+        for archive in (upper_archive, lower_archive, snap_base_archive):
+            self.factory.makeBinaryPackagePublishingHistory(
+                archive=archive, distroarchseries=job.build.distro_arch_series,
+                pocket=PackagePublishingPocket.RELEASE,
+                status=PackagePublishingStatus.PUBLISHED)
+        upper_archive.addArchiveDependency(
+            lower_archive, PackagePublishingPocket.RELEASE)
+        snap_base.addArchiveDependency(
+            snap_base_archive, PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"])
+        expected_archives = [
+            "deb %s %s main" % (
+                upper_archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main" % (
+                lower_archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main" % (
+                snap_base_archive.archive_url, job.build.distro_series.name),
+            "deb %s %s main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                primary.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_snap_base_without_archive_dependencies(self):
+        # If the build is using a snap base that does not have archive
+        # dependencies, extraBuildArgs only sends the base archive.
+        snap_base = self.factory.makeSnapBase()
+        job = self.makeJob(snap_base=snap_base)
+        expected_archives = [
+            "deb %s %s main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe" % (
+                job.archive.archive_url, job.build.distro_series.name),
+            ]
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, args["archives"])
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_disallow_internet(self):
         # If external network access is not allowed for the snap,
         # extraBuildArgs does not dispatch a proxy token.
@@ -784,7 +969,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('build.count,job_type=SNAPBUILD,builder_name={},env=test'.format(
+            ('build.count,builder_name={},env=test,job_type=SNAPBUILD'.format(
                 builder.name),))
 
     @defer.inlineCallbacks

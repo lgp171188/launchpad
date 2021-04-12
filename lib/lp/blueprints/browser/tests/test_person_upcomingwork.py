@@ -64,7 +64,7 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
             self.team, self.current_milestone.dateexpected, user=None)
 
         self.assertEqual(
-            [self.current_milestone.dateexpected], workitems.keys())
+            [self.current_milestone.dateexpected], list(workitems))
         containers = workitems[self.current_milestone.dateexpected]
         # We have one container for the work item from the spec and another
         # one for the bugtask.
@@ -96,7 +96,7 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
             self.team, self.current_milestone.dateexpected, user=None)
 
         self.assertEqual(
-            [self.current_milestone.dateexpected], workitems.keys())
+            [self.current_milestone.dateexpected], list(workitems))
         containers = workitems[self.current_milestone.dateexpected]
         self.assertEqual(1, len(containers))
         [container] = containers
@@ -120,7 +120,7 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
             self.team, self.current_milestone.dateexpected, user=None)
 
         self.assertEqual(
-            [self.current_milestone.dateexpected], workitems.keys())
+            [self.current_milestone.dateexpected], list(workitems))
         containers = workitems[self.current_milestone.dateexpected]
         self.assertEqual(1, len(containers))
         [container] = containers

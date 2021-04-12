@@ -3,12 +3,15 @@
 
 """Fixture for the librarians."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'fillLibrarianFile',
     'LibrarianServerFixture',
     ]
 
+import hashlib
 import os
 import shutil
 import tempfile
@@ -28,6 +31,7 @@ from lp.services.daemons.tachandler import (
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver.storage import _relFileLocation
 from lp.services.osutils import get_pid_from_file
+from lp.testing.dbuser import dbuser
 
 
 class LibrarianServerFixture(TacTestSetup):
@@ -238,8 +242,17 @@ class LibrarianServerFixture(TacTestSetup):
 
 def fillLibrarianFile(fileid, content=None):
     """Write contents in disk for a librarian sampledata."""
-    if content is None:
-        content = b'x' * LibraryFileContent.get(fileid).filesize
+    with dbuser('librariangc'):
+        lfc = LibraryFileContent.get(fileid)
+        if content is None:
+            content = b'x' * lfc.filesize
+        else:
+            lfc.filesize = len(content)
+        lfc.sha256 = hashlib.sha256(content).hexdigest()
+        if lfc.sha1 is not None:
+            lfc.sha1 = hashlib.sha1(content).hexdigest()
+        if lfc.md5 is not None:
+            lfc.md5 = hashlib.md5(content).hexdigest()
 
     filepath = os.path.join(
         config.librarian_server.root, _relFileLocation(fileid))

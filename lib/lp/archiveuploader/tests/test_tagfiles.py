@@ -31,7 +31,7 @@ class Testtagfiles(unittest.TestCase):
         reject them if it can't understand.
         """
         parsed = parse_tagfile(datadir("bad-multiline-changes"))
-        self.assertEqual('unstable', parsed['Distribution'])
+        self.assertEqual(b'unstable', parsed['Distribution'])
 
     def testCheckParseMalformedMultiline(self):
         """Malformed but somewhat readable files do not raise an exception.
@@ -40,7 +40,7 @@ class Testtagfiles(unittest.TestCase):
         reject them if it can't understand.
         """
         parsed = parse_tagfile(datadir("bad-multiline-changes"))
-        self.assertEqual('unstable', parsed['Distribution'])
+        self.assertEqual(b'unstable', parsed['Distribution'])
         self.assertRaises(KeyError, parsed.__getitem__, 'Fish')
 
     def testCheckParseEmptyChangesRaises(self):
@@ -82,7 +82,7 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
 
         tagfile_path = datadir("test436182_0.1_source.changes")
         tagfile = open(tagfile_path)
-        self.apt_pkg_parsed_version = apt_pkg.TagFile(tagfile)
+        self.apt_pkg_parsed_version = apt_pkg.TagFile(tagfile, bytes=True)
         self.apt_pkg_parsed_version.step()
 
         self.parse_tagfile_version = parse_tagfile(tagfile_path)
@@ -97,17 +97,17 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
           2. appended a trailing '\n' to the end of the value.
         """
 
-        expected_text = (
-            'test75874 anotherbinary\n'
-            ' andanother andonemore\n'
-            '\tlastone')
+        expected_bytes = (
+            b'test75874 anotherbinary\n'
+            b' andanother andonemore\n'
+            b'\tlastone')
 
         self.assertEqual(
-            expected_text,
+            expected_bytes,
             self.apt_pkg_parsed_version.section['Binary'])
 
         self.assertEqual(
-            expected_text,
+            expected_bytes,
             self.parse_tagfile_version['Binary'])
 
     def test_parse_tagfile_with_newline_delimited_field(self):
@@ -123,19 +123,19 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
         see http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Files
         """
 
-        expected_text = (
-            'f26bb9b29b1108e53139da3584a4dc92 1511 test75874_0.1.tar.gz\n '
-            '29c955ff520cea32ab3e0316306d0ac1 393742 '
-                'pmount_0.9.7.orig.tar.gz\n'
-            ' 91a8f46d372c406fadcb57c6ff7016f3 5302 '
-                'pmount_0.9.7-2ubuntu2.diff.gz')
+        expected_bytes = (
+            b'f26bb9b29b1108e53139da3584a4dc92 1511 test75874_0.1.tar.gz\n '
+            b'29c955ff520cea32ab3e0316306d0ac1 393742 '
+                b'pmount_0.9.7.orig.tar.gz\n'
+            b' 91a8f46d372c406fadcb57c6ff7016f3 5302 '
+                b'pmount_0.9.7-2ubuntu2.diff.gz')
 
         self.assertEqual(
-            expected_text,
+            expected_bytes,
             self.apt_pkg_parsed_version.section['Files'])
 
         self.assertEqual(
-            expected_text,
+            expected_bytes,
             self.parse_tagfile_version['Files'])
 
     def test_parse_description_field(self):
@@ -144,19 +144,19 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
 
         See http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Description
         """
-        expected_text = (
-            "Here's the single-line synopsis.\n"
-            " Then there is the extended description which can\n"
-            " span multiple lines, and even include blank-lines like this:\n"
-            " .\n"
-            " There you go. If a line starts with two or more spaces,\n"
-            " it will be displayed verbatim. Like this one:\n"
-            "  Example verbatim line.\n"
-            "    Another verbatim line.\n"
-            " OK, back to normal.")
+        expected_bytes = (
+            b"Here's the single-line synopsis.\n"
+            b" Then there is the extended description which can\n"
+            b" span multiple lines, and even include blank-lines like this:\n"
+            b" .\n"
+            b" There you go. If a line starts with two or more spaces,\n"
+            b" it will be displayed verbatim. Like this one:\n"
+            b"  Example verbatim line.\n"
+            b"    Another verbatim line.\n"
+            b" OK, back to normal.")
 
         self.assertEqual(
-            expected_text,
+            expected_bytes,
             self.apt_pkg_parsed_version.section['Description'])
 
         # In the past our parse_tagfile function replaced blank-line
@@ -164,5 +164,5 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
         # but it is now compatible with ParseTagFiles (and ready to be
         # replaced by ParseTagFiles).
         self.assertEqual(
-            expected_text,
+            expected_bytes,
             self.parse_tagfile_version['Description'])

@@ -124,7 +124,7 @@ class TestArchiveWebservice(TestCaseWithFactory):
         self.assertThat(
             ws.delete(ppa_url),
             MatchesStructure.byEquality(
-                status=400, body="Archive already deleted."))
+                status=400, body=b"Archive already deleted."))
 
     def test_delete_is_restricted(self):
         with admin_logged_in():
@@ -177,7 +177,7 @@ class TestSigningKey(TestCaseWithFactory):
         self.assertEqual(fingerprint, ws_archive["signing_key_fingerprint"])
         response = ws.named_get(archive_url, "getSigningKeyData")
         self.assertEqual(200, response.status)
-        self.assertEqual(public_key_data, response.jsonBody())
+        self.assertEqual(public_key_data.decode("ASCII"), response.jsonBody())
 
     @responses.activate
     def test_signing_key_private_subscriber(self):
@@ -195,7 +195,7 @@ class TestSigningKey(TestCaseWithFactory):
         self.assertEqual(fingerprint, ws_archive["signing_key_fingerprint"])
         response = ws.named_get(archive_url, "getSigningKeyData")
         self.assertEqual(200, response.status)
-        self.assertEqual(public_key_data, response.jsonBody())
+        self.assertEqual(public_key_data.decode("ASCII"), response.jsonBody())
 
     @responses.activate
     def test_signing_key_private_non_subscriber(self):

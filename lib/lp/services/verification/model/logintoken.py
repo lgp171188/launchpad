@@ -10,6 +10,7 @@ __all__ = [
 import hashlib
 
 import pytz
+import six
 from sqlobject import (
     ForeignKey,
     SQLObjectNotFound,
@@ -78,7 +79,8 @@ class LoginToken(SQLBase):
         token = kwargs.pop('token', None)
         if token is not None:
             self._plaintext_token = token
-            kwargs['_token'] = hashlib.sha256(token).hexdigest()
+            kwargs['_token'] = hashlib.sha256(
+                token.encode('UTF-8')).hexdigest()
         super(LoginToken, self).__init__(*args, **kwargs)
 
     _plaintext_token = None
@@ -168,8 +170,8 @@ class LoginToken(SQLBase):
         # Encrypt this part's content if requested.
         if key.can_encrypt:
             gpghandler = getUtility(IGPGHandler)
-            token_text = gpghandler.encryptContent(
-                token_text.encode('utf-8'), key)
+            token_text = six.ensure_text(gpghandler.encryptContent(
+                token_text.encode('utf-8'), key))
             # In this case, we need to include some clear text instructions
             # for people who do not have an MUA that can decrypt the ASCII
             # armored text.
@@ -346,7 +348,8 @@ class LoginTokenSet:
     def __getitem__(self, tokentext):
         """See ILoginTokenSet."""
         token = IStore(LoginToken).find(
-            LoginToken, _token=hashlib.sha256(tokentext).hexdigest()).one()
+            LoginToken,
+            _token=hashlib.sha256(tokentext.encode('UTF-8')).hexdigest()).one()
         if token is None:
             raise NotFoundError(tokentext)
         token._plaintext_token = tokentext

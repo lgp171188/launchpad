@@ -150,7 +150,7 @@ class TestPPAHtaccessTokenGeneration(TestCaseWithFactory):
             line.strip().split(':', 1) for line in open(filename, 'r')]
 
         # First entry is buildd secret, rest are from tokens.
-        usernames = list(zip(*file_contents)[0])
+        usernames = list(list(zip(*file_contents))[0])
         self.assertEqual(['buildd'] + token_usernames, usernames)
 
         # We can re-encrypt the buildd_secret and it should match the

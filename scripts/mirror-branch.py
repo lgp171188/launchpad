@@ -72,7 +72,8 @@ if __name__ == '__main__':
 
     resource.setrlimit(resource.RLIMIT_AS, (1500000000, 1500000000))
 
-    protocol = PullerWorkerProtocol(sys.stdout)
+    # The worker outputs netstrings, which are bytes.
+    protocol = PullerWorkerProtocol(getattr(sys.stdout, 'buffer', sys.stdout))
     install_worker_ui_factory(protocol)
     PullerWorker(
         source_url, destination_url, int(branch_id), unique_name, branch_type,

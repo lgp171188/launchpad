@@ -9,6 +9,7 @@ __metaclass__ = type
 __all__ = [
     'default_optionflags',
     'LayeredDocFileSuite',
+    'PrettyPrinter',
     'setUp',
     'setGlobs',
     'stop',
@@ -28,9 +29,11 @@ import six
 import transaction
 from zope.component import getUtility
 from zope.testing.loggingsupport import Handler
+from zope.testing.renormalizing import OutputChecker
 
 from lp.services.config import config
 from lp.services.database.sqlbase import flush_database_updates
+from lp.services.helpers import backslashreplace
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.testing import (
     ANONYMOUS,
@@ -78,6 +81,9 @@ class FilePrefixStrippingDocTestParser(doctest.DocTestParser):
 
 
 default_parser = FilePrefixStrippingDocTestParser()
+
+
+default_checker = OutputChecker()
 
 
 class StdoutHandler(Handler):
@@ -146,6 +152,7 @@ def LayeredDocFileSuite(paths, id_extensions=None, **kw):
         id_extensions = []
     kw.setdefault('optionflags', default_optionflags)
     kw.setdefault('parser', default_parser)
+    kw.setdefault('checker', default_checker)
 
     # Make sure that paths are resolved relative to our caller
     kw['package'] = doctest._normalize_module(kw.get('package'))
@@ -212,6 +219,36 @@ def stop():
         sys.stdout = old_stdout
 
 
+class PrettyPrinter(pprint.PrettyPrinter, object):
+    """A pretty-printer that formats text in the Python 3 style.
+
+    This should only be used when the resulting ambiguities between str and
+    unicode representation and between int and long representation on Python
+    2 are not a problem.
+    """
+
+    def format(self, obj, contexts, maxlevels, level):
+        if isinstance(obj, six.text_type):
+            obj = obj.encode('unicode_escape').decode('ASCII')
+            if "'" in obj and '"' not in obj:
+                return '"%s"' % obj, True, False
+            else:
+                return "'%s'" % obj.replace("'", "\\'"), True, False
+        elif sys.version_info[0] < 3 and isinstance(obj, long):
+            return repr(int(obj)), True, False
+        else:
+            return super(PrettyPrinter, self).format(
+                obj, contexts, maxlevels, level)
+
+    # Disable wrapping of long strings on Python >= 3.5, which is unhelpful
+    # in doctests.  There seems to be no reasonable public API for this.
+    if sys.version_info[:2] >= (3, 5):
+        _dispatch = dict(pprint.PrettyPrinter._dispatch)
+        del _dispatch[six.text_type.__repr__]
+        del _dispatch[bytes.__repr__]
+        del _dispatch[bytearray.__repr__]
+
+
 # XXX cjwatson 2018-05-13: Once all doctests are made safe for the standard
 # __future__ imports, the `future=True` behaviour should become
 # unconditional.
@@ -230,12 +267,13 @@ def setGlobs(test, future=False):
     test.globs['factory'] = LaunchpadObjectFactory()
     test.globs['ordered_dict_as_string'] = ordered_dict_as_string
     test.globs['verifyObject'] = verifyObject
-    test.globs['pretty'] = pprint.PrettyPrinter(width=1).pformat
+    test.globs['pretty'] = PrettyPrinter(width=1).pformat
     test.globs['stop'] = stop
     test.globs['launchpadlib_for'] = launchpadlib_for
     test.globs['launchpadlib_credentials_for'] = launchpadlib_credentials_for
     test.globs['oauth_access_token_for'] = oauth_access_token_for
     test.globs['six'] = six
+    test.globs['backslashreplace'] = backslashreplace
 
     if future:
         import __future__

@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad bug-related database table classes."""
@@ -127,6 +127,7 @@ from lp.bugs.interfaces.bugattachment import (
 from lp.bugs.interfaces.bugmessage import IBugMessageSet
 from lp.bugs.interfaces.bugnomination import (
     BugNominationStatus,
+    IBugNominationSet,
     NominationError,
     NominationSeriesObsoleteError,
     )
@@ -188,7 +189,7 @@ from lp.registry.interfaces.sharingjob import (
     IRemoveArtifactSubscriptionsJobSource,
     )
 from lp.registry.interfaces.sourcepackage import ISourcePackage
-from lp.registry.model.accesspolicy import reconcile_access_for_artifact
+from lp.registry.model.accesspolicy import reconcile_access_for_artifacts
 from lp.registry.model.person import (
     Person,
     person_sort_key,
@@ -368,13 +369,13 @@ class Bug(SQLBase, InformationTypeMixin):
 
     # useful Joins
     activity = SQLMultipleJoin('BugActivity', joinColumn='bug', orderBy='id')
-    messages = SQLRelatedJoin('Message', joinColumn='bug',
-                           otherColumn='message',
+    messages = SQLRelatedJoin('Message', joinColumn='bug_id',
+                           otherColumn='message_id',
                            intermediateTable='BugMessage',
                            prejoins=['owner'],
                            orderBy=['datecreated', 'id'])
-    bug_messages = SQLMultipleJoin(
-        'BugMessage', joinColumn='bug', orderBy='index')
+    bug_messages = ReferenceSet(
+        'id', BugMessage.bug_id, order_by=BugMessage.index)
     watches = SQLMultipleJoin(
         'BugWatch', joinColumn='bug', orderBy=['bugtracker', 'remotebug'])
     duplicates = SQLMultipleJoin('Bug', joinColumn='duplicateof', orderBy='id')
@@ -617,25 +618,25 @@ class Bug(SQLBase, InformationTypeMixin):
                 Message,
                 Join(
                     BugMessage,
-                    BugMessage.messageID == Message.id),
+                    BugMessage.message_id == Message.id),
                 LeftJoin(
                     Join(
                         ParentMessage,
                         ParentBugMessage,
-                        ParentMessage.id == ParentBugMessage.messageID),
+                        ParentMessage.id == ParentBugMessage.message_id),
                     And(
                         Message.parent == ParentMessage.id,
-                        ParentBugMessage.bugID == self.id)),
+                        ParentBugMessage.bug_id == self.id)),
                 ]
             results = store.using(*tables).find(
                 (Message, ParentMessage, BugMessage),
-                BugMessage.bugID == self.id,
+                BugMessage.bug_id == self.id,
                 )
         else:
             lookup = Message, BugMessage
             results = store.find(lookup,
-                BugMessage.bugID == self.id,
-                BugMessage.messageID == Message.id,
+                BugMessage.bug_id == self.id,
+                BugMessage.message_id == Message.id,
                 )
         results.order_by(BugMessage.index)
         return DecoratedResultSet(results, index_message,
@@ -874,8 +875,8 @@ class Bug(SQLBase, InformationTypeMixin):
         # there is at least one bugtask for which access can be checked.
         if self.default_bugtask:
             service = getUtility(IService, 'sharing')
-            bugs, _, _, _ = service.getVisibleArtifacts(
-                person, bugs=[self], ignore_permissions=True)
+            bugs = service.getVisibleArtifacts(
+                person, bugs=[self], ignore_permissions=True)["bugs"]
             if not bugs:
                 service.ensureAccessGrants(
                     [person], subscribed_by, bugs=[self],
@@ -1534,7 +1535,7 @@ class Bug(SQLBase, InformationTypeMixin):
     @cachedproperty
     def _question_from_bug(self):
         for question in self.questions:
-            if (question.ownerID == self.ownerID
+            if (question.owner_id == self.ownerID
                 and question.datecreated == self.datecreated):
                 return question
         return None
@@ -1578,7 +1579,7 @@ class Bug(SQLBase, InformationTypeMixin):
         # query seems fine as we have to join out from bugmessage anyway.
         result = Store.of(self).find((BugMessage, Message, MessageChunk),
             Message.id == MessageChunk.messageID,
-            BugMessage.messageID == Message.id,
+            BugMessage.message_id == Message.id,
             BugMessage.bug == self.id, *ranges)
         result.order_by(BugMessage.index, MessageChunk.sequence)
 
@@ -1676,16 +1677,7 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def getNominationFor(self, target):
         """See `IBug`."""
-        if IDistroSeries.providedBy(target):
-            filter_args = dict(distroseriesID=target.id)
-        elif IProductSeries.providedBy(target):
-            filter_args = dict(productseriesID=target.id)
-        elif ISourcePackage.providedBy(target):
-            filter_args = dict(distroseriesID=target.series.id)
-        else:
-            return None
-
-        nomination = BugNomination.selectOneBy(bugID=self.id, **filter_args)
+        nomination = getUtility(IBugNominationSet).getByBugTarget(self, target)
 
         if nomination is None:
             raise NotFoundError(
@@ -1702,7 +1694,7 @@ class Bug(SQLBase, InformationTypeMixin):
             return nomination.target.bugtargetdisplayname.lower()
 
         if nominations is None:
-            nominations = BugNomination.selectBy(bugID=self.id)
+            nominations = getUtility(IBugNominationSet).findByBug(self)
         if IProduct.providedBy(target):
             filtered_nominations = []
             for nomination in shortlist(nominations):
@@ -1827,8 +1819,8 @@ class Bug(SQLBase, InformationTypeMixin):
         if information_type in PRIVATE_INFORMATION_TYPES:
             service = getUtility(IService, 'sharing')
             for person in (who, self.owner):
-                bugs, _, _, _ = service.getVisibleArtifacts(
-                    person, bugs=[self], ignore_permissions=True)
+                bugs = service.getVisibleArtifacts(
+                    person, bugs=[self], ignore_permissions=True)["bugs"]
                 if not bugs:
                     # subscribe() isn't sufficient if a subscription
                     # already exists, as it will do nothing even if
@@ -2130,7 +2122,7 @@ class Bug(SQLBase, InformationTypeMixin):
             BugSubscription.person == person).is_empty()
 
     def _reconcileAccess(self):
-        # reconcile_access_for_artifact will only use the pillar list if
+        # reconcile_access_for_artifacts will only use the pillar list if
         # the information type is private. But affected_pillars iterates
         # over the tasks immediately, which is needless expense for
         # public bugs.
@@ -2138,8 +2130,8 @@ class Bug(SQLBase, InformationTypeMixin):
             pillars = self.affected_pillars
         else:
             pillars = []
-        reconcile_access_for_artifact(
-            self, self.information_type, pillars)
+        reconcile_access_for_artifacts(
+            [self], self.information_type, pillars)
 
     def _attachments_query(self):
         """Helper for the attachments* properties."""

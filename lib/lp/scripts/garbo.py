@@ -505,7 +505,7 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
                     DistributionSourcePackageCache.archiveID,
                     DistributionSourcePackageCache.distributionID,
                     DistributionSourcePackageCache.sourcepackagenameID),
-                map(Row, cache_filter_data)))
+                [Row(cache_key) for cache_key in cache_filter_data]))
         for dspc in rows:
             existing_records.add(
                 (dspc.archiveID, dspc.distributionID,
@@ -626,7 +626,7 @@ class PopulateLatestPersonSourcePackageReleaseCache(TunableLoop):
                     lpsprc.upload_archive_id,
                     lpsprc.upload_distroseries_id,
                     lpsprc.sourcepackagename_id),
-                map(Row, cache_filter_data)))
+                [Row(cache_key) for cache_key in cache_filter_data]))
         for lpsprc_record in rs:
             key = (
                 lpsprc_record.maintainer_id,
@@ -1064,8 +1064,9 @@ class AnswerContactPruner(BulkPruner):
     """Remove old answer contacts which are no longer required.
 
     Remove a person as an answer contact if:
-      their account has been deactivated for more than one day, or
-      suspended for more than one week.
+      their account has been deactivated for more than one day,
+      suspended for more than one week, or
+      marked as deceased for more than one week.
     """
     target_table_class = AnswerContact
     ids_to_prune_query = """
@@ -1083,9 +1084,10 @@ class AnswerContactPruner(BulkPruner):
                 (Account.date_status_set <
                 CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
                 - CAST('7 days' AS interval)
-                AND Account.status = %s)
+                AND Account.status IN %s)
             )
-        """ % (AccountStatus.DEACTIVATED.value, AccountStatus.SUSPENDED.value)
+        """ % (AccountStatus.DEACTIVATED.value,
+               (AccountStatus.SUSPENDED.value, AccountStatus.DECEASED.value))
 
 
 class BranchJobPruner(BulkPruner):
@@ -1632,7 +1634,7 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
                 "Script aborted after %d seconds.", self.script_timeout)
 
         if tunable_loops:
-            self.logger.warn("%d tasks did not run.", len(tunable_loops))
+            self.logger.warning("%d tasks did not run.", len(tunable_loops))
 
         if self.failure_count:
             self.logger.error("%d tasks failed.", self.failure_count)
@@ -1736,7 +1738,7 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
                     tunable_loops.append(tunable_loop_class)
                 # Otherwise, emit a warning and skip the task.
                 else:
-                    loop_logger.warn(
+                    loop_logger.warning(
                         "Unable to acquire lock %s. Running elsewhere?",
                         loop_lock_path)
                 continue

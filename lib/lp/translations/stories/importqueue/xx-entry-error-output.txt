@@ -41,6 +41,6 @@ The output is properly HTML-escaped, so is safe to display in this way.
     >>> entry.error_output = "<h1>Injection &amp; subterfuge</h1>"
     >>> admin_browser.open(entry_url)
     >>> output_panel = find_error_output(admin_browser)
-    >>> print(output_panel.renderContents())
+    >>> print(output_panel.decode_contents())
     Error output for this entry:
     ...&lt;h1&gt;Injection &amp;amp; subterfuge&lt;/h1&gt;...

@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Views, menus, and traversal related to `OCIProject`s."""
@@ -12,12 +12,12 @@ __all__ = [
     'OCIProjectFacets',
     'OCIProjectNavigation',
     'OCIProjectNavigationMenu',
+    'OCIProjectURL',
     ]
 
+from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
-from zope.formlib import form
 from zope.interface import implementer
-from zope.schema import Choice
 
 from lp.app.browser.launchpadform import (
     action,
@@ -30,6 +30,7 @@ from lp.app.interfaces.headings import IHeadingBreadcrumb
 from lp.bugs.browser.bugtask import BugTargetTraversalMixin
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
@@ -42,6 +43,7 @@ from lp.registry.interfaces.ociprojectname import (
     IOCIProjectNameSet,
     )
 from lp.registry.interfaces.product import IProduct
+from lp.services.config import config
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -57,7 +59,38 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
+from lp.services.webapp.interfaces import (
+    ICanonicalUrlData,
+    IMultiFacetedBreadcrumb,
+    )
+
+
+@implementer(ICanonicalUrlData)
+class OCIProjectURL:
+    """OCI project URL creation rules.
+
+    The canonical URL for an OCI project in a distribution depends on the
+    values of `default_traversal_policy` and `redirect_default_traversal` on
+    the context distribution.
+    """
+
+    rootsite = None
+
+    def __init__(self, context):
+        self.context = context
+
+    @property
+    def inside(self):
+        return self.context.pillar
+
+    @property
+    def path(self):
+        if self.context.distribution is not None:
+            policy = self.context.distribution.default_traversal_policy
+            if (policy == DistributionDefaultTraversalPolicy.OCI_PROJECT and
+                    not self.context.distribution.redirect_default_traversal):
+                return self.context.name
+        return u"+oci/%s" % self.context.name
 
 
 def getPillarFieldName(pillar):
@@ -170,11 +203,21 @@ class OCIProjectNavigationMenu(NavigationMenu):
 
     facet = 'overview'
 
-    links = ('edit',)
+    links = ('edit', 'create_recipe', 'view_recipes')
 
     @enabled_with_permission('launchpad.Edit')
     def edit(self):
         return Link('+edit', 'Edit OCI project', icon='edit')
+
+    @enabled_with_permission('launchpad.AnyLegitimatePerson')
+    def create_recipe(self):
+        return Link('+new-recipe', 'Create OCI recipe', icon='add')
+
+    def view_recipes(self):
+        enabled = not getUtility(IOCIRecipeSet).findByOCIProject(
+            self.context, visible_by_user=self.user).is_empty()
+        return Link(
+            '+recipes', 'View all recipes', icon='info', enabled=enabled)
 
 
 class OCIProjectContextMenu(ContextMenu):
@@ -192,9 +235,37 @@ class OCIProjectContextMenu(ContextMenu):
 
     def view_recipes(self):
         enabled = not getUtility(IOCIRecipeSet).findByOCIProject(
-            self.context).is_empty()
+            self.context, visible_by_user=self.user).is_empty()
         return Link(
-            '+recipes', 'View OCI recipes', icon='info', enabled=enabled)
+            '+recipes', 'View all recipes', icon='info', enabled=enabled)
+
+
+class OCIProjectIndexView(LaunchpadView):
+    @property
+    def git_repository(self):
+        return self.context.getDefaultGitRepository(self.user)
+
+    @property
+    def git_repository_path(self):
+        return self.context.getDefaultGitRepositoryPath(self.user)
+
+    @property
+    def git_ssh_hostname(self):
+        return urlsplit(config.codehosting.git_ssh_root).hostname
+
+    @property
+    def official_recipes(self):
+        return self.context.getOfficialRecipes(visible_by_user=self.user)
+
+    @cachedproperty
+    def official_recipe_count(self):
+        return self.context.getOfficialRecipes(
+            visible_by_user=self.user).count()
+
+    @cachedproperty
+    def other_recipe_count(self):
+        return self.context.getUnofficialRecipes(
+            visible_by_user=self.user).count()
 
 
 class OCIProjectEditView(LaunchpadEditFormView):
@@ -203,7 +274,6 @@ class OCIProjectEditView(LaunchpadEditFormView):
     schema = IOCIProject
     field_names = [
         'name',
-        'official_recipe',
         ]
 
     def setUpFields(self):
@@ -215,14 +285,6 @@ class OCIProjectEditView(LaunchpadEditFormView):
         # Set the correct pillar field as mandatory
         pillar_field = self.form_fields.get(pillar_key).field
         pillar_field.required = True
-
-    def extendFields(self):
-        official_recipe = self.context.getOfficialRecipe()
-        self.form_fields += form.Fields(
-            Choice(
-                __name__="official_recipe", title=u"Official recipe",
-                required=False, vocabulary="OCIRecipe",
-                default=official_recipe))
 
     @property
     def label(self):
@@ -246,9 +308,7 @@ class OCIProjectEditView(LaunchpadEditFormView):
 
     @action('Update OCI project', name='update')
     def update_action(self, action, data):
-        official_recipe = data.pop("official_recipe")
         self.updateContextFromData(data)
-        self.context.setOfficialRecipe(official_recipe)
 
     @property
     def next_url(self):

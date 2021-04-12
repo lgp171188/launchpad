@@ -19,13 +19,14 @@ __all__ = [
     'UnknownRecipientError',
     ]
 
+import six
 from zope.interface import (
     Attribute,
     Interface,
     )
 from zope.schema import (
-    ASCII,
     Bool,
+    Bytes,
     )
 
 from lp import _
@@ -51,15 +52,15 @@ class ISignedMessage(Interface):
     signedMessage = Attribute("The part that was signed, represented "
                               "as an email.message.Message.")
 
-    signedContent = ASCII(title=_("Signed Content"),
-                          description=_("The text that was signed."))
+    signedContent = Bytes(title=_("Signed Content"),
+                          description=_("The byte string that was signed."))
 
-    signature = ASCII(title=_("Signature"),
+    signature = Bytes(title=_("Signature"),
                       description=_("The OpenPGP signature used to sign "
                                     "the message."))
 
-    parsed_string = Attribute(
-        "The string that was parsed to create the SignedMessage.")
+    parsed_bytes = Attribute(
+        "The byte string that was parsed to create the SignedMessage.")
 
 
 class IMailHandler(Interface):
@@ -152,8 +153,11 @@ class INotificationRecipientSet(Interface):
         Return true if person or email is in the notification recipients list.
         """
 
-    def __nonzero__():
+    def __bool__():
         """Return False when the set is empty, True when it's not."""
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
     def getReason(person_or_email):
         """Return a reason tuple containing (text, header) for an address.

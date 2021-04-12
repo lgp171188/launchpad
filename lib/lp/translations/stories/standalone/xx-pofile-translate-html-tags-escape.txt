@@ -30,6 +30,6 @@ And we can see that we escaped the tags:
 
   >>> text = find_tag_by_id(
   ...     user_browser.contents, 'msgset_67_hr_translation_0')
-  >>> print(extract_text(text.renderContents()))
+  >>> print(extract_text(text.decode_contents()))
   Upotreba:
   %s [opcije] &lt;foo&gt; [&lt;etiketa&gt;]%s%s%s

@@ -21,8 +21,8 @@ ISpecificationMessageSet.createMessage:
     ...     content="text message content",
     ...     owner=factory.makePerson(),
     ...     spec=factory.makeSpecification())
-    >>> test_message.message.subject
-    u'test message subject'
+    >>> print(test_message.message.subject)
+    test message subject
 
 
 Retrieving specification messages
@@ -35,5 +35,5 @@ ISpecificationMessageSet.get:
     >>> from zope.security.proxy import removeSecurityProxy
     >>> specmessage_one = specmessageset.get(
     ...     removeSecurityProxy(test_message).id)
-    >>> specmessage_one.message.subject
-    u'test message subject'
+    >>> print(specmessage_one.message.subject)
+    test message subject

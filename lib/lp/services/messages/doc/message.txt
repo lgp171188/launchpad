@@ -16,15 +16,15 @@ on bugs. Bugs are linked to Messages via the BugMessage table.
     ...     subject='The Title', content='The Content', bug=bug_one,
     ...     owner=current_user)
     >>> msg = bmsg.message
-    >>> msg.subject
-    u'The Title'
+    >>> print(msg.subject)
+    The Title
 
 We can retrieve the text chunks as a unicode string. (However, note that
 if generating HTML you should use the MessageChunks detailed below
 to handle attachments correctly)
 
-    >>> msg.text_contents
-    u'The Content'
+    >>> print(msg.text_contents)
+    The Content
 
 Messages are threaded, although this is not necessarily displayed in the
 UI. Each message has a parent attribute. If the message was created via
@@ -52,8 +52,8 @@ may be accessed using the chunks attribute, or simply by iterating over
 the Message.
 
     >>> for chunk in msg:
-    ...     print repr([chunk.sequence, chunk.content, chunk.blob])
-    [1, u'The Content', None]
+    ...     print(pretty([chunk.sequence, chunk.content, chunk.blob]))
+    [1, 'The Content', None]
     >>> msg.chunks[0].message == msg
     True
 
@@ -124,20 +124,22 @@ normal.
     >>> msg = msg_set.get(
     ...     rfc822msgid="<20050405054002.22134.71562@localhost.localdomain>"
     ...     )[0]
-    >>> msg.title
-    u'Unicode\u2122'
+    >>> print(msg.title)
+    Unicode™
     >>> chunks = msg.chunks
     >>> for chunk in chunks:
     ...     if chunk.content:
-    ...         print '%2d - %r' % (chunk.sequence, chunk.content)
-     1 - u'Plain text'
-     3 - u'Unicode\u2122 text'
+    ...         print('%2d - %s' % (chunk.sequence, pretty(chunk.content)))
+     1 - 'Plain text'
+     3 - 'Unicode\u2122 text'
 
 The text_contents attribute contains only the text parts, since that is
 what we want to display in the UI.
 
-    >>> msg.text_contents
-    u'Plain text\n\nUnicode\u2122 text'
+    >>> print(msg.text_contents)
+    Plain text
+    <BLANKLINE>
+    Unicode™ text
 
 Stripping non-text parts is useful, since a lot of messages will contain
 detach GPG signatures, and they shouldn't be shown in the UI since they
@@ -145,10 +147,11 @@ add only noise to the comment. For the sake of completeness, since this
 has been a problem before, let's look at text_contents of a message
 containing a signature.asc attachment.
 
+    >>> from lp.services.compat import message_as_bytes
     >>> from lp.services.mail.tests.helpers import read_test_message
     >>> signed_msg = read_test_message('signed_detached.txt')
     >>> signed_msg['Message-Id'] = '<signeddetached@testmsg>'
-    >>> print signed_msg.as_string()
+    >>> print(signed_msg.as_string())
     Date...
     ...
     Content-Type: multipart/signed; micalg=pgp-sha1;
@@ -163,8 +166,8 @@ containing a signature.asc attachment.
     -----END PGP SIGNATURE-----
     ...
 
-    >>> signed_message = msg_set.fromEmail(signed_msg.as_string())
-    >>> print signed_message.text_contents
+    >>> signed_message = msg_set.fromEmail(message_as_bytes(signed_msg))
+    >>> print(signed_message.text_contents)
     Some signed content.
 
 Note that the second and forth chunks of the previous message were not
@@ -175,16 +178,16 @@ of type text/plain, so are stored as blobs.
     >>> chunks[1].content is None
     True
     >>> blob = chunks[1].blob
-    >>> blob.filename
-    u'anna.jpg.exe'
+    >>> print(blob.filename)
+    anna.jpg.exe
     >>> blob.http_url.endswith(u'/anna.jpg.exe')
     True
 
     >>> blob2 = chunks[3].blob
-    >>> blob2.filename
-    u'unnamed'
-    >>> blob2.mimetype
-    u'application/xml; charset="utf16"'
+    >>> print(blob2.filename)
+    unnamed
+    >>> print(blob2.mimetype)
+    application/xml; charset="utf16"
 
 Only those chunks of content type text/plain with content-disposition
 "inline" that have no filename are stored as content. If an inline
@@ -196,7 +199,7 @@ doesn't specify a Content-Type, application/octet-stream will be used as
 a default. If the chunk doesn't specify a charset, latin-1 will be
 used as a default.
 
-    >>> raw_msg = """\
+    >>> raw_msg = u"""\
     ... Content-Type: multipart/mixed; charset="latin-1";
     ...               boundary="=====BOUNDARY====="
     ... MIME-Version: 1.0
@@ -217,7 +220,7 @@ used as a default.
     ... MIME-Version: 1.0
     ... Content-Transfer-Encoding: 7bit
     ...
-    ... Plain text without a chăŕŝěţ.
+    ... Plain text without a ch\u0103\u0155\u015D\u011B\u0163.
     ... --=====BOUNDARY=====
     ... Content-Type: text/plain; charset="us-ascii"
     ... Content-Disposition: inline; filename="attachment.txt"
@@ -246,16 +249,16 @@ used as a default.
     ...
     ... some text in another file
     ... --=====BOUNDARY=====
-    ... """
+    ... """.encode('UTF-8')
     >>> msg = msgset.fromEmail(raw_msg)
     >>> for chunk in msg.chunks:
     ...     if chunk.content is not None:
-    ...         print '%d - %r' % (chunk.sequence, chunk.content)
+    ...         print('%d - %s' % (chunk.sequence, pretty(chunk.content)))
     ...     else:
-    ...         print '%d - file: %s (%s)' % (
-    ...             chunk.sequence, chunk.blob.filename, chunk.blob.mimetype)
-    1 - u'Plain text'
-    2 - u'Plain text without a ch\xc4\x83\xc5\x95\xc5\x9d\xc4\x9b\xc5\xa3.'
+    ...         print('%d - file: %s (%s)' % (
+    ...             chunk.sequence, chunk.blob.filename, chunk.blob.mimetype))
+    1 - 'Plain text'
+    2 - 'Plain text without a ch\xc4\x83\xc5\x95\xc5\x9d\xc4\x9b\xc5\xa3.'
     3 - file: attachment.txt   (text/plain; charset="us-ascii")
     4 - file: unnamed          (text/plain; charset="us-ascii")
     5 - file: attachment2.txt  (text/plain; charset="us-ascii")
@@ -266,11 +269,12 @@ as the request. I don't think this is important outside of tests.
 
     >>> import transaction
     >>> transaction.commit()
-    >>> blob.read()
+    >>> six.ensure_str(blob.read())
     '\x00\x01\x02\x03'
 
-    >>> blob2.read().decode('utf16')
-    u'<?xml version="1.0" encoding="utf16"?>\n<unicode>\u2122</unicode>'
+    >>> print(blob2.read().decode('utf16'))
+    <?xml version="1.0" encoding="utf16"?>
+    <unicode>™</unicode>
 
 
 We can also retrieve a byte-identical copy of the original message
@@ -284,8 +288,8 @@ Let's add another multipart message, this time we include a message in
 the message, like it is done when forwarding an email.
 
     >>> forwarded_msg = read_test_message('forwarded-msg.txt')
-    >>> msg = msgset.fromEmail(forwarded_msg.as_string())
-    >>> print msg.text_contents
+    >>> msg = msgset.fromEmail(message_as_bytes(forwarded_msg))
+    >>> print(msg.text_contents)
     Forwarding test message.
     <BLANKLINE>
     <BLANKLINE>
@@ -297,7 +301,7 @@ the parent if it's already in the database, though. To ensure that
 threads aren't broken, if the direct parent of the message isn't in the
 database, the next parent will be used.
 
-    >>> foo_msg = msgset.fromEmail('''\
+    >>> foo_msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Test
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
@@ -306,7 +310,7 @@ database, the next parent will be used.
     ... Foo Bar
     ... ''')
 
-    >>> baz_msg = msgset.fromEmail('''\
+    >>> baz_msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Test
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
@@ -326,7 +330,7 @@ We can specify a parent to be used, if no parent could be found for the
 message. This is useful for bugs, where we want all messages except for
 the first one to have a parent.
 
-    >>> bar_msg = msgset.fromEmail('''\
+    >>> bar_msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Test
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
@@ -340,7 +344,7 @@ the first one to have a parent.
 The fromEmail method handles non-multipart and minimalist messages
 quite happily.
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Test
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
@@ -348,17 +352,18 @@ quite happily.
     ...
     ... Foo Bar
     ... ''')
-    >>> msg.title
-    u'Test'
+    >>> print(msg.title)
+    Test
     >>> chunks = list(msg.chunks)
     >>> len(chunks)
     1
-    >>> chunks[0].content
-    u'Foo Bar\n'
+    >>> print(chunks[0].content)
+    Foo Bar
+    <BLANKLINE>
 
 It also handles the case where the subject line is folded.
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Folded
     ...  subject
@@ -368,15 +373,15 @@ It also handles the case where the subject line is folded.
     ... Foo Bar
     ... ''')
 
-    >>> msg.title
-    u'Folded subject'
+    >>> print(msg.title)
+    Folded subject
 
 
 However, there are some things it refuses to deal with. In particular, it
 will not create Messages if it cannot determine the owner unless it is
 explicitly told to do so:
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: invalid@example.com
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
     ... Message-Id: <fnord3>
@@ -384,11 +389,12 @@ explicitly told to do so:
     ...
     ... Foo Bar
     ... ''')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    UnknownSender: u'invalid@example.com'
+    lp.services.messages.interfaces.message.UnknownSender: ...'invalid@example.com'
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: invalid@example.com
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
     ... Message-Id: <fnord3>
@@ -396,8 +402,8 @@ explicitly told to do so:
     ...
     ... Foo Bar
     ... ''', create_missing_persons=True)
-    >>> msg.subject
-    u'Foo Bar Bazarooney!'
+    >>> print(msg.subject)
+    Foo Bar Bazarooney!
 
 When the fromEmail() method creates a new Person entry, it'll set the
 creation_rationale accordingly.
@@ -410,40 +416,43 @@ header, or a missing Message-Id: or Date: header. These are required, and if
 they are missing then the email was sent from a broken email client or
 passed through a broken MTA and we have no choice but to bounce them.
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Date: Thu, 16 Jun 2005 14:12:54 +0100
     ... Subject: Dud
     ...
     ... Moo
     ... ''')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    InvalidEmailMessage: Missing Message-Id
+    lp.services.messages.interfaces.message.InvalidEmailMessage: Missing Message-Id
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
     ... Subject: Re: Dud
     ... Message-Id: <fnord6>
     ...
     ... Moo
     ... ''')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    InvalidEmailMessage: No From: or Reply-To: header
+    lp.services.messages.interfaces.message.InvalidEmailMessage: No From: or Reply-To: header
 
 Also, we generally insist that a message has a date associated with it.
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Subject: Dud without a date!
     ... Message-Id: <fnord6>
     ...
     ... Moo
     ... ''')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    InvalidEmailMessage: Invalid date...
+    lp.services.messages.interfaces.message.InvalidEmailMessage: Invalid date...
 
 However, we can override this behaviour by passing a date_created
 parameter to fromEmail(). This is optional, and defaults to None, but it
@@ -453,7 +462,7 @@ otherwise reject the method as invalid.
     >>> from datetime import datetime
     >>> import pytz
 
-    >>> msg_text = '''\
+    >>> msg_bytes = b'''\
     ... From: foo.bar@canonical.com
     ... Subject: I have no date! Oh teh noes!
     ... Message-Id: <therearenofnords>
@@ -464,7 +473,7 @@ otherwise reject the method as invalid.
     >>> date_created = datetime(
     ...     2008, 7, 9, 14, 27, 40, tzinfo=pytz.timezone('UTC'))
     >>> msg = msgset.fromEmail(
-    ...     msg_text, date_created=date_created)
+    ...     msg_bytes, date_created=date_created)
 
     >>> msg.datecreated
     datetime.datetime(2008, 7, 9, 14, 27, 40, tzinfo=<UTC>)
@@ -472,7 +481,7 @@ otherwise reject the method as invalid.
 But, we make sure that we don't create a message with a date that is
 futuristic:
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Date: Fri, 17 Jun 2016 10:45:13 +0100
     ... Subject: Re: Back to the future
@@ -486,7 +495,7 @@ futuristic:
 And similarly, we will consider any message that claims to be older than
 1990 to have been created right now:
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Date: Tue, 17 Jun 1986 10:45:13 +0100
     ... Subject: Re: Back to the future, again
@@ -500,7 +509,7 @@ And similarly, we will consider any message that claims to be older than
 
 Finally, let's test the goldilocks message, where the date is just right:
 
-    >>> msg = msgset.fromEmail('''\
+    >>> msg = msgset.fromEmail(b'''\
     ... From: foo.bar@canonical.com
     ... Date: Fri, 17 Jun 2005 10:45:13 +0100
     ... Subject: Re: Smells like the present to me
@@ -508,7 +517,7 @@ Finally, let's test the goldilocks message, where the date is just right:
     ...
     ... Moo
     ... ''')
-    >>> print msg.datecreated
+    >>> print(msg.datecreated)
     2005-06-17 09:45:13+00:00
 
 
@@ -523,8 +532,9 @@ which often works.
     >>> import os.path
     >>> mail_path = ('../../mail/tests/emails/x-unknown-encoding.txt')
     >>> msg_path = os.path.join(os.path.dirname(__file__), mail_path)
-    >>> raw_msg = open(msg_path).read()
-    >>> print raw_msg
+    >>> with open(msg_path, 'rb') as f:
+    ...     raw_msg = f.read()
+    >>> print(raw_msg.decode('ISO-8859-1'))
     MIME-Version: 1.0
     ...
     Content-Type: TEXT/PLAIN; charset=X-UNKNOWN; format=flowed...

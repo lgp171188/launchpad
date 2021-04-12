@@ -103,6 +103,9 @@ class VoteEmailCommand(CodeReviewEmailCommand):
         'needsinformation': CodeReviewVote.NEEDS_INFO,
         'needs_information': CodeReviewVote.NEEDS_INFO,
         'needs-information': CodeReviewVote.NEEDS_INFO,
+        'needsresubmitting': CodeReviewVote.NEEDS_RESUBMITTING,
+        'needs-resubmitting': CodeReviewVote.NEEDS_RESUBMITTING,
+        'resubmit': CodeReviewVote.NEEDS_RESUBMITTING,
         }
 
     def execute(self, context):
@@ -306,7 +309,7 @@ class CodeHandler:
                 ensure_not_weakly_authenticated(mail, 'code review')
 
             message = getUtility(IMessageSet).fromEmail(
-                mail.parsed_string,
+                mail.parsed_bytes,
                 owner=getUtility(ILaunchBag).user,
                 filealias=file_alias,
                 parsed_message=mail)

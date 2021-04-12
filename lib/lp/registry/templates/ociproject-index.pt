@@ -18,7 +18,7 @@
   </metal:registering>
 
   <metal:side fill-slot="side">
-    <div tal:replace="structure context/@@+global-actions"/>
+    <tal:menu replace="structure context/@@+global-actions" />
   </metal:side>
 
   <metal:heading fill-slot="heading">
@@ -26,6 +26,22 @@
   </metal:heading>
 
   <div metal:fill-slot="main">
+    <div tal:condition="python: view.git_repository is None">
+      <p>
+        You can create a git repository for this OCI project in order to
+        build your OCI recipes by using the following commands:
+        <br />
+        <pre class="command">
+          git remote add origin git+ssh://<tal:name replace="view/user/name"/>@<tal:host replace="view/git_ssh_hostname" />/<tal:name replace="view/git_repository_path"/>
+          git push --set-upstream origin master
+        </pre>
+      </p>
+    </div>
+    <div tal:define="repo view/git_repository"
+         tal:condition="repo">
+      Your default git repository for this project is <a tal:replace="structure repo/fmt:link"/>.
+    </div>
+
     <h2>OCI project information</h2>
     <div class="two-column-list">
       <dl id="pillar" tal:define="pillar context/pillar">
@@ -49,14 +65,55 @@
     </div>
 
     <h2>Recipes</h2>
-    <div id="recipe-summary"
-         tal:define="link context/menu:context/view_recipes"
-         tal:condition="link/enabled"
-         tal:content="structure link/render"/>
-    <tal:create-recipe
-        define="link context/menu:context/create_recipe"
-        condition="link/enabled"
-        replace="structure link/render"/>
+
+    <h3 tal:condition="view/official_recipe_count">Official recipes</h3>
+    <table class="listing" id="mirrors_list" tal:condition="view/official_recipe_count">
+      <tbody>
+        <tr class="head">
+          <th>Name</th>
+          <th>Owner</th>
+          <th>Source</th>
+          <th>Build file</th>
+          <th>Date created</th>
+        </tr>
+
+        <tr tal:repeat="recipe view/official_recipes">
+          <td>
+            <a tal:content="recipe/name"
+                tal:attributes="href recipe/fmt:url" />
+          </td>
+          <td tal:content="structure recipe/owner/fmt:link" />
+          <td>
+            <a tal:replace="structure recipe/git_ref/fmt:link"/>
+          </td>
+          <td tal:content="recipe/build_file" />
+          <td tal:content="recipe/date_created/fmt:displaydate" />
+        </tr>
+      </tbody>
+    </table>
+    <div tal:condition="python: not view.official_recipe_count and view.other_recipe_count">
+      <p>There are no official recipes for this OCI project.</p>
+    </div>
+
+    <div tal:define="count view/other_recipe_count"
+         tal:condition="count">
+      <span tal:condition="python: count == 1">
+        There is <strong>1</strong> unofficial recipe.</span>
+      <span tal:condition="python: count != 1">
+        There are <strong tal:content="count" /> unofficial recipes.
+      </span>
+      <p>
+        <tal:summary
+          define="link context/menu:context/view_recipes"
+          condition="link/enabled"
+          content="structure link/render"/>
+      </p>
+    </div>
+
+    <div tal:condition="python: not view.official_recipe_count and not view.other_recipe_count">
+      <p>There are no recipes registered for this OCI project.</p>
+    </div>
+
   </div>
 </body>
 </html>

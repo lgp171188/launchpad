@@ -80,8 +80,8 @@ class TestProduct(TestCaseWithFactory):
             webservice, product, branch_sharing_policy='Proprietary')
         self.assertThat(response, MatchesStructure.byEquality(
                 status=403,
-                body=('A current commercial subscription is required to use '
-                      'proprietary branches.')))
+                body=(b'A current commercial subscription is required to use '
+                      b'proprietary branches.')))
         with person_logged_in(owner):
             self.assertEqual(
                 BranchSharingPolicy.PUBLIC, product.branch_sharing_policy)
@@ -111,8 +111,8 @@ class TestProduct(TestCaseWithFactory):
             webservice, product, bug_sharing_policy='Proprietary')
         self.assertThat(response, MatchesStructure.byEquality(
                 status=403,
-                body=('A current commercial subscription is required to use '
-                      'proprietary bugs.')))
+                body=(b'A current commercial subscription is required to use '
+                      b'proprietary bugs.')))
         with person_logged_in(owner):
             self.assertEqual(
                 BugSharingPolicy.PUBLIC, product.bug_sharing_policy)

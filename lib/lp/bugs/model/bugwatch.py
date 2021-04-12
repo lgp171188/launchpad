@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -70,10 +70,7 @@ from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.stormbase import StormBase
-from lp.services.helpers import (
-    ensure_unicode,
-    shortlist,
-    )
+from lp.services.helpers import shortlist
 from lp.services.messages.model.message import Message
 from lp.services.webapp import (
     urlappend,
@@ -261,6 +258,8 @@ class BugWatch(SQLBase):
 
     def hasComment(self, comment_id):
         """See `IBugWatch`."""
+        if comment_id is not None:
+            comment_id = six.ensure_text(comment_id)
         store = Store.of(self)
         bug_messages = store.find(
             BugMessage,
@@ -595,7 +594,7 @@ class BugWatchSet:
         # * /tracker/(index.php) (index.php part is optional)
         # * /tracker2/(index.php) (index.php part is optional)
         sf_path_re = re.compile(
-            '^\/(support\/tracker\.php|tracker2?\/(index\.php)?)$')
+            r'^\/(support\/tracker\.php|tracker2?\/(index\.php)?)$')
         if (sf_path_re.match(path) is None):
             return None
         if not query.get('aid'):
@@ -624,9 +623,9 @@ class BugWatchSet:
         # or that have an item_id parameter containing the bug ID.
         if path not in ('/bugs/', '/bugs/index.php'):
             return None
-        if len(query) == 1 and query.values()[0] is None:
+        if len(query) == 1 and list(query.values())[0] is None:
             # The query string is just a bare ID.
-            remote_bug = query.keys()[0]
+            remote_bug = list(query)[0]
         elif 'item_id' in query:
             remote_bug = query['item_id']
         else:
@@ -682,7 +681,7 @@ class BugWatchSet:
             return None
 
         google_code_url_expression = re.compile(
-            "(?P<base_path>\/p\/[a-z][-a-z0-9]+/issues)/detail")
+            r"(?P<base_path>\/p\/[a-z][-a-z0-9]+/issues)/detail")
 
         path_match = google_code_url_expression.match(path)
         if path_match is None:
@@ -768,7 +767,8 @@ class BugWatchSet:
         bulk.create(
             (BugWatchActivity.bug_watch_id, BugWatchActivity.result,
              BugWatchActivity.oops_id),
-            [(bug_watch_id, result, ensure_unicode(oops_id))
+            [(bug_watch_id, result,
+              None if oops_id is None else six.ensure_text(oops_id))
              for bug_watch_id in set(get_bug_watch_ids(references))])
 
 

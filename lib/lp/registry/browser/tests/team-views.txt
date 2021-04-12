@@ -17,14 +17,14 @@ as well as the up to five latest members who proposed themselves.
     >>> membershipset = getUtility(ITeamMembershipSet)
     >>> for member in team_home.recently_approved_members:
     ...     membership = membershipset.getByPersonAndTeam(member, ubuntu_team)
-    ...     print "%s: %s" % (member.name, membership.status.title)
+    ...     print("%s: %s" % (member.name, membership.status.title))
     name20: Approved
     spiv: Approved
     limi: Approved
 
     >>> for member in team_home.recently_proposed_members:
     ...     membership = membershipset.getByPersonAndTeam(member, ubuntu_team)
-    ...     print "%s: %s" % (member.name, membership.status.title)
+    ...     print("%s: %s" % (member.name, membership.status.title))
     justdave: Proposed
 
 If new members are added/proposed, they'll show up at the top of the lists.
@@ -40,7 +40,7 @@ If new members are added/proposed, they'll show up at the top of the lists.
     >>> team_home = create_initialized_view(ubuntu_team, '+index')
     >>> for member in team_home.recently_approved_members:
     ...     membership = membershipset.getByPersonAndTeam(member, ubuntu_team)
-    ...     print "%s: %s" % (member.name, membership.status.title)
+    ...     print("%s: %s" % (member.name, membership.status.title))
     salgado: Approved
     name20: Approved
     spiv: Approved
@@ -48,7 +48,7 @@ If new members are added/proposed, they'll show up at the top of the lists.
 
     >>> for member in team_home.recently_proposed_members:
     ...     membership = membershipset.getByPersonAndTeam(member, ubuntu_team)
-    ...     print "%s: %s" % (member.name, membership.status.title)
+    ...     print("%s: %s" % (member.name, membership.status.title))
     name12: Proposed
     justdave: Proposed
 
@@ -61,10 +61,10 @@ Posting malformed data to the team home page raises an error.
     >>> team_home = getMultiAdapter(
     ...     (ubuntu_team, broken_request), name='+index')
     >>> team_home.initialize()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    UnexpectedFormData: The mailing list form did not receive the expected
-    form fields.
+    lp.app.errors.UnexpectedFormData: The mailing list form did not receive the expected form fields.
 
 
 Contacting the team
@@ -83,9 +83,9 @@ because bart is not a member of the team.
     >>> ignored = login_person(bart)
 
     >>> view = create_initialized_view(guadamen, '+index')
-    >>> print view.contact_link_title
+    >>> print(view.contact_link_title)
     Send an email to this team's admins through Launchpad
-    >>> print view.specific_contact_text
+    >>> print(view.specific_contact_text)
     Contact this team's admins
 
 
@@ -98,15 +98,15 @@ page.  The display of mugshots is batched.
     >>> ubuntu = person_set.getByName('ubuntu-team')
     >>> view = create_initialized_view(ubuntu, '+mugshots')
     >>> batch = view.members.currentBatch()
-    >>> print len(list(ubuntu.allmembers))
+    >>> print(len(list(ubuntu.allmembers)))
     10
-    >>> print view.batch_size
+    >>> print(view.batch_size)
     8
-    >>> print len(list(batch))
+    >>> print(len(list(batch)))
     8
     >>> from zope.security.proxy import removeSecurityProxy
     >>> for person in list(batch):
-    ...     print removeSecurityProxy(person)
+    ...     print(removeSecurityProxy(person))
     <Person at ... limi (Alexander Limi)>
     <Person at ... cprov (Celso Providelo)>
     <Person at ... kamion (Colin Watson)>
@@ -124,9 +124,9 @@ Team visibility is used on the page to indicate privacy.  GuadaMen is a public
 team.
 
     >>> view = create_initialized_view(guadamen, '+index')
-    >>> print view.visibility_info
+    >>> print(view.visibility_info)
     Public team
-    >>> print view.visibility_portlet_class
+    >>> print(view.visibility_portlet_class)
     portlet
 
 Private teams are indicated as private.
@@ -139,9 +139,9 @@ Private teams are indicated as private.
     ...     visibility=PersonVisibility.PRIVATE)
 
     >>> view = create_initialized_view(private_team, '+index')
-    >>> print view.visibility_info
+    >>> print(view.visibility_info)
     Private team
-    >>> print view.visibility_portlet_class
+    >>> print(view.visibility_portlet_class)
     portlet private
 
 +add-my-teams
@@ -153,7 +153,7 @@ to the current team.
     >>> ignored = login_person(sample_person)
     >>> view = create_initialized_view(guadamen, '+add-my-teams')
     >>> for candidate in view.candidate_teams:
-    ...     print candidate.name, candidate.visibility.title
+    ...     print(candidate.name, candidate.visibility.title)
     landscape-developers Public
     launchpad-users Public
     private-team Private

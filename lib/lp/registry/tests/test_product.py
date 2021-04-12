@@ -829,7 +829,7 @@ class TestProduct(TestCaseWithFactory):
         'launchpad.LimitedView': set((
             'bugtargetdisplayname', 'display_name', 'displayname', 'drivers',
             'enable_bug_expiration', 'getBugTaskWeightFunction',
-            'getSpecification',
+            'getOCIProject', 'getSpecification',
             'icon', 'logo', 'name', 'official_answers', 'official_anything',
             'official_blueprints', 'official_codehosting', 'official_malone',
             'owner', 'parent_subscription_target', 'pillar', 'projectgroup',
@@ -865,7 +865,7 @@ class TestProduct(TestCaseWithFactory):
             'getEffectiveTranslationPermission', 'getExternalBugTracker',
             'getFAQ', 'getFirstEntryToImport', 'getLinkedBugWatches',
             'getMergeProposals', 'getMilestone', 'getMilestonesAndReleases',
-            'getOCIProject', 'getQuestion', 'getQuestionLanguages',
+            'getQuestion', 'getQuestionLanguages',
             'getPackage', 'getRelease', 'getSeries', 'getSubscription',
             'getSubscriptions', 'getSupportedLanguages', 'getTimeline',
             'getTopContributors', 'getTopContributorsGroupedByCategory',
@@ -879,7 +879,7 @@ class TestProduct(TestCaseWithFactory):
             'license_info', 'license_status', 'licenses', 'milestones',
             'mugshot', 'newCodeImport',
             'obsolete_translatable_series', 'official_bug_tags',
-            'packagedInDistros', 'packagings',
+            'packagings',
             'past_sprints', 'personHasDriverRights',
             'primary_translatable', 'private_bugs',
             'programminglang', 'qualifies_for_free_hosting',
@@ -1419,7 +1419,7 @@ class TestProductFiles(TestCase):
     def test_adddownloadfile_nonascii_filename(self):
         """Test uploading a file with a non-ascii char in the filename."""
         firefox_owner = setupBrowser(auth='Basic mark@example.com:test')
-        filename = u'foo\xa5.txt'.encode('utf-8')
+        filename = u'foo\xa5.txt'
         firefox_owner.open(
             'http://launchpad.test/firefox/1.0/1.0.0/+adddownloadfile')
         foo_file = BytesIO(b'Foo installer package...')
@@ -2145,7 +2145,7 @@ class TestWebService(WebServiceTestCase):
         # The product layer provides the context restriction, so we need to
         # check we can access context filtered references - e.g. on question.
         oopsid = "OOPS-abcdef1234"
-        question = self.factory.makeQuestion(title="Crash with %s" % oopsid)
+        question = self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
         product = question.product
         transaction.commit()
         ws_product = self.wsObject(product, product.owner)
@@ -2163,7 +2163,7 @@ class TestWebService(WebServiceTestCase):
         # The product layer provides the context restriction, so we need to
         # check the filter is tight enough - other contexts should not work.
         oopsid = "OOPS-abcdef1234"
-        self.factory.makeQuestion(title="Crash with %s" % oopsid)
+        self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
         product = self.factory.makeProduct()
         transaction.commit()
         ws_product = self.wsObject(product, product.owner)

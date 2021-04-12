@@ -19,17 +19,17 @@ DistributionSourcePackage class is tested in:
 Combining Distribution and SourcePackageRelease:
 
  >>> distribution = Distribution.get(1)
- >>> distribution.name
- u'ubuntu'
+ >>> print(distribution.name)
+ ubuntu
 
  >>> src_name = SourcePackageName.selectOneBy(name='pmount')
- >>> src_name.name
- u'pmount'
+ >>> print(src_name.name)
+ pmount
 
  >>> sourcepackagerelease = SourcePackageRelease.selectOneBy(
  ...     sourcepackagenameID=src_name.id, version='0.1-1')
- >>> sourcepackagerelease.name
- u'pmount'
+ >>> print(sourcepackagerelease.name)
+ pmount
 
  >>> from lp.testing import verifyObject
  >>> dspr = DistributionSourcePackageRelease(distribution,
@@ -37,8 +37,8 @@ Combining Distribution and SourcePackageRelease:
  >>> verifyObject(IDistributionSourcePackageRelease, dspr)
  True
 
- >>> dspr.displayname
- u'pmount 0.1-1'
+ >>> print(dspr.displayname)
+ pmount 0.1-1
 
 
 == Querying builds for DistributionSourcePackageRelease ==

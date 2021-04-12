@@ -38,7 +38,7 @@ Attempts to claim a revoked OpenPGP key fail:
     ...     '84D205F03E1E67096CB54E262BE83793AACCD97C')
     >>> browser.getControl('Import Key').click()
     >>> for tag in find_tags_by_class(browser.contents, 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     <BLANKLINE>
     The key 84D205F03E1E67096CB54E262BE83793AACCD97C cannot be validated
     because it has been publicly revoked.
@@ -54,7 +54,7 @@ Attempts to claim an expired OpenPGP key also fail:
     ...     '0DD64D28E5F41138533495200E3DB4D402F53CC6')
     >>> browser.getControl('Import Key').click()
     >>> for tag in find_tags_by_class(browser.contents, 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     <BLANKLINE>
     The key 0DD64D28E5F41138533495200E3DB4D402F53CC6 cannot be validated
     because it has expired. Change the expiry date (in a terminal, enter
@@ -74,12 +74,12 @@ will create login tokens for the revoked and expired test keys:
     ...     person, 'test@canonical.com', 'test@canonical.com',
     ...     LoginTokenType.VALIDATEGPG,
     ...     '84D205F03E1E67096CB54E262BE83793AACCD97C')
-    >>> revoked_key_token = logintoken.token.encode('ascii')
+    >>> revoked_key_token = logintoken.token
     >>> logintoken = tokenset.new(
     ...     person, 'test@canonical.com', 'test@canonical.com',
     ...     LoginTokenType.VALIDATEGPG,
     ...     '0DD64D28E5F41138533495200E3DB4D402F53CC6')
-    >>> expired_key_token = logintoken.token.encode('ascii')
+    >>> expired_key_token = logintoken.token
     >>> logout()
 
 
@@ -89,7 +89,7 @@ Try to validate the revoked OpenPGP key:
     ...     'http://launchpad.test/token/%s/+validategpg' % revoked_key_token)
     >>> browser.getControl('Continue').click()
     >>> for tag in find_tags_by_class(browser.contents, 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     The key 84D205F03E1E67096CB54E262BE83793AACCD97C cannot be validated
     because it has been publicly revoked.
@@ -105,7 +105,7 @@ Try to validate the revoked OpenPGP key:
     ...     'http://launchpad.test/token/%s/+validategpg' % expired_key_token)
     >>> browser.getControl('Continue').click()
     >>> for tag in find_tags_by_class(browser.contents, 'error message'):
-    ...     print(tag.renderContents())
+    ...     print(tag.decode_contents())
     There is 1 error.
     The key 0DD64D28E5F41138533495200E3DB4D402F53CC6 cannot be validated
     because it has expired. Change the expiry date (in a terminal, enter

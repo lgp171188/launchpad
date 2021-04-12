@@ -51,7 +51,7 @@ look up the user.
     >>> account = account_set.getByOpenIDIdentifier(u'no-priv_oid')
     >>> IAccount.providedBy(account)
     True
-    >>> print account.displayname
+    >>> print(account.displayname)
     No Privileges Person
 
 A LookupError is raised if the identifier is not used by any account.
@@ -75,7 +75,7 @@ accessible for the owner.
 
 An account has a displayname.
 
-    >>> print account.displayname
+    >>> print(account.displayname)
     No Privileges Person
 
 Account objects have a useful string representation.
@@ -88,20 +88,20 @@ The account has other metadata.
     >>> account.date_created
     datetime.datetime(...)
 
-    >>> print account.creation_rationale.name
+    >>> print(account.creation_rationale.name)
     OWNER_CREATED_LAUNCHPAD
 
-    >>> print account.status.name
+    >>> print(account.status.name)
     ACTIVE
 
     >>> account.date_status_set >= account.date_created
     True
 
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> print removeSecurityProxy(account).status_history
+    >>> print(removeSecurityProxy(account).status_history)
     None
 
-    >>> print account.displayname
+    >>> print(account.displayname)
     No Privileges Person
 
 When the status is changed, the date_status_set is updated in the
@@ -125,8 +125,8 @@ database. Only an admin can change the status.
 An Account has at least one OpenID identifier used to generate the
 OpenID identity URL.
 
-    >>> account.openid_identifiers.any().identifier
-    u'no-priv_oid'
+    >>> print(account.openid_identifiers.any().identifier)
+    no-priv_oid
 
 
 Creating new accounts
@@ -142,7 +142,7 @@ rationale and displayname are required.
     >>> new_account = account_set.new(
     ...     AccountCreationRationale.USER_CREATED, 'New Account')
     >>> transaction.commit()
-    >>> print new_account.creation_rationale.name
+    >>> print(new_account.creation_rationale.name)
     USER_CREATED
-    >>> print new_account.displayname
+    >>> print(new_account.displayname)
     New Account

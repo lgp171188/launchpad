@@ -77,6 +77,7 @@ from lp.app.browser.tales import DateTimeFormatterAPI
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.browser.codereviewcomment import CodeReviewDisplayComment
 from lp.code.browser.decorations import DecoratedBranch
+from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.enums import (
     BranchMergeProposalStatus,
     BranchType,
@@ -539,9 +540,7 @@ class DiffRenderingMixin:
         if preview_diff is None:
             return None
         try:
-            diff = preview_diff.text.decode('utf-8')
-        except UnicodeDecodeError:
-            diff = preview_diff.text.decode('windows-1252', 'replace')
+            diff = preview_diff.text
         except (LookupError, LibrarianServerError):
             self._diff_available = False
             diff = ''
@@ -861,7 +860,8 @@ class DecoratedCodeReviewVoteReference:
         CodeReviewVote.ABSTAIN: CodeReviewVote.ABSTAIN.title,
         CodeReviewVote.NEEDS_INFO: CodeReviewVote.NEEDS_INFO.title,
         CodeReviewVote.NEEDS_FIXING: CodeReviewVote.NEEDS_FIXING.title,
-        CodeReviewVote.RESUBMIT: CodeReviewVote.RESUBMIT.title,
+        CodeReviewVote.NEEDS_RESUBMITTING: (
+            CodeReviewVote.NEEDS_RESUBMITTING.title),
         }
 
     def __init__(self, context, user, users_vote):
@@ -1077,6 +1077,13 @@ class BranchMergeProposalResubmitView(LaunchpadFormView,
     for_input = True
     page_title = label = "Resubmit proposal to merge"
 
+    custom_widget_source_git_ref = CustomWidgetFactory(
+        GitRefWidget, require_branch=True)
+    custom_widget_target_git_ref = CustomWidgetFactory(
+        GitRefWidget, require_branch=True)
+    custom_widget_prerequisite_git_ref = CustomWidgetFactory(
+        GitRefWidget, require_branch=True)
+
     def initialize(self):
         self.cancel_url = canonical_url(self.context)
         super(BranchMergeProposalResubmitView, self).initialize()
@@ -1091,12 +1098,9 @@ class BranchMergeProposalResubmitView(LaunchpadFormView,
                 ]
         else:
             field_names = [
-                'source_git_repository',
-                'source_git_path',
-                'target_git_repository',
-                'target_git_path',
-                'prerequisite_git_repository',
-                'prerequisite_git_path',
+                'source_git_ref',
+                'target_git_ref',
+                'prerequisite_git_ref',
                 ]
         field_names.extend([
             'description',
@@ -1122,16 +1126,9 @@ class BranchMergeProposalResubmitView(LaunchpadFormView,
                 merge_target = data['target_branch']
                 merge_prerequisite = data['prerequisite_branch']
             else:
-                merge_source = data['source_git_repository'].getRefByPath(
-                    data['source_git_path'])
-                merge_target = data['target_git_repository'].getRefByPath(
-                    data['target_git_path'])
-                if data['prerequisite_git_repository']:
-                    merge_prerequisite = (
-                        data['prerequisite_git_repository'].getRefByPath(
-                            data['prerequisite_git_path']))
-                else:
-                    merge_prerequisite = None
+                merge_source = data['source_git_ref']
+                merge_target = data['target_git_ref']
+                merge_prerequisite = data.get('prerequisite_git_ref')
             proposal = self.context.resubmit(
                 self.user, merge_source, merge_target, merge_prerequisite,
                 data['commit_message'], data['description'],

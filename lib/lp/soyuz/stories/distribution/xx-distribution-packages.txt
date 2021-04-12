@@ -19,7 +19,7 @@ This page is used to search packages in a distribution context.
     'http://localhost/ubuntu/+search?text=pmount'
 
     >>> for tag in find_tags_by_class(browser.contents, 'package-matches'):
-    ...     print(extract_text(tag).encode('us-ascii', 'replace'))
+    ...     print(extract_text(tag))
     pmount
     (Matching binaries: pmount.)
 
@@ -56,7 +56,7 @@ Now run a search for mozilla-firefox and check that it is found:
     >>> field.value = 'mozilla-firefox'
     >>> browser.getControl('Search', index=0).click()
     >>> for tag in find_tags_by_class(browser.contents, 'package-matches'):
-    ...     print(extract_text(tag).encode('us-ascii', 'replace'))
+    ...     print(extract_text(tag))
     mozilla-firefox
     The Mozilla Firefox web browser
     (Matching binaries: mozilla-firefox, mozilla-firefox-data.)
@@ -396,8 +396,8 @@ release.
     >>> print(extract_text(first_header_link))
     1.0.9a-4ubuntu1
 
-    >>> first_header_link.get('href')
-    u'/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1'
+    >>> print(first_header_link.get('href'))
+    /ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1
 
 Following the header we get a body with the changelog in it.  Note that
 any email addreses in the changelog are obfuscated because we are not

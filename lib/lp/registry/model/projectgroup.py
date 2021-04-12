@@ -10,6 +10,7 @@ __all__ = [
     'ProjectGroupSet',
     ]
 
+import six
 from sqlobject import (
     AND,
     BoolCol,
@@ -95,10 +96,12 @@ from lp.registry.model.productseries import ProductSeries
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import shortlist
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.authorization import check_permission
@@ -536,12 +539,14 @@ class ProjectGroupSet:
     def get(self, projectgroupid):
         """See `lp.registry.interfaces.projectgroup.IProjectGroupSet`.
 
-        >>> getUtility(IProjectGroupSet).get(1).name
-        u'apache'
+        >>> print(getUtility(IProjectGroupSet).get(1).name)
+        apache
         >>> getUtility(IProjectGroupSet).get(-1)
+        ... # doctest: +NORMALIZE_WHITESPACE
+        ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
         Traceback (most recent call last):
         ...
-        NotFoundError: -1
+        lp.app.errors.NotFoundError: -1
         """
         try:
             projectgroup = ProjectGroup.get(projectgroupid)
@@ -590,32 +595,27 @@ class ProjectGroupSet:
         should be limited to projects that are active in those Launchpad
         applications.
         """
-        if text:
-            text = text.replace("%", "%%")
-        clauseTables = set()
-        clauseTables.add('Project')
-        queries = []
+        joining_product = False
+        clauses = []
 
         if text:
+            text = six.ensure_text(text)
             if search_products:
-                clauseTables.add('Product')
-                product_query = "Product.fti @@ ftq(%s)" % sqlvalues(text)
-                queries.append(product_query)
+                joining_product = True
+                clauses.extend([
+                    Product.projectgroup == ProjectGroup.id,
+                    fti_search(Product, text),
+                    ])
             else:
-                projectgroup_query = "Project.fti @@ ftq(%s)" % sqlvalues(text)
-                queries.append(projectgroup_query)
-
-        if 'Product' in clauseTables:
-            queries.append('Product.project=Project.id')
+                clauses.append(fti_search(ProjectGroup, text))
 
         if not show_inactive:
-            queries.append('Project.active IS TRUE')
-            if 'Product' in clauseTables:
-                queries.append('Product.active IS TRUE')
+            clauses.append(ProjectGroup.active)
+            if joining_product:
+                clauses.append(Product.active)
 
-        query = " AND ".join(queries)
-        return ProjectGroup.select(
-            query, distinct=True, clauseTables=clauseTables)
+        return IStore(ProjectGroup).find(
+            ProjectGroup, *clauses).config(distinct=True)
 
 
 @implementer(IProjectGroupSeries)

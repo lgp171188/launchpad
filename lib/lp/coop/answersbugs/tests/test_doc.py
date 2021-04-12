@@ -29,6 +29,7 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     )
 from lp.testing.mail_helpers import pop_notifications
+from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setUp,
@@ -52,8 +53,8 @@ def _createUbuntuBugTaskLinkedToQuestion():
     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     ubuntu.addAnswerContact(ubuntu_team, ubuntu_team.teamowner)
     ubuntu_question = ubuntu.newQuestion(
-        sample_person, "Can't install Ubuntu",
-        "I insert the install CD in the CD-ROM drive, but it won't boot.")
+        sample_person, u"Can't install Ubuntu",
+        u"I insert the install CD in the CD-ROM drive, but it won't boot.")
     no_priv = getUtility(IPersonSet).getByEmail('no-priv@canonical.com')
     params = CreateBugParams(
         owner=no_priv, title="Installer fails on a Mac PPC",
@@ -73,7 +74,7 @@ def bugLinkedToQuestionSetUp(test):
     def get_bugtask_linked_to_question():
         return getUtility(IBugTaskSet).get(bugtask_id)
 
-    setUp(test)
+    setUp(test, future=True)
     bugtask_id = _createUbuntuBugTaskLinkedToQuestion()
     test.globs['get_bugtask_linked_to_question'] = (
         get_bugtask_linked_to_question)
@@ -100,11 +101,10 @@ def uploadQueueBugLinkedToQuestionSetUp(test):
 
 # Files that have special needs can construct their own suite
 special = {
-    'notifications-linked-private-bug.txt':
-            LayeredDocFileSuite(
-            'notifications-linked-private-bug.txt',
-            setUp=bugLinkedToQuestionSetUp, tearDown=tearDown,
-            layer=DatabaseFunctionalLayer),
+    'notifications-linked-private-bug.txt': LayeredDocFileSuite(
+        'notifications-linked-private-bug.txt',
+        setUp=bugLinkedToQuestionSetUp, tearDown=tearDown,
+        layer=DatabaseFunctionalLayer),
     'notifications-linked-bug.txt': LayeredDocFileSuite(
         'notifications-linked-bug.txt',
         setUp=bugLinkedToQuestionSetUp, tearDown=tearDown,
@@ -125,4 +125,7 @@ special = {
 
 
 def test_suite():
-    return build_test_suite(here, special)
+    return build_test_suite(
+        here, special,
+        setUp=lambda test: setUp(test, future=True),
+        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))

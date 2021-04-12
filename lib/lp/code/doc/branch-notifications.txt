@@ -62,7 +62,8 @@ also sends the email to the list of recipients.
     Subscriber
     >>> print(branch_notification['X-Launchpad-Message-For'])
     name12
-    >>> notification_body = branch_notification.get_payload(decode=True)
+    >>> notification_body = six.ensure_text(
+    ...     branch_notification.get_payload(decode=True))
     >>> print(notification_body) #doctest: -NORMALIZE_WHITESPACE
     The contents.
     <BLANKLINE>
@@ -196,15 +197,17 @@ to allow email filtering.
     # A helper function to print out the To header and
     # email body
     >>> def print_to_and_body(email):
-    ...     attachment = ''
+    ...     attachment = b''
     ...     if email.is_multipart():
     ...         root = email.get_payload()
     ...         body = root[0].get_payload(decode=True)
     ...         if len(root) > 1:
-    ...             attachment = '\n' + root[1].get_payload(decode=True)
+    ...             attachment = b'\n' + root[1].get_payload(decode=True)
     ...     else:
     ...         body = email.get_payload(decode=True)
-    ...     print('To: %s\n%s%s' % (email['To'], body, attachment))
+    ...     print('To: %s\n%s%s' % (
+    ...         email['To'], six.ensure_text(body),
+    ...         six.ensure_text(attachment)))
 
 We need to create some sufficiently large diffs to compare against.
 
@@ -532,18 +535,20 @@ must also handle the unicode.
     >>> len(notifications)
     1
     >>> email = notifications.pop()
-    >>> email.get_payload(decode=True).decode('utf-8').splitlines()
-    [u'Whiteboard changed to:',
-     u'',
-     u'A new \ua000 summary',
-     u'',
-     u'--',
-     u'lp://dev/~name12/firefox/new-name',
-     u'http://code.launchpad.test/~name12/firefox/new-name',
-     u'',
-     u'You are subscribed to branch lp://dev/~name12/firefox/new-name.',
-     u'To unsubscribe from this branch go to
-     http://code.launchpad.test/~name12/firefox/new-name/+edit-subscription']
+    >>> for line in email.get_payload(
+    ...         decode=True).decode('utf-8').splitlines():
+    ...     print(line)
+    Whiteboard changed to:
+    <BLANKLINE>
+    A new ꀀ summary
+    <BLANKLINE>
+    --
+    lp://dev/~name12/firefox/new-name
+    http://code.launchpad.test/~name12/firefox/new-name
+    <BLANKLINE>
+    You are subscribed to branch lp://dev/~name12/firefox/new-name.
+    To unsubscribe from this branch go to
+    http://code.launchpad.test/~name12/firefox/new-name/+edit-subscription
 
 
 == Modifications by users other than the branch owner ==

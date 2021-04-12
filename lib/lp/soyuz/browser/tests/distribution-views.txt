@@ -192,12 +192,14 @@ The DistributionPackageSearchView also has a helper property to
 help templates print the list of distroseries that an exactly-matched
 package is available in:
 
-    >>> distro_pkg_search_view.distroseries_names
-    {u'mozilla-firefox': u'warty'}
+    >>> for key, value in distro_pkg_search_view.distroseries_names.items():
+    ...     print('%s: %s' % (key, value))
+    mozilla-firefox: warty
     >>> distro_pkg_search_view = create_initialized_view(
     ...     ubuntu, name="+search", form={'text': 'mozilla-firefox'})
-    >>> distro_pkg_search_view.distroseries_names
-    {u'mozilla-firefox': u'warty'}
+    >>> for key, value in distro_pkg_search_view.distroseries_names.items():
+    ...     print('%s: %s' % (key, value))
+    mozilla-firefox: warty
 
 Another helper on the DistributionPackageSearchView is the
 matching_binary_names property which can be used by templates to get
@@ -206,8 +208,9 @@ package:
 
     >>> distro_pkg_search_view = create_initialized_view(
     ...     ubuntu, name="+search", form={'text': 'moz'})
-    >>> distro_pkg_search_view.matching_binary_names
-    {u'mozilla-firefox': u'mozilla-firefox, mozilla-firefox-data'}
+    >>> for key, value in distro_pkg_search_view.matching_binary_names.items():
+    ...     print('%s: %s' % (key, value))
+    mozilla-firefox: mozilla-firefox, mozilla-firefox-data
 
 The matching_binary_names property uses a protected helper method
 '_listFirstFiveMatchingNames' which ensures only the first five matching

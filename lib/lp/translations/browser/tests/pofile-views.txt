@@ -5,8 +5,8 @@ On this section, we are going to test the view class for an IPOFile.
 
 First, we need some imports.
 
+    >>> import io
     >>> from zope.publisher.browser import FileUpload
-    >>> from StringIO import StringIO
     >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.translations.model.translationmessage import (
     ...     TranslationMessage, DummyTranslationMessage)
@@ -124,8 +124,8 @@ a view for it, which will be the last in the pofile_view's list.
     11
     >>> translationmessage_view = pofile_view.translationmessage_views[-1]
     >>> translationmessage_view.initialize()
-    >>> translationmessage_view.singular_text
-    u'evolution addressbook'
+    >>> print(translationmessage_view.singular_text)
+    evolution addressbook
 
 It does not have a plural form.
 
@@ -139,8 +139,9 @@ And thus, it only has one translation.
 
 Which is the one we wanted.
 
-    >>> translationmessage_view.context.translations
-    [u'libreta de direcciones de Evolution']
+    >>> for translation in translationmessage_view.context.translations:
+    ...     print(translation)
+    libreta de direcciones de Evolution
 
 To help the JavaScript key navigation the view is exposing the autofocus
 field and a list of all translation fields ordered by the way they are
@@ -276,8 +277,9 @@ And we can see that we didn't get errors.
     >>> translationmessage = potmsgset.getCurrentTranslation(
     ...     pofile_es.potemplate, pofile_es.language,
     ...     pofile_es.potemplate.translation_side)
-    >>> translationmessage.translations
-    [u'Foo']
+    >>> for translation in translationmessage.translations:
+    ...     print(translation)
+    Foo
     >>> pofile_view.errors
     {}
 
@@ -381,7 +383,7 @@ string again once we're on zope.publisher >= 4.0.0a1.
 
     >>> class FileUploadArgument:
     ...     filename=b'po/es.po'
-    ...     file=StringIO(b'foos')
+    ...     file=io.BytesIO(b'foos')
     ...     headers=''
 
 Now, we do the upload.
@@ -412,8 +414,8 @@ given POFile instead of the one given with the submit.
 
     >>> entry.path == pofile_es.path
     True
-    >>> pofile_es.path
-    u'es.po'
+    >>> print(pofile_es.path)
+    es.po
 
     >>> transaction.commit()
 
@@ -441,24 +443,27 @@ The traversal value should be an integer.
 
     >>> request.method = 'GET'
     >>> navigation.traverse('foo')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError:...
+    lp.app.errors.NotFoundError: ...
 
 Also, translation message sequence numbers are always >= 1.
 
     >>> navigation.traverse('0')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError:...
+    lp.app.errors.NotFoundError: ...
 
 The given sequence number, we also need that is part of the available ones,
 if we use a high one, we should detect it.
 
     >>> navigation.traverse('30')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFoundError:...
+    lp.app.errors.NotFoundError: ...
 
 But if we have a right sequence number, we will get a valid translation
 message.

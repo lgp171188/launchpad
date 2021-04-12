@@ -49,6 +49,26 @@ log = logging.getLogger("loggerhead")
 SESSION_VAR = "lh.session"
 
 
+def set_standard_headers(app):
+    def wrapped(environ, start_response):
+        def response_hook(status, response_headers, exc_info=None):
+            response_headers.extend([
+                # Our response always varies based on authentication.
+                ('Vary', 'Cookie, Authorization'),
+
+                # Prevent clickjacking and content sniffing attacks.
+                ('Content-Security-Policy', "frame-ancestors 'self';"),
+                ('X-Frame-Options', 'SAMEORIGIN'),
+                ('X-Content-Type-Options', 'nosniff'),
+                ('X-XSS-Protection', '1; mode=block'),
+                ])
+            return start_response(status, response_headers, exc_info)
+
+        return app(environ, response_hook)
+
+    return wrapped
+
+
 def log_request_start_and_stop(app):
     def wrapped(environ, start_response):
         url = construct_url(environ)
@@ -161,13 +181,15 @@ class LoggerheadApplication(Application):
         self._load_brz_plugins()
 
         with open(os.path.join(
-                config.root, config.codebrowse.secret_path)) as secret_file:
+                config.root, config.codebrowse.secret_path),
+                "rb") as secret_file:
             secret = secret_file.read()
 
         app = RootApp(SESSION_VAR)
         app = HTTPExceptionHandler(app)
         app = SessionHandler(app, SESSION_VAR, secret)
         app = RevisionHeaderHandler(app)
+        app = set_standard_headers(app)
         app = log_request_start_and_stop(app)
         app = PrefixMiddleware(app)
         app = oops_middleware(app)

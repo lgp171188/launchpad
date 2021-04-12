@@ -73,12 +73,10 @@ class TestSpecificationDependencies(TestCaseWithFactory):
         do_next.createDependency(do_first)
         do_last = self.factory.makeBlueprint()
         do_last.createDependency(do_next)
-        self.assertThat(sorted(do_first.getBlockedSpecs()), Equals([do_next]))
-        self.assertThat(
-            sorted(do_first.all_blocked()), Equals(sorted([do_next, do_last])))
-        self.assertThat(sorted(do_last.getDependencies()), Equals([do_next]))
-        self.assertThat(
-            sorted(do_last.all_deps()), Equals(sorted([do_first, do_next])))
+        self.assertContentEqual([do_next], do_first.getBlockedSpecs())
+        self.assertContentEqual([do_next, do_last], do_first.all_blocked())
+        self.assertContentEqual([do_next], do_last.getDependencies())
+        self.assertContentEqual([do_first, do_next], do_last.all_deps())
 
     def test_diamond_dependency(self):
         #             do_first
@@ -94,18 +92,14 @@ class TestSpecificationDependencies(TestCaseWithFactory):
         do_last = self.factory.makeBlueprint()
         do_last.createDependency(do_next_lhs)
         do_last.createDependency(do_next_rhs)
-        self.assertThat(
-            sorted(do_first.getBlockedSpecs()),
-            Equals(sorted([do_next_lhs, do_next_rhs])))
-        self.assertThat(
-            sorted(do_first.all_blocked()),
-            Equals(sorted([do_next_lhs, do_next_rhs, do_last])))
-        self.assertThat(
-            sorted(do_last.getDependencies()),
-            Equals(sorted([do_next_lhs, do_next_rhs])))
-        self.assertThat(
-            sorted(do_last.all_deps()),
-            Equals(sorted([do_first, do_next_lhs, do_next_rhs])))
+        self.assertContentEqual(
+            [do_next_lhs, do_next_rhs], do_first.getBlockedSpecs())
+        self.assertContentEqual(
+            [do_next_lhs, do_next_rhs, do_last], do_first.all_blocked())
+        self.assertContentEqual(
+            [do_next_lhs, do_next_rhs], do_last.getDependencies())
+        self.assertContentEqual(
+            [do_first, do_next_lhs, do_next_rhs], do_last.all_deps())
 
     def test_all_deps_filters(self):
         # all_deps, when provided a user, shows only the dependencies the user
@@ -242,7 +236,7 @@ class TestSpecificationWorkItemsNotifications(TestCaseWithFactory):
             new_work_item['status'].name)
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
-        msg = email[2]
+        msg = email[2].decode('UTF-8')
         self.assertIn(rationale, msg)
 
     def test_workitems_deleted_notification_message(self):
@@ -261,7 +255,7 @@ class TestSpecificationWorkItemsNotifications(TestCaseWithFactory):
         rationale = '- %s: %s' % (wi.title, wi.status.name)
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
-        msg = email[2]
+        msg = email[2].decode('UTF-8')
         self.assertIn(rationale, msg)
 
     def test_workitems_changed_notification_message(self):
@@ -300,7 +294,7 @@ class TestSpecificationWorkItemsNotifications(TestCaseWithFactory):
             new_work_item['title'], new_work_item['status'].name)
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
-        msg = email[2]
+        msg = email[2].decode('UTF-8')
         self.assertIn(rationale_removed, msg)
         self.assertIn(rationale_added, msg)
 

@@ -222,7 +222,7 @@ class GitRefScanJob(GitJobDerived):
     def composeWebhookPayload(repository, old_refs_commits, refs_to_upsert,
                               refs_to_remove):
         ref_changes = {}
-        for ref in refs_to_upsert.keys() + list(refs_to_remove):
+        for ref in list(refs_to_upsert) + list(refs_to_remove):
             old = (
                 {"commit_sha1": old_refs_commits[ref]}
                 if ref in old_refs_commits else None)

@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """FAQ document models."""
@@ -12,14 +12,25 @@ __all__ = [
     ]
 
 from lazr.lifecycle.event import ObjectCreatedEvent
+import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
+from storm.expr import (
+    And,
+    Desc,
     )
-from storm.expr import And
+from storm.properties import (
+    DateTime,
+    Int,
+    Unicode,
+    )
+from storm.references import (
+    Reference,
+    ReferenceSet,
+    )
+from storm.store import (
+    EmptyResultSet,
+    Store,
+    )
 from zope.event import notify
 from zope.interface import implementer
 
@@ -37,13 +48,12 @@ from lp.registry.interfaces.person import (
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.nl_search import nl_phrase_search
-from lp.services.database.sqlbase import (
-    quote,
-    SQLBase,
-    sqlvalues,
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
     )
+from lp.services.database.nl_search import nl_phrase_search
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,
@@ -51,40 +61,53 @@ from lp.services.database.stormexpr import (
 
 
 @implementer(IFAQ)
-class FAQ(SQLBase):
+class FAQ(StormBase):
     """See `IFAQ`."""
 
-    _table = 'FAQ'
-    _defaultOrder = ['date_created', 'id']
+    __storm_table__ = "FAQ"
 
-    owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+    __storm_order__ = ['date_created', 'id']
 
-    title = StringCol(notNull=True)
+    id = Int(primary=True)
 
-    keywords = StringCol(dbName="tags", notNull=False, default=None)
+    owner_id = Int(
+        name="owner", allow_none=False, validator=validate_public_person)
+    owner = Reference(owner_id, "Person.id")
 
-    content = StringCol(notNull=False, default=None)
+    title = Unicode(allow_none=False)
 
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
+    keywords = Unicode(name="tags", allow_none=True, default=None)
 
-    last_updated_by = ForeignKey(
-        dbName='last_updated_by', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=False,
-        default=None)
+    content = Unicode(allow_none=True, default=None)
 
-    date_last_updated = UtcDateTimeCol(notNull=False, default=None)
+    date_created = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
 
-    product = ForeignKey(
-        dbName='product', foreignKey='Product', notNull=False, default=None)
+    last_updated_by_id = Int(
+        name="last_updated_by", allow_none=True, default=None,
+        validator=validate_public_person)
+    last_updated_by = Reference(last_updated_by_id, "Person.id")
 
-    distribution = ForeignKey(
-        dbName='distribution', foreignKey='Distribution', notNull=False,
-        default=None)
+    date_last_updated = DateTime(
+        allow_none=True, default=None, tzinfo=pytz.UTC)
 
-    related_questions = SQLMultipleJoin(
-        'Question', joinColumn='faq', orderBy=['Question.datecreated'])
+    product_id = Int(name="product", allow_none=True, default=None)
+    product = Reference(product_id, "Product.id")
+
+    distribution_id = Int(name="distribution", allow_none=True, default=None)
+    distribution = Reference(distribution_id, "Distribution.id")
+
+    related_questions = ReferenceSet(
+        'id', 'Question.faq_id', order_by=('Question.datecreated'))
+
+    def __init__(self, owner, title, content=None, keywords=None,
+            date_created=DEFAULT, product=None, distribution=None):
+        self.owner = owner
+        self.title = title
+        self.content = content
+        self.keywords = keywords
+        self.date_created = date_created
+        self.product = product
+        self.distribution = distribution
 
     @property
     def target(self):
@@ -95,10 +118,10 @@ class FAQ(SQLBase):
             return self.distribution
 
     def destroySelf(self):
-        if self.related_questions:
+        if not self.related_questions.is_empty():
             raise CannotDeleteFAQ(
                "Cannot delete FAQ: questions must be unlinked first.")
-        super(FAQ, self).destroySelf()
+        Store.of(self).remove(self)
 
     @staticmethod
     def new(owner, title, content, keywords=keywords, date_created=None,
@@ -118,9 +141,14 @@ class FAQ(SQLBase):
         if date_created is None:
             date_created = DEFAULT
         faq = FAQ(
-            owner=owner, title=title, content=content, keywords=keywords,
+            owner=owner, title=six.text_type(title),
+            content=six.text_type(content),
+            keywords=keywords,
             date_created=date_created, product=product,
             distribution=distribution)
+        store = IMasterStore(FAQ)
+        store.add(faq)
+        store.flush()
         notify(ObjectCreatedEvent(faq))
         return faq
 
@@ -133,21 +161,25 @@ class FAQ(SQLBase):
         assert not (product and distribution), (
             'only one of product or distribution should be provided')
         if product:
-            target_constraint = 'product = %s' % sqlvalues(product)
+            target_constraint = (FAQ.product == product)
         elif distribution:
-            target_constraint = 'distribution = %s' % sqlvalues(distribution)
+            target_constraint = (FAQ.distribution == distribution)
         else:
             raise AssertionError('must provide product or distribution')
 
-        phrases = nl_phrase_search(summary, FAQ, target_constraint)
+        phrases = nl_phrase_search(summary, FAQ, [target_constraint])
         if not phrases:
             # No useful words to search on in that summary.
-            return FAQ.select('1 = 2')
+            return EmptyResultSet()
 
-        return FAQ.select(
-            And(target_constraint, fti_search(FAQ, phrases, ftq=False)),
-            orderBy=[
-                rank_by_fti(FAQ, phrases, ftq=False), "-FAQ.date_created"])
+        store = IStore(FAQ)
+        resultset = store.find(
+            FAQ,
+            fti_search(FAQ, phrases, ftq=False),
+            target_constraint)
+        return resultset.order_by(
+            rank_by_fti(FAQ, phrases, ftq=False),
+            Desc(FAQ.date_created))
 
     @staticmethod
     def getForTarget(id, target):
@@ -156,13 +188,12 @@ class FAQ(SQLBase):
         When target is not None, the target will be checked to make sure
         that the FAQ is in the expected target or return None otherwise.
         """
-        try:
-            faq = FAQ.get(id)
-            if target is None or target == faq.target:
-                return faq
-            else:
-                return None
-        except SQLObjectNotFound:
+        faq = IStore(FAQ).get(FAQ, int(id))
+        if faq is None:
+            return None
+        if target is None or target == faq.target:
+            return faq
+        else:
             return None
 
 
@@ -228,41 +259,44 @@ class FAQSearch:
 
     def getResults(self):
         """Return the FAQs matching this search."""
-        return FAQ.select(
-            self.getConstraints(),
-            clauseTables=self.getClauseTables(),
-            orderBy=self.getOrderByClause())
+        store = IStore(FAQ)
+        tables = self.getClauseTables()
+        if tables:
+            store = store.using(*tables)
+        resultset = store.find(FAQ, *self.getConstraints())
+        return resultset.order_by(self.getOrderByClause())
 
     def getConstraints(self):
         """Return the constraints to use by this search."""
+        from lp.registry.model.product import Product
         constraints = []
 
         if self.search_text:
-            constraints.append('FAQ.fti @@ ftq(%s)' % quote(self.search_text))
+            constraints.append(fti_search(FAQ, self.search_text))
 
         if self.owner:
-            constraints.append('FAQ.owner = %s' % sqlvalues(self.owner))
+            constraints.append(FAQ.owner == self.owner)
 
         if self.product:
-            constraints.append('FAQ.product = %s' % sqlvalues(self.product))
+            constraints.append(FAQ.product == self.product)
 
         if self.distribution:
-            constraints.append(
-                'FAQ.distribution = %s' % sqlvalues(self.distribution))
+            constraints.append(FAQ.distribution == self.distribution)
 
         if self.projectgroup:
-            constraints.append(
-                'FAQ.product = Product.id AND Product.project = %s' % (
-                    sqlvalues(self.projectgroup)))
+            constraints.append(And(
+                FAQ.product == Product.id,
+                Product.projectgroup == self.projectgroup))
 
-        return '\n AND '.join(constraints)
+        return constraints
 
     def getClauseTables(self):
         """Return the tables that should be added to the FROM clause."""
+        from lp.registry.model.product import Product
         if self.projectgroup:
-            return ['Product']
+            return [FAQ, Product]
         else:
-            return []
+            return [FAQ]
 
     def getOrderByClause(self):
         """Return the ORDER BY clause to sort the results."""
@@ -273,15 +307,15 @@ class FAQSearch:
             else:
                 sort = FAQSort.NEWEST_FIRST
         if sort is FAQSort.NEWEST_FIRST:
-            return "-FAQ.date_created"
+            return Desc(FAQ.date_created)
         elif sort is FAQSort.OLDEST_FIRST:
-            return "FAQ.date_created"
+            return FAQ.date_created
         elif sort is FAQSort.RELEVANCY:
             if self.search_text:
                 return [
-                    rank_by_fti(FAQ, self.search_text), "-FAQ.date_created"]
+                    rank_by_fti(FAQ, self.search_text), Desc(FAQ.date_created)]
             else:
-                return "-FAQ.date_created"
+                return Desc(FAQ.date_created)
         else:
             raise AssertionError("Unknown FAQSort value: %r" % sort)
 

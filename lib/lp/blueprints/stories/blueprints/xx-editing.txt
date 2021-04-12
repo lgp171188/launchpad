@@ -117,16 +117,18 @@ Any logged in user can edit a specification whiteboard.
 Regular users can't access the change status page.
 
     >>> user_browser.getLink(url='+status')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...     'http://blueprints.launchpad.test/kubuntu/'
     ...     '+spec/krunch-desktop-plan/+status')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    Unauthorized:...
+    zope.security.interfaces.Unauthorized: ...
 
 Nor can they change a blueprint's priority.
 
@@ -134,9 +136,10 @@ Nor can they change a blueprint's priority.
     ...     'http://blueprints.launchpad.test/kubuntu/'
     ...     '+spec/krunch-desktop-plan')
     >>> user_browser.getLink(url='+priority')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 But an administrator can.
 

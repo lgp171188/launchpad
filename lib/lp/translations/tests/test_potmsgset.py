@@ -22,10 +22,7 @@ from lp.testing.layers import (
     ZopelessDatabaseLayer,
     )
 from lp.translations.interfaces.potemplate import IPOTemplateSet
-from lp.translations.interfaces.potmsgset import (
-    POTMsgSetInIncompatibleTemplatesError,
-    TranslationCreditsType,
-    )
+from lp.translations.interfaces.potmsgset import TranslationCreditsType
 from lp.translations.interfaces.side import (
     ITranslationSideTraitsSet,
     TranslationSide,
@@ -961,7 +958,7 @@ class TestPOTMsgSetText(TestCaseWithFactory):
 
     def test_singular_text_po(self):
         # Gettext PO format uses English strings as msgids.
-        english_msgid = self.factory.getUniqueString()
+        english_msgid = self.factory.getUniqueUnicode()
         potmsgset = self._makePOTMsgSet(
             english_msgid, TranslationFileFormat.PO)
         self.assertEqual(english_msgid, potmsgset.singular_text)
@@ -1258,7 +1255,7 @@ class TestPOTMsgSet_submitSuggestion(TestCaseWithFactory):
     def test_credits_message(self):
         # Suggestions for translation-credits messages are ignored.
         pofile, potmsgset = self._makePOFileAndPOTMsgSet(
-            msgid='translator-credits')
+            msgid=u'translator-credits')
         self.assertTrue(potmsgset.is_translation_credit)
         owner = pofile.potemplate.owner
         translation = {0: self.factory.getUniqueString()}
@@ -1270,7 +1267,7 @@ class TestPOTMsgSet_submitSuggestion(TestCaseWithFactory):
     def test_credits_karma(self):
         # No karma is assigned for suggestions on translation credits.
         pofile, potmsgset = self._makePOFileAndPOTMsgSet(
-            msgid='translator-credits')
+            msgid=u'translator-credits')
         self.assertTrue(potmsgset.is_translation_credit)
         owner = pofile.potemplate.owner
         translation = {0: self.factory.getUniqueString()}
@@ -1783,8 +1780,8 @@ class TestClone(TestCaseWithFactory):
         """Cloning a POTMsgSet should produce a near-identical copy."""
         msgset = self.factory.makePOTMsgSet(
             context=self.factory.getUniqueString('context'),
-            plural=self.factory.getUniqueString('plural'),
-            singular=self.factory.getUniqueString('singular'),
+            plural=self.factory.getUniqueUnicode('plural'),
+            singular=self.factory.getUniqueUnicode('singular'),
             commenttext=self.factory.getUniqueString('comment'),
             filereferences=self.factory.getUniqueString('filereferences'),
             sourcecomment=self.factory.getUniqueString('sourcecomment'),

@@ -86,11 +86,6 @@ class IDatabasePolicy(Interface):
         """Hook called when policy is popped from the `IStoreSelector`."""
 
 
-class MasterUnavailable(Exception):
-    """A master (writable replica) database was requested but not available.
-    """
-
-
 class DisallowedStore(Exception):
     """A request was made to access a Store that has been disabled
     by the current policy.
@@ -143,7 +138,7 @@ class IStoreSelector(Interface):
         for backwards compatibility, and new code should explicitly state
         if they want a master or a slave.
 
-        :raises MasterUnavailable:
+        :raises DisconnectionError:
 
         :raises DisallowedStore:
         """

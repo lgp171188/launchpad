@@ -333,7 +333,7 @@ Anonymous users cannot see this button.
     >>> anon_browser.getControl('Import Now')
     Traceback (most recent call last):
       ...
-    LookupError: label u'Import Now'
+    LookupError: label ...'Import Now'
     ...
 
 If the logged in user clicks this button, the import will be scheduled

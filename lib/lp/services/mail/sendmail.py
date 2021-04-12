@@ -55,6 +55,7 @@ from zope.security.proxy import (
 from zope.sendmail.interfaces import IMailDelivery
 
 from lp.app import versioninfo
+from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.encoding import is_ascii_only
 from lp.services.mail.stub import TestMailer
@@ -206,7 +207,7 @@ class MailController(object):
     def __init__(self, from_addr, to_addrs, subject, body, headers=None,
                  envelope_to=None, bulk=True):
         self.from_addr = from_addr
-        if zisinstance(to_addrs, six.string_types):
+        if zisinstance(to_addrs, (bytes, six.text_type)):
             to_addrs = [to_addrs]
         self.to_addrs = to_addrs
         self.envelope_to = envelope_to
@@ -448,10 +449,7 @@ def sendmail(message, to_addrs=None, bulk=True):
     hash.update(six.ensure_binary(message['message-id']))
     message['X-Launchpad-Hash'] = hash.hexdigest()
 
-    if sys.version_info[:2] >= (3, 4):
-        raw_message = message.as_bytes()
-    else:
-        raw_message = message.as_string()
+    raw_message = message_as_bytes(message)
     message_detail = message['Subject']
     if not isinstance(message_detail, six.string_types):
         # Might be a Header object; can be squashed.
@@ -516,11 +514,8 @@ def raw_sendmail(from_addr, to_addrs, raw_message, message_detail):
     """
     assert not isinstance(to_addrs, six.string_types), \
         'to_addrs must be a sequence'
-    assert isinstance(raw_message, str), 'Not a native string'
-    if isinstance(raw_message, bytes):  # Python 2
-        assert raw_message.decode('ascii'), 'Not ASCII - badly encoded message'
-    else:  # Python 3
-        assert raw_message.encode('ascii'), 'Not ASCII - badly encoded message'
+    assert isinstance(raw_message, bytes), 'Not a byte string'
+    assert raw_message.decode('ascii'), 'Not ASCII - badly encoded message'
     mailer = getUtility(IMailDelivery, 'Mail')
     request = get_current_browser_request()
     timeline = get_request_timeline(request)

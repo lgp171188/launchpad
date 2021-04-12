@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Testing infrastructure for the Launchpad application.
@@ -240,6 +240,7 @@ from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.karma import KarmaTotalCache
 from lp.registry.model.milestone import Milestone
 from lp.registry.model.suitesourcepackage import SuiteSourcePackage
+from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.database.constants import (
     DEFAULT,
@@ -492,16 +493,11 @@ class ObjectFactory(
         string = "%s-%s" % (prefix, self.getUniqueInteger())
         return string
 
-    if sys.version_info[0] >= 3:
-        def getUniqueBytes(self, prefix=None):
-            return six.ensure_binary(self.getUniqueString(prefix=prefix))
+    def getUniqueBytes(self, prefix=None):
+        return six.ensure_binary(self.getUniqueString(prefix=prefix))
 
-        getUniqueUnicode = getUniqueString
-    else:
-        getUniqueBytes = getUniqueString
-
-        def getUniqueUnicode(self, prefix=None):
-            return six.ensure_text(self.getUniqueString(prefix=prefix))
+    def getUniqueUnicode(self, prefix=None):
+        return six.ensure_text(self.getUniqueString(prefix=prefix))
 
     def getUniqueURL(self, scheme=None, host=None):
         """Return a URL unique to this run of the test case."""
@@ -519,44 +515,6 @@ class ObjectFactory(
         """
         epoch = datetime(2009, 1, 1, tzinfo=pytz.UTC)
         return epoch + timedelta(minutes=self.getUniqueInteger())
-
-    def makeCodeImportSourceDetails(self, target_id=None, rcstype=None,
-                                    target_rcstype=None, url=None,
-                                    cvs_root=None, cvs_module=None,
-                                    stacked_on_url=None, macaroon=None):
-        if not six.PY2:
-            raise NotImplementedError(
-                "Code imports do not yet work on Python 3.")
-
-        # XXX cjwatson 2020-08-07: Move this back up to module level once
-        # codeimport has been ported to Breezy.
-        from lp.codehosting.codeimport.worker import CodeImportSourceDetails
-
-        if target_id is None:
-            target_id = self.getUniqueInteger()
-        if rcstype is None:
-            rcstype = 'bzr-svn'
-        if target_rcstype is None:
-            target_rcstype = 'bzr'
-        if rcstype in ['bzr-svn', 'bzr']:
-            assert cvs_root is cvs_module is None
-            if url is None:
-                url = self.getUniqueURL()
-        elif rcstype == 'cvs':
-            assert url is None
-            if cvs_root is None:
-                cvs_root = self.getUniqueUnicode()
-            if cvs_module is None:
-                cvs_module = self.getUniqueUnicode()
-        elif rcstype == 'git':
-            assert cvs_root is cvs_module is None
-            if url is None:
-                url = self.getUniqueURL(scheme='git')
-        else:
-            raise AssertionError("Unknown rcstype %r." % rcstype)
-        return CodeImportSourceDetails(
-            target_id, rcstype, target_rcstype, url, cvs_root, cvs_module,
-            stacked_on_url=stacked_on_url, macaroon=macaroon)
 
 
 class BareLaunchpadObjectFactory(ObjectFactory):
@@ -717,7 +675,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         removeSecurityProxy(email).status = email_address_status
 
-        once_active = (AccountStatus.DEACTIVATED, AccountStatus.SUSPENDED)
+        once_active = (
+            AccountStatus.DEACTIVATED, AccountStatus.SUSPENDED,
+            AccountStatus.DECEASED)
         if account_status:
             if account_status in once_active:
                 removeSecurityProxy(person.account).status = (
@@ -877,7 +837,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return getUtility(IPollSet).new(
             team, name, title, proposition, dateopens, datecloses,
             PollSecrecy.SECRET, allowspoilt=True,
-            poll_type=poll_type)
+            poll_type=poll_type, check_permissions=False)
 
     def makeTranslationGroup(self, owner=None, name=None, title=None,
                              summary=None, url=None):
@@ -1722,7 +1682,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if parent_ids is None:
             parent_ids = []
         if rev_id is None:
-            rev_id = self.getUniqueString('revision-id')
+            rev_id = self.getUniqueUnicode('revision-id')
+        else:
+            rev_id = six.ensure_text(rev_id)
         if log_body is None:
             log_body = self.getUniqueString('log-body')
         return getUtility(IRevisionSet).new(
@@ -2198,6 +2160,25 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner, data, comment, filename, content_type=content_type,
             description=description, **other_params)
 
+    def makeBugSubscriptionFilter(self, target=None, subscriber=None,
+                                  subscribed_by=None):
+        """Create and return a new bug subscription filter.
+
+        :param target: An `IStructuralSubscriptionTarget`.  Defaults to a
+            new `Product`.
+        :param subscriber: An `IPerson`.  Defaults to a new `Person`.
+        :param subscribed_by: An `IPerson`.  Defaults to `subscriber`.
+        :return: An `IBugSubscriptionFilter`.
+        """
+        if target is None:
+            target = self.makeProduct()
+        if subscriber is None:
+            subscriber = self.makePerson()
+        if subscribed_by is None:
+            subscribed_by = subscriber
+        return removeSecurityProxy(target).addBugSubscriptionFilter(
+            subscriber, subscribed_by)
+
     def makeSignedMessage(self, msgid=None, body=None, subject=None,
             attachment_contents=None, force_transfer_encoding=False,
             email_address=None, signing_context=None, to_address=None):
@@ -2261,7 +2242,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if force_transfer_encoding:
             encode_base64(body_part)
         body_part.set_charset(charset)
-        mail.parsed_string = mail.as_string()
+        mail.parsed_bytes = message_as_bytes(mail)
         return mail
 
     def makeSpecification(self, product=None, title=None, distribution=None,
@@ -2387,11 +2368,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if target is None:
             target = self.makeProduct()
         if title is None:
-            title = self.getUniqueString('title')
+            title = self.getUniqueUnicode('title')
         if owner is None:
             owner = target.owner
         if description is None:
-            description = self.getUniqueString('description')
+            description = self.getUniqueUnicode('description')
         with person_logged_in(owner):
             question = target.newQuestion(
                 owner=owner, title=title, description=description, **kwargs)
@@ -2549,13 +2530,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeCodeImportResult(self, code_import=None, result_status=None,
                              date_started=None, date_finished=None,
-                             log_excerpt=None, log_alias=None, machine=None):
+                             log_excerpt=None, log_alias=None, machine=None,
+                             requesting_user=None):
         """Create and return a new CodeImportResult."""
         if code_import is None:
             code_import = self.makeCodeImport()
         if machine is None:
             machine = self.makeCodeImportMachine()
-        requesting_user = None
         if log_excerpt is None:
             log_excerpt = self.getUniqueUnicode()
         if result_status is None:
@@ -3016,11 +2997,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if processors is None:
             processors = [getUtility(IProcessorSet).getByName('386')]
         if url is None:
-            url = 'http://%s:8221/' % self.getUniqueString()
+            url = 'http://%s:8221/' % self.getUniqueUnicode()
         if name is None:
-            name = self.getUniqueString('builder-name')
+            name = self.getUniqueUnicode('builder-name')
         if title is None:
-            title = self.getUniqueString('builder-title')
+            title = self.getUniqueUnicode('builder-title')
         if owner is None:
             owner = self.makePerson()
         if virtualized and vm_reset_protocol is None:
@@ -3098,8 +3079,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if name is None:
             name = self.getUniqueUnicode('spr-name')
         if description is None:
-            description = self.getUniqueString(
-                'spr-description').decode('utf8')
+            description = self.getUniqueUnicode('spr-description')
         if daily_build_archive is None:
             daily_build_archive = self.makeArchive(
                 distribution=distroseries.distribution, owner=owner)
@@ -3247,7 +3227,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if potemplate is None:
             potemplate = self.makePOTemplate()
         if singular is None and plural is None:
-            singular = self.getUniqueString()
+            singular = self.getUniqueUnicode()
         if sequence is None:
             sequence = self.getUniqueInteger()
         potmsgset = potemplate.createMessageSetFromText(
@@ -3270,8 +3250,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
         if with_plural:
             if msgid is None:
-                msgid = self.getUniqueString()
-            plural = self.getUniqueString()
+                msgid = self.getUniqueUnicode()
+            plural = self.getUniqueUnicode()
         else:
             plural = None
 
@@ -3289,7 +3269,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         translations = removeSecurityProxy(translations)
         if translations is None:
-            return {0: self.getUniqueString()}
+            return {0: self.getUniqueUnicode()}
         if isinstance(translations, dict):
             return translations
         assert isinstance(translations, (list, tuple)), (
@@ -4414,7 +4394,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             raise AssertionError(
                 "key_type must be a member of SSH_TEXT_TO_KEY_TYPE, not %r" %
                 key_type)
-        key_text = base64.b64encode(NS(key_type) + b"".join(parameters))
+        key_text = base64.b64encode(
+            NS(key_type) + b"".join(parameters)).decode("ASCII")
         if comment is None:
             comment = self.getUniqueString()
         return "%s %s %s" % (key_type, key_text, comment)
@@ -4769,15 +4750,30 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                  auto_build_archive=None, auto_build_pocket=None,
                  auto_build_channels=None, is_stale=None,
                  require_virtualized=True, processors=None,
-                 date_created=DEFAULT, private=False, allow_internet=True,
-                 build_source_tarball=False, store_upload=False,
-                 store_series=None, store_name=None, store_secrets=None,
-                 store_channels=None):
+                 date_created=DEFAULT, private=None, information_type=None,
+                 allow_internet=True, build_source_tarball=False,
+                 store_upload=False, store_series=None, store_name=None,
+                 store_secrets=None, store_channels=None, project=_DEFAULT):
         """Make a new Snap."""
+        assert information_type is None or private is None
+        if information_type is None:
+            # Defaults to public information type, unless "private" flag was
+            # passed.
+            information_type = (InformationType.PUBLIC if not private
+                                else InformationType.PROPRIETARY)
+        if private is None:
+            private = information_type not in PUBLIC_INFORMATION_TYPES
         if registrant is None:
             registrant = self.makePerson()
         if owner is None:
-            owner = self.makeTeam(registrant)
+            is_private_snap = (
+                private or information_type not in PUBLIC_INFORMATION_TYPES)
+            # Private snaps cannot be owned by non-moderated teams.
+            membership_policy = (
+                TeamMembershipPolicy.OPEN if not is_private_snap
+                else TeamMembershipPolicy.MODERATED)
+            owner = self.makeTeam(
+                registrant, membership_policy=membership_policy)
         if distroseries is _DEFAULT:
             distroseries = self.makeDistroSeries()
         if name is None:
@@ -4790,18 +4786,31 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                     distribution=distroseries.distribution, owner=owner)
             if auto_build_pocket is None:
                 auto_build_pocket = PackagePublishingPocket.UPDATES
+        if private and project is _DEFAULT:
+            # If we are creating a private snap and didn't explicitly set a
+            # pillar for it, we must create a pillar.
+            branch_sharing = (
+                BranchSharingPolicy.PUBLIC_OR_PROPRIETARY if not private
+                else BranchSharingPolicy.PROPRIETARY)
+            project = self.makeProduct(
+                owner=registrant, registrant=registrant,
+                information_type=information_type,
+                branch_sharing_policy=branch_sharing)
+        if project is _DEFAULT:
+            project = None
         snap = getUtility(ISnapSet).new(
             registrant, owner, distroseries, name,
             require_virtualized=require_virtualized, processors=processors,
             date_created=date_created, branch=branch, git_ref=git_ref,
             auto_build=auto_build, auto_build_archive=auto_build_archive,
             auto_build_pocket=auto_build_pocket,
-            auto_build_channels=auto_build_channels, private=private,
+            auto_build_channels=auto_build_channels,
+            information_type=information_type,
             allow_internet=allow_internet,
             build_source_tarball=build_source_tarball,
             store_upload=store_upload, store_series=store_series,
             store_name=store_name, store_secrets=store_secrets,
-            store_channels=store_channels)
+            store_channels=store_channels, project=project)
         if is_stale is not None:
             removeSecurityProxy(snap).is_stale = is_stale
         IStore(snap).flush()
@@ -4822,9 +4831,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeSnapBuild(self, requester=None, registrant=None, snap=None,
                       archive=None, distroarchseries=None, pocket=None,
-                      channels=None, date_created=DEFAULT, build_request=None,
-                      status=BuildStatus.NEEDSBUILD, builder=None,
-                      duration=None, **kwargs):
+                      snap_base=None, channels=None, date_created=DEFAULT,
+                      build_request=None, status=BuildStatus.NEEDSBUILD,
+                      builder=None, duration=None, **kwargs):
         """Make a new SnapBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -4852,7 +4861,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             pocket = PackagePublishingPocket.UPDATES
         snapbuild = getUtility(ISnapBuildSet).new(
             requester, snap, archive, distroarchseries, pocket,
-            channels=channels, date_created=date_created,
+            snap_base=snap_base, channels=channels, date_created=date_created,
             build_request=build_request)
         if duration is not None:
             removeSecurityProxy(snapbuild).updateStatus(
@@ -4961,7 +4970,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                       oci_project=None, git_ref=None, description=None,
                       official=False, require_virtualized=True,
                       build_file=None, date_created=DEFAULT,
-                      allow_internet=True, build_args=None, build_path=None):
+                      allow_internet=True, build_args=None, build_path=None,
+                      information_type=InformationType.PUBLIC):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -4974,7 +4984,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if oci_project is None:
             oci_project = self.makeOCIProject()
         if git_ref is None:
-            [git_ref] = self.makeGitRefs()
+            component = self.getUniqueUnicode()
+            paths = [u'refs/heads/{}-20.04'.format(component)]
+            [git_ref] = self.makeGitRefs(paths=paths)
         if build_file is None:
             build_file = self.getUniqueUnicode(u"build_file_for")
         if build_path is None:
@@ -4992,7 +5004,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             require_virtualized=require_virtualized,
             date_created=date_created,
             allow_internet=allow_internet,
-            build_args=build_args)
+            build_args=build_args,
+            information_type=information_type)
 
     def makeOCIRecipeArch(self, recipe=None, processor=None):
         """Make a new OCIRecipeArch."""
@@ -5005,7 +5018,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIRecipeBuild(self, requester=None, registrant=None, recipe=None,
                            distro_arch_series=None, date_created=DEFAULT,
                            status=BuildStatus.NEEDSBUILD, builder=None,
-                           duration=None, **kwargs):
+                           duration=None, build_request=None, **kwargs):
         """Make a new OCIRecipeBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -5028,7 +5041,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             recipe = self.makeOCIRecipe(
                 registrant=registrant, oci_project=oci_project, **kwargs)
         oci_build = getUtility(IOCIRecipeBuildSet).new(
-            requester, recipe, distro_arch_series, date_created)
+            requester, recipe, distro_arch_series, date_created, build_request)
         if duration is not None:
             removeSecurityProxy(oci_build).updateStatus(
                 BuildStatus.BUILDING, builder=builder,

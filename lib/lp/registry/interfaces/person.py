@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 __all__ = [
+    'AlreadyConvertedException',
     'IAdminPeopleMergeSchema',
     'IAdminTeamMergeSchema',
     'ICanonicalSSOAPI',
@@ -2207,6 +2208,8 @@ class IPersonSet(Interface):
             database was updated.
         :raises AccountSuspendedError: if the account associated with the
             identifier has been suspended.
+        :raises AccountDeceasedError: if the account associated with the
+            identifier belongs to a deceased user.
         """
 
     @call_with(user=REQUEST_USER)
@@ -2424,7 +2427,7 @@ class IPersonSet(Interface):
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
     @operation_for_version("beta")
-    def find(text=""):
+    def find(text=u""):
         """Return all non-merged Persons and Teams whose name, displayname or
         email address match <text>.
 
@@ -2447,7 +2450,7 @@ class IPersonSet(Interface):
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
     @operation_for_version("beta")
-    def findPerson(text="", exclude_inactive_accounts=True,
+    def findPerson(text=u"", exclude_inactive_accounts=True,
                    must_have_email=False,
                    created_after=None, created_before=None):
         """Return all non-merged Persons with at least one email address whose
@@ -2480,7 +2483,7 @@ class IPersonSet(Interface):
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
     @operation_for_version("beta")
-    def findTeam(text="", preload_for_api=False):
+    def findTeam(text=u"", preload_for_api=False):
         """Return all Teams whose name, displayname or email address
         match <text>.
 
@@ -2671,6 +2674,10 @@ class ICanonicalSSOAPI(Interface):
 
     def getPersonDetailsByOpenIDIdentifier(openid_identifier):
         """Get the details of an LP person based on an OpenID identifier."""
+
+
+class AlreadyConvertedException(Exception):
+    """Raised when attempting to claim a team that has been claimed."""
 
 
 @error_status(http_client.FORBIDDEN)

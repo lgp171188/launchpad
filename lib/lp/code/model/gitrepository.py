@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -33,7 +33,11 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
 import six
-from six.moves.urllib.parse import quote_plus
+from six.moves.urllib.parse import (
+    quote_plus,
+    urlsplit,
+    urlunsplit,
+    )
 from storm.databases.postgres import Returning
 from storm.expr import (
     And,
@@ -169,7 +173,7 @@ from lp.registry.interfaces.sharingjob import (
     )
 from lp.registry.model.accesspolicy import (
     AccessPolicyGrant,
-    reconcile_access_for_artifact,
+    reconcile_access_for_artifacts,
     )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
@@ -192,7 +196,10 @@ from lp.services.database.stormexpr import (
     Values,
     )
 from lp.services.features import getFeatureFlag
-from lp.services.identity.interfaces.account import IAccountSet
+from lp.services.identity.interfaces.account import (
+    AccountStatus,
+    IAccountSet,
+    )
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.macaroons.interfaces import IMacaroonIssuer
@@ -333,9 +340,19 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     _default_branch = Unicode(name='default_branch', allow_none=True)
 
+    loose_object_count = Int(name='loose_object_count', allow_none=True)
+    pack_count = Int(name='pack_count', allow_none=True)
+
+    date_last_repacked = DateTime(
+        name='date_last_repacked', tzinfo=pytz.UTC, allow_none=True)
+    date_last_scanned = DateTime(
+        name='date_last_scanned', tzinfo=pytz.UTC, allow_none=True)
+
     def __init__(self, repository_type, registrant, owner, target, name,
                  information_type, date_created, reviewer=None,
-                 description=None, status=None):
+                 description=None, status=None, loose_object_count=None,
+                 pack_count=None, date_last_scanned=None,
+                 date_last_repacked=None):
         super(GitRepository, self).__init__()
         self.repository_type = repository_type
         self.registrant = registrant
@@ -362,6 +379,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
                        else GitRepositoryStatus.AVAILABLE)
         self.owner_default = False
         self.target_default = False
+        self.loose_object_count = loose_object_count
+        self.pack_count = pack_count
+        self.date_last_repacked = date_last_repacked
+        self.date_last_scanned = date_last_scanned
 
     def _createOnHostingService(
             self, clone_from_repository=None, async_create=False):
@@ -469,6 +490,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         namespace.moveRepository(self, user, rename_if_necessary=True)
         self._reconcileAccess()
 
+    def repackRepository(self):
+        getUtility(IGitHostingClient).repackRepository(self.getInternalPath())
+        self.date_last_repacked = UTC_NOW
+
     @property
     def namespace(self):
         """See `IGitRepository`."""
@@ -531,10 +556,22 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         # See also `IGitLookup.getByHostingPath`.
         return str(self.id)
 
-    def getCodebrowseUrl(self):
+    def getCodebrowseUrl(self, username=None, password=None):
         """See `IGitRepository`."""
-        return urlutils.join(
+        url = urlutils.join(
             config.codehosting.git_browse_root, self.shortened_path)
+        if username is None and password is None:
+            return url
+        # XXX cjwatson 2019-03-07: This is ugly and needs
+        # refactoring once we support more general HTTPS
+        # authentication; see also comment in
+        # GitRepository.git_https_url.
+        split = urlsplit(url)
+        netloc = "%s:%s@%s" % (username or "", password or "", split.hostname)
+        if split.port:
+            netloc += ":%s" % split.port
+        return urlunsplit([
+            split.scheme, netloc, split.path, "", ""])
 
     def getCodebrowseUrlForRevision(self, commit):
         return "%s/commit/?id=%s" % (
@@ -582,8 +619,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             # works, so only work for projects for now.
             if self.project is not None:
                 pillars = [self.project]
-        reconcile_access_for_artifact(
-            self, self.information_type, pillars, wanted_links)
+        reconcile_access_for_artifacts(
+            [self], self.information_type, pillars, wanted_links)
 
     @property
     def refs(self):
@@ -603,6 +640,11 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     def branches_by_date(self):
         """See `IGitRepository`."""
         return self.branches.order_by(Desc(GitRef.committer_date))
+
+    def setRepackData(self, loose_object_count, pack_count):
+        self.loose_object_count = loose_object_count
+        self.pack_count = pack_count
+        self.date_last_scanned = UTC_NOW
 
     @property
     def default_branch(self):
@@ -964,8 +1006,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             subscription.review_level = code_review_level
         # Grant the subscriber access if they can't see the repository.
         service = getUtility(IService, "sharing")
-        _, _, repositories, _ = service.getVisibleArtifacts(
-            person, gitrepositories=[self], ignore_permissions=True)
+        repositories = service.getVisibleArtifacts(
+            person, gitrepositories=[self],
+            ignore_permissions=True)["gitrepositories"]
         if not repositories:
             service.ensureAccessGrants(
                 [person], subscribed_by, gitrepositories=[self],
@@ -2021,7 +2064,10 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
                 caveat_value)
         except LookupError:
             return False
-        ok = IPerson.providedBy(user) and user.account == account
+        ok = (
+            IPerson.providedBy(user) and
+            user.account_status == AccountStatus.ACTIVE and
+            user.account == account)
         if ok:
             verified.user = user
         return ok

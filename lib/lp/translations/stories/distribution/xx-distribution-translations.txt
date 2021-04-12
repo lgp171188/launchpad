@@ -80,9 +80,10 @@ But we are already showing the status for the translation focus one,
 we should not have a link to it.
 
     >>> browser.getLink('5.04 The Hoary Hedgehog Release')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Let's try now a distribution that lacks a translation focus. Debian is
 a good example, if enable translations for it.
@@ -130,9 +131,10 @@ But we are already showing the status for the translation focus one,
 we should not have a link to it.
 
     >>> browser.getLink('3.1 Sarge')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 Administrator can change the translation focus for a distribution.
 

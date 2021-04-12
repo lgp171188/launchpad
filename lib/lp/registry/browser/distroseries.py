@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """View classes related to `IDistroSeries`."""
@@ -17,6 +17,7 @@ __all__ = [
     'DistroSeriesPackageSearchView',
     'DistroSeriesPackagesView',
     'DistroSeriesUniquePackagesView',
+    'DistroSeriesURL',
     'DistroSeriesView',
     ]
 
@@ -27,7 +28,10 @@ from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
 from zope.formlib.widget import CustomWidgetFactory
-from zope.interface import Interface
+from zope.interface import (
+    implementer,
+    Interface,
+    )
 from zope.lifecycleevent import ObjectCreatedEvent
 from zope.schema import (
     Choice,
@@ -67,6 +71,7 @@ from lp.registry.browser import (
     MilestoneOverlayMixin,
     )
 from lp.registry.enums import (
+    DistributionDefaultTraversalPolicy,
     DistroSeriesDifferenceStatus,
     DistroSeriesDifferenceType,
     )
@@ -86,6 +91,7 @@ from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.escaping import structured
+from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.services.webapp.menu import (
     ApplicationMenu,
     enabled_with_permission,
@@ -127,6 +133,34 @@ UPGRADABLE_SERIES_STATUSES = [
 def get_dsd_source():
     """For convenience: the `IDistroSeriesDifferenceSource` utility."""
     return getUtility(IDistroSeriesDifferenceSource)
+
+
+@implementer(ICanonicalUrlData)
+class DistroSeriesURL:
+    """Distro series URL creation rules.
+
+    The canonical URL for a distro series depends on the values of
+    `default_traversal_policy` and `redirect_default_traversal` on the
+    context distribution.
+    """
+
+    rootsite = None
+
+    def __init__(self, context):
+        self.context = context
+
+    @property
+    def inside(self):
+        return self.context.distribution
+
+    @property
+    def path(self):
+        policy = self.context.distribution.default_traversal_policy
+        if (policy == DistributionDefaultTraversalPolicy.SERIES and
+                not self.context.distribution.redirect_default_traversal):
+            return self.context.name
+        else:
+            return u"+series/%s" % self.context.name
 
 
 class DistroSeriesNavigation(GetitemNavigation, BugTargetTraversalMixin,

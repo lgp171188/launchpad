@@ -9,7 +9,7 @@ __all__ = [
     'CanonicalSSOApplication',
     ]
 
-
+import six
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -30,7 +30,7 @@ class CanonicalSSOAPI(LaunchpadXMLRPCView):
     def getPersonDetailsByOpenIDIdentifier(self, openid_identifier):
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
-                openid_identifier.decode('ascii'))
+                six.ensure_text(openid_identifier, 'ascii'))
         except LookupError:
             return None
         person = IPerson(account, None)

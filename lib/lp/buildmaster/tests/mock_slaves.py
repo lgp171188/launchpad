@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Mock Build objects for tests soyuz buildd-system."""
@@ -21,6 +21,7 @@ __all__ = [
     'WaitingSlave',
     ]
 
+from collections import OrderedDict
 import os
 import sys
 
@@ -73,6 +74,7 @@ class MockBuilder:
         self.version = version
         self.clean_status = clean_status
         self.active = active
+        self.failure_count = 0
 
     def setCleanStatus(self, clean_status):
         self.clean_status = clean_status
@@ -111,7 +113,7 @@ class OkSlave:
 
     def build(self, buildid, buildtype, chroot, filemap, args):
         self.call_log.append(
-            ('build', buildid, buildtype, chroot, filemap.keys(), args))
+            ('build', buildid, buildtype, chroot, list(filemap), args))
         return defer.succeed(('BuildStatus.BUILDING', buildid))
 
     def echo(self, *args):
@@ -163,7 +165,7 @@ class BuildingSlave(OkSlave):
     def status(self):
         self.call_log.append('status')
         buildlog = xmlrpc_client.Binary(
-            "This is a build log: %d" % self.status_count)
+            b"This is a build log: %d" % self.status_count)
         self.status_count += 1
         return defer.succeed({
             'builder_status': 'BuilderStatus.BUILDING',
@@ -176,7 +178,7 @@ class BuildingSlave(OkSlave):
         if sum == "buildlog":
             if isinstance(file_to_write, six.string_types):
                 file_to_write = open(file_to_write, 'wb')
-            file_to_write.write("This is a build log")
+            file_to_write.write(b"This is a build log")
             file_to_write.close()
         return defer.succeed(None)
 
@@ -216,7 +218,7 @@ class WaitingSlave(OkSlave):
             if isinstance(file_to_write, six.string_types):
                 file_to_write = open(file_to_write, 'wb')
             if not self.valid_files[hash]:
-                content = b"This is a %s" % hash
+                content = ("This is a %s" % hash).encode("ASCII")
             else:
                 with open(self.valid_files[hash], 'rb') as source:
                     content = source.read()
@@ -360,5 +362,8 @@ class SlaveTestHelpers(fixtures.Fixture):
             'ogrecomponent': 'main',
             }
         return slave.build(
-            build_id, 'binarypackage', chroot_file, {'.dsc': dsc_file},
-            extra_args)
+            build_id, 'binarypackage', chroot_file,
+            # Although a single-element dict obviously has stable ordering,
+            # we use an OrderedDict anyway to test that BuilderSlave
+            # serializes it correctly over XML-RPC.
+            OrderedDict([('.dsc', dsc_file)]), extra_args)

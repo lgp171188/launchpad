@@ -176,19 +176,15 @@ from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
-    quote,
-    quote_like,
     SQLBase,
     sqlvalues,
     )
 from lp.services.database.stormexpr import (
     fti_search,
+    rank_by_fti,
     RegexpMatch,
     )
-from lp.services.helpers import (
-    ensure_unicode,
-    shortlist,
-    )
+from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
@@ -211,7 +207,6 @@ from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,
     IHugeVocabulary,
-    NamedSQLObjectHugeVocabulary,
     NamedSQLObjectVocabulary,
     NamedStormHugeVocabulary,
     SQLObjectVocabularyBase,
@@ -243,7 +238,7 @@ class BasePersonVocabulary:
         If the token contains an '@', treat it like an email. Otherwise,
         treat it like a name.
         """
-        token = ensure_unicode(token)
+        token = six.ensure_text(token)
         if "@" in token:
             # This looks like an email token, so let's do an object
             # lookup based on that.
@@ -314,24 +309,25 @@ class ProductVocabulary(SQLObjectVocabularyBase):
         if query is None or an empty string.
         """
         if query:
-            query = ensure_unicode(query)
-            like_query = query.lower()
-            like_query = "'%%%%' || %s || '%%%%'" % quote_like(like_query)
-            fti_query = quote(query)
+            query = six.ensure_text(query)
             if vocab_filter is None:
                 vocab_filter = []
             where_clause = And(
-                SQL(
-                    "active = 't' AND (name LIKE %s OR fti @@ ftq(%s))" % (
-                        like_query, fti_query)),
+                self._table.active,
+                Or(
+                    self._table.name.contains_string(query.lower()),
+                    fti_search(self._table, query)),
                 ProductSet.getProductPrivacyFilter(
                     getUtility(ILaunchBag).user), *vocab_filter)
-            order_by = SQL(
-                '(CASE name WHEN %s THEN 1 '
-                ' ELSE ts_rank(fti, ftq(%s)) END) DESC, displayname, name'
-                % (fti_query, fti_query))
+            order_by = (
+                Case(
+                    cases=((query, -1),),
+                    expression=self._table.name,
+                    default=rank_by_fti(self._table, query)),
+                self._table.display_name,
+                self._table.name)
             return IStore(Product).find(self._table, where_clause).order_by(
-                order_by).config(limit=100)
+                *order_by).config(limit=100)
 
         return self.emptySelectResults()
 
@@ -373,13 +369,13 @@ class ProjectGroupVocabulary(SQLObjectVocabularyBase):
         if query is None or an empty string.
         """
         if query:
-            query = ensure_unicode(query)
-            like_query = query.lower()
-            like_query = "'%%' || %s || '%%'" % quote_like(like_query)
-            fti_query = quote(query)
-            sql = "active = 't' AND (name LIKE %s OR fti @@ ftq(%s))" % (
-                    like_query, fti_query)
-            return self._table.select(sql)
+            query = six.ensure_text(query)
+            return IStore(self._table).find(
+                self._table,
+                self._table.active,
+                Or(
+                    self._table.name.contains_string(query.lower()),
+                    fti_search(self._table, query)))
         return self.emptySelectResults()
 
 
@@ -472,7 +468,7 @@ class NonMergedPeopleAndTeamsVocabulary(
         if not text:
             return self.emptySelectResults()
 
-        return self._select(ensure_unicode(text))
+        return self._select(text)
 
 
 @implementer(IHugeVocabulary)
@@ -492,7 +488,7 @@ class PersonAccountToMergeVocabulary(
     def __contains__(self, obj):
         return obj in self._select()
 
-    def _select(self, text=""):
+    def _select(self, text=u""):
         """Return `IPerson` objects that match the text."""
         return getUtility(IPersonSet).findPerson(
             text, exclude_inactive_accounts=False,
@@ -506,7 +502,6 @@ class PersonAccountToMergeVocabulary(
         if not text:
             return self.emptySelectResults()
 
-        text = ensure_unicode(text)
         return self._select(text)
 
 
@@ -740,7 +735,7 @@ class ValidPersonOrTeamVocabulary(
             else:
                 return self.emptySelectResults()
 
-        text = ensure_unicode(text)
+        text = six.ensure_text(text)
         return self._doSearch(text=text, vocab_filter=vocab_filter)
 
     def searchForTerms(self, query=None, vocab_filter=None):
@@ -1195,7 +1190,7 @@ class ProductReleaseVocabulary(SQLObjectVocabularyBase):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         objs = self._table.select(
             AND(
                 Milestone.q.id == ProductRelease.q.milestoneID,
@@ -1252,7 +1247,7 @@ class ProductSeriesVocabulary(SQLObjectVocabularyBase):
             return self.emptySelectResults()
         user = getUtility(ILaunchBag).user
         privacy_filter = ProductSet.getProductPrivacyFilter(user)
-        query = ensure_unicode(query).lower().strip('/')
+        query = six.ensure_text(query).lower().strip('/')
         # If there is a slash splitting the product and productseries
         # names, they must both match. If there is no slash, we don't
         # know whether it is matching the product or the productseries
@@ -1522,7 +1517,7 @@ class DistributionVocabulary(NamedSQLObjectVocabulary):
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
-        obj = Distribution.selectOne("name=%s" % sqlvalues(token))
+        obj = IStore(Distribution).find(Distribution, name=token).one()
         if obj is None:
             raise LookupError(token)
         else:
@@ -1533,12 +1528,12 @@ class DistributionVocabulary(NamedSQLObjectVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = query.lower()
-        like_query = "'%%' || %s || '%%'" % quote_like(query)
-        kw = {}
+        rows = IStore(self._table).find(
+            self._table,
+            self._table.name.contains_string(six.ensure_text(query).lower()))
         if self._orderBy:
-            kw['orderBy'] = self._orderBy
-        return self._table.select("name LIKE %s" % like_query, **kw)
+            rows = rows.order_by(self._orderBy)
+        return rows
 
 
 class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
@@ -1570,12 +1565,11 @@ class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
         except ValueError:
             raise LookupError(token)
 
-        obj = DistroSeries.selectOne('''
-                    Distribution.id = DistroSeries.distribution AND
-                    Distribution.name = %s AND
-                    DistroSeries.name = %s
-                    ''' % sqlvalues(distroname, distroseriesname),
-                    clauseTables=['Distribution'])
+        obj = IStore(DistroSeries).find(
+            DistroSeries,
+            DistroSeries.distribution == Distribution.id,
+            Distribution.name == distroname,
+            DistroSeries.name == distroseriesname).one()
         if obj is None:
             raise LookupError(token)
         else:
@@ -1586,7 +1580,7 @@ class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         objs = self._table.select(
                 AND(
                     Distribution.q.id == DistroSeries.q.distributionID,
@@ -1827,7 +1821,7 @@ class VocabularyFilterDistribution(VocabularyFilter):
         return [PillarName.distribution != None]
 
 
-class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
+class PillarVocabularyBase(NamedStormHugeVocabulary):
     """Active `IPillar` objects vocabulary."""
     displayname = 'Needs to be overridden'
     _table = PillarName
@@ -1864,7 +1858,7 @@ class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
     def searchForTerms(self, query=None, vocab_filter=None):
         if not query:
             return self.emptySelectResults()
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         store = IStore(PillarName)
         origin = [
             PillarName,
@@ -1872,8 +1866,8 @@ class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
             ]
         base_clauses = [
             ProductSet.getProductPrivacyFilter(getUtility(ILaunchBag).user)]
-        if self._filter:
-            base_clauses.extend(self._filter)
+        if self._clauses:
+            base_clauses.extend(self._clauses)
         if vocab_filter:
             base_clauses.extend(vocab_filter.filter_terms)
         equal_clauses = base_clauses + [PillarName.name == query]
@@ -1898,7 +1892,7 @@ class PillarVocabularyBase(NamedSQLObjectHugeVocabulary):
 class DistributionOrProductVocabulary(PillarVocabularyBase):
     """Active `IDistribution` or `IProduct` objects vocabulary."""
     displayname = 'Select a project'
-    _filter = [PillarName.projectgroup == None, PillarName.active == True]
+    _clauses = [PillarName.projectgroup == None, PillarName.active == True]
 
     def __contains__(self, obj):
         if IProduct.providedBy(obj):
@@ -1917,7 +1911,7 @@ class DistributionOrProductVocabulary(PillarVocabularyBase):
 class DistributionOrProductOrProjectGroupVocabulary(PillarVocabularyBase):
     """Active `IProduct`, `IProjectGroup` or `IDistribution` vocabulary."""
     displayname = 'Select a project'
-    _filter = [PillarName.active == True]
+    _clauses = [PillarName.active == True]
 
     def __contains__(self, obj):
         if IProduct.providedBy(obj) or IProjectGroup.providedBy(obj):
@@ -1938,16 +1932,17 @@ class FeaturedProjectVocabulary(
                                DistributionOrProductOrProjectGroupVocabulary):
     """Vocabulary of projects that are featured on the LP Home Page."""
 
-    _filter = AND(PillarName.q.id == FeaturedProject.q.pillar_name,
-                  PillarName.q.active == True)
-    _clauseTables = ['FeaturedProject']
+    _clauses = [
+        PillarName.id == FeaturedProject.pillar_name_id,
+        PillarName.active == True,
+        ]
 
     def __contains__(self, obj):
         """See `IVocabulary`."""
-        query = """PillarName.id=FeaturedProject.pillar_name
-                   AND PillarName.name = %s""" % sqlvalues(obj.name)
-        return PillarName.selectOne(
-                   query, clauseTables=['FeaturedProject']) is not None
+        return IStore(PillarName).find(
+            PillarName,
+            PillarName.id == FeaturedProject.pillar_name_id,
+            PillarName.name == obj.name).one()
 
 
 class SourcePackageNameIterator(BatchedCountableIterator):
@@ -1994,7 +1989,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = ensure_unicode(query).lower()
+        query = six.ensure_text(query).lower()
         results = IStore(self._table).find(
             self._table,
             Or(

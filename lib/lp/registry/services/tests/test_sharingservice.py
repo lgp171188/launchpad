@@ -1,4 +1,4 @@
-# Copyright 2012-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -25,6 +25,7 @@ from lp.code.enums import (
     )
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -41,11 +42,11 @@ from lp.registry.interfaces.accesspolicy import (
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.services.sharingservice import SharingService
-from lp.services.features.testing import FeatureFixture
 from lp.services.job.tests import block_on_job
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.services.webapp.publisher import canonical_url
+from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     admin_logged_in,
     login,
@@ -64,7 +65,7 @@ from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import LaunchpadWebServiceCaller
 
 
-class TestSharingService(TestCaseWithFactory):
+class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
     """Tests for the SharingService."""
 
     layer = CeleryJobLayer
@@ -72,9 +73,12 @@ class TestSharingService(TestCaseWithFactory):
     def setUp(self):
         super(TestSharingService, self).setUp()
         self.service = getUtility(IService, 'sharing')
-        self.useFixture(FeatureFixture({
+        # Set test flags and configurations for Snaps and OCI.
+        flags = SNAP_TESTING_FLAGS.copy()
+        flags.update({
             'jobs.celery.enabled_classes': 'RemoveArtifactSubscriptionsJob',
-        }))
+        })
+        self.setConfig(feature_flags=flags)
 
     def _makeGranteeData(self, grantee, policy_permissions,
                         shared_artifact_types):
@@ -1100,12 +1104,14 @@ class TestSharingService(TestCaseWithFactory):
 
         # Check that grantees have expected access grants and subscriptions.
         for person in [team_grantee, person_grantee]:
-            (visible_bugs, visible_branches, visible_gitrepositories,
-             visible_specs) = (
-                self.service.getVisibleArtifacts(
+            artifacts = self.service.getVisibleArtifacts(
                     person, bugs=bugs, branches=branches,
                     gitrepositories=gitrepositories,
-                    specifications=specifications))
+                    specifications=specifications)
+            visible_bugs = artifacts["bugs"]
+            visible_branches = artifacts["branches"]
+            visible_specs = artifacts["specifications"]
+
             self.assertContentEqual(bugs or [], visible_bugs)
             self.assertContentEqual(branches or [], visible_branches)
             # XXX cjwatson 2015-02-05: check Git repositories when
@@ -1132,11 +1138,14 @@ class TestSharingService(TestCaseWithFactory):
         for person in [team_grantee, person_grantee]:
             for bug in bugs or []:
                 self.assertNotIn(person, bug.getDirectSubscribers())
-            (visible_bugs, visible_branches, visible_gitrepositories,
-             visible_specs) = (
-                self.service.getVisibleArtifacts(
+            artifacts = self.service.getVisibleArtifacts(
                     person, bugs=bugs, branches=branches,
-                    gitrepositories=gitrepositories))
+                    gitrepositories=gitrepositories)
+            visible_bugs = artifacts["bugs"]
+            visible_branches = artifacts["branches"]
+            visible_gitrepositories = artifacts["gitrepositories"]
+            visible_specs = artifacts["specifications"]
+
             self.assertContentEqual([], visible_bugs)
             self.assertContentEqual([], visible_branches)
             self.assertContentEqual([], visible_gitrepositories)
@@ -1414,12 +1423,27 @@ class TestSharingService(TestCaseWithFactory):
                 target=product, owner=product.owner,
                 information_type=InformationType.USERDATA)
             gitrepositories.append(gitrepository)
+        snaps = []
+        for x in range(0, 10):
+            snap = self.factory.makeSnap(
+                project=product, owner=product.owner, registrant=product.owner,
+                information_type=InformationType.USERDATA)
+            snaps.append(snap)
         specs = []
         for x in range(0, 10):
             spec = self.factory.makeSpecification(
                 product=product, owner=product.owner,
                 information_type=InformationType.PROPRIETARY)
             specs.append(spec)
+        ocirecipes = []
+        for x in range(0, 10):
+            ociproject = self.factory.makeOCIProject(
+                pillar=product, registrant=product.owner)
+            ocirecipe = self.factory.makeOCIRecipe(
+                oci_project=ociproject, owner=product.owner,
+                registrant=product.owner,
+                information_type=InformationType.USERDATA)
+            ocirecipes.append(ocirecipe)
 
         # Grant access to grantee as well as the person who will be doing the
         # query. The person who will be doing the query is not granted access
@@ -1442,8 +1466,12 @@ class TestSharingService(TestCaseWithFactory):
         for i, gitrepository in enumerate(gitrepositories):
             grant_access(gitrepository, i == 9)
         getUtility(IService, 'sharing').ensureAccessGrants(
+            [grantee], product.owner, snaps=snaps[:9])
+        getUtility(IService, 'sharing').ensureAccessGrants(
             [grantee], product.owner, specifications=specs[:9])
-        return bug_tasks, branches, gitrepositories, specs
+        getUtility(IService, 'sharing').ensureAccessGrants(
+            [grantee], product.owner, ocirecipes=ocirecipes[:9])
+        return bug_tasks, branches, gitrepositories, snaps, specs, ocirecipes
 
     def test_getSharedArtifacts(self):
         # Test the getSharedArtifacts method.
@@ -1454,17 +1482,24 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        bug_tasks, branches, gitrepositories, specs = (
+        bug_tasks, branches, gitrepositories, snaps, specs, ocirecipes = (
             self.create_shared_artifacts(product, grantee, user))
 
         # Check the results.
-        (shared_bugtasks, shared_branches, shared_gitrepositories,
-         shared_specs) = (
-            self.service.getSharedArtifacts(product, grantee, user))
+        artifacts = self.service.getSharedArtifacts(product, grantee, user)
+        shared_bugtasks = artifacts["bugtasks"]
+        shared_branches = artifacts["branches"]
+        shared_gitrepositories = artifacts["gitrepositories"]
+        shared_snaps = artifacts["snaps"]
+        shared_specs = artifacts["specifications"]
+        shared_ocirecipes = artifacts["ocirecipes"]
+
         self.assertContentEqual(bug_tasks[:9], shared_bugtasks)
         self.assertContentEqual(branches[:9], shared_branches)
         self.assertContentEqual(gitrepositories[:9], shared_gitrepositories)
+        self.assertContentEqual(snaps[:9], shared_snaps)
         self.assertContentEqual(specs[:9], shared_specs)
+        self.assertContentEqual(ocirecipes[:9], shared_ocirecipes)
 
     def _assert_getSharedProjects(self, product, who=None):
         # Test that 'who' can query the shared products for a grantee.
@@ -1603,7 +1638,7 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        bug_tasks, _, _, _ = self.create_shared_artifacts(
+        bug_tasks, _, _, _, _, _ = self.create_shared_artifacts(
             product, grantee, user)
 
         # Check the results.
@@ -1619,7 +1654,7 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, branches, _, _ = self.create_shared_artifacts(
+        _, branches, _, _, _, _ = self.create_shared_artifacts(
             product, grantee, user)
 
         # Check the results.
@@ -1636,13 +1671,30 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, _, gitrepositories, _ = self.create_shared_artifacts(
+        _, _, gitrepositories, _, _, _ = self.create_shared_artifacts(
             product, grantee, user)
 
         # Check the results.
         shared_gitrepositories = self.service.getSharedGitRepositories(
             product, grantee, user)
         self.assertContentEqual(gitrepositories[:9], shared_gitrepositories)
+
+    def test_getSharedSnaps(self):
+        # Test the getSharedSnaps method.
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            owner=owner, specification_sharing_policy=(
+            SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY))
+        login_person(owner)
+        grantee = self.factory.makePerson()
+        user = self.factory.makePerson()
+        _, _, _, snaps, _, _ = self.create_shared_artifacts(
+            product, grantee, user)
+
+        # Check the results.
+        shared_snaps = self.service.getSharedSnaps(
+            product, grantee, user)
+        self.assertContentEqual(snaps[:9], shared_snaps)
 
     def test_getSharedSpecifications(self):
         # Test the getSharedSpecifications method.
@@ -1653,13 +1705,30 @@ class TestSharingService(TestCaseWithFactory):
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, _, _, specifications = self.create_shared_artifacts(
+        _, _, _, _, specifications, _ = self.create_shared_artifacts(
             product, grantee, user)
 
         # Check the results.
         shared_specifications = self.service.getSharedSpecifications(
             product, grantee, user)
         self.assertContentEqual(specifications[:9], shared_specifications)
+
+    def test_getSharedOCIRecipes(self):
+        # Test the getSharedSnaps method.
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            owner=owner, specification_sharing_policy=(
+            SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY))
+        login_person(owner)
+        grantee = self.factory.makePerson()
+        user = self.factory.makePerson()
+        _, _, _, _, _, ocirecipes = self.create_shared_artifacts(
+            product, grantee, user)
+
+        # Check the results.
+        shared_ocirecipes = self.service.getSharedOCIRecipes(
+            product, grantee, user)
+        self.assertContentEqual(ocirecipes[:9], shared_ocirecipes)
 
     def test_getPeopleWithAccessBugs(self):
         # Test the getPeopleWithoutAccess method with bugs.
@@ -1783,10 +1852,14 @@ class TestSharingService(TestCaseWithFactory):
         grantee, ignore, bugs, branches, gitrepositories, specs = (
             self._make_Artifacts())
         # Check the results.
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
-            self.service.getVisibleArtifacts(
+        artifacts = self.service.getVisibleArtifacts(
                 grantee, bugs=bugs, branches=branches,
-                gitrepositories=gitrepositories, specifications=specs))
+                gitrepositories=gitrepositories, specifications=specs)
+        shared_bugs = artifacts["bugs"]
+        shared_branches = artifacts["branches"]
+        shared_gitrepositories = artifacts["gitrepositories"]
+        shared_specs = artifacts["specifications"]
+
         self.assertContentEqual(bugs[:5], shared_bugs)
         self.assertContentEqual(branches[:5], shared_branches)
         self.assertContentEqual(gitrepositories[:5], shared_gitrepositories)
@@ -1797,10 +1870,14 @@ class TestSharingService(TestCaseWithFactory):
         # user has a policy grant for the pillar of the specification.
         _, owner, bugs, branches, gitrepositories, specs = (
             self._make_Artifacts())
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
-            self.service.getVisibleArtifacts(
+        artifacts = self.service.getVisibleArtifacts(
                 owner, bugs=bugs, branches=branches,
-                gitrepositories=gitrepositories, specifications=specs))
+                gitrepositories=gitrepositories, specifications=specs)
+        shared_bugs = artifacts["bugs"]
+        shared_branches = artifacts["branches"]
+        shared_gitrepositories = artifacts["gitrepositories"]
+        shared_specs = artifacts["specifications"]
+
         self.assertContentEqual(bugs, shared_bugs)
         self.assertContentEqual(branches, shared_branches)
         self.assertContentEqual(gitrepositories, shared_gitrepositories)
@@ -1840,17 +1917,16 @@ class TestSharingService(TestCaseWithFactory):
                 information_type=InformationType.USERDATA)
             bugs.append(bug)
 
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
-            self.service.getVisibleArtifacts(grantee, bugs=bugs))
+        artifacts = self.service.getVisibleArtifacts(grantee, bugs=bugs)
+        shared_bugs = artifacts["bugs"]
         self.assertContentEqual(bugs, shared_bugs)
 
         # Change some bugs.
         for x in range(0, 5):
             change_callback(bugs[x], owner)
         # Check the results.
-        shared_bugs, shared_branches, shared_gitrepositories, shared_specs = (
-            self.service.getVisibleArtifacts(grantee, bugs=bugs))
-        self.assertContentEqual(bugs[5:], shared_bugs)
+        artifacts = self.service.getVisibleArtifacts(grantee, bugs=bugs)
+        self.assertContentEqual(bugs[5:], artifacts["bugs"])
 
     def test_getVisibleArtifacts_bug_policy_change(self):
         # getVisibleArtifacts excludes bugs after change of information type.

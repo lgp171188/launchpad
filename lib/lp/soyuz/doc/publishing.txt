@@ -4,6 +4,7 @@ SourcePackagePublishingHistory
 
 This class provides public access to publishing records via a SQL view.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.publishing import (
     ...     BinaryPackagePublishingHistory,
     ...     SourcePackagePublishingHistory,
@@ -12,9 +13,12 @@ This class provides public access to publishing records via a SQL view.
 Select a publishing record from the sampledata (pmount is a
 interesting one):
 
-    >>> spph = SourcePackagePublishingHistory.get(8)
-    >>> spph.sourcepackagerelease.name, spph.distroseries.name
-    (u'pmount', u'hoary')
+    >>> spph = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, 8)
+    >>> print(spph.sourcepackagerelease.name)
+    pmount
+    >>> print(spph.distroseries.name)
+    hoary
 
 None of the sources in the sample data are signed, so we can fake one here
 to make sure verifyObject will work.
@@ -312,7 +316,8 @@ Retrieve any SourcePackagePublishingHistory entry.
     ...     ISourcePackageReleaseFile)
     >>> from lp.soyuz.interfaces.publishing import (
     ...     IBinaryPackagePublishingHistory)
-    >>> spph = SourcePackagePublishingHistory.get(10)
+    >>> spph = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, 10)
 
     >>> print(spph.displayname)
     alsa-utils 1.0.8-1ubuntu1 in warty
@@ -324,8 +329,8 @@ Files published are accessible via the files property:
     >>> ISourcePackageReleaseFile.providedBy(any_pub_file)
     True
 
-    >>> spph.files[0].libraryfile.filename
-    u'alsa-utils_1.0.8-1ubuntu1.dsc'
+    >>> print(spph.files[0].libraryfile.filename)
+    alsa-utils_1.0.8-1ubuntu1.dsc
 
 
 Deletion and obsolescence
@@ -483,10 +488,13 @@ archive index.
 Let's retrieve the 'insecure' corresponding publishing records since
 only they provide the API we are interested in.
 
-    >>> copied_source = SourcePackagePublishingHistory.get(copied_source.id)
+    >>> copied_source = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, copied_source.id)
 
-    >>> copied_binaries = [BinaryPackagePublishingHistory.get(bin.id)
-    ...                    for bin in copied_binaries]
+    >>> copied_binaries = [
+    ...     IStore(BinaryPackagePublishingHistory).get(
+    ...         BinaryPackagePublishingHistory, bin.id)
+    ...     for bin in copied_binaries]
 
 When we call createMissingBuilds method on the copied sources it won't
 create any builds since the binaries were copied over too.
@@ -740,8 +748,8 @@ Perform the source-only copy.
     >>> ppa_copied_source = ppa_source.copyTo(
     ...     hoary_test, PackagePublishingPocket.RELEASE, cprov.archive)
 
-    >>> ppa_copied_source = SourcePackagePublishingHistory.get(
-    ...     ppa_copied_source.id)
+    >>> ppa_copied_source = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, ppa_copied_source.id)
 
 createMissingBuilds will not create any builds because this is an
 intra-archive copy:
@@ -810,7 +818,8 @@ Let's perform the copy of the source and its i386 binary.
 
 The source and binary are present in hoary-test:
 
-    >>> copied_source = SourcePackagePublishingHistory.get(copied_source.id)
+    >>> copied_source = IStore(SourcePackagePublishingHistory).get(
+    ...     SourcePackagePublishingHistory, copied_source.id)
     >>> print(copied_source.displayname)
     mno 999 in hoary-test
 
@@ -879,7 +888,8 @@ BinaryPackageFile and IBinaryPackagePublishingHistory
     >>> from lp.soyuz.interfaces.files import (
     ...     IBinaryPackageFile)
 
-    >>> bpph = BinaryPackagePublishingHistory.get(15)
+    >>> bpph = IStore(BinaryPackagePublishingHistory).get(
+    ...     BinaryPackagePublishingHistory, 15)
     >>> print(bpph.displayname)
     mozilla-firefox 0.9 in woody i386
 
@@ -890,8 +900,9 @@ BinaryPackageFile and IBinaryPackagePublishingHistory
     >>> IBinaryPackageFile.providedBy(any_file)
     True
 
-    >>> [pub_file.libraryfile.filename for pub_file in bpph.files]
-    [u'mozilla-firefox_0.9_i386.deb']
+    >>> for pub_file in bpph.files:
+    ...     print(pub_file.libraryfile.filename)
+    mozilla-firefox_0.9_i386.deb
 
 Binary publishing records also have a download count, which contains
 the number of downloads of this binary package release in this archive.
@@ -917,11 +928,12 @@ the number of downloads of this binary package release in this archive.
 We can also use getDownloadCounts to find the raw download counts per
 day and country.
 
-    >>> [(b.day, b.country.name if b.country is not None else None)
-    ...   for b in bpph.getDownloadCounts()]
-    [(datetime.date(2010, 2, 21), u'Australia'),
-     (datetime.date(2010, 2, 21), u'United Kingdom'),
-     (datetime.date(2010, 2, 19), None)]
+    >>> for b in bpph.getDownloadCounts():
+    ...     print(b.day)
+    ...     print(b.country.name if b.country is not None else None)
+    2010-02-21 Australia
+    2010-02-21 United Kingdom
+    2010-02-19 None
 
 getDownloadCounts lets us filter by date.
 
@@ -936,10 +948,14 @@ getDownloadCounts lets us filter by date.
 We can also get a dict of totals for each day. The keys are strings to
 work around lazr.restful's dict limitations. This too has a date filter.
 
-    >>> bpph.getDailyDownloadTotals()
-    {'2010-02-21': 14L, '2010-02-19': 2L}
-    >>> bpph.getDailyDownloadTotals(start_date=date(2010, 2, 20))
-    {'2010-02-21': 14L}
+    >>> for day, total in sorted(bpph.getDailyDownloadTotals().items()):
+    ...     print('%s: %d' % (day, total))
+    2010-02-19: 2
+    2010-02-21: 14
+    >>> for day, total in sorted(bpph.getDailyDownloadTotals(
+    ...         start_date=date(2010, 2, 20)).items()):
+    ...     print('%s: %d' % (day, total))
+    2010-02-21: 14
 
 
 IPublishingSet
@@ -1244,7 +1260,7 @@ The returned ResultSet element is tuple containing:
     mozilla-firefox_0.9_i386.changes
 
     >>> print(content.md5)
-    e4a7193a8f72fa2755e2162512069093
+    b14d7265706d0f5b19d5812d59a61d2a
 
 Last but not least the publishing set class allows for the bulk deletion
 of publishing history records.
@@ -1327,7 +1343,7 @@ We use the source publications to initialize
     >>> decorated_set = ArchiveSourcePublications(cprov_published_sources)
     >>> empty_decorated_set = ArchiveSourcePublications([])
 
-`ArchiveSourcePublications` implements __nonzero__, so callsites can
+`ArchiveSourcePublications` implements __bool__, so callsites can
 verify in advance whether there are elements to be iterated or not.
 
     >>> bool(decorated_set)

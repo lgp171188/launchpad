@@ -43,36 +43,40 @@ The projects are now no longer publicly visible:
 
     >>> anon_browser.open('http://launchpad.test/projects/+index?text=mozilla')
     >>> anon_browser.getLink(url='/firefox')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
     >>> anon_browser.getLink(url='/mozilla')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open('http://launchpad.test/firefox')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound:...
+    zope.publisher.interfaces.NotFound: ...
 
     >>> anon_browser.open('http://launchpad.test/mozilla')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    NotFound:...
+    zope.publisher.interfaces.NotFound: ...
 
 But an administrator can still see them if they traverse directly, and
 they'll see an informative message. They can then reactivate them..
 
     >>> admin_browser.open('http://launchpad.test/firefox')
     >>> print(find_tag_by_id(
-    ...     admin_browser.contents, 'project-inactive').renderContents())
+    ...     admin_browser.contents, 'project-inactive').decode_contents())
      This project is currently inactive...
     >>> toggleProject('firefox')
 
     >>> admin_browser.open('http://launchpad.test/mozilla')
     >>> print(find_tag_by_id(
-    ...     admin_browser.contents, 'project-inactive').renderContents())
+    ...     admin_browser.contents, 'project-inactive').decode_contents())
      This project is currently inactive...
     >>> toggleProject('mozilla')
 

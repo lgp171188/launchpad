@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Common views for objects that implement `IPillar`."""
@@ -57,7 +57,10 @@ from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.registry.model.pillar import PillarPerson
 from lp.services.config import config
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp.authorization import check_permission
+from lp.services.webapp.authorization import (
+    check_permission,
+    precache_permission_for_objects,
+    )
 from lp.services.webapp.batching import (
     BatchNavigator,
     get_batch_properties_for_json_cache,
@@ -376,6 +379,14 @@ class PillarSharingView(LaunchpadView):
         cache.objects['has_edit_permission'] = check_permission(
             "launchpad.Edit", self.context)
         batch_navigator = self.grantees()
+        # Precache LimitedView for all the grantees, partly for performance
+        # but mainly because it's possible that the user won't strictly have
+        # LimitedView on all of them and they should nevertheless be able to
+        # see who has access to pillars they drive.  Fixing this in
+        # PublicOrPrivateTeamsExistence would very likely be too expensive.
+        precache_permission_for_objects(
+            None, 'launchpad.LimitedView',
+            [grantee for grantee, _, _ in batch_navigator.batch])
         cache.objects['grantee_data'] = (
             self._getSharingService().jsonGranteeData(batch_navigator.batch))
         cache.objects.update(
@@ -411,6 +422,9 @@ class PillarPersonSharingView(LaunchpadView):
         bug_data = self._build_bug_template_data(self.bugtasks, request)
         spec_data = self._build_specification_template_data(
             self.specifications, request)
+        snap_data = self._build_ocirecipe_template_data(self.snaps, request)
+        ocirecipe_data = self._build_ocirecipe_template_data(
+            self.ocirecipes, request)
         grantee_data = {
             'displayname': self.person.displayname,
             'self_link': absoluteURL(self.person, request)
@@ -424,19 +438,28 @@ class PillarPersonSharingView(LaunchpadView):
         cache.objects['branches'] = branch_data
         cache.objects['gitrepositories'] = gitrepository_data
         cache.objects['specifications'] = spec_data
+        cache.objects['snaps'] = snap_data
+        cache.objects['ocirecipes'] = ocirecipe_data
 
     def _loadSharedArtifacts(self):
         # As a concrete can by linked via more than one policy, we use sets to
         # filter out dupes.
-        (self.bugtasks, self.branches, self.gitrepositories,
-         self.specifications) = (
-            self.sharing_service.getSharedArtifacts(
-                self.pillar, self.person, self.user))
+        artifacts = self.sharing_service.getSharedArtifacts(
+                self.pillar, self.person, self.user)
+        self.bugtasks = artifacts["bugtasks"]
+        self.branches = artifacts["branches"]
+        self.gitrepositories = artifacts["gitrepositories"]
+        self.snaps = artifacts["snaps"]
+        self.specifications = artifacts["specifications"]
+        self.ocirecipes = artifacts["ocirecipes"]
+
         bug_ids = set([bugtask.bug.id for bugtask in self.bugtasks])
         self.shared_bugs_count = len(bug_ids)
         self.shared_branches_count = len(self.branches)
         self.shared_gitrepositories_count = len(self.gitrepositories)
+        self.shared_snaps_count = len(self.snaps)
         self.shared_specifications_count = len(self.specifications)
+        self.shared_ocirecipe_count = len(self.ocirecipes)
 
     def _build_specification_template_data(self, specs, request):
         spec_data = []
@@ -486,3 +509,25 @@ class PillarPersonSharingView(LaunchpadView):
                 bug_importance=importance,
                 information_type=information_type))
         return bug_data
+
+    def _build_ocirecipe_template_data(self, oci_recipes, request):
+        recipe_data = []
+        for recipe in oci_recipes:
+            recipe_data.append(dict(
+                self_link=absoluteURL(recipe, request),
+                web_link=canonical_url(recipe, path_only_if_possible=True),
+                name=recipe.name,
+                id=recipe.id,
+                information_type=recipe.information_type.title))
+        return recipe_data
+
+    def _build_snap_template_data(self, snaps, request):
+        snap_data = []
+        for snap in snaps:
+            snap_data.append(dict(
+                self_link=absoluteURL(snap, request),
+                web_link=canonical_url(snap, path_only_if_possible=True),
+                name=snap.name,
+                id=snap.id,
+                information_type=snap.information_type.title))
+        return snap_data

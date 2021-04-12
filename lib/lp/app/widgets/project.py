@@ -77,7 +77,9 @@ class ProjectScopeWidget(BrowserWidget, InputWidget):
         try:
             self.getInputValue()
             return self.hasInput()
-        except (InputErrors, UnexpectedFormData, LaunchpadValidationError):
+        except InputErrors:
+            return False
+        except (UnexpectedFormData, LaunchpadValidationError):
             return False
 
     def getInputValue(self):

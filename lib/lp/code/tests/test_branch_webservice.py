@@ -116,7 +116,7 @@ class TestBranchOperations(TestCaseWithFactory):
             reviewers=[source.owner.self_link], review_types=[])
         self.assertEqual(
             exception.content,
-            'reviewers and review_types must be equal length.')
+            b'reviewers and review_types must be equal length.')
 
     def test_getBranchVisibilityInfo(self):
         """Test the test_getBranchVisibilityInfo API."""
@@ -150,7 +150,7 @@ class TestBranchOperations(TestCaseWithFactory):
             needs_review=True, commit_message='It was merged!\n')
         self.assertEqual(
             exception.content,
-            'Source and target branches must be different.')
+            b'Source and target branches must be different.')
 
     def test_setOwner(self):
         """Test setOwner via the web API does not raise a 404."""
@@ -209,7 +209,7 @@ class TestBranchDeletes(TestCaseWithFactory):
         target_branch = self.lp.branches.getByUniqueName(
             unique_name='~jimhenson/fraggle/rock')
         api_error = self.assertRaises(BadRequest, target_branch.lp_delete)
-        self.assertIn('Cannot delete', api_error.content)
+        self.assertIn(b'Cannot delete', api_error.content)
 
 
 class TestSlashBranches(TestCaseWithFactory):

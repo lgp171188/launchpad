@@ -477,7 +477,7 @@ class LaunchpadSearchView(LaunchpadFormView):
         return match.group(1)
 
     def _getNameToken(self, text):
-        """Return the search text as a Launchpad name.
+        r"""Return the search text as a Launchpad name.
 
         Launchpad names may contain ^[a-z0-9][a-z0-9\+\.\-]+$.
         See `valid_name_pattern`.

@@ -105,10 +105,12 @@ XXX cprov 20051209: need to build a broken upload to test it properly
 
 Confirm we can now find ed published in hoary.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.enums import PackagePublishingStatus
     >>> from lp.soyuz.model.publishing import SourcePackagePublishingHistory
-    >>> for release in SourcePackagePublishingHistory.selectBy(
-    ...     distroseries=hoary, status=PackagePublishingStatus.PENDING):
+    >>> for release in IStore(SourcePackagePublishingHistory).find(
+    ...         SourcePackagePublishingHistory,
+    ...         distroseries=hoary, status=PackagePublishingStatus.PENDING):
     ...     if release.sourcepackagerelease.sourcepackagename.name == "ed":
     ...         print(release.sourcepackagerelease.version)
     0.2-20
@@ -275,14 +277,14 @@ Let's check the IPerson entities related to this source upload:
 
     >>> signed_src = signed_queue.sources[0].sourcepackagerelease
 
-    >>> signed_src.creator.displayname
-    u'Daniel Silverstone'
+    >>> print(signed_src.creator.displayname)
+    Daniel Silverstone
 
-    >>> signed_src.maintainer.displayname
-    u'Launchpad team'
+    >>> print(signed_src.maintainer.displayname)
+    Launchpad team
 
-    >>> signed_queue.signing_key.owner.displayname
-    u'Foo Bar'
+    >>> print(signed_queue.signing_key.owner.displayname)
+    Foo Bar
 
 Based on this information we can conclude that source 'bar' is
 maintained by 'Launchpad Team', was modified by 'Daniel Silverstone'
@@ -367,10 +369,14 @@ has a similar behaviour):
     2
     >>> dup_one, dup_two = list(dups)
 
-    >>> dup_one.displayname, dup_one.displayversion
-    (u'cnews', u'1.0')
-    >>> dup_two.displayname, dup_two.displayversion
-    (u'cnews', u'1.0')
+    >>> print(dup_one.displayname)
+    cnews
+    >>> print(dup_one.displayversion)
+    1.0
+    >>> print(dup_two.displayname)
+    cnews
+    >>> print(dup_two.displayversion)
+    1.0
 
 The upload admin can not accept both since we check unique
 (name, version) accross distribution:
@@ -387,13 +393,10 @@ the look up code won't be able to identify any duplications:
 As expected the second item acceptance will fail and the item will
 remain in the original queue
 
-    >>> dup_two.setAccepted()
+    >>> dup_two.setAccepted()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    QueueInconsistentStateError: The source cnews - 1.0 is already
-    accepted in ubuntu/breezy-autotest and you cannot upload the same
-    version within the same distribution. You have to modify the source
-    version and re-upload.
+    lp.soyuz.interfaces.queue.QueueInconsistentStateError: The source cnews - 1.0 is already accepted in ubuntu/breezy-autotest and you cannot upload the same version within the same distribution. You have to modify the source version and re-upload.
     >>> dup_two.status.name
     'UNAPPROVED'
 
@@ -420,13 +423,10 @@ test after the former accepted item was published (DONE queue)
 
 The protection code should also identify dups with items in DONE queue
 
-    >>> dup_two.setAccepted()
+    >>> dup_two.setAccepted()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    QueueInconsistentStateError: The source cnews - 1.0 is already
-    accepted in ubuntu/breezy-autotest and you cannot upload the same
-    version within the same distribution. You have to modify the source
-    version and re-upload.
+    lp.soyuz.interfaces.queue.QueueInconsistentStateError: The source cnews - 1.0 is already accepted in ubuntu/breezy-autotest and you cannot upload the same version within the same distribution. You have to modify the source version and re-upload.
 
 The ubuntu policy allows unofficial sections to live sometime in the
 repository, until someone find time to override them. It's better than
@@ -592,9 +592,10 @@ an error:
     >>> print(item.overrideSource(
     ...     new_component=restricted, new_section=web,
     ...     allowed_components=(universe,)))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    QueueAdminUnauthorizedError: No rights to override to restricted
+    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override to restricted
 
 Allowing "restricted" still won't work because the original component
 is "main":
@@ -602,9 +603,10 @@ is "main":
     >>> print(item.overrideSource(
     ...     new_component=restricted, new_section=web,
     ...     allowed_components=(restricted,)))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    QueueAdminUnauthorizedError: No rights to override from main
+    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override from main
 
 Specifying both main and restricted allows the override to restricted/web.
 overrideSource() returns True if it completed the task.
@@ -638,15 +640,17 @@ Similarly for binaries:
     ...     }]
     >>> print(item.overrideBinaries(
     ...     binary_changes, allowed_components=(universe,)))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    QueueAdminUnauthorizedError: No rights to override to restricted
+    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override to restricted
 
     >>> print(item.overrideBinaries(
     ...     binary_changes, allowed_components=(restricted,)))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    QueueAdminUnauthorizedError: No rights to override from main
+    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override from main
 
     >>> print(item.overrideBinaries(
     ...     binary_changes, allowed_components=(main, restricted)))
@@ -753,8 +757,8 @@ with fake changes files first so that emails can be generated.)
 
     >>> from lp.archiveuploader.tests import insertFakeChangesFile
     >>> items = breezy_autotest.getPackageUploads(PackageUploadStatus.NEW)
-    >>> insertFakeChangesFile(items[1].changesfile.id)
-    >>> insertFakeChangesFile(items[3].changesfile.id)
+    >>> insertFakeChangesFile(items[1].changesfile.content.id)
+    >>> insertFakeChangesFile(items[3].changesfile.content.id)
     >>> items[1].acceptFromQueue()
 
 Two emails are generated.  We won't look what is inside them here, that is

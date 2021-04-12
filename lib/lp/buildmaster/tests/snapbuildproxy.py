@@ -43,19 +43,19 @@ class ProxyAuthAPITokensResource(resource.Resource):
         self.requests = []
 
     def render_POST(self, request):
-        content = request.content.read()
+        content = json.loads(request.content.read().decode("UTF-8"))
         self.requests.append({
             "method": request.method,
             "uri": request.uri,
             "headers": dict(request.requestHeaders.getAllRawHeaders()),
-            "content": content,
+            "json": content,
             })
-        username = json.loads(content)["username"]
+        username = content["username"]
         return json.dumps({
             "username": username,
             "secret": uuid.uuid4().hex,
             "timestamp": datetime.utcnow().isoformat(),
-            })
+            }).encode("UTF-8")
 
 
 class InProcessProxyAuthAPIFixture(fixtures.Fixture):
@@ -69,7 +69,7 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
         class TestSomething(TestCase):
 
             run_tests_with = AsynchronousDeferredRunTest.make_factory(
-                timeout=10)
+                timeout=30)
 
             @defer.inlineCallbacks
             def setUp(self):

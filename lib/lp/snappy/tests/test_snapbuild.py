@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build features."""
@@ -15,6 +15,7 @@ from datetime import (
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
+import six
 from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     ContainsDict,
@@ -35,7 +36,12 @@ from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.registry.enums import PersonVisibility
+from lp.registry.enums import (
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
+from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
@@ -170,6 +176,7 @@ class TestSnapBuild(TestCaseWithFactory):
         # A SnapBuild is private iff its Snap and archive are.
         self.assertFalse(self.build.is_private)
         private_team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
             visibility=PersonVisibility.PRIVATE)
         with person_logged_in(private_team.teamowner):
             build = self.factory.makeSnapBuild(
@@ -181,17 +188,60 @@ class TestSnapBuild(TestCaseWithFactory):
             build = self.factory.makeSnapBuild(archive=private_archive)
             self.assertTrue(build.is_private)
 
+    def test_can_be_retried(self):
+        ok_cases = [
+            BuildStatus.FAILEDTOBUILD,
+            BuildStatus.MANUALDEPWAIT,
+            BuildStatus.CHROOTWAIT,
+            BuildStatus.FAILEDTOUPLOAD,
+            BuildStatus.CANCELLED,
+            BuildStatus.SUPERSEDED,
+            ]
+        for status in BuildStatus.items:
+            build = self.factory.makeSnapBuild(status=status)
+            if status in ok_cases:
+                self.assertTrue(build.can_be_retried)
+            else:
+                self.assertFalse(build.can_be_retried)
+
+    def test_can_be_retried_obsolete_series(self):
+        # Builds for obsolete series cannot be retried.
+        distroseries = self.factory.makeDistroSeries(
+            status=SeriesStatus.OBSOLETE)
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        build = self.factory.makeSnapBuild(distroarchseries=das)
+        self.assertFalse(build.can_be_retried)
+
     def test_can_be_cancelled(self):
         # For all states that can be cancelled, can_be_cancelled returns True.
         ok_cases = [
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
             ]
-        for status in BuildStatus:
+        for status in BuildStatus.items:
+            build = self.factory.makeSnapBuild()
+            build.queueBuild()
+            build.updateStatus(status)
             if status in ok_cases:
-                self.assertTrue(self.build.can_be_cancelled)
+                self.assertTrue(build.can_be_cancelled)
             else:
-                self.assertFalse(self.build.can_be_cancelled)
+                self.assertFalse(build.can_be_cancelled)
+
+    def test_retry_resets_state(self):
+        # Retrying a build resets most of the state attributes, but does
+        # not modify the first dispatch time.
+        now = datetime.now(pytz.UTC)
+        build = self.factory.makeSnapBuild()
+        build.updateStatus(BuildStatus.BUILDING, date_started=now)
+        build.updateStatus(BuildStatus.FAILEDTOBUILD)
+        build.gotFailure()
+        with person_logged_in(build.snap.owner):
+            build.retry()
+        self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
+        self.assertEqual(now, build.date_first_dispatched)
+        self.assertIsNone(build.log)
+        self.assertIsNone(build.upload_log)
+        self.assertEqual(0, build.failure_count)
 
     def test_cancel_not_in_progress(self):
         # The cancel() method for a pending build leaves it in the CANCELLED
@@ -417,7 +467,8 @@ class TestSnapBuild(TestCaseWithFactory):
             notification["X-Launchpad-Notification-Type"])
         self.assertEqual(
             "FAILEDTOBUILD", notification["X-Launchpad-Build-State"])
-        body, footer = notification.get_payload(decode=True).split("\n-- \n")
+        body, footer = six.ensure_text(
+            notification.get_payload(decode=True)).split("\n-- \n")
         self.assertEqual(expected_body % (build.log_url, ""), body)
         self.assertEqual(
             "http://launchpad.test/~person/+snap/snap-1/+build/%d\n"
@@ -710,6 +761,7 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
             self.assertEqual(
                 db_build.distro_arch_series.architecturetag, build["arch_tag"])
             self.assertEqual("Updates", build["pocket"])
+            self.assertIsNone(build["snap_base_link"])
             self.assertIsNone(build["channels"])
             self.assertIsNone(build["score"])
             self.assertFalse(build["can_be_rescored"])
@@ -729,6 +781,7 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
     def test_private_snap(self):
         # A SnapBuild with a private Snap is private.
         db_team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
             owner=self.person, visibility=PersonVisibility.PRIVATE)
         with person_logged_in(self.person):
             db_build = self.factory.makeSnapBuild(
@@ -738,7 +791,8 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
             self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
         unpriv_webservice.default_api_version = "devel"
         logout()
-        self.assertEqual(200, self.webservice.get(build_url).status)
+        response = self.webservice.get(build_url)
+        self.assertEqual(200, response.status)
         # 404 since we aren't allowed to know that the private team exists.
         self.assertEqual(404, unpriv_webservice.get(build_url).status)
 
@@ -883,7 +937,7 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
                     caveat_id="lp.snap-build %s" % build.id),
                 ])))
 
-    def test_verifyMacaroon_good(self):
+    def test_verifyMacaroon_good_repository(self):
         [ref] = self.factory.makeGitRefs(
             information_type=InformationType.USERDATA)
         build = self.factory.makeSnapBuild(
@@ -893,6 +947,30 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
             getUtility(IMacaroonIssuer, "snap-build"))
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(issuer, macaroon, ref.repository)
+
+    def test_verifyMacaroon_good_direct_archive(self):
+        build = self.factory.makeSnapBuild(
+            snap=self.factory.makeSnap(private=True),
+            archive=self.factory.makeArchive(private=True))
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "snap-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, build.archive)
+
+    def test_verifyMacaroon_good_indirect_archive(self):
+        build = self.factory.makeSnapBuild(
+            snap=self.factory.makeSnap(private=True),
+            archive=self.factory.makeArchive(private=True))
+        dependency = self.factory.makeArchive(
+            distribution=build.archive.distribution, private=True)
+        build.archive.addArchiveDependency(
+            dependency, PackagePublishingPocket.RELEASE)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "snap-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, dependency)
 
     def test_verifyMacaroon_good_no_context(self):
         [ref] = self.factory.makeGitRefs(
@@ -1007,3 +1085,17 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         self.assertMacaroonDoesNotVerify(
             ["Caveat check for 'lp.snap-build %s' failed." % build.id],
             issuer, macaroon, other_repository)
+
+    def test_verifyMacaroon_wrong_archive(self):
+        build = self.factory.makeSnapBuild(
+            snap=self.factory.makeSnap(private=True),
+            archive=self.factory.makeArchive(private=True))
+        other_archive = self.factory.makeArchive(
+            distribution=build.archive.distribution, private=True)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "snap-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.snap-build %s' failed." % build.id],
+            issuer, macaroon, other_archive)

@@ -5,6 +5,8 @@
 
 """Tests that get run automatically on a merge."""
 
+from __future__ import absolute_import, print_function
+
 import _pythonpath
 
 import errno
@@ -61,8 +63,8 @@ def setup_test_database():
     # database when PostgreSQL is too old.
     con = psycopg2.connect('dbname=template1')
     if con.server_version < 100000:
-        print 'Your PostgreSQL version is too old.  You need at least 10.x'
-        print 'You have %s' % con.get_parameter_status('server_version')
+        print('Your PostgreSQL version is too old.  You need at least 10.x')
+        print('You have %s' % con.get_parameter_status('server_version'))
         return 1
 
     # Drop the template database if it exists - the Makefile does this
@@ -90,11 +92,11 @@ def setup_test_database():
             break
         # Rogue processes. Report, sleep for a bit, and try again.
         for usename, query in results:
-            print '!! Open connection %s - %s' % (usename, query)
-        print 'Sleeping'
+            print('!! Open connection %s - %s' % (usename, query))
+        print('Sleeping')
         time.sleep(20)
     else:
-        print 'Cannot rebuild database. There are open connections.'
+        print('Cannot rebuild database. There are open connections.')
         return 1
 
     cur.close()
@@ -103,7 +105,7 @@ def setup_test_database():
     # Build the template database. Tests duplicate this.
     schema_dir = os.path.join(HERE, 'database', 'schema')
     if os.system('cd %s; make test > /dev/null' % (schema_dir)) != 0:
-        print 'Failed to create database or load sampledata.'
+        print('Failed to create database or load sampledata.')
         return 1
 
     # Sanity check the database. No point running tests if the
@@ -116,7 +118,7 @@ def setup_test_database():
         """)
     enc = cur.fetchone()[0]
     if enc not in ('UNICODE', 'UTF8'):
-        print 'Database encoding incorrectly set'
+        print('Database encoding incorrectly set')
         return 1
     cur.execute(r"""
         SELECT setting FROM pg_settings
@@ -125,7 +127,7 @@ def setup_test_database():
     loc = cur.fetchone()[0]
     #if not (loc.startswith('en_') or loc in ('C', 'en')):
     if loc != 'C':
-        print 'Database locale incorrectly set. Need to rerun initdb.'
+        print('Database locale incorrectly set. Need to rerun initdb.')
         return 1
 
     # Explicity close our connections - things will fail if we leave open
@@ -140,7 +142,7 @@ def setup_test_database():
 
 def run_test_process():
     """Start the testrunner process and return its exit code."""
-    print 'Running tests.'
+    print('Running tests.')
     os.chdir(HERE)
 
     # We run the test suite under a virtual frame buffer server so that the
@@ -151,7 +153,7 @@ def run_test_process():
         "--server-args='-screen 0 1024x768x24'",
         os.path.join(HERE, 'bin', 'test')] + sys.argv[1:]
     command_line = ' '.join(cmd)
-    print "Running command:", command_line
+    print("Running command:", command_line)
 
     # Run the test suite.  Make the suite the leader of a new process group
     # so that we can signal the group without signaling ourselves.
@@ -183,7 +185,7 @@ def run_test_process():
                 # nb: select.error doesn't expose a named 'errno' attribute,
                 # at least in python 2.6.5; see
                 # <http://mail.python.org/pipermail/python-dev/2000-October/009671.html>
-                if e[0] == errno.EINTR:
+                if e.args[0] == errno.EINTR:
                     continue
                 else:
                     raise
@@ -209,22 +211,22 @@ def run_test_process():
     rv = xvfb_proc.wait()
 
     if rv == 0:
-        print
-        print 'Successfully ran all tests.'
+        print()
+        print('Successfully ran all tests.')
     else:
-        print
-        print 'Tests failed (exit code %d)' % rv
+        print()
+        print('Tests failed (exit code %d)' % rv)
 
     return rv
 
 
 def cleanup_hung_testrunner(process):
     """Kill and clean up the testrunner process and its children."""
-    print
-    print
-    print ("WARNING: A test appears to be hung. There has been no "
+    print()
+    print()
+    print("WARNING: A test appears to be hung. There has been no "
         "output for %d seconds." % TIMEOUT)
-    print "Forcibly shutting down the test suite"
+    print("Forcibly shutting down the test suite")
 
     # This guarantees the process will die.  In rare cases
     # a child process may survive this if they are in a different
@@ -235,22 +237,22 @@ def cleanup_hung_testrunner(process):
     assert process.poll() is not None
 
     # Drain the subprocess's stdout and stderr.
-    print "The dying processes left behind the following output:"
-    print "--------------- BEGIN OUTPUT ---------------"
+    print("The dying processes left behind the following output:")
+    print("--------------- BEGIN OUTPUT ---------------")
     sys.stdout.write(process.stdout.read())
-    print
-    print "---------------- END OUTPUT ----------------"
+    print()
+    print("---------------- END OUTPUT ----------------")
 
 
 def nice_killpg(pgid):
     """Kill a Unix process group using increasingly harmful signals."""
     try:
-        print "Process group %d will be killed" % pgid
+        print("Process group %d will be killed" % pgid)
 
         # Attempt a series of increasingly brutal methods of killing the
         # process.
         for signum in [SIGTERM, SIGINT, SIGHUP, SIGKILL]:
-            print "Sending signal %s to process group %d" % (signum, pgid)
+            print("Sending signal %s to process group %d" % (signum, pgid))
             os.killpg(pgid, signum)
 
             # Give the processes some time to shut down.
@@ -262,7 +264,7 @@ def nice_killpg(pgid):
             pass
         else:
             raise
-    print "Process group %d is now empty." % pgid
+    print("Process group %d is now empty." % pgid)
 
 
 if __name__ == '__main__':

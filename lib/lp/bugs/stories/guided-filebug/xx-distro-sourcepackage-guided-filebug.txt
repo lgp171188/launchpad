@@ -18,7 +18,7 @@ similar matching bugs.
     >>> similar_bugs_table is None
     True
 
-    >>> print(find_main_content(user_browser.contents).renderContents())
+    >>> print(find_main_content(user_browser.contents).decode_contents())
     <...
     No similar bug reports were found...
 

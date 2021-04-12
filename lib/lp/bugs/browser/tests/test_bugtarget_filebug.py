@@ -618,7 +618,7 @@ class FileBugViewBaseExtraDataTestCase(FileBugViewMixin, TestCaseWithFactory):
             'Added to the description.',
             bug.description)
         self.assertEqual(2, bug.messages.count())
-        self.assertEqual(bug.bug_messages[-1], message_event.object)
+        self.assertEqual(bug.bug_messages.last(), message_event.object)
         notifications = [
             no.message for no in view.request.response.notifications]
         self.assertContentEqual(

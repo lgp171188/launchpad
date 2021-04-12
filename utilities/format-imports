@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 #
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """ Format import sections in python files
@@ -295,7 +295,7 @@ LOCAL_PACKAGES = (
     '.', 'canonical', 'lp', 'launchpad_loggerhead', 'devscripts',
     # database/* have some implicit relative imports.
     'fti', 'replication', 'preflight', 'security', 'upgrade',
-    'dbcontroller',
+    'dbcontroller', 'zcml',
     )
 
 def format_imports(imports):

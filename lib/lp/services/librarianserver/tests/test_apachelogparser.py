@@ -1,9 +1,11 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from datetime import datetime
+import io
 import os
-from StringIO import StringIO
 import subprocess
 
 from zope.component import getUtility
@@ -95,7 +97,7 @@ class TestLibrarianLogFileParsing(TestCase):
         self.logger = BufferLogger()
 
     def test_request_to_lfa_is_parsed(self):
-        fd = StringIO(
+        fd = io.StringIO(
             '69.233.136.42 - - [13/Jun/2008:14:55:22 +0100] "GET '
             '/15018215/ul_logo_64x64.png HTTP/1.1" 200 2261 '
             '"https://launchpad.net/~ubuntulite/+archive" "Mozilla"')
@@ -114,7 +116,7 @@ class TestLibrarianLogFileParsing(TestCase):
     def test_request_to_non_lfa_is_ignored(self):
         # A request to a path which doesn't map to a LibraryFileAlias (e.g.
         # '/') is ignored.
-        fd = StringIO(
+        fd = io.StringIO(
             '69.233.136.42 - - [13/Jun/2008:14:55:22 +0100] "GET / HTTP/1.1" '
             '200 2261 "https://launchpad.net/~ubuntulite/+archive" "Mozilla"')
         downloads, parsed_bytes, ignored = parse_file(

@@ -527,8 +527,7 @@ def expose_user_subscriptions_to_js(user, subscriptions, request):
                 can_mute=filter.isMuteAllowed(user),
                 is_muted=filter.muted(user) is not None,
                 target_title=target.title))
-    info = info.values()
-    info.sort(key=itemgetter('target_url'))
+    info = sorted(info.values(), key=itemgetter('target_url'))
     IJSONRequestCache(request).objects['subscription_info'] = info
 
 

@@ -362,7 +362,7 @@ def validate_target(bug, target, retarget_existing=True,
                 target.distribution.guessPublishedSourcePackageName(
                     target.sourcepackagename.name)
             except NotFoundError as e:
-                raise IllegalTarget(e[0])
+                raise IllegalTarget(e.args[0])
 
     legal_types = target.pillar.getAllowedBugInformationTypes()
     new_pillar = target.pillar not in bug.affected_pillars
@@ -1485,25 +1485,22 @@ class BugTaskSet:
         # Avoid circular imports.
         from lp.bugs.model.bug import Bug
         search_params = BugTaskSearchParams(user)
-        constraint_clauses = ['BugTask.bug = Bug.id']
+        constraint_clauses = [BugTask.bug == Bug.id]
         if product:
             search_params.setProduct(product)
-            constraint_clauses.append(
-                'BugTask.product = %s' % sqlvalues(product))
+            constraint_clauses.append(BugTask.product == product)
         elif distribution:
             search_params.setDistribution(distribution)
-            constraint_clauses.append(
-                'BugTask.distribution = %s' % sqlvalues(distribution))
+            constraint_clauses.append(BugTask.distribution == distribution)
             if sourcepackagename:
                 search_params.sourcepackagename = sourcepackagename
                 constraint_clauses.append(
-                    'BugTask.sourcepackagename = %s' % sqlvalues(
-                        sourcepackagename))
+                    BugTask.sourcepackagename == sourcepackagename)
         else:
             raise AssertionError('Need either a product or distribution.')
 
         search_params.fast_searchtext = nl_phrase_search(
-            summary, Bug, ' AND '.join(constraint_clauses), ['BugTask'])
+            summary, Bug, constraint_clauses)
         return self.search(search_params, _noprejoins=True)
 
     def search(self, params, *args, **kwargs):

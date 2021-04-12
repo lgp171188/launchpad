@@ -6,6 +6,8 @@ __all__ = [
     'LimitedList',
     ]
 
+import sys
+
 
 class LimitedList(list):
     """A mutable sequence that takes a limited number of elements."""
@@ -62,10 +64,14 @@ class LimitedList(list):
             self._ensureLength()
         return result
 
-    def __setslice__(self, i, j, sequence):
-        result = super(LimitedList, self).__setslice__(i, j, sequence)
-        self._ensureLength()
-        return result
+    if sys.version_info[0] < 3:
+        # list.__setslice__ exists on Python 2, so we must override it in
+        # this subclass.  (If it didn't exist, as is the case on Python 3,
+        # then __setitem__ above would be good enough.)
+        def __setslice__(self, i, j, sequence):
+            result = super(LimitedList, self).__setslice__(i, j, sequence)
+            self._ensureLength()
+            return result
 
     def append(self, value):
         result = super(LimitedList, self).append(value)

@@ -7,9 +7,9 @@ from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
-import email
 import operator
 
+import six
 import transaction
 from zope.component import getUtility
 
@@ -20,6 +20,7 @@ from lp.registry.interfaces.persontransferjob import (
     ITeamInvitationNotificationJobSource,
     ITeamJoinNotificationJobSource,
     )
+from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.job.runner import JobRunner
 from lp.services.log.logger import DevNullLogger
@@ -45,7 +46,7 @@ def pop_notifications(sort_key=None, commit=True):
 
     notifications = []
     for fromaddr, toaddrs, raw_message in stub.test_emails:
-        notification = email.message_from_string(raw_message)
+        notification = message_from_bytes(raw_message)
         notification['X-Envelope-To'] = ', '.join(toaddrs)
         notification['X-Envelope-From'] = fromaddr
         notifications.append(notification)
@@ -95,7 +96,7 @@ def print_emails(include_reply_to=False, group_similar=False,
         body = message.get_payload(decode=decode)
         if group_similar:
             # Strip the first line as it's different for each recipient.
-            body = body[body.find('\n') + 1:]
+            body = body[body.find(b'\n' if decode else '\n') + 1:]
         if body in distinct_bodies and group_similar:
             message, existing_recipients = distinct_bodies[body]
             distinct_bodies[body] = (
@@ -119,18 +120,20 @@ def print_emails(include_reply_to=False, group_similar=False,
             print('%s: %s' % (
                 notification_type_header, message[notification_type_header]))
         print('Subject:', message['Subject'])
-        print(body)
+        print(six.ensure_text(body))
         print("-" * 40)
 
 
 def print_distinct_emails(include_reply_to=False, include_rationale=True,
-                          include_for=False, include_notification_type=True):
+                          include_for=False, include_notification_type=True,
+                          decode=False):
     """A convenient shortcut for `print_emails`(group_similar=True)."""
     return print_emails(group_similar=True,
                         include_reply_to=include_reply_to,
                         include_rationale=include_rationale,
                         include_for=include_for,
-                        include_notification_type=include_notification_type)
+                        include_notification_type=include_notification_type,
+                        decode=decode)
 
 
 def run_mail_jobs():

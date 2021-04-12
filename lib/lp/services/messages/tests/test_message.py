@@ -12,8 +12,10 @@ from email.utils import (
     make_msgid,
     )
 
+import six
 import transaction
 
+from lp.services.compat import message_as_bytes
 from lp.services.messages.model.message import MessageSet
 from lp.testing import (
     login,
@@ -27,7 +29,12 @@ class TestMessageSet(TestCaseWithFactory):
 
     layer = LaunchpadFunctionalLayer
 
-    high_characters = ''.join(chr(c) for c in range(128, 256))
+    # Stick to printable non-whitespace characters from ISO-8859-1 to avoid
+    # confusion.  (In particular, '\x85' and '\xa0' are whitespace
+    # characters according to Unicode but not according to ASCII, and this
+    # would otherwise result in different test output between Python 2 and
+    # 3.)
+    high_characters = b''.join(six.int2byte(c) for c in range(161, 256))
 
     def setUp(self):
         super(TestMessageSet, self).setUp()
@@ -65,35 +72,35 @@ class TestMessageSet(TestCaseWithFactory):
         # and an text/x-diff attachment.
         msg = self._makeMessageWithAttachment()
         # Now create the message from the MessageSet.
-        message = MessageSet().fromEmail(msg.as_string())
+        message = MessageSet().fromEmail(message_as_bytes(msg))
         text, diff = message.chunks
         self.assertEqual('This is the body of the email.', text.content)
         self.assertEqual('review.diff', diff.blob.filename)
         self.assertEqual('text/x-diff', diff.blob.mimetype)
         # Need to commit in order to read back out of the librarian.
         transaction.commit()
-        self.assertEqual('This is the diff, honest.', diff.blob.read())
+        self.assertEqual(b'This is the diff, honest.', diff.blob.read())
 
     def test_fromEmail_strips_attachment_paths(self):
         # Build a simple multipart message with a plain text first part
         # and an text/x-diff attachment.
         msg = self._makeMessageWithAttachment(filename='/tmp/foo/review.diff')
         # Now create the message from the MessageSet.
-        message = MessageSet().fromEmail(msg.as_string())
+        message = MessageSet().fromEmail(message_as_bytes(msg))
         text, diff = message.chunks
         self.assertEqual('This is the body of the email.', text.content)
         self.assertEqual('review.diff', diff.blob.filename)
         self.assertEqual('text/x-diff', diff.blob.mimetype)
         # Need to commit in order to read back out of the librarian.
         transaction.commit()
-        self.assertEqual('This is the diff, honest.', diff.blob.read())
+        self.assertEqual(b'This is the diff, honest.', diff.blob.read())
 
     def test_fromEmail_always_creates(self):
         """Even when messages are identical, fromEmail creates a new one."""
         email = self.factory.makeEmailMessage()
-        orig_message = MessageSet().fromEmail(email.as_string())
+        orig_message = MessageSet().fromEmail(message_as_bytes(email))
         transaction.commit()
-        dupe_message = MessageSet().fromEmail(email.as_string())
+        dupe_message = MessageSet().fromEmail(message_as_bytes(email))
         self.assertNotEqual(orig_message.id, dupe_message.id)
 
     def test_fromEmail_restricted_reuploads(self):
@@ -103,14 +110,15 @@ class TestMessageSet(TestCaseWithFactory):
         transaction.commit()
         email = self.factory.makeEmailMessage()
         message = MessageSet().fromEmail(
-            email.as_string(), filealias=filealias, restricted=True)
+            message_as_bytes(email), filealias=filealias, restricted=True)
         self.assertTrue(message.raw.restricted)
         self.assertNotEqual(message.raw.id, filealias.id)
 
     def test_fromEmail_restricted_attachments(self):
         """fromEmail creates restricted attachments correctly."""
         msg = self._makeMessageWithAttachment()
-        message = MessageSet().fromEmail(msg.as_string(), restricted=True)
+        message = MessageSet().fromEmail(
+            message_as_bytes(msg), restricted=True)
         text, diff = message.chunks
         self.assertEqual('review.diff', diff.blob.filename)
         self.assertTrue('review.diff', diff.blob.restricted)
@@ -128,7 +136,7 @@ class TestMessageSet(TestCaseWithFactory):
         """"macintosh encoding is equivalent to MacRoman."""
         high_decoded = self.high_characters.decode('macroman')
         email = self.makeEncodedEmail('macintosh', 'macroman')
-        message = MessageSet().fromEmail(email.as_string())
+        message = MessageSet().fromEmail(message_as_bytes(email))
         self.assertEqual(high_decoded, message.subject)
         self.assertEqual(high_decoded, message.text_contents)
 
@@ -136,7 +144,7 @@ class TestMessageSet(TestCaseWithFactory):
         """"'booga' encoding is decoded as latin-1."""
         high_decoded = self.high_characters.decode('latin-1')
         email = self.makeEncodedEmail('booga', 'latin-1')
-        message = MessageSet().fromEmail(email.as_string())
+        message = MessageSet().fromEmail(message_as_bytes(email))
         self.assertEqual(high_decoded, message.subject)
         self.assertEqual(high_decoded, message.text_contents)
 
@@ -152,7 +160,7 @@ class TestMessageSet(TestCaseWithFactory):
 
     def test_decode_unknown_ascii(self):
         """Test decode with ascii characters in an unknown encoding."""
-        result = MessageSet.decode('abcde', 'booga')
+        result = MessageSet.decode(b'abcde', 'booga')
         self.assertEqual(u'abcde', result)
 
     def test_decode_unknown_high_characters(self):

@@ -36,10 +36,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import SQLBase
 from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,
@@ -114,19 +111,16 @@ class DistroArchSeries(SQLBase):
         """See `IDistroArchSeries`."""
         from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
 
-        query = """
-            BinaryPackagePublishingHistory.distroarchseries = %s AND
-            BinaryPackagePublishingHistory.archive IN %s AND
-            BinaryPackagePublishingHistory.status = %s AND
-            BinaryPackagePublishingHistory.pocket = %s
-            """ % sqlvalues(
-                    self,
-                    self.distroseries.distribution.all_distro_archive_ids,
-                    PackagePublishingStatus.PUBLISHED,
-                    PackagePublishingPocket.RELEASE
-                 )
-        self.package_count = BinaryPackagePublishingHistory.select(
-            query).count()
+        self.package_count = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            BinaryPackagePublishingHistory.distroarchseries == self,
+            BinaryPackagePublishingHistory.archiveID.is_in(
+                self.distroseries.distribution.all_distro_archive_ids),
+            BinaryPackagePublishingHistory.status ==
+                PackagePublishingStatus.PUBLISHED,
+            BinaryPackagePublishingHistory.pocket ==
+                PackagePublishingPocket.RELEASE,
+            ).count()
 
     @property
     def isNominatedArchIndep(self):
@@ -224,7 +218,7 @@ class DistroArchSeries(SQLBase):
         # match.
         content_sha1sum = hashlib.sha1(filecontent).hexdigest()
         if content_sha1sum != sha1sum:
-            filecontent += '\r'
+            filecontent += b'\r'
             content_sha1sum = hashlib.sha1(filecontent).hexdigest()
         if content_sha1sum != sha1sum:
             raise InvalidChrootUploaded("Chroot upload checksums do not match")

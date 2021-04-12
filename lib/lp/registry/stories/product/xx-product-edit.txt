@@ -19,7 +19,7 @@ invalid project.
     >>> browser.getControl('Part of', index=0).value = 'asdasfasd'
     >>> browser.getControl(name='field.actions.change').click()
     >>> for message in find_tags_by_class(browser.contents, 'error'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     <BLANKLINE>
     ...
@@ -108,7 +108,7 @@ Now we try to change newproductname2's name to newproductname.
     >>> admin_browser.getControl('Name').value = 'newproductname'
     >>> admin_browser.getControl(name='field.actions.change').click()
     >>> for message in find_tags_by_class(admin_browser.contents, 'error'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is 1 error.
     <BLANKLINE>
     ...

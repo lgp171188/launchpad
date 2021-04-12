@@ -1,0 +1,28 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_only"
+  i18n:domain="launchpad">
+<body>
+
+  <div metal:fill-slot="main">
+    <div metal:use-macro="context/@@launchpad_form/form">
+      <div metal:fill-slot="extra_info">
+        <p>
+          The status of <dfn tal:content="context/title" /> is
+          <span tal:replace="context/status/title" />.
+        </p>
+        <p>Retrying this build will destroy its history and logs.</p>
+        <p>
+          By default, this build will be retried only after other pending
+          builds; please contact a build daemon administrator if you need
+          special treatment.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

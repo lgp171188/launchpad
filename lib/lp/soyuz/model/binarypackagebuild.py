@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -96,6 +96,7 @@ from lp.soyuz.enums import (
     PackagePublishingStatus,
     )
 from lp.soyuz.interfaces.archive import (
+    IArchive,
     InvalidExternalDependencies,
     validate_external_dependencies,
     )
@@ -1326,8 +1327,8 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         # Exclude any architectures which already have built or copied
         # binaries. A new build with the same archtag could never
         # succeed; its files would conflict during upload.
-        relevant_builds = self.findBuiltOrPublishedBySourceAndArchive(
-            sourcepackagerelease, archive).values()
+        relevant_builds = list(self.findBuiltOrPublishedBySourceAndArchive(
+            sourcepackagerelease, archive).values())
 
         # Find any architectures that already have a build that exactly
         # matches, regardless of status. We can't create a second build
@@ -1423,7 +1424,8 @@ class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
 
     def checkVerificationContext(self, context, **kwargs):
         """See `MacaroonIssuerBase`."""
-        if not ILibraryFileAlias.providedBy(context):
+        if (not ILibraryFileAlias.providedBy(context) and
+                not IArchive.providedBy(context)):
             raise BadMacaroonContext(context)
         return context
 
@@ -1431,16 +1433,18 @@ class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
                             **kwargs):
         """See `MacaroonIssuerBase`.
 
-        For verification, the context is an `ILibraryFileAlias`.  We check
-        that the file is one of those required to build the
-        `IBinaryPackageBuild` that is the context of the macaroon, and that
-        the context build is currently building.
+        For verification, the context is an `ILibraryFileAlias` or an
+        `IArchive`.  We check that the file or archive is one of those
+        required to build the `IBinaryPackageBuild` that is the context of
+        the macaroon, and that the context build is currently building.
         """
-        # Circular import.
+        # Circular imports.
+        from lp.soyuz.model.archive import Archive
+        from lp.soyuz.model.archivedependency import ArchiveDependency
         from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
         # Binary package builds only support free-floating macaroons for
-        # librarian authentication, not ones bound to a user.
+        # librarian or archive authentication, not ones bound to a user.
         if user:
             return False
         verified.user = NO_USER
@@ -1449,12 +1453,28 @@ class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
             build_id = int(caveat_value)
         except ValueError:
             return False
-        return not IStore(BinaryPackageBuild).find(
-            BinaryPackageBuild,
+        clauses = [
             BinaryPackageBuild.id == build_id,
-            BinaryPackageBuild.source_package_release_id ==
-                SourcePackageRelease.id,
-            SourcePackageReleaseFile.sourcepackagereleaseID ==
-                SourcePackageRelease.id,
-            SourcePackageReleaseFile.libraryfile == context,
-            BinaryPackageBuild.status == BuildStatus.BUILDING).is_empty()
+            BinaryPackageBuild.status == BuildStatus.BUILDING,
+            ]
+        if ILibraryFileAlias.providedBy(context):
+            clauses.extend([
+                BinaryPackageBuild.source_package_release_id ==
+                    SourcePackageRelease.id,
+                SourcePackageReleaseFile.sourcepackagereleaseID ==
+                    SourcePackageRelease.id,
+                SourcePackageReleaseFile.libraryfile == context,
+                ])
+        elif IArchive.providedBy(context):
+            clauses.append(
+                Or(
+                    BinaryPackageBuild.archive == context,
+                    BinaryPackageBuild.archive_id.is_in(Select(
+                        Archive.id,
+                        where=And(
+                            ArchiveDependency.archive == Archive.id,
+                            ArchiveDependency.dependency == context)))))
+        else:
+            return False
+        return not IStore(BinaryPackageBuild).find(
+            BinaryPackageBuild, *clauses).is_empty()

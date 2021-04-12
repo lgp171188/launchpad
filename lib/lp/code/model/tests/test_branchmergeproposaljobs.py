@@ -280,7 +280,7 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         committer = self.factory.makePerson()
         self.hosting_fixture.getLog.result = [
             {
-                "sha1": six.ensure_text(hashlib.sha1("tip").hexdigest()),
+                "sha1": six.ensure_text(hashlib.sha1(b"tip").hexdigest()),
                 "message": "Fix upside-down messages\n\nLP: #%d" % bug.id,
                 "committer": {
                     "name": committer.display_name,
@@ -348,7 +348,7 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
             'The source branch of http://code.launchpad.test/~%s/%s/%s/'
             '+merge/%d has no revisions.' % (
                 branch.owner.name, branch.target.name, branch.name, bmp.id),
-            email.get_payload(decode=True))
+            six.ensure_text(email.get_payload(decode=True)))
 
     def test_run_branches_pending_writes(self):
         """If the branches are being written, we retry but don't complain."""
@@ -429,7 +429,8 @@ def make_runnable_incremental_diff_job(test_case):
     parent_id = repository.get_revision(source_rev_id).parent_ids[0]
     test_case.factory.makeRevision(rev_id=source_rev_id)
     test_case.factory.makeRevision(rev_id=parent_id)
-    return GenerateIncrementalDiffJob.create(bmp, parent_id, source_rev_id)
+    return GenerateIncrementalDiffJob.create(
+        bmp, six.ensure_text(parent_id), six.ensure_text(source_rev_id))
 
 
 class TestGenerateIncrementalDiffJob(DiffTestCase):
@@ -738,7 +739,7 @@ class TestReviewRequestedEmailJob(TestCaseWithFactory):
         (notification,) = pop_notifications()
         self.assertIn(
             'You have been requested to review the proposed merge',
-            notification.get_payload(decode=True))
+            six.ensure_text(notification.get_payload(decode=True)))
 
 
 class TestMergeProposalUpdatedEmailJob(TestCaseWithFactory):

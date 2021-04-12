@@ -32,8 +32,8 @@ changing the status, the target, and the new status.
 
 It returns the edited bugtask.
 
-    >>> firefox_bugtask.target.name
-    u'firefox'
+    >>> print(firefox_bugtask.target.name)
+    firefox
     >>> firefox_bugtask.status.name
     'CONFIRMED'
 
@@ -52,12 +52,12 @@ BugActivity records are created.
 
     >>> from lp.bugs.model.bugactivity import BugActivity
     >>> latest_activity = BugActivity.selectFirst(orderBy='-id')
-    >>> latest_activity.whatchanged
-    u'firefox: status'
-    >>> latest_activity.oldvalue
-    u'New'
-    >>> latest_activity.newvalue
-    u'Confirmed'
+    >>> print(latest_activity.whatchanged)
+    firefox: status
+    >>> print(latest_activity.oldvalue)
+    New
+    >>> print(latest_activity.newvalue)
+    Confirmed
 
 The edited bugtask is only returned if it's actually edited. If the
 bugtask already has the specified status, None is returned.
@@ -77,8 +77,8 @@ product, not the product series, the product bugtask is edited.
     True
     >>> firefox_bugtask = bug.setStatus(
     ...     firefox_trunk, BugTaskStatus.NEW, no_priv)
-    >>> firefox_bugtask.target.name
-    u'firefox'
+    >>> print(firefox_bugtask.target.name)
+    firefox
     >>> firefox_bugtask.status.name
     'NEW'
 
@@ -101,8 +101,8 @@ is edited.
     >>> firefox_trunk_bugtask = bug.setStatus(
     ...     firefox_trunk, BugTaskStatus.INCOMPLETE, no_priv)
 
-    >>> firefox_trunk_bugtask.target.name
-    u'trunk'
+    >>> print(firefox_trunk_bugtask.target.name)
+    trunk
     >>> firefox_trunk_bugtask.status.name
     'INCOMPLETE'
 
@@ -111,16 +111,16 @@ master will be edited and returned. The conjoined slave is of course
 updated automatically.
 
     >>> firefox_bugtask = firefox_trunk_bugtask.conjoined_slave
-    >>> firefox_bugtask.target.name
-    u'firefox'
+    >>> print(firefox_bugtask.target.name)
+    firefox
     >>> firefox_bugtask.conjoined_master is not None
     True
     >>> firefox_bugtask.status.name
     'INCOMPLETE'
     >>> firefox_trunk_bugtask = bug.setStatus(
     ...     firefox_bugtask.target, BugTaskStatus.CONFIRMED, no_priv)
-    >>> firefox_trunk_bugtask.target.name
-    u'trunk'
+    >>> print(firefox_trunk_bugtask.target.name)
+    trunk
     >>> firefox_trunk_bugtask.status.name
     'CONFIRMED'
     >>> firefox_bugtask.status.name
@@ -151,8 +151,8 @@ for product tasks.
     >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     >>> ubuntu_bugtask = bug.setStatus(
     ...     ubuntu, BugTaskStatus.CONFIRMED, no_priv)
-    >>> ubuntu_bugtask.target.name
-    u'ubuntu'
+    >>> print(ubuntu_bugtask.target.name)
+    ubuntu
     >>> ubuntu_bugtask.status.name
     'CONFIRMED'
 
@@ -173,8 +173,8 @@ edited.
     ...     ubuntu_firefox, getUtility(ILaunchBag).user)
     >>> ubuntu_firefox_task = bug.setStatus(
     ...     ubuntu_firefox, BugTaskStatus.INCOMPLETE, no_priv)
-    >>> ubuntu_firefox_task.target.displayname
-    u'mozilla-firefox in Ubuntu'
+    >>> print(ubuntu_firefox_task.target.displayname)
+    mozilla-firefox in Ubuntu
     >>> ubuntu_firefox_task.status.name
     'INCOMPLETE'
 
@@ -186,8 +186,8 @@ edited.
     >>> warty_firefox = ubuntu_warty.getSourcePackage('mozilla-firefox')
     >>> ubuntu_firefox_task = bug.setStatus(
     ...     warty_firefox, BugTaskStatus.CONFIRMED, no_priv)
-    >>> ubuntu_firefox_task.target.displayname
-    u'mozilla-firefox in Ubuntu'
+    >>> print(ubuntu_firefox_task.target.displayname)
+    mozilla-firefox in Ubuntu
     >>> ubuntu_firefox_task.status.name
     'CONFIRMED'
 
@@ -195,8 +195,8 @@ edited.
     >>> hoary_firefox = ubuntu_hoary.getSourcePackage('mozilla-firefox')
     >>> ubuntu_firefox_task = bug.setStatus(
     ...     hoary_firefox, BugTaskStatus.NEW, no_priv)
-    >>> ubuntu_firefox_task.target.displayname
-    u'mozilla-firefox in Ubuntu'
+    >>> print(ubuntu_firefox_task.target.displayname)
+    mozilla-firefox in Ubuntu
     >>> ubuntu_firefox_task.status.name
     'NEW'
 
@@ -204,8 +204,8 @@ However, if the bug is targeted to the current series, passing a
 non-current series won't modify any bugtask, unless the bug is already
 targeted to the non-current series of course.
 
-    >>> ubuntu.currentseries.name
-    u'hoary'
+    >>> print(ubuntu.currentseries.name)
+    hoary
 
     # Need to be privileged user to target the bug to a series.
     >>> login('foo.bar@canonical.com')
@@ -243,7 +243,7 @@ targeted to the non-current series of course.
     >>> warty_firefox = ubuntu_warty.getSourcePackage('mozilla-firefox')
     >>> ubuntu_firefox_task = bug.setStatus(
     ...     warty_firefox, BugTaskStatus.INCOMPLETE, no_priv)
-    >>> ubuntu_firefox_task.target.displayname
-    u'mozilla-firefox in Ubuntu Warty'
+    >>> print(ubuntu_firefox_task.target.displayname)
+    mozilla-firefox in Ubuntu Warty
     >>> ubuntu_firefox_task.status.name
     'INCOMPLETE'

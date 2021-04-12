@@ -10,15 +10,17 @@ the project owner, therefore they cannot create a new FAQ.
     >>> user_browser.getLink('All FAQs').click()
 
     >>> user_browser.getLink('Create a new FAQ')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...     'http://answers.launchpad.test/firefox/+createfaq')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    Unauthorized: ...
+    zope.security.interfaces.Unauthorized: ...
 
 Sample Person does have that ability to create a FAQ because they are the
 project owner. They are looking for a FAQ about RSS, but they do not find
@@ -70,10 +72,11 @@ The FAQ is created and the browser displays the page for Sample Person.
     FAQ #... : Questions : Mozilla Firefox
 
     >>> content = find_main_content(owner_browser.contents)
-    >>> extract_text(find_tag_by_id(content, 'faq-keywords'))
-    u'Keywords:...RSS bookmark'
-    >>> extract_text(find_tag_by_id(content, 'faq-content'))
-    u'Use the bookmark bar.'
+    >>> print(extract_text(find_tag_by_id(content, 'faq-keywords')))
+    Keywords:
+    RSS bookmark
+    >>> print(extract_text(find_tag_by_id(content, 'faq-content')))
+    Use the bookmark bar.
 
 They return to the project's list of FAQs to verify that the newest
 FAQ is listed first.

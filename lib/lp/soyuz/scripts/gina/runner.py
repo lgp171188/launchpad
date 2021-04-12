@@ -10,6 +10,7 @@ import sys
 import time
 
 import psycopg2
+import six
 from zope.component import getUtility
 
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -120,7 +121,7 @@ def run_gina(options, ztm, target_section):
 def attempt_source_package_import(distro, source, package_root,
                                   importer_handler):
     """Attempt to import a source package, and handle typical errors."""
-    package_name = source.get("Package", "unknown")
+    package_name = six.ensure_text(source.get("Package", "unknown"))
     try:
         try:
             do_one_sourcepackage(
@@ -236,9 +237,9 @@ def import_binarypackages(distro, packages_map, package_root,
 
         if nosource:
             # XXX kiko 2005-10-23: untested
-            log.warn('%i source packages not found', len(nosource))
+            log.warning('%i source packages not found', len(nosource))
             for pkg in nosource:
-                log.warn(pkg)
+                log.warning(pkg)
 
 
 def do_one_binarypackage(distro, binary, archtag, package_root,

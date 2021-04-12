@@ -53,7 +53,7 @@ def get_potmsgset_key(potmsgset):
     """
     potmsgset = removeSecurityProxy(potmsgset)
     return (
-        potmsgset.msgid_singularID, potmsgset.msgid_pluralID,
+        potmsgset.msgid_singular_id, potmsgset.msgid_plural_id,
         potmsgset.context)
 
 
@@ -282,8 +282,16 @@ class MessageSharingMerge(LaunchpadScript):
         class_count = len(equivalence_classes)
         log.info("Merging %d template equivalence classes." % class_count)
 
+        def equivalence_class_sort_key(name):
+            template_name, package_name = name
+            if package_name is None:
+                return template_name, 0, None
+            else:
+                return template_name, 1, package_name
+
         tm = TransactionManager(self.txn, self.options.dry_run)
-        for number, name in enumerate(sorted(equivalence_classes)):
+        for number, name in enumerate(sorted(
+                equivalence_classes, key=equivalence_class_sort_key)):
             templates = equivalence_classes[name]
             log.info(
                 "Merging equivalence class '%s': %d template(s) (%d / %d)" % (
@@ -600,7 +608,7 @@ class TranslationMerger:
         """
         tm = removeSecurityProxy(tm)
         msgstr_ids = tuple([
-            getattr(tm, 'msgstr%dID' % form)
+            getattr(tm, 'msgstr%d_id' % form)
             for form in range(TranslationConstants.MAX_PLURAL_FORMS)])
 
         return (tm.potemplateID, tm.languageID) + msgstr_ids

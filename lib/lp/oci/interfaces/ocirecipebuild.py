@@ -94,6 +94,13 @@ class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
         This OCI build was successfully uploaded to a registry.
         """)
 
+    SUPERSEDED = Item("""
+        Superseded
+
+        The upload has been cancelled because another build will upload a
+        more recent version.
+    """)
+
 
 class IOCIRecipeBuildView(IPackageBuild):
     """`IOCIRecipeBuild` attributes that require launchpad.View permission."""
@@ -166,6 +173,11 @@ class IOCIRecipeBuildView(IPackageBuild):
         required=True, readonly=True,
         description=_("Whether this build record can be rescored manually.")))
 
+    can_be_retried = exported(Bool(
+        title=_("Can be retried"),
+        required=True, readonly=True,
+        description=_("Whether this build record can be retried.")))
+
     can_be_cancelled = exported(Bool(
         title=_("Can be cancelled"),
         required=True, readonly=True,
@@ -207,6 +219,13 @@ class IOCIRecipeBuildView(IPackageBuild):
         value_type=Dict(key_type=TextLine()),
         required=False, readonly=True))
 
+    def hasMoreRecentBuild():
+        """Checks if this recipe has a more recent build currently building or
+        already built for the same processor.
+
+        :return: True if another build superseded this one.
+        """
+
 
 class IOCIRecipeBuildEdit(Interface):
     """`IOCIRecipeBuild` attributes that require launchpad.Edit permission."""
@@ -226,6 +245,15 @@ class IOCIRecipeBuildEdit(Interface):
 
         :raises CannotScheduleRegistryUpload: if the build is not in a state
             where an upload can be scheduled.
+        """
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def retry():
+        """Restore the build record to its initial state.
+
+        Build record loses its history, is moved to NEEDSBUILD and a new
+        non-scored BuildQueue entry is created for it.
         """
 
     def cancel():

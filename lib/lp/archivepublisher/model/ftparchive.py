@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from collections import defaultdict
@@ -242,7 +242,7 @@ class FTPArchiveHandler:
         """Creates empty files for a release pocket and distroseries"""
         suite = distroseries.getSuite(pocket)
 
-        # Create empty override lists.
+        # Create empty override lists if they don't already exist.
         needed_paths = [
             (comp,),
             ("extra", comp),
@@ -252,15 +252,19 @@ class FTPArchiveHandler:
             needed_paths.append((comp, sub_comp))
 
         for path in needed_paths:
-            write_file(os.path.join(
+            full_path = os.path.join(
                 self._config.overrideroot,
-                ".".join(("override", suite) + path)), b"")
+                ".".join(("override", suite) + path))
+            if not os.path.exists(full_path):
+                write_file(full_path, b"")
 
-        # Create empty file lists.
+        # Create empty file lists if they don't already exist.
         def touch_list(*parts):
-            write_file(os.path.join(
+            full_path = os.path.join(
                 self._config.overrideroot,
-                "_".join((suite, ) + parts)), b"")
+                "_".join((suite, ) + parts))
+            if not os.path.exists(full_path):
+                write_file(full_path, b"")
         touch_list(comp, "source")
 
         arch_tags = [
@@ -378,10 +382,9 @@ class FTPArchiveHandler:
 
                 spphs = self.getSourcesForOverrides(distroseries, pocket)
                 bpphs = self.getBinariesForOverrides(distroseries, pocket)
-                self.publishOverrides(
-                    distroseries.getSuite(pocket), spphs, bpphs)
+                self.publishOverrides(distroseries, pocket, spphs, bpphs)
 
-    def publishOverrides(self, suite,
+    def publishOverrides(self, distroseries, pocket,
                          source_publications, binary_publications):
         """Output a set of override files for use in apt-ftparchive.
 
@@ -404,8 +407,15 @@ class FTPArchiveHandler:
         # test_ftparchive.
         from lp.archivepublisher.publishing import FORMAT_TO_SUBCOMPONENT
 
+        suite = distroseries.getSuite(pocket)
+
         # overrides[component][src/bin] = sets of tuples
         overrides = defaultdict(lambda: defaultdict(set))
+        # Ensure that we generate overrides for all the expected components,
+        # even if they're currently empty.
+        for component in self.publisher.archive.getComponentsForSeries(
+                distroseries):
+            overrides[component.name]
 
         def updateOverride(packagename, component, section, archtag=None,
                            priority=None, binpackageformat=None,
@@ -435,6 +445,7 @@ class FTPArchiveHandler:
                     package_arch = "%s/%s" % (packagename, archtag)
                     override['bin'].add((
                         package_arch, priority, section,
+                        0 if phased_update_percentage is None else 1,
                         phased_update_percentage))
                 elif subcomp in self.publisher.subcomponents:
                     # We pick up subcomponent packages here, although they
@@ -492,7 +503,7 @@ class FTPArchiveHandler:
         ef = open(ef_override_new, "w")
         f = open(main_override_new, "w")
         basic_override_seen = set()
-        for (package_arch, priority, section,
+        for (package_arch, priority, section, _,
              phased_update_percentage) in bin_overrides:
             package = package_arch.split("/")[0]
             if package not in basic_override_seen:
@@ -661,16 +672,25 @@ class FTPArchiveHandler:
                         continue
                 spps = self.getSourceFiles(distroseries, pocket)
                 pps = self.getBinaryFiles(distroseries, pocket)
-                self.publishFileLists(distroseries.getSuite(pocket), spps, pps)
+                self.publishFileLists(distroseries, pocket, spps, pps)
 
-    def publishFileLists(self, suite, sourcefiles, binaryfiles):
+    def publishFileLists(self, distroseries, pocket, sourcefiles, binaryfiles):
         """Collate the set of source files and binary files provided and
         write out all the file list files for them.
 
         listroot/distroseries_component_source
         listroot/distroseries_component_binary-archname
         """
+        suite = distroseries.getSuite(pocket)
+
         filelist = defaultdict(lambda: defaultdict(list))
+        # Ensure that we generate file lists for all the expected components
+        # and architectures, even if they're currently empty.
+        for component in self.publisher.archive.getComponentsForSeries(
+                distroseries):
+            filelist[component.name]["source"]
+            for das in distroseries.enabled_architectures:
+                filelist[component.name]["binary-%s" % das.architecturetag]
 
         def updateFileList(sourcepackagename, filename, component,
                            architecturetag=None):
@@ -693,7 +713,6 @@ class FTPArchiveHandler:
             updateFileList(*file_details)
 
         self.log.debug("Writing file lists for %s" % suite)
-        series, pocket = self.distro.getDistroSeriesAndPocket(suite)
         for component, architectures in six.iteritems(filelist):
             for architecture, file_names in six.iteritems(architectures):
                 # XXX wgrant 2010-10-06: There must be a better place to do
@@ -703,7 +722,7 @@ class FTPArchiveHandler:
                 else:
                     # The "[7:]" strips the "binary-" prefix off the
                     # architecture names we get here.
-                    das = series.getDistroArchSeries(architecture[7:])
+                    das = distroseries.getDistroArchSeries(architecture[7:])
                     enabled = das.enabled
                 if enabled:
                     self.writeFileList(
@@ -735,7 +754,8 @@ class FTPArchiveHandler:
             with open(new_path, 'w') as f:
                 files[subcomp].sort(key=package_name)
                 f.write("\n".join(files[subcomp]))
-                f.write("\n")
+                if files[subcomp]:
+                    f.write("\n")
             os.rename(new_path, final_path)
 
     #

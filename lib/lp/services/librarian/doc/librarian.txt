@@ -344,7 +344,7 @@ provide such a token.
 
     >>> private_path = TimeLimitedToken.url_to_token_path(
     ...        file_alias.private_url)
-    >>> url_token = token_url.split('=')[1]
+    >>> url_token = token_url.split('=')[1].encode('ASCII')
     >>> hashlib.sha256(url_token).hexdigest() == session_store().find(
     ...     TimeLimitedToken, path=private_path).any().token
     True
@@ -364,14 +364,16 @@ If you try to retrieve this file through the standard ILibrarianClient,
 you'll get a DownloadFailed error.
 
     >>> client.getFileByAlias(private_file_id)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    DownloadFailed: Alias ... cannot be downloaded from this client.
+    lp.services.librarian.interfaces.client.DownloadFailed: Alias ... cannot be downloaded from this client.
 
     >>> client.getURLForAlias(private_file_id)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    DownloadFailed: Alias ... cannot be downloaded from this client.
+    lp.services.librarian.interfaces.client.DownloadFailed: Alias ... cannot be downloaded from this client.
 
 But using the restricted librarian will work:
 
@@ -389,9 +391,10 @@ Trying to access that file directly on the normal librarian will fail
     ...     config.librarian.restricted_download_url,
     ...     config.librarian.download_url)
     >>> urlopen(sneaky_url).read()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    HTTPError: HTTP Error 404: Not Found
+    urllib.error.HTTPError: HTTP Error 404: Not Found
 
 But downloading it from the restricted host, will work.
 
@@ -412,14 +415,16 @@ also fails:
     >>> transaction.commit()
 
     >>> restricted_client.getURLForAlias(public_file_id)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    DownloadFailed: ...
+    lp.services.librarian.interfaces.client.DownloadFailed: ...
 
     >>> restricted_client.getFileByAlias(public_file_id)
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
-    DownloadFailed: ...
+    lp.services.librarian.interfaces.client.DownloadFailed: ...
 
 The remoteAddFile() on the restricted client, also creates a restricted
 file:
@@ -454,13 +459,14 @@ So searching for the private content on the public librarian will fail:
 
     >>> transaction.commit()
     >>> search_query = "search?digest=%s" % restricted_file.content.sha1
-    >>> print(urlopen(config.librarian.download_url + search_query).read())
+    >>> print(six.ensure_str(
+    ...     urlopen(config.librarian.download_url + search_query).read()))
     0
 
 But on the restricted server, this will work:
 
-    >>> result = urlopen(
-    ...     config.librarian.restricted_download_url + search_query).read()
+    >>> result = six.ensure_str(urlopen(
+    ...     config.librarian.restricted_download_url + search_query).read())
     >>> result = result.splitlines()
     >>> print(result[0])
     3
@@ -476,9 +482,10 @@ An UploadFailed will be raised if you try to create a file with no
 content
 
     >>> client.addFile('test.txt', 0, io.BytesIO(b'hello'), 'text/plain')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
-    UploadFailed: Invalid length: 0
+    lp.services.librarian.interfaces.client.UploadFailed: Invalid length: 0
 
 If you really want a zero length file you can do it:
 
@@ -631,9 +638,10 @@ The count starts at 0, and cannot be changed directly.
     0
 
     >>> public_file.hits = 10
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    ForbiddenAttribute: ...
+    zope.security.interfaces.ForbiddenAttribute: ...
 
 To change that, we have to use the updateDownloadCount() method, which
 takes care of creating/updating the necessary LibraryFileDownloadCount

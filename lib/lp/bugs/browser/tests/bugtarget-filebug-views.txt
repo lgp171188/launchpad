@@ -39,11 +39,11 @@ directly.
     True
 
     >>> filebug_view.submit_bug_action.success(bug_data)
-    >>> filebug_view.added_bug.title
-    u'Test Title'
+    >>> print(filebug_view.added_bug.title)
+    Test Title
 
-    >>> filebug_view.added_bug.description
-    u'Test description.'
+    >>> print(filebug_view.added_bug.description)
+    Test description.
 
 
 URLs to additional FileBug elements
@@ -88,11 +88,11 @@ directly.
     True
 
     >>> filebug_view.submit_bug_action.success(bug_data)
-    >>> filebug_view.added_bug.title
-    u'Test Title'
+    >>> print(filebug_view.added_bug.title)
+    Test Title
 
-    >>> filebug_view.added_bug.description
-    u'Test description.'
+    >>> print(filebug_view.added_bug.description)
+    Test description.
 
     >>> for tag in filebug_view.added_bug.tags:
     ...     print(tag)
@@ -114,8 +114,8 @@ The base class allows security bugs to be filed.
     True
 
     >>> filebug_view.submit_bug_action.success(bug_data)
-    >>> filebug_view.added_bug.title
-    u'Security bug'
+    >>> print(filebug_view.added_bug.title)
+    Security bug
 
     >>> filebug_view.added_bug.security_related
     True

@@ -1820,6 +1820,7 @@
             set_attributes="
                 bug_reported_acknowledgement
                 bug_reporting_guidelines
+                default_traversal_policy
                 description
                 development_series_alias
                 display_name
@@ -1832,11 +1833,13 @@
                 mirror_admin
                 mugshot
                 oci_project_admin
+                oci_registry_credentials
                 official_answers
                 official_blueprints
                 official_malone
                 owner
                 package_derivatives_email
+                redirect_default_traversal
                 redirect_release_uploads
                 summary
                 vcs
@@ -1932,13 +1935,15 @@
     <class
         class="lp.registry.model.distribution.DistributionSet">
         <allow
-            interface="lp.registry.interfaces.distribution.IDistributionSet"/>
+            interface="lp.registry.interfaces.distribution.IDistributionSet"
+            attributes="__len__"/>
     </class>
     <securedutility
         class="lp.registry.model.distribution.DistributionSet"
         provides="lp.registry.interfaces.distribution.IDistributionSet">
         <allow
-            interface="lp.registry.interfaces.distribution.IDistributionSet"/>
+            interface="lp.registry.interfaces.distribution.IDistributionSet"
+            attributes="__len__"/>
     </securedutility>
 
     <!-- SourcePackage -->

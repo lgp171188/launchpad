@@ -86,7 +86,7 @@ name is specified, an error message will be displayed.
     'test bug'
 
     >>> for message in find_tags_by_class(anon_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     Please enter a project name
 
 An error message will be displayed also if the project isn't registered
@@ -102,7 +102,7 @@ in the Launchpad.
     >>> anon_browser.getControl(name='field.searchtext').value
     'test bug'
     >>> for message in find_tags_by_class(anon_browser.contents, 'message'):
-    ...     print(message.renderContents())
+    ...     print(message.decode_contents())
     There is no project named 'invalid' registered in Launchpad
 
 If the user doesn't know what name to write, they can use the 'Choose'

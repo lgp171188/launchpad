@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Webservice unit tests related to Launchpad Bugs."""
@@ -18,6 +18,7 @@ from lazr.restfulclient.errors import (
     )
 import pytz
 from simplejson import dumps
+import six
 from storm.store import Store
 from testtools.matchers import (
     Equals,
@@ -187,7 +188,7 @@ class TestBugCommentRepresentation(TestCaseWithFactory):
 
         self.assertEqual(response.status, 200)
 
-        rendered_comment = response.body
+        rendered_comment = six.ensure_text(response.body)
         self.assertRenderedCommentsEqual(
             rendered_comment, self.expected_comment_html)
 
@@ -199,7 +200,7 @@ class TestBugScaling(TestCaseWithFactory):
     def test_attachments_query_counts_constant(self):
         # XXX j.c.sackett 2010-09-02 bug=619017
         # This test was being thrown off by the reference bug. To get around
-        # the problem, flush and reset are called on the bug storm cache
+        # the problem, flush and invalidate are called on the bug storm cache
         # before each call to the webservice. When lp's storm is updated
         # to release the committed fix for this bug, please see about
         # updating this test.
@@ -216,7 +217,7 @@ class TestBugScaling(TestCaseWithFactory):
         url = '/bugs/%d/attachments?ws.size=75' % self.bug.id
         # First request.
         store.flush()
-        store.reset()
+        store.invalidate()
         response = webservice.get(url)
         self.assertThat(collector, HasQueryCount(LessThan(24)))
         with_2_count = collector.count
@@ -227,16 +228,17 @@ class TestBugScaling(TestCaseWithFactory):
         logout()
         # Second request.
         store.flush()
-        store.reset()
+        store.invalidate()
         response = webservice.get(url)
         self.assertThat(collector, HasQueryCount(Equals(with_2_count)))
 
     def test_messages_query_counts_constant(self):
         # XXX Robert Collins 2010-09-15 bug=619017
         # This test may be thrown off by the reference bug. To get around the
-        # problem, flush and reset are called on the bug storm cache before
-        # each call to the webservice. When lp's storm is updated to release
-        # the committed fix for this bug, please see about updating this test.
+        # problem, flush and invalidate are called on the bug storm cache
+        # before each call to the webservice. When lp's storm is updated to
+        # release the committed fix for this bug, please see about updating
+        # this test.
         login(USER_EMAIL)
         bug = self.factory.makeBug()
         store = Store.of(bug)
@@ -251,7 +253,7 @@ class TestBugScaling(TestCaseWithFactory):
         url = '/bugs/%d/messages?ws.size=75' % bug.id
         # First request.
         store.flush()
-        store.reset()
+        store.invalidate()
         response = webservice.get(url)
         self.assertThat(collector, HasQueryCount(LessThan(24)))
         with_2_count = collector.count
@@ -263,7 +265,7 @@ class TestBugScaling(TestCaseWithFactory):
         logout()
         # Second request.
         store.flush()
-        store.reset()
+        store.invalidate()
         response = webservice.get(url)
         self.assertThat(collector, HasQueryCount(Equals(with_2_count)))
 

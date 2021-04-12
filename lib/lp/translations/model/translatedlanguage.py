@@ -4,6 +4,7 @@
 __all__ = ['TranslatedLanguageMixin']
 
 import pytz
+import six
 from storm.expr import (
     Coalesce,
     Desc,
@@ -71,8 +72,11 @@ class POFilesByPOTemplates(object):
     def __len__(self):
         return self.templates_collection.select(POTemplate).count()
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.templates_collection.select(POTemplate).any())
+
+    if six.PY2:
+        __nonzero__ = __bool__
 
 
 @implementer(ITranslatedLanguage)

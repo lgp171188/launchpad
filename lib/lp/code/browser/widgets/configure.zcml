@@ -16,4 +16,13 @@
       permission="zope.Public"
       />
 
+  <view
+      type="zope.publisher.interfaces.browser.IBrowserRequest"
+      for="zope.schema.interfaces.IChoice
+           lp.code.vocabularies.gitref.GitRefVocabulary"
+      provides="zope.formlib.interfaces.IInputWidget"
+      factory="lp.code.browser.widgets.gitref.GitRefPickerWidget"
+      permission="zope.Public"
+      />
+
 </configure>

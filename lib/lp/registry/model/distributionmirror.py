@@ -546,7 +546,7 @@ class DistributionMirror(SQLBase):
         """See IDistributionMirror"""
         paths = []
         for series in self.distribution.series:
-            for pocket, suffix in pocketsuffix.items():
+            for pocket, suffix in sorted(pocketsuffix.items()):
                 for component in series.components:
                     for arch_series in series.architectures:
                         # Skip unsupported series and unofficial architectures
@@ -568,7 +568,7 @@ class DistributionMirror(SQLBase):
         """See IDistributionMirror"""
         paths = []
         for series in self.distribution.series:
-            for pocket, suffix in pocketsuffix.items():
+            for pocket, suffix in sorted(pocketsuffix.items()):
                 for component in series.components:
                     # Skip sources for series which are obsolete and ones
                     # which were not on the mirror on its last probe.
@@ -835,32 +835,35 @@ class MirrorDistroArchSeries(SQLBase, _MirrorSeriesMixIn):
                    binarypackagerelease's binarypackagefile.filetype is
                    BinaryPackageFileType.DEB.
         """
-        query = """
-            BinaryPackagePublishingHistory.pocket = %s
-            AND BinaryPackagePublishingHistory.component = %s
-            AND BinaryPackagePublishingHistory.distroarchseries = %s
-            AND BinaryPackagePublishingHistory.archive = %s
-            AND BinaryPackagePublishingHistory.status = %s
-            """ % sqlvalues(self.pocket, self.component,
-                            self.distro_arch_series,
-                            self.distro_arch_series.main_archive,
-                            PackagePublishingStatus.PUBLISHED)
+        clauses = [
+            BinaryPackagePublishingHistory.pocket == self.pocket,
+            BinaryPackagePublishingHistory.component == self.component,
+            BinaryPackagePublishingHistory.distroarchseries ==
+                self.distro_arch_series,
+            BinaryPackagePublishingHistory.archive ==
+                self.distro_arch_series.main_archive,
+            BinaryPackagePublishingHistory.status ==
+                PackagePublishingStatus.PUBLISHED,
+            ]
 
         if deb_only:
-            query += """
-                AND BinaryPackagePublishingHistory.binarypackagerelease =
-                    BinaryPackageFile.binarypackagerelease
-                AND BinaryPackageFile.filetype = %s
-                """ % sqlvalues(BinaryPackageFileType.DEB)
+            clauses.extend([
+                BinaryPackagePublishingHistory.binarypackagereleaseID ==
+                    BinaryPackageFile.binarypackagereleaseID,
+                BinaryPackageFile.filetype == BinaryPackageFileType.DEB,
+                ])
 
         if time_interval is not None:
             start, end = time_interval
             assert end > start, '%s is not more recent than %s' % (end, start)
-            query = (query + " AND datepublished >= %s AND datepublished < %s"
-                     % sqlvalues(start, end))
-        return BinaryPackagePublishingHistory.selectFirst(
-            query, clauseTables=['BinaryPackageFile'],
-            orderBy='-datepublished')
+            clauses.extend([
+                BinaryPackagePublishingHistory.datepublished >= start,
+                BinaryPackagePublishingHistory.datepublished < end,
+                ])
+        rows = IStore(BinaryPackagePublishingHistory).find(
+            BinaryPackagePublishingHistory,
+            *clauses).order_by(BinaryPackagePublishingHistory.datepublished)
+        return rows.last()
 
     def _getPackageReleaseURLFromPublishingRecord(self, publishing_record):
         """Return the URL on this mirror from where the BinaryPackageRelease.
@@ -898,24 +901,27 @@ class MirrorDistroSeriesSource(SQLBase, _MirrorSeriesMixIn):
         notNull=True, schema=PackagePublishingPocket)
 
     def getLatestPublishingEntry(self, time_interval):
-        query = """
-            SourcePackagePublishingHistory.pocket = %s
-            AND SourcePackagePublishingHistory.component = %s
-            AND SourcePackagePublishingHistory.distroseries = %s
-            AND SourcePackagePublishingHistory.archive = %s
-            AND SourcePackagePublishingHistory.status = %s
-            """ % sqlvalues(self.pocket, self.component,
-                            self.distroseries,
-                            self.distroseries.main_archive,
-                            PackagePublishingStatus.PUBLISHED)
+        clauses = [
+            SourcePackagePublishingHistory.pocket == self.pocket,
+            SourcePackagePublishingHistory.component == self.component,
+            SourcePackagePublishingHistory.distroseries == self.distroseries,
+            SourcePackagePublishingHistory.archive ==
+                self.distroseries.main_archive,
+            SourcePackagePublishingHistory.status ==
+                PackagePublishingStatus.PUBLISHED,
+            ]
 
         if time_interval is not None:
             start, end = time_interval
             assert end > start
-            query = (query + " AND datepublished >= %s AND datepublished < %s"
-                     % sqlvalues(start, end))
-        return SourcePackagePublishingHistory.selectFirst(
-            query, orderBy='-datepublished')
+            clauses.extend([
+                SourcePackagePublishingHistory.datepublished >= start,
+                SourcePackagePublishingHistory.datepublished < end,
+                ])
+        rows = IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            *clauses).order_by(SourcePackagePublishingHistory.datepublished)
+        return rows.last()
 
     def _getPackageReleaseURLFromPublishingRecord(self, publishing_record):
         """return the URL on this mirror from where the SourcePackageRelease.

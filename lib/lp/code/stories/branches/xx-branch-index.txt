@@ -76,7 +76,7 @@ than the text of the revision author.
     ...     revisions = find_tags_by_class(
     ...         browser.contents, 'revision-details')
     ...     for revision in revisions:
-    ...         print(extract_text(revision).encode('ascii'))
+    ...         print(extract_text(revision))
 
     >>> print_revisions(user_browser)
     5. By Eric on 2007-01-05
@@ -103,13 +103,13 @@ and author.
     ...     'http://code.launchpad.test/~name12/+branch/+junk/junk.dev')
     >>> commit_messages = find_tags_by_class(
     ...         browser.contents, 'revision-comment')
-    >>> print(commit_messages[0].p.renderContents())
+    >>> print(commit_messages[0].p.decode_contents())
     fix bug in bar
 
 When a commit message refers to a bug using the form "bug <bugnumber>",
 a link to that bug is created.
 
-    >>> print(commit_messages[3].p.renderContents())
+    >>> print(commit_messages[3].p.decode_contents())
     fix <a ...>bug 1</a>
 
 This link can be followed to the bug's details page.

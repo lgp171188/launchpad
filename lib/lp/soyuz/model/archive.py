@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database class for table Archive."""
@@ -30,6 +30,7 @@ from storm.expr import (
     Cast,
     Count,
     Desc,
+    Exists,
     Join,
     Not,
     Or,
@@ -1054,7 +1055,7 @@ class Archive(SQLBase):
         from lp.soyuz.model.distroseriespackagecache import (
             DistroSeriesPackageCache)
         # Compiled regexp to remove puntication.
-        clean_text = re.compile('(,|;|:|\.|\?|!)')
+        clean_text = re.compile(r'(,|;|:|\.|\?|!)')
 
         # XXX cprov 20080402 bug=207969: The set() is only used because we
         # have a limitation in our FTI setup, it only indexes the first 2500
@@ -1092,7 +1093,7 @@ class Archive(SQLBase):
 
         # Collapse all relevant terms in 'package_description_cache' and
         # update the package counters.
-        self.package_description_cache = " ".join(cache_contents)
+        self.package_description_cache = " ".join(sorted(cache_contents))
         self.sources_cached = sources_cached.count()
         self.binaries_cached = binaries_cached.count()
 
@@ -1100,7 +1101,8 @@ class Archive(SQLBase):
                           source_package_name, dep_name):
         """See `IArchive`."""
         deps = expand_dependencies(
-            self, distro_arch_series, pocket, component, source_package_name)
+            self, distro_arch_series, pocket, component, source_package_name,
+            self.dependencies)
         archive_clause = Or([And(
             BinaryPackagePublishingHistory.archiveID == archive.id,
             BinaryPackagePublishingHistory.pocket == pocket,
@@ -1167,7 +1169,7 @@ class Archive(SQLBase):
                     "Non-primary archives only support the '%s' component." %
                     dependency.default_component.name)
         return ArchiveDependency(
-            archive=self, dependency=dependency, pocket=pocket,
+            parent=self, dependency=dependency, pocket=pocket,
             component=component)
 
     def _addArchiveDependency(self, dependency, pocket, component=None):
@@ -2593,16 +2595,16 @@ class ArchiveSet:
     def getPPAByDistributionAndOwnerName(self, distribution, person_name,
                                          ppa_name):
         """See `IArchiveSet`"""
-        query = """
-            Archive.purpose = %s AND
-            Archive.distribution = %s AND
-            Person.id = Archive.owner AND
-            Archive.name = %s AND
-            Person.name = %s
-        """ % sqlvalues(
-                ArchivePurpose.PPA, distribution, ppa_name, person_name)
+        # Circular import.
+        from lp.registry.model.person import Person
 
-        return Archive.selectOne(query, clauseTables=['Person'])
+        return IStore(Archive).find(
+            Archive,
+            Archive.purpose == ArchivePurpose.PPA,
+            Archive.distribution == distribution,
+            Archive.owner == Person.id,
+            Archive.name == ppa_name,
+            Person.name == person_name).one()
 
     def _getDefaultArchiveNameByPurpose(self, purpose):
         """Return the default for a archive in a given purpose.
@@ -2641,11 +2643,11 @@ class ArchiveSet:
 
     def getByDistroAndName(self, distribution, name):
         """See `IArchiveSet`."""
-        return Archive.selectOne("""
-            Archive.distribution = %s AND
-            Archive.name = %s AND
-            Archive.purpose != %s
-            """ % sqlvalues(distribution, name, ArchivePurpose.PPA))
+        return IStore(Archive).find(
+            Archive,
+            Archive.distribution == distribution,
+            Archive.name == name,
+            Archive.purpose != ArchivePurpose.PPA).one()
 
     def _getDefaultDisplayname(self, name, owner, distribution, purpose):
         """See `IArchive`."""
@@ -2697,9 +2699,8 @@ class ArchiveSet:
         # For non-PPA archives we enforce unique names within the context of a
         # distribution.
         if purpose != ArchivePurpose.PPA:
-            archive = Archive.selectOne(
-                "Archive.distribution = %s AND Archive.name = %s" %
-                sqlvalues(distribution, name))
+            archive = IStore(Archive).find(
+                Archive, distribution=distribution, name=name).one()
             if archive is not None:
                 raise AssertionError(
                     "archive '%s' exists already in '%s'." %
@@ -2846,19 +2847,20 @@ class ArchiveSet:
 
     def getLatestPPASourcePublicationsForDistribution(self, distribution):
         """See `IArchiveSet`."""
-        query = """
-            SourcePackagePublishingHistory.archive = Archive.id AND
-            SourcePackagePublishingHistory.distroseries =
-                DistroSeries.id AND
-            Archive.private = FALSE AND
-            Archive.enabled = TRUE AND
-            DistroSeries.distribution = %s AND
-            Archive.purpose = %s
-        """ % sqlvalues(distribution, ArchivePurpose.PPA)
+        # Circular import.
+        from lp.registry.model.distroseries import DistroSeries
 
-        return SourcePackagePublishingHistory.select(
-            query, limit=5, clauseTables=['Archive', 'DistroSeries'],
-            orderBy=['-datecreated', '-id'])
+        return IStore(SourcePackagePublishingHistory).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.archive == Archive.id,
+            SourcePackagePublishingHistory.distroseries == DistroSeries.id,
+            Archive._private == False,
+            Archive._enabled == True,
+            DistroSeries.distribution == distribution,
+            Archive.purpose == ArchivePurpose.PPA,
+            ).order_by(
+                Desc(SourcePackagePublishingHistory.datecreated),
+                Desc(SourcePackagePublishingHistory.id))[:5]
 
     def getMostActivePPAsForDistribution(self, distribution):
         """See `IArchiveSet`."""
@@ -2894,8 +2896,10 @@ class ArchiveSet:
             Archive._private == True, Archive.purpose == ArchivePurpose.PPA)
 
     def getArchivesForDistribution(self, distribution, name=None,
-                                   purposes=None, user=None,
-                                   exclude_disabled=True):
+                                   purposes=None,
+                                   check_permissions=True, user=None,
+                                   exclude_disabled=True,
+                                   exclude_pristine=False):
         """See `IArchiveSet`."""
         extra_exprs = []
 
@@ -2913,7 +2917,9 @@ class ArchiveSet:
         public_archive = And(Archive._private == False,
                              Archive._enabled == True)
 
-        if user is not None:
+        if not check_permissions:
+            pass
+        elif user is not None:
             admins = getUtility(ILaunchpadCelebrities).admin
             if not user.inTeam(admins):
                 # Enforce privacy-awareness for logged-in, non-admin users,
@@ -2947,6 +2953,11 @@ class ArchiveSet:
 
         if exclude_disabled:
             extra_exprs.append(Archive._enabled == True)
+
+        if exclude_pristine:
+            extra_exprs.append(Exists(Select(
+                1, tables=[SourcePackagePublishingHistory],
+                where=(SourcePackagePublishingHistory.archive == Archive.id))))
 
         query = Store.of(distribution).find(
             Archive,

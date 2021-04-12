@@ -396,15 +396,15 @@ a sourcepackage, so we subtract this count from the total number of bugs
 targeted to the distribution:
 
     >>> from storm.expr import SQL
-    >>> store.find(
+    >>> print(store.find(
     ...     BugSummary,
     ...     BugSummary.distribution == distribution,
     ...     BugSummary.status == BugTaskStatus.CONFIRMED,
     ...     BugSummary.viewed_by == None,
     ...     BugSummary.tag == None).sum(SQL("""
     ...         CASE WHEN sourcepackagename IS NULL THEN count ELSE -count END
-    ...         """)) or 0
-    1L
+    ...         """)) or 0)
+    1
 
 
 DistroSeries Bug Counts

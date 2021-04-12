@@ -20,7 +20,11 @@ from sqlobject import (
     StringCol,
     )
 from storm.expr import And
-from storm.locals import SQL
+from storm.locals import (
+    Int,
+    Reference,
+    SQL,
+    )
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -262,18 +266,19 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
     assert TranslationConstants.MAX_PLURAL_FORMS == 6, (
         "Change this code to support %d plural forms."
         % TranslationConstants.MAX_PLURAL_FORMS)
-    msgstr0 = ForeignKey(foreignKey='POTranslation', dbName='msgstr0',
-                         notNull=False, default=DEFAULT)
-    msgstr1 = ForeignKey(foreignKey='POTranslation', dbName='msgstr1',
-                         notNull=False, default=DEFAULT)
-    msgstr2 = ForeignKey(foreignKey='POTranslation', dbName='msgstr2',
-                         notNull=False, default=DEFAULT)
-    msgstr3 = ForeignKey(foreignKey='POTranslation', dbName='msgstr3',
-                         notNull=False, default=DEFAULT)
-    msgstr4 = ForeignKey(foreignKey='POTranslation', dbName='msgstr4',
-                         notNull=False, default=DEFAULT)
-    msgstr5 = ForeignKey(foreignKey='POTranslation', dbName='msgstr5',
-                         notNull=False, default=DEFAULT)
+
+    msgstr0_id = Int(name='msgstr0', allow_none=True, default=DEFAULT)
+    msgstr0 = Reference(msgstr0_id, 'POTranslation.id')
+    msgstr1_id = Int(name='msgstr1', allow_none=True, default=DEFAULT)
+    msgstr1 = Reference(msgstr1_id, 'POTranslation.id')
+    msgstr2_id = Int(name='msgstr2', allow_none=True, default=DEFAULT)
+    msgstr2 = Reference(msgstr2_id, 'POTranslation.id')
+    msgstr3_id = Int(name='msgstr3', allow_none=True, default=DEFAULT)
+    msgstr3 = Reference(msgstr3_id, 'POTranslation.id')
+    msgstr4_id = Int(name='msgstr4', allow_none=True, default=DEFAULT)
+    msgstr4 = Reference(msgstr4_id, 'POTranslation.id')
+    msgstr5_id = Int(name='msgstr5', allow_none=True, default=DEFAULT)
+    msgstr5 = Reference(msgstr5_id, 'POTranslation.id')
 
     comment = StringCol(
         dbName='comment', notNull=False, default=None)
@@ -430,7 +435,7 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
 
         for form in range(TranslationConstants.MAX_PLURAL_FORMS):
             msgstr_name = 'msgstr%d' % form
-            msgstr = getattr(self, 'msgstr%dID' % form)
+            msgstr = getattr(self, 'msgstr%d_id' % form)
             if msgstr is None:
                 form_clause = "%s IS NULL" % msgstr_name
             else:
@@ -497,10 +502,10 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
         """See `ITranslationMessage`."""
         store = Store.of(self)
 
-        forms_match = (TranslationMessage.msgstr0ID == self.msgstr0ID)
+        forms_match = (TranslationMessage.msgstr0_id == self.msgstr0_id)
         for form in range(1, TranslationConstants.MAX_PLURAL_FORMS):
             form_name = 'msgstr%d' % form
-            form_value = getattr(self, 'msgstr%dID' % form)
+            form_value = getattr(self, 'msgstr%d_id' % form)
             forms_match = And(
                 forms_match,
                 getattr(TranslationMessage, form_name) == form_value)
@@ -541,10 +546,6 @@ class TranslationMessageSet:
         except SQLObjectNotFound:
             return None
 
-    def selectDirect(self, where=None, order_by=None):
-        """See `ITranslationMessageSet`."""
-        return TranslationMessage.select(where, orderBy=order_by)
-
     def preloadDetails(self, messages, pofile=None, need_pofile=False,
                        need_potemplate=False, need_potemplate_context=False,
                        need_potranslation=False, need_potmsgset=False,
@@ -570,7 +571,7 @@ class TranslationMessageSet:
         if need_potranslation:
             load_related(
                 POTranslation, tms,
-                ['msgstr%dID' % form
+                ['msgstr%d_id' % form
                  for form in range(TranslationConstants.MAX_PLURAL_FORMS)])
         if need_potmsgset:
             load_related(POTMsgSet, tms, ['potmsgsetID'])

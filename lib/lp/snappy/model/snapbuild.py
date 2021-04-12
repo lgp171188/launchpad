@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -26,6 +26,7 @@ from storm.locals import (
     Desc,
     Int,
     JSON,
+    Or,
     Reference,
     Select,
     SQL,
@@ -51,6 +52,7 @@ from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
@@ -95,8 +97,10 @@ from lp.snappy.model.snapbuildjob import (
     SnapBuildJob,
     SnapBuildJobType,
     )
+from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archivedependency import ArchiveDependency
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
@@ -156,6 +160,8 @@ class SnapBuild(PackageBuildMixin, Storm):
 
     pocket = DBEnum(enum=PackagePublishingPocket, allow_none=False)
 
+    snap_base_id = Int(name='snap_base', allow_none=True)
+    snap_base = Reference(snap_base_id, 'SnapBase.id')
     channels = JSON('channels', allow_none=True)
 
     processor_id = Int(name='processor', allow_none=False)
@@ -189,8 +195,9 @@ class SnapBuild(PackageBuildMixin, Storm):
     store_upload_metadata = JSON('store_upload_json_data', allow_none=True)
 
     def __init__(self, build_farm_job, requester, snap, archive,
-                 distro_arch_series, pocket, channels, processor, virtualized,
-                 date_created, store_upload_metadata=None, build_request=None):
+                 distro_arch_series, pocket, snap_base, channels,
+                 processor, virtualized, date_created,
+                 store_upload_metadata=None, build_request=None):
         """Construct a `SnapBuild`."""
         super(SnapBuild, self).__init__()
         self.build_farm_job = build_farm_job
@@ -199,6 +206,7 @@ class SnapBuild(PackageBuildMixin, Storm):
         self.archive = archive
         self.distro_arch_series = distro_arch_series
         self.pocket = pocket
+        self.snap_base = snap_base
         self.channels = channels
         self.processor = processor
         self.virtualized = virtualized
@@ -273,6 +281,27 @@ class SnapBuild(PackageBuildMixin, Storm):
             return self.buildqueue_record.lastscore
 
     @property
+    def can_be_retried(self):
+        """See `ISnapBuild`."""
+        # First check that the behaviour would accept the build if it
+        # succeeded.
+        if self.distro_series.status == SeriesStatus.OBSOLETE:
+            return False
+
+        failed_statuses = [
+            BuildStatus.FAILEDTOBUILD,
+            BuildStatus.MANUALDEPWAIT,
+            BuildStatus.CHROOTWAIT,
+            BuildStatus.FAILEDTOUPLOAD,
+            BuildStatus.CANCELLED,
+            BuildStatus.SUPERSEDED,
+            ]
+
+        # If the build is currently in any of the failed states,
+        # it may be retried.
+        return self.status in failed_statuses
+
+    @property
     def can_be_rescored(self):
         """See `ISnapBuild`."""
         return (
@@ -290,6 +319,19 @@ class SnapBuild(PackageBuildMixin, Storm):
             BuildStatus.NEEDSBUILD,
             ]
         return self.status in cancellable_statuses
+
+    def retry(self):
+        """See `ISnapBuild`."""
+        assert self.can_be_retried, "Build %s cannot be retried" % self.id
+        self.build_farm_job.status = self.status = BuildStatus.NEEDSBUILD
+        self.build_farm_job.date_finished = self.date_finished = None
+        self.date_started = None
+        self.build_farm_job.builder = self.builder = None
+        self.log = None
+        self.upload_log = None
+        self.dependencies = None
+        self.failure_count = 0
+        self.queueBuild()
 
     def rescore(self, score):
         """See `ISnapBuild`."""
@@ -525,7 +567,7 @@ class SnapBuild(PackageBuildMixin, Storm):
 class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def new(self, requester, snap, archive, distro_arch_series, pocket,
-            channels=None, date_created=DEFAULT,
+            snap_base=None, channels=None, date_created=DEFAULT,
             store_upload_metadata=None, build_request=None):
         """See `ISnapBuildSet`."""
         store = IMasterStore(SnapBuild)
@@ -534,7 +576,7 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
             archive)
         snapbuild = SnapBuild(
             build_farm_job, requester, snap, archive, distro_arch_series,
-            pocket, channels, distro_arch_series.processor,
+            pocket, snap_base, channels, distro_arch_series.processor,
             not distro_arch_series.processor.supports_nonvirtualized
             or snap.require_virtualized or archive.require_virtualized,
             date_created, store_upload_metadata=store_upload_metadata,
@@ -621,7 +663,8 @@ class SnapBuildMacaroonIssuer(MacaroonIssuerBase):
 
     def checkVerificationContext(self, context, **kwargs):
         """See `MacaroonIssuerBase`."""
-        if not IGitRepository.providedBy(context):
+        if (not IGitRepository.providedBy(context) and
+                not IArchive.providedBy(context)):
             raise BadMacaroonContext(context)
         return context
 
@@ -629,10 +672,10 @@ class SnapBuildMacaroonIssuer(MacaroonIssuerBase):
                             **kwargs):
         """See `MacaroonIssuerBase`.
 
-        For verification, the context is an `IGitRepository`.  We check that
-        the repository is needed to build the `ISnapBuild` that is the
-        context of the macaroon, and that the context build is currently
-        building.
+        For verification, the context is an `IGitRepository` or an
+        `IArchive`.  We check that the repository or archive is needed to
+        build the `ISnapBuild` that is the context of the macaroon, and that
+        the context build is currently building.
         """
         # Circular import.
         from lp.snappy.model.snap import Snap
@@ -652,9 +695,24 @@ class SnapBuildMacaroonIssuer(MacaroonIssuerBase):
             build_id = int(caveat_value)
         except ValueError:
             return False
-        return not IStore(SnapBuild).find(
-            SnapBuild,
+        clauses = [
             SnapBuild.id == build_id,
-            SnapBuild.snap_id == Snap.id,
-            Snap.git_repository == context,
-            SnapBuild.status == BuildStatus.BUILDING).is_empty()
+            SnapBuild.status == BuildStatus.BUILDING,
+            ]
+        if IGitRepository.providedBy(context):
+            clauses.extend([
+                SnapBuild.snap_id == Snap.id,
+                Snap.git_repository == context,
+                ])
+        elif IArchive.providedBy(context):
+            clauses.append(
+                Or(
+                    SnapBuild.archive == context,
+                    SnapBuild.archive_id.is_in(Select(
+                        Archive.id,
+                        where=And(
+                            ArchiveDependency.archive == Archive.id,
+                            ArchiveDependency.dependency == context)))))
+        else:
+            return False
+        return not IStore(SnapBuild).find(SnapBuild, *clauses).is_empty()

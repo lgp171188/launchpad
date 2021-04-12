@@ -20,7 +20,7 @@ country.
     ...     mirrors = country_and_mirror['mirrors']
     ...     for mirror in mirrors:
     ...         assert mirror.country.name == country
-    ...     print "%s: %d mirror(s)" % (country, len(mirrors))
+    ...     print("%s: %d mirror(s)" % (country, len(mirrors)))
     France: 2 mirror(s)
     Germany: 1 mirror(s)
     United Kingdom: 1 mirror(s)
@@ -36,7 +36,7 @@ Lists of archive mirrors
     ...     mirrors = country_and_mirror['mirrors']
     ...     for mirror in mirrors:
     ...         assert mirror.country.name == country
-    ...     print "%s: %d mirror(s)" % (country, len(mirrors))
+    ...     print("%s: %d mirror(s)" % (country, len(mirrors)))
     Antarctica: 2 mirror(s)
     France: 2 mirror(s)
     United Kingdom: 1 mirror(s)
@@ -52,15 +52,15 @@ Registering a distribution
 The +add view of the DistributionSet allows admins to register distributions.
 
     >>> view = create_view(distributionset, '+add')
-    >>> print view.label
+    >>> print(view.label)
     Register a new distribution
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Register a new distribution
 
 The view provides a cancel link.
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/distros
 
 The view accepts the basic fields to register a distribution.
@@ -85,11 +85,11 @@ The view accepts the basic fields to register a distribution.
     >>> view = create_initialized_view(distributionset, '+add', form=form)
     >>> view.errors
     []
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/youbuntu
 
     >>> distribution = distributionset.getByName("youbuntu")
-    >>> print distribution.name
+    >>> print(distribution.name)
     youbuntu
 
 Only admins and owners can access the view.
@@ -112,13 +112,13 @@ a label, page_title, and cancel_url.
 
     >>> login("admin@canonical.com")
     >>> view = create_view(distribution, '+edit')
-    >>> print view.label
+    >>> print(view.label)
     Change YoUbuntu details
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Change YoUbuntu details
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/youbuntu
 
 The view accepts most of the distribution fields.
@@ -132,7 +132,9 @@ The view accepts most of the distribution fields.
      'package_derivatives_email', 'icon',
      'logo', 'mugshot', 'official_malone', 'enable_bug_expiration',
      'blueprints_usage', 'translations_usage', 'answers_usage',
-     'translation_focus']
+     'translation_focus',
+     'default_traversal_policy', 'redirect_default_traversal',
+     'oci_registry_credentials']
 
     >>> del form['field.name']
     >>> del form['field.actions.save']
@@ -142,10 +144,10 @@ The view accepts most of the distribution fields.
     >>> view = create_initialized_view(distribution, '+edit', form=form)
     >>> view.errors
     []
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/youbuntu
 
-    >>> print distribution.bug_reporting_guidelines
+    >>> print(distribution.bug_reporting_guidelines)
     guidelines
 
     >>> distribution.bug_tracking_usage
@@ -169,18 +171,18 @@ administrator.
 
     >>> login("admin@canonical.com")
     >>> view = create_view(distribution, '+selectmirroradmins')
-    >>> print view.label
+    >>> print(view.label)
     Change the YoUbuntu mirror administrator
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Change the YoUbuntu mirror administrator
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/youbuntu
 
 The view accepts the mirror_admin field.
 
-    >>> print distribution.mirror_admin.name
+    >>> print(distribution.mirror_admin.name)
     name16
 
     >>> view.field_names
@@ -194,10 +196,10 @@ The view accepts the mirror_admin field.
     ...     distribution, '+selectmirroradmins', form=form)
     >>> view.errors
     []
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/youbuntu
 
-    >>> print distribution.mirror_admin.name
+    >>> print(distribution.mirror_admin.name)
     no-priv
 
 Only admins and owners can access the view.
@@ -266,18 +268,18 @@ the +selectmirroradmins allows the owner or admin to change the members team.
 
     >>> login("admin@canonical.com")
     >>> view = create_view(distribution, '+selectmemberteam')
-    >>> print view.label
+    >>> print(view.label)
     Change the YoUbuntu members team
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Change the YoUbuntu members team
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/youbuntu
 
 The view accepts the members field.
 
-    >>> print distribution.members.name
+    >>> print(distribution.members.name)
     landscape-developers
 
     >>> view.field_names
@@ -291,10 +293,10 @@ The view accepts the members field.
     ...     distribution, '+selectmemberteam', form=form)
     >>> view.errors
     []
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/youbuntu
 
-    >>> print distribution.members.name
+    >>> print(distribution.members.name)
     ubuntu-team
 
 Only admins and owners can access the view.
@@ -329,13 +331,13 @@ not appear.
 
     >>> view = create_view(distribution, name='+index', principal=owner)
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print find_tag_by_id(content, 'portlet-latest-faqs')
+    >>> print(find_tag_by_id(content, 'portlet-latest-faqs'))
     None
-    >>> print find_tag_by_id(content, 'portlet-latest-questions')
+    >>> print(find_tag_by_id(content, 'portlet-latest-questions'))
     None
-    >>> print find_tag_by_id(content, 'portlet-latest-bugs')
+    >>> print(find_tag_by_id(content, 'portlet-latest-bugs'))
     None
-    >>> print find_tag_by_id(content, 'portlet-blueprints')
+    >>> print(find_tag_by_id(content, 'portlet-blueprints'))
     None
 
 If the distribution officially uses the application, its portlet does appear.
@@ -348,13 +350,13 @@ If the distribution officially uses the application, its portlet does appear.
 
     >>> view = create_view(distribution, name='+index', principal=owner)
     >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print find_tag_by_id(content, 'portlet-latest-faqs')['id']
+    >>> print(find_tag_by_id(content, 'portlet-latest-faqs')['id'])
     portlet-latest-faqs
-    >>> print find_tag_by_id(content, 'portlet-latest-questions')['id']
+    >>> print(find_tag_by_id(content, 'portlet-latest-questions')['id'])
     portlet-latest-questions
-    >>> print find_tag_by_id(content, 'portlet-latest-bugs')['id']
+    >>> print(find_tag_by_id(content, 'portlet-latest-bugs')['id'])
     portlet-latest-bugs
-    >>> print find_tag_by_id(content, 'portlet-blueprints')['id']
+    >>> print(find_tag_by_id(content, 'portlet-blueprints')['id'])
     portlet-blueprints
 
 
@@ -365,11 +367,11 @@ The +series view provides a page title and list of dicts that represent
 the series and the CSS class to present them with.
 
     >>> view = create_view(ubuntu, name='+series')
-    >>> print view.label
+    >>> print(view.label)
     Timeline
 
     >>> for styled_series in view.styled_series:
-    ...     print styled_series['series'].name, styled_series['css_class']
+    ...     print(styled_series['series'].name, styled_series['css_class'])
     breezy-autotest
     grumpy
     hoary highlight
@@ -383,11 +385,11 @@ The +derivatives view provides a page title and list of dicts that represent
 the derivatives and the CSS class to present them with.
 
     >>> view = create_view(ubuntu, name='+derivatives')
-    >>> print view.label
+    >>> print(view.label)
     Derivatives
 
     >>> for styled_series in view.styled_series:
-    ...     print styled_series['series'].name, styled_series['css_class']
+    ...     print(styled_series['series'].name, styled_series['css_class'])
     hoary-test
     krunch
     breezy-autotest
@@ -401,9 +403,9 @@ The +ppas view provides a page title and label, some statistics helpers
 and search results.
 
     >>> view = create_view(ubuntu, name='+ppas')
-    >>> print view.label
+    >>> print(view.label)
     Personal Package Archives for Ubuntu
 
     # The leaf of the breadcrumbs, also used in the page-title.
-    >>> print view.page_title
+    >>> print(view.page_title)
     Personal Package Archives

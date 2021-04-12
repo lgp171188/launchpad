@@ -48,13 +48,15 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertProvides(oci_credentials, IOCIRegistryCredentials)
 
     def test_credentials_are_encrypted(self):
-        credentials = {'username': 'foo', 'password': 'bar'}
+        credentials = {
+            'username': 'foo', 'password': 'bar', 'region': 'br-101'}
         oci_credentials = removeSecurityProxy(
             self.factory.makeOCIRegistryCredentials(
                 credentials=credentials))
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         self.assertThat(oci_credentials._credentials, MatchesDict({
             "username": Equals("foo"),
+            "region": Equals("br-101"),
             "credentials_encrypted": AfterPreprocessing(
                 lambda value: json.loads(
                     container.decrypt(value).decode("UTF-8")),
@@ -66,12 +68,14 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
         oci_credentials = self.factory.makeOCIRegistryCredentials(
             registrant=owner, owner=owner,
             url='http://example.org',
-            credentials={'username': 'foo', 'password': 'bar'})
+            credentials={
+                'username': 'foo', 'password': 'bar', 'region': 'br-101'})
 
         with person_logged_in(owner):
             self.assertThat(oci_credentials.getCredentials(), MatchesDict({
                 "username": Equals("foo"),
-                "password": Equals("bar")}))
+                "password": Equals("bar"),
+                "region": Equals("br-101")}))
 
     def test_credentials_set_empty(self):
         owner = self.factory.makePerson()
@@ -190,6 +194,20 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
                 url=url,
                 credentials=credentials)
 
+    def test_new_owner_override(self):
+        # In certain sitations, we might want to be able to create
+        # credentials for other people
+        registrant = self.factory.makePerson()
+        other_person = self.factory.makePerson()
+        url = self.factory.getUniqueURL()
+        credentials = {'username': 'foo', 'password': 'bar'}
+        oci_credentials = getUtility(IOCIRegistryCredentialsSet).new(
+            registrant=registrant, owner=other_person, url=url,
+            credentials=credentials, override_owner=True)
+        self.assertEqual(oci_credentials.owner, other_person)
+        self.assertEqual(oci_credentials.url, url)
+        self.assertEqual(oci_credentials.getCredentials(), credentials)
+
     def test_getOrCreate_existing(self):
         owner = self.factory.makePerson()
         url = self.factory.getUniqueURL()
@@ -201,6 +219,29 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
             registrant=owner, owner=owner, url=url, credentials=credentials)
 
         self.assertEqual(new.id, existing.id)
+
+    def test_getOrCreate_existing_by_region(self):
+        owner = self.factory.makePerson()
+        url = self.factory.getUniqueURL()
+        west_credentials = {
+            'username': 'foo', 'password': 'bar', 'region': 'west',
+            }
+        west = getUtility(IOCIRegistryCredentialsSet).new(
+            registrant=owner, owner=owner, url=url,
+            credentials=west_credentials)
+        east_credentials = {
+            'username': 'foo', 'password': 'bar', 'region': 'east',
+            }
+        east = getUtility(IOCIRegistryCredentialsSet).new(
+            registrant=owner, owner=owner, url=url,
+            credentials=east_credentials)
+        self.assertNotEqual(west.id, east.id)
+
+        existing_west = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
+            registrant=owner, owner=owner, url=url,
+            credentials=west_credentials)
+
+        self.assertEqual(west.id, existing_west.id)
 
     def test_getOrCreate_new(self):
         owner = self.factory.makePerson()

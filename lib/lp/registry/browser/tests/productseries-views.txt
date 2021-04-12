@@ -32,19 +32,19 @@ rendering links:
     >>> view = create_view(series, '+get-involved')
 
     # answers_usage is never LAUNCHPAD for product series.
-    >>> print view.answers_usage.name
+    >>> print(view.answers_usage.name)
     NOT_APPLICABLE
-    >>> print view.blueprints_usage.name
+    >>> print(view.blueprints_usage.name)
     LAUNCHPAD
-    >>> print view.official_malone
+    >>> print(view.official_malone)
     True
-    >>> print view.translations_usage.name
+    >>> print(view.translations_usage.name)
     LAUNCHPAD
-    >>> print view.codehosting_usage.name
+    >>> print(view.codehosting_usage.name)
     UNKNOWN
 
     >>> for link in view.enabled_links:
-    ...     print link.url
+    ...     print(link.url)
     http://bugs.launchpad.test/app/simple/+filebug
     http://translations.launchpad.test/app/simple
     http://blueprints.launchpad.test/app/simple/+addspec
@@ -62,7 +62,7 @@ update the milestones and releases table.
     >>> login('foo.bar@canonical.com')
     >>> view = create_view(series, '+index', principal=product.owner)
     >>> script = find_tag_by_id(view.render(), 'milestone-script')
-    >>> print script
+    >>> print(script)
     <script id="milestone-script" type="text/javascript">
         LPJS.use(... 'lp.registry.milestoneoverlay',
                       'lp.registry.milestonetable'...
@@ -84,7 +84,7 @@ If the Create milestone link is not enabled, the script is not present.
     >>> ignored = login_person(a_user)
     >>> view = create_view(series, '+index', principal=a_user)
     >>> content = view.render()
-    >>> print find_tag_by_id(content, 'milestone-script')
+    >>> print(find_tag_by_id(content, 'milestone-script'))
     None
     >>> 'var milestone_form_uri' in content
     False
@@ -95,18 +95,18 @@ the class table is 'listing hidden'.
 
     >>> ignored = login_person(product.owner)
     >>> view = create_view(series, '+index', principal=product.owner)
-    >>> print view.milestone_table_class
+    >>> print(view.milestone_table_class)
     listing hidden
 
     >>> table = find_tag_by_id(view.render(), 'series-simple')
-    >>> print ' '.join(table['class'])
+    >>> print(' '.join(table['class']))
     listing hidden
 
 When the product series has milestones, the class is just 'listing'.
 
     >>> milestone = series.newMilestone('12', code_name='twelve')
     >>> view = create_view(series, '+index')
-    >>> print view.milestone_table_class
+    >>> print(view.milestone_table_class)
     listing
 
 Obsolete series are less interesting that other series. The ProductSeriesView
@@ -115,7 +115,7 @@ to display.
 
     >>> from lp.registry.interfaces.series import SeriesStatus
 
-    >>> print series.status.title
+    >>> print(series.status.title)
     Active Development
     >>> view.is_obsolete
     False
@@ -129,18 +129,18 @@ The view provides access to the latest release if it has one.
 
     >>> from lp.registry.interfaces.product import IProductSet
 
-    >>> print view.latest_release_with_download_files
+    >>> print(view.latest_release_with_download_files)
     None
 
     >>> firefox = getUtility(IProductSet).getByName('firefox')
     >>> series_with_downloads = firefox.getSeries('trunk')
     >>> view = create_initialized_view(series_with_downloads, name='+index')
-    >>> print view.latest_release_with_download_files.version
+    >>> print(view.latest_release_with_download_files.version)
     0.9.2
 
 The view also provides a link to register a new code import.
 
-    >>> print view.request_import_link
+    >>> print(view.request_import_link)
     http://code.launchpad.test/firefox/+new-import
 
 
@@ -150,18 +150,18 @@ Edit ProductSeries
 The productseries +edit view provides a label and page_title for the page.
 
     >>> view = create_initialized_view(series, '+edit')
-    >>> print view.label
+    >>> print(view.label)
     Edit App simple series
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Edit App simple series
 
 The view provides a cancel_url and a next_url.
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/app/simple
 
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/app/simple
 
 
@@ -183,15 +183,15 @@ parent project.
 
 The view provides a label and page_title.
 
-    >>> print view.label
+    >>> print(view.label)
     Administer App simple series
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Administer App simple series
 
 The view provides a cancel_url and a next_url.
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/app/simple
 
 Users without edit permission cannot access the view.
@@ -245,19 +245,19 @@ Registry experts can also access the view.
 
 The delete view has a label and page_title to explain what it does.
 
-    >>> print view.label
+    >>> print(view.label)
     Delete Field rabbit series
 
-    >>> print view.page_title
+    >>> print(view.page_title)
     Delete Field rabbit series
 
 The view has a a next_url to the product used when the delete is successful,
 though it is None by default. There is a cancel_url that links to the series.
 
-    >>> print view.next_url
+    >>> print(view.next_url)
     None
 
-    >>> print view.cancel_url
+    >>> print(view.cancel_url)
     http://launchpad.test/field/rabbit
 
 There are helper properties that list the associates objects with the
@@ -299,22 +299,24 @@ portion do.
     >>> productseries.branch = factory.makeBranch()
 
     >>> view = create_view(productseries, name='+delete')
-    >>> [milestone.name for milestone in view.milestones]
-    [u'0.2', u'0.1']
+    >>> for milestone in view.milestones:
+    ...     print(milestone.name)
+    0.2
+    0.1
     >>> view.has_bugtasks_and_specifications
     True
     >>> for bugtask in view.bugtasks:
     ...     if bugtask.milestone is not None:
-    ...         print bugtask.milestone.name
+    ...         print(bugtask.milestone.name)
     ...     else:
-    ...         print bugtask.target.name
+    ...         print(bugtask.target.name)
     rabbit
     0.2
     >>> for spec in view.specifications:
     ...     if spec.milestone is not None:
-    ...         print spec.milestone.name
+    ...         print(spec.milestone.name)
     ...     else:
-    ...         print spec.goal.name
+    ...         print(spec.goal.name)
     rabbit
     0.1
 
@@ -348,10 +350,10 @@ development.
     >>> active_view = create_initialized_view(
     ...     active_series, '+delete', form=form)
     >>> for error in active_view.errors:
-    ...     print error
+    ...     print(error)
     You cannot delete a series that is the focus of development. Make another
     series the focus of development before deleting this one.
-    >>> print active_series.product.name
+    >>> print(active_series.product.name)
     field
 
 The delete action will not delete a series that is linked to a package.
@@ -379,7 +381,7 @@ The delete action will not delete a series that is linked to a package.
     >>> linked_view = create_initialized_view(
     ...     linked_series, '+delete', form=form)
     >>> for error in linked_view.errors:
-    ...     print error
+    ...     print(error)
     You cannot delete a series that is linked to packages in distributions.
     You can remove the links from the <a ...>project packaging</a> page.
 
@@ -392,22 +394,22 @@ Series structural subscriptions are removed. Branch links are removed.
 
     >>> view = create_initialized_view(productseries, '+delete', form=form)
     >>> for notification in view.request.response.notifications:
-    ...     print notification.message
+    ...     print(notification.message)
     Series rabbit deleted.
 
-    >>> print view.next_url
+    >>> print(view.next_url)
     http://launchpad.test/field
     >>> [milestone for milestone in product.all_milestones]
     []
     >>> [release for release in  product.releases]
     []
-    >>> print specification.milestone
+    >>> print(specification.milestone)
     None
-    >>> print bugtask.milestone
+    >>> print(bugtask.milestone)
     None
     >>> bugtask.related_tasks
     []
-    >>> print series_specification.milestone
+    >>> print(series_specification.milestone)
     None
     >>> [subscription for subscription in owner.structural_subscriptions]
     []
@@ -422,14 +424,14 @@ avoid conflicts. The linked branch is removed.
     >>> obsolete_junk = celebrities.obsolete_junk
     >>> productseries.product == obsolete_junk
     True
-    >>> print productseries.name
+    >>> print(productseries.name)
     field-rabbit-20090501-193424
 
 The series status is set to obsolete and the releasefileglob was set to None.
 
-    >>> print productseries.status.title
+    >>> print(productseries.status.title)
     Obsolete
-    >>> print productseries.releasefileglob
+    >>> print(productseries.releasefileglob)
     None
 
 A series cannot be deleted if it is has translation templates.
@@ -452,7 +454,7 @@ A series cannot be deleted if it is has translation templates.
     >>> translated_view = create_initialized_view(
     ...     translated_series, '+delete', form=form)
     >>> for error in translated_view.errors:
-    ...     print error
+    ...     print(error)
     This series cannot be deleted because it has translations.
 
 The view reports all the reason why a series cannot be deleted.
@@ -468,7 +470,7 @@ The view reports all the reason why a series cannot be deleted.
     ...     }
     >>> view = create_initialized_view(active_series, '+delete', form=form)
     >>> for error in view.errors:
-    ...     print error
+    ...     print(error)
     You cannot delete a series that is the focus of development. Make another
     series the focus of development before deleting this one.
     You cannot delete a series that is linked to packages in distributions.

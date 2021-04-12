@@ -177,8 +177,8 @@ Queue item filelist
 First set up some additional data to show in the listing: a package diff
 and an extra, expired, source file.
 
+    >>> import io
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> from StringIO import StringIO
     >>> from lp.services.database.constants import UTC_NOW
     >>> from lp.services.librarian.interfaces.client import ILibrarianClient
     >>> from lp.soyuz.enums import PackageDiffStatus
@@ -193,7 +193,7 @@ and an extra, expired, source file.
     >>> diff.date_fulfilled = UTC_NOW
     >>> diff.status = PackageDiffStatus.COMPLETED
     >>> diff.diff_content = getUtility(ILibrarianClient).addFile(
-    ...     'alsa-utils.diff.gz', 11, StringIO('i am a diff'),
+    ...     'alsa-utils.diff.gz', 11, io.BytesIO(b'i am a diff'),
     ...     'application/gzipped-patch')
     >>> sprf = new.addFile(factory.makeLibraryFileAlias(
     ...     filename='alsa-utils_1.0.9a-4ubuntu1.diff.gz'))

@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'OCIDistributionPushRule',
     'OCIPushRule',
     'OCIPushRuleSet',
     ]
@@ -70,6 +71,27 @@ class OCIPushRule(Storm):
     def destroySelf(self):
         """See `IOCIPushRule`."""
         IStore(OCIPushRule).remove(self)
+
+
+@implementer(IOCIPushRule)
+class OCIDistributionPushRule:
+    """A non-database instance that is synthesised from data elsewhere."""
+
+    registry_credentials = None
+
+    def __init__(self, recipe, registry_credentials, image_name):
+        self.id = None  # This is not a database instance
+        self.recipe = recipe
+        self.registry_credentials = registry_credentials
+        self.image_name = image_name
+
+    @property
+    def registry_url(self):
+        return self.registry_credentials.url
+
+    @property
+    def username(self):
+        return self.registry_credentials.username
 
 
 @implementer(IOCIPushRuleSet)

@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper methods and mixins for OCI tests."""
@@ -17,13 +17,16 @@ from testtools.matchers import (
     )
 from zope.security.proxy import removeSecurityProxy
 
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_PRIVATE_FEATURE_FLAG,
+    )
 from lp.services.features.testing import FeatureFixture
 
 
 class OCIConfigHelperMixin:
 
-    def setConfig(self):
+    def setConfig(self, feature_flags=None):
         self.private_key = PrivateKey.generate()
         self.pushConfig(
             "oci",
@@ -34,7 +37,11 @@ class OCIConfigHelperMixin:
             registry_secrets_private_key=base64.b64encode(
                 bytes(self.private_key)).decode("UTF-8"))
         # Default feature flags for our tests
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        feature_flags = feature_flags or {}
+        feature_flags.update({
+            OCI_RECIPE_ALLOW_CREATE: 'on',
+            OCI_RECIPE_PRIVATE_FEATURE_FLAG: 'on'})
+        self.useFixture(FeatureFixture(feature_flags))
 
 
 class MatchesOCIRegistryCredentials(MatchesAll):

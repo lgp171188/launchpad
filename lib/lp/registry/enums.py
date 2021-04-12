@@ -1,4 +1,4 @@
-# Copyright 2010-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Enums for the Registry app."""
@@ -7,6 +7,7 @@ __metaclass__ = type
 __all__ = [
     'BranchSharingPolicy',
     'BugSharingPolicy',
+    'DistributionDefaultTraversalPolicy',
     'DistroSeriesDifferenceStatus',
     'DistroSeriesDifferenceType',
     'EXCLUSIVE_TEAM_POLICY',
@@ -424,4 +425,34 @@ class VCSType(DBEnumeratedType):
         Git
 
         The Git DVCS is used as the default project or distribution VCS.
+        """)
+
+
+class DistributionDefaultTraversalPolicy(DBEnumeratedType):
+    """Policy for the default traversal from a distribution.
+
+    This determines what the "name" segment in a URL such as
+    "/{distro}/{name}" (with no intervening segment such as "+source")
+    means.
+    """
+
+    SERIES = DBItem(0, """
+        Series
+
+        The default traversal from a distribution is used for series of that
+        distribution.
+        """)
+
+    SOURCE_PACKAGE = DBItem(1, """
+        Source package
+
+        The default traversal from a distribution is used for source
+        packages in that distribution.
+        """)
+
+    OCI_PROJECT = DBItem(2, """
+        OCI project
+
+        The default traversal from a distribution is used for OCI projects
+        in that distribution.
         """)

@@ -98,9 +98,10 @@ cannot see any link reporting that bugs can expire.
 
     >>> anon_browser.open('http://bugs.launchpad.test/thunderbird')
     >>> expirable_bugs_link = anon_browser.getLink('Incomplete bugs')
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    LinkNotFoundError
+    zope.testbrowser.browser.LinkNotFoundError
 
 
 Tags and Filters
@@ -115,9 +116,9 @@ loaded using Javascript in a separate request.
     >>> print(extract_text(anon_browser.contents))
     Tags
     1
-    layout-test
-    1
     doc
+    1
+    layout-test
 
 They are there to provide easy navigation for bugs with a certain
 tag...

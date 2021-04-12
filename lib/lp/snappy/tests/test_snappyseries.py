@@ -188,7 +188,7 @@ class TestSnappySeriesWebservice(TestCaseWithFactory):
             name="dummy", display_name="Dummy", status="Experimental")
         self.assertEqual(400, response.status)
         self.assertEqual(
-            "name: dummy is already in use by another series.", response.body)
+            b"name: dummy is already in use by another series.", response.body)
 
     def test_getByName(self):
         # lp.snappy_serieses.getByName returns a matching SnappySeries.
@@ -215,7 +215,7 @@ class TestSnappySeriesWebservice(TestCaseWithFactory):
             "/+snappy-series", "getByName", name="nonexistent")
         self.assertEqual(404, response.status)
         self.assertEqual(
-            "No such snappy series: 'nonexistent'.", response.body)
+            b"No such snappy series: 'nonexistent'.", response.body)
 
     def test_collection(self):
         # lp.snappy_serieses is a collection of all SnappySeries.

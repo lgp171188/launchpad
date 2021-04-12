@@ -316,6 +316,14 @@ class FormattableDate(Date):
         # As a minimal sanity check, just raise an error if it fails.
         try:
             value.strftime('%Y')
+            if value.year < 1900:
+                # Unlike Python 2, Python 3's `date.strftime` works fine on
+                # years earlier than 1900.  However, we carry on refusing it
+                # anyway, partly for test compatibility and partly because
+                # at the time of writing this is only used for the targeted
+                # date of milestones and so dates before 1900 aren't
+                # interesting anyway.
+                raise ValueError('year=%d is before 1900' % value.year)
         except ValueError:
             raise LaunchpadValidationError(error_msg)
 

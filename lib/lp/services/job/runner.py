@@ -155,6 +155,9 @@ class BaseRunnableJob(BaseRunnableJobSource):
     def __ne__(self, job):
         return not (self == job)
 
+    def __hash__(self):
+        return hash(tuple([self.__class__] + sorted(self.__dict__.items())))
+
     def __lt__(self, job):
         naked_job = removeSecurityProxy(job)
         if self.__class__ is naked_job.__class__:
@@ -326,20 +329,21 @@ class BaseRunnableJob(BaseRunnableJobSource):
         """See `IJob`."""
         self.job.start(manage_transaction=manage_transaction)
         statsd = getUtility(IStatsdClient)
-        statsd.incr('job.start_count,type={}'.format(self.__class__.__name__))
+        statsd.incr(
+            'job.start_count', labels={'type': self.__class__.__name__})
 
     def complete(self, manage_transaction=False):
         """See `IJob`."""
         self.job.complete(manage_transaction=manage_transaction)
         statsd = getUtility(IStatsdClient)
-        statsd.incr('job.complete_count,type={}'.format(
-            self.__class__.__name__))
+        statsd.incr(
+            'job.complete_count', labels={'type': self.__class__.__name__})
 
     def fail(self, manage_transaction=False):
         """See `IJob`."""
         self.job.fail(manage_transaction=manage_transaction)
         statsd = getUtility(IStatsdClient)
-        statsd.incr('job.fail_count,type={}'.format(self.__class__.__name__))
+        statsd.incr('job.fail_count', labels={'type': self.__class__.__name__})
 
 
 class BaseJobRunner(LazrJobRunner):
@@ -448,7 +452,7 @@ class JobRunner(BaseJobRunner):
 class RunJobCommand(amp.Command):
 
     arguments = [(b'job_id', amp.Integer())]
-    response = [(b'success', amp.Integer()), (b'oops_id', amp.String())]
+    response = [(b'success', amp.Integer()), (b'oops_id', amp.Unicode())]
 
 
 def import_source(job_source_name):

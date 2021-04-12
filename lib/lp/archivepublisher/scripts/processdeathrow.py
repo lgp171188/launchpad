@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Death row processor base script class
@@ -14,6 +14,7 @@ __all__ = [
     'DeathRowProcessor',
     ]
 
+from zope.component import getUtility
 
 from lp.archivepublisher.deathrow import getDeathRow
 from lp.archivepublisher.scripts.base import PublisherScript
@@ -22,6 +23,8 @@ from lp.services.webapp.adapter import (
     clear_request_started,
     set_request_started,
     )
+from lp.soyuz.enums import ArchivePurpose
+from lp.soyuz.interfaces.archive import IArchiveSet
 
 
 class DeathRowProcessor(PublisherScript):
@@ -41,14 +44,18 @@ class DeathRowProcessor(PublisherScript):
             "--ppa", action="store_true", default=False,
             help="Run only over PPA archives.")
 
+    def getTargetArchives(self, distribution):
+        """Find archives to target based on given options."""
+        if self.options.ppa:
+            return getUtility(IArchiveSet).getArchivesForDistribution(
+                distribution, purposes=[ArchivePurpose.PPA],
+                check_permissions=False, exclude_pristine=True)
+        else:
+            return distribution.all_distro_archives
+
     def main(self):
         for distribution in self.findDistros():
-            if self.options.ppa:
-                archives = distribution.getAllPPAs()
-            else:
-                archives = distribution.all_distro_archives
-
-            for archive in archives:
+            for archive in self.getTargetArchives(distribution):
                 self.logger.info("Processing %s" % archive.archive_url)
                 self.processDeathRow(archive)
 

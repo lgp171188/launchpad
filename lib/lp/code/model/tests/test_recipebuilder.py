@@ -81,6 +81,8 @@ class TestRecipeBuilderBase(TestCaseWithFactory):
         processor = getUtility(IProcessorSet).getByName('386')
         distroseries.nominatedarchindep = distroseries.newArch(
             'i386', processor, True, self.factory.makePerson())
+        for component_name in ("main", "universe"):
+            self.factory.makeComponentSelection(distroseries, component_name)
         sourcepackage = self.factory.makeSourcePackage(spn, distroseries)
         if recipe_registrant is None:
             recipe_registrant = self.factory.makePerson(
@@ -164,7 +166,7 @@ class TestRecipeBuilder(TestRecipeBuilderBase):
 
 class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
 
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def _setBuilderConfig(self):
         """Setup a temporary builder config."""
@@ -339,6 +341,31 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
             'suite': 'mydistro',
             'trusted_keys': expected_trusted_keys,
             }, extra_args)
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archives(self):
+        # The build uses the release pocket in its target PPA, and the
+        # release, security, and updates pockets in the primary archive.
+        archive = self.factory.makeArchive()
+        job = self.makeJob(archive=archive, with_builder=True)
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            distroarchseries=job.build.distroseries.architectures[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        primary = job.build.distribution.main_archive
+        expected_archives = [
+            "deb %s %s main" % (
+                archive.archive_url, job.build.distroseries.name),
+            "deb %s %s main universe" % (
+                primary.archive_url, job.build.distroseries.name),
+            "deb %s %s-security main universe" % (
+                primary.archive_url, job.build.distroseries.name),
+            "deb %s %s-updates main universe" % (
+                primary.archive_url, job.build.distroseries.name),
+            ]
+        extra_args = yield job.extraBuildArgs()
+        self.assertEqual(expected_archives, extra_args["archives"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_archive_trusted_keys(self):

@@ -12,10 +12,6 @@ __all__ = [
 
 import base64
 import json
-try:
-    from json.decoder import JSONDecodeError
-except ImportError:
-    JSONDecodeError = ValueError
 import string
 import time
 
@@ -102,8 +98,8 @@ class MacaroonAuth(requests.auth.AuthBase):
             try:
                 _, key, value = caveat.caveat_id.split("|")
                 if key == "account":
-                    account = json.loads(
-                        base64.b64decode(value).decode("UTF-8"))
+                    account = json.loads(base64.b64decode(
+                        value.encode("UTF-8")).decode("UTF-8"))
                     if "openid" in account:
                         self.logger.debug(
                             "%s macaroon: OpenID identifier: %s" %
@@ -225,7 +221,7 @@ class SnapStoreClient:
         if requests_error.response.content:
             try:
                 response_data = requests_error.response.json()
-            except JSONDecodeError:
+            except ValueError:
                 pass
             else:
                 if "error_list" in response_data:
@@ -432,7 +428,7 @@ class SnapStoreClient:
         if cached_channels is not None:
             try:
                 channels = json.loads(cached_channels)
-            except JSONDecodeError:
+            except ValueError:
                 log.exception(
                     "Cannot load cached channels for %s; deleting" %
                     search_host)

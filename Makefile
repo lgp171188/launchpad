@@ -23,13 +23,15 @@ PIP_ENV := LC_ALL=C.UTF-8
 # be reviewed/merged/deployed.
 PIP_NO_INDEX := 1
 PIP_ENV += PIP_NO_INDEX=$(PIP_NO_INDEX)
-PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheelhouse/ file://$(WD)/download-cache/dist/"
+PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheels/ file://$(WD)/download-cache/dist/"
 
 VIRTUALENV := $(PIP_ENV) virtualenv
 PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
 
+VENV_PYTHON := env/bin/$(PYTHON)
+
 SITE_PACKAGES := \
-	$$(env/bin/python -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
+	$$($(VENV_PYTHON) -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
 
 TESTFLAGS=-p $(VERBOSITY)
 TESTOPTS=
@@ -73,6 +75,7 @@ API_INDEX = $(APIDOC_DIR)/index.html
 # NB: It's important PIP_BIN only mentions things genuinely produced by pip.
 PIP_BIN = \
     $(PY) \
+    $(VENV_PYTHON) \
     bin/bingtestservice \
     bin/build-twisted-plugin-cache \
     bin/harness \
@@ -261,11 +264,11 @@ requirements/combined.txt: \
 # dependencies without also building a useless wheel of Launchpad itself;
 # fortunately that doesn't take too long, and we just remove it afterwards.
 build_wheels: $(PIP_BIN) requirements/combined.txt
-	$(RM) -r wheelhouse
+	$(RM) -r wheelhouse wheels
 	$(SHHH) $(PIP) wheel \
 		-c requirements/setup.txt -c requirements/combined.txt \
-		-w wheelhouse .
-	$(RM) wheelhouse/lp-[0-9]*.whl
+		-w wheels .
+	$(RM) wheels/lp-[0-9]*.whl
 	$(MAKE) clean_pip
 
 # Compatibility
@@ -277,14 +280,14 @@ build_eggs: build_wheels
 #
 # If we listed every target on the left-hand side, a parallel make would try
 # multiple copies of this rule to build them all.  Instead, we nominally build
-# just $(PY), and everything else is implicitly updated by that.
-$(PY): download-cache requirements/combined.txt setup.py
+# just $(VENV_PYTHON), and everything else is implicitly updated by that.
+$(VENV_PYTHON): download-cache requirements/combined.txt setup.py
 	rm -rf env
 	mkdir -p env
 	$(VIRTUALENV) \
 		--python=$(PYTHON) --never-download \
 		--extra-search-dir=$(WD)/download-cache/dist/ \
-		--extra-search-dir=$(WD)/wheelhouse/ \
+		--extra-search-dir=$(WD)/wheels/ \
 		env
 	ln -sfn env/bin bin
 	$(SHHH) $(PIP) install -r requirements/setup.txt
@@ -294,16 +297,12 @@ $(PY): download-cache requirements/combined.txt setup.py
 		|| { code=$$?; rm -f $@; exit $$code; }
 	touch $@
 
-$(subst $(PY),,$(PIP_BIN)): $(PY)
+$(subst $(VENV_PYTHON),,$(PIP_BIN)): $(VENV_PYTHON)
 
 # Explicitly update version-info.py rather than declaring $(VERSION_INFO) as
 # a prerequisite, to make sure it's up to date when doing deployments.
-compile: $(PY)
+compile: $(VENV_PYTHON)
 	${SHHH} utilities/relocate-virtualenv env
-	if grep -q '^2\.' env/python_version; then \
-		${SHHH} $(MAKE) -C sourcecode build \
-			PYTHON=${PYTHON} LPCONFIG=${LPCONFIG}; \
-	fi
 	$(PYTHON) utilities/link-system-packages.py \
 		"$(SITE_PACKAGES)" system-packages.txt
 	${SHHH} bin/build-twisted-plugin-cache
@@ -432,7 +431,7 @@ lxc-clean: clean_js clean_pip clean_logs
 	# it does everything expected from a clean target.  When the
 	# referenced bug is fixed, this target may be reunited with
 	# the 'clean' target.
-	$(RM) -r env wheelhouse
+	$(RM) -r env wheelhouse wheels
 	$(RM) requirements/combined.txt
 	$(RM) -r $(LP_BUILT_JS_ROOT)/*
 	$(RM) -r $(CODEHOSTING_ROOT)/*
@@ -493,6 +492,7 @@ copy-apache-config: codehosting-dir
 		base=local-launchpad; \
 	fi; \
 	sed -e 's,%BRANCH_REWRITE%,$(shell pwd)/scripts/branch-rewrite.py,' \
+		-e 's,%WSGI_ARCHIVE_AUTH%,$(shell pwd)/scripts/wsgi-archive-auth.py,' \
 		-e 's,%LISTEN_ADDRESS%,$(LISTEN_ADDRESS),' \
 		configs/$(LPCONFIG)/local-launchpad-apache > \
 		/etc/apache2/sites-available/$$base
