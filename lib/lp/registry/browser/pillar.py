@@ -422,6 +422,9 @@ class PillarPersonSharingView(LaunchpadView):
         bug_data = self._build_bug_template_data(self.bugtasks, request)
         spec_data = self._build_specification_template_data(
             self.specifications, request)
+        snap_data = self._build_ocirecipe_template_data(self.snaps, request)
+        ocirecipe_data = self._build_ocirecipe_template_data(
+            self.ocirecipes, request)
         grantee_data = {
             'displayname': self.person.displayname,
             'self_link': absoluteURL(self.person, request)
@@ -435,6 +438,8 @@ class PillarPersonSharingView(LaunchpadView):
         cache.objects['branches'] = branch_data
         cache.objects['gitrepositories'] = gitrepository_data
         cache.objects['specifications'] = spec_data
+        cache.objects['snaps'] = snap_data
+        cache.objects['ocirecipes'] = ocirecipe_data
 
     def _loadSharedArtifacts(self):
         # As a concrete can by linked via more than one policy, we use sets to
@@ -504,3 +509,25 @@ class PillarPersonSharingView(LaunchpadView):
                 bug_importance=importance,
                 information_type=information_type))
         return bug_data
+
+    def _build_ocirecipe_template_data(self, oci_recipes, request):
+        recipe_data = []
+        for recipe in oci_recipes:
+            recipe_data.append(dict(
+                self_link=absoluteURL(recipe, request),
+                web_link=canonical_url(recipe, path_only_if_possible=True),
+                name=recipe.name,
+                id=recipe.id,
+                information_type=recipe.information_type.title))
+        return recipe_data
+
+    def _build_snap_template_data(self, snaps, request):
+        snap_data = []
+        for snap in snaps:
+            snap_data.append(dict(
+                self_link=absoluteURL(snap, request),
+                web_link=canonical_url(snap, path_only_if_possible=True),
+                name=snap.name,
+                id=snap.id,
+                information_type=snap.information_type.title))
+        return snap_data
