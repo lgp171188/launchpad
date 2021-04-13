@@ -414,6 +414,7 @@ clean_pip:
 	$(RM) -r build
 	if [ -d $(CONVOY_ROOT) ]; then $(RM) -r $(CONVOY_ROOT) ; fi
 	$(RM) -r bin
+	$(RM) -r env
 	$(RM) -r parts
 	$(RM) .installed.cfg
 
