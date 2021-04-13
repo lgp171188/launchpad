@@ -1,4 +1,4 @@
-# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper functions for the process-accepted.py script."""
@@ -110,6 +110,8 @@ class ProcessAccepted(PublisherScript):
         """
         processed_queue_ids = []
         for archive in self.getTargetArchives(distribution):
+            if not archive.can_be_published:
+                continue
             set_request_started(
                 request_statements=LimitedList(10000),
                 txn=self.txn, enable_timeout=False)
