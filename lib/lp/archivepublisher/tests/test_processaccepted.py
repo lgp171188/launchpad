@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test process-accepted.py"""
@@ -100,6 +100,7 @@ class TestProcessAccepted(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries(distribution=self.distro)
         copy_archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.COPY)
+        copy_archive.publish = True
         copy_source = self.createWaitingAcceptancePackage(
             archive=copy_archive, distroseries=distroseries)
         # Also upload some stuff in the main archive.
@@ -108,10 +109,7 @@ class TestProcessAccepted(TestCaseWithFactory):
         # Before accepting, the package should not be published at all.
         published_copy = copy_archive.getPublishedSources(
             name=self.test_package_name)
-        # Using .count() until Storm fixes __nonzero__ on SQLObj result
-        # sets, then we can use bool() which is far more efficient than
-        # counting.
-        self.assertEqual(published_copy.count(), 0)
+        self.assertTrue(published_copy.is_empty())
 
         # Accept the packages.
         script = self.getScript(['--copy-archives'])
@@ -121,7 +119,7 @@ class TestProcessAccepted(TestCaseWithFactory):
         # Packages in main archive should not be accepted and published.
         published_main = self.distro.main_archive.getPublishedSources(
             name=self.test_package_name)
-        self.assertEqual(published_main.count(), 0)
+        self.assertTrue(published_main.is_empty())
 
         # Check the copy archive source was accepted.
         published_copy = copy_archive.getPublishedSources(
@@ -129,6 +127,25 @@ class TestProcessAccepted(TestCaseWithFactory):
         self.assertEqual(
             published_copy.status, PackagePublishingStatus.PENDING)
         self.assertEqual(copy_source, published_copy.sourcepackagerelease)
+
+    def test_skips_non_publishing_copy_archives(self):
+        # The script skips copy archives that have the publish flag disabled.
+        distroseries = self.factory.makeDistroSeries(distribution=self.distro)
+        copy_archive = self.factory.makeArchive(
+            distribution=self.distro, purpose=ArchivePurpose.COPY)
+        self.createWaitingAcceptancePackage(
+            archive=copy_archive, distroseries=distroseries)
+        published_copy = copy_archive.getPublishedSources(
+            name=self.test_package_name)
+        self.assertTrue(published_copy.is_empty())
+
+        script = self.getScript(['--copy-archives'])
+        switch_dbuser(self.dbuser)
+        script.main()
+
+        published_copy = copy_archive.getPublishedSources(
+            name=self.test_package_name)
+        self.assertTrue(published_copy.is_empty())
 
     def test_commits_after_each_item(self):
         # Test that the script commits after each item, not just at the end.

@@ -105,6 +105,12 @@
     </securedutility>
 
     <securedutility
+        component=".model.persontransferjob.PersonCloseAccountJob"
+        provides=".interfaces.persontransferjob.IPersonCloseAccountJobs">
+      <allow interface=".interfaces.persontransferjob.IPersonCloseAccountJobs"/>
+    </securedutility>
+
+    <securedutility
         component=".model.persontransferjob.TeamInvitationNotificationJob"
         provides=".interfaces.persontransferjob.ITeamInvitationNotificationJobSource">
       <allow interface=".interfaces.persontransferjob.ITeamInvitationNotificationJobSource"/>
