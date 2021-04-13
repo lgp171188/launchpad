@@ -35,17 +35,4 @@
       <tal:product tal:replace="structure view/product_widget" />
     </td>
   </tr>
-
-  <tr>
-    <td>
-      <label>
-        <input type="radio" value="ociproject"
-               tal:replace="structure view/options/ociproject" />
-       OCI project
-      </label>
-    </td>
-    <td>
-      <tal:product tal:replace="structure view/ociproject_widget" />
-    </td>
-  </tr>
 </table>

@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugTask-related browser views."""
@@ -143,6 +143,7 @@ from lp.bugs.interfaces.bugwatch import BugWatchActivityStatus
 from lp.bugs.interfaces.cve import ICveSet
 from lp.bugs.vocabularies import BugTaskMilestoneVocabulary
 from lp.code.interfaces.branchcollection import IAllBranches
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
@@ -1119,7 +1120,8 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
     # the form.
     default_field_names = ['assignee', 'bugwatch', 'importance', 'milestone',
                            'status']
-    custom_widget_target = BugTaskTargetWidget
+    custom_widget_target = CustomWidgetFactory(
+        BugTaskTargetWidget, packages_as_ociproject=False)
     custom_widget_sourcepackagename = BugTaskSourcePackageNameWidget
     custom_widget_bugwatch = BugTaskBugWatchWidget
     custom_widget_assignee = BugTaskAssigneeWidget
@@ -1232,6 +1234,16 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
         keeping the field ids unique.
         """
         return get_prefix(self.context)
+
+    def setUpWidgets(self, context=None):
+        is_oci_distro = (
+            IOCIProject.providedBy(self.context.target) and
+            IDistribution.providedBy(self.context.target.pillar) and
+            self.context.target.pillar.default_traversal_policy ==
+            DistributionDefaultTraversalPolicy.OCI_PROJECT)
+        self.custom_widget_target = CustomWidgetFactory(
+            BugTaskTargetWidget, packages_as_ociproject=is_oci_distro)
+        super(BugTaskEditView, self).setUpWidgets(context)
 
     def setUpFields(self):
         """Sets up the fields for the bug task edit form.

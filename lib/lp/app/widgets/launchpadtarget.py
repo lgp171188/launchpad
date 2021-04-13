@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -33,7 +33,6 @@ from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
-from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import (
@@ -44,17 +43,11 @@ from lp.services.webapp.interfaces import (
 
 @implementer(IAlwaysSubmittedWidget, IMultiLineWidgetLayout, IInputWidget)
 class LaunchpadTargetWidget(BrowserWidget, InputWidget):
-    """Widget for selecting a product, distribution, package target or OCI
-    project (the last is disabled by default).
-
-    To enable OCIProject as target, subclass LaunchpadTargetWidget and set
-    `show_ociproject` to True.
-    """
+    """Widget for selecting a product, distribution or package target."""
 
     template = ViewPageTemplateFile('templates/launchpad-target.pt')
     default_option = "package"
     _widgets_set_up = False
-    show_ociproject = False
 
     def getDistributionVocabulary(self):
         return 'Distribution'
@@ -62,18 +55,17 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
     def getProductVocabulary(self):
         return 'Product'
 
-    def getOCIProjectVocabulary(self):
-        return 'OCIProject'
+    def getPackageVocabulary(self):
+        if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
+            # Replace the default field with a field that uses the better
+            # vocabulary.
+            return 'DistributionSourcePackage'
+        else:
+            return 'BinaryAndSourcePackageName'
 
     def setUpSubWidgets(self):
         if self._widgets_set_up:
             return
-        if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
-            # Replace the default field with a field that uses the better
-            # vocabulary.
-            package_vocab = 'DistributionSourcePackage'
-        else:
-            package_vocab = 'BinaryAndSourcePackageName'
         fields = [
             Choice(
                 __name__='product', title=u'Project',
@@ -84,12 +76,8 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
                 default=getUtility(ILaunchpadCelebrities).ubuntu),
             Choice(
                 __name__='package', title=u"Package",
-                required=False, vocabulary=package_vocab),
+                required=False, vocabulary=self.getPackageVocabulary()),
             ]
-        if self.show_ociproject:
-            fields.append(Choice(
-                __name__='ociproject', title=u"OCI project",
-                required=False, vocabulary=self.getOCIProjectVocabulary()))
         self.distribution_widget = CustomWidgetFactory(
             LaunchpadDropdownWidget)
         for field in fields:
@@ -100,10 +88,7 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
     def setUpOptions(self):
         """Set up options to be rendered."""
         self.options = {}
-        option_names = ['package', 'product']
-        if self.show_ociproject:
-            option_names.append('ociproject')
-        for option in option_names:
+        for option in ['package', 'product']:
             attributes = dict(
                 type='radio', name=self.name, value=option,
                 id='%s.option.%s' % (self.name, option))
@@ -148,24 +133,6 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
                     self.name, self.label,
                     LaunchpadValidationError(
                         "There is no project named '%s' registered in"
-                        " Launchpad" % entered_name))
-                raise self._error
-        if form_value == 'ociproject':
-            try:
-                return self.ociproject_widget.getInputValue()
-            except MissingInputError:
-                self._error = WidgetInputError(
-                    self.name, self.label,
-                    LaunchpadValidationError(
-                        'Please enter an OCI project name'))
-                raise self._error
-            except ConversionError:
-                entered_name = self.request.form_ng.getOne(
-                    "%s.ociproject" % self.name)
-                self._error = WidgetInputError(
-                    self.name, self.label,
-                    LaunchpadValidationError(
-                        "There is no OCI project named '%s' registered in"
                         " Launchpad" % entered_name))
                 raise self._error
         elif form_value == 'package':
@@ -223,9 +190,6 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
             self.default_option = 'package'
             self.distribution_widget.setRenderedValue(value.distribution)
             self.package_widget.setRenderedValue(value.sourcepackagename)
-        elif IOCIProject.providedBy(value):
-            self.default_option = 'ociproject'
-            self.ociproject_widget.setRenderedValue(value)
         else:
             raise AssertionError('Not a valid value: %r' % value)
 

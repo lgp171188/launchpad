@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Vocabularies for content objects.
@@ -2213,15 +2213,21 @@ class OCIProjectVocabulary(StormVocabularyBase):
     displayname = 'Select an OCI project'
     step_title = 'Search'
 
+    def __init__(self, context=None):
+        super(OCIProjectVocabulary, self).__init__(context)
+        self.pillar = None
+
+    def setPillar(self, pillar):
+        self.pillar = pillar
+
     def toTerm(self, ociproject):
-        token = "%s/%s" % (ociproject.pillar.name, ociproject.name)
-        title = "%s" % token
+        token = ociproject.name
+        title = "%s (%s)" % (ociproject.name, ociproject.pillar.displayname)
         return SimpleTerm(ociproject, token, title)
 
     def getTermByToken(self, token):
-        pillar_name, name = token.split('/')
         ociproject = getUtility(IOCIProjectSet).getByPillarAndName(
-            pillar_name, name)
+            self.pillar, token)
         if ociproject is None:
             raise LookupError(token)
         return self.toTerm(ociproject)

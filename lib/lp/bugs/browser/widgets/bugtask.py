@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Widgets related to IBugTask."""
@@ -21,6 +21,7 @@ import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import (
+    ConversionError,
     IDisplayWidget,
     IInputWidget,
     InputErrors,
@@ -44,6 +45,7 @@ from zope.schema.vocabulary import getVocabularyRegistry
 from lp import _
 from lp.app.browser.tales import TeamFormatterAPI
 from lp.app.errors import UnexpectedFormData
+from lp.app.validators import LaunchpadValidationError
 from lp.app.widgets.helpers import get_widget_template
 from lp.app.widgets.launchpadtarget import LaunchpadTargetWidget
 from lp.app.widgets.popup import (
@@ -64,6 +66,8 @@ from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
 from lp.services.fields import URIField
 from lp.services.webapp import canonical_url
@@ -468,12 +472,58 @@ class BugTaskBugWatchWidget(RadioWidget):
 
 
 class BugTaskTargetWidget(LaunchpadTargetWidget):
-    show_ociproject = True
+
+    def __init__(self, context, request, packages_as_ociproject=False):
+        super(LaunchpadTargetWidget, self).__init__(context, request)
+        self.packages_as_ociproject = packages_as_ociproject
 
     def getDistributionVocabulary(self):
         distro = self.context.context.distribution
         vocabulary = UsesBugsDistributionVocabulary(distro)
         return vocabulary
+
+    def getPackageVocabulary(self):
+        if self.packages_as_ociproject:
+            return 'OCIProject'
+        else:
+            return super(BugTaskTargetWidget, self).getPackageVocabulary()
+
+    def getInputValue(self):
+        self.setUpSubWidgets()
+        form_value = self.request.form_ng.getOne(self.name)
+        if self.packages_as_ociproject and form_value == 'package':
+            try:
+                distribution = self.distribution_widget.getInputValue()
+            except ConversionError:
+                entered_name = self.request.form_ng.getOne(
+                    "%s.distribution" % self.name)
+                self._error = WidgetInputError(
+                    self.name, self.label,
+                    LaunchpadValidationError(
+                        "There is no distribution named '%s' registered in"
+                        " Launchpad" % entered_name))
+                raise self._error
+            if not self.package_widget.hasInput():
+                return distribution
+            self.package_widget.vocabulary.setPillar(distribution)
+            return self.package_widget.getInputValue()
+        return super(BugTaskTargetWidget, self).getInputValue()
+
+    def setRenderedValue(self, value):
+        self.setUpSubWidgets()
+        if IOCIProject.providedBy(value):
+            if IProduct.providedBy(value.pillar):
+                # We do not support project-based OCIProjects in this widget
+                # yet. If we get an OCIProject based on a project, associate
+                # the value with the project only.
+                self.default_option = 'product'
+                self.product_widget.setRenderedValue(value.pillar)
+            elif IDistribution.providedBy(value.pillar):
+                self.default_option = 'package'
+                self.distribution_widget.setRenderedValue(value.pillar)
+                self.package_widget.setRenderedValue(value)
+        else:
+            super(BugTaskTargetWidget, self).setRenderedValue(value)
 
 
 class BugTaskSourcePackageNameWidget(SourcePackageNameWidgetBase):
