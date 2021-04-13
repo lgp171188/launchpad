@@ -14,6 +14,7 @@ __all__ = [
     'INCLUSIVE_TEAM_POLICY',
     'PersonTransferJobType',
     'PersonVisibility',
+    'PollSort',
     'ProductJobType',
     'VCSType',
     'SharingPermission',
@@ -25,6 +26,8 @@ __all__ = [
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
+    EnumeratedType,
+    Item,
     )
 
 
@@ -455,4 +458,32 @@ class DistributionDefaultTraversalPolicy(DBEnumeratedType):
 
         The default traversal from a distribution is used for OCI projects
         in that distribution.
+        """)
+
+
+class PollSort(EnumeratedType):
+    """Choices for how to sort polls."""
+
+    OLDEST_FIRST = Item("""
+        oldest first
+
+        Sort polls from oldest to newest.
+        """)
+
+    NEWEST_FIRST = Item("""
+        newest first
+
+        Sort polls from newest to oldest.
+        """)
+
+    OPENING = Item("""
+        by opening date
+
+        Sort polls with the earliest opening date first.
+        """)
+
+    CLOSING = Item("""
+        by closing date
+
+        Sort polls with the earliest closing date first.
         """)

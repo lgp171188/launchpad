@@ -757,6 +757,11 @@
         path_expression="string:+poll/${name}"
         attribute_to_parent="team"
         />
+    <browser:url
+        for="lp.registry.interfaces.poll.IPollSet"
+        path_expression="string:+polls"
+        parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
+        />
     <browser:pages
         for="lp.registry.interfaces.poll.IPoll"
         class="lp.registry.browser.poll.PollView"

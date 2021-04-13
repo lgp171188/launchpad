@@ -114,6 +114,7 @@ from lp.registry.interfaces.karma import IKarmaActionSet
 from lp.registry.interfaces.nameblacklist import INameBlacklistSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pillar import IPillarNameSet
+from lp.registry.interfaces.poll import IPollSet
 from lp.registry.interfaces.product import (
     InvalidProductName,
     IProduct,
@@ -867,6 +868,7 @@ class LaunchpadRootNavigation(Navigation):
         'package-sets': IPackagesetSet,
         'people': IPersonSet,
         'pillars': IPillarNameSet,
+        '+polls': IPollSet,
         '+processors': IProcessorSet,
         'projects': IProductSet,
         'projectgroups': IProjectGroupSet,

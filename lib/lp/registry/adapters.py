@@ -18,6 +18,7 @@ from zope.component.interfaces import ComponentLookupError
 from zope.interface import implementer
 
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
+from lp.registry.enums import PollSort
 from lp.registry.interfaces.poll import (
     IPollSet,
     IPollSubset,
@@ -96,14 +97,16 @@ class PollSubset:
         assert self.team is not None, (
             'team cannot be None to call this method.')
         return getUtility(IPollSet).findByTeam(
-            self.team, [PollStatus.OPEN], order_by='datecloses', when=when)
+            self.team, [PollStatus.OPEN],
+            order_by=PollSort.CLOSING, when=when)
 
     def getClosedPolls(self, when=None):
         """See IPollSubset."""
         assert self.team is not None, (
             'team cannot be None to call this method.')
         return getUtility(IPollSet).findByTeam(
-            self.team, [PollStatus.CLOSED], order_by='datecloses', when=when)
+            self.team, [PollStatus.CLOSED],
+            order_by=PollSort.CLOSING, when=when)
 
     def getNotYetOpenedPolls(self, when=None):
         """See IPollSubset."""
@@ -111,7 +114,7 @@ class PollSubset:
             'team cannot be None to call this method.')
         return getUtility(IPollSet).findByTeam(
             self.team, [PollStatus.NOT_YET_OPENED],
-            order_by='dateopens', when=when)
+            order_by=PollSort.OPENING, when=when)
 
 
 def productseries_to_product(productseries):
