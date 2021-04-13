@@ -18,8 +18,6 @@ import simplejson
 import six
 from storm.expr import (
     And,
-    LeftJoin,
-    Lower,
     Or,
     )
 from storm.locals import (
@@ -34,6 +32,7 @@ from zope.interface import (
     provider,
     )
 
+from lp.app.errors import TeamAccountNotClosable
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.enums import PersonTransferJobType
 from lp.registry.interfaces.person import (
@@ -47,7 +46,7 @@ from lp.registry.interfaces.persontransferjob import (
     IMembershipNotificationJob,
     IMembershipNotificationJobSource,
     IPersonCloseAccountJob,
-    IPersonCloseAccountJobSource,
+    IPersonCloseAccountJobs,
     IPersonDeactivateJob,
     IPersonDeactivateJobSource,
     IPersonMergeJob,
@@ -74,7 +73,6 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormbase import StormBase
-from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.job.model.job import (
     EnumeratedSubclass,
     Job,
@@ -446,42 +444,25 @@ class PersonDeactivateJob(PersonTransferJobDerived):
 
 
 @implementer(IPersonCloseAccountJob)
-@provider(IPersonCloseAccountJobSource)
+@provider(IPersonCloseAccountJobs)
 class PersonCloseAccountJob(PersonTransferJobDerived):
     """A Job that closes account for a person."""
 
     class_job_type = PersonTransferJobType.CLOSE_ACCOUNT
 
-    config = config.IPersonCloseAccountJobSource
+    config = config.IPersonCloseAccountJobs
 
     @classmethod
-    def create(cls, username):
-        """See `IPersonCloseAccountJobSource`."""
-        # Minor person has to be not null, so use the janitor.
-        store = IMasterStore(Person)
-        janitor = getUtility(ILaunchpadCelebrities).janitor
-
-        person = store.using(
-            Person,
-            LeftJoin(EmailAddress, Person.id == EmailAddress.personID)
-        ).find(
-            Person,
-            Or(Person.name == username,
-               Lower(EmailAddress.email) == Lower(username))
-        ).order_by(Person.id).config(distinct=True).one()
-
-        if person is None:
-            raise TypeError("User %s does not exist" % username)
-        person_name = person.name
+    def create(cls, person):
+        """See `IPersonCloseAccountJobs`."""
 
         # We don't delete teams
         if person.is_team:
-            raise TypeError("%s is a team" % person_name)
-
-        log.info("Closing %s's account" % person_name)
+            raise TeamAccountNotClosable("%s is a team" % person.name)
 
         return super(PersonCloseAccountJob, cls).create(
-            minor_person=janitor, major_person=person, metadata={})
+            minor_person=getUtility(ILaunchpadCelebrities).janitor,
+            major_person=person, metadata={})
 
     @classmethod
     def find(cls, person=None):

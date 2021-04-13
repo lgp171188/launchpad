@@ -10,7 +10,7 @@ __all__ = [
     'IMembershipNotificationJob',
     'IMembershipNotificationJobSource',
     'IPersonCloseAccountJob',
-    'IPersonCloseAccountJobSource',
+    'IPersonCloseAccountJobs',
     'IPersonDeactivateJob',
     'IPersonDeactivateJobSource',
     'IPersonMergeJob',
@@ -177,14 +177,15 @@ class IPersonCloseAccountJob(IPersonTransferJob):
     """A Job that closes the account for a person."""
 
     person = PublicPersonChoice(
-        title=_('Alias for person attribute'), vocabulary='ValidPersonOrTeam',
+        title=_('Alias for major_person attribute'),
+        vocabulary='ValidPersonOrTeam',
         required=True)
 
     def getErrorRecipients(self):
         """See `BaseRunnableJob`."""
 
 
-class IPersonCloseAccountJobSource(IJobSource):
+class IPersonCloseAccountJobs(IJobSource):
     """An interface for acquiring ICloseAccountJobs."""
 
     def create(person):

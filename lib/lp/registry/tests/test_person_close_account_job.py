@@ -1,7 +1,7 @@
 # Copyright 2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Tests for `PersonDeactivateJob`."""
+"""Tests for `PersonCloseAccountJob`."""
 
 __metaclass__ = type
 
@@ -13,10 +13,9 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import TeamAccountNotClosable
 from lp.registry.interfaces.person import IPersonSet
-from lp.registry.interfaces.persontransferjob import (
-    IPersonCloseAccountJobSource,
-    )
+from lp.registry.interfaces.persontransferjob import IPersonCloseAccountJobs
 from lp.registry.model.persontransferjob import PersonCloseAccountJob
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
@@ -42,31 +41,18 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
-    def test_close_account_job_nonexistent_username_email(self):
-        self.assertRaisesWithContent(
-            TypeError,
-            "User nonexistent_username does not exist",
-            getUtility(IPersonCloseAccountJobSource).create,
-            u'nonexistent_username')
-
-        self.assertRaisesWithContent(
-            TypeError,
-            "User nonexistent_email@username.test does not exist",
-            getUtility(IPersonCloseAccountJobSource).create,
-            u'nonexistent_email@username.test')
-
     def test_close_account_job_valid_username(self):
         user_to_delete = self.factory.makePerson(name=u'delete-me')
-        job_source = getUtility(IPersonCloseAccountJobSource)
+        job_source = getUtility(IPersonCloseAccountJobs)
         jobs = list(job_source.iterReady())
 
         # at this point we have no jobs
         self.assertEqual([], jobs)
 
-        getUtility(IPersonCloseAccountJobSource).create(u'delete-me')
+        getUtility(IPersonCloseAccountJobs).create(user_to_delete)
         jobs = list(job_source.iterReady())
         jobs[0] = removeSecurityProxy(jobs[0])
-        with dbuser(config.IPersonCloseAccountJobSource.dbuser):
+        with dbuser(config.IPersonCloseAccountJobs.dbuser):
             JobRunner(jobs).runAll()
 
         self.assertEqual(JobStatus.COMPLETED, jobs[0].status)
@@ -78,11 +64,11 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
         user_to_delete = self.factory.makePerson(
             email=u'delete-me@example.com')
         getUtility(
-            IPersonCloseAccountJobSource).create(u'delete-me@example.com')
-        job_source = getUtility(IPersonCloseAccountJobSource)
+            IPersonCloseAccountJobs).create(user_to_delete)
+        job_source = getUtility(IPersonCloseAccountJobs)
         jobs = list(job_source.iterReady())
         jobs[0] = removeSecurityProxy(jobs[0])
-        with dbuser(config.IPersonCloseAccountJobSource.dbuser):
+        with dbuser(config.IPersonCloseAccountJobs.dbuser):
             JobRunner(jobs).runAll()
         self.assertEqual(JobStatus.COMPLETED, jobs[0].status)
         person = removeSecurityProxy(
@@ -92,10 +78,10 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
     def test_team(self):
         team = self.factory.makeTeam()
         self.assertRaisesWithContent(
-            TypeError,
+            TeamAccountNotClosable,
             "%s is a team" % team.name,
-            getUtility(IPersonCloseAccountJobSource).create,
-            team.name)
+            getUtility(IPersonCloseAccountJobs).create,
+            team)
 
     def test_unhandled_reference(self):
         user_to_delete = self.factory.makePerson(name=u'delete-me')
@@ -104,10 +90,10 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
             getUtility(IPersonSet).getByName(user_to_delete.name))
         person_id = person.id
         account_id = person.account.id
-        job = PersonCloseAccountJob.create(u'delete-me')
+        job = PersonCloseAccountJob.create(user_to_delete)
         logger = BufferLogger()
         with log.use(logger),\
-                dbuser(config.IPersonCloseAccountJobSource.dbuser):
+                dbuser(config.IPersonCloseAccountJobs.dbuser):
             job.run()
         error_message = (
             {u'ERROR User delete-me is still '
@@ -144,7 +130,7 @@ class TestPersonCloseAccountJobViaCelery(TestCaseWithFactory):
         user_to_delete = self.factory.makePerson()
 
         with block_on_job():
-            job = PersonCloseAccountJob.create(user_to_delete.name)
+            job = PersonCloseAccountJob.create(user_to_delete)
             transaction.commit()
         person = removeSecurityProxy(
             getUtility(IPersonSet).getByName(user_to_delete.name))

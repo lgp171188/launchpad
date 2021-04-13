@@ -106,8 +106,8 @@
 
     <securedutility
         component=".model.persontransferjob.PersonCloseAccountJob"
-        provides=".interfaces.persontransferjob.IPersonCloseAccountJobSource">
-      <allow interface=".interfaces.persontransferjob.IPersonCloseAccountJobSource"/>
+        provides=".interfaces.persontransferjob.IPersonCloseAccountJobs">
+      <allow interface=".interfaces.persontransferjob.IPersonCloseAccountJobs"/>
     </securedutility>
 
     <securedutility
