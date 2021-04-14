@@ -323,6 +323,9 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
             status['upload'] = statusEnum.PENDING
         else:
             status['upload'] = statusEnum.UPLOADED
+
+        # Get the longest date and whether any of them are estimated
+        # for the summary of the builds
         dates = [x.date for x in self.builds if x.date]
         status['date'] = max(dates) if dates else None
         status['date_estimated'] = any(x.estimate for x in self.builds)
