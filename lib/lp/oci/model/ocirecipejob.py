@@ -5,8 +5,8 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 from lp.buildmaster.model.processor import Processor
-
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+
 
 __metaclass__ = type
 __all__ = [

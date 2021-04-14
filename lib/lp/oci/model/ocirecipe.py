@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 
+
 __metaclass__ = type
 __all__ = [
     'get_ocirecipe_privacy_filter',
