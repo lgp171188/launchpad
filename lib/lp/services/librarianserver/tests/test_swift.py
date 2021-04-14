@@ -289,6 +289,47 @@ class TestFeedSwift(TestCase):
         # Our object round tripped
         self.assertEqual(obj1 + obj2 + obj3, expected_content)
 
+    def test_multiple_instances(self):
+        log = BufferLogger()
+
+        # Confirm that files exist on disk where we expect to find them.
+        for lfc in self.lfcs:
+            path = swift.filesystem_path(lfc.id)
+            self.assertTrue(os.path.exists(path))
+
+        # Migrate all the files into Swift, using multiple instances.  For
+        # each instance, only the matching files are processed.
+        for instance_id in range(3):
+            swift.to_swift(
+                log, instance_id=instance_id, num_instances=3,
+                remove_func=os.unlink)
+
+            # Only the matching files are gone from disk.  (This is
+            # cumulative, so we test for all instances up to this point.)
+            for lfc in self.lfcs:
+                exists = os.path.exists(swift.filesystem_path(lfc.id))
+                if (lfc.id % 3) <= instance_id:
+                    self.assertFalse(exists)
+                else:
+                    self.assertTrue(exists)
+
+            # Confirm all the files that have been migrated so far are in
+            # Swift.
+            swift_client = self.swift_fixture.connect()
+            try:
+                for lfc, contents in zip(self.lfcs, self.contents):
+                    container, name = swift.swift_location(lfc.id)
+                    if (lfc.id % 3) <= instance_id:
+                        headers, obj = swift_client.get_object(container, name)
+                        self.assertEqual(contents, obj, 'Did not round trip')
+                    else:
+                        self.assertRaises(
+                            swiftclient.ClientException,
+                            swift.quiet_swiftclient,
+                            swift_client.get_object, container, name)
+            finally:
+                swift_client.close()
+
 
 class TestHashStream(TestCase):
     layer = BaseLayer
