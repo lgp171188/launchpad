@@ -27,7 +27,18 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-from lazr.restful.declarations import error_status
+from lazr.restful.declarations import (
+    collection_default_content,
+    error_status,
+    export_read_operation,
+    exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
+    operation_for_version,
+    operation_parameters,
+    operation_returns_collection_of,
+    )
+from lazr.restful.fields import Reference
 import pytz
 from six.moves import http_client
 from zope.component import getUtility
@@ -42,12 +53,14 @@ from zope.schema import (
     Choice,
     Datetime,
     Int,
+    List,
     Text,
     TextLine,
     )
 
 from lp import _
 from lp.app.validators.name import name_validator
+from lp.registry.enums import PollSort
 from lp.registry.interfaces.person import ITeam
 from lp.services.fields import ContentNameField
 
@@ -120,53 +133,55 @@ class CannotCreatePoll(Exception):
     pass
 
 
+@exported_as_webservice_entry(as_of="beta")
 class IPoll(Interface):
     """A poll for a given proposition in a team."""
 
     id = Int(title=_('The unique ID'), required=True, readonly=True)
 
-    team = Int(
+    team = exported(Reference(
+        ITeam,
         title=_('The team that this poll refers to.'), required=True,
-        readonly=True)
+        readonly=True))
 
-    name = PollNameField(
+    name = exported(PollNameField(
         title=_('The unique name of this poll'),
         description=_('A short unique name, beginning with a lower-case '
                       'letter or number, and containing only letters, '
                       'numbers, dots, hyphens, or plus signs.'),
-        required=True, readonly=False, constraint=name_validator)
+        required=True, readonly=False, constraint=name_validator))
 
-    title = TextLine(
-        title=_('The title of this poll'), required=True, readonly=False)
+    title = exported(TextLine(
+        title=_('The title of this poll'), required=True, readonly=False))
 
-    dateopens = Datetime(
+    dateopens = exported(Datetime(
         title=_('The date and time when this poll opens'), required=True,
-        readonly=False)
+        readonly=False))
 
-    datecloses = Datetime(
+    datecloses = exported(Datetime(
         title=_('The date and time when this poll closes'), required=True,
-        readonly=False)
+        readonly=False))
 
-    proposition = Text(
+    proposition = exported(Text(
         title=_('The proposition that is going to be voted'), required=True,
-        readonly=False)
+        readonly=False))
 
-    type = Choice(
+    type = exported(Choice(
         title=_('The type of this poll'), required=True,
         readonly=False, vocabulary=PollAlgorithm,
-        default=PollAlgorithm.CONDORCET)
+        default=PollAlgorithm.CONDORCET))
 
-    allowspoilt = Bool(
+    allowspoilt = exported(Bool(
         title=_('Users can spoil their votes?'),
         description=_(
             'Allow users to leave the ballot blank (i.e. cast a vote for '
             '"None of the above")'),
-        required=True, readonly=False, default=True)
+        required=True, readonly=False, default=True))
 
-    secrecy = Choice(
+    secrecy = exported(Choice(
         title=_('The secrecy of the Poll'), required=True,
         readonly=False, vocabulary=PollSecrecy,
-        default=PollSecrecy.SECRET)
+        default=PollSecrecy.SECRET))
 
     @invariant
     def saneDates(poll):
@@ -297,6 +312,7 @@ class IPoll(Interface):
         """
 
 
+@exported_as_webservice_collection(IPoll)
 class IPollSet(Interface):
     """The set of Poll objects."""
 
@@ -304,25 +320,57 @@ class IPollSet(Interface):
             secrecy, allowspoilt, poll_type=PollAlgorithm.SIMPLE):
         """Create a new Poll for the given team."""
 
-    def findByTeam(team, status=PollStatus.ALL, order_by=None, when=None):
+    @operation_parameters(
+        team=Reference(ITeam, title=_("Team"), required=False),
+        status=List(
+            title=_("Poll statuses"),
+            description=_(
+                "A list of one or more of 'open', 'closed', or "
+                "'not-yet-opened'.  Defaults to all statuses."),
+            value_type=Choice(values=PollStatus.ALL), min_length=1,
+            required=False),
+        order_by=Choice(
+            title=_("Sort order"), vocabulary=PollSort, required=False))
+    @operation_returns_collection_of(IPoll)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def find(team=None, status=None, order_by=PollSort.NEWEST_FIRST,
+             when=None):
+        """Search for polls.
+
+        :param team: An optional `ITeam` to filter by.
+        :param status: A collection containing as many values as you want
+            from PollStatus.  Defaults to `PollStatus.ALL`.
+        :param order_by: An optional `PollSort` item indicating how to sort
+            the results.  Defaults to `PollSort.NEWEST_FIRST`.
+        :param when: Used only by tests, to filter for polls open at a
+            specific date.
+        """
+
+    def findByTeam(team, status=None, order_by=PollSort.NEWEST_FIRST,
+                   when=None):
         """Return all Polls for the given team, filtered by status.
 
-        :status: is a sequence containing as many values as you want from
-        PollStatus.
-
-        :order_by: can be either a string with the column name you want to
-        sort or a list of column names as strings.
-        If no order_by is specified the results will be ordered using the
-        default ordering specified in Poll.sortingColumns.
-
-        The optional :when argument is used only by our tests, to test if the
-        poll is/was/will-be open at a specific date.
+        :param team: A `ITeam` to filter by.
+        :param status: A collection containing as many values as you want
+            from PollStatus.  Defaults to `PollStatus.ALL`.
+        :param order_by: An optional `PollSort` item indicating how to sort
+            the results.  Defaults to `PollSort.NEWEST_FIRST`.
+        :param when: Used only by tests, to filter for polls open at a
+            specific date.
         """
 
     def getByTeamAndName(team, name, default=None):
         """Return the Poll for the given team with the given name.
 
         Return :default if there's no Poll with this name for that team.
+        """
+
+    @collection_default_content()
+    def emptyList():
+        """Return an empty collection of polls.
+
+        This only exists to keep lazr.restful happy.
         """
 
 
