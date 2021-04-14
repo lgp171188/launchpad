@@ -108,6 +108,7 @@ from lp.blueprints.interfaces.specification import ISpecification
 from lp.bugs.interfaces.bugtask import IBugTask
 from lp.code.interfaces.branch import IBranch
 from lp.registry.enums import (
+    DistributionDefaultTraversalPolicy,
     EXCLUSIVE_TEAM_POLICY,
     PersonVisibility,
     )
@@ -184,6 +185,7 @@ from lp.services.database.stormexpr import (
     rank_by_fti,
     RegexpMatch,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import (
@@ -214,6 +216,9 @@ from lp.services.webapp.vocabulary import (
     VocabularyFilter,
     )
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.binaryandsourcepackagename import (
+    BinaryAndSourcePackageNameVocabulary,
+    )
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
     )
@@ -2235,5 +2240,75 @@ class OCIProjectVocabulary(StormVocabularyBase):
     def search(self, query, vocab_filter=None):
         return getUtility(IOCIProjectSet).searchByName(query)
 
+    @property
     def _entries(self):
-        return getUtility(IOCIProjectSet).searchByName('')
+        return getUtility(IOCIProjectSet).searchByName(six.ensure_text(''))
+
+    def __contains__(self, obj):
+        found_obj = IStore(self._table).find(
+            self._table,
+            self._table.id == obj.id).one()
+        return found_obj is not None and found_obj == obj
+
+
+@implementer(IHugeVocabulary)
+class DistributionPackageVocabulary:
+    """A simple wrapper to automatically select package vocabulary
+    (BinaryAndSourcePackageNameVocabulary or OCIProjectVocabulary) depending
+    on which type of distribution we are dealing with.
+    """
+
+    def __init__(self, context=None):
+        super(DistributionPackageVocabulary, self).__init__()
+        if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
+            # Replace the default field with a field that uses the better
+            # vocabulary.
+            self.packages_vocabulary = DistributionSourcePackageVocabulary(
+                context)
+        else:
+            self.packages_vocabulary = BinaryAndSourcePackageNameVocabulary(
+                context)
+
+        self.oci_projects_vocabulary = OCIProjectVocabulary(context)
+        self.distribution = None
+        self.context = context
+
+    def setDistribution(self, distribution):
+        self.distribution = distribution
+        self.oci_projects_vocabulary.setPillar(distribution)
+        if isinstance(
+                self.packages_vocabulary, DistributionSourcePackageVocabulary):
+            self.packages_vocabulary.setDistribution(distribution)
+
+    @property
+    def is_oci_distribution(self):
+        distribution = self.distribution
+        if distribution is None and self.context is not None:
+            # If distribution was not set yet, try to guess it from context.
+            distribution = getattr(self.context, 'distribution', None)
+        oci_traversal_policy = DistributionDefaultTraversalPolicy.OCI_PROJECT
+        return (
+            distribution is not None and
+            distribution.default_traversal_policy == oci_traversal_policy)
+
+    def __getattribute__(self, item):
+        local_attrs = {
+            'is_oci_distribution', 'oci_projects_vocabulary',
+            'packages_vocabulary', 'distribution', 'setDistribution',
+            'context'}
+        if item in local_attrs:
+            return object.__getattribute__(self, item)
+        if self.is_oci_distribution:
+            vocabulary = self.oci_projects_vocabulary
+        else:
+            vocabulary = self.packages_vocabulary
+        return getattr(vocabulary, item)
+
+    # Special methods should be declared at the class declaration,
+    # even if self.__special_method__ will be forwarded to the correct
+    # vocabulary after, by __getattribute__.
+    def __iter__(self):
+        return self.__iter__()
+
+    def __contains__(self, obj):
+        return self.__contains__(obj)

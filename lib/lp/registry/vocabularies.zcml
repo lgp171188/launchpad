@@ -576,4 +576,18 @@
             permission="zope.Public"
             attributes="setPillar"/>
     </class>
+
+    <securedutility
+        name="DistributionPackage"
+        component="lp.registry.vocabularies.DistributionPackageVocabulary"
+        provides="zope.schema.interfaces.IVocabularyFactory">
+        <allow interface="zope.schema.interfaces.IVocabularyFactory" />
+    </securedutility>
+
+    <class class="lp.registry.vocabularies.DistributionPackageVocabulary">
+        <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
+        <require
+            permission="zope.Public"
+            attributes="setDistribution"/>
+    </class>
 </configure>

@@ -62,6 +62,7 @@ from lp.bugs.interfaces.bugwatch import (
     UnrecognizedBugTrackerURL,
     )
 from lp.bugs.vocabularies import UsesBugsDistributionVocabulary
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
@@ -473,25 +474,43 @@ class BugTaskBugWatchWidget(RadioWidget):
 
 class BugTaskTargetWidget(LaunchpadTargetWidget):
 
-    def __init__(self, context, request, packages_as_ociproject=False):
-        super(LaunchpadTargetWidget, self).__init__(context, request)
-        self.packages_as_ociproject = packages_as_ociproject
-
     def getDistributionVocabulary(self):
         distro = self.context.context.distribution
         vocabulary = UsesBugsDistributionVocabulary(distro)
         return vocabulary
 
     def getPackageVocabulary(self):
-        if self.packages_as_ociproject:
-            return 'OCIProject'
-        else:
-            return super(BugTaskTargetWidget, self).getPackageVocabulary()
+        return 'DistributionPackage'
+
+    def getSelectedDistribution(self):
+        return (self.distribution_widget.getInputValue()
+                if self.distribution_widget.hasInput() else None)
+
+    @property
+    def is_oci_distribution_selected(self):
+        if not hasattr(self, 'distribution_widget'):
+            # Field not initialized yet.
+            return False
+        distribution = self.getSelectedDistribution()
+        oci_traversal_policy = DistributionDefaultTraversalPolicy.OCI_PROJECT
+        return (
+            distribution is not None and
+            distribution.default_traversal_policy == oci_traversal_policy)
+
+    def _syncPackageVocabularyDistribution(self, distribution=None):
+        """Sync the package vocabulary depending on the selected
+        distribution, so we know if we are dealing with OCI projects or
+        source/binary packages.
+        """
+        if distribution is None:
+            distribution = self.getSelectedDistribution()
+        self.package_widget.vocabulary.setDistribution(distribution)
 
     def getInputValue(self):
         self.setUpSubWidgets()
+        self._syncPackageVocabularyDistribution()
         form_value = self.request.form_ng.getOne(self.name)
-        if self.packages_as_ociproject and form_value == 'package':
+        if self.is_oci_distribution_selected and form_value == 'package':
             try:
                 distribution = self.distribution_widget.getInputValue()
             except ConversionError:
@@ -503,10 +522,7 @@ class BugTaskTargetWidget(LaunchpadTargetWidget):
                         "There is no distribution named '%s' registered in"
                         " Launchpad" % entered_name))
                 raise self._error
-            if not self.package_widget.hasInput():
-                return distribution
-            self.package_widget.vocabulary.setPillar(distribution)
-            return self.package_widget.getInputValue()
+            return self.package_widget.getInputValue() or distribution
         return super(BugTaskTargetWidget, self).getInputValue()
 
     def setRenderedValue(self, value):
@@ -522,6 +538,7 @@ class BugTaskTargetWidget(LaunchpadTargetWidget):
                 self.default_option = 'package'
                 self.distribution_widget.setRenderedValue(value.pillar)
                 self.package_widget.setRenderedValue(value)
+                self._syncPackageVocabularyDistribution(value.pillar)
         else:
             super(BugTaskTargetWidget, self).setRenderedValue(value)
 

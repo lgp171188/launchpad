@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -61,7 +61,10 @@ from lp.layers import (
     FeedsLayer,
     setFirstLayer,
     )
-from lp.registry.enums import BugSharingPolicy
+from lp.registry.enums import (
+    BugSharingPolicy,
+    DistributionDefaultTraversalPolicy,
+    )
 from lp.registry.interfaces.person import PersonVisibility
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
@@ -78,6 +81,7 @@ from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.testing import (
+    admin_logged_in,
     ANONYMOUS,
     BrowserTestCase,
     celebrity_logged_in,
@@ -1515,6 +1519,86 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
         self.assertEqual(ds, bug_task.target)
         notifications = view.request.response.notifications
         self.assertEqual(0, len(notifications))
+
+    def test_retarget_distribution_to_oci_project(self):
+        # It should be possible to retarget a bug from a normal distribution
+        # to an OCI project of a specific OCI-distro.
+        with admin_logged_in():
+            ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+            oci_distro = self.factory.makeDistribution()
+            oci_distro.official_malone = True
+            oci_distro.default_traversal_policy = (
+                DistributionDefaultTraversalPolicy.OCI_PROJECT)
+            oci_project = self.factory.makeOCIProject(pillar=oci_distro)
+            oci_project_name = oci_project.name
+
+        bug_task = self.factory.makeBugTask(target=ubuntu)
+
+        url = canonical_url(bug_task, view_name='+editstatus')
+        browser = self.getUserBrowser(url, user=bug_task.owner)
+        browser.getControl(name='ubuntu.target').value = 'package'
+        browser.getControl(name='ubuntu.target.distribution').value = (
+            oci_distro.name)
+        browser.getControl(name='ubuntu.target.package').value = (
+            oci_project_name)
+        browser.getControl("Save Changes").click()
+
+        with admin_logged_in():
+            self.assertEqual(canonical_url(bug_task), browser.url)
+            self.assertEqual(oci_project, bug_task.target)
+
+    def test_retarget_oci_project_to_distribution(self):
+        # It should be possible to retarget a bug from an OCI project to a
+        # normal distribution.
+        with admin_logged_in():
+            ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+            oci_distro = self.factory.makeDistribution(name='oci-distro')
+            oci_distro.official_malone = True
+            oci_distro.default_traversal_policy = (
+                DistributionDefaultTraversalPolicy.OCI_PROJECT)
+            oci_project = self.factory.makeOCIProject(pillar=oci_distro)
+
+        bug_task = self.factory.makeBugTask(target=oci_project)
+
+        url = canonical_url(bug_task, view_name='+editstatus')
+        browser = self.getUserBrowser(url, user=bug_task.owner)
+        browser.getControl(name='oci-distro.target').value = 'package'
+        browser.getControl(name='oci-distro.target.distribution').value = (
+            ubuntu.name)
+        browser.getControl(name='oci-distro.target.package').value = ''
+        browser.getControl("Save Changes").click()
+
+        with admin_logged_in():
+            self.assertEqual(canonical_url(bug_task), browser.url)
+            self.assertEqual(ubuntu, bug_task.target)
+
+    def test_retarget_oci_project_to_source_package(self):
+        # It should be possible to retarget a bug from an OCI project to a
+        # source package of a distribution.
+        with admin_logged_in():
+            ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+            oci_distro = self.factory.makeDistribution(name='oci-distro')
+            oci_distro.official_malone = True
+            oci_distro.default_traversal_policy = (
+                DistributionDefaultTraversalPolicy.OCI_PROJECT)
+            oci_project = self.factory.makeOCIProject(pillar=oci_distro)
+            ds = self.factory.makeDistroSeries(distribution=ubuntu)
+            sp = self.factory.makeSourcePackage(distroseries=ds, publish=True)
+
+        bug_task = self.factory.makeBugTask(target=oci_project)
+
+        url = canonical_url(bug_task, view_name='+editstatus')
+        browser = self.getUserBrowser(url, user=bug_task.owner)
+        browser.getControl(name='oci-distro.target').value = 'package'
+        browser.getControl(name='oci-distro.target.distribution').value = (
+            ubuntu.name)
+        browser.getControl(name='oci-distro.target.package').value = sp.name
+        browser.getControl("Save Changes").click()
+
+        with admin_logged_in():
+            self.assertEqual(canonical_url(bug_task), browser.url)
+            self.assertEqual(
+                sp.sourcepackagename, bug_task.target.sourcepackagename)
 
 
 class BugTaskViewTestMixin():
