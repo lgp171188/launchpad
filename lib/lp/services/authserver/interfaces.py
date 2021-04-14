@@ -33,8 +33,9 @@ class IAuthServer(Interface):
         :param issuer_name: An `IMacaroonIssuer` name.  Only issuers where
             `issuable_via_authserver` is True are permitted.
         :param context_type: A string identifying the type of context for
-            which to issue the macaroon.  Currently only 'LibraryFileAlias'
-            and 'SnapBuild' are supported.
+            which to issue the macaroon.  Currently only 'LibraryFileAlias',
+            'BinaryPackageBuild', 'SnapBuild', and 'OCIRecipeBuild' are
+            supported.
         :param context: The context for which to issue the macaroon.  Note
             that this is passed over XML-RPC, so it should be plain data
             (e.g. an ID) rather than a database object.
@@ -46,8 +47,8 @@ class IAuthServer(Interface):
 
         :param macaroon_raw: A serialised macaroon.
         :param context_type: A string identifying the type of context to
-            check.  Currently only 'LibraryFileAlias' and 'SnapBuild' are
-            supported.
+            check.  Currently only 'LibraryFileAlias', 'BinaryPackageBuild',
+            'SnapBuild', and 'OCIRecipeBuild' are supported.
         :param context: The context to check.  Note that this is passed over
             XML-RPC, so it should be plain data (e.g. an ID) rather than a
             database object.
