@@ -5,6 +5,8 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
+
 __metaclass__ = type
 __all__ = [
     'get_ocirecipe_privacy_filter',
@@ -726,6 +728,20 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         return self._getBuilds(filter_term, order_by)
 
     @property
+    def completed_builds_without_build_request(self):
+        """See `IOCIRecipe`."""
+        filter_term = (
+            Not(OCIRecipeBuild.status.is_in(self._pending_states)),
+            OCIRecipeBuild.build_request_id == None)
+        order_by = (
+            NullsLast(Desc(Greatest(
+                OCIRecipeBuild.date_started,
+                OCIRecipeBuild.date_finished))),
+            Desc(OCIRecipeBuild.id))
+        return self._getBuilds(filter_term, order_by)
+
+
+    @property
     def pending_builds(self):
         """See `IOCIRecipe`."""
         filter_term = (OCIRecipeBuild.status.is_in(self._pending_states))
@@ -915,6 +931,50 @@ class OCIRecipeSet:
             git_ref = git_refs.get((recipe.git_repository, recipe.git_path))
             if git_ref is not None:
                 recipe.git_ref = git_ref
+
+    def getStatusSummaryForBuilds(self, builds):
+        # Create a small helper function to collect the builds for a given
+        # list of build states:
+        def collect_builds(*states):
+            wanted = []
+            for state in states:
+                candidates = [build for build in builds
+                              if build.status == state]
+                wanted.extend(candidates)
+            return wanted
+        failed = collect_builds(BuildStatus.FAILEDTOBUILD,
+                                BuildStatus.MANUALDEPWAIT,
+                                BuildStatus.CHROOTWAIT,
+                                BuildStatus.FAILEDTOUPLOAD)
+        needsbuild = collect_builds(BuildStatus.NEEDSBUILD)
+        building = collect_builds(BuildStatus.BUILDING,
+                                  BuildStatus.UPLOADING)
+        successful = collect_builds(BuildStatus.FULLYBUILT)
+
+        # Note: the BuildStatus DBItems are used here to summarize the
+        # status of a set of builds:s
+        if len(building) != 0:
+            return {
+                'status': BuildSetStatus.BUILDING,
+                'builds': building,
+                }
+        # If there are no builds, this is a 'pending build request'
+        # and needs building
+        elif len(needsbuild) != 0 or len(builds) == 0:
+            return {
+                'status': BuildSetStatus.NEEDSBUILD,
+                'builds': needsbuild,
+                }
+        elif len(failed) != 0:
+            return {
+                'status': BuildSetStatus.FAILEDTOBUILD,
+                'builds': failed,
+                }
+        else:
+            return {
+                'status': BuildSetStatus.FULLYBUILT,
+                'builds': successful,
+                }
 
 
 @implementer(IOCIRecipeBuildRequest)
