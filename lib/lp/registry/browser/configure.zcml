@@ -977,6 +977,13 @@
         template="../templates/person-review.pt"
         />
     <browser:page
+        name="+deleteaccount"
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonDeleteView"
+        permission="launchpad.Moderate"
+        template="../templates/person-delete.pt"
+        />
+    <browser:page
         name="+reviewaccount"
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonAccountAdministerView"

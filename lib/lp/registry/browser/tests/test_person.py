@@ -55,7 +55,11 @@ from lp.registry.browser.person import PersonView
 from lp.registry.browser.team import TeamInvitationView
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.karma import IKarmaCacheManager
-from lp.registry.interfaces.persontransferjob import IPersonMergeJobSource
+from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.persontransferjob import (
+    IPersonCloseAccountJobs,
+    IPersonMergeJobSource,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
@@ -70,6 +74,7 @@ from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.log.logger import DevNullLogger
 from lp.services.mail import stub
 from lp.services.propertycache import clear_property_cache
@@ -90,10 +95,12 @@ from lp.soyuz.enums import (
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
+    admin_logged_in,
     ANONYMOUS,
     BrowserTestCase,
     login,
     login_person,
+    logout,
     monkey_patch,
     person_logged_in,
     record_two_runs,
@@ -116,6 +123,7 @@ from lp.testing.pages import (
     setupBrowserForUser,
     )
 from lp.testing.publication import test_traverse
+from lp.testing.sampledata import ADMIN_EMAIL
 from lp.testing.views import (
     create_initialized_view,
     create_view,
@@ -317,6 +325,43 @@ class TestPersonIndexView(BrowserTestCase):
         message = 'Finch is queued to be merged in a few minutes.'
         self.assertEqual(1, len(notifications))
         self.assertEqual(message, notifications[0].message)
+
+    def test_deleteAccount_admin(self):
+        person = self.factory.makePerson(name='finch')
+        admin = getUtility(IPersonSet).find(ADMIN_EMAIL).any()
+        browser = self.getViewBrowser(
+            person, view_name='+deleteaccount', user=admin)
+        browser.getControl("Delete").click()
+        self.assertIn(
+            "This account will now be permanently removed.",
+            six.ensure_text(browser.contents))
+
+        # the delete job is created with Wainting Status
+        job_source = getUtility(IPersonCloseAccountJobs)
+        with person_logged_in(admin):
+            job = removeSecurityProxy(job_source.find(person).one())
+            self.assertEqual(JobStatus.WAITING, job.status)
+
+    def test_deleteAccount_registry_expert(self):
+        person = self.factory.makePerson(name='finch')
+        registry_expert = self.factory.makePerson()
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        with admin_logged_in():
+            getUtility(ILaunchpadCelebrities).registry_experts.addMember(
+                registry_expert, admin)
+        logout()
+        with person_logged_in(registry_expert):
+            browser = self.getViewBrowser(
+                person, view_name='+deleteaccount', user=registry_expert)
+            browser.getControl("Delete").click()
+            self.assertIn(
+                "This account will now be permanently removed.",
+                six.ensure_text(browser.contents))
+        # the delete job is created with Wainting Status
+        job_source = getUtility(IPersonCloseAccountJobs)
+        with person_logged_in(admin):
+            job = removeSecurityProxy(job_source.find(person).one())
+            self.assertEqual(JobStatus.WAITING, job.status)
 
     def test_display_utcoffset(self):
         person = self.factory.makePerson(time_zone='Asia/Kolkata')

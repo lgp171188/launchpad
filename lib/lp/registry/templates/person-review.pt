@@ -38,6 +38,12 @@
                 tal:attributes="alt string:edit" src="/@@/edit" />
                 Review the user's Launchpad information</a>.
             </p>
+            <p>
+              <a tal:attributes="
+                href string:${view/person/fmt:url}/+deleteaccount"><img
+                tal:attributes="alt string:remove" src="/@@/remove" />
+                Permanently delete this account</a>.
+            </p>
              <table id="summary">
               <tr>
                 <th>Created:</th>

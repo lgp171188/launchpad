@@ -185,6 +185,7 @@ from lp.registry.interfaces.persondistributionsourcepackage import (
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.persontransferjob import (
+    IPersonCloseAccountJobs,
     IPersonDeactivateJobSource,
     )
 from lp.registry.interfaces.pillar import IPillarNameSet
@@ -1273,6 +1274,29 @@ class PersonAdministerView(PersonRenameFormMixin):
     def change_action(self, action, data):
         """Update the IPerson."""
         self.updateContextFromData(data)
+
+
+class PersonDeleteView(LaunchpadFormView):
+    """Delete an `IPerson`."""
+    schema = Interface
+    label = "Delete person"
+
+    @property
+    def next_url(self):
+        """See `LaunchpadEditFormView`."""
+        return canonical_url(self.context)
+
+    @property
+    def cancel_url(self):
+        """See `LaunchpadEditFormView`."""
+        return canonical_url(self.context)
+
+    @action('Delete', name='delete')
+    def delete_action(self, action, data):
+        """Delete the IPerson."""
+        getUtility(IPersonCloseAccountJobs).create(self.context)
+        self.request.response.addInfoNotification(
+            "This account will now be permanently removed.")
 
 
 class IAccountAdministerSchema(Interface):
