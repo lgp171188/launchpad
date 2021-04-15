@@ -292,7 +292,7 @@ class FeedTypedData:
             # or they will try be served from http://feeds.launchpad.net,
             # which will not work.
             soup = BeautifulSoup(self._content)
-            a_tags = soup.findAll('a')
+            a_tags = soup.find_all('a')
             for a_tag in a_tags:
                 if a_tag['href'].startswith('/'):
                     a_tag['href'] = urljoin(self.root_url, a_tag['href'])

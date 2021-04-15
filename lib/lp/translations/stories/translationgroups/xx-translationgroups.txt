@@ -168,9 +168,9 @@ The new groups should show up on the "Translation groups" page.
 
     >>> groups_table = find_tag_by_id(
     ...     anon_browser.contents, 'translation-groups')
-    >>> groups = groups_table.find('tbody').findAll('tr')
+    >>> groups = groups_table.find('tbody').find_all('tr')
     >>> for group_row in groups:
-    ...     group = group_row.findNext('td')
+    ...     group = group_row.find_next('td')
     ...     print('%s: %s' % (group.a.string, group.a['href']))
     Just a testing team: ...testing-translation-team
     Single-language Translators: ...monolingua
@@ -461,7 +461,7 @@ group has been assigned as the translator for.
     ...     return find_tag_by_id(browser.contents, "related-projects")
 
     >>> portlet = find_projects_portlet(browser)
-    >>> for link in portlet.findAll('a'):
+    >>> for link in portlet.find_all('a'):
     ...     print('%s: %s' % (link.find(text=True), link['href']))
     Ubuntu: http://launchpad.test/ubuntu
     GNOME: http://launchpad.test/gnome
@@ -496,7 +496,7 @@ They disappear from the listing:
     http://translations.launchpad.test/+groups/polyglot
 
     >>> portlet = find_projects_portlet(browser)
-    >>> for link in portlet.findAll('a'):
+    >>> for link in portlet.find_all('a'):
     ...     print('%s: %s' % (link.string, link['href']))
     Ubuntu: http://launchpad.test/ubuntu
 
@@ -645,11 +645,11 @@ The system allows us to change the translator for a concrete language
 
     >>> portlet = find_tag_by_id(
     ...     anon_browser.contents, "translation-teams-listing")
-    >>> language_rows = portlet.find('tbody').findAll('tr')
+    >>> language_rows = portlet.find('tbody').find_all('tr')
     >>> for language_row in language_rows:
-    ...     cell = language_row.findNext('td')
+    ...     cell = language_row.find_next('td')
     ...     lang_name = extract_text(cell)
-    ...     lang_team = extract_text(cell.findNext('td').findNext('a'))
+    ...     lang_team = extract_text(cell.find_next('td').find_next('a'))
     ...     print('%s: %s' % (lang_name, lang_team))
     Abkhazian (ab): Hoary Gnome Team
     Afrikaans (af): No Privileges Person
@@ -717,11 +717,11 @@ instance Welsh (cy), the change will work.
 
     >>> portlet = find_tag_by_id(
     ...     browser.contents, "translation-teams-listing")
-    >>> language_rows = portlet.find('tbody').findAll('tr')
+    >>> language_rows = portlet.find('tbody').find_all('tr')
     >>> for language_row in language_rows:
-    ...     cell = language_row.findNext('td')
+    ...     cell = language_row.find_next('td')
     ...     lang_name = extract_text(cell)
-    ...     lang_team = extract_text(cell.findNext('td').findNext('a'))
+    ...     lang_team = extract_text(cell.find_next('td').find_next('a'))
     ...     print('%s: %s' % (lang_name, lang_team))
     Abkhazian (ab): Hoary Gnome Team
     Welsh (cy): No Privileges Person
@@ -770,12 +770,12 @@ We are in read only mode, so there shouldn't be any textareas:
 
     >>> main_content = find_tag_by_id(
     ...     browser.contents, 'messages_to_translate')
-    >>> for textarea in main_content.findAll('textarea'):
+    >>> for textarea in main_content.find_all('textarea'):
     ...     print('Found textarea:\n%s' % textarea)
 
 Neither any input widget:
 
-    >>> for input in main_content.findAll('input'):
+    >>> for input in main_content.find_all('input'):
     ...     print('Found input:\n%s' % input)
 
 However, in Welsh, No Privileges Person does have the ability to edit
@@ -1223,7 +1223,7 @@ Let's add a new suggestion as a person without privileges.
 
 Now, we can see the added suggestion + others from the sample data.
 
-    >>> for suggestion in find_main_content(browser.contents).findAll(
+    >>> for suggestion in find_main_content(browser.contents).find_all(
     ...         True, {'id': re.compile('msgset_134_es_suggestion_.*')}):
     ...     print(suggestion)
     <...<samp> </samp>new suggestion...

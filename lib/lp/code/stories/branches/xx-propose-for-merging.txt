@@ -25,7 +25,7 @@ branch.
 
     >>> def print_radio_buttons(browser):
     ...     main = find_main_content(browser.contents)
-    ...     for button in main.findAll('input', attrs={'type': 'radio'}):
+    ...     for button in main.find_all('input', attrs={'type': 'radio'}):
     ...         try:
     ...             if button['checked']:
     ...                 checked = '(*)'

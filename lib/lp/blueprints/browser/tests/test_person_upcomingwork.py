@@ -296,7 +296,7 @@ class TestPersonUpcomingWork(BrowserTestCase):
         groups = find_tags_by_class(browser.contents, 'collapsible-body')
         self.assertEqual(1, len(groups))
         tbody = groups[0]
-        title_td = tbody.findChildren('td')[0]
+        title_td = tbody.find_all('td')[0]
         self.assertEqual(
             "<td>\n<span>&lt;script&gt;window.alert('XSS')&lt;/script&gt;"
             "</span>\n</td>", str(title_td))

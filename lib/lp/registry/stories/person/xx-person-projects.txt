@@ -7,7 +7,7 @@ team.
     >>> anon_browser.open('http://launchpad.test/~ubuntu-team')
     >>> related_projects = find_tag_by_id(
     ...     anon_browser.contents, 'portlet-related-projects')
-    >>> for tr in related_projects.findAll('tr'):
+    >>> for tr in related_projects.find_all('tr'):
     ...     print(extract_text(tr))
     Ubuntu
     ubuntutest

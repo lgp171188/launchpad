@@ -501,7 +501,7 @@ class TestGitRefView(BrowserTestCase):
         view = create_initialized_view(ref, "+index")
         contents = view()
         soup = BeautifulSoup(contents)
-        details = soup.findAll(
+        details = soup.find_all(
             attrs={"class": re.compile(r"commit-details|commit-comment")})
         expected_texts = list(reversed([
             "%.7s...\nby\n%s\non 2015-01-%02d" % (
@@ -513,7 +513,7 @@ class TestGitRefView(BrowserTestCase):
             expected_texts, [extract_text(detail) for detail in details])
         self.assertEqual(
             [canonical_url(mp), canonical_url(mp.merge_source)],
-            [link["href"] for link in details[5].findAll("a")])
+            [link["href"] for link in details[5].find_all("a")])
         self.assertThat(
             contents, Not(soupmatchers.HTMLContains(MissingCommitsNote())))
 
@@ -532,7 +532,7 @@ class TestGitRefView(BrowserTestCase):
         view = create_initialized_view(ref, "+index")
         contents = view()
         soup = BeautifulSoup(contents)
-        details = soup.findAll(
+        details = soup.find_all(
             attrs={"class": re.compile(r"commit-details|commit-comment")})
         expected_texts = list(reversed([
             "%.7s...\nby\n%s\non 2015-01-%02d" % (
@@ -544,7 +544,7 @@ class TestGitRefView(BrowserTestCase):
             expected_texts, [extract_text(detail) for detail in details])
         self.assertEqual(
             [canonical_url(mp)],
-            [link["href"] for link in details[5].findAll("a")])
+            [link["href"] for link in details[5].find_all("a")])
         self.assertThat(
             contents, Not(soupmatchers.HTMLContains(MissingCommitsNote())))
 
@@ -629,7 +629,7 @@ class TestGitRefView(BrowserTestCase):
         view = create_initialized_view(ref, "+index")
         contents = view()
         soup = BeautifulSoup(contents)
-        details = soup.findAll(
+        details = soup.find_all(
             attrs={"class": re.compile(r"commit-details|commit-comment")})
         expected_text = "%.7s...\nby\n%s\non 2015-01-%02d" % (
             log[-1]["sha1"], log[-1]["author"]["name"], len(log))

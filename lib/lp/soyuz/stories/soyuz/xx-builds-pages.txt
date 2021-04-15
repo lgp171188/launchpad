@@ -103,7 +103,7 @@ For SourcePackage, it's only possible to filter by state.
 The source package default state is "all states":
 
     >>> soup = find_main_content(anon_browser.contents)
-    >>> [results] = soup.findAll(attrs={'selected': 'selected'})
+    >>> [results] = soup.find_all(attrs={'selected': 'selected'})
     >>> print(extract_text(results))
     All states
 

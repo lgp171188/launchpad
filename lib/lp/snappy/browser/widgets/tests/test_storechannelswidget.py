@@ -282,7 +282,7 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
         self.assertIsNotNone(self.widget.track_widget)
         self.assertIsNotNone(self.widget.risks_widget)
         soup = BeautifulSoup(markup)
-        fields = soup.findAll(["input"], {"id": re.compile(".*")})
+        fields = soup.find_all(["input"], {"id": re.compile(".*")})
         expected_ids = [
             "field.channels.risks.%d" % i for i in range(len(self.risks))]
         expected_ids.append("field.channels.track")

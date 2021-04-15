@@ -211,12 +211,12 @@ be there at all.
     'http://launchpad.test/~myemail/+members'
 
     >>> contents = anon_browser.contents
-    >>> for link in find_tag_by_id(contents, 'activemembers').findAll('a'):
+    >>> for link in find_tag_by_id(contents, 'activemembers').find_all('a'):
     ...     print(link.decode_contents())
     Karl Tilbury
     Sample Person
 
-    >>> for link in find_tag_by_id(contents, 'proposedmembers').findAll('a'):
+    >>> for link in find_tag_by_id(contents, 'proposedmembers').find_all('a'):
     ...     print(link.decode_contents())
     Colin Watson
     James Blackwell
@@ -231,7 +231,7 @@ have been invited.
 
     >>> def print_members(contents, type):
     ...     table = find_tag_by_id(contents, type)
-    ...     for link in table.findAll('a'):
+    ...     for link in table.find_all('a'):
     ...         link_contents = link.decode_contents()
     ...         if link_contents != 'Edit' and not link.find('img'):
     ...             print(link_contents)

@@ -1183,7 +1183,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         view = self.makeView(derived_series)
 
         soup = BeautifulSoup(view())
-        help_links = soup.findAll(
+        help_links = soup.find_all(
             'a', href='/+help-soyuz/derived-series-syncing.html')
         self.assertEqual(1, len(help_links))
 
@@ -1202,7 +1202,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         # listing the differences.
         soup = BeautifulSoup(view())
         diff_table = soup.find('table', {'class': 'listing'})
-        rows = diff_table.tbody.findAll('tr')
+        rows = diff_table.tbody.find_all('tr')
 
         self.assertEqual(1, len(rows))
         self.assertIn("Latest comment", six.text_type(rows[0]))
@@ -1217,9 +1217,9 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         view = self.makeView(derived_series)
         soup = BeautifulSoup(view())
         diff_table = soup.find('table', {'class': 'listing'})
-        row = diff_table.tbody.findAll('tr')[0]
+        row = diff_table.tbody.find_all('tr')[0]
 
-        links = row.findAll('a', href=canonical_url(difference))
+        links = row.find_all('a', href=canonical_url(difference))
         self.assertEqual(1, len(links))
         self.assertEqual(difference.source_package_name.name, links[0].string)
 
@@ -1289,7 +1289,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         soup = BeautifulSoup(view())
         diff_table = soup.find('table', {'class': 'listing'})
         row = diff_table.tbody.tr
-        links = row.findAll('a', {'class': 'derived-version'})
+        links = row.find_all('a', {'class': 'derived-version'})
 
         # The version displayed is the version attached to the
         # difference.
@@ -1334,8 +1334,8 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
 
         # The table feature a simple span since we were unable to fetch a
         # published sourcepackage.
-        derived_span = row.findAll('span', {'class': 'derived-version'})
-        parent_span = row.findAll('span', {'class': 'parent-version'})
+        derived_span = row.find_all('span', {'class': 'derived-version'})
+        parent_span = row.find_all('span', {'class': 'parent-version'})
         self.assertEqual(1, len(derived_span))
         self.assertEqual(1, len(parent_span))
 
@@ -1387,7 +1387,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         diff_table = soup.find('table', {'class': 'listing'})
         row = diff_table.tbody.tr
 
-        changelog_span = row.findAll('span', {'class': 'lesser'})
+        changelog_span = row.find_all('span', {'class': 'lesser'})
         self.assertEqual(1, len(changelog_span))
         link = changelog_span[0].a
         self.assertEqual("changelog", link.string)

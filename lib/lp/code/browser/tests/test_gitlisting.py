@@ -82,7 +82,7 @@ class TestTargetGitListingView:
             'div', id='default-repository-branches').find('table')
         self.assertContentEqual(
             ['1.0', 'master', 'with#hash', '\N{SNOWMAN}'],
-            [link.find(text=True) for link in table.findAll('a')])
+            [link.find(text=True) for link in table.find_all('a')])
         self.assertEndsWith(
             table.find(text="1.0").parent['href'],
             "/~foowner/%s/+git/foo/+ref/1.0" % self.target_path)
@@ -100,7 +100,7 @@ class TestTargetGitListingView:
             ['lp:%s' % self.target_path,
              'lp:~random/%s/+git/bar' % self.target_path,
              'lp:~contributor/%s' % self.target_path],
-            [link.find(text=True) for link in table.findAll('a')])
+            [link.find(text=True) for link in table.find_all('a')])
         self.assertEndsWith(
             table.find(
                 text="lp:~contributor/%s" % self.target_path).parent['href'],
@@ -149,7 +149,7 @@ class TestTargetGitListingView:
             'div', id='gitrepositories-table-listing').find('table')
         self.assertContentEqual(
             ['lp:~contributor/%s/+git/foo' % self.target_path],
-            [link.find(text=True) for link in table.findAll('a')])
+            [link.find(text=True) for link in table.find_all('a')])
 
     def test_copes_with_private_repos(self):
         invisible_repo = self.factory.makeGitRepository(
@@ -234,7 +234,7 @@ class TestPersonTargetGitListingView:
             'div', id='default-repository-branches').find('table')
         self.assertContentEqual(
             ['master', 'bug-1234'],
-            [link.find(text=True) for link in table.findAll('a')])
+            [link.find(text=True) for link in table.find_all('a')])
         self.assertEndsWith(
             table.find(text="bug-1234").parent['href'],
             "/~dev/%s/+git/foo/+ref/bug-1234" % self.target_path)
@@ -245,7 +245,7 @@ class TestPersonTargetGitListingView:
         self.assertContentEqual(
             ['lp:~dev/%s' % self.target_path,
              'lp:~dev/%s/+git/bar' % self.target_path],
-            [link.find(text=True) for link in table.findAll('a')])
+            [link.find(text=True) for link in table.find_all('a')])
         self.assertEndsWith(
             table.find(
                 text="lp:~dev/%s/+git/bar" % self.target_path).parent['href'],
@@ -275,7 +275,7 @@ class TestPersonTargetGitListingView:
             'div', id='gitrepositories-table-listing').find('table')
         self.assertContentEqual(
             ['lp:~dev/%s/+git/foo' % self.target_path],
-            [link.find(text=True) for link in table.findAll('a')])
+            [link.find(text=True) for link in table.find_all('a')])
 
     def test_copes_with_private_repos(self):
         invisible_repo = self.factory.makeGitRepository(
@@ -492,7 +492,7 @@ class TestPlainGitListingView:
             'div', id='gitrepositories-table-listing').find('table')
         self.assertContentEqual(
             [some_repo.git_identity, other_repo.git_identity],
-            [link.find(text=True) for link in table.findAll('a')])
+            [link.find(text=True) for link in table.find_all('a')])
 
     def test_copes_with_private_repos(self):
         # XXX wgrant 2015-06-12: owner is self.user instead of

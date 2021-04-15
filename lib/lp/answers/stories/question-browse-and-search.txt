@@ -58,7 +58,7 @@ Answers page and goes there to check.
 He sees a listing of the current questions posted on Ubuntu:
 
     >>> soup = find_main_content(browser.contents)
-    >>> for question in soup.findAll('td', 'questionTITLE'):
+    >>> for question in soup.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Continue playing after shutdown
     Play DVDs in Totem
@@ -74,7 +74,7 @@ results. There, he finds only one other question:
     >>> print(browser.title)
     Questions : Ubuntu
     >>> soup = find_main_content(browser.contents)
-    >>> for question in soup.findAll('td', 'questionTITLE'):
+    >>> for question in soup.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Installation failed
 
@@ -125,11 +125,11 @@ description appears in a small pop-up:
     >>> import re
     >>> soup = find_main_content(browser.contents)
     >>> question_link = soup.find('a', text=re.compile('Play DVDs'))
-    >>> print(question_link.findParent('tr')['title'])
+    >>> print(question_link.find_parent('tr')['title'])
     How do you play DVDs in Totem..........?
 
     >>> question_link = soup.find('a', text=re.compile('Slow system'))
-    >>> print(question_link.findParent('tr')['title'])
+    >>> print(question_link.find_parent('tr')['title'])
     I get really poor hard drive performance.
 
 He clicks on the question title to obtain the question page where the
@@ -229,7 +229,7 @@ selected. He adds 'Invalid' to the selection, and run his search again.
 This time, the search returns one item.
 
     >>> soup = find_main_content(browser.contents)
-    >>> for question in soup.findAll('td', 'questionTITLE'):
+    >>> for question in soup.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Firefox is slow and consumes too much RAM
 
@@ -304,7 +304,7 @@ recent questions on Mozilla Firefox.
     >>> print(browser.title)
     Questions : Mozilla Firefox
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Firefox loses focus and gets stuck
     Problem showing the SVG demo on W3C site
@@ -324,7 +324,7 @@ problems:
     >>> browser.getControl(name='field.search_text').value = 'plugin'
     >>> browser.getControl('Search', index=0).click()
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Problem showing the SVG demo on W3C site
 
@@ -344,7 +344,7 @@ questions.)
     >>> [strip_label(status) for status in statuses]
     ['Answered', 'Solved']
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Play DVDs in Totem
     mailto: problem in webpage
@@ -390,7 +390,7 @@ They need to login to access that page:
     'Questions you asked about mozilla-firefox in Ubuntu : Questions : mozilla-firefox package : Ubuntu'
     >>> questions = find_tag_by_id(
     ...     sample_person_browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     mailto: problem in webpage
     Installation of Java Runtime Environment for Mozilla
@@ -412,7 +412,7 @@ The exact question they were searching for is displayed!
 
     >>> questions = find_tag_by_id(
     ...     sample_person_browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     mailto: problem in webpage
 
@@ -459,7 +459,7 @@ They need to login to access that page:
     Questions needing your attention for Ubuntu : Questions : Ubuntu
     >>> questions = find_tag_by_id(
     ...     sample_person_browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Play DVDs in Totem
     Installation of Java Runtime Environment for Mozilla
@@ -504,7 +504,7 @@ commented on.
     Questions : Foo Bar
 
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Continue playing after shutdown
     Play DVDs in Totem
@@ -520,7 +520,7 @@ That listing is batched when there are many questions:
 The listing contains a 'In' column that shows the context where the
 questions was made.
 
-    >>> for question in questions.findAll('td', 'question-target'):
+    >>> for question in questions.find_all('td', 'question-target'):
     ...     print(question.find('a').decode_contents())
     Ubuntu
     Ubuntu
@@ -544,7 +544,7 @@ questions to a particular status:
     ...     'Solved', 'Invalid']
     >>> browser.getControl('Search', index=0).click()
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Firefox is slow and consumes too much RAM
     mailto: problem in webpage
@@ -574,7 +574,7 @@ answerer.
     >>> print(browser.title)
     Questions for Foo Bar : Questions : Foo Bar
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     mailto: problem in webpage
 
@@ -588,7 +588,7 @@ questions commented on by the person.
     >>> print(browser.title)
     Questions for Foo Bar : Questions : Foo Bar
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Continue playing after shutdown
     Play DVDs in Totem
@@ -606,7 +606,7 @@ asked by the person.
     >>> print(browser.title)
     Questions for Foo Bar : Questions : Foo Bar
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Slow system
     Firefox loses focus and gets stuck
@@ -621,7 +621,7 @@ the attention of that person.
     >>> print(browser.title)
     Questions for Foo Bar : Questions : Foo Bar
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Continue playing after shutdown
     Slow system
@@ -636,7 +636,7 @@ visiting the 'Subscribed' link in the 'Answers' facet.
     >>> print(browser.title)
     Questions for Foo Bar : Questions : Foo Bar
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Slow system
 
@@ -656,7 +656,7 @@ there is an 'In' column displaying where the questions were filed.
 
     >>> def print_questions_with_target(contents):
     ...     questions = find_tag_by_id(contents, 'question-listing')
-    ...     for question in questions.tbody.findAll('tr'):
+    ...     for question in questions.tbody.find_all('tr'):
     ...         question_title = question.find(
     ...             'td', 'questionTITLE').find('a').decode_contents()
     ...         question_target = question.find(
@@ -674,7 +674,7 @@ That listing is searchable:
     >>> browser.getControl('Search', index=0).click()
 
     >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.findAll('td', 'questionTITLE'):
+    >>> for question in questions.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Problem showing the SVG demo on W3C site
 

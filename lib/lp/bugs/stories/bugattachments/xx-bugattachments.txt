@@ -36,7 +36,7 @@ After we added the attachment, we get redirected to the bug page.
 We can check that the attachment is there
 
   >>> attachments = find_portlet(user_browser.contents, 'Bug attachments')
-  >>> for li_tag in attachments.findAll('li', 'download-attachment'):
+  >>> for li_tag in attachments.find_all('li', 'download-attachment'):
   ...   print(li_tag.a.decode_contents())
   Some information
 
@@ -69,7 +69,7 @@ also not necessary to enter a comment in order to add an attachment.
   'http://bugs.launchpad.test/firefox/+bug/1'
 
   >>> attachments = find_portlet(user_browser.contents, 'Bug attachments')
-  >>> for li_tag in attachments.findAll('li', 'download-attachment'):
+  >>> for li_tag in attachments.find_all('li', 'download-attachment'):
   ...   print(li_tag.a.decode_contents())
   Some information
   bar.txt
@@ -146,7 +146,7 @@ listed as an ordinary attachment.
   >>> user_browser.url
   'http://bugs.launchpad.test/firefox/+bug/1'
   >>> attachments = find_portlet(user_browser.contents, 'Bug attachments')
-  >>> for li_tag in attachments.findAll('li', 'download-attachment'):
+  >>> for li_tag in attachments.find_all('li', 'download-attachment'):
   ...   print(li_tag.a.decode_contents())
   Some information
   bar.txt
@@ -203,7 +203,7 @@ Now we are redirected to the main bug page...
 ...and the new attachment is listed as a patch.
 
   >>> patches = find_portlet(user_browser.contents, 'Patches')
-  >>> for li_tag in patches.findAll('li', 'download-attachment'):
+  >>> for li_tag in patches.find_all('li', 'download-attachment'):
   ...   print(li_tag.a.decode_contents())
   A fix for this bug.
   A better icon for foo
@@ -331,7 +331,7 @@ Now we are redirected to the main bug page...
 "Patches"...
 
     >>> patches = find_portlet(user_browser.contents, 'Patches')
-    >>> for li_tag in patches.findAll('li', 'download-attachment'):
+    >>> for li_tag in patches.find_all('li', 'download-attachment'):
     ...   print(li_tag.a.decode_contents())
     Another title
     A fix for this bug.
@@ -343,7 +343,7 @@ Now we are redirected to the main bug page...
 ...while it is gone from the portlet "Bug attachments".
 
     >>> attachments = find_portlet(user_browser.contents, 'Bug attachments')
-    >>> for li_tag in attachments.findAll('li', 'download-attachment'):
+    >>> for li_tag in attachments.find_all('li', 'download-attachment'):
     ...   print(li_tag.a.decode_contents())
     bar.txt
     More data

@@ -29,12 +29,12 @@ We are in read only mode, so there shouldn't be any textareas:
 
     >>> main_content = find_tag_by_id(
     ...     browser.contents, 'messages_to_translate')
-    >>> for textarea in main_content.findAll('textarea'):
+    >>> for textarea in main_content.find_all('textarea'):
     ...     raise AssertionError('Found textarea:\n%s' % textarea)
 
 Neither any input widget:
 
-    >>> for input in main_content.findAll('input'):
+    >>> for input in main_content.find_all('input'):
     ...     raise AssertionError('Found input:\n%s' % input)
 
 As an anynoymous user you will have access to the download and details
@@ -463,7 +463,7 @@ Also, we should still have previous translation:
 But also, the new one should appear in the form.
 
     >>> import re
-    >>> elements = find_main_content(slow_submission.contents).findAll(
+    >>> elements = find_main_content(slow_submission.contents).find_all(
     ...     True, {'id': re.compile(r'^msgset_143_es_suggestion_\d+_0$')})
     >>> for element in elements:
     ...     print(element.decode_contents())

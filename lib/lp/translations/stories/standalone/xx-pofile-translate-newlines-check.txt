@@ -11,7 +11,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=299009
     >>> def print_tags(browser, tags):
     ...     """Find and print [tags] in browser.contents. End each with '--'."""
     ...     soup = find_main_content(browser.contents)
-    ...     for tag in soup.findAll(attrs={'id': tags}):
+    ...     for tag in soup.find_all(attrs={'id': tags}):
     ...         print(u"%s\n--\n" % tag.decode_contents())
 
     >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')

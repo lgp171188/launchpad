@@ -132,11 +132,11 @@ class BzrMixin:
         if not related_package_branch_info:
             self.assertIs(branch_table, None)
         else:
-            rows = branch_table.tbody.findAll('tr')
+            rows = branch_table.tbody.find_all('tr')
 
             package_branches_info = []
             for row in rows:
-                branch_links = row.findAll('a')
+                branch_links = row.find_all('a')
                 self.assertEqual(2, len(branch_links))
                 package_branches_info.append(
                     '%s%s' % (root_url, branch_links[0]['href']))
@@ -162,11 +162,11 @@ class BzrMixin:
         if not related_series_branch_info:
             self.assertIs(branch_table, None)
         else:
-            rows = branch_table.tbody.findAll('tr')
+            rows = branch_table.tbody.find_all('tr')
 
             series_branches_info = []
             for row in rows:
-                branch_links = row.findAll('a')
+                branch_links = row.find_all('a')
                 self.assertEqual(2, len(branch_links))
                 series_branches_info.append(
                     '%s%s' % (root_url, branch_links[0]['href']))

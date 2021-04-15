@@ -1717,7 +1717,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
             repository, name="+permissions", principal=repository.owner)
         rules_tables = find_tags_by_class(view(), "git-rules-table")
         rows = list(chain.from_iterable([
-            rules_table.findAll("tr", {"class": True})
+            rules_table.find_all("tr", {"class": True})
             for rules_table in rules_tables]))
         self.assertThat(rows, MatchesListwise([
             self._matchesRule("1", "refs/heads/stable/*", "stable/*"),

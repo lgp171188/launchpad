@@ -1056,7 +1056,7 @@ class TestProductSet(BrowserTestCase):
             results = [
                 re.sub('\nregistered\n.*', '', extract_text(td))
                 for td in find_tag_by_id(
-                    browser.contents, 'latest-registered').findAll('td')]
+                    browser.contents, 'latest-registered').find_all('td')]
             self.assertIn(public.display_name, results)
             self.assertIn(policy_granted.display_name, results)
             self.assertNotIn(artifact_granted.display_name, results)
@@ -1104,7 +1104,7 @@ class TestProductSet(BrowserTestCase):
                 expected_results,
                 [extract_text(td)
                  for td in find_tag_by_id(
-                     browser.contents, 'search-results').findAll('td')])
+                     browser.contents, 'search-results').find_all('td')])
 
 
 class TestProductSetBranchView(TestCaseWithFactory):

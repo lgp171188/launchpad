@@ -217,7 +217,7 @@ The 'filelist' is expanded as one or more table rows, right below the
 clicked item:
 
     >>> filelist_body = first_tag_by_class(anon_browser.contents, 'queue-4')
-    >>> filelist = filelist_body.findAll('tr')
+    >>> filelist = filelist_body.find_all('tr')
 
 It contains a list of files related to the queue item clicked, followed
 by its size, one file per line. Expired files have no size.
