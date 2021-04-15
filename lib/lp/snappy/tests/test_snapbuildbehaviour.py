@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build behaviour."""
@@ -34,17 +34,9 @@ from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
 import transaction
-from twisted.internet import (
-    defer,
-    reactor,
-    )
-from twisted.web import (
-    server,
-    xmlrpc,
-    )
+from twisted.internet import defer
 from zope.component import getUtility
 from zope.proxy import isProxy
-from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -78,7 +70,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.authserver.xmlrpc import AuthServerAPIView
+from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import (
@@ -114,35 +106,6 @@ from lp.testing.gpgkeys import (
     )
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import LaunchpadZopelessLayer
-from lp.xmlrpc.interfaces import IPrivateApplication
-
-
-class InProcessAuthServer(xmlrpc.XMLRPC):
-
-    def __init__(self, *args, **kwargs):
-        xmlrpc.XMLRPC.__init__(self, *args, **kwargs)
-        private_root = getUtility(IPrivateApplication)
-        self.authserver = AuthServerAPIView(
-            private_root.authserver, TestRequest())
-
-    def __getattr__(self, name):
-        if name.startswith("xmlrpc_"):
-            return getattr(self.authserver, name[len("xmlrpc_"):])
-        else:
-            raise AttributeError("%r has no attribute '%s'" % name)
-
-
-class InProcessAuthServerFixture(fixtures.Fixture, xmlrpc.XMLRPC):
-    """A fixture that runs an in-process authserver."""
-
-    def _setUp(self):
-        listener = reactor.listenTCP(0, server.Site(InProcessAuthServer()))
-        self.addCleanup(listener.stopListening)
-        config.push("in-process-auth-server-fixture", dedent("""
-            [builddmaster]
-            authentication_endpoint: http://localhost:%d/
-            """) % listener.getHost().port)
-        self.addCleanup(config.pop, "in-process-auth-server-fixture")
 
 
 class FormatAsRfc3339TestCase(TestCase):
