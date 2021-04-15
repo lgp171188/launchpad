@@ -10,10 +10,18 @@ __all__ = [
     'ArchiveAPI',
     ]
 
-from zope.component import getUtility
+from pymacaroons import Macaroon
+from zope.component import (
+    ComponentLookupError,
+    getUtility,
+    )
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.services.macaroons.interfaces import (
+    IMacaroonIssuer,
+    NO_USER,
+    )
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.archiveapi import IArchiveAPI
@@ -29,6 +37,24 @@ BUILDD_USER_NAME = "buildd"
 class ArchiveAPI(LaunchpadXMLRPCView):
     """See `IArchiveAPI`."""
 
+    def _verifyMacaroon(self, archive, password):
+        try:
+            macaroon = Macaroon.deserialize(password)
+        # XXX cjwatson 2021-03-31: Restrict exceptions once
+        # https://github.com/ecordell/pymacaroons/issues/50 is fixed.
+        except Exception:
+            return False
+        try:
+            issuer = getUtility(IMacaroonIssuer, macaroon.identifier)
+        except ComponentLookupError:
+            return False
+        verified = issuer.verifyMacaroon(macaroon, archive)
+        if verified and verified.user != NO_USER:
+            # We currently only permit verifying standalone macaroons, not
+            # ones issued on behalf of a particular user.
+            return False
+        return verified
+
     @return_fault
     def _checkArchiveAuthToken(self, archive_reference, username, password):
         archive = getUtility(IArchiveSet).getByReference(archive_reference)
@@ -37,6 +63,15 @@ class ArchiveAPI(LaunchpadXMLRPCView):
                 message="No archive found for '%s'." % archive_reference)
         archive = removeSecurityProxy(archive)
         token_set = getUtility(IArchiveAuthTokenSet)
+
+        # If the password is a serialized macaroon for the buildd user, then
+        # try macaroon authentication.
+        if (username == BUILDD_USER_NAME and
+                self._verifyMacaroon(archive, password)):
+            # Success.
+            return
+
+        # Fall back to checking archive auth tokens.
         if username == BUILDD_USER_NAME:
             secret = archive.buildd_secret
         else:
