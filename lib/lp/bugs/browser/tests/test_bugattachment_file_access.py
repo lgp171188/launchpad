@@ -31,14 +31,10 @@ from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     api_url,
     login_person,
-    logout,
     TestCaseWithFactory,
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import webservice_for_person
 
 
 class TestAccessToBugAttachmentFiles(TestCaseWithFactory):
@@ -138,9 +134,7 @@ class TestWebserviceAccessToBugAttachmentFiles(TestCaseWithFactory):
 
     def test_anon_access_to_public_bug_attachment(self):
         # Attachments of public bugs can be accessed by anonymous users.
-        logout()
-        webservice = LaunchpadWebServiceCaller(
-            'test', '', default_api_version='devel')
+        webservice = webservice_for_person(None, default_api_version='devel')
         ws_bug = self.getWebserviceJSON(webservice, self.bug_url)
         ws_bug_attachment = self.getWebserviceJSON(
             webservice, ws_bug['attachments_collection_link'])['entries'][0]

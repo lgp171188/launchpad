@@ -21,7 +21,6 @@ from lp.testing import (
     api_url,
     launchpadlib_for,
     login_celebrity,
-    logout,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -29,10 +28,7 @@ from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
     )
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import webservice_for_person
 
 
 class TestMessageTraversal(TestCaseWithFactory):
@@ -104,9 +100,8 @@ class TestBugMessage(TestCaseWithFactory):
                 self.factory.makeBugAttachment(bug).id for i in range(3))
             bug_url = api_url(bug)
         self.assertThat(created_attachment_ids, HasLength(3))
-        logout()
 
-        webservice = LaunchpadWebServiceCaller('test', None)
+        webservice = webservice_for_person(None)
         bug_attachments = webservice.get(
             bug_url + '/attachments').jsonBody()['entries']
         bug_attachment_ids = set(

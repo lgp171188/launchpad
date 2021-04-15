@@ -33,7 +33,6 @@ from lp.testing import (
     api_url,
     launchpadlib_for,
     login,
-    logout,
     person_logged_in,
     record_two_runs,
     TestCaseWithFactory,
@@ -252,8 +251,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
 
     def setUp(self):
         super(PersonSetWebServiceTests, self).setUp()
-        self.webservice = LaunchpadWebServiceCaller('test', None)
-        logout()
+        self.webservice = webservice_for_person(None)
 
     def assertReturnsPeople(self, expected_names, path):
         self.assertEqual(
