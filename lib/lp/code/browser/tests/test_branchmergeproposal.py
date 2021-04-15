@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for BranchMergeProposals."""
@@ -75,7 +75,10 @@ from lp.code.enums import (
     BranchMergeProposalStatus,
     CodeReviewVote,
     )
-from lp.code.errors import InvalidBranchMergeProposal
+from lp.code.errors import (
+    GitRepositoryScanFault,
+    InvalidBranchMergeProposal,
+    )
 from lp.code.interfaces.branchjob import IBranchScanJobSource
 from lp.code.interfaces.branchmergeproposal import (
     IBranchMergeProposal,
@@ -154,7 +157,7 @@ class GitHostingClientMixin:
 
     def setUp(self):
         super(GitHostingClientMixin, self).setUp()
-        self.useFixture(GitHostingFixture())
+        self.git_hosting_fixture = self.useFixture(GitHostingFixture())
 
 
 class TestBranchMergeProposalContextMenu(TestCaseWithFactory):
@@ -292,6 +295,23 @@ class TestBranchMergeProposalMergedViewGit(
 
     def getBranchRevisionValues(self, branch):
         return {'merged_revision_id': branch.commit_sha1}
+
+    def test_mp_page_with_git_hosting_issues(self):
+        mp = self.makeBranchMergeProposal()
+        self.git_hosting_fixture.getLog.result = None
+        self.git_hosting_fixture.getLog.failure = GitRepositoryScanFault(":-(")
+
+        canonical_url(mp)
+        browser = self.getUserBrowser(canonical_url(mp))
+        error_msg = (
+            "There was an error fetching revisions from git servers. "
+            "Please, try again in some minutes. If the problem persists, "
+            "contact Launchpad support.")
+        self.assertThat(
+            browser.contents, HTMLContains(Tag(
+                'error msg', "div",
+                text=error_msg,
+                attrs={'class': "pending-update"})))
 
 
 class TestBranchMergeProposalAddVoteView(TestCaseWithFactory):
@@ -1956,7 +1976,7 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
         # There is of course the permissions aspect involved here that you can
         # do a local merge using only read permissions on the source branch.
         team = self.factory.makeTeam()
-        source_owner = self.factory.makePerson()
+        self.factory.makePerson()
         other_user = self.factory.makePerson()
         fooix = self.factory.makeProduct(name="fooix")
         repository = self.factory.makeGitRepository(
