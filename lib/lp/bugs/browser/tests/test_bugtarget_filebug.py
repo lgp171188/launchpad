@@ -269,7 +269,7 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
         main_content = find_main_content(html)
         filebug_form = main_content.find(id='filebug-form')
         self.assertIsNot(None, filebug_form)
-        filebug_form_container = filebug_form.findParents(
+        filebug_form_container = filebug_form.find_parents(
             id='filebug-form-container')[0]
         class_attrs = [item.strip()
                        for item in filebug_form_container['class']]

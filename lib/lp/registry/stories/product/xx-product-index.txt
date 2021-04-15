@@ -50,7 +50,7 @@ Let's check it out:
     >>> browser.open('http://launchpad.test/tomcat')
     >>> content = find_main_content(browser.contents)
     >>> external_links = find_tag_by_id(content, 'external-links')
-    >>> for link in external_links.findAll('a'):
+    >>> for link in external_links.find_all('a'):
     ...     print(extract_text(link), link['href'])
     Home page http://home.page/
     Sourceforge project http://sourceforge.net/projects/sf-tomcat
@@ -75,7 +75,7 @@ When the sourceforge URL is identical to the homepage, we omit the homepage:
     >>> browser.open('http://launchpad.test/tomcat')
     >>> content = find_main_content(browser.contents)
     >>> external_links = find_tag_by_id(content, 'external-links')
-    >>> for link in external_links.findAll('a'):
+    >>> for link in external_links.find_all('a'):
     ...     print(extract_text(link), link['href'])
     Sourceforge project http://sourceforge.net/projects/sf-tomcat
     Wiki http://wiki.url/

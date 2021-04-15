@@ -174,7 +174,6 @@ from lp.testing import (
     api_url,
     celebrity_logged_in,
     login_person,
-    logout,
     person_logged_in,
     record_two_runs,
     StormStatementRecorder,
@@ -192,10 +191,7 @@ from lp.testing.matchers import (
     DoesNotSnapshot,
     HasQueryCount,
     )
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import webservice_for_person
 from lp.xmlrpc import faults
 from lp.xmlrpc.interfaces import IPrivateApplication
 
@@ -4582,8 +4578,8 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         with person_logged_in(requester):
             repository_url = api_url(repository)
         webservice = webservice_for_person(
-            requester, permission=OAuthPermission.WRITE_PUBLIC)
-        webservice.default_api_version = "devel"
+            requester, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(200, response.status)
         macaroon = Macaroon.deserialize(response.jsonBody())
@@ -4606,9 +4602,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         repository = self.factory.makeGitRepository()
         with person_logged_in(repository.owner):
             repository_url = api_url(repository)
-        logout()
-        webservice = LaunchpadWebServiceCaller()
-        webservice.default_api_version = "devel"
+        webservice = webservice_for_person(None, default_api_version="devel")
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(401, response.status)
         self.assertEqual(

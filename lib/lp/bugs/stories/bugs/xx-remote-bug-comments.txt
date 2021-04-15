@@ -64,7 +64,7 @@ mark the comment as 'awaiting synchronization' until it makes its way
 to the remote bug tracker.
 
     >>> activity = new_bug_comment.find(attrs={'class': 'boardCommentActivity'})
-    >>> print(extract_text(activity.findAll('td')[1]))
+    >>> print(extract_text(activity.find_all('td')[1]))
     Awaiting synchronization
 
 When the comment is synchronized, it receives a remote comment id, and

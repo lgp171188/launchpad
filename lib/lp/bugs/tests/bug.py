@@ -82,7 +82,7 @@ def print_bug_affects_table(content, highlighted_only=False):
         tr_attrs = {'class': 'highlight'}
     else:
         tr_attrs = {}
-    tr_tags = affects_table.tbody.findAll(
+    tr_tags = affects_table.tbody.find_all(
         'tr', attrs=tr_attrs, recursive=False)
     for tr in tr_tags:
         if tr.td.table:
@@ -98,11 +98,11 @@ def print_remote_bugtasks(content):
     For each remote bugtask, print the target and the bugwatch.
     """
     affects_table = find_tags_by_class(content, 'listing')[0]
-    for span in affects_table.findAll('span'):
+    for span in affects_table.find_all('span'):
         for key, value in span.attrs.items():
             if 'bug-remote' in value:
-                target = extract_text(span.findAllPrevious('td')[-2])
-                print(target, extract_text(span.findNext('a')))
+                target = extract_text(span.find_all_previous('td')[-2])
+                print(target, extract_text(span.find_next('a')))
 
 
 def print_bugs_list(content, list_id):
@@ -113,7 +113,7 @@ def print_bugs_list(content, list_id):
     becomes more elaborate then this function will be the place to
     cope with it.
     """
-    bugs_list = find_tag_by_id(content, list_id).findAll(
+    bugs_list = find_tag_by_id(content, list_id).find_all(
         None, {'class': 'similar-bug'})
     for node in bugs_list:
         # Also strip zero-width spaces out.
@@ -229,13 +229,13 @@ def print_upstream_linking_form(browser):
 
     link_upstream_how_radio_control = browser.getControl(
         name='field.link_upstream_how')
-    link_upstream_how_buttons = soup.findAll(
+    link_upstream_how_buttons = soup.find_all(
         'input', {'name': 'field.link_upstream_how'})
 
     wrapper = textwrap.TextWrapper(width=65, subsequent_indent='    ')
     for button in link_upstream_how_buttons:
         # Print the radio button.
-        label = button.findParent('label')
+        label = button.find_parent('label')
         if label is None:
             label = soup.find('label', {'for': button['id']})
         if button.get('value') in link_upstream_how_radio_control.value:
@@ -244,7 +244,7 @@ def print_upstream_linking_form(browser):
             print(wrapper.fill('( ) %s' % extract_text(label)))
         # Print related text field, if found. Assumes that the text
         # field is in the same table row as the radio button.
-        text_field = button.findParent('tr').find('input', {'type': 'text'})
+        text_field = button.find_parent('tr').find('input', {'type': 'text'})
         if text_field is not None:
             text_control = browser.getControl(name=text_field.get('name'))
             print('    [%s]' % text_control.value.ljust(10))
@@ -291,7 +291,7 @@ def print_bugfilters_portlet_filled(browser, target):
 def print_ul(ul):
     """Print the data from a list."""
     li_content = []
-    for li in ul.findAll('li'):
+    for li in ul.find_all('li'):
         li_content.append(extract_text(li))
     if len(li_content) > 0:
         print('\n'.join(li_content))

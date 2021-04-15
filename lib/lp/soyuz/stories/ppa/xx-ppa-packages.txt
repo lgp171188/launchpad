@@ -88,7 +88,7 @@ The detailed Packages list
     >>> def print_archive_package_rows(contents):
     ...     package_table = find_tag_by_id(
     ...         contents, 'packages_list')
-    ...     for ppa_row in package_table.findChildren('tr'):
+    ...     for ppa_row in package_table.find_all('tr'):
     ...         print(extract_text(ppa_row))
 
     >>> print_archive_package_rows(anon_browser.contents)
@@ -418,10 +418,10 @@ Anyone can see the build status for package in Celso's PPA.
 
     >>> def print_build_status(contents):
     ...     rows = find_tags_by_class(contents, 'archive_package_row')
-    ...     headers = rows[0].findAll('th')
+    ...     headers = rows[0].find_all('th')
     ...     print(extract_text(headers[0]), extract_text(headers[-1]))
     ...     for row in rows[1:]:
-    ...         columns = row.findAll('td')
+    ...         columns = row.find_all('td')
     ...         name = extract_text(columns[0])
     ...         built_icon = columns[-1].img['src']
     ...         built_text = columns[-1].a

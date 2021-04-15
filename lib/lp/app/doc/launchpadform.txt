@@ -491,7 +491,7 @@ By default, all widgets are visible.
 
   >>> from lp.services.beautifulsoup import BeautifulSoup
   >>> soup = BeautifulSoup(view())
-  >>> for input in soup.findAll('input'):
+  >>> for input in soup.find_all('input'):
   ...     print(input)
   <input ... name="field.displayname" ... type="text" ...
 
@@ -505,7 +505,7 @@ using its hidden() method, which should return a hidden <input> tag.
   >>> view = TestWidgetVisibility2(context, request)
 
   >>> soup = BeautifulSoup(view())
-  >>> for input in soup.findAll('input'):
+  >>> for input in soup.find_all('input'):
   ...     print(input)
   <input ... name="field.displayname" type="hidden" ...
 

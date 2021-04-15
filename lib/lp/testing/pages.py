@@ -229,7 +229,7 @@ def find_tags_by_class(content, class_, only_first=False):
     if only_first:
         find = BeautifulSoup.find
     else:
-        find = BeautifulSoup.findAll
+        find = BeautifulSoup.find_all
     return find(soup, attrs={'class': class_matcher})
 
 
@@ -289,11 +289,11 @@ def print_table(content, columns=None, skip_rows=None, sep="\t"):
                      None no rows are skipped.
     :param sep       the separator to be used between output items.
     """
-    for row_num, row in enumerate(content.findAll('tr')):
+    for row_num, row in enumerate(content.find_all('tr')):
         if skip_rows is not None and row_num in skip_rows:
             continue
         row_content = []
-        for col_num, item in enumerate(row.findAll('td')):
+        for col_num, item in enumerate(row.find_all('td')):
             if columns is None or col_num in columns:
                 row_content.append(extract_text(item))
         if len(row_content) > 0:
@@ -306,7 +306,7 @@ def get_radio_button_text_for_field(soup, name):
     The resulting output will look something like:
     ['(*) A checked option', '( ) An unchecked option']
     """
-    buttons = soup.findAll(
+    buttons = soup.find_all(
         'input', {'name': 'field.%s' % name})
     for button in buttons:
         if button.parent.name == 'label':
@@ -444,7 +444,7 @@ def parse_relationship_section(content):
     if section is None:
         print('EMPTY SECTION')
         return
-    for li in section.findAll('li'):
+    for li in section.find_all('li'):
         if li.a:
             link = li.a
             content = whitespace_re.sub(' ', link.string.strip())
@@ -461,7 +461,7 @@ def print_action_links(content):
     if actions is None:
         print("No actions portlet")
         return
-    entries = actions.findAll('li')
+    entries = actions.find_all('li')
     for entry in entries:
         if entry.a:
             print('%s: %s' % (entry.a.string, entry.a['href']))
@@ -478,7 +478,7 @@ def print_navigation_links(content):
     title = navigation_links.find('label')
     if title is not None:
         print('= %s =' % title.string)
-    entries = navigation_links.findAll(['strong', 'a'])
+    entries = navigation_links.find_all(['strong', 'a'])
     for entry in entries:
         try:
             print('%s: %s' % (entry.span.string, entry['href']))
@@ -506,7 +506,7 @@ def print_portlet_links(content, name, base=None):
     if portlet_contents is None:
         print("No portlet found with name:", name)
         return
-    portlet_links = portlet_contents.findAll('a')
+    portlet_links = portlet_contents.find_all('a')
     if len(portlet_links) == 0:
         print("No links were found in the portlet.")
         return
@@ -520,7 +520,7 @@ def print_submit_buttons(content):
 
     Use this to check that the buttons on a page match your expectations.
     """
-    buttons = find_main_content(content).findAll(
+    buttons = find_main_content(content).find_all(
         'input', attrs={'class': 'button', 'type': 'submit'})
     if buttons is None:
         print("No buttons found")
@@ -571,9 +571,9 @@ def print_location(contents):
     The main heading is the first <h1> element in the page.
     """
     doc = find_tag_by_id(contents, 'document')
-    heading = doc.find(attrs={'id': 'watermark-heading'}).findAll('a')
+    heading = doc.find(attrs={'id': 'watermark-heading'}).find_all('a')
     container = doc.find(attrs={'class': 'breadcrumbs'})
-    hierarchy = container.findAll(recursive=False) if container else []
+    hierarchy = container.find_all(recursive=False) if container else []
     segments = [extract_text(step) for step in chain(heading, hierarchy)]
 
     if len(segments) == 0:
@@ -598,9 +598,9 @@ def print_location_apps(contents):
     if location_apps is None:
         location_apps = first_tag_by_class(contents, 'watermark-apps-portlet')
         if location_apps is not None:
-            location_apps = location_apps.ul.findAll('li')
+            location_apps = location_apps.ul.find_all('li')
     else:
-        location_apps = location_apps.findAll('span')
+        location_apps = location_apps.find_all('span')
     if location_apps is None:
         print("(Application tabs omitted)")
     elif len(location_apps) == 0:
@@ -750,20 +750,24 @@ def webservice_for_person(person, consumer_key=u'launchpad-library',
     Use this method to create a way to test the webservice that doesn't depend
     on sample data.
     """
-    if person.is_team:
-        raise AssertionError('This cannot be used with teams.')
-    login(ANONYMOUS)
-    oacs = getUtility(IOAuthConsumerSet)
-    consumer = oacs.getByKey(consumer_key)
-    if consumer is None:
-        consumer = oacs.new(consumer_key)
-    request_token, _ = consumer.newRequestToken()
-    request_token.review(person, permission, context)
-    access_token, access_secret = request_token.createAccessToken()
+    kwargs = {}
+    if person is not None:
+        if person.is_team:
+            raise AssertionError('This cannot be used with teams.')
+        login(ANONYMOUS)
+        oacs = getUtility(IOAuthConsumerSet)
+        consumer = oacs.getByKey(consumer_key)
+        if consumer is None:
+            consumer = oacs.new(consumer_key)
+        request_token, _ = consumer.newRequestToken()
+        request_token.review(person, permission, context)
+        access_token, access_secret = request_token.createAccessToken()
+        kwargs['oauth_consumer_key'] = consumer_key
+        kwargs['oauth_access_key'] = access_token.key
+        kwargs['oauth_access_secret'] = access_secret
+    kwargs['default_api_version'] = default_api_version
     logout()
-    service = LaunchpadWebServiceCaller(
-        consumer_key, access_token.key, access_secret,
-        default_api_version=default_api_version)
+    service = LaunchpadWebServiceCaller(**kwargs)
     service.user = person
     return service
 

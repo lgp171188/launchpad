@@ -51,7 +51,7 @@ no FAQ is associated to the question, the 'No existing FAQs are
 relevant' option is selected.
 
     >>> def printFAQOptions(contents):
-    ...     buttons =  find_main_content(contents).findAll(
+    ...     buttons =  find_main_content(contents).find_all(
     ...         'input', {'name': 'field.faq'})
     ...     for button in buttons:
     ...         label = extract_text(button.parent)
@@ -60,7 +60,7 @@ relevant' option is selected.
     ...         else:
     ...             radio = '( )'
     ...         if button['value']:
-    ...             link = button.findNext('a').decode_contents()
+    ...             link = button.find_next('a').decode_contents()
     ...         else:
     ...             link = ''
     ...         print(radio, label, link)

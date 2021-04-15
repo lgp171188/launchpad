@@ -39,10 +39,7 @@ from lp.testing import (
     )
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import webservice_for_person
 
 
 class TestWebhook(TestCaseWithFactory):
@@ -124,7 +121,7 @@ class TestWebhook(TestCaseWithFactory):
                     u'hg:push:0.1').encode('ASCII')))
 
     def test_anon_forbidden(self):
-        response = LaunchpadWebServiceCaller().get(
+        response = webservice_for_person(None).get(
             self.webhook_url, api_version='devel')
         self.assertEqual(401, response.status)
         self.assertIn(b'launchpad.View', response.body)
@@ -292,7 +289,7 @@ class TestWebhookTargetBase:
             [entry['delivery_url'] for entry in representation['entries']])
 
     def test_webhooks_permissions(self):
-        webservice = LaunchpadWebServiceCaller()
+        webservice = webservice_for_person(None)
         response = webservice.get(
             self.target_url + '/webhooks', api_version='devel')
         self.assertEqual(401, response.status)
@@ -347,7 +344,7 @@ class TestWebhookTargetBase:
 
     def test_newWebhook_permissions(self):
         self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true'}))
-        webservice = LaunchpadWebServiceCaller()
+        webservice = webservice_for_person(None)
         response = webservice.named_post(
             self.target_url, 'newWebhook',
             delivery_url='http://example.com/ep',

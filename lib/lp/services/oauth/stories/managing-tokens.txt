@@ -49,31 +49,31 @@ keys stored in hidden <input>s as well as the button to revoke the
 authorization.
 
     >>> li = find_tag_by_id(main_content, 'tokens').find('li')
-    >>> for input in li.find('form').findAll('input'):
+    >>> for input in li.find('form').find_all('input'):
     ...     print(input['name'], input['value'])
     consumer_key System-wide: Ubuntu (mycomputer)
     token_key ...
     token_type access_token
     revoke Revoke Authorization
 
-    >>> li2 = li.findNextSibling('li')
-    >>> for input in li2.find('form').findAll('input'):
+    >>> li2 = li.find_next_sibling('li')
+    >>> for input in li2.find('form').find_all('input'):
     ...     print(input['name'], input['value'])
     consumer_key foobar123451432
     token_key salgado-read-nonprivate
     token_type access_token
     revoke Revoke Authorization
 
-    >>> li3 = li2.findNext('li')
-    >>> for input in li3.find('form').findAll('input'):
+    >>> li3 = li2.find_next('li')
+    >>> for input in li3.find('form').find_all('input'):
     ...     print(input['name'], input['value'])
     consumer_key launchpad-library
     token_key salgado-change-anything
     token_type access_token
     revoke Revoke Authorization
 
-    >>> li4 = li3.findNext('li')
-    >>> for input in li4.find('form').findAll('input'):
+    >>> li4 = li3.find_next('li')
+    >>> for input in li4.find('form').find_all('input'):
     ...     print(input['name'], input['value'])
     consumer_key oauthconsumerkey...
     token_key ...

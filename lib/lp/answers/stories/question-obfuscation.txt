@@ -15,7 +15,7 @@ front page.
     >>> user_browser.open('http://answers.launchpad.test/')
     >>> question_portlet = find_tag_by_id(
     ...     user_browser.contents, 'latest-questions-solved')
-    >>> for li in question_portlet.findAll('li'):
+    >>> for li in question_portlet.find_all('li'):
     ...     print(li['title'])
     I am not able to ... if i click on a mailto:user@domain.com link ...
 
@@ -30,7 +30,7 @@ in the question's description.
 
     >>> question_listing = find_tag_by_id(
     ...     user_browser.contents, 'question-listing')
-    >>> for li in question_portlet.findAll('li'):
+    >>> for li in question_portlet.find_all('li'):
     ...     print(li['title'])
     I am not able to ... if i click on a mailto:user@domain.com link ...
 
@@ -81,7 +81,7 @@ description. They can then see the email address in the tooltip in the
     >>> user_browser.open('http://answers.launchpad.test/')
     >>> question_portlet = find_tag_by_id(
     ...     user_browser.contents, 'latest-questions-asked')
-    >>> for li in question_portlet.findAll('li'):
+    >>> for li in question_portlet.find_all('li'):
     ...     print(li['title'])
     The clicking mailto:user@domain.com crashes the browser.
     ...
@@ -98,14 +98,14 @@ page.
 
     >>> question_portlet = find_tag_by_id(
     ...     anon_browser.contents, 'latest-questions-solved')
-    >>> for li in question_portlet.findAll('li'):
+    >>> for li in question_portlet.find_all('li'):
     ...     print(li['title'])
     I am not able to ... if i click on a
     mailto:<email address hidden> ...
 
     >>> question_portlet = find_tag_by_id(
     ...     anon_browser.contents, 'latest-questions-asked')
-    >>> for li in question_portlet.findAll('li'):
+    >>> for li in question_portlet.find_all('li'):
     ...     print(li['title'])
     The clicking mailto:<email address hidden> crashes the browser.
     ...
@@ -123,7 +123,7 @@ They cannot see the address reading the question either.
 
     >>> question_listing = find_tag_by_id(
     ...     anon_browser.contents, 'question-listing')
-    >>> for tr in question_listing.tbody.findAll('tr'):
+    >>> for tr in question_listing.tbody.find_all('tr'):
     ...     print(tr['title'])
     I am not able to ... if i click on a mailto:<email address hidden>
     link ...

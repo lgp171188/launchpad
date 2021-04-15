@@ -14,7 +14,7 @@ displays the most recent announcements for all the projects.
     >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> browser.open('http://launchpad.test/')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/announcements.atom"
         rel="alternate" title="All Announcements"
         type="application/atom+xml"/>]
@@ -25,7 +25,7 @@ feed.
 
     >>> browser.open('http://launchpad.test/+announcements')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/announcements.atom"
         rel="alternate" title="All Announcements"
         type="application/atom+xml"/>]
@@ -37,7 +37,7 @@ atom feed for that one bug.
 
     >>> browser.open('http://bugs.launchpad.test/firefox/+bug/1')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/bugs/1/bug.atom"
         rel="alternate" title="Bug 1 Feed"
         type="application/atom+xml"/>]
@@ -59,7 +59,7 @@ But if the bug is private, there should be no link.
     http://bugs.launchpad.test/jokosher/+bug/14
 
     >>> soup = BeautifulSoup(auth_browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     []
 
 Even so, if they somehow manage to hack the url or use inline ajax editing of
@@ -79,7 +79,7 @@ branches.
 
     >>> browser.open('http://launchpad.test/~stevea')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/~stevea/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for Steve Alexander"
         type="application/atom+xml"/>,
@@ -95,7 +95,7 @@ not the branches link.
 
     >>> browser.open('http://bugs.launchpad.test/~stevea')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/~stevea/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for Steve Alexander"
         type="application/atom+xml"/>]
@@ -111,7 +111,7 @@ main product page.
 
     >>> browser.open('http://launchpad.test/jokosher')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/jokosher/announcements.atom"
         rel="alternate" title="Announcements for Jokosher"
         type="application/atom+xml"/>,
@@ -129,7 +129,7 @@ Only bug feeds should be linked to on bugs.launchpad.test.
 
     >>> browser.open('http://bugs.launchpad.test/jokosher')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/jokosher/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for Jokosher"
         type="application/atom+xml"/>]
@@ -159,7 +159,7 @@ it must have quotes and html escaped.
     >>> logout()
     >>> browser.open('http://launchpad.test/bad-displayname')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/bad-displayname/announcements.atom"
         rel="alternate"
         title='Announcements for Bad displayname"&gt;&lt;script&gt;alert("h4x0r")&lt;/script&gt;'
@@ -187,7 +187,7 @@ on the main project group page.
 
     >>> browser.open('http://launchpad.test/gnome')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/gnome/announcements.atom"
         rel="alternate" title="Announcements for GNOME"
         type="application/atom+xml"/>,
@@ -205,7 +205,7 @@ Only bug feeds should be linked to on bugs.launchpad.test.
 
     >>> browser.open('http://bugs.launchpad.test/gnome')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/gnome/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for GNOME"
         type="application/atom+xml"/>]
@@ -221,7 +221,7 @@ that the code does not display the atom feed link here inappropriately.
     ...     '&field.status=Confirmed&field.status=Triaged'
     ...     '&field.status=In+Progress&field.status=Fix+Committed')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     []
 
 
@@ -234,7 +234,7 @@ An announcements feed link should also be shown on the main distro page.
 
     >>> browser.open('http://launchpad.test/ubuntu')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/ubuntu/announcements.atom"
         rel="alternate" title="Announcements for Ubuntu"
         type="application/atom+xml"/>,
@@ -246,7 +246,7 @@ Only bug feeds should be linked to on bugs.launchpad.test.
 
     >>> browser.open('http://bugs.launchpad.test/ubuntu')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/ubuntu/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for Ubuntu"
         type="application/atom+xml"/>]
@@ -259,7 +259,7 @@ show a link to the atom feed for that distroseries' latest bugs.
 
     >>> browser.open('http://bugs.launchpad.test/ubuntu/hoary')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link
         href="http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for Hoary"
@@ -273,7 +273,7 @@ show a link to the atom feed for that product series' latest bugs.
 
     >>> browser.open('http://bugs.launchpad.test/firefox/1.0')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for 1.0"
         type="application/atom+xml"/>]
@@ -286,7 +286,7 @@ show a link to the atom feed for that source package's latest bugs.
 
     >>> browser.open('http://bugs.launchpad.test/ubuntu/+source/cnews')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link
         href="http://feeds.launchpad.test/ubuntu/+source/cnews/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for cnews in Ubuntu"
@@ -300,7 +300,7 @@ to the atom feed for that project group's latest branches.
 
     >>> browser.open('http://code.launchpad.test/mozilla')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link
         href="http://feeds.launchpad.test/mozilla/branches.atom"
         rel="alternate" title="Latest Branches for The Mozilla Project"
@@ -318,7 +318,7 @@ to the atom feed for that product's latest branches.
 
     >>> browser.open('http://code.launchpad.test/firefox')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/firefox/branches.atom"
         rel="alternate" title="Latest Branches for Mozilla Firefox"
         type="application/atom+xml"/>,
@@ -335,7 +335,7 @@ to the atom feed for that person's latest branches.
 
     >>> browser.open('http://code.launchpad.test/~mark')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link href="http://feeds.launchpad.test/~mark/branches.atom"
         rel="alternate" title="Latest Branches for Mark Shuttleworth"
         type="application/atom+xml"/>,
@@ -352,7 +352,7 @@ atom feed for that branch's revisions.
     >>> url = 'http://code.launchpad.test/~mark/firefox/release--0.9.1'
     >>> browser.open(url)
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     [<link
         href="http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom"
         rel="alternate"
@@ -368,7 +368,7 @@ But if the branch is private, there should be no link.
     >>> auth_browser.open(
     ... 'https://code.launchpad.test/~name12/landscape/feature-x')
     >>> soup = BeautifulSoup(auth_browser.contents)
-    >>> soup.head.findAll('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')
     []
 
 Even so, if they somehow manage to hack the url, they are redirected to a page

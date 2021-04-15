@@ -86,7 +86,7 @@ class TestGitSubscriptionAddView(BrowserTestCase):
     def _getSubscribers(self, contents):
         subscriptions = find_tags_by_class(
             contents, 'repository-subscribers')[0]
-        for subscriber in subscriptions.findAll('div'):
+        for subscriber in subscriptions.find_all('div'):
             yield extract_text(subscriber.decode_contents())
 
     def _getInformationalMessage(self, contents):

@@ -1510,7 +1510,7 @@ class SnapFilePruner(BulkPruner):
             AND Job.status = %s
             AND Job.date_finished <
                 CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-                - CAST('30 days' AS INTERVAL)
+                - CAST('7 days' AS INTERVAL)
             AND SnapFile.libraryfile = LibraryFileAlias.id
             AND LibraryFileAlias.filename LIKE '%%.snap'
         """ % (SnapBuildJobType.STORE_UPLOAD.value, JobStatus.COMPLETED.value)

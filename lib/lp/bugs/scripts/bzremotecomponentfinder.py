@@ -80,7 +80,7 @@ class BugzillaRemoteComponentScraper:
                     'versions': None,
                     })
 
-        for script_text in soup.findAll(name="script"):
+        for script_text in soup.find_all(name="script"):
             if script_text is None or script_text.string is None:
                 continue
             for line in script_text.string.split(";"):

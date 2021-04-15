@@ -181,7 +181,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNotNone(self.widget.core20_widget)
         self.assertIsNotNone(self.widget.snapcraft_widget)
         soup = BeautifulSoup(markup)
-        fields = soup.findAll(["input"], {"id": re.compile(".*")})
+        fields = soup.find_all(["input"], {"id": re.compile(".*")})
         expected_ids = [
             "field.auto_build_channels.core",
             "field.auto_build_channels.core18",

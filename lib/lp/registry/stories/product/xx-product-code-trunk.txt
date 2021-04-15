@@ -26,7 +26,7 @@ Make revisions for the branch so it has a codebrowse link.
     ...     dev_focus = find_tag_by_id(browser.contents, 'development-focus')
     ...     print(extract_text(dev_focus))
     ...     print("Links:")
-    ...     for a in dev_focus.findAll('a'):
+    ...     for a in dev_focus.find_all('a'):
     ...         for content in a.contents:
     ...             print(content)
     ...         title = a.get('title', '')
@@ -40,14 +40,14 @@ Make revisions for the branch so it has a codebrowse link.
     ...     except TypeError:
     ...         return
     ...     print("Links:")
-    ...     for a in code_trunk.findAll('a'):
+    ...     for a in code_trunk.find_all('a'):
     ...         for content in a.contents:
     ...             print(content)
     ...         title = a.get('title', '')
     ...         print("%s (%s)" % (title, a['href']))
     >>> def print_involvement_portlet(browser):
     ...     involvement = find_tag_by_id(browser.contents, 'involvement')
-    ...     for a in involvement.findAll('a'):
+    ...     for a in involvement.find_all('a'):
     ...         for content in a.contents:
     ...             print(content)
     ...         print(a['href'])

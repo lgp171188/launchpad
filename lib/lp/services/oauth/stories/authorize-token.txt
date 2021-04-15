@@ -59,7 +59,7 @@ This page contains one submit button for each item of OAuthPermission,
 except for 'Desktop Integration', which must be specifically requested.
 
     >>> def print_access_levels(main_content):
-    ...     actions = main_content.findAll('input', attrs={'type': 'submit'})
+    ...     actions = main_content.find_all('input', attrs={'type': 'submit'})
     ...     for action in actions:
     ...         print(action['value'])
 
@@ -71,7 +71,7 @@ except for 'Desktop Integration', which must be specifically requested.
     Change Anything
 
     >>> from lp.services.webapp.interfaces import OAuthPermission
-    >>> actions = main_content.findAll('input', attrs={'type': 'submit'})
+    >>> actions = main_content.find_all('input', attrs={'type': 'submit'})
     >>> len(actions) == len(OAuthPermission.items) - 1
     True
 

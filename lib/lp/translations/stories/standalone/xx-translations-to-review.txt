@@ -54,8 +54,8 @@ Xowxz is a Khmer reviewer.
     ...     listing = soup.find(id="translations-to-review-table")
     ...     if listing:
     ...         count = 0
-    ...         for tr in listing.findAll('tr'):
-    ...             tds = [td.decode_contents() for td in tr.findAll('td')]
+    ...         for tr in listing.find_all('tr'):
+    ...             tds = [td.decode_contents() for td in tr.find_all('td')]
     ...             print('    '.join(tds))
     ...             count += 1
     ...         print("Listing contains %d translation(s)." % count)
