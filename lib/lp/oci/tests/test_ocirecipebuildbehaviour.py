@@ -77,13 +77,13 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.model.ocirecipebuildbehaviour import OCIRecipeBuildBehaviour
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
 from lp.services.propertycache import get_property_cache
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
-from lp.snappy.tests.test_snapbuildbehaviour import InProcessAuthServerFixture
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
