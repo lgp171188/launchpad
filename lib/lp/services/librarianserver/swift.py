@@ -56,11 +56,16 @@ def quiet_swiftclient(func, *args, **kwargs):
         swiftclient.logger.disabled = old_disabled
 
 
-def to_swift(log, start_lfc_id=None, end_lfc_id=None, remove_func=False):
+def to_swift(log, start_lfc_id=None, end_lfc_id=None,
+             instance_id=None, num_instances=None, remove_func=False):
     '''Copy a range of Librarian files from disk into Swift.
 
     start and end identify the range of LibraryFileContent.id to
     migrate (inclusive).
+
+    If instance_id and num_instances are set, only process files whose ID
+    have remainder instance_id when divided by num_instances.  This allows
+    running multiple feeders in parallel.
 
     If remove_func is set, it is called for every file after being copied into
     Swift.
@@ -76,6 +81,9 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None, remove_func=False):
 
     log.info("Walking disk store {0} from {1} to {2}, inclusive".format(
         fs_root, start_lfc_id, end_lfc_id))
+    if instance_id is not None and num_instances is not None:
+        log.info("Parallel mode: instance ID {0} of {1}".format(
+            instance_id, num_instances))
 
     start_fs_path = filesystem_path(start_lfc_id)
     end_fs_path = filesystem_path(end_lfc_id)
@@ -134,6 +142,9 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None, remove_func=False):
             except ValueError:
                 log.warning('Invalid hex fail, skipping {0}'.format(fs_path))
                 continue
+            if instance_id is not None and num_instances is not None:
+                if (lfc % num_instances) != instance_id:
+                    continue
 
             log.debug('Found {0} ({1})'.format(lfc, filename))
 
@@ -174,6 +185,8 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None, remove_func=False):
 
             if remove_func:
                 remove_func(fs_path)
+
+    connection_pool.put(swift_connection)
 
 
 def rename(path):

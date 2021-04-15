@@ -47,6 +47,24 @@ class LibrarianFeedSwift(LaunchpadCronScript):
             default=None, metavar="INTERVAL",
             help="Don't migrate files older than INTERVAL "
                  "(PostgreSQL syntax)")
+        self.parser.add_option(
+            "--instance-id", action="store", type=int, default=None,
+            metavar="INSTANCE_ID",
+            help=(
+                "Run as instance INSTANCE_ID (starting at 0) out of "
+                "NUM_INSTANCES parallel workers"))
+        self.parser.add_option(
+            "--num-instances", action="store", type=int, default=None,
+            metavar="NUM_INSTANCES",
+            help="Run NUM_INSTANCES parallel workers")
+
+    @property
+    def lockfilename(self):
+        if self.options.instance_id is not None:
+            return "launchpad-%s-%d.lock" % (
+                self.name, self.options.instance_id)
+        else:
+            return "launchpad-%s.lock" % self.name
 
     def main(self):
         if self.options.rename and self.options.remove:
@@ -72,17 +90,31 @@ class LibrarianFeedSwift(LaunchpadCronScript):
                     - CAST(%s AS INTERVAL)
                 """, (six.text_type(self.options.end_at),)).get_one()[0]
 
+        if ((self.options.instance_id is None) !=
+                (self.options.num_instances is None)):
+            self.parser.error(
+                "Must specify both or neither of --instance-id and "
+                "--num-instances")
+
+        kwargs = {
+            "instance_id": self.options.instance_id,
+            "num_instances": self.options.num_instances,
+            "remove_func": remove,
+            }
+
         if self.options.ids and (self.options.start or self.options.end):
             self.parser.error(
                 "Cannot specify both individual file(s) and range")
 
         elif self.options.ids:
             for lfc in self.options.ids:
-                swift.to_swift(self.logger, lfc, lfc, remove)
+                swift.to_swift(
+                    self.logger, start_lfc_id=lfc, end_lfc_id=lfc, **kwargs)
 
         else:
-            swift.to_swift(self.logger, self.options.start,
-                           self.options.end, remove)
+            swift.to_swift(
+                self.logger, start_lfc_id=self.options.start,
+                end_lfc_id=self.options.end, **kwargs)
         self.logger.info('Done')
 
 
