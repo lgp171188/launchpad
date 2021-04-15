@@ -28,6 +28,7 @@ from zope.interface import implementer
 
 from lp.code.errors import (
     CannotRepackRepository,
+    CannotRunGitGC,
     GitReferenceDeletionFault,
     GitRepositoryBlobNotFound,
     GitRepositoryCreationFault,
@@ -323,4 +324,19 @@ class GitHostingClient:
         except requests.RequestException as e:
             raise CannotRepackRepository(
                 "Failed to repack Git repository %s: %s" %
+                (path, six.text_type(e)))
+
+    def runGitGC(self, path, logger=None):
+        """See `IGitHostingClient`."""
+
+        url = "/repo/%s/gc" % path
+        try:
+            if logger is not None:
+                logger.info(
+                    "Running gc for repository %s" % (
+                        path))
+            return self._post(url)
+        except requests.RequestException as e:
+            raise CannotRunGitGC(
+                "Failed to run Git GC for repository %s: %s" %
                 (path, six.text_type(e)))

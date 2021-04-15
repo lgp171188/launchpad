@@ -494,6 +494,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         getUtility(IGitHostingClient).repackRepository(self.getInternalPath())
         self.date_last_repacked = UTC_NOW
 
+    def runGitGC(self):
+        getUtility(IGitHostingClient).runGitGC(self.getInternalPath())
+
     @property
     def namespace(self):
         """See `IGitRepository`."""
