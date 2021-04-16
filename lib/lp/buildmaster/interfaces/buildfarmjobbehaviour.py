@@ -46,6 +46,15 @@ class IBuildFarmJobBehaviour(Interface):
             'password' (optional): password to authenticate with
         """
 
+    def issueMacaroon():
+        """Issue a macaroon to access private resources for this build.
+
+        :raises NotImplementedError: if the build type does not support
+            accessing private resources.
+        :return: A Deferred that calls back with a serialized macaroon or a
+            fault.
+        """
+
     def extraBuildArgs(logger=None):
         """Return extra arguments required by the builder for this build.
 

@@ -14,6 +14,7 @@ from textwrap import dedent
 import time
 import uuid
 
+from aptsources.sourceslist import SourceEntry
 import fixtures
 from pymacaroons import Macaroon
 import pytz
@@ -77,6 +78,7 @@ from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
     )
+from lp.services.macaroons.testing import MacaroonVerifies
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.snappy.interfaces.snap import (
@@ -788,6 +790,59 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertEqual(expected_archives, args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_snap_base_with_private_archive_dependencies(self):
+        # If the build is using a snap base that has archive dependencies on
+        # private PPAs, extraBuildArgs sends them.
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        snap_base = self.factory.makeSnapBase()
+        job = self.makeJob(snap_base=snap_base)
+        dependency = self.factory.makeArchive(
+            distribution=job.archive.distribution, private=True)
+        snap_base.addArchiveDependency(
+            dependency, PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"])
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=dependency, distroarchseries=job.build.distro_arch_series,
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        job.build.updateStatus(BuildStatus.BUILDING)
+        self.assertThat(
+            [SourceEntry(item) for item in args["archives"]],
+            MatchesListwise([
+                MatchesStructure(
+                    type=Equals("deb"),
+                    uri=AfterPreprocessing(urlsplit, MatchesStructure(
+                        scheme=Equals("http"),
+                        username=Equals("buildd"),
+                        password=MacaroonVerifies("snap-build", dependency),
+                        hostname=Equals("private-ppa.launchpad.test"),
+                        path=Equals("/%s/%s/%s" % (
+                            dependency.owner.name, dependency.name,
+                            dependency.distribution.name)))),
+                    dist=Equals(job.build.distro_series.name),
+                    comps=Equals(["main"])),
+                MatchesStructure.byEquality(
+                    type="deb",
+                    uri=job.archive.archive_url,
+                    dist=job.build.distro_series.name,
+                    comps=["main", "universe"]),
+                MatchesStructure.byEquality(
+                    type="deb",
+                    uri=job.archive.archive_url,
+                    dist="%s-security" % job.build.distro_series.name,
+                    comps=["main", "universe"]),
+                MatchesStructure.byEquality(
+                    type="deb",
+                    uri=job.archive.archive_url,
+                    dist="%s-updates" % job.build.distro_series.name,
+                    comps=["main", "universe"]),
+                ]))
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_ppa_and_snap_base_with_archive_dependencies(self):

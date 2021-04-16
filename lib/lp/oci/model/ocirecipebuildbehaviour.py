@@ -80,6 +80,14 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             raise CannotBuild(
                 "Missing chroot for %s" % build.distro_arch_series.displayname)
 
+    def issueMacaroon(self):
+        """See `IBuildFarmJobBehaviour`."""
+        return cancel_on_timeout(
+            self._authserver.callRemote(
+                "issueMacaroon",
+                "oci-recipe-build", "OCIRecipeBuild", self.build.id),
+            config.builddmaster.authentication_timeout)
+
     def _getBuildInfoArgs(self):
         def format_user(user):
             if user is None:
@@ -142,11 +150,7 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
 
         if build.recipe.git_ref is not None:
             if build.recipe.git_repository.private:
-                macaroon_raw = yield cancel_on_timeout(
-                    self._authserver.callRemote(
-                        "issueMacaroon",
-                        "oci-recipe-build", "OCIRecipeBuild", build.id),
-                    config.builddmaster.authentication_timeout)
+                macaroon_raw = yield self.issueMacaroon()
                 url = build.recipe.git_repository.getCodebrowseUrl(
                     username=None, password=macaroon_raw)
                 args["git_repository"] = url
