@@ -5,21 +5,18 @@
 
 __metaclass__ = type
 
-from lazr.restfulclient.errors import HTTPError
 from testtools.matchers import HasLength
-import transaction
 from zope.component import getUtility
-from zope.security.management import endInteraction
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.bugs.interfaces.bugmessage import IBugMessageSet
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
     api_url,
-    launchpadlib_for,
     login_celebrity,
     person_logged_in,
     TestCaseWithFactory,
@@ -133,28 +130,11 @@ class TestSetCommentVisibility(TestCaseWithFactory):
         self.admin = admins.teamowner
         with person_logged_in(self.admin):
             self.bug = self.factory.makeBug()
+            self.bug_url = api_url(self.bug)
             self.message = self.factory.makeBugComment(
                 bug=self.bug,
                 subject='foo',
                 body='bar')
-        transaction.commit()
-
-    def _get_bug_for_user(self, user=None):
-        """Convenience function to get the api bug reference."""
-        endInteraction()
-        if user is not None:
-            lp = launchpadlib_for("test", user)
-        else:
-            lp = launchpadlib_for("test")
-
-        bug_entry = lp.load('/bugs/%s/' % self.bug.id)
-        return bug_entry
-
-    def _set_visibility(self, bug):
-        """Method to set visibility; needed for assertRaises."""
-        bug.setCommentVisibility(
-            comment_number=1,
-            visible=False)
 
     def _check_comment_hidden(self):
         bug_msg_set = getUtility(IBugMessageSet)
@@ -164,14 +144,15 @@ class TestSetCommentVisibility(TestCaseWithFactory):
             self.assertFalse(bug_message.message.visible)
 
     def _test_hide_comment(self, person, should_fail=False):
-        bug = self._get_bug_for_user(person)
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        response = webservice.named_post(
+            self.bug_url, 'setCommentVisibility',
+            comment_number=1, visible=False)
         if should_fail:
-            self.assertRaises(
-                HTTPError,
-                self._set_visibility,
-                bug)
+            self.assertEqual(401, response.status)
         else:
-            self._set_visibility(bug)
+            self.assertEqual(200, response.status)
             self._check_comment_hidden()
 
     def test_random_user_cannot_set_visible(self):
