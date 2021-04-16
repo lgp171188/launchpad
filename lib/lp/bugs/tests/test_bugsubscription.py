@@ -3,21 +3,27 @@
 
 """Tests for BugSubscriptions."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
+
+import json
 
 from testtools.matchers import LessThan
 from zope.security.interfaces import Unauthorized
 
 from lp.bugs.enums import BugNotificationLevel
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
-    launchpadlib_for,
+    api_url,
     person_logged_in,
     RequestTimelineCollector,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
+from lp.testing.pages import webservice_for_person
 
 
 class TestBugSubscription(TestCaseWithFactory):
@@ -30,18 +36,26 @@ class TestBugSubscription(TestCaseWithFactory):
         self.bug = self.factory.makeBug()
         self.subscriber = self.factory.makePerson()
 
-    def updateBugNotificationLevelWithWebService(self, bug_id,
-                                                 subscriber_name,
+    def updateBugNotificationLevelWithWebService(self, bug, subscriber,
                                                  update_as):
         """A helper method to update a subscription's bug_notification_level.
         """
-        launchpad = launchpadlib_for("test", update_as, version='devel')
-        lplib_bug = launchpad.bugs[self.bug.id]
-        lplib_subscriber = launchpad.people[subscriber_name]
-        [lplib_subscription] = [
-            subscription for subscription in lplib_bug.subscriptions
-            if subscription.person == lplib_subscriber]
-        lplib_subscription.bug_notification_level = u'Nothing'
+        bug_url = api_url(bug)
+        subscriber_url = api_url(subscriber)
+        webservice = webservice_for_person(
+            update_as, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version='devel')
+        ws_bug = self.getWebserviceJSON(webservice, bug_url)
+        ws_subscriptions = self.getWebserviceJSON(
+            webservice, ws_bug['subscriptions_collection_link'])
+        absolute_subscriber_url = webservice.getAbsoluteUrl(subscriber_url)
+        [ws_subscription] = [
+            subscription for subscription in ws_subscriptions['entries']
+            if subscription['person_link'] == absolute_subscriber_url]
+        response = webservice.patch(
+            ws_subscription['self_link'], 'application/json',
+            json.dumps({'bug_notification_level': 'Lifecycle'}))
+        self.assertEqual(209, response.status)
 
     def test_subscribers_can_change_bug_notification_level(self):
         # The bug_notification_level of a subscription can be changed by
@@ -125,7 +139,7 @@ class TestBugSubscription(TestCaseWithFactory):
         self.addCleanup(collector.unregister)
         with person_logged_in(self.subscriber):
             self.updateBugNotificationLevelWithWebService(
-                self.bug.id, team.name, self.subscriber)
+                self.bug, team, self.subscriber)
         # 25 is an entirely arbitrary limit for the number of queries
         # this requires, based on the number run when the code was
         # written; it should give us a nice early warning if the number
@@ -137,6 +151,6 @@ class TestBugSubscription(TestCaseWithFactory):
         # interaction goes away, so we have to set up a new one.
         with person_logged_in(self.subscriber):
             self.updateBugNotificationLevelWithWebService(
-                self.bug.id, team_2.name, self.subscriber)
+                self.bug, team_2, self.subscriber)
         self.assertThat(
             collector, HasQueryCount(LessThan(25)))
