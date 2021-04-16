@@ -176,7 +176,7 @@ class SnapBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             archive_dependencies.extend(build.snap_base.dependencies)
         args["archives"], args["trusted_keys"] = (
             yield get_sources_list_for_building(
-                build, build.distro_arch_series, None,
+                self, build.distro_arch_series, None,
                 archive_dependencies=archive_dependencies,
                 tools_source=tools_source, tools_fingerprint=tools_fingerprint,
                 logger=logger))

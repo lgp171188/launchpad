@@ -25,6 +25,8 @@ class IBuildFarmJobBehaviour(Interface):
         "A list of `BuildBaseImageType`s indicating which types of base "
         "images can be used for this build.")
 
+    build = Attribute("The `IBuildFarmJob` to build.")
+
     archive = Attribute("The `Archive` to build against.")
 
     distro_arch_series = Attribute("The `DistroArchSeries` to build against.")

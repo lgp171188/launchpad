@@ -165,7 +165,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
 
         args['archives'], args['trusted_keys'] = (
             yield get_sources_list_for_building(
-                build, das, build.source_package_release.name, logger=logger))
+                self, das, build.source_package_release.name, logger=logger))
         args['build_debug_symbols'] = build.archive.build_debug_symbols
 
         defer.returnValue(args)

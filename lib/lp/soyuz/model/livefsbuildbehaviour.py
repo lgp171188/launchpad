@@ -98,7 +98,7 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         args["datestamp"] = build.version
         args["archives"], args["trusted_keys"] = (
             yield get_sources_list_for_building(
-                build, build.distro_arch_series, None, logger=logger))
+                self, build.distro_arch_series, None, logger=logger))
         defer.returnValue(args)
 
     def verifySuccessfulBuild(self):

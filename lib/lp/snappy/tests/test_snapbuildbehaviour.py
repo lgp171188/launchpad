@@ -340,7 +340,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(branch=branch)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -380,7 +380,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -411,7 +411,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref.repository.getRefByPath("HEAD"))
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -445,7 +445,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref, private=True)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         args = yield job.extraBuildArgs()
@@ -489,7 +489,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -520,7 +520,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -617,7 +617,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(channels={"snapcraft": "edge"})
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertFalse(isProxy(args["channels"]))
@@ -629,7 +629,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(channels={"snapcraft": "apt"})
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertNotIn("channels", args)
@@ -643,7 +643,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob()
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertFalse(isProxy(args["channels"]))
@@ -658,7 +658,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(channels={"snapcraft": "apt"})
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertNotIn("channels", args)

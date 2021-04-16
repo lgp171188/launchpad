@@ -250,8 +250,8 @@ def expand_dependencies(archive, distro_arch_series, pocket, component,
 
 
 @defer.inlineCallbacks
-def get_sources_list_for_building(build, distroarchseries, sourcepackagename,
-                                  archive_dependencies=None,
+def get_sources_list_for_building(behaviour, distroarchseries,
+                                  sourcepackagename, archive_dependencies=None,
                                   tools_source=None, tools_fingerprint=None,
                                   logger=None):
     """Return sources.list entries and keys required to build the given item.
@@ -264,7 +264,8 @@ def get_sources_list_for_building(build, distroarchseries, sourcepackagename,
 
     The keys are in an arbitrary order.
 
-    :param build: a context `IBuild`.
+    :param behaviour: the `IBuildFarmJobBehaviour` for the context
+        `IBuildFarmJob`.
     :param distroarchseries: A `IDistroArchSeries`
     :param sourcepackagename: A source package name (as text)
     :param archive_dependencies: a sequence of `IArchiveDependency` objects
@@ -280,6 +281,7 @@ def get_sources_list_for_building(build, distroarchseries, sourcepackagename,
         sources.list entries (lines) and a list of base64-encoded public
         keys.
     """
+    build = behaviour.build
     if archive_dependencies is None:
         archive_dependencies = build.archive.dependencies
     deps = expand_dependencies(

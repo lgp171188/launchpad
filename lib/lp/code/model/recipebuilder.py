@@ -86,7 +86,7 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
             None).name
         args['archives'], args['trusted_keys'] = (
             yield get_sources_list_for_building(
-                self.build, self.distro_arch_series, None,
+                self, self.distro_arch_series, None,
                 tools_source=config.builddmaster.bzr_builder_sources_list,
                 logger=logger))
         # XXX cjwatson 2017-07-26: This duplicates "series", which is common
