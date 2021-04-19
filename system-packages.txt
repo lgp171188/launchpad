@@ -19,6 +19,9 @@ apt
 apt_inst
 apt_pkg
 
+# Used by tests to parse sources.list entries.
+aptsources
+
 # utilities/js-deps
 convoy
 

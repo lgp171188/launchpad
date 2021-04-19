@@ -13,22 +13,28 @@ from datetime import (
 import doctest
 import os.path
 
+from aptsources.sourceslist import SourceEntry
 from pytz import UTC
 import responses
 import six
 from six.moves import http_client
+from six.moves.urllib.parse import urlsplit
 from storm.store import Store
 from testtools.matchers import (
+    AfterPreprocessing,
     AllMatch,
     DocTestMatches,
+    Equals,
     LessThan,
     MatchesListwise,
     MatchesPredicate,
-    MatchesRegex,
     MatchesStructure,
     )
 from testtools.testcase import ExpectedException
-from testtools.twistedsupport import AsynchronousDeferredRunTest
+from testtools.twistedsupport import (
+    AsynchronousDeferredRunTest,
+    AsynchronousDeferredRunTestForBrokenTwisted,
+    )
 import transaction
 from twisted.internet import defer
 from zope.component import getUtility
@@ -57,6 +63,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
+from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.features import getFeatureFlag
@@ -67,6 +74,7 @@ from lp.services.gpg.interfaces import (
     IGPGHandler,
     )
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.macaroons.testing import MacaroonVerifies
 from lp.services.propertycache import (
     clear_property_cache,
     get_property_cache,
@@ -1866,11 +1874,15 @@ class TestAddArchiveDependencies(TestCaseWithFactory):
 class TestArchiveDependencies(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=30)
 
     @defer.inlineCallbacks
     def test_private_sources_list(self):
         """Entries for private dependencies include credentials."""
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
         p3a = self.factory.makeArchive(name='p3a', private=True)
         yield self.useFixture(InProcessKeyServerFixture()).start()
         key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
@@ -1890,10 +1902,20 @@ class TestArchiveDependencies(TestCaseWithFactory):
             sources_list, trusted_keys = yield get_sources_list_for_building(
                 behaviour, build.distro_arch_series,
                 build.source_package_release.name)
-            matches = MatchesRegex(
-                "deb http://buildd:sekrit@private-ppa.launchpad.test/"
-                "person-name-.*/dependency/ubuntu distroseries-.* main")
-            self.assertThat(sources_list[0], matches)
+            # Mark the build as building so that we can verify its macaroons.
+            build.updateStatus(BuildStatus.BUILDING)
+            self.assertThat(SourceEntry(sources_list[0]), MatchesStructure(
+                type=Equals("deb"),
+                uri=AfterPreprocessing(urlsplit, MatchesStructure(
+                    scheme=Equals("http"),
+                    username=Equals("buildd"),
+                    password=MacaroonVerifies("binary-package-build", p3a),
+                    hostname=Equals("private-ppa.launchpad.test"),
+                    path=Equals("/%s/dependency/ubuntu" % p3a.owner.name),
+                    )),
+                dist=Equals(build.distro_series.getSuite(build.pocket)),
+                comps=Equals(["main"]),
+                ))
             self.assertThat(trusted_keys, MatchesListwise([
                 Base64KeyMatches("0D57E99656BEFB0897606EE9A022DD1F5001B46D"),
                 ]))

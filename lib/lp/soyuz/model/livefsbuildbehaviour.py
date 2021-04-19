@@ -25,6 +25,8 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
     )
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.config import config
+from lp.services.twistedsupport import cancel_on_timeout
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -77,6 +79,13 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         if chroot is None:
             raise CannotBuild(
                 "Missing chroot for %s" % build.distro_arch_series.displayname)
+
+    def issueMacaroon(self):
+        """See `IBuildFarmJobBehaviour`."""
+        return cancel_on_timeout(
+            self._authserver.callRemote(
+                "issueMacaroon", "livefs-build", "LiveFSBuild", self.build.id),
+            config.builddmaster.authentication_timeout)
 
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):

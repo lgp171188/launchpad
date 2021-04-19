@@ -290,7 +290,8 @@ def get_sources_list_for_building(behaviour, distroarchseries,
         tools_source=tools_source, tools_fingerprint=tools_fingerprint,
         logger=logger)
     sources_list_lines, trusted_keys = (
-        yield _get_sources_list_for_dependencies(deps, logger=logger))
+        yield _get_sources_list_for_dependencies(
+            behaviour, deps, logger=logger))
 
     external_dep_lines = []
     # Append external sources.list lines for this build if specified.  No
@@ -343,7 +344,8 @@ def _has_published_binaries(archive, distroarchseries, pocket):
     return not published_binaries.is_empty()
 
 
-def _get_binary_sources_list_line(archive, distroarchseries, pocket,
+@defer.inlineCallbacks
+def _get_binary_sources_list_line(behaviour, archive, distroarchseries, pocket,
                                   components):
     """Return the correponding binary sources_list line."""
     # Encode the private PPA repository password in the
@@ -351,23 +353,24 @@ def _get_binary_sources_list_line(archive, distroarchseries, pocket,
     # sanitized to not expose it.
     if archive.private:
         uri = URI(archive.archive_url)
-        uri = uri.replace(
-            userinfo="buildd:%s" % archive.buildd_secret)
+        macaroon_raw = yield behaviour.issueMacaroon()
+        uri = uri.replace(userinfo="buildd:%s" % macaroon_raw)
         url = str(uri)
     else:
         url = archive.archive_url
 
     suite = distroarchseries.distroseries.name + pocketsuffix[pocket]
-    return 'deb %s %s %s' % (url, suite, ' '.join(components))
+    defer.returnValue('deb %s %s %s' % (url, suite, ' '.join(components)))
 
 
 @defer.inlineCallbacks
-def _get_sources_list_for_dependencies(dependencies, logger=None):
+def _get_sources_list_for_dependencies(behaviour, dependencies, logger=None):
     """Return sources.list entries and keys.
 
     Process the given list of dependency tuples for the given
     `DistroArchseries`.
 
+    :param behaviour: the build's `IBuildFarmJobBehaviour`.
     :param dependencies: list of 3 elements tuples as:
         (`IArchive`, `IDistroArchSeries`, `PackagePublishingPocket`,
          list of `IComponent` names)
@@ -399,8 +402,8 @@ def _get_sources_list_for_dependencies(dependencies, logger=None):
             components = [
                 component for component in components
                 if component in archive_components]
-            sources_list_line = _get_binary_sources_list_line(
-                archive, distro_arch_series, pocket, components)
+            sources_list_line = yield _get_binary_sources_list_line(
+                behaviour, archive, distro_arch_series, pocket, components)
             sources_list_lines.append(sources_list_line)
             fingerprint = archive.signing_key_fingerprint
         if fingerprint is not None and fingerprint not in trusted_keys:
