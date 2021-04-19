@@ -105,11 +105,6 @@ class SnapBase(Storm):
         if archive_dependency is not None:
             raise ArchiveDependencyError(
                 "This dependency is already registered.")
-        # XXX cjwatson 2021-03-19: Relax this once we have a way to dispatch
-        # appropriate tokens for snap builds whose base has dependencies on
-        # private archives.
-        if dependency.private:
-            raise ArchiveDependencyError("This dependency is private.")
         if not dependency.enabled:
             raise ArchiveDependencyError("Dependencies must not be disabled.")
 
