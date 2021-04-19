@@ -44,6 +44,9 @@ from lp.buildmaster.enums import (
     BuildQueueStatus,
     BuildStatus,
     )
+from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    IBuildFarmJobBehaviour,
+    )
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.enums import (
     PersonVisibility,
@@ -1883,8 +1886,9 @@ class TestArchiveDependencies(TestCaseWithFactory):
                 PackagePublishingPocket.RELEASE)
             build = self.factory.makeBinaryPackageBuild(archive=p3a,
                 distroarchseries=bpph.distroarchseries)
+            behaviour = IBuildFarmJobBehaviour(build)
             sources_list, trusted_keys = yield get_sources_list_for_building(
-                build, build.distro_arch_series,
+                behaviour, build.distro_arch_series,
                 build.source_package_release.name)
             matches = MatchesRegex(
                 "deb http://buildd:sekrit@private-ppa.launchpad.test/"
@@ -2140,8 +2144,10 @@ class TestOverlays(TestCaseWithFactory):
         self._createDep(
             test_publisher, series11, 'series12', 'depdistro4', 'multiverse',
             PackagePublishingPocket.UPDATES)
+        behaviour = IBuildFarmJobBehaviour(build)
         sources_list, trusted_keys = yield get_sources_list_for_building(
-            build, build.distro_arch_series, build.source_package_release.name)
+            behaviour, build.distro_arch_series,
+            build.source_package_release.name)
 
         self.assertThat(
             "\n".join(sources_list),

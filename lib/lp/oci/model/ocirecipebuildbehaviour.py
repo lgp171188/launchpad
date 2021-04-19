@@ -128,7 +128,7 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
         args["name"] = build.recipe.name
         args["archives"], args["trusted_keys"] = (
             yield get_sources_list_for_building(
-                build, build.distro_arch_series, None,
+                self, build.distro_arch_series, None,
                 tools_source=None, tools_fingerprint=None,
                 logger=logger))
 
