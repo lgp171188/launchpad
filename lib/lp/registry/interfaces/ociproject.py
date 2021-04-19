@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'CannotDeleteOCIProject',
     'IOCIProject',
     'IOCIProjectSet',
     'OCI_PROJECT_ALLOW_CREATE',
@@ -16,6 +17,7 @@ __all__ = [
 from lazr.restful.declarations import (
     call_with,
     error_status,
+    export_destructor_operation,
     export_factory_operation,
     exported,
     exported_as_webservice_entry,
@@ -58,6 +60,11 @@ from lp.services.fields import (
 
 
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
+
+
+@error_status(http_client.BAD_REQUEST)
+class CannotDeleteOCIProject(Exception):
+    """The OCIProject cannnot be deleted."""
 
 
 class IOCIProjectView(IHasGitRepositories, Interface):
@@ -159,6 +166,16 @@ class IOCIProjectEdit(Interface):
 
     def setOfficialRecipeStatus(recipe, status):
         """Change whether an OCI Recipe is official or not for this project."""
+
+    @export_destructor_operation()
+    @operation_for_version('devel')
+    def destroySelf():
+        """Delete this OCI project.
+
+        Any OCI recipe and git repository related to this OCI project should
+        be deleted beforehand. OCIProjectSeries objects are automatically
+        deleted.
+        """
 
 
 class IOCIProjectLegitimate(Interface):

@@ -46,6 +46,7 @@ from lp.code.model.branchnamespace import (
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
+    CannotDeleteOCIProject,
     IOCIProject,
     IOCIProjectSet,
     )
@@ -296,6 +297,28 @@ class OCIProject(BugTargetBase, StormBase):
     def getDefaultGitRepositoryPath(self, person):
         namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
         return namespace.name
+
+    def destroySelf(self):
+        """See `IOCIProject`."""
+        from lp.oci.model.ocirecipe import OCIRecipe
+        from lp.code.model.gitrepository import GitRepository
+
+        exists_recipes = not IStore(OCIRecipe).find(
+            OCIRecipe,
+            OCIRecipe.oci_project == self).is_empty()
+        if exists_recipes:
+            raise CannotDeleteOCIProject("This OCI recipe contains recipes.")
+
+        git_repos = IStore(GitRepository).find(
+            GitRepository, GitRepository.oci_project == self)
+        if not git_repos.is_empty():
+            repos = ", ".join(repo.display_name for repo in git_repos)
+            raise CannotDeleteOCIProject(
+                "There are git repositories associated with this OCI project: "
+                + repos)
+        for series in self.series:
+            series.destroySelf()
+        IStore(self).remove(self)
 
 
 @implementer(IOCIProjectSet)
