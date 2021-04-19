@@ -1444,7 +1444,6 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         builds = recipe.requestBuildsFromJob(self.person, build_request)
         job = removeSecurityProxy(build_request).job
         removeSecurityProxy(job).builds = builds
-        #builds[0].queueBuild()
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
             Build status
