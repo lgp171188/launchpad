@@ -198,8 +198,8 @@ class OCIProject(BugTargetBase, StructuralSubscriptionTargetMixin, StormBase):
         return self.pillar.bug_supervisor
 
     def getAllowedBugInformationTypes(self):
-        """See `IDistribution.`"""
-        return FREE_INFORMATION_TYPES
+        """See `IOCIProject.`"""
+        return self.pillar.getAllowedBugInformationTypes()
 
     def getBugSummaryContextWhereClause(self):
         """See BugTargetBase."""
