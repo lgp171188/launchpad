@@ -90,6 +90,9 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
         BuildRequest.
         """
 
+    def build_status():
+        """Return the status of the builds and the upload to a registry."""
+
 
 class IOCIRecipeRequestBuildsJobSource(IJobSource):
 

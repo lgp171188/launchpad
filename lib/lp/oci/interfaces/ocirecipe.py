@@ -280,6 +280,15 @@ class IOCIRecipeView(Interface):
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface), readonly=True)
 
+    completed_builds_without_build_request = CollectionField(
+        title=_("Completed builds of this OCI recipe."),
+        description=_(
+            "Completed builds of this OCI recipe, sorted in descending "
+            "order of finishing that do no have a corresponding "
+            "build request"),
+        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
+        value_type=Reference(schema=Interface), readonly=True)
+
     pending_builds = CollectionField(
         title=_("Pending builds of this OCI recipe."),
         description=_(
@@ -585,4 +594,26 @@ class IOCIRecipeSet(Interface):
 
         After this, any OCI recipes that previously used this repository
         will have no source and so cannot dispatch new builds.
+        """
+
+    def getStatusSummaryForBuilds(builds):
+        """Return a summary of the build status for the given builds.
+
+        The returned summary includes a status, a description of
+        that status and the builds related to the status.
+
+        :param builds: A list of build records.
+        :type builds: ``list``
+        :return: A dict consisting of the build status summary for the
+            given builds. For example:
+                {
+                    'status': BuildSetStatus.FULLYBUILT,
+                    'builds': [build1, build2]
+                }
+            or, an example where there are currently some builds building:
+                {
+                    'status': BuildSetStatus.BUILDING,
+                    'builds':[build3]
+                }
+        :rtype: ``dict``.
         """

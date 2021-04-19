@@ -1255,25 +1255,53 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
                         "OCI recipe breadcrumb", "li",
                         text=re.compile(r"\srecipe-name\s")))))
 
+    def makeRecipe(self, processor_names, **kwargs):
+        recipe = self.factory.makeOCIRecipe(**kwargs)
+        processors_list = []
+        distroseries = self.factory.makeDistroSeries(
+            distribution=recipe.oci_project.distribution)
+        for proc_name in processor_names:
+            proc = getUtility(IProcessorSet).getByName(proc_name)
+            distro = self.factory.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag=proc_name,
+                processor=proc)
+            distro.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            processors_list.append(proc)
+        recipe.setProcessors(processors_list)
+        return recipe
+
     def test_index(self):
         oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution)
-        oci_project_name = oci_project.name
         oci_project_display = oci_project.display_name
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
             paths=["refs/heads/master"])
-        recipe = self.makeOCIRecipe(
-            oci_project=oci_project, git_ref=ref, build_file="Dockerfile")
+        recipe = self.makeRecipe(
+            processor_names=["amd64", "386"],
+            build_file="Dockerfile", git_ref=ref,
+            oci_project=oci_project, registrant=self.person, owner=self.person)
+        build_request = recipe.requestBuilds(self.person)
+        builds = recipe.requestBuildsFromJob(self.person, build_request)
+        job = removeSecurityProxy(build_request).job
+        removeSecurityProxy(job).builds = builds
+
+        for build in builds:
+            removeSecurityProxy(build).updateStatus(
+                    BuildStatus.BUILDING, builder=None,
+                    date_started=build.date_created)
+            removeSecurityProxy(build).updateStatus(
+                BuildStatus.FULLYBUILT, builder=None,
+                date_finished=build.date_started + timedelta(minutes=30))
+
+        # We also need to account for builds that don't have a build_request
         build = self.makeBuild(
             recipe=recipe, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
 
-        browser = self.getViewBrowser(build.recipe)
+        browser = self.getViewBrowser(build_request.recipe)
         login_person(self.person)
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
-            %s OCI project
-            recipe-name
             .*
             OCI recipe information
             Owner: Test Person
@@ -1285,9 +1313,33 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Official recipe:
             No
             Latest builds
-            Status When complete Architecture
-            Successfully built 30 minutes ago 386
-            """ % (oci_project_name, oci_project_display, recipe.build_path),
+            Build status
+            Upload status
+            When requested
+            When complete
+            All builds were built successfully.
+            No registry upload requested.
+            a moment ago
+            in 29 minutes
+            amd64
+            Successfully built
+            386
+            Successfully built
+            amd64
+            in 29 minutes
+            386
+            in 29 minutes
+            All builds were built successfully.
+            No registry upload requested.
+            1 hour ago
+            30 minutes ago
+            386
+            Successfully built
+            386
+            30 minutes ago
+            Recipe push rules
+            This OCI recipe has no push rules defined yet.
+            """ % (oci_project_display, recipe.build_path),
             extract_text(find_main_content(browser.contents)))
 
         # Check portlet on side menu.
@@ -1346,8 +1398,18 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Official recipe:
             No
             Latest builds
-            Status When complete Architecture
-            Successfully built 30 minutes ago 386
+            Build status
+            Upload status
+            When requested
+            When complete
+            All builds were built successfully.
+            No registry upload requested.
+            1 hour ago
+            30 minutes ago
+            386
+            Successfully built
+            386
+            30 minutes ago
             """ % (oci_project_name, oci_project_display, build_path),
             self.getMainText(build.recipe))
 
@@ -1389,8 +1451,18 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Official recipe:
             No
             Latest builds
-            Status When complete Architecture
-            Successfully built 30 minutes ago 386
+            Build status
+            Upload status
+            When requested
+            When complete
+            All builds were built successfully.
+            No registry upload requested.
+            1 hour ago
+            30 minutes ago
+            386
+            Successfully built
+            386
+            30 minutes ago
             """ % (oci_project_name, oci_project_display, build_path),
             main_text)
 
@@ -1401,8 +1473,20 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         build.setLog(self.factory.makeLibraryFileAlias())
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
-            Status When complete Architecture
-            Successfully built 30 minutes ago buildlog \(.*\) 386
+            Build status
+            Upload status
+            When requested
+            When complete
+            All builds were built successfully.
+            No registry upload requested.
+            1 hour ago
+            30 minutes ago
+            386
+            buildlog
+            \(.*\)
+            Successfully built
+            386
+            30 minutes ago
             """, self.getMainText(build.recipe))
 
     def test_index_no_builds(self):
@@ -1414,13 +1498,29 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
 
     def test_index_pending_build(self):
         # A pending build is listed as such.
-        build = self.makeBuild()
-        build.queueBuild()
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="recipe-repository",
+            paths=["refs/heads/master"])
+        recipe = self.makeRecipe(
+            processor_names=["amd64", "386"],
+            build_file="Dockerfile", git_ref=ref,
+            oci_project=oci_project, registrant=self.person, owner=self.person)
+        build_request = recipe.requestBuilds(self.person)
+        builds = recipe.requestBuildsFromJob(self.person, build_request)
+        job = removeSecurityProxy(build_request).job
+        removeSecurityProxy(job).builds = builds
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
             Latest builds
-            Status When complete Architecture
-            Needs building in .* \(estimated\) 386
-            """, self.getMainText(build.recipe))
+            Build status
+            Upload status
+            When requested
+            When complete
+            There are some builds waiting to be built.
+            a moment ago
+            in .* \(estimated\)
+            """, self.getMainText(recipe))
 
     def test_index_request_builds_link(self):
         # Recipe owners get a link to allow requesting builds.
@@ -1530,24 +1630,6 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
             jobs = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
             with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
                 JobRunner(jobs).runAll()
-
-    def test_pending_build_requests_not_shown_if_absent(self):
-        self.recipe.requestBuilds(self.recipe.owner)
-        browser = self.getViewBrowser(self.recipe, user=self.person)
-        content = extract_text(find_main_content(browser.contents))
-        self.assertIn(
-            "You have 1 pending build request. "
-            "The builds should start automatically soon.",
-            content.replace("\n", " "))
-
-        # Run the build request, so we don't have any pending one. The
-        # message should be gone then.
-        self.runRequestBuildJobs()
-        browser = self.getViewBrowser(self.recipe, user=self.person)
-        content = extract_text(find_main_content(browser.contents))
-        self.assertNotIn(
-            "The builds should start automatically soon.",
-            content.replace("\n", " "))
 
     def test_request_builds_action(self):
         # Requesting a build creates pending builds.
