@@ -902,13 +902,6 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")
 
-    def test_issueMacaroon_refuses_public_snap(self):
-        build = self.factory.makeSnapBuild()
-        issuer = getUtility(IMacaroonIssuer, "snap-build")
-        self.assertRaises(
-            BadMacaroonContext, removeSecurityProxy(issuer).issueMacaroon,
-            build)
-
     def test_issueMacaroon_good(self):
         build = self.factory.makeSnapBuild(
             snap=self.factory.makeSnap(private=True))
@@ -966,6 +959,18 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
             distribution=build.archive.distribution, private=True)
         build.archive.addArchiveDependency(
             dependency, PackagePublishingPocket.RELEASE)
+        build.updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "snap-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertMacaroonVerifies(issuer, macaroon, dependency)
+
+    def test_verifyMacaroon_good_snap_base_archive(self):
+        snap_base = self.factory.makeSnapBase()
+        dependency = self.factory.makeArchive(private=True)
+        snap_base.addArchiveDependency(
+            dependency, PackagePublishingPocket.RELEASE)
+        build = self.factory.makeSnapBuild(snap_base=snap_base)
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
             getUtility(IMacaroonIssuer, "snap-build"))

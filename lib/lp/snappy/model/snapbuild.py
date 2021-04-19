@@ -93,6 +93,7 @@ from lp.snappy.interfaces.snapbuild import (
     )
 from lp.snappy.interfaces.snapbuildjob import ISnapStoreUploadJobSource
 from lp.snappy.mail.snapbuild import SnapBuildMailer
+from lp.snappy.model.snapbase import SnapBase
 from lp.snappy.model.snapbuildjob import (
     SnapBuildJob,
     SnapBuildJobType,
@@ -656,9 +657,9 @@ class SnapBuildMacaroonIssuer(MacaroonIssuerBase):
         """
         if not ISnapBuild.providedBy(context):
             raise BadMacaroonContext(context)
-        if not removeSecurityProxy(context).is_private:
-            raise BadMacaroonContext(
-                context, "Refusing to issue macaroon for public build.")
+        # We allow issuing macaroons for public builds.  It's harmless, and
+        # it allows using SnapBases that have archive dependencies on
+        # private PPAs.
         return removeSecurityProxy(context).id
 
     def checkVerificationContext(self, context, **kwargs):
@@ -712,6 +713,11 @@ class SnapBuildMacaroonIssuer(MacaroonIssuerBase):
                         Archive.id,
                         where=And(
                             ArchiveDependency.archive == Archive.id,
+                            ArchiveDependency.dependency == context))),
+                    SnapBuild.snap_base_id.is_in(Select(
+                        SnapBase.id,
+                        where=And(
+                            ArchiveDependency.snap_base == SnapBase.id,
                             ArchiveDependency.dependency == context)))))
         else:
             return False
