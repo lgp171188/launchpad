@@ -94,22 +94,24 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         self.setUpStats()
 
     @defer.inlineCallbacks
-    def assertExpectedInteraction(self, call_log, builder, build, chroot,
-                                  archive, archive_purpose, component=None,
-                                  extra_uploads=None, filemap_names=None):
+    def assertExpectedInteraction(self, call_log, builder, build, behaviour,
+                                  chroot, archive, archive_purpose,
+                                  component=None, extra_uploads=None,
+                                  filemap_names=None):
         expected = yield self.makeExpectedInteraction(
-            builder, build, chroot, archive, archive_purpose, component,
-            extra_uploads, filemap_names)
+            builder, build, behaviour, chroot, archive, archive_purpose,
+            component, extra_uploads, filemap_names)
         self.assertEqual(expected, call_log)
 
     @defer.inlineCallbacks
-    def makeExpectedInteraction(self, builder, build, chroot, archive,
-                                archive_purpose, component=None,
+    def makeExpectedInteraction(self, builder, build, behaviour, chroot,
+                                archive, archive_purpose, component=None,
                                 extra_uploads=None, filemap_names=None):
         """Build the log of calls that we expect to be made to the slave.
 
         :param builder: The builder we are using to build the binary package.
         :param build: The build being done on the builder.
+        :param behaviour: The build behaviour.
         :param chroot: The `LibraryFileAlias` for the chroot in which we are
             building.
         :param archive: The `IArchive` into which we are building.
@@ -123,7 +125,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         ds_name = das.distroseries.name
         suite = ds_name + pocketsuffix[build.pocket]
         archives, trusted_keys = yield get_sources_list_for_building(
-            build, das, build.source_package_release.name)
+            behaviour, das, build.source_package_release.name)
         arch_indep = das.isNominatedArchIndep
         if component is None:
             component = build.current_component.name
@@ -178,11 +180,11 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
+        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
         yield interactor._startBuild(
-            bq, vitals, builder, slave,
-            interactor.getBuildBehaviour(bq, builder, slave), BufferLogger())
+            bq, vitals, builder, slave, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, lf, archive,
+            slave.call_log, builder, build, behaviour, lf, archive,
             ArchivePurpose.PRIMARY, 'universe')
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
@@ -213,11 +215,11 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
+        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
         yield interactor._startBuild(
-            bq, vitals, builder, slave,
-            interactor.getBuildBehaviour(bq, builder, slave), BufferLogger())
+            bq, vitals, builder, slave, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, lf, archive,
+            slave.call_log, builder, build, behaviour, lf, archive,
             ArchivePurpose.PRIMARY, 'main')
 
     @defer.inlineCallbacks
@@ -236,11 +238,12 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
+        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
         yield interactor._startBuild(
-            bq, vitals, builder, slave,
-            interactor.getBuildBehaviour(bq, builder, slave), BufferLogger())
+            bq, vitals, builder, slave, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, lf, archive, ArchivePurpose.PPA)
+            slave.call_log, builder, build, behaviour, lf, archive,
+            ArchivePurpose.PPA)
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
@@ -273,11 +276,12 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
+        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
         yield interactor._startBuild(
-            bq, vitals, builder, slave,
-            interactor.getBuildBehaviour(bq, builder, slave), BufferLogger())
+            bq, vitals, builder, slave, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, lf, archive, ArchivePurpose.PPA,
+            slave.call_log, builder, build, behaviour, lf, archive,
+            ArchivePurpose.PPA,
             extra_uploads=[(sprf_url, 'buildd', 'sekrit')],
             filemap_names=[sprf.libraryfile.filename])
 
@@ -297,11 +301,11 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         bq = build.queueBuild()
         bq.markAsBuilding(builder)
         interactor = BuilderInteractor()
+        behaviour = interactor.getBuildBehaviour(bq, builder, slave)
         yield interactor._startBuild(
-            bq, vitals, builder, slave,
-            interactor.getBuildBehaviour(bq, builder, slave), BufferLogger())
+            bq, vitals, builder, slave, behaviour, BufferLogger())
         yield self.assertExpectedInteraction(
-            slave.call_log, builder, build, lf, archive,
+            slave.call_log, builder, build, behaviour, lf, archive,
             ArchivePurpose.PARTNER)
 
     def test_dont_dispatch_release_builds(self):

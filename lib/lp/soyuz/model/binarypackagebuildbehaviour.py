@@ -22,6 +22,8 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.config import config
+from lp.services.twistedsupport import cancel_on_timeout
 from lp.services.webapp import urlappend
 from lp.soyuz.adapters.archivedependencies import (
     get_primary_current_component,
@@ -131,6 +133,14 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
                     (build.title, build.id, build.pocket.name,
                      build.distro_series.name))
 
+    def issueMacaroon(self):
+        """See `IBuildFarmJobBehaviour`."""
+        return cancel_on_timeout(
+            self._authserver.callRemote(
+                "issueMacaroon", "binary-package-build", "BinaryPackageBuild",
+                self.build.id),
+            config.builddmaster.authentication_timeout)
+
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """
@@ -165,7 +175,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
 
         args['archives'], args['trusted_keys'] = (
             yield get_sources_list_for_building(
-                build, das, build.source_package_release.name, logger=logger))
+                self, das, build.source_package_release.name, logger=logger))
         args['build_debug_symbols'] = build.archive.build_debug_symbols
 
         defer.returnValue(args)

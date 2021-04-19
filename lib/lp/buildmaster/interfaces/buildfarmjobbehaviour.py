@@ -25,6 +25,8 @@ class IBuildFarmJobBehaviour(Interface):
         "A list of `BuildBaseImageType`s indicating which types of base "
         "images can be used for this build.")
 
+    build = Attribute("The `IBuildFarmJob` to build.")
+
     archive = Attribute("The `Archive` to build against.")
 
     distro_arch_series = Attribute("The `DistroArchSeries` to build against.")
@@ -42,6 +44,15 @@ class IBuildFarmJobBehaviour(Interface):
             'url': URL from which the builder can fetch content
             'username' (optional): username to authenticate as
             'password' (optional): password to authenticate with
+        """
+
+    def issueMacaroon():
+        """Issue a macaroon to access private resources for this build.
+
+        :raises NotImplementedError: if the build type does not support
+            accessing private resources.
+        :return: A Deferred that calls back with a serialized macaroon or a
+            fault.
         """
 
     def extraBuildArgs(logger=None):

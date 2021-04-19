@@ -89,6 +89,10 @@ class BuildFarmJobBehaviourBase:
         """The default behaviour is to send no files."""
         return {}
 
+    def issueMacaroon(self):
+        raise NotImplementedError(
+            "This build type does not support accessing private resources.")
+
     def extraBuildArgs(self, logger=None):
         """The default behaviour is to send only common extra arguments."""
         args = {}
