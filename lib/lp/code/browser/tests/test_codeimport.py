@@ -10,6 +10,7 @@ __metaclass__ = type
 import re
 
 from testtools.matchers import StartsWith
+from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 
 from lp.code.enums import (
@@ -17,7 +18,9 @@ from lp.code.enums import (
     RevisionControlSystems,
     TargetRevisionControlSystems,
     )
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.tests.helpers import GitHostingFixture
+from lp.registry.enums import VCSType
 from lp.services.webapp import canonical_url
 from lp.testing import (
     admin_logged_in,
@@ -36,18 +39,19 @@ class TestImportDetails(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def assertImportDetailsDisplayed(self, code_import, details_id,
+    def assertImportDetailsDisplayed(self, context, details_id,
                                      prefix_text, span_title=None):
         """A code import has its details displayed properly.
 
-        :param code_import: An `ICodeImport`.
+        :param context: A context object (`ICodeImport` or `IProduct`).
         :param details_id: The HTML tag id to search for.
         :param prefix_text: An expected prefix of the details text.
         :param span_title: If present, the expected contents of a span title
             attribute.
         """
-        browser = self.getUserBrowser(canonical_url(code_import.target))
+        browser = self.getUserBrowser(canonical_url(context, rootsite='code'))
         details = find_tag_by_id(browser.contents, details_id)
+        self.assertIsNotNone(details)
         if span_title is not None:
             self.assertEqual(span_title, details.span['title'])
         text = re.sub(r'\s+', ' ', extract_text(details))
@@ -59,7 +63,7 @@ class TestImportDetails(TestCaseWithFactory):
         code_import = self.factory.makeCodeImport(
             rcs_type=RevisionControlSystems.BZR_SVN)
         self.assertImportDetailsDisplayed(
-            code_import, 'svn-import-details',
+            code_import.target, 'svn-import-details',
             'This branch is an import of the Subversion branch',
             span_title=RevisionControlSystems.BZR_SVN.title)
 
@@ -71,7 +75,23 @@ class TestImportDetails(TestCaseWithFactory):
             rcs_type=RevisionControlSystems.GIT,
             target_rcs_type=TargetRevisionControlSystems.GIT)
         self.assertImportDetailsDisplayed(
-            code_import, 'git-import-details',
+            code_import.target, 'git-import-details',
+            'This repository is an import of the Git repository')
+
+    def test_git_to_git_import_product(self):
+        # The index page for a product should state that a repository
+        # is imported.
+        self.useFixture(GitHostingFixture())
+        code_import = self.factory.makeCodeImport(
+            rcs_type=RevisionControlSystems.GIT,
+            target_rcs_type=TargetRevisionControlSystems.GIT)
+        product = code_import.target.target
+        with person_logged_in(product.owner):
+            product.vcs = VCSType.GIT
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                target=product, repository=code_import.target)
+        self.assertImportDetailsDisplayed(
+            product, 'git-import-details',
             'This repository is an import of the Git repository')
 
     def test_other_users_are_forbidden_to_change_codeimport(self):
