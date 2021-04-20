@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Views, navigation and actions for BranchMergeProposals."""
@@ -88,6 +88,7 @@ from lp.code.errors import (
     BranchMergeProposalExists,
     ClaimReviewFailed,
     DiffNotFound,
+    GitRepositoryScanFault,
     InvalidBranchMergeProposal,
     WrongBranchMergeProposal,
     )
@@ -131,6 +132,12 @@ from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.menu import NavigationMenu
+
+
+GIT_HOSTING_ERROR_MSG = (
+    "There was an error fetching revisions from git servers. "
+    "Please try again in a few minutes. If the problem persists, "
+    "<a href='/launchpad/+addquestion'>contact Launchpad support</a>.")
 
 
 def latest_proposals_for_each_branch(proposals):
@@ -359,10 +366,14 @@ class BranchMergeProposalActionNavigationMenu(NavigationMenu,
 
 class UnmergedRevisionsMixin:
     """Provides the methods needed to show unmerged revisions."""
+    # This is set at self.unlanded_revisions, and should be used at view level
+    # as self.commit_infos_message (see git-macros.pt).
+    _unlanded_revisions_message = None
 
     @cachedproperty
     def unlanded_revisions(self):
         """Return the unlanded revisions from the source branch."""
+        self._unlanded_revisions_message = ''
         with reduced_timeout(1.0, webapp_max=5.0):
             try:
                 return self.context.getUnlandedSourceBranchRevisions()
@@ -374,6 +385,18 @@ class UnmergedRevisionsMixin:
                         self.context.merge_source.identity,
                         self.context.merge_target.identity))
                 return []
+            except GitRepositoryScanFault as e:
+                log.exception("Error scanning git repository: %s" % e)
+                self._unlanded_revisions_message = GIT_HOSTING_ERROR_MSG
+                return []
+
+    @property
+    def commit_infos_message(self):
+        if self._unlanded_revisions_message is None:
+            # Evaluating unlanded_revisions so it updates
+            # self._unlanded_revisions_message.
+            self.unlanded_revisions
+        return self._unlanded_revisions_message
 
     @property
     def pending_updates(self):
@@ -664,6 +687,7 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
         merge_proposal = self.context
         with reduced_timeout(1.0, webapp_max=5.0):
             try:
+                self._conversation_message = ''
                 groups = list(merge_proposal.getRevisionsSinceReviewStart())
             except TimeoutError:
                 log.exception(
@@ -672,6 +696,10 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
                         merge_proposal.id,
                         merge_proposal.merge_source.identity,
                         merge_proposal.merge_target.identity))
+                groups = []
+            except GitRepositoryScanFault as e:
+                log.exception("Error scanning git repository: %s" % e)
+                self._conversation_message = GIT_HOSTING_ERROR_MSG
                 groups = []
         source = merge_proposal.merge_source
         if IBranch.providedBy(source):
@@ -709,6 +737,14 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
             comments = [c for c in comments if c.visible or c.author == user]
         self._populate_previewdiffs(comments)
         return CodeReviewConversation(comments)
+
+    @property
+    def conversation_message(self):
+        if self._conversation_message is None:
+            # Evaluating self.conversation so it updates
+            # self._conversation_message.
+            self.conversation
+        return self._conversation_message
 
     def _populate_previewdiffs(self, comments):
         """Lookup and populate caches for 'previewdiff_id'.
