@@ -235,8 +235,9 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
             log.error("There was an error fetching git commit info: %s" % e)
             self._commit_info_message = (
                 "There was an error while fetching commit information from "
-                "code hosting service. Please, try again in some minutes. "
-                "If the problem persists, contact Launchpad support.")
+                "code hosting service. Please try again in a few minutes. "
+                'If the problem persists, <a href="/launchpad/+addquestion">'
+                "contact Launchpad support</a>.")
             return []
         except Exception as e:
             log.error("There was an error scanning %s: (%s) %s" %
@@ -245,6 +246,8 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
 
     def commit_infos_message(self):
         if self._commit_info_message is None:
+            # Evaluating self.commit infos so it updates
+            # self._commit_info_message.
             self.commit_infos
         return self._commit_info_message
 

@@ -145,7 +145,7 @@
   </style>
   <dl class="commit">
     <div tal:condition="view/commit_infos_message" class="pending-update">
-      <p tal:content="view/commit_infos_message" />
+      <p tal:content="structure view/commit_infos_message" />
     </div>
     <tal:commit repeat="commit_info commit_infos">
       <metal:commit-text use-macro="ref/@@+macros/commit-text"/>

@@ -132,8 +132,8 @@
 
     <div id="conversation"
          tal:content="structure view/conversation/@@+render"/>
-     <div tal:condition="view/conversation_message" class="pending-update">
-      <p tal:content="view/conversation_message" />
+    <div tal:condition="view/conversation_message" class="pending-update">
+      <p tal:content="structure view/conversation_message" />
     </div>
   </div>
 

@@ -49,6 +49,7 @@ from lp.testing.layers import (
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
     extract_text,
+    find_main_content,
     find_tags_by_class,
     )
 from lp.testing.views import (
@@ -166,21 +167,12 @@ class TestGitRefView(BrowserTestCase):
         # the error message telling us that git hosting is having problems.
         browser = self.getUserBrowser(url, ref.owner)
 
-        recent_commits_tag = soupmatchers.Tag(
-            "recent commits", "div", attrs={"id": "recent-commits"})
         error_msg = (
             "There was an error while fetching commit information from code "
-            "hosting service. Please, try again in some minutes. If the "
+            "hosting service. Please try again in a few minutes. If the "
             "problem persists, contact Launchpad support.")
-        self.assertThat(
-            browser.contents,
-            soupmatchers.HTMLContains(
-                soupmatchers.Within(
-                    recent_commits_tag,
-                    soupmatchers.Tag(
-                        'error msg', "div",
-                        text=error_msg,
-                        attrs={'class': "pending-update"}))))
+        self.assertIn(
+            error_msg, extract_text(find_main_content(browser.contents)))
 
     def test_clone_instructions(self):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])

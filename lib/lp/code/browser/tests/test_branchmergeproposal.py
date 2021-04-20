@@ -134,6 +134,7 @@ from lp.testing.layers import (
     )
 from lp.testing.pages import (
     extract_text,
+    find_main_content,
     find_tag_by_id,
     find_tags_by_class,
     first_tag_by_class,
@@ -305,13 +306,10 @@ class TestBranchMergeProposalMergedViewGit(
         browser = self.getUserBrowser(canonical_url(mp))
         error_msg = (
             "There was an error fetching revisions from git servers. "
-            "Please, try again in some minutes. If the problem persists, "
-            "contact Launchpad support.")
-        self.assertThat(
-            browser.contents, HTMLContains(Tag(
-                'error msg', "div",
-                text=error_msg,
-                attrs={'class': "pending-update"})))
+            "Please try again in a few minutes. If the problem persists, "
+            'contact Launchpad support.')
+        self.assertIn(
+            error_msg, extract_text(find_main_content(browser.contents)))
 
 
 class TestBranchMergeProposalAddVoteView(TestCaseWithFactory):

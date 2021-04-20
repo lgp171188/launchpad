@@ -136,8 +136,8 @@ from lp.services.webapp.menu import NavigationMenu
 
 GIT_HOSTING_ERROR_MSG = (
     "There was an error fetching revisions from git servers. "
-    "Please, try again in some minutes. If the problem persists, "
-    "contact Launchpad support.")
+    "Please try again in a few minutes. If the problem persists, "
+    "<a href='/launchpad/+addquestion'>contact Launchpad support</a>.")
 
 
 def latest_proposals_for_each_branch(proposals):
@@ -393,6 +393,8 @@ class UnmergedRevisionsMixin:
     @property
     def commit_infos_message(self):
         if self._unlanded_revisions_message is None:
+            # Evaluating unlanded_revisions so it updates
+            # self._unlanded_revisions_message.
             self.unlanded_revisions
         return self._unlanded_revisions_message
 
@@ -739,6 +741,8 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
     @property
     def conversation_message(self):
         if self._conversation_message is None:
+            # Evaluating self.conversation so it updates
+            # self._conversation_message.
             self.conversation
         return self._conversation_message
 
