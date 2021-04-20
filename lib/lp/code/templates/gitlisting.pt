@@ -84,6 +84,17 @@ git push --set-upstream origin master
         </p>
       </div>
 
+
+      <div id="repository-import-details"
+          class="yui-g"
+          tal:condition="repository/repository_type/enumvalue:IMPORTED">
+        <div class="portlet">
+          <h2>Import details</h2>
+          <tal:repository-import-details
+              replace="structure repository/@@++repository-import-details" />
+        </div>
+      </div>
+
       <div class="yui-g">
         <div id="default-repository-branches" class="portlet"
             tal:define="branches view/default_git_repository_branches">
