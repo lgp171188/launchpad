@@ -9,6 +9,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+import io
 import json
 import re
 
@@ -400,7 +401,8 @@ class TestErrorHandling(TestCaseWithFactory):
             owner, permission=OAuthPermission.WRITE_PUBLIC)
         response = webservice.named_post(
             bug_url, 'addAttachment',
-            comment='foo', data=b'foo', filename='/home/foo/bar.txt')
+            comment='foo', data=io.BytesIO(b'foo'),
+            filename='/home/foo/bar.txt')
         self.assertEqual(400, response.status)
 
 
