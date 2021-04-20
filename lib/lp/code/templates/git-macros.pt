@@ -144,8 +144,15 @@
     }
   </style>
   <dl class="commit">
-    <div tal:condition="view/commit_infos_message" class="pending-update">
-      <p tal:content="structure view/commit_infos_message" />
+    <tal:comment condition="nothing">
+        commit_infos_message is not mandatory, and it's used to communicate
+        error messages. It's ok if a view doesn't define it when including
+        this macro.
+    </tal:comment>
+    <div tal:define="commit_infos_message python: getattr(view, 'commit_infos_message', None)"
+         tal:condition="commit_infos_message"
+         class="pending-update">
+      <p tal:content="structure commit_infos_message" />
     </div>
     <tal:commit repeat="commit_info commit_infos">
       <metal:commit-text use-macro="ref/@@+macros/commit-text"/>
