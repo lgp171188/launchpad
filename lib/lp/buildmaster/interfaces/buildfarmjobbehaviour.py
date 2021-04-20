@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for build farm job behaviours."""
@@ -39,7 +39,8 @@ class IBuildFarmJobBehaviour(Interface):
     def determineFilesToSend():
         """Work out which files to send to the builder.
 
-        :return: A dict mapping filenames to dicts as follows::
+        :return: A dict mapping filenames to dicts as follows, or a Deferred
+                resulting in the same::
             'sha1': SHA-1 of file content
             'url': URL from which the builder can fetch content
             'username' (optional): username to authenticate as

@@ -1,4 +1,4 @@
-# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BinaryPackageBuildBehaviour."""
@@ -13,8 +13,14 @@ import shutil
 import tempfile
 
 from storm.store import Store
-from testtools.matchers import MatchesListwise
-from testtools.twistedsupport import AsynchronousDeferredRunTest
+from testtools.matchers import (
+    Equals,
+    MatchesListwise,
+    )
+from testtools.twistedsupport import (
+    AsynchronousDeferredRunTest,
+    AsynchronousDeferredRunTestForBrokenTwisted,
+    )
 import transaction
 from twisted.internet import defer
 from zope.component import getUtility
@@ -55,9 +61,11 @@ from lp.registry.interfaces.pocket import (
     )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
+from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.config import config
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import BufferLogger
+from lp.services.macaroons.testing import MacaroonVerifies
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
@@ -86,7 +94,8 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
     """
 
     layer = LaunchpadZopelessLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=30)
 
     def setUp(self):
         super(TestBinaryBuildPackageBehaviour, self).setUp()
@@ -98,10 +107,10 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
                                   chroot, archive, archive_purpose,
                                   component=None, extra_uploads=None,
                                   filemap_names=None):
-        expected = yield self.makeExpectedInteraction(
+        matcher = yield self.makeExpectedInteraction(
             builder, build, behaviour, chroot, archive, archive_purpose,
             component, extra_uploads, filemap_names)
-        self.assertEqual(expected, call_log)
+        self.assertThat(call_log, matcher)
 
     @defer.inlineCallbacks
     def makeExpectedInteraction(self, builder, build, behaviour, chroot,
@@ -135,7 +144,10 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             extra_uploads = []
 
         upload_logs = [
-            ('ensurepresent',) + upload
+            MatchesListwise(
+                [Equals('ensurepresent')] +
+                [item if hasattr(item, 'match') else Equals(item)
+                 for item in upload])
             for upload in [(chroot.http_url, '', '')] + extra_uploads]
 
         extra_args = {
@@ -157,7 +169,9 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         build_log = [
             ('build', build.build_cookie, 'binarypackage',
              chroot.content.sha1, filemap_names, extra_args)]
-        result = upload_logs + build_log
+        result = MatchesListwise([
+            item if hasattr(item, 'match') else Equals(item)
+            for item in upload_logs + build_log])
         defer.returnValue(result)
 
     @defer.inlineCallbacks
@@ -253,6 +267,9 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def test_private_source_dispatch(self):
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
         archive = self.factory.makeArchive(private=True)
         slave = OkSlave()
         builder = self.factory.makeBuilder()
@@ -282,7 +299,10 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         yield self.assertExpectedInteraction(
             slave.call_log, builder, build, behaviour, lf, archive,
             ArchivePurpose.PPA,
-            extra_uploads=[(sprf_url, 'buildd', 'sekrit')],
+            extra_uploads=[
+                (Equals(sprf_url),
+                 Equals('buildd'),
+                 MacaroonVerifies('binary-package-build', archive))],
             filemap_names=[sprf.libraryfile.filename])
 
     @defer.inlineCallbacks
