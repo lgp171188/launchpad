@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Builder behaviour for binary package builds."""
@@ -62,6 +62,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
             distroname, distroseriesname, archname, sourcename, version,
             state))
 
+    @defer.inlineCallbacks
     def determineFilesToSend(self):
         """See `IBuildFarmJobBehaviour`."""
         # Build filemap structure with the files required in this build
@@ -76,18 +77,21 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
                     self.build.source_package_release.sourcepackagename.name,
                     self.build.current_component.name))
         filemap = OrderedDict()
+        macaroon_raw = None
         for source_file in self.build.source_package_release.files:
             lfa = source_file.libraryfile
             if not self.build.archive.private:
                 filemap[lfa.filename] = {
                     'sha1': lfa.content.sha1, 'url': lfa.http_url}
             else:
+                if macaroon_raw is None:
+                    macaroon_raw = yield self.issueMacaroon()
                 filemap[lfa.filename] = {
                     'sha1': lfa.content.sha1,
                     'url': urlappend(pool_url, lfa.filename),
                     'username': 'buildd',
-                    'password': self.build.archive.buildd_secret}
-        return filemap
+                    'password': macaroon_raw}
+        defer.returnValue(filemap)
 
     def verifyBuildRequest(self, logger):
         """Assert some pre-build checks.
