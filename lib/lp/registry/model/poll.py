@@ -49,6 +49,7 @@ from lp.registry.interfaces.poll import (
     PollSecrecy,
     PollStatus,
     )
+from lp.registry.model.person import Person
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import sqlvalues
@@ -347,6 +348,8 @@ class PollSet:
         clauses = []
         if team is not None:
             clauses.append(Poll.team == team)
+        else:
+            clauses.extend([Poll.team == Person.id, Person.merged == None])
         clauses.append(Or(*status_clauses))
 
         results = IStore(Poll).find(Poll, *clauses)
