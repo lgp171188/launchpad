@@ -50,17 +50,14 @@ from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.diskpool import DiskPool
 from lp.archivepublisher.domination import Dominator
-from lp.archivepublisher.htaccess import (
-    htpasswd_credentials_for_archive,
-    write_htaccess,
-    write_htpasswd,
-    )
 from lp.archivepublisher.indices import (
     build_binary_stanza_fields,
     build_source_stanza_fields,
     build_translations_stanza_fields,
     )
-from lp.archivepublisher.interfaces.archivegpgsigningkey import ISignableArchive
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    ISignableArchive,
+    )
 from lp.archivepublisher.model.ftparchive import FTPArchiveHandler
 from lp.archivepublisher.utils import (
     get_ppa_reference,
@@ -164,27 +161,6 @@ def _getDiskPool(pubconf, log):
     dp.logger.setLevel(logging.INFO)
 
     return dp
-
-
-def _setupHtaccess(archive, pubconf, log):
-    """Setup .htaccess/.htpasswd files for an archive.
-    """
-    if not archive.private:
-        # FIXME: JRV 20101108 leftover .htaccess and .htpasswd files
-        # should be removed when support for making existing 3PA's public
-        # is added; bug=376072
-        return
-
-    htaccess_path = os.path.join(pubconf.archiveroot, ".htaccess")
-    htpasswd_path = os.path.join(pubconf.archiveroot, ".htpasswd")
-    # After the initial htaccess/htpasswd files
-    # are created generate_ppa_htaccess is responsible for
-    # updating the tokens.
-    if not os.path.exists(htaccess_path):
-        log.debug("Writing htaccess file.")
-        write_htaccess(htaccess_path, pubconf.archiveroot)
-        passwords = htpasswd_credentials_for_archive(archive)
-        write_htpasswd(htpasswd_path, passwords)
 
 
 def getPublisher(archive, allowed_suites, log, distsroot=None):
@@ -472,7 +448,6 @@ class Publisher(object):
     def setupArchiveDirs(self):
         self.log.debug("Setting up archive directories.")
         self._config.setupArchiveDirs()
-        _setupHtaccess(self.archive, self._config, self.log)
 
     def isDirty(self, distroseries, pocket):
         """True if a publication has happened in this release and pocket."""
