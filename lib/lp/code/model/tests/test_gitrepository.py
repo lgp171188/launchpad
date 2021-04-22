@@ -3938,8 +3938,8 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
         with person_logged_in(owner_db):
             self.assertRaises(
-                Unauthorized, getattr, repository_db, 'runGitGC')
-        self.assertEqual(0, hosting_fixture.runGitGC.call_count)
+                Unauthorized, getattr, repository_db, 'collectGarbage')
+        self.assertEqual(0, hosting_fixture.collectGarbage.call_count)
 
     def test_git_gc_admin(self):
         # Admins can trigger a git GC run
@@ -3949,11 +3949,11 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             owner=owner_db, name="repository")
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         with person_logged_in(admin):
-            repository_db.runGitGC()
+            repository_db.collectGarbage()
         self.assertEqual(
             [((repository_db.getInternalPath(),), {})],
-            hosting_fixture.runGitGC.calls)
-        self.assertEqual(1, hosting_fixture.runGitGC.call_count)
+            hosting_fixture.collectGarbage.calls)
+        self.assertEqual(1, hosting_fixture.collectGarbage.call_count)
 
     def test_git_gc_registry_expert(self):
         # Registry experts can trigger a Git GC run
@@ -3967,11 +3967,11 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             getUtility(ILaunchpadCelebrities).registry_experts.addMember(
                 person, admin)
         with person_logged_in(person):
-            repository_db.runGitGC()
+            repository_db.collectGarbage()
         self.assertEqual(
             [((repository_db.getInternalPath(),), {})],
-            hosting_fixture.runGitGC.calls)
-        self.assertEqual(1, hosting_fixture.runGitGC.call_count)
+            hosting_fixture.collectGarbage.calls)
+        self.assertEqual(1, hosting_fixture.collectGarbage.call_count)
 
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")

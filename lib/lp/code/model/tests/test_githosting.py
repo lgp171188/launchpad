@@ -506,7 +506,7 @@ class TestGitHostingClient(TestCase):
 
     def test_git_gc(self):
         with self.mockRequests("POST", status=200):
-            gc = self.client.runGitGC("/repo/123")
+            gc = self.client.collectGarbage("/repo/123")
         self.assertEqual(None, gc)
 
     def test_git_gc_failure(self):
@@ -515,4 +515,4 @@ class TestGitHostingClient(TestCase):
                 CannotRunGitGC,
                 "Failed to run Git GC for repository /repo/123: "
                 "400 Client Error: Bad Request",
-                self.client.runGitGC, "/repo/123")
+                self.client.collectGarbage, "/repo/123")

@@ -774,7 +774,7 @@ class IGitRepositoryExpensiveRequest(Interface):
 
     @export_write_operation()
     @operation_for_version("devel")
-    def runGitGC():
+    def collectGarbage():
         """Trigger a gc run for a given git repository.
 
         Raises Unauthorized if the repack was attempted by a person

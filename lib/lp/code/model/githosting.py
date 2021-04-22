@@ -326,7 +326,7 @@ class GitHostingClient:
                 "Failed to repack Git repository %s: %s" %
                 (path, six.text_type(e)))
 
-    def runGitGC(self, path, logger=None):
+    def collectGarbage(self, path, logger=None):
         """See `IGitHostingClient`."""
 
         url = "/repo/%s/gc" % path

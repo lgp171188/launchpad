@@ -157,7 +157,7 @@ class IGitHostingClient(Interface):
         :param logger: An optional logger.
         """
 
-    def runGitGC(path, logger=None):
+    def collectGarbage(path, logger=None):
         """Run Git GC for a repository.
 
         :param path: Physical path of the new repository on the hosting
