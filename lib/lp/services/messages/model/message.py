@@ -100,6 +100,8 @@ class Message(SQLBase):
     _table = 'Message'
     _defaultOrder = '-id'
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    date_deleted = UtcDateTimeCol(notNull=False, default=UTC_NOW)
+    date_last_edit = UtcDateTimeCol(notNull=False, default=UTC_NOW)
     subject = StringCol(notNull=False, default=None)
     owner = ForeignKey(
         dbName='owner', foreignKey='Person',
