@@ -27,6 +27,7 @@ from lp.app.browser.launchpadform import (
 from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
+from lp.code.interfaces.gitnamespace import get_git_namespace
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import IDistribution
@@ -225,11 +226,12 @@ class OCIProjectContextMenu(ContextMenu):
 class OCIProjectIndexView(LaunchpadView):
     @property
     def git_repository(self):
-        return self.context.getDefaultGitRepository(self.user)
+        return get_git_namespace(self.context, self.user).getByName(
+            self.context.name)
 
     @property
     def git_repository_path(self):
-        return self.context.getDefaultGitRepositoryPath(self.user)
+        return get_git_namespace(self.context, self.user).name
 
     @property
     def git_ssh_hostname(self):

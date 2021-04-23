@@ -38,6 +38,7 @@ from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.code.interfaces.gitnamespace import get_git_namespace
 from lp.oci.browser.ocirecipe import (
     OCIRecipeAdminView,
     OCIRecipeEditView,
@@ -394,8 +395,8 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             name=oci_project.name,
             target=oci_project, owner=self.person, registrant=self.person)
         with admin_logged_in():
-            default_repo_path = oci_project.getDefaultGitRepositoryPath(
-                self.person)
+            default_repo_path = (
+                get_git_namespace(oci_project, self.person).name)
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         error_message = (
@@ -992,7 +993,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             target=oci_project, owner=self.person, registrant=self.person)
 
         with person_logged_in(self.person):
-            default_repo = oci_project.getDefaultGitRepository(recipe.owner)
+            default_repo = get_git_namespace(
+                oci_project, recipe.owner).getByName(oci_project.name)
             repo_link = GitRepositoryFormatterAPI(default_repo).link('')
             browser = self.getViewBrowser(
                 recipe, view_name="+edit", user=self.person)

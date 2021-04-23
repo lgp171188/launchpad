@@ -64,6 +64,7 @@ from lp.app.widgets.itemswidgets import (
     )
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
+from lp.code.interfaces.gitnamespace import get_git_namespace
 from lp.oci.interfaces.ocipushrule import (
     IOCIPushRuleSet,
     OCIPushRuleAlreadyExists,
@@ -957,7 +958,8 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         """Setup GitRef widget indicating the user to use the default
         oci project's git repository, if possible.
         """
-        path = self.context.getDefaultGitRepositoryPath(self.user)
+        namespace = get_git_namespace(self.context, self.user)
+        path = namespace.name
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
         widget.setBranchFormatValidator(self._branch_format_validator)
@@ -965,7 +967,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         if widget.error():
             # Do not override more important git_ref errors.
             return
-        default_repo = self.context.getDefaultGitRepository(self.user)
+        default_repo = namespace.getByName(self.context.name)
         if default_repo is None:
             msg = (
                 "Your git repository for this OCI project was not created yet."
@@ -1122,7 +1124,8 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         if self.context.git_ref.namespace.target != self.context.oci_project:
             msg = ("This recipe's git repository is not in the "
                    "correct namespace.<br/>")
-            default_repo = oci_proj.getDefaultGitRepository(self.context.owner)
+            default_repo = get_git_namespace(
+                oci_proj, self.context.owner).getByName(oci_proj.name)
             if default_repo:
                 link = GitRepositoryFormatterAPI(default_repo).link('')
                 msg += "Consider using %s instead." % link
