@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the repack_git_repositories script."""
+import logging
 import threading
 from wsgiref.simple_server import (
     make_server,
@@ -11,6 +12,7 @@ from wsgiref.simple_server import (
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
+from lp.code.scripts.repackgitrepository import RepackTunableLoop
 from lp.services.config import config
 from lp.services.config.fixture import (
     ConfigFixture,
@@ -67,6 +69,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
     def setUp(self):
         super(TestRequestGitRepack, self).setUp()
+        self.log = logging.getLogger('repack')
 
     def runScript_no_Turnip(self):
         transaction.commit()
@@ -135,7 +138,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
     def test_auto_repack_with_Turnip_multiple_repos(self):
         # Test repack works when 10 repositories
-        # qualifies for a repack
+        # qualify for a repack
         repo = []
         for i in range(10):
             repo.append(self.factory.makeGitRepository())
@@ -152,3 +155,34 @@ class TestRequestGitRepack(TestCaseWithFactory):
             self.assertIsNotNone(repo[i].date_last_repacked)
             self.assertEqual("/repo/%s/repack" % repo[i].getInternalPath(),
                              self.turnip_server.app.contents[i])
+
+    def test_auto_repack_loop_throttle(self):
+        repacker = FooRepackTunableLoop(self.log, None)
+
+        # Test repack works when 10 repositories
+        # qualifies for a repack but throttle at 7
+        repo = []
+        for i in range(10):
+            repo.append(self.factory.makeGitRepository())
+            repo[i] = removeSecurityProxy(repo[i])
+            repo[i].loose_object_count = 7000
+            repo[i].pack_count = 43
+        transaction.commit()
+
+        # Confirm the initial state is sane.
+        self.assertFalse(repacker.isDone())
+
+        self.makeTurnipServer()
+
+        # Run one loop.
+        repacker(5)
+
+        # although we would have 5 more repos that qualify for a repack at
+        # this point we stop at "targets" defined as 7 for this test but 1 000
+        # in reality
+        self.assertTrue(repacker.isDone())
+
+
+class FooRepackTunableLoop(RepackTunableLoop):
+    maximum_chunk_size = 3
+    targets = 7

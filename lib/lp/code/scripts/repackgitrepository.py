@@ -27,12 +27,16 @@ from lp.services.looptuner import (
 class RepackTunableLoop(TunableLoop):
     tuner_class = LoopTuner
     maximum_chunk_size = 5
+    # we stop requesting repacks once we've reached
+    # 1000 requests in one run
+    targets = 1000
 
     def __init__(self, log, dry_run, abort_time=None):
         super(RepackTunableLoop, self).__init__(log, abort_time)
         self.dry_run = dry_run
         self.start_at = 0
         self.logger = log
+        self.offset = 0
         self.store = IStore(GitRepository)
 
     def findRepackCandidates(self):
@@ -49,7 +53,10 @@ class RepackTunableLoop(TunableLoop):
         return repos
 
     def isDone(self):
-        return self.findRepackCandidates().is_empty()
+        # we stop at maximum 1000 or when we have no repositories
+        # that are valid repack candidates
+        return (self.findRepackCandidates().is_empty() or
+                self.offset >= self.targets)
 
     def __call__(self, chunk_size):
         repackable_repos = list(self.findRepackCandidates()[:chunk_size])
@@ -62,8 +69,9 @@ class RepackTunableLoop(TunableLoop):
                     self.logger.info(
                         'Requesting automatic git repository repack for %s.'
                         % repo.identity)
-                    repo.repackRepository()
                     counter += 1
+                    self.offset = self.offset + counter
+                    repo.repackRepository()
             except CannotRepackRepository as e:
                 self.logger.error(
                     'An error occurred while requesting repository repack %s'
