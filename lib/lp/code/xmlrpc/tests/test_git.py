@@ -1492,9 +1492,9 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertPermissionDenied(
             requester, path, message=message, permission="write")
 
-    def test_translatePath_create_oci_project_default_denied(self):
-        # A repository cannot (yet) be created and immediately set as the
-        # default for an OCI project.
+    def test_translatePath_create_oci_project_default(self):
+        # A repository can be created and immediately set as the default for
+        # an OCI project.
         requester = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
         path = u"/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)

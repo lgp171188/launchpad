@@ -552,7 +552,7 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
     """
 
     has_defaults = True
-    allow_push_to_set_default = False
+    allow_push_to_set_default = True
     supports_merge_proposals = True
     supports_code_imports = True
     allow_recipe_name_from_target = True
