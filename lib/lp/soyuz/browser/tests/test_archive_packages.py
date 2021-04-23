@@ -458,7 +458,7 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
             )
         self.assertThat(html, packages_matches)
         self.assertEqual(
-            [], BeautifulSoup(html).findAll(
+            [], BeautifulSoup(html).find_all(
                 'span', text=re.compile('Showing 5 of .')))
 
     def test_job_notifications_display_multiple_is_capped(self):
@@ -468,7 +468,7 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
                 self.archive, "+packages", principal=self.archive.owner)
             soup = BeautifulSoup(view.render())
         self.assertEqual([],
-            soup.findAll(
+            soup.find_all(
                 'div', attrs={'class': 'pending-job', 'job_id': jobs[-1].id}))
         showing_tags = soup.find_all(
             'span', text=re.compile('Showing 5 of .'))

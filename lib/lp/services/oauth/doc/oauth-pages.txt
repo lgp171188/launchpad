@@ -32,7 +32,7 @@ consumer's request to access Launchpad on their behalf.
     >>> def print_hidden_fields(html):
     ...     soup = BeautifulSoup(
     ...         html, parse_only=SoupStrainer(attrs={'type': 'hidden'}))
-    ...     for tag in soup.findAll(attrs={'type': 'hidden'}):
+    ...     for tag in soup.find_all(attrs={'type': 'hidden'}):
     ...         if tag['value']:
     ...             print(tag['name'], tag['value'])
 

@@ -31,11 +31,11 @@ This way he can also set the documentation URL.
 The link now appears in the table next to the name of the team.
 
     >>> team = first_tag_by_class(carlos_browser.contents, 'translator-team')
-    >>> print(extract_text(team.findAll('a')[0]))
+    >>> print(extract_text(team.find_all('a')[0]))
     testing Spanish team
 
     >>> link = first_tag_by_class(carlos_browser.contents, 'translator-link')
-    >>> print(link.findAll('a')[0]['href'])
+    >>> print(link.find_all('a')[0]['href'])
     http://www.ubuntu.com/
 
 Back on the translations page, the link is now present, too.
@@ -148,7 +148,7 @@ to said documentation.
     Before translating, be sure to go through Just a testing team
     instructions.
 
-    >>> links = notification.findAll('a')
+    >>> links = notification.find_all('a')
     >>> print(links[0]['href'])
     https://help.launchpad.net/
 
@@ -161,7 +161,7 @@ Adding the Spanish team documentation URL adds another link.
     Before translating, be sure to go through Just a testing team
     instructions and Spanish guidelines.
 
-    >>> links = notification.findAll('a')
+    >>> links = notification.find_all('a')
     >>> print(links[0]['href'])
     https://help.launchpad.net/
     >>> print(links[1]['href'])
@@ -177,6 +177,6 @@ the narrative is changed a bit to include the full team name.
     Before translating, be sure to go through testing Spanish team
     guidelines.
 
-    >>> links = notification.findAll('a')
+    >>> links = notification.find_all('a')
     >>> print(links[0]['href'])
     https://help.launchpad.net/Spanish

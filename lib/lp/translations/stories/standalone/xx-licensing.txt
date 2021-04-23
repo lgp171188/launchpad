@@ -49,10 +49,10 @@ nor input boxes available.
 
     >>> main_content = find_tag_by_id(
     ...     browser.contents, 'messages_to_translate')
-    >>> for textarea in main_content.findAll('textarea'):
+    >>> for textarea in main_content.find_all('textarea'):
     ...     print('Found textarea:\n%s' % textarea)
 
-    >>> for input in main_content.findAll('input'):
+    >>> for input in main_content.find_all('input'):
     ...     print('Found input:\n%s' % input)
 
 Karl changes his mind. He returns to the licensing page.

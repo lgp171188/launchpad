@@ -54,7 +54,7 @@ If there are not any branches, a helpful message is shown.
 
 The 'Help' links go to the help wiki.
 
-    >>> for anchor in summary.findAll('a'):
+    >>> for anchor in summary.find_all('a'):
     ...     print(anchor['href'])
     https://help.launchpad.net/Code
 
@@ -97,7 +97,7 @@ shown.
     using the command:
     bzr branch lp://dev/evolution
 
-    >>> links = summary.findAll('a')
+    >>> links = summary.find_all('a')
 
 Both active reviews and approved merges are links allowing the user to
 go to listing views.
@@ -123,7 +123,7 @@ once, but both series are shown in the listing.
 
     >>> browser.open('http://code.launchpad.test/firefox')
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
-    >>> for row in table.tbody.findAll('tr')[0:2]:
+    >>> for row in table.tbody.find_all('tr')[0:2]:
     ...     print(extract_text(row))
     lp://dev/firefox
       Series: trunk, 1.0                     Development ...
@@ -138,7 +138,7 @@ Firstly lets associate release--0.9.1 with the 1.0 series.
 
     >>> browser.open('http://code.launchpad.test/firefox')
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
-    >>> for row in table.tbody.findAll('tr')[0:2]:
+    >>> for row in table.tbody.find_all('tr')[0:2]:
     ...     print(extract_text(row))
     lp://dev/firefox
       Series: trunk                 Development ...
@@ -159,7 +159,7 @@ default listings.
 
     >>> browser.open('http://code.launchpad.test/firefox')
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
-    >>> for row in table.tbody.findAll('tr')[0:2]:
+    >>> for row in table.tbody.find_all('tr')[0:2]:
     ...     print(extract_text(row))
     lp://dev/~mark/firefox/release-0.8     Development ...
 
@@ -187,7 +187,7 @@ The links are only shown if the user has permission to perform the task.
     ...     if links is None:
     ...         print('None')
     ...         return
-    ...     for link in links.findAll('a'):
+    ...     for link in links.find_all('a'):
     ...         print(extract_text(link))
 
     >>> def setup_code_hosting(productname):

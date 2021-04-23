@@ -314,7 +314,7 @@ One licence, the GNU GPL v2, is selected.
 
     >>> def print_checked_items(html, links=False):
     ...     soup = BeautifulSoup(html)
-    ...     for label in soup.findAll('label'):
+    ...     for label in soup.find_all('label'):
     ...         if not isinstance(label.next, Tag):
     ...             continue
     ...         if label.next.get('checked'):

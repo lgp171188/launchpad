@@ -40,7 +40,7 @@ authenticated already, so they will see 'human@somewhere.org'.
     Question #11 :  ...
     >>> text = find_tags_by_class(
     ...     user_browser.contents, 'boardCommentBody')[-1]
-    >>> print(extract_text(text.findAll('p')[-1]))
+    >>> print(extract_text(text.find_all('p')[-1]))
     --
     ______________________
     human@somewhere.org
@@ -56,7 +56,7 @@ see the obfuscated email address (<email address hidden>).
 
     >>> text = find_tags_by_class(
     ...     anon_browser.contents, 'boardCommentBody')[-1]
-    >>> print(extract_text(text.findAll('p')[-1]))
+    >>> print(extract_text(text.find_all('p')[-1]))
     --
     ______________________
     &lt;email address hidden&gt;
@@ -74,7 +74,7 @@ Signatures are identified by paragraphs with a starting line like '--'.
 The entire content of the paragraph is wrapped by a tag of 'foldable'
 class.
 
-    >>> print(text.findAll('p')[-1])
+    >>> print(text.find_all('p')[-1])
     <p><span class="foldable">--...
     &lt;email address hidden&gt;<br/>
     Witty signatures rock!
@@ -87,7 +87,7 @@ preceded by a citation line. Only the quoted lines are wrapped with a
 tag of 'foldable' class, citation lines are always displayed. Again
 we can continue with the anonymous user to see the markup.
 
-    >>> print(text.findAll('p')[-2])
+    >>> print(text.find_all('p')[-2])
     <p>Somebody said sometime ago:<br/>
     <span class="foldable-quoted">
     &gt; 1. Remove the letters  c, j, q, x, w<br/>

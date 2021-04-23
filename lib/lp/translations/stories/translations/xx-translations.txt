@@ -249,7 +249,7 @@ The template title points to the general translate page:
     # We are not using browser.getLink because there is no unique way to
     # get all of the relevant links, and we don't want to pollute the
     # page template with too many IDs useful only for testing.
-    >>> all_links = evolution_line.findAll('a')
+    >>> all_links = evolution_line.find_all('a')
     >>> base_href = browser.url
     >>> unfiltered = all_links[0]
     >>> print(extract_text(unfiltered))
@@ -422,7 +422,7 @@ Language title points to the general translate page:
     # We are not using browser.getLink because there is no unique way to
     # get all of the relevant links, and we don't want to pollute the
     # page template with too many IDs useful only for testing.
-    >>> all_links = spanish_line.findAll('a')
+    >>> all_links = spanish_line.find_all('a')
     >>> base_href = browser.url
     >>> unfiltered = all_links[0]
     >>> print(extract_text(unfiltered))

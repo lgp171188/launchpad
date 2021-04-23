@@ -664,10 +664,10 @@ Then we can see how logged-in users and anonymous users see the page:
 
     >>> def print_watches(browser):
     ...     watches = find_tag_by_id(
-    ...         browser.contents, 'latestwatches').tbody.findAll('tr')
+    ...         browser.contents, 'latestwatches').tbody.find_all('tr')
     ...     for watch in watches:
     ...         bug, remote_bug, status, last_checked, next_check = (
-    ...             watch.findAll('td'))
+    ...             watch.find_all('td'))
     ...         print(extract_text(bug))
     ...         print('  --> %s: %s' % (
     ...             extract_text(remote_bug),

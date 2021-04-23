@@ -34,6 +34,8 @@ from lp.services.macaroons.interfaces import (
     )
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.snappy.interfaces.snapbuild import ISnapBuildSet
+from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
+from lp.soyuz.interfaces.livefsbuild import ILiveFSBuildSet
 from lp.xmlrpc import faults
 
 
@@ -59,7 +61,8 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
         """Resolve a serialised context.
 
         :param context_type: A string identifying the type of context.
-            Currently only 'LibraryFileAlias' and 'SnapBuild' are supported.
+            Currently only 'LibraryFileAlias', 'BinaryPackageBuild',
+            'LiveFSBuild', 'SnapBuild', and 'OCIRecipeBuild' are supported.
         :param context: The context as plain data (e.g. an ID).
         :return: The resolved context, or None.
         """
@@ -69,6 +72,12 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
                 return getUtility(ILibraryFileAliasSet)[context]
             except SQLObjectNotFound:
                 return None
+        elif context_type == 'BinaryPackageBuild':
+            # The context is a `BinaryPackageBuild` ID.
+            return getUtility(IBinaryPackageBuildSet).getByID(context)
+        elif context_type == 'LiveFSBuild':
+            # The context is a `LiveFSBuild` ID.
+            return getUtility(ILiveFSBuildSet).getByID(context)
         elif context_type == 'SnapBuild':
             # The context is a `SnapBuild` ID.
             return getUtility(ISnapBuildSet).getByID(context)

@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Base and idle BuildFarmJobBehaviour classes."""
@@ -89,6 +89,10 @@ class BuildFarmJobBehaviourBase:
         """The default behaviour is to send no files."""
         return {}
 
+    def issueMacaroon(self):
+        raise NotImplementedError(
+            "This build type does not support accessing private resources.")
+
     def extraBuildArgs(self, logger=None):
         """The default behaviour is to send only common extra arguments."""
         args = {}
@@ -102,9 +106,10 @@ class BuildFarmJobBehaviourBase:
     @defer.inlineCallbacks
     def composeBuildRequest(self, logger):
         args = yield self.extraBuildArgs(logger=logger)
+        filemap = yield self.determineFilesToSend()
         defer.returnValue(
             (self.builder_type, self.distro_arch_series, self.pocket,
-             self.determineFilesToSend(), args))
+             filemap, args))
 
     def verifyBuildRequest(self, logger):
         """The default behaviour is a no-op."""

@@ -43,6 +43,7 @@ from zope.schema import (
     ValidationError,
     )
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.launchpadform import (
     action,
@@ -75,7 +76,11 @@ from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     OCIRecipeFeatureDisabled,
     )
-from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ocirecipebuild import (
+    IOCIRecipeBuildSet,
+    OCIRecipeBuildRegistryUploadStatus,
+    )
+from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentialsSet,
     OCIRegistryCredentialsAlreadyExist,
@@ -101,6 +106,7 @@ from lp.services.webapp.breadcrumb import NameBreadcrumb
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.archive import EnableProcessorsMixin
 from lp.soyuz.browser.build import get_build_by_id_str
+from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 
 
 class OCIRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
@@ -307,6 +313,51 @@ class OCIRecipeView(LaunchpadView):
             oci_project = self.context
         distro = oci_project.distribution
         return bool(distro and distro.oci_registry_credentials)
+
+    def getImageForStatus(self, status):
+        image_map = {
+            BuildSetStatus.NEEDSBUILD: '/@@/build-needed',
+            BuildSetStatus.FULLYBUILT_PENDING: '/@@/build-success-publishing',
+            BuildSetStatus.FAILEDTOBUILD: '/@@/no',
+            BuildSetStatus.BUILDING: '/@@/processing',
+            }
+        return image_map.get(
+            status, '/@@/yes')
+
+    def _convertBuildJobToStatus(self, build_job):
+        recipe_set = getUtility(IOCIRecipeSet)
+        unscheduled_upload = OCIRecipeBuildRegistryUploadStatus.UNSCHEDULED
+        upload_status = build_job.registry_upload_status
+        # This is just a dict, but zope wraps it as RecipeSet is secured
+        status = removeSecurityProxy(
+                    recipe_set.getStatusSummaryForBuilds([build_job]))
+        # Add the registry job status
+        status["upload_scheduled"] = upload_status != unscheduled_upload
+        status["upload"] = upload_status
+        status["date"] = build_job.date
+        status["date_estimated"] = build_job.estimate
+        return {
+            "builds": [build_job],
+            "job_id": "build{}".format(build_job.id),
+            "date_created": build_job.date_created,
+            "date_finished": build_job.date_finished,
+            "build_status": status
+        }
+
+    def build_requests(self):
+        req_util = getUtility(IOCIRecipeRequestBuildsJobSource)
+        build_requests = list(req_util.findByOCIRecipe(self.context)[:10])
+
+        # It's possible that some recipes have builds that are older
+        # than the introduction of the async requestBuilds.
+        # In that case, convert the single build to a fake 'request build job'
+        # that has a single attached build.
+        if len(build_requests) < 10:
+            recipe = self.context
+            no_request_builds = recipe.completed_builds_without_build_request
+            for build in no_request_builds[:10 - len(build_requests)]:
+                build_requests.append(self._convertBuildJobToStatus(build))
+        return build_requests[:10]
 
 
 def builds_for_recipe(recipe):

@@ -20,7 +20,7 @@ information.
 
     >>> anon_browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> soup = find_main_content(anon_browser.contents)
-    >>> for question in soup.findAll('td', 'questionTITLE'):
+    >>> for question in soup.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Continue playing after shutdown
     Play DVDs in Totem
@@ -31,7 +31,7 @@ information.
     # Since we have more than 5 results, some of them are in the second batch.
     >>> anon_browser.getLink('Next').click()
     >>> soup = find_main_content(anon_browser.contents)
-    >>> for question in soup.findAll('td', 'questionTITLE'):
+    >>> for question in soup.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Installation failed
 
@@ -50,7 +50,7 @@ the anonymous user will see a Spanish question.
     >>> anon_browser.getControl('English (en)').selected = False
     >>> anon_browser.getControl('Search', index=0).click()
     >>> table = find_tag_by_id(anon_browser.contents, 'question-listing')
-    >>> for question in table.findAll('td', 'questionTITLE'):
+    >>> for question in table.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Problema al recompilar kernel con soporte smp (doble-núcleo)
     Continue playing after shutdown
@@ -62,7 +62,7 @@ While the user might recognize the first question above is in Spanish,
 browsers and search engine robots need help. Each row in the list
 of questions declares its language and text direction.
 
-    >>> for question in table.findAll('tr', lang=True):
+    >>> for question in table.find_all('tr', lang=True):
     ...     print('lang="%s" dir="%s"' % (question['lang'], question['dir']))
     lang="es" dir="ltr"
     lang="en" dir="ltr"
@@ -76,13 +76,13 @@ Arabic and is written from right-to-left.
 
     >>> anon_browser.getLink('Next').click()
     >>> table = find_tag_by_id(anon_browser.contents, 'question-listing')
-    >>> for question in table.findAll('td', 'questionTITLE'):
+    >>> for question in table.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Slow system
     Installation failed
     عكس ...
 
-    >>> for question in table.findAll('tr', lang=True):
+    >>> for question in table.find_all('tr', lang=True):
     ...     print('lang="%s" dir="%s"' % (question['lang'], question['dir']))
     lang="en" dir="ltr"
     lang="en" dir="ltr"
@@ -137,7 +137,7 @@ then questions with those language will be displayed:
     True
 
     >>> soup = find_main_content(anon_browser.contents)
-    >>> for question in soup.findAll('td', 'questionTITLE'):
+    >>> for question in soup.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Problema al recompilar kernel con soporte smp (doble-núcleo)
     Continue playing after shutdown
@@ -148,7 +148,7 @@ then questions with those language will be displayed:
     # Since we have more than 5 results, some of them are in the second batch.
     >>> anon_browser.getLink('Next').click()
     >>> soup = find_main_content(anon_browser.contents)
-    >>> for question in soup.findAll('td', 'questionTITLE'):
+    >>> for question in soup.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Slow system
     Installation failed
@@ -212,7 +212,7 @@ the search results.
     >>> browser.getControl('English (en)').selected = False
     >>> browser.getControl('Search', index=0).click()
     >>> content = find_main_content(browser.contents)
-    >>> for question in content.findAll('td', 'questionTITLE'):
+    >>> for question in content.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Problema al recompilar kernel con soporte smp (doble-núcleo)
 
@@ -252,7 +252,7 @@ English, and can use it to locate English questions.
     >>> daf_browser.getControl('English (en)').selected = True
     >>> daf_browser.getControl('Search', index=0).click()
     >>> content = find_main_content(daf_browser.contents)
-    >>> for question in content.findAll('td', 'questionTITLE'):
+    >>> for question in content.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Continue playing after shutdown
     Play DVDs in Totem
@@ -301,7 +301,7 @@ the preceding page.
     ['Open']
 
     >>> content = find_main_content(user_browser.contents)
-    >>> for question in content.findAll('td', 'questionTITLE'):
+    >>> for question in content.find_all('td', 'questionTITLE'):
     ...     print(question.find('a').decode_contents())
     Problemas de Impressão no Firefox
 
@@ -330,7 +330,7 @@ project. They can see the question on the second page of "My questions"...
     lang: ar
     dir: rtl
 
-    >>> for question in questions.findAll('td', {'class': 'questionTITLE'}):
+    >>> for question in questions.find_all('td', {'class': 'questionTITLE'}):
     ...     print(question.find('a').decode_contents())
     عكس التغ...
 

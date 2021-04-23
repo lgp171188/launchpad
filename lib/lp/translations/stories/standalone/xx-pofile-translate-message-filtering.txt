@@ -24,7 +24,7 @@ messages in the batches of 10 items.
     ...
     ...     if soup is None:
     ...         soup = find_main_content(browser.contents)
-    ...     for tag in soup.findAll('label'):
+    ...     for tag in soup.find_all('label'):
     ...         id = tag.get('id')
     ...         if id is not None:
     ...             match = re.match(match_translation_id, id)

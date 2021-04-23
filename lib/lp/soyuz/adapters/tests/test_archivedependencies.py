@@ -23,6 +23,9 @@ from zope.security.proxy import removeSecurityProxy
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
     )
+from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    IBuildFarmJobBehaviour,
+    )
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
@@ -203,9 +206,10 @@ class TestSourcesList(TestCaseWithFactory):
             else:
                 prefix = archive_or_prefix + " "
             expected_lines.extend([prefix + suffix for suffix in suffixes])
+        behaviour = IBuildFarmJobBehaviour(build)
         sources_list, trusted_keys = yield get_sources_list_for_building(
-            build, build.distro_arch_series, build.source_package_release.name,
-            **kwargs)
+            behaviour, build.distro_arch_series,
+            build.source_package_release.name, **kwargs)
         self.assertEqual(expected_lines, sources_list)
         key_matchers = [
             Base64KeyMatches(self.fingerprints[key_name])

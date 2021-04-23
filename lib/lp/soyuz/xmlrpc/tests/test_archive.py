@@ -7,9 +7,12 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.enums import BuildStatus
 from lp.services.features.testing import FeatureFixture
+from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.soyuz.interfaces.archive import NAMED_AUTH_TOKEN_FEATURE_FLAG
 from lp.soyuz.xmlrpc.archive import ArchiveAPI
 from lp.testing import TestCaseWithFactory
@@ -25,6 +28,8 @@ class TestArchiveAPI(TestCaseWithFactory):
         super(TestArchiveAPI, self).setUp()
         self.useFixture(FeatureFixture({NAMED_AUTH_TOKEN_FEATURE_FLAG: "on"}))
         self.archive_api = ArchiveAPI(None, None)
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
 
     def assertNotFound(self, archive_reference, username, password, message):
         """Assert that an archive auth token check returns NotFound."""
@@ -64,6 +69,48 @@ class TestArchiveAPI(TestCaseWithFactory):
         archive = removeSecurityProxy(self.factory.makeArchive(private=True))
         self.assertIsNone(self.archive_api.checkArchiveAuthToken(
             archive.reference, "buildd", archive.buildd_secret))
+
+    def test_checkArchiveAuthToken_buildd_macaroon_wrong_archive(self):
+        archive = self.factory.makeArchive(private=True)
+        build = self.factory.makeBinaryPackageBuild(archive=archive)
+        other_archive = self.factory.makeArchive(
+            distribution=archive.distribution, private=True)
+        removeSecurityProxy(build).updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "binary-package-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertUnauthorized(
+            other_archive.reference, "buildd", macaroon.serialize())
+
+    def test_checkArchiveAuthToken_buildd_macaroon_not_building(self):
+        archive = self.factory.makeArchive(private=True)
+        build = self.factory.makeBinaryPackageBuild(archive=archive)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "binary-package-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertUnauthorized(
+            archive.reference, "buildd", macaroon.serialize())
+
+    def test_checkArchiveAuthToken_buildd_macaroon_wrong_user(self):
+        archive = self.factory.makeArchive(private=True)
+        build = self.factory.makeBinaryPackageBuild(archive=archive)
+        removeSecurityProxy(build).updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "binary-package-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertNotFound(
+            archive.reference, "another-user", macaroon.serialize(),
+            "No valid tokens for 'another-user' in '%s'." % archive.reference)
+
+    def test_checkArchiveAuthToken_buildd_macaroon_correct(self):
+        archive = self.factory.makeArchive(private=True)
+        build = self.factory.makeBinaryPackageBuild(archive=archive)
+        removeSecurityProxy(build).updateStatus(BuildStatus.BUILDING)
+        issuer = removeSecurityProxy(
+            getUtility(IMacaroonIssuer, "binary-package-build"))
+        macaroon = issuer.issueMacaroon(build)
+        self.assertIsNone(self.archive_api.checkArchiveAuthToken(
+            archive.reference, "buildd", macaroon.serialize()))
 
     def test_checkArchiveAuthToken_named_token_wrong_password(self):
         archive = removeSecurityProxy(self.factory.makeArchive(private=True))

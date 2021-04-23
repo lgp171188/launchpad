@@ -269,7 +269,7 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         self.assertIn("primary", self.widget.options)
         self.assertIn("ppa", self.widget.options)
         soup = BeautifulSoup(markup)
-        fields = soup.findAll(["input", "select"], {"id": re.compile(".*")})
+        fields = soup.find_all(["input", "select"], {"id": re.compile(".*")})
         expected_ids = [
             "field.archive.option.primary",
             "field.archive.option.ppa",

@@ -311,7 +311,7 @@ The only entry that shows up now is the one Carlos just uploaded.
 
     >>> import_list = find_tag_by_id(
     ...     user_browser.contents, 'import-entries-list')
-    >>> first_entry = import_list.findNext('tr')
+    >>> first_entry = import_list.find_next('tr')
     >>> print(represent_queue_entry(first_entry))
     foo.pot in evolution in Ubuntu Hoary
     Needs Review
@@ -332,7 +332,7 @@ Ubuntu.
     ...     output = []
     ...     import_list = find_tag_by_id(
     ...         browser.contents, 'import-entries-list') 
-    ...     for entry in import_list.findAll('tr'):
+    ...     for entry in import_list.find_all('tr'):
     ...         output.append(represent_queue_entry(entry))
     ...     return '\n'.join(output)
 

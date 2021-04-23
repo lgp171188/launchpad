@@ -30,16 +30,12 @@ from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import WebServiceTestRequest
 from lp.testing import (
-    logout,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.fixture import ZopeAdapterFixture
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import webservice_for_person
 
 
 def ws_url(bug):
@@ -90,8 +86,7 @@ class TestWebServiceObfuscation(TestCaseWithFactory):
     def test_email_address_obfuscated(self):
         # Email addresses are obfuscated for anonymous users.
         bug = self._makeBug()
-        logout()
-        webservice = LaunchpadWebServiceCaller()
+        webservice = webservice_for_person(None)
         result = webservice(ws_url(bug)).jsonBody()
         self.assertEqual(
             self.bug_title % self.email_address_obfuscated,
@@ -125,8 +120,7 @@ class TestWebServiceObfuscation(TestCaseWithFactory):
         # Email addresses are obfuscated in the XML representation for
         # anonymous users.
         bug = self._makeBug()
-        logout()
-        webservice = LaunchpadWebServiceCaller()
+        webservice = webservice_for_person(None)
         result = webservice(
             ws_url(bug), headers={'Accept': 'application/xhtml+xml'})
         self.assertNotIn(self.email_address.encode('UTF-8'), result.body)
@@ -146,8 +140,7 @@ class TestWebServiceObfuscation(TestCaseWithFactory):
         user = self.factory.makePerson()
         webservice = webservice_for_person(user)
         etag_logged_in = webservice(ws_url(bug)).getheader('etag')
-        logout()
-        webservice = LaunchpadWebServiceCaller()
+        webservice = webservice_for_person(None)
         etag_logged_out = webservice(ws_url(bug)).getheader('etag')
         self.assertNotEqual(etag_logged_in, etag_logged_out)
 

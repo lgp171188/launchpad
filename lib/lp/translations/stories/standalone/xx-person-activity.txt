@@ -21,7 +21,7 @@ listed which Carlos has contributed to.
 
     # Prints a heading and formatted list of POFiles and latest submissions.
     >>> def print_activity_list(listing):
-    ...     for row in listing.findAll('tr'):
+    ...     for row in listing.find_all('tr'):
     ...         print(extract_text(row))
 
     >>> listing = find_tag_by_id(anon_browser.contents, 'activity-table')

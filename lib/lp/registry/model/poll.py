@@ -22,6 +22,7 @@ from storm.locals import (
     And,
     Bool,
     DateTime,
+    Desc,
     Int,
     Or,
     Reference,
@@ -31,6 +32,7 @@ from storm.locals import (
 from zope.component import getUtility
 from zope.interface import implementer
 
+from lp.registry.enums import PollSort
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.poll import (
     CannotCreatePoll,
@@ -47,6 +49,7 @@ from lp.registry.interfaces.poll import (
     PollSecrecy,
     PollStatus,
     )
+from lp.registry.model.person import Person
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import sqlvalues
@@ -309,14 +312,26 @@ class PollSet:
         IStore(Poll).add(poll)
         return poll
 
-    def findByTeam(self, team, status=PollStatus.ALL, order_by=None,
-                   when=None):
+    @staticmethod
+    def _convertPollSortToOrderBy(sort_by):
+        """Compute a value to pass to `order_by` on a poll collection.
+
+        :param sort_by: An item from the `PollSort` enumeration.
+        """
+        return {
+            PollSort.OLDEST_FIRST: [Poll.id],
+            PollSort.NEWEST_FIRST: [Desc(Poll.id)],
+            PollSort.OPENING: [Poll.dateopens, Poll.id],
+            PollSort.CLOSING: [Poll.datecloses, Poll.id],
+            }[sort_by]
+
+    def find(self, team=None, status=None, order_by=PollSort.NEWEST_FIRST,
+             when=None):
         """See IPollSet."""
+        if status is None:
+            status = PollStatus.ALL
         if when is None:
             when = datetime.now(pytz.timezone('UTC'))
-
-        if order_by is None:
-            order_by = Poll.sortingColumns
 
         status = set(status)
         status_clauses = []
@@ -330,15 +345,31 @@ class PollSet:
 
         assert len(status_clauses) > 0, "No poll statuses were selected"
 
-        results = IStore(Poll).find(
-            Poll, Poll.team == team, Or(*status_clauses))
+        clauses = []
+        if team is not None:
+            clauses.append(Poll.team == team)
+        else:
+            clauses.extend([Poll.team == Person.id, Person.merged == None])
+        clauses.append(Or(*status_clauses))
 
-        return results.order_by(order_by)
+        results = IStore(Poll).find(Poll, *clauses)
+
+        return results.order_by(self._convertPollSortToOrderBy(order_by))
+
+    def findByTeam(self, team, status=None, order_by=PollSort.NEWEST_FIRST,
+                   when=None):
+        """See IPollSet."""
+        return self.find(
+            team=team, status=status, order_by=order_by, when=when)
 
     def getByTeamAndName(self, team, name, default=None):
         """See IPollSet."""
         poll = IStore(Poll).find(Poll, team=team, name=name).one()
         return poll if poll is not None else default
+
+    def emptyList(self):
+        """See IPollSet."""
+        return []
 
 
 @implementer(IPollOption)

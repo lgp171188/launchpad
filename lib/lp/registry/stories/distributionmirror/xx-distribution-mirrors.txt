@@ -11,7 +11,7 @@ on their status and content.
     ...     header = mirrors_table.find('tr')
     ...     country = extract_text(header.find('th'))
     ...     mirrors = []
-    ...     for tr in header.findNextSiblings('tr'):
+    ...     for tr in header.find_next_siblings('tr'):
     ...         if 'head' in str(tr.attrs):
     ...             print("%s: %s" % (country, pretty(mirrors)))
     ...             country = extract_text(tr.find('th'))
@@ -23,7 +23,7 @@ on their status and content.
     ...             # from different countries, so we'll just skip it.
     ...             pass
     ...         else:
-    ...             tds = tuple([extract_text(td) for td in tr.findAll('td')])
+    ...             tds = tuple([extract_text(td) for td in tr.find_all('td')])
     ...             mirrors.append(tds)
 
 Official mirrors

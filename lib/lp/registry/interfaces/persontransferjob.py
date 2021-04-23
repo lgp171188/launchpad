@@ -9,6 +9,8 @@ __all__ = [
     'IExpiringMembershipNotificationJobSource',
     'IMembershipNotificationJob',
     'IMembershipNotificationJobSource',
+    'IPersonCloseAccountJob',
+    'IPersonCloseAccountJobs',
     'IPersonDeactivateJob',
     'IPersonDeactivateJobSource',
     'IPersonMergeJob',
@@ -168,6 +170,35 @@ class IPersonDeactivateJobSource(IJobSource):
 
         :param person: Match jobs on `person`, or `None` to ignore.
         :return: A `ResultSet` yielding `IPersonDeactivateJob`.
+        """
+
+
+class IPersonCloseAccountJob(IPersonTransferJob):
+    """A Job that closes the account for a person."""
+
+    person = PublicPersonChoice(
+        title=_('Alias for major_person attribute'),
+        vocabulary='ValidPersonOrTeam',
+        required=True)
+
+    def getErrorRecipients(self):
+        """See `BaseRunnableJob`."""
+
+
+class IPersonCloseAccountJobs(IJobSource):
+    """An interface for acquiring ICloseAccountJobs."""
+
+    def create(person):
+        """Create a new IPersonCloseAccountJob.
+
+        :param person: A `IPerson` to close the account for.
+        """
+
+    def find(person=None):
+        """Finds pending close account jobs.
+
+        :param person: Match jobs on `person`, or `None` to ignore.
+        :return: A `ResultSet` yielding `IPersonCloseAccountJob`.
         """
 
 

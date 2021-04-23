@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git reference views."""
@@ -41,7 +41,10 @@ from lp.code.browser.branchmergeproposal import (
 from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.enums import GitRepositoryType
-from lp.code.errors import InvalidBranchMergeProposal
+from lp.code.errors import (
+    GitRepositoryScanFault,
+    InvalidBranchMergeProposal,
+    )
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.code.interfaces.gitref import IGitRef
@@ -109,6 +112,10 @@ class GitRefContextMenu(ContextMenu, HasRecipesMenuMixin, HasSnapsMenuMixin):
 
 
 class GitRefView(LaunchpadView, HasSnapsViewMixin):
+
+    # This is set at self.commit_infos, and should be accessed by the view
+    # as self.commit_info_message.
+    _commit_info_message = None
 
     @property
     def label(self):
@@ -219,9 +226,30 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin):
 
     @cachedproperty
     def commit_infos(self):
-        return self.context.getLatestCommits(
-            extended_details=True, user=self.user, handle_timeout=True,
-            logger=log)
+        try:
+            self._commit_info_message = ''
+            return self.context.getLatestCommits(
+                extended_details=True, user=self.user, handle_timeout=True,
+                logger=log)
+        except GitRepositoryScanFault as e:
+            log.error("There was an error fetching git commit info: %s" % e)
+            self._commit_info_message = (
+                "There was an error while fetching commit information from "
+                "code hosting service. Please try again in a few minutes. "
+                'If the problem persists, <a href="/launchpad/+addquestion">'
+                "contact Launchpad support</a>.")
+            return []
+        except Exception as e:
+            log.error("There was an error scanning %s: (%s) %s" %
+                      (self.context, e.__class__, e))
+            raise
+
+    def commit_infos_message(self):
+        if self._commit_info_message is None:
+            # Evaluating self.commit infos so it updates
+            # self._commit_info_message.
+            self.commit_infos
+        return self._commit_info_message
 
     @property
     def recipes_link(self):

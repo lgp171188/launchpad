@@ -66,13 +66,13 @@ There are two entries in the list.
 
     >>> import_list = find_tag_by_id(
     ...     user_browser.contents, 'import-entries-list')
-    >>> first_entry = import_list.findNext('tr')
+    >>> first_entry = import_list.find_next('tr')
     >>> print(extract_text(first_entry))
     po/evolution-2.2-test.pot in
     Evolution trunk series
     Imported
-    >>> second_entry = first_entry.findNext(
-    ...     'tr').findNext('tr').findNext('tr')
+    >>> second_entry = first_entry.find_next(
+    ...     'tr').find_next('tr').find_next('tr')
     >>> print(extract_text(second_entry))
     po/pt_BR.po in
     Evolution trunk series
@@ -100,13 +100,13 @@ Evolution product are for this trunk series.
 
     >>> import_list = find_tag_by_id(
     ...     user_browser.contents, 'import-entries-list')
-    >>> first_entry = import_list.findNext('tr')
+    >>> first_entry = import_list.find_next('tr')
     >>> print(extract_text(first_entry))
     po/evolution-2.2-test.pot in
     Evolution trunk series
     Imported
-    >>> second_entry = first_entry.findNext(
-    ...     'tr').findNext('tr').findNext('tr')
+    >>> second_entry = first_entry.find_next(
+    ...     'tr').find_next('tr').find_next('tr')
     >>> print(extract_text(second_entry))
     po/pt_BR.po in
     Evolution trunk series
@@ -134,23 +134,22 @@ it here too.
 
     >>> import_list = find_tag_by_id(
     ...     user_browser.contents, 'import-entries-list')
-    >>> first_entry = import_list.findNext('tr')
+    >>> first_entry = import_list.find_next('tr')
     >>> print(extract_text(first_entry))
     po/evolution-2.2-test.pot in
     Evolution trunk series
     Imported
-    >>> first_entry_importer = first_entry.findNext('tr')
+    >>> first_entry_importer = first_entry.find_next('tr')
     >>> print(extract_text(first_entry_importer))
     Uploaded by
     Foo Bar
     on 2006-12-13 22:17:56 CET
-    >>> second_entry = first_entry_importer.findNext(
-    ...     'tr').findNext('tr')
+    >>> second_entry = first_entry_importer.find_next('tr').find_next('tr')
     >>> print(extract_text(second_entry))
     po/pt_BR.po in
     Evolution trunk series
     Imported
-    >>> second_entry_importer = second_entry.findNext('tr')
+    >>> second_entry_importer = second_entry.find_next('tr')
     >>> print(extract_text(second_entry_importer))
     Uploaded by
     Foo Bar

@@ -239,7 +239,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             view = create_initialized_view(
                 ds_diff, '+listing-distroseries-extra')
             soup = BeautifulSoup(view())
-        tags = soup.find('ul', 'package-diff-status').findAll('span')
+        tags = soup.find('ul', 'package-diff-status').find_all('span')
         self.assertEqual(2, len(tags))
 
     def test_do_not_display_child_diff(self):
@@ -261,7 +261,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             view = create_initialized_view(
                 ds_diff, '+listing-distroseries-extra')
             soup = BeautifulSoup(view())
-        tags = soup.find('ul', 'package-diff-status').findAll('span')
+        tags = soup.find('ul', 'package-diff-status').find_all('span')
         self.assertEqual(1, len(tags))
 
     def test_do_not_display_parent_diff(self):
@@ -283,7 +283,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             view = create_initialized_view(
                 ds_diff, '+listing-distroseries-extra')
             soup = BeautifulSoup(view())
-        tags = soup.find('ul', 'package-diff-status').findAll('span')
+        tags = soup.find('ul', 'package-diff-status').find_all('span')
         self.assertEqual(1, len(tags))
 
     def _assertNoRequestLink(self, ds_diff):
@@ -372,7 +372,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
         else:
             soup = html_or_soup
         class_dict = {'class': re.compile('request-derived-diff')}
-        return len(soup.findAll('span', class_dict))
+        return len(soup.find_all('span', class_dict))
 
     def contains_one_link_to_diff(self, html_or_soup, package_diff):
         """Return whether the html contains a link to the diff content."""
@@ -380,7 +380,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
             soup = BeautifulSoup(html_or_soup)
         else:
             soup = html_or_soup
-        return 1 == len(soup.findAll(
+        return 1 == len(soup.find_all(
             'a', href=package_diff.diff_content.http_url))
 
     def test_both_request_diff_texts_rendered(self):
@@ -435,7 +435,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
             # The diff has a css_class class.
             self.assertEqual(
                 1,
-                len(soup.findAll('span', {'class': re.compile(css_class)})))
+                len(soup.find_all('span', {'class': re.compile(css_class)})))
 
     def test_parent_source_diff_rendering_diff_no_link(self):
         # The status of the package is shown if the parent package diff is
@@ -459,7 +459,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
             # The diff has a css_class class.
             self.assertEqual(
                 1,
-                len(soup.findAll('span', {'class': re.compile(css_class)})))
+                len(soup.find_all('span', {'class': re.compile(css_class)})))
 
     def test_source_diff_rendering_no_source(self):
         # If there is no source pub for this difference, then we don't
@@ -511,9 +511,9 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
         soup = BeautifulSoup(view())
 
         self.assertEqual(
-            1, len(soup.findAll('p', text="I'm working on this.")))
+            1, len(soup.find_all('p', text="I'm working on this.")))
         self.assertEqual(
-            1, len(soup.findAll('p', text="Here's another comment.")))
+            1, len(soup.find_all('p', text="Here's another comment.")))
 
     def test_last_common_version_is_linked(self):
         # The "Last Common Version" version text should link to the
@@ -555,7 +555,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
         soup = BeautifulSoup(view_content)
 
         self.assertEqual(
-            1, len(soup.findAll('div', {'class': 'blacklist-options'})))
+            1, len(soup.find_all('div', {'class': 'blacklist-options'})))
 
     def test_blacklist_options_disabled(self):
         # Blacklist options are disabled to the users who are *not* archive
@@ -568,7 +568,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
 
         self.assertEqual(
             1,
-            len(soup.findAll('div', {'class': 'blacklist-options-disabled'})))
+            len(soup.find_all('div', {'class': 'blacklist-options-disabled'})))
 
     def test_blacklist_options_initial_values_none(self):
         ds_diff = self.factory.makeDistroSeriesDifference()

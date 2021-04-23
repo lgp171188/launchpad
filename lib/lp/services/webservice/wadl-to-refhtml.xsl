@@ -475,6 +475,12 @@
             <xsl:when test="@id = 'pillars'">
                 <xsl:text>/pillars</xsl:text>
             </xsl:when>
+            <xsl:when test="@id = 'poll'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;team.name&gt;</var>
+                <xsl:text>/+poll/</xsl:text>
+                <var>&lt;poll.name&gt;</var>
+            </xsl:when>
             <xsl:when test="@id = 'processor'">
                 <xsl:text>/+processors/</xsl:text>
                 <var>&lt;processor.name&gt;</var>
@@ -732,6 +738,9 @@
     <xsl:template name="find-root-object-uri">
         <xsl:value-of select="$base"/>
         <xsl:choose>
+            <xsl:when test="@id = 'polls'">
+                <xsl:text>/+polls</xsl:text>
+            </xsl:when>
             <xsl:when test="@id = 'snap_bases'">
                 <xsl:text>/+snap-bases</xsl:text>
             </xsl:when>

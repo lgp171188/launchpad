@@ -90,7 +90,7 @@ the system tells them that they're not allowed to see those pages.
     ...
     urllib.error.HTTPError: HTTP Error 503: Service Unavailable
     >>> main_content = find_main_content(user_browser.contents)
-    >>> print(main_content.findNext('p').decode_contents())
+    >>> print(main_content.find_next('p').decode_contents())
     Translations for this release series are not available yet.
 
     >>> user_browser.handleErrors = False

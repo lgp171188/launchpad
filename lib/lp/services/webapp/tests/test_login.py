@@ -521,7 +521,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         discharge_form = find_tag_by_id(html, 'discharge-form')
         self.assertEqual(form['starting_url'], discharge_form['action'])
         self.assertThat(
-            [dict(tag.attrs) for tag in discharge_form.findAll('input')],
+            [dict(tag.attrs) for tag in discharge_form.find_all('input')],
             MatchesListwise([
                 ContainsDict({
                     'type': Equals('hidden'),

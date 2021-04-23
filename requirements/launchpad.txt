@@ -5,7 +5,8 @@
 # Don't list entries from ztk-versions.cfg here unless overriding their
 # versions; they will be included automatically.
 
-ampoule==19.12.0
+# lp:~launchpad/ampoule:launchpad
+ampoule==19.12.0.post1
 amqp==2.4.2
 anyjson==0.3.3
 appdirs==1.4.3
@@ -55,7 +56,7 @@ hyperlink==18.0.0
 immutables==0.14
 importlib==1.0.2
 importlib-resources==0.5
-incremental==17.5.0
+incremental==21.3.0
 ipaddress==1.0.18
 ipython==0.13.2
 iso8601==0.1.12

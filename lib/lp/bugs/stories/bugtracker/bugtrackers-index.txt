@@ -12,8 +12,8 @@ The page presents a table with all bugtrackers currently registered:
 
     >>> def print_tracker_table(browser):
     ...     table = find_tag_by_id(browser.contents, 'trackers')
-    ...     for row in table.tbody.findAll('tr'):
-    ...         title, location, linked, type, watches = row.findAll('td')
+    ...     for row in table.tbody.find_all('tr'):
+    ...         title, location, linked, type, watches = row.find_all('td')
     ...         print('------------------------')
     ...         print('\n'.join([
     ...             extract_text(title),

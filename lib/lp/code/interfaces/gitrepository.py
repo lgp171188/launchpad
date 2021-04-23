@@ -1161,7 +1161,7 @@ class IGitRepositorySet(Interface):
             title=_("Git repository"), required=False, schema=IGitRepository))
     @export_write_operation()
     @operation_for_version("devel")
-    def setDefaultRepository(target, repository, force_oci=False):
+    def setDefaultRepository(target, repository):
         """Set the default repository for a target.
 
         :param target: An `IHasGitRepositories`.

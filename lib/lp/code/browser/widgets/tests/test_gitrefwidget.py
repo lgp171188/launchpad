@@ -306,7 +306,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         self.assertIsNotNone(self.widget.repository_widget)
         self.assertIsNotNone(self.widget.path_widget)
         soup = BeautifulSoup(markup)
-        fields = soup.findAll("input", id=True)
+        fields = soup.find_all("input", id=True)
         ids = [field["id"] for field in fields]
         self.assertContentEqual(
             ["field.git_ref.repository", "field.git_ref.path"], ids)

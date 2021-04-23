@@ -10,7 +10,7 @@ duplicates.
     >>> def print_similar_bugs(content):
     ...     bugs_list = find_tags_by_class(content, 'similar-bug')
     ...     for node in bugs_list:
-    ...         label = node.findAll('label')[0]
+    ...         label = node.find_all('label')[0]
     ...         label_class = ' '.join(label['class'])
     ...         text_lines = [line.strip() for line in
     ...                       extract_text(node).splitlines()]

@@ -14,7 +14,8 @@ fi
 
 # virtualenv-tools does most of the hard work.  We must explicitly invoke it
 # with the virtualenv's Python, as its #! line is probably wrong.
-"$1/bin/python" "$1/bin/virtualenv-tools" --update-path=auto "$1"
+LC_ALL=C.UTF-8 \
+    "$1/bin/python" "$1/bin/virtualenv-tools" --update-path=auto "$1"
 
 # Fix up a few things that virtualenv-tools doesn't handle.
 top="$(readlink -f "$(dirname "$0")/..")"

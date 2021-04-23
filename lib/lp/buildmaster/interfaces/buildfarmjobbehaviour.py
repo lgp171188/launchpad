@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for build farm job behaviours."""
@@ -25,6 +25,8 @@ class IBuildFarmJobBehaviour(Interface):
         "A list of `BuildBaseImageType`s indicating which types of base "
         "images can be used for this build.")
 
+    build = Attribute("The `IBuildFarmJob` to build.")
+
     archive = Attribute("The `Archive` to build against.")
 
     distro_arch_series = Attribute("The `DistroArchSeries` to build against.")
@@ -37,11 +39,21 @@ class IBuildFarmJobBehaviour(Interface):
     def determineFilesToSend():
         """Work out which files to send to the builder.
 
-        :return: A dict mapping filenames to dicts as follows::
+        :return: A dict mapping filenames to dicts as follows, or a Deferred
+                resulting in the same::
             'sha1': SHA-1 of file content
             'url': URL from which the builder can fetch content
             'username' (optional): username to authenticate as
             'password' (optional): password to authenticate with
+        """
+
+    def issueMacaroon():
+        """Issue a macaroon to access private resources for this build.
+
+        :raises NotImplementedError: if the build type does not support
+            accessing private resources.
+        :return: A Deferred that calls back with a serialized macaroon or a
+            fault.
         """
 
     def extraBuildArgs(logger=None):

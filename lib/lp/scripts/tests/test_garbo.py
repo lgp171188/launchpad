@@ -1705,32 +1705,32 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertEqual(expected_count, store.find(SnapFile).count())
 
     def test_SnapFilePruner_old_snap_files(self):
-        # Snap files attached to builds over 30 days old that have been
+        # Snap files attached to builds over 7 days old that have been
         # uploaded to the store are pruned.
-        self._test_SnapFilePruner('foo.snap', JobStatus.COMPLETED, 30)
+        self._test_SnapFilePruner('foo.snap', JobStatus.COMPLETED, 7)
 
     def test_SnapFilePruner_old_non_snap_files(self):
-        # Non-snap files attached to builds over 30 days old that have been
+        # Non-snap files attached to builds over 7 days old that have been
         # uploaded to the store are retained.
         self._test_SnapFilePruner(
-            'foo.tar.gz', JobStatus.COMPLETED, 30, expected_count=1)
+            'foo.tar.gz', JobStatus.COMPLETED, 7, expected_count=1)
 
     def test_SnapFilePruner_recent_binary_files(self):
-        # Snap binary files attached to builds less than 30 days old that
+        # Snap binary files attached to builds less than 7 days old that
         # have been uploaded to the store are retained.
         self._test_SnapFilePruner(
-            'foo.snap', JobStatus.COMPLETED, 29, expected_count=1)
+            'foo.snap', JobStatus.COMPLETED, 6, expected_count=1)
 
     def test_SnapFilePruner_binary_files_failed_to_upload(self):
         # Snap binary files attached to builds that failed to be uploaded to
         # the store are retained.
         self._test_SnapFilePruner(
-            'foo.snap', JobStatus.FAILED, 30, expected_count=1)
+            'foo.snap', JobStatus.FAILED, 7, expected_count=1)
 
     def test_SnapFilePruner_binary_files_no_upload_job(self):
         # Snap binary files attached to builds with no store upload job are
         # retained.
-        self._test_SnapFilePruner('foo.snap', None, 30, expected_count=1)
+        self._test_SnapFilePruner('foo.snap', None, 7, expected_count=1)
 
 
 class TestGarboTasks(TestCaseWithFactory):

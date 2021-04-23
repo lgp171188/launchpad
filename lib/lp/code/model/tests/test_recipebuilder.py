@@ -181,8 +181,7 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         job = self.makeJob(with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
         expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(
-                job.build, distroarchseries, None))
+            yield get_sources_list_for_building(job, distroarchseries, None))
         expected_archives.insert(
             0, "deb http://foo %s main" % job.build.distroseries.name)
         args = yield job.extraBuildArgs()
@@ -273,8 +272,7 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         job = self.makeJob(with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
         expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(
-                job.build, distroarchseries, None))
+            yield get_sources_list_for_building(job, distroarchseries, None))
         logger = BufferLogger()
         extra_args = yield job.extraBuildArgs(logger)
         self.assertEqual({
@@ -308,8 +306,7 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         distroarchseries = job.build.distroseries.architectures[0]
         args = yield job.extraBuildArgs()
         expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(
-                job.build, distroarchseries, None))
+            yield get_sources_list_for_building(job, distroarchseries, None))
         self.assertEqual(args["archives"], expected_archives)
         self.assertEqual(args["trusted_keys"], expected_trusted_keys)
 
@@ -318,8 +315,7 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
         job = self.makeJob(git=True, with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
         expected_archives, expected_trusted_keys = (
-            yield get_sources_list_for_building(
-                job.build, distroarchseries, None))
+            yield get_sources_list_for_building(job, distroarchseries, None))
         extra_args = yield job.extraBuildArgs()
         self.assertEqual({
             'arch_tag': 'i386',
