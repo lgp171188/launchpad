@@ -26,20 +26,21 @@
   </metal:heading>
 
   <div metal:fill-slot="main">
-    <div tal:condition="python: view.git_repository is None">
+    <div tal:condition="python: view.git_repository is None and
+                                view.user_can_push_default">
       <p>
         You can create a git repository for this OCI project in order to
         build your OCI recipes by using the following commands:
         <br />
         <pre class="command">
-          git remote add origin git+ssh://<tal:name replace="view/user/name"/>@<tal:host replace="view/git_ssh_hostname" />/<tal:name replace="view/git_repository_path"/>
+          git remote add origin <span class="ssh-url" tal:content="view/git_ssh_url" />
           git push --set-upstream origin master
         </pre>
       </p>
     </div>
     <div tal:define="repo view/git_repository"
          tal:condition="repo">
-      Your default git repository for this project is <a tal:replace="structure repo/fmt:link"/>.
+      The default git repository for this project is <a tal:replace="structure repo/fmt:link"/>.
     </div>
 
     <h2>OCI project information</h2>

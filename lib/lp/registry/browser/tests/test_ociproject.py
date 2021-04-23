@@ -10,11 +10,14 @@ __metaclass__ = type
 __all__ = []
 
 from datetime import datetime
+import re
 
 import pytz
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.ociproject import (
     OCI_PROJECT_ALLOW_CREATE,
@@ -157,47 +160,60 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
         expected_links = ["Create OCI recipe", "View all recipes"]
         self.assertEqual("\n".join(expected_links), actions)
 
-    def test_git_repo_hint(self):
-        owner = self.factory.makePerson(name="a-usr")
+    def test_git_repo_hint_cannot_push(self):
+        owner = self.factory.makePerson()
         pillar = self.factory.makeProduct(name="a-pillar")
         oci_project = self.factory.makeOCIProject(
             pillar=pillar, ociprojectname="oci-name")
-        git_url = (
-            "git\+ssh://a-usr@git.launchpad.test/"
-            "~a-usr/a-pillar/\+oci/oci-name"
-        )
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
-            OCI project oci-name for A-pillar
-            .*
-            You can create a git repository for this OCI project in order
-            to build your OCI recipes by using the following commands:
-            git remote add origin
-            %s
-            git push --set-upstream origin master
+        self.assertNotIn(
+            "You can create a git repository",
+            self.getMainText(oci_project, user=owner))
 
-            OCI project information
-            Project: A-pillar
-            Name: oci-name
-            """ % git_url, self.getMainText(oci_project, user=owner))
-
-    def test_shows_existing_git_repo(self):
-        owner = self.factory.makePerson(name="a-usr")
+    def test_git_repo_hint_can_push(self):
         pillar = self.factory.makeProduct(name="a-pillar")
         oci_project = self.factory.makeOCIProject(
             pillar=pillar, ociprojectname="oci-name")
         self.factory.makeGitRepository(
             name=oci_project.name,
-            target=oci_project, owner=owner, registrant=owner)
+            target=oci_project, owner=pillar.owner, registrant=pillar.owner)
+        git_url = "git+ssh://%s@git.launchpad.test/a-pillar/+oci/oci-name" % (
+            pillar.owner.name)
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
             OCI project oci-name for A-pillar
             .*
-            Your default git repository for this project is
-            lp:~a-usr/a-pillar/\+oci/oci-name/\+git/oci-name.
+            You can create a git repository for this OCI project in order
+            to build your OCI recipes by using the following commands:
+            git remote add origin %s
+            git push --set-upstream origin master
+
+            OCI project information
+            Project: A-pillar
+            Edit OCI project
+            Name: oci-name
+            Edit OCI project
+            """ % re.escape(git_url),
+            self.getMainText(oci_project, user=pillar.owner))
+
+    def test_shows_existing_default_git_repo(self):
+        pillar = self.factory.makeProduct(name="a-pillar")
+        oci_project = self.factory.makeOCIProject(
+            pillar=pillar, ociprojectname="oci-name")
+        repository = self.factory.makeGitRepository(
+            name=oci_project.name, target=oci_project)
+        with person_logged_in(pillar.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                oci_project, repository)
+        git_url = "lp:a-pillar/+oci/oci-name"
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            OCI project oci-name for A-pillar
+            .*
+            The default git repository for this project is %s.
 
             OCI project information
             Project: A-pillar
             Name: oci-name
-            """, self.getMainText(oci_project, user=owner))
+            """ % re.escape(git_url),
+            self.getMainText(oci_project))
 
     def test_shows_official_recipes(self):
         distribution = self.factory.makeDistribution(displayname="My Distro")
