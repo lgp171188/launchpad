@@ -280,7 +280,7 @@ page that any user can navigate.
     >>> print(extract_text(content.h1))
     Derby announcement headline
 
-    >>> print(extract_text(content.findAll('p')[1]))
+    >>> print(extract_text(content.find_all('p')[1]))
     Derby announcement summary
 
     >>> anon_browser.getLink("Read all announcements").click()

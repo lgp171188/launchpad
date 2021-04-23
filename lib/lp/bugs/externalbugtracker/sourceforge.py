@@ -61,7 +61,7 @@ class SourceForge(ExternalBugTracker):
                 # Happily, BeautifulSoup will turn the contents of this tag
                 # into a newline-delimited list from which we can then
                 # extract the requisite data.
-                status_row = status_tag.findParent().findParent()
+                status_row = status_tag.find_parent().find_parent()
                 status = status_row.contents[-1]
                 status = status.strip()
             else:
@@ -84,7 +84,7 @@ class SourceForge(ExternalBugTracker):
             # find it it's not critical.
             resolution_tag = soup.find(text=re.compile('Resolution:'))
             if resolution_tag:
-                resolution_row = resolution_tag.findParent().findParent()
+                resolution_row = resolution_tag.find_parent().find_parent()
                 resolution = resolution_row.contents[-1]
                 resolution = resolution.strip()
             else:

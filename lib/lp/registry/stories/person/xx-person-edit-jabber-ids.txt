@@ -45,7 +45,7 @@ it will be associated with their account.
 
     >>> def show_jabberids(browser):
     ...     tags = find_tag_by_id(browser.contents, 'jabber-ids')
-    ...     for dd in tags.findAll('dd'):
+    ...     for dd in tags.find_all('dd'):
     ...         print(extract_text(dd))
 
     >>> show_jabberids(user_browser)

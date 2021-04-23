@@ -333,7 +333,7 @@ The source packages list is presented publicly.
     >>> def print_archive_package_rows(contents):
     ...     package_table = find_tag_by_id(
     ...         anon_browser.contents, 'packages_list')
-    ...     for ppa_row in package_table.findChildren('tr'):
+    ...     for ppa_row in package_table.find_all('tr'):
     ...         print(extract_text(ppa_row))
 
     >>> print_archive_package_rows(anon_browser.contents)

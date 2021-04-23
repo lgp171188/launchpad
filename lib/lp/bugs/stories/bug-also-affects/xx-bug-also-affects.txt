@@ -506,7 +506,7 @@ But we're happy, so we add the bug watch.
     >>> bug_watches = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
     >>> for li in bug_watches('li'):
-    ...     print(li.findAll('a')[0].decode_contents())
+    ...     print(li.find_all('a')[0].decode_contents())
     gnome-bugzilla #42
 
 It's possible to supply an HTTPS URL, even though the bug tracker's base
@@ -532,7 +532,7 @@ The URL was automatically converted to HTTP:
     >>> bug_watches = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
     >>> for li in bug_watches('li'):
-    ...     print(li.findAll('a')[0]['href'])
+    ...     print(li.find_all('a')[0]['href'])
     http://bugzilla.gnome.org/bugs/show_bug.cgi?id=42
     http://bugzilla.gnome.org/bugs/show_bug.cgi?id=84
 
@@ -597,7 +597,7 @@ registered automatically.
     >>> bug_watches = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
     >>> for li in bug_watches('li'):
-    ...     print(li.findAll('a')[0].decode_contents())
+    ...     print(li.find_all('a')[0].decode_contents())
     gnome-bugzilla #42
     gnome-bugzilla #84
     auto-new.trac #42
@@ -623,7 +623,7 @@ it to HTTP on their behalf:
     >>> bug_watches = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
     >>> for li in bug_watches('li'):
-    ...     print(li.findAll('a')[0]['href'])
+    ...     print(li.find_all('a')[0]['href'])
     http://bugzilla.gnome.org/bugs/show_bug.cgi?id=168
     http://bugzilla.gnome.org/bugs/show_bug.cgi?id=42
     http://bugzilla.gnome.org/bugs/show_bug.cgi?id=84

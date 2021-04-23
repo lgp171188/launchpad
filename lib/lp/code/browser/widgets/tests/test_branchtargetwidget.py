@@ -244,6 +244,6 @@ class LaunchpadTargetWidgetTestCase(TestCaseWithFactory):
             'field.target.product',
             ]
         soup = BeautifulSoup(markup)
-        fields = soup.findAll(['input', 'select'], {'id': re.compile('.*')})
+        fields = soup.find_all(['input', 'select'], {'id': re.compile('.*')})
         ids = [field['id'] for field in fields]
         self.assertContentEqual(expected_ids, ids)

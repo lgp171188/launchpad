@@ -179,7 +179,7 @@ class LaunchpadRootIndexViewTestCase(TestCaseWithFactory):
         markup = BeautifulSoup(
             result, parse_only=SoupStrainer(id='homepage-blogposts'))
         self.assertEqual(['called'], calls)
-        items = markup.findAll('li', 'news')
+        items = markup.find_all('li', 'news')
         # Notice about launchpad being opened is always added at the end
         self.assertEqual(3, len(items))
         a = items[-1].find("a")
@@ -226,7 +226,7 @@ class LaunchpadRootIndexViewTestCase(TestCaseWithFactory):
             result = view()
         markup = BeautifulSoup(
             result, parse_only=SoupStrainer(id='homepage-blogposts'))
-        items = markup.findAll('li', 'news')
+        items = markup.find_all('li', 'news')
         self.assertEqual(3, len(items))
 
     def test_featured_projects_query_count(self):

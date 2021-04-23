@@ -140,7 +140,7 @@ Page Footers
     >>> bugs_request.setPrincipal(user)
     >>> view = BugsMainSideView(user, bugs_request)
     >>> footer = find_tag_by_id(html, 'footer')
-    >>> for tag in footer.findAll('a'):
+    >>> for tag in footer.find_all('a'):
     ...     print(tag.string, tag['href'])
     None http://launchpad.test/
     Take the tour http://launchpad.test/+tour

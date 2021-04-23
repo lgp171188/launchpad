@@ -102,7 +102,7 @@ mouse is left over the question's title.
     >>> import re
     >>> question_link = contents.find(
     ...     'a', text=re.compile('Installation of Java'))
-    >>> print(question_link.findParent('li')['title'])
+    >>> print(question_link.find_parent('li')['title'])
     <BLANKLINE>
     When opening http://www.gotomypc.com/ with Mozilla, a java run time
     ennvironment plugin is requested.
@@ -117,7 +117,7 @@ hovers on the FAQ's title:
 
     >>> faq_link = contents.find(
     ...     'a', text=re.compile('How can I play MP3/Divx'))
-    >>> print(faq_link.findParent('li')['title'])
+    >>> print(faq_link.find_parent('li')['title'])
     Playing many common formats such as DVIX, MP3, DVD, or Flash
     animations require the installation of plugins.
     <BLANKLINE>

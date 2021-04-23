@@ -22,6 +22,8 @@ __all__ = [
     'IPersonSet',
     'IPillar',
     'IPillarNameSet',
+    'IPoll',
+    'IPollSet',
     'IProduct',
     'IProductRelease',
     'IProductReleaseFile',
@@ -82,6 +84,10 @@ from lp.registry.interfaces.person import (
 from lp.registry.interfaces.pillar import (
     IPillar,
     IPillarNameSet,
+    )
+from lp.registry.interfaces.poll import (
+    IPoll,
+    IPollSet,
     )
 from lp.registry.interfaces.product import (
     IProduct,

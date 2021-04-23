@@ -1402,6 +1402,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
 class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
 
     identifier = "binary-package-build"
+    issuable_via_authserver = True
 
     @property
     def _primary_caveat_name(self):

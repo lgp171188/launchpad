@@ -98,5 +98,5 @@ A similar page is available for only searching project groups.
 The search results contains only project-groups.
 
     >>> print(extract_text(
-    ...     find_main_content(anon_browser.contents).findAll('p')[1]))
+    ...     find_main_content(anon_browser.contents).find_all('p')[1]))
     1 project group found matching ...gnome...

@@ -43,7 +43,7 @@ page, because that page does not include a bug description field.
     ...         user_browser.contents, 'informational message')[0]))
 
     >>> def print_visible_guidelines(context_path, guidelines):
-    ...     result = guidelines.findParents(id='filebug-form-container')
+    ...     result = guidelines.find_parents(id='filebug-form-container')
     ...     style_attrs = []
     ...     if result:
     ...         filebug_form_container = result[0]

@@ -84,7 +84,7 @@ claim process the team's owner.
     >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> soup = BeautifulSoup(user_browser.contents)
     >>> print(extract_text(
-    ...     soup.find(attrs={'for': 'field.teamowner'}).findPrevious('tr')))
+    ...     soup.find(attrs={'for': 'field.teamowner'}).find_previous('tr')))
     Team Owner: No Privileges Person...
 
     >>> user_browser.getControl('Display Name').value = 'Ubuntu Doc Team'

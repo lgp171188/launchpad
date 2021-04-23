@@ -18,10 +18,8 @@ from pymacaroons import Macaroon
 from pytz import UTC
 from testtools.matchers import (
     Equals,
-    Matcher,
     MatchesListwise,
     MatchesStructure,
-    Mismatch,
     )
 import transaction
 from zope.component import getUtility
@@ -66,7 +64,10 @@ from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
     )
-from lp.services.macaroons.testing import MacaroonTestMixin
+from lp.services.macaroons.testing import (
+    MacaroonTestMixin,
+    MacaroonVerifies,
+    )
 from lp.services.webapp import canonical_url
 from lp.testing import (
     ANONYMOUS,
@@ -93,19 +94,6 @@ def login_for_code_imports():
     the vcs-imports team and can access the objects freely.
     """
     return login_celebrity('vcs_imports')
-
-
-class CodeImportJobMacaroonVerifies(Matcher):
-    """Matches if a code-import-job macaroon can be verified."""
-
-    def __init__(self, code_import):
-        self.code_import = code_import
-
-    def match(self, macaroon_raw):
-        issuer = getUtility(IMacaroonIssuer, 'code-import-job')
-        macaroon = Macaroon.deserialize(macaroon_raw)
-        if not issuer.verifyMacaroon(macaroon, self.code_import.import_job):
-            return Mismatch("Macaroon '%s' does not verify" % macaroon_raw)
 
 
 class TestCodeImportJob(TestCaseWithFactory):
@@ -154,7 +142,7 @@ class TestCodeImportJob(TestCaseWithFactory):
                 Equals('git'), Equals('git'),
                 Equals('git://git.example.com/project.git'),
                 Equals('--macaroon'),
-                CodeImportJobMacaroonVerifies(code_import),
+                MacaroonVerifies('code-import-job', code_import.import_job),
                 Equals('--exclude-host'), Equals('launchpad.test'),
                 ]),
             # Start the job so that the macaroon can be verified.

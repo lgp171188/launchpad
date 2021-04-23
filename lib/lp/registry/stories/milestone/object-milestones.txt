@@ -13,11 +13,11 @@ function will print them out:
     ...     if table is None:
     ...         return None
     ...     result = []
-    ...     for tr in table.findAll('tr'):
+    ...     for tr in table.find_all('tr'):
     ...         milestone_date = tr.find('span')
     ...         if len(milestone_date.contents) > 0:
     ...             # Just make sure we don't print an actual date.
-    ...             milestone_date.contents[0].replaceWith('A date')
+    ...             milestone_date.contents[0].replace_with('A date')
     ...         result.append(extract_text(tr))
     ...     return '\n'.join(result)
 
@@ -26,9 +26,9 @@ function will print them out:
     ...     if portlet is None:
     ...         return None
     ...     result = []
-    ...     for tr in portlet.find('table').findAll('tr'):
+    ...     for tr in portlet.find('table').find_all('tr'):
     ...         result.append(
-    ...             ' '.join(text.strip() for text in tr.findAll(text=True)))
+    ...             ' '.join(text.strip() for text in tr.find_all(text=True)))
     ...     return '\n'.join(result)
 
 
@@ -361,7 +361,7 @@ listing:
 
 Each bugtask has one or more badges.
 
-    >>> print(bug_table.findAll('tr')[1])
+    >>> print(bug_table.find_all('tr')[1])
     <tr>...Test Bug 1...<a...alt="milestone test-milestone"...
       class="sprite milestone"...>...
 

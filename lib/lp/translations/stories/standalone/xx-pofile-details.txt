@@ -52,9 +52,9 @@ a separate method to pretty-print all the translations.
     ...         return ' '.join(contents)
     ...
     ...     table = find_tags_by_class(browser.contents, 'listing')[0]
-    ...     rows = table.findAll('tr')
+    ...     rows = table.find_all('tr')
     ...     for row in rows:
-    ...         cells = row.findAll('td')
+    ...         cells = row.find_all('td')
     ...         type = get_first_defined_class(cells)
     ...         types = { 'englishstring' : 'english',
     ...                   'usedtranslation' : ' used',

@@ -376,7 +376,7 @@ branch widget is shown.
     >>> import re
     >>> def get_target_branch_widgets(browser):
     ...     main = find_main_content(browser.contents)
-    ...     return main.findAll(
+    ...     return main.find_all(
     ...         'input', attrs={'name': re.compile('target_branch')})
 
     >>> nopriv_browser.open(

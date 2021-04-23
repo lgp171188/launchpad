@@ -24,16 +24,17 @@ from lp.bugs.model.bugnotification import BugNotification
 from lp.bugs.scripts.bugnotification import construct_email_notifications
 from lp.services.database.interfaces import IStore
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     api_url,
-    launchpadlib_for,
     login_person,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.pages import webservice_for_person
 
 
 class TestBugChanges(TestCaseWithFactory):
@@ -695,10 +696,15 @@ class TestBugChanges(TestCaseWithFactory):
         # log and notifications.
         person = self.factory.makePerson()
         bug = self.factory.makeBug(owner=person)
+        bug_url = api_url(bug)
         self.saveOldChanges(bug=bug)
-        webservice = launchpadlib_for('test', person)
-        lp_bug = webservice.load(api_url(bug))
-        lp_bug.transitionToInformationType(information_type='Private Security')
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version='devel')
+        response = webservice.named_post(
+            bug_url, 'transitionToInformationType',
+            information_type='Private Security')
+        self.assertEqual(200, response.status)
 
         information_type_change_activity = {
             'person': person,

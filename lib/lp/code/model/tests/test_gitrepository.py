@@ -174,7 +174,6 @@ from lp.testing import (
     api_url,
     celebrity_logged_in,
     login_person,
-    logout,
     person_logged_in,
     record_two_runs,
     StormStatementRecorder,
@@ -192,10 +191,7 @@ from lp.testing.matchers import (
     DoesNotSnapshot,
     HasQueryCount,
     )
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import webservice_for_person
 from lp.xmlrpc import faults
 from lp.xmlrpc.interfaces import IPrivateApplication
 
@@ -638,8 +634,7 @@ class TestGitIdentityMixin(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject()
         repository = self.factory.makeGitRepository(target=oci_project)
         with admin_logged_in():
-            self.repository_set.setDefaultRepository(
-                oci_project, repository, force_oci=True)
+            self.repository_set.setDefaultRepository(oci_project, repository)
         self.assertGitIdentity(
             repository,
             "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name))
@@ -755,8 +750,7 @@ class TestGitIdentityMixin(TestCaseWithFactory):
         with admin_logged_in():
             self.repository_set.setDefaultRepositoryForOwner(
                 repository.owner, oci_project, repository, repository.owner)
-            self.repository_set.setDefaultRepository(
-                oci_project, repository, force_oci=True)
+            self.repository_set.setDefaultRepository(oci_project, repository)
         eric_oci_project = getUtility(IPersonOCIProjectFactory).create(
             eric, oci_project)
         self.assertEqual(
@@ -3599,29 +3593,6 @@ class TestGitRepositorySet(TestCaseWithFactory):
                 self.repository_set.setDefaultRepositoryForOwner,
                 person, person, repository, user)
 
-    def test_setDefaultRepository_refuses_oci_project(self):
-        # setDefaultRepository refuses if the target is an OCI project.
-        oci_project = self.factory.makeOCIProject()
-        repository = self.factory.makeGitRepository(target=oci_project)
-        with admin_logged_in():
-            self.assertRaises(
-                GitTargetError, self.repository_set.setDefaultRepository,
-                oci_project, repository)
-
-    def test_setDefaultRepository_accepts_oci_project_override(self):
-        # setDefaultRepository refuses if the target is an OCI project.
-        oci_project = self.factory.makeOCIProject()
-        repository = self.factory.makeGitRepository(target=oci_project)
-        with admin_logged_in():
-            self.repository_set.setDefaultRepository(
-                oci_project, repository, force_oci=True)
-        identity_path = "%s/+oci/%s" % (
-                oci_project.distribution.name, oci_project.name)
-        self.assertEqual(
-            identity_path, repository.shortened_path, "shortened path")
-        self.assertEqual(
-            "lp:%s" % identity_path, repository.git_identity, "git identity")
-
     def test_setDefaultRepositoryForOwner_noop(self):
         # If a repository is already the target owner default, setting
         # the default again should no-op.
@@ -3770,12 +3741,6 @@ class TestGitRepositorySetDefaultsPackage(
 
 class TestGitRepositorySetDefaultsOCIProject(
     TestGitRepositorySetDefaultsMixin, TestCaseWithFactory):
-
-    def setUp(self):
-        super(TestGitRepositorySetDefaultsOCIProject, self).setUp()
-        self.set_method = (lambda target, repository, user:
-            self.repository_set.setDefaultRepository(
-                target, repository, force_oci=True))
 
     def makeTarget(self, template=None):
         kwargs = {}
@@ -4582,8 +4547,8 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         with person_logged_in(requester):
             repository_url = api_url(repository)
         webservice = webservice_for_person(
-            requester, permission=OAuthPermission.WRITE_PUBLIC)
-        webservice.default_api_version = "devel"
+            requester, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(200, response.status)
         macaroon = Macaroon.deserialize(response.jsonBody())
@@ -4606,9 +4571,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         repository = self.factory.makeGitRepository()
         with person_logged_in(repository.owner):
             repository_url = api_url(repository)
-        logout()
-        webservice = LaunchpadWebServiceCaller()
-        webservice.default_api_version = "devel"
+        webservice = webservice_for_person(None, default_api_version="devel")
         response = webservice.named_post(repository_url, "issueAccessToken")
         self.assertEqual(401, response.status)
         self.assertEqual(

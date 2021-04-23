@@ -49,7 +49,7 @@ understood by any member of the support community.
     able to test this case again. Note that in production this exact use case
     already finds nothing.
 
-    #>>> for row in similar_questions.findAll('tr', 'noted'):
+    #>>> for row in similar_questions.find_all('tr', 'noted'):
     #...     row.find('a').decode_contents()
     #'Installation of Java Runtime Environment for Mozilla'
     #'Problema al recompilar kernel con soporte smp (doble-n\xc3\xbacleo)'

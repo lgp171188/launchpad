@@ -2,13 +2,13 @@
 
     >>> def branchSummary(browser):
     ...     table = find_tag_by_id(browser.contents, 'branchtable')
-    ...     for row in table.tbody.findAll('tr'):
-    ...         cells = row.findAll('td')
+    ...     for row in table.tbody.find_all('tr'):
+    ...         cells = row.find_all('td')
     ...         first_cell = cells[0]
-    ...         anchors = first_cell.findAll('a')
+    ...         anchors = first_cell.find_all('a')
     ...         print(anchors[0].get('href'))
     ...         # Badges in the next cell
-    ...         for img in cells[1].findAll('img'):
+    ...         for img in cells[1].find_all('img'):
     ...             print(img['title'])
 
 

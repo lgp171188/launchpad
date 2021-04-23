@@ -21,7 +21,7 @@ A helper method to print out language chart.
     ...     print("%-25s %13s %13s" % (
     ...         "Language", "Untranslated", "Unreviewed"))
     ...     for row in language_rows:
-    ...         cols = row.findAll('td')
+    ...         cols = row.find_all('td')
     ...         language = extract_text(cols[0])
     ...         untranslated = extract_text(cols[2])
     ...         unreviewed = extract_text(cols[3])

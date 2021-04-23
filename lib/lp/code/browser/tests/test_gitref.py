@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for GitRefView."""
@@ -23,6 +23,7 @@ from testtools.matchers import (
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.code.errors import GitRepositoryScanFault
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.tests.helpers import GitHostingFixture
@@ -40,6 +41,7 @@ from lp.testing import (
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import dbuser
+from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -47,6 +49,7 @@ from lp.testing.layers import (
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
     extract_text,
+    find_main_content,
     find_tags_by_class,
     )
 from lp.testing.views import (
@@ -148,6 +151,28 @@ class TestGitRefView(BrowserTestCase):
 
     def test_rendering_non_ascii(self):
         self._test_rendering("\N{SNOWMAN}")
+
+    def test_rendering_githost_failure(self):
+        [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
+        log = self.makeCommitLog()
+        self.hosting_fixture.getLog.result = list(reversed(log))
+        self.scanRef(ref, log[-1])
+
+        # Make code hosting fail.
+        self.hosting_fixture.getLog = FakeMethod(
+            failure=GitRepositoryScanFault(":-("))
+        with admin_logged_in():
+            url = canonical_url(ref)
+        # Visiting ref page should not crash, and we should be able to see
+        # the error message telling us that git hosting is having problems.
+        browser = self.getUserBrowser(url, ref.owner)
+
+        error_msg = (
+            "There was an error while fetching commit information from code "
+            "hosting service. Please try again in a few minutes. If the "
+            "problem persists, contact Launchpad support.")
+        self.assertIn(
+            error_msg, extract_text(find_main_content(browser.contents)))
 
     def test_clone_instructions(self):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
@@ -501,7 +526,7 @@ class TestGitRefView(BrowserTestCase):
         view = create_initialized_view(ref, "+index")
         contents = view()
         soup = BeautifulSoup(contents)
-        details = soup.findAll(
+        details = soup.find_all(
             attrs={"class": re.compile(r"commit-details|commit-comment")})
         expected_texts = list(reversed([
             "%.7s...\nby\n%s\non 2015-01-%02d" % (
@@ -513,7 +538,7 @@ class TestGitRefView(BrowserTestCase):
             expected_texts, [extract_text(detail) for detail in details])
         self.assertEqual(
             [canonical_url(mp), canonical_url(mp.merge_source)],
-            [link["href"] for link in details[5].findAll("a")])
+            [link["href"] for link in details[5].find_all("a")])
         self.assertThat(
             contents, Not(soupmatchers.HTMLContains(MissingCommitsNote())))
 
@@ -532,7 +557,7 @@ class TestGitRefView(BrowserTestCase):
         view = create_initialized_view(ref, "+index")
         contents = view()
         soup = BeautifulSoup(contents)
-        details = soup.findAll(
+        details = soup.find_all(
             attrs={"class": re.compile(r"commit-details|commit-comment")})
         expected_texts = list(reversed([
             "%.7s...\nby\n%s\non 2015-01-%02d" % (
@@ -544,7 +569,7 @@ class TestGitRefView(BrowserTestCase):
             expected_texts, [extract_text(detail) for detail in details])
         self.assertEqual(
             [canonical_url(mp)],
-            [link["href"] for link in details[5].findAll("a")])
+            [link["href"] for link in details[5].find_all("a")])
         self.assertThat(
             contents, Not(soupmatchers.HTMLContains(MissingCommitsNote())))
 
@@ -629,7 +654,7 @@ class TestGitRefView(BrowserTestCase):
         view = create_initialized_view(ref, "+index")
         contents = view()
         soup = BeautifulSoup(contents)
-        details = soup.findAll(
+        details = soup.find_all(
             attrs={"class": re.compile(r"commit-details|commit-comment")})
         expected_text = "%.7s...\nby\n%s\non 2015-01-%02d" % (
             log[-1]["sha1"], log[-1]["author"]["name"], len(log))

@@ -16,12 +16,12 @@ IP address, since we'll use that later.
     'Hoary (5.04) : Translations : ...evolution...package : Ubuntu'
 
     >>> content = find_main_content(anon_browser.contents)
-    >>> print(backslashreplace(extract_text(content.findAll('h1')[0])))
+    >>> print(backslashreplace(extract_text(content.find_all('h1')[0])))
     Translations for evolution in Ubuntu Hoary
 
 There are two templates for evolution in Ubuntu Hoary
 
-    >>> template_names = content.findAll('h2')
+    >>> template_names = content.find_all('h2')
     >>> for name in template_names:
     ...     print(extract_text(name))
     Template "evolution-2.2" in Ubuntu Hoary package "evolution"
@@ -34,8 +34,8 @@ comprised of the translated languages plus the languages of the user,
 100% of the strings are untranslated. The Last and Edited By columns
 indicate that these languages have never been edited my anyone.
 
-    >>> table = content.findAll('table')[0]
-    >>> for row in table.findAll('tr'):
+    >>> table = content.find_all('table')[0]
+    >>> for row in table.find_all('tr'):
     ...     print(extract_text(row, formatter='html'))
     Language        Status Untranslated Need review Changed Last    Edited By
     Afrikaans              22             ...         ...   &mdash; &mdash;

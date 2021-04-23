@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = [
     'MembershipNotificationJob',
+    'PersonCloseAccountJob',
     'PersonTransferJob',
     ]
 
@@ -24,12 +25,14 @@ from storm.locals import (
     Reference,
     Unicode,
     )
+import transaction
 from zope.component import getUtility
 from zope.interface import (
     implementer,
     provider,
     )
 
+from lp.app.errors import TeamAccountNotClosable
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.enums import PersonTransferJobType
 from lp.registry.interfaces.person import (
@@ -42,6 +45,8 @@ from lp.registry.interfaces.persontransferjob import (
     IExpiringMembershipNotificationJobSource,
     IMembershipNotificationJob,
     IMembershipNotificationJobSource,
+    IPersonCloseAccountJob,
+    IPersonCloseAccountJobs,
     IPersonDeactivateJob,
     IPersonDeactivateJobSource,
     IPersonMergeJob,
@@ -59,6 +64,7 @@ from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.registry.mail.teammembership import TeamMembershipMailer
 from lp.registry.model.person import Person
 from lp.registry.personmerge import merge_people
+from lp.registry.scripts.closeaccount import close_account
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
@@ -435,6 +441,75 @@ class PersonDeactivateJob(PersonTransferJobDerived):
 
     def getOperationDescription(self):
         return 'deactivating ~%s' % self.person.name
+
+
+@implementer(IPersonCloseAccountJob)
+@provider(IPersonCloseAccountJobs)
+class PersonCloseAccountJob(PersonTransferJobDerived):
+    """A Job that closes account for a person."""
+
+    class_job_type = PersonTransferJobType.CLOSE_ACCOUNT
+
+    config = config.IPersonCloseAccountJobs
+
+    @classmethod
+    def create(cls, person):
+        """See `IPersonCloseAccountJobs`."""
+
+        # We don't delete teams
+        if person.is_team:
+            raise TeamAccountNotClosable("%s is a team" % person.name)
+
+        return super(PersonCloseAccountJob, cls).create(
+            minor_person=getUtility(ILaunchpadCelebrities).janitor,
+            major_person=person, metadata={})
+
+    @classmethod
+    def find(cls, person=None):
+        """See `IPersonMergeJobSource`."""
+        conditions = [
+            PersonCloseAccountJob.job_type == cls.class_job_type,
+            PersonCloseAccountJob.job_id == Job.id,
+            Job._status.is_in(Job.PENDING_STATUSES)]
+        arg_conditions = []
+        if person:
+            arg_conditions.append(PersonCloseAccountJob.major_person == person)
+        conditions.extend(arg_conditions)
+        return DecoratedResultSet(
+            IStore(PersonCloseAccountJob).find(
+                PersonCloseAccountJob, *conditions), cls)
+
+    @property
+    def person(self):
+        """See `IPersonCloseAccountJob`."""
+        return self.major_person
+
+    @property
+    def log_name(self):
+        return self.__class__.__name__
+
+    def getErrorRecipients(self):
+        """See `IPersonCloseAccountJob`."""
+        return [format_address_for_person(self.person)]
+
+    def run(self):
+        """Perform the account closure."""
+        try:
+            close_account(self.person.name, log)
+            transaction.commit()
+        except Exception:
+            log.error(
+                "%s Account closure failed for user %s", self.log_name,
+                self.person.name)
+            transaction.abort()
+
+    def __repr__(self):
+        return (
+            "<{self.__class__.__name__} to close account "
+            "~{self.person.name}").format(self=self)
+
+    def getOperationDescription(self):
+        return 'closing account for ~%s' % self.person.name
 
 
 @implementer(ITeamInvitationNotificationJob)

@@ -28,15 +28,11 @@ from lp.testing import (
     admin_logged_in,
     api_url,
     login,
-    logout,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.pages import (
-    LaunchpadWebServiceCaller,
-    webservice_for_person,
-    )
+from lp.testing.pages import webservice_for_person
 
 
 class SpecificationWebserviceTests(TestCaseWithFactory):
@@ -424,9 +420,7 @@ class IHasSpecificationsTests(TestCaseWithFactory):
         self.factory.makeSpecification(product=product, name="spec1")
         self.factory.makeSpecification(product=product, name="spec2")
         product_url = api_url(product)
-        logout()
-        webservice = LaunchpadWebServiceCaller(
-            "test", "", default_api_version="devel")
+        webservice = webservice_for_person(None, default_api_version="devel")
         response = webservice.get(product_url)
         self.assertEqual(200, response.status)
         response = webservice.get(

@@ -359,7 +359,7 @@ class Mantis(ExternalBugTracker):
                                and not isinstance(node, Comment)))
         if app_error:
             app_error_code = ''.join(c for c in app_error if c.isdigit())
-            app_error_message = app_error.findNext('p')
+            app_error_message = app_error.find_next('p')
             if app_error_message is not None:
                 app_error_message = app_error_message.string
             return app_error_code, app_error_message
@@ -388,7 +388,7 @@ class Mantis(ExternalBugTracker):
         if key_node is None:
             raise UnparsableBugData("Key %r not found." % (key,))
 
-        value_cell = key_node.findNext('td')
+        value_cell = key_node.find_next('td')
         if value_cell is None:
             raise UnparsableBugData(
                 "Value cell for key %r not found." % (key,))

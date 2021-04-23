@@ -504,7 +504,7 @@ class TestBranchView(BrowserTestCase):
 
         self.assertTextMatchesExpressionIgnoreWhitespace(expected_text, text)
 
-        links = revision_content.findAll('a')
+        links = revision_content.find_all('a')
         self.assertEqual(mp_url, links[2]['href'])
 
     def test_recent_revisions_with_merge_proposals_and_bug_links(self):
@@ -559,7 +559,7 @@ class TestBranchView(BrowserTestCase):
 
         self.assertTextMatchesExpressionIgnoreWhitespace(expected_text, text)
 
-        links = revision_content.findAll('a')
+        links = revision_content.find_all('a')
         self.assertEqual(mp_url, links[2]['href'])
         self.assertEqual(branch_url, links[3]['href'])
         self.assertEqual(linked_bug_urls[0], links[4]['href'])

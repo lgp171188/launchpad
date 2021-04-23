@@ -201,7 +201,7 @@ class TestAsyncLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
             with_builder=True)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         extra_args = yield job.extraBuildArgs()
         self.assertEqual({
             "archive_private": False,

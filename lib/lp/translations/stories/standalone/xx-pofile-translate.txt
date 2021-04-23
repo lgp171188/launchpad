@@ -38,12 +38,12 @@ The page is rendered in read-only mode, without any textareas for input.
 
     >>> main_content = find_tag_by_id(
     ...     browser.contents, 'messages_to_translate')
-    >>> for textarea in main_content.findAll('textarea'):
+    >>> for textarea in main_content.find_all('textarea'):
     ...     print('Found textarea:\n%s' % textarea)
 
 In fact, no input widgets at all are displayed.
 
-    >>> for input in main_content.findAll('input'):
+    >>> for input in main_content.find_all('input'):
     ...     print('Found input:\n%s' % input)
 
 As an anynoymous user you will have access to the download and details
@@ -139,7 +139,7 @@ they must adhere religiously to an agreed-to format.
     ...     content = find_main_content(browser.contents)
     ...     ids = [
     ...         tag.get(attribute)
-    ...         for tag in content.findAll()
+    ...         for tag in content.find_all()
     ...         if re.match(prefix, tag.get(attribute,''))]
     ...     return sorted(ids)
 

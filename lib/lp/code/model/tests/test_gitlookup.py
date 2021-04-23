@@ -173,7 +173,7 @@ class TestGetByPath(TestCaseWithFactory):
         repository = self.factory.makeGitRepository(target=oci_project)
         with person_logged_in(repository.target.distribution.owner):
             getUtility(IGitRepositorySet).setDefaultRepository(
-                repository.target, repository, force_oci=True)
+                repository.target, repository)
         self.assertEqual(
             (repository, ""), self.lookup.getByPath(repository.shortened_path))
 

@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build behaviour."""
@@ -14,6 +14,7 @@ from textwrap import dedent
 import time
 import uuid
 
+from aptsources.sourceslist import SourceEntry
 import fixtures
 from pymacaroons import Macaroon
 import pytz
@@ -34,17 +35,9 @@ from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
 import transaction
-from twisted.internet import (
-    defer,
-    reactor,
-    )
-from twisted.web import (
-    server,
-    xmlrpc,
-    )
+from twisted.internet import defer
 from zope.component import getUtility
 from zope.proxy import isProxy
-from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -78,13 +71,14 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.authserver.xmlrpc import AuthServerAPIView
+from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
     )
+from lp.services.macaroons.testing import MacaroonVerifies
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.snappy.interfaces.snap import (
@@ -114,35 +108,6 @@ from lp.testing.gpgkeys import (
     )
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import LaunchpadZopelessLayer
-from lp.xmlrpc.interfaces import IPrivateApplication
-
-
-class InProcessAuthServer(xmlrpc.XMLRPC):
-
-    def __init__(self, *args, **kwargs):
-        xmlrpc.XMLRPC.__init__(self, *args, **kwargs)
-        private_root = getUtility(IPrivateApplication)
-        self.authserver = AuthServerAPIView(
-            private_root.authserver, TestRequest())
-
-    def __getattr__(self, name):
-        if name.startswith("xmlrpc_"):
-            return getattr(self.authserver, name[len("xmlrpc_"):])
-        else:
-            raise AttributeError("%r has no attribute '%s'" % name)
-
-
-class InProcessAuthServerFixture(fixtures.Fixture, xmlrpc.XMLRPC):
-    """A fixture that runs an in-process authserver."""
-
-    def _setUp(self):
-        listener = reactor.listenTCP(0, server.Site(InProcessAuthServer()))
-        self.addCleanup(listener.stopListening)
-        config.push("in-process-auth-server-fixture", dedent("""
-            [builddmaster]
-            authentication_endpoint: http://localhost:%d/
-            """) % listener.getHost().port)
-        self.addCleanup(config.pop, "in-process-auth-server-fixture")
 
 
 class FormatAsRfc3339TestCase(TestCase):
@@ -377,7 +342,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(branch=branch)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -417,7 +382,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -448,7 +413,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref.repository.getRefByPath("HEAD"))
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -482,7 +447,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref, private=True)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         args = yield job.extraBuildArgs()
@@ -526,7 +491,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -557,7 +522,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(git_ref=ref)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -654,7 +619,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(channels={"snapcraft": "edge"})
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertFalse(isProxy(args["channels"]))
@@ -666,7 +631,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(channels={"snapcraft": "apt"})
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertNotIn("channels", args)
@@ -680,7 +645,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob()
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertFalse(isProxy(args["channels"]))
@@ -695,7 +660,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         job = self.makeJob(channels={"snapcraft": "apt"})
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertNotIn("channels", args)
@@ -825,6 +790,59 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertEqual(expected_archives, args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_snap_base_with_private_archive_dependencies(self):
+        # If the build is using a snap base that has archive dependencies on
+        # private PPAs, extraBuildArgs sends them.
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        snap_base = self.factory.makeSnapBase()
+        job = self.makeJob(snap_base=snap_base)
+        dependency = self.factory.makeArchive(
+            distribution=job.archive.distribution, private=True)
+        snap_base.addArchiveDependency(
+            dependency, PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"])
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=dependency, distroarchseries=job.build.distro_arch_series,
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        job.build.updateStatus(BuildStatus.BUILDING)
+        self.assertThat(
+            [SourceEntry(item) for item in args["archives"]],
+            MatchesListwise([
+                MatchesStructure(
+                    type=Equals("deb"),
+                    uri=AfterPreprocessing(urlsplit, MatchesStructure(
+                        scheme=Equals("http"),
+                        username=Equals("buildd"),
+                        password=MacaroonVerifies("snap-build", dependency),
+                        hostname=Equals("private-ppa.launchpad.test"),
+                        path=Equals("/%s/%s/%s" % (
+                            dependency.owner.name, dependency.name,
+                            dependency.distribution.name)))),
+                    dist=Equals(job.build.distro_series.name),
+                    comps=Equals(["main"])),
+                MatchesStructure.byEquality(
+                    type="deb",
+                    uri=job.archive.archive_url,
+                    dist=job.build.distro_series.name,
+                    comps=["main", "universe"]),
+                MatchesStructure.byEquality(
+                    type="deb",
+                    uri=job.archive.archive_url,
+                    dist="%s-security" % job.build.distro_series.name,
+                    comps=["main", "universe"]),
+                MatchesStructure.byEquality(
+                    type="deb",
+                    uri=job.archive.archive_url,
+                    dist="%s-updates" % job.build.distro_series.name,
+                    comps=["main", "universe"]),
+                ]))
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_ppa_and_snap_base_with_archive_dependencies(self):

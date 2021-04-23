@@ -35,11 +35,11 @@ show the number of messages that are untranslated, the percentage
 that represents, when the translation was updated, and by whom.
 
     >>> content = find_main_content(anon_browser.contents)
-    >>> print(extract_text(content.findAll('h1')[0]))
+    >>> print(extract_text(content.find_all('h1')[0]))
     Translation status
 
-    >>> table = content.findAll('table')[0]
-    >>> for row in table.findAll('tr'):
+    >>> table = content.find_all('table')[0]
+    >>> for row in table.find_all('tr'):
     ...     print(extract_text(row, formatter='html'))
     Language        Status  Untranslated Need review Changed Last    Edited By
     Afrikaans               22           ...         ...     &mdash; &mdash;
@@ -58,7 +58,7 @@ English translations, but they are not displayed to the user.
     >>> anon_browser.open('http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/mozilla/+pots/pkgconf-mozilla')
     >>> table = find_tag_by_id(anon_browser.contents, 'language-chart')
-    >>> for row in table.findAll('tr')[0:6]:
+    >>> for row in table.find_all('tr')[0:6]:
     ...     print(extract_text(row, formatter='html'))
     Language    Status  Untranslated Need review Changed Last  Edited By
     Afrikaans             9            ...         ...   ...   &mdash;

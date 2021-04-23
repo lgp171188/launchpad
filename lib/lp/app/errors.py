@@ -12,6 +12,7 @@ __all__ = [
     'POSTToNonCanonicalURL',
     'ServiceUsageForbidden',
     'SubscriptionPrivacyViolation',
+    'TeamAccountNotClosable',
     'TranslationUnavailable',
     'UnexpectedFormData',
     'UserCannotUnsubscribePerson',
@@ -27,6 +28,10 @@ from zope.security.interfaces import (
 
 class TranslationUnavailable(Exception):
     """Translation objects are unavailable."""
+
+
+class TeamAccountNotClosable(Exception):
+    """We do not close team accounts."""
 
 
 @error_status(http_client.NOT_FOUND)

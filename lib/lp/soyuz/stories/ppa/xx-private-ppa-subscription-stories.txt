@@ -250,7 +250,6 @@ subscription is displayed.
     >>> print(extract_text(regeneration_info))
     Reset password
     If you believe...
-    Note: after ...
 
 When Joe clicks on the 'Generate new personal subscription' link then
 the page is redisplayed with new sources.list entries and a notification.
