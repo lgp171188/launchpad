@@ -15,7 +15,11 @@ __all__ = [
     'OCIProjectURL',
     ]
 
-from six.moves.urllib.parse import urlsplit
+from breezy import urlutils
+from six.moves.urllib.parse import (
+    urlsplit,
+    urlunsplit,
+    )
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -29,6 +33,7 @@ from lp.app.errors import NotFoundError
 from lp.app.interfaces.headings import IHeadingBreadcrumb
 from lp.bugs.browser.bugtask import BugTargetTraversalMixin
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import IDistribution
@@ -57,6 +62,7 @@ from lp.services.webapp import (
     StandardLaunchpadFacets,
     stepthrough,
     )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import (
@@ -243,15 +249,21 @@ class OCIProjectContextMenu(ContextMenu):
 class OCIProjectIndexView(LaunchpadView):
     @property
     def git_repository(self):
-        return self.context.getDefaultGitRepository(self.user)
+        return getUtility(IGitRepositorySet).getDefaultRepository(self.context)
 
     @property
-    def git_repository_path(self):
-        return self.context.getDefaultGitRepositoryPath(self.user)
+    def git_ssh_url(self):
+        base_url = urlsplit(
+            urlutils.join(
+                config.codehosting.git_ssh_root,
+                canonical_url(self.context, force_local_path=True)[1:]))
+        url = list(base_url)
+        url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        return urlunsplit(url)
 
     @property
-    def git_ssh_hostname(self):
-        return urlsplit(config.codehosting.git_ssh_root).hostname
+    def user_can_push_default(self):
+        return check_permission("launchpad.Edit", self.context)
 
     @property
     def official_recipes(self):

@@ -131,15 +131,6 @@ class IOCIProjectView(IHasGitRepositories, IHasOfficialBugTags, IServiceUsage,
         If the user is a Launchpad admin, any type is acceptable.
         """
 
-    def getDefaultGitRepository(person):
-        """Returns the default git repository for the given user under the
-        namespace of this OCI project"""
-
-    def getDefaultGitRepositoryPath(person):
-        """Returns the default git repository path for this OCI Project,
-        regardless if the repository exists or not.
-        """
-
 
 class IOCIProjectEditableAttributes(IBugTarget):
     """IOCIProject attributes that can be edited.

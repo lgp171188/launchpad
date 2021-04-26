@@ -43,7 +43,6 @@ from lp.bugs.model.bugtarget import BugTargetBase
 from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
     )
-from lp.code.interfaces.gitnamespace import IGitNamespaceSet
 from lp.code.model.branchnamespace import (
     BRANCH_POLICY_ALLOWED_TYPES,
     BRANCH_POLICY_REQUIRED_GRANTS,
@@ -336,14 +335,6 @@ class OCIProject(BugTargetBase, StructuralSubscriptionTargetMixin, StormBase):
                             [self.pillar], required_grant, user))):
             return []
         return BRANCH_POLICY_ALLOWED_TYPES[self.pillar.branch_sharing_policy]
-
-    def getDefaultGitRepository(self, person):
-        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
-        return namespace.getByName(self.name)
-
-    def getDefaultGitRepositoryPath(self, person):
-        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
-        return namespace.name
 
 
 @implementer(IOCIProjectSet)

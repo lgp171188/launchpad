@@ -26,6 +26,7 @@ __all__ = [
     'CannotHaveLinkedBranch',
     'CannotModifyNonHostedGitRepository',
     'CannotRepackRepository',
+    'CannotRunGitGC',
     'CannotUpgradeBranch',
     'CannotUpgradeNonHosted',
     'CodeImportAlreadyRequested',
@@ -493,6 +494,10 @@ class GitRepositoryBlobUnsupportedRemote(Exception):
 
 class CannotRepackRepository(Exception):
     """Raised when there was a failure to repack a repository."""
+
+
+class CannotRunGitGC(Exception):
+    """Raised when there was a failure to run git gc for a repository."""
 
 
 class GitRepositoryDeletionFault(Exception):
