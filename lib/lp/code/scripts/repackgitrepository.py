@@ -45,11 +45,14 @@ class RepackTunableLoop(TunableLoop):
             (Or(
                 GitRepository.loose_object_count >=
                 config.codehosting.loose_objects_threshold,
-                GitRepository.status == GitRepositoryStatus.AVAILABLE,
                 GitRepository.pack_count >=
-                config.codehosting.packs_threshold
+                config.codehosting.packs_threshold,
                 ),
-             And(GitRepository.id > self.start_at))).order_by(GitRepository.id)
+             And(GitRepository.status == GitRepositoryStatus.AVAILABLE),
+             And(GitRepository.id > self.start_at),
+             And(GitRepository.loose_object_count != None),
+             And(GitRepository.pack_count != None))
+        ).order_by(GitRepository.id)
         return repos
 
     def isDone(self):
