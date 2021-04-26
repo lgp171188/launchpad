@@ -36,7 +36,7 @@ class RepackTunableLoop(TunableLoop):
         self.dry_run = dry_run
         self.start_at = 0
         self.logger = log
-        self.offset = 0
+        self.num_repacked = 0
         self.store = IStore(GitRepository)
 
     def findRepackCandidates(self):
@@ -56,7 +56,7 @@ class RepackTunableLoop(TunableLoop):
         # we stop at maximum 1000 or when we have no repositories
         # that are valid repack candidates
         return (self.findRepackCandidates().is_empty() or
-                self.offset >= self.targets)
+                self.num_repacked + self.maximum_chunk_size >= self.targets)
 
     def __call__(self, chunk_size):
         repackable_repos = list(self.findRepackCandidates()[:chunk_size])
@@ -70,7 +70,12 @@ class RepackTunableLoop(TunableLoop):
                         'Requesting automatic git repository repack for %s.'
                         % repo.identity)
                     counter += 1
-                    self.offset = self.offset + counter
+                    # we count the total number of requests for a job run
+                    # before making the call to turnip as we want to ensure
+                    # we limit the total number of messages we place on Celery
+                    # queues per repack job run regardless of the success or
+                    # failure of individual repack operations
+                    self.num_repacked += 1
                     repo.repackRepository()
             except CannotRepackRepository as e:
                 self.logger.error(
@@ -101,5 +106,9 @@ class RepackTunableLoop(TunableLoop):
 
         if not self.dry_run:
             transaction.commit()
+            self.logger.info(
+                'Requested a total of %d automatic git repository repacks '
+                'in this run of the Automated Repack Job.'
+                % self.num_repacked)
         else:
             transaction.abort()

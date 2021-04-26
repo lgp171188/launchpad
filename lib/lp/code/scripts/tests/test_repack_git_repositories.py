@@ -81,8 +81,8 @@ class TestRequestGitRepack(TestCaseWithFactory):
         self.assertIn(
             'Failed to repack Git repository 1', err)
         self.assertIn(
-            'Requested 0 automatic git repository '
-            'repacks out of the 1 qualifying for repack.', err)
+            'Requested a total of 1 automatic git repository repacks '
+            'in this run of the Automated Repack Job', err)
         transaction.commit()
 
     def runScript_with_Turnip(self):
@@ -157,10 +157,18 @@ class TestRequestGitRepack(TestCaseWithFactory):
                              self.turnip_server.app.contents[i])
 
     def test_auto_repack_loop_throttle(self):
-        repacker = FooRepackTunableLoop(self.log, None)
+        repacker = RepackTunableLoop(self.log, None)
+        # We throttle at 7 for this test, we use a limit
+        # of 1 000 repositories in reality
+        repacker.targets = 7
+
+        # We want to allow a maximum of 3 repack requests
+        # per loop run for this test, we have a chunk size of
+        # 5 defined in reality
+        repacker.maximum_chunk_size = 3
 
         # Test repack works when 10 repositories
-        # qualifies for a repack but throttle at 7
+        # qualify for a repack but throttle at 7
         repo = []
         for i in range(10):
             repo.append(self.factory.makeGitRepository())
@@ -172,17 +180,20 @@ class TestRequestGitRepack(TestCaseWithFactory):
         # Confirm the initial state is sane.
         self.assertFalse(repacker.isDone())
 
-        self.makeTurnipServer()
+        # First run.
+        repacker(repacker.maximum_chunk_size)
 
-        # Run one loop.
-        repacker(5)
+        self.assertFalse(repacker.isDone())
+        self.assertEqual(repacker.num_repacked, 3)
+        self.assertEqual(repacker.start_at, 3)
 
-        # although we would have 5 more repos that qualify for a repack at
-        # this point we stop at "targets" defined as 7 for this test but 1 000
-        # in reality
+        # Second run.
+        # The number of repos repacked so far (6) plus the number of
+        # repos we can request in one loop (maximum_chunk_size = 3) would
+        # put us over the maximum number of repositories we are targeting
+        # with the repack job: "targets" defined as 7 for this test.
+        repacker(repacker.maximum_chunk_size)
+
         self.assertTrue(repacker.isDone())
-
-
-class FooRepackTunableLoop(RepackTunableLoop):
-    maximum_chunk_size = 3
-    targets = 7
+        self.assertEqual(repacker.num_repacked, 6)
+        self.assertEqual(repacker.start_at, 6)
