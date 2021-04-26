@@ -63,6 +63,7 @@ from lp.code.model.branchnamespace import (
     )
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.enums import PersonVisibility
+from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
@@ -285,6 +286,7 @@ class PersonalGitNamespace(_BaseGitNamespace):
 
     has_defaults = False
     allow_push_to_set_default = False
+    default_owner = None
     supports_merge_proposals = True
     supports_code_imports = False
     allow_recipe_name_from_target = False
@@ -400,6 +402,11 @@ class ProjectGitNamespace(_BaseGitNamespace):
         repository.sourcepackagename = None
         repository.oci_project = None
 
+    @property
+    def default_owner(self):
+        """See `IGitNamespacePolicy`."""
+        return self.target.owner
+
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
         # Some policies require that the repository owner or current user
@@ -497,6 +504,11 @@ class PackageGitNamespace(_BaseGitNamespace):
         repository.sourcepackagename = dsp.sourcepackagename
         repository.oci_project = None
 
+    @property
+    def default_owner(self):
+        """See `IGitNamespacePolicy`."""
+        return self.target.owner
+
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
         return PUBLIC_INFORMATION_TYPES
@@ -585,6 +597,19 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
         repository.distribution = None
         repository.sourcepackagename = None
         repository.oci_project = self.oci_project
+
+    @property
+    def default_owner(self):
+        """See `IGitNamespacePolicy`."""
+        # XXX cjwatson 2021-04-26: This may be a bit too restrictive, since
+        # other users may be able to edit the OCI project.  If this becomes
+        # a problem, it will probably be best to fix it by extending the set
+        # of people who have launchpad.Edit on repositories in OCI project
+        # namespaces.
+        if IDistribution.providedBy(self.target.pillar):
+            return self.target.pillar.oci_project_admin
+        else:
+            return self.target.pillar.owner
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
