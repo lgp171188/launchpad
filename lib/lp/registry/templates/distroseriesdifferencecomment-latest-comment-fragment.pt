@@ -9,7 +9,7 @@
   </tal:text>
   <br />
   <span class="greyed-out greylink"><tal:date
-    replace="context/comment_date/fmt:approximatedate">2005-09-16</tal:date>
+    replace="structure context/comment_date/fmt:approximatedatetitle" />
   by
   <tal:author replace="structure context/comment_author/fmt:link" /></span>
 </span>

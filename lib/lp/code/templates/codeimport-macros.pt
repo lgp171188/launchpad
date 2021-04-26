@@ -11,14 +11,11 @@
   <img tal:attributes="src python:view.iconForCodeImportResultStatus(result.status);
                        title result/status/title"/>
   Import started
-  <tal:when replace="result/date_job_started/fmt:displaydate">
-    4 hours ago
-  </tal:when>
+  <tal:when replace="structure result/date_job_started/fmt:displaydatetitle" />
   on <tal:machine replace="structure result/machine/fmt:link" />
   and finished
-  <tal:when replace="result/date_job_finished/fmt:displaydate">
-    3 hours ago
-  </tal:when>
+  <tal:when
+    replace="structure result/date_job_finished/fmt:displaydatetitle" />
   taking
   <tal:duration replace="result/job_duration/fmt:approximateduration">
     five minutes

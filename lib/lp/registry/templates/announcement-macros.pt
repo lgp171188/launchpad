@@ -50,7 +50,8 @@
       </strong>
       <strong tal:condition="announcement/date_last_modified">
           Updated
-          <span tal:replace="announcement/date_last_modified/fmt:displaydate" />.
+          <tal:modified
+            replace="structure announcement/date_last_modified/fmt:displaydatetitle" />.
       </strong>
       <a rel="nofollow" class="sprite external-link"
          tal:condition="announcement/url"

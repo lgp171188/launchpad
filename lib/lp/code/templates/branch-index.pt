@@ -57,10 +57,11 @@
 <tal:registering metal:fill-slot="registering">
   Created by
     <tal:registrant replace="structure context/registrant/fmt:link" />
-  on
-    <tal:created-on replace="structure context/date_created/fmt:date" />
-  and last modified on
-    <tal:last-modified replace="structure context/date_last_modified/fmt:date" />
+    <tal:created-on
+      replace="structure context/date_created/fmt:displaydatetitle" />
+  and last modified
+    <tal:last-modified
+      replace="structure context/date_last_modified/fmt:displaydatetitle" />
 </tal:registering>
 
 

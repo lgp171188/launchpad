@@ -6,7 +6,9 @@
 
   <div>
     <div style="float: right">
-      Proposed <tal:modified replace="context/date_created/fmt:displaydate" />
+      Proposed
+      <tal:modified
+        replace="structure context/date_created/fmt:displaydatetitle" />
 
     </div>
     <tal:merge-fragment tal:replace="structure context/@@+link-summary" />

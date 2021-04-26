@@ -17,7 +17,8 @@
   </ul>
 
   <div class="released">
-    released <tal:date replace="context/datereleased/fmt:displaydate" />
+    released
+    <tal:date replace="structure context/datereleased/fmt:displaydatetitle" />
   </div>
 </div
 >

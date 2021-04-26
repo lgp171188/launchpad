@@ -19,7 +19,8 @@
                tal:attributes="href build/fmt:url"></a>
           </td>
           <td>
-            <tal:date replace="buildview/date/fmt:displaydate" />
+            <tal:date
+              replace="structure buildview/date/fmt:displaydatetitle" />
             <tal:estimate condition="buildview/estimate">
               (estimated)
             </tal:estimate>
@@ -48,7 +49,8 @@
                  tal:attributes="href binary/fmt:url">package - version</a>
             </td>
             <td>
-              <tal:date replace="binaryview/date/fmt:displaydate" />
+              <tal:date
+                replace="structure binaryview/date/fmt:displaydatetitle" />
               <tal:estimate condition="binaryview/estimate">
                 (estimated)
               </tal:estimate>

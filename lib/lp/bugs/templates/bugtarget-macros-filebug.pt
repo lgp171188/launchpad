@@ -322,9 +322,7 @@
                       replace="string: comments" />)
                   last updated
                   <tal:last-updated
-                      content="bug/date_last_updated/fmt:approximatedate">
-                    2007-07-03
-                  </tal:last-updated>
+                    replace="structure bug/date_last_updated/fmt:approximatedatetitle" />
                   <a class="sprite new-window view-bug-link action-icon"
                      target="_blank" tal:attributes="href bug/fmt:url"
                   >view this bug</a>

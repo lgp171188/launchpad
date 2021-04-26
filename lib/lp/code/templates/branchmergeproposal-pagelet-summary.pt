@@ -59,7 +59,8 @@
             <tal:reviewer replace="structure context/reviewer/fmt:link">
               Some User
             </tal:reviewer>
-            <tal:modified replace="context/date_reviewed/fmt:displaydate" />
+            <tal:modified
+              replace="structure context/date_reviewed/fmt:displaydatetitle" />
           </td>
         </tr>
         <tr id="summary-row-3-approved-revision"

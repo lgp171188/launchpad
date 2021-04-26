@@ -31,11 +31,11 @@
             <tal:mirrored-yet tal:condition="branch/last_mirrored">
               This branch may be out of date, as Launchpad has not been able to
               access between
-              <span tal:attributes="title branch/last_mirrored/fmt:datetime"
-                    tal:content="branch/last_mirrored/fmt:approximatedate" />
+              <tal:last-mirrored
+                replace="structure branch/last_mirrored/fmt:approximatedatetitle" />
               and
-              <span tal:attributes="title branch/last_mirror_attempt/fmt:datetime"
-                    tal:content="branch/last_mirror_attempt/fmt:approximatedate" />.
+              <tal:last-mirror-attempt
+                replace="structure branch/last_mirror_attempt/fmt:approximatedatetitle" />.
             </tal:mirrored-yet>
             <tal:not-mirrored-yet tal:condition="not:branch/last_mirrored">
               Launchpad has not been able to mirror this branch. The last attempt
@@ -57,8 +57,8 @@
         <tal:mirror-scheduled tal:condition="not:view/mirror_disabled">
           Launchpad will try again
           <tal:mirror-in-future tal:condition="not:view/in_mirror_queue">
-            <span tal:attributes="title branch/next_mirror_time/fmt:datetime"
-                  tal:content="branch/next_mirror_time/fmt:approximatedate" />.
+            <tal:next-mirror-time
+              replace="structure branch/next_mirror_time/fmt:approximatedatetitle" />.
             <tal:owner condition="branch/required:launchpad.Edit">
               If you have fixed the problem, please ask Launchpad to try again.
 
@@ -84,8 +84,8 @@
         <tal:mirrored-yet tal:condition="branch/last_mirrored">
           This branch may be out of date, because Launchpad has not been
           able to access it since
-          <span tal:attributes="title branch/last_mirrored/fmt:datetime"
-                tal:content="branch/last_mirrored/fmt:approximatedate" />.
+          <tal:last-mirrored
+            replace="structure branch/last_mirrored/fmt:approximatedatetitle" />.
         </tal:mirrored-yet>
         <tal:not-mirrored-yet tal:condition="not:branch/last_mirrored">
           This branch has not been mirrored, as Launchpad has been unable to
