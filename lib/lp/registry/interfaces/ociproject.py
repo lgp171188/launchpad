@@ -50,7 +50,6 @@ from lp.app.validators.path import path_does_not_escape
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.bugs.interfaces.bugtarget import (
     IBugTarget,
-    IHasExpirableBugs,
     IHasOfficialBugTags,
     )
 from lp.bugs.interfaces.structuralsubscription import (
@@ -72,9 +71,8 @@ from lp.services.fields import (
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 
 
-class IOCIProjectView(IHasGitRepositories, IServiceUsage,
-                      IHasOfficialBugTags, IStructuralSubscriptionTarget,
-                      Interface):
+class IOCIProjectView(IHasGitRepositories, IHasOfficialBugTags, IServiceUsage,
+                      IStructuralSubscriptionTarget, Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)

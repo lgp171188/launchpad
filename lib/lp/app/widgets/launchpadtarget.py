@@ -55,7 +55,7 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
     def getProductVocabulary(self):
         return 'Product'
 
-    def getPackageVocabulary(self):
+    def getPackageVocabularyName(self):
         if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
             # Replace the default field with a field that uses the better
             # vocabulary.
@@ -76,7 +76,7 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
                 default=getUtility(ILaunchpadCelebrities).ubuntu),
             Choice(
                 __name__='package', title=u"Package",
-                required=False, vocabulary=self.getPackageVocabulary()),
+                required=False, vocabulary=self.getPackageVocabularyName()),
             ]
         self.distribution_widget = CustomWidgetFactory(
             LaunchpadDropdownWidget)

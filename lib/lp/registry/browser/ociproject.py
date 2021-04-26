@@ -187,7 +187,7 @@ class OCIProjectFacets(StandardLaunchpadFacets):
         return Link(target, text, site=site)
 
     def branches(self):
-        return self.makeLink('Code', self.context.pillar, '+branches', 'code')
+        return self.makeLink('Code', self.context, '+code', 'code')
 
     def bugs(self):
         """Override bugs link to show the OCIProject's bug page, instead of

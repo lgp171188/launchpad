@@ -479,7 +479,7 @@ class BugTaskTargetWidget(LaunchpadTargetWidget):
         vocabulary = UsesBugsDistributionVocabulary(distro)
         return vocabulary
 
-    def getPackageVocabulary(self):
+    def getPackageVocabularyName(self):
         return 'DistributionPackage'
 
     def getSelectedDistribution(self):

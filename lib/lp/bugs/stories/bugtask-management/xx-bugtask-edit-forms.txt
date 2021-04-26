@@ -49,7 +49,7 @@ respective bug task.
     Target
     Distribution
     ...
-    Package (Find...)
+    Package (Find…)
     Project (Find…)
     Status  Importance  Milestone
     New...  Low...      (nothing selected)...

@@ -2242,7 +2242,7 @@ class OCIProjectVocabulary(StormVocabularyBase):
 
     @property
     def _entries(self):
-        return getUtility(IOCIProjectSet).searchByName(six.ensure_text(''))
+        return getUtility(IOCIProjectSet).searchByName(u'')
 
     def __contains__(self, obj):
         found_obj = IStore(self._table).find(
@@ -2254,8 +2254,9 @@ class OCIProjectVocabulary(StormVocabularyBase):
 @implementer(IHugeVocabulary)
 class DistributionPackageVocabulary:
     """A simple wrapper to automatically select package vocabulary
-    (BinaryAndSourcePackageNameVocabulary or OCIProjectVocabulary) depending
-    on which type of distribution we are dealing with.
+    (BinaryAndSourcePackageNameVocabulary, DistributionSourcePackageVocabulary
+    or OCIProjectVocabulary) depending on which type of distribution
+    we are dealing with.
     """
 
     def __init__(self, context=None):
@@ -2291,24 +2292,19 @@ class DistributionPackageVocabulary:
             distribution is not None and
             distribution.default_traversal_policy == oci_traversal_policy)
 
-    def __getattribute__(self, item):
-        local_attrs = {
-            'is_oci_distribution', 'oci_projects_vocabulary',
-            'packages_vocabulary', 'distribution', 'setDistribution',
-            'context'}
-        if item in local_attrs:
-            return object.__getattribute__(self, item)
+    @property
+    def _real_vocabulary(self):
         if self.is_oci_distribution:
-            vocabulary = self.oci_projects_vocabulary
+            return self.oci_projects_vocabulary
         else:
-            vocabulary = self.packages_vocabulary
-        return getattr(vocabulary, item)
+            return self.packages_vocabulary
 
-    # Special methods should be declared at the class declaration,
-    # even if self.__special_method__ will be forwarded to the correct
-    # vocabulary after, by __getattribute__.
+    def __getattr__(self, item):
+        return getattr(self._real_vocabulary, item)
+
+    # Special methods should be explicitly declared at the class declaration.
     def __iter__(self):
-        return self.__iter__()
+        return self._real_vocabulary.__iter__()
 
     def __contains__(self, obj):
-        return self.__contains__(obj)
+        return self._real_vocabulary.__contains__(obj)

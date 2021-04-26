@@ -100,9 +100,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
             expected_links = [
                 ("Overview", None, "overview active"),
                 ("Code", canonical_url(
-                    oci_project.pillar,
-                    view_name="+branches",
-                    rootsite="code"), None),
+                    oci_project, view_name="+code", rootsite="code"), None),
                 ("Bugs", canonical_url(
                     oci_project, view_name="+bugs", rootsite="bugs"), None),
                 ("Blueprints", None, "specifications disabled-tab"),

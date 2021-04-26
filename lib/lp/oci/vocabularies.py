@@ -1,4 +1,4 @@
-# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2020-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI vocabularies."""
@@ -110,5 +110,6 @@ class OCIRecipeVocabulary(StormVocabularyBase):
     def search(self, query, vocab_filter=None):
         return self.context.searchRecipes(query)
 
+    @property
     def _entries(self):
         return self.context.getRecipes()
