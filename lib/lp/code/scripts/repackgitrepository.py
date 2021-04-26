@@ -27,12 +27,16 @@ from lp.services.looptuner import (
 class RepackTunableLoop(TunableLoop):
     tuner_class = LoopTuner
     maximum_chunk_size = 5
+    # we stop requesting repacks once we've reached
+    # 1000 requests in one run
+    targets = 1000
 
     def __init__(self, log, dry_run, abort_time=None):
         super(RepackTunableLoop, self).__init__(log, abort_time)
         self.dry_run = dry_run
         self.start_at = 0
         self.logger = log
+        self.num_repacked = 0
         self.store = IStore(GitRepository)
 
     def findRepackCandidates(self):
@@ -49,7 +53,10 @@ class RepackTunableLoop(TunableLoop):
         return repos
 
     def isDone(self):
-        return self.findRepackCandidates().is_empty()
+        # we stop at maximum 1000 or when we have no repositories
+        # that are valid repack candidates
+        return (self.findRepackCandidates().is_empty() or
+                self.num_repacked + self.maximum_chunk_size >= self.targets)
 
     def __call__(self, chunk_size):
         repackable_repos = list(self.findRepackCandidates()[:chunk_size])
@@ -62,8 +69,14 @@ class RepackTunableLoop(TunableLoop):
                     self.logger.info(
                         'Requesting automatic git repository repack for %s.'
                         % repo.identity)
-                    repo.repackRepository()
                     counter += 1
+                    # we count the total number of requests for a job run
+                    # before making the call to turnip as we want to ensure
+                    # we limit the total number of messages we place on Celery
+                    # queues per repack job run regardless of the success or
+                    # failure of individual repack operations
+                    self.num_repacked += 1
+                    repo.repackRepository()
             except CannotRepackRepository as e:
                 self.logger.error(
                     'An error occurred while requesting repository repack %s'
@@ -93,5 +106,9 @@ class RepackTunableLoop(TunableLoop):
 
         if not self.dry_run:
             transaction.commit()
+            self.logger.info(
+                'Requested a total of %d automatic git repository repacks '
+                'in this run of the Automated Repack Job.'
+                % self.num_repacked)
         else:
             transaction.abort()
