@@ -77,5 +77,4 @@ class TestOCIRecipeRequestBuildsJob(TestCaseWithFactory):
         self.assertTrue(status['upload_requested'])
         self.assertEqual(
             OCIRecipeBuildSetRegistryUploadStatus.PARTIAL,
-            status['upload']
-        )
+            status['upload'])
