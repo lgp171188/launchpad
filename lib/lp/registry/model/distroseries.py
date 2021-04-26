@@ -1355,7 +1355,8 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
         from lp.bugs.model.bugsummary import BugSummary
         return And(
                 BugSummary.distroseries_id == self.id,
-                BugSummary.sourcepackagename_id == None
+                BugSummary.sourcepackagename_id == None,
+                BugSummary.ociproject_id == None,
                 )
 
     def getPOFileContributorsByLanguage(self, language):

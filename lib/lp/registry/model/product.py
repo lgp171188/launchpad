@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes including and related to Product."""
@@ -1179,7 +1179,9 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         """See BugTargetBase."""
         # Circular fail.
         from lp.bugs.model.bugsummary import BugSummary
-        return BugSummary.product_id == self.id
+        return And(
+            BugSummary.product_id == self.id,
+            BugSummary.ociproject_id == None)
 
     def searchQuestions(self, search_text=None,
                         status=QUESTION_STATUS_DEFAULT_SEARCH,

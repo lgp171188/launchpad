@@ -162,8 +162,19 @@ class OCIProject(BugTargetBase, StormBase):
         return "OCI project %s for %s" % (
             self.ociprojectname.name, self.pillar.display_name)
 
+    displayname = display_name
     bugtargetname = display_name
     bugtargetdisplayname = display_name
+
+    @property
+    def driver(self):
+        """See `IOCIProject`."""
+        return self.pillar.driver
+
+    @property
+    def bug_supervisor(self):
+        """See `IOCIProject`."""
+        return self.pillar.bug_supervisor
 
     def _reconcileAccess(self):
         """Reconcile access for all OCI recipes of this project."""

@@ -351,7 +351,9 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
         """See BugTargetBase."""
         # Circular fail.
         from lp.bugs.model.bugsummary import BugSummary
-        return BugSummary.productseries_id == self.id
+        return And(
+            BugSummary.productseries_id == self.id,
+            BugSummary.ociproject_id == None)
 
     def getLatestRelease(self):
         """See `IProductRelease.`"""

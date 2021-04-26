@@ -1,4 +1,4 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -50,18 +50,30 @@ def create_tasks(factory):
     sp = factory.makeSourcePackage(publish=True)
 
     bug = factory.makeBug(target=product)
+
+    ocip_distro = factory.makeOCIProject(pillar=factory.makeDistribution())
+    ocip_product = factory.makeOCIProject(pillar=factory.makeProduct())
+
     getUtility(IBugTaskSet).createManyTasks(
-        bug, bug.owner, [sp, sp.distribution_sourcepackage, ps])
+        bug, bug.owner,
+        [sp, sp.distribution_sourcepackage, ps, ocip_distro, ocip_product])
 
     # There'll be a target for each task, plus a packageless one for
     # each package task.
+    # For OCI projects, the pillar (distro or product) is denormalized.
     expected_targets = [
-        (ps.product.id, None, None, None, None),
-        (None, ps.id, None, None, None),
-        (None, None, sp.distribution.id, None, None),
-        (None, None, sp.distribution.id, None, sp.sourcepackagename.id),
-        (None, None, None, sp.distroseries.id, None),
-        (None, None, None, sp.distroseries.id, sp.sourcepackagename.id)
+        (ps.product.id, None, None, None, None, None),
+        (None, ps.id, None, None, None, None),
+        (None, None, sp.distribution.id, None, None, None),
+        (None, None, sp.distribution.id, None, sp.sourcepackagename.id, None),
+        (None, None, None, sp.distroseries.id, None, None),
+        (None, None, None, sp.distroseries.id, sp.sourcepackagename.id, None),
+        (None, None, ocip_distro.pillar.id, None, None, ocip_distro.id),
+        (ocip_product.pillar.id, None, None, None, None, ocip_product.id),
+        # OCI projects generates 2 rows on bugsummary for each bug task:
+        # 1 for the oci project + pillar, and one only for the pillar.
+        (None, None, ocip_distro.pillar.id, None, None, None),
+        (ocip_product.pillar.id, None, None, None, None, None),
         ]
     return expected_targets
 
@@ -150,9 +162,14 @@ class TestBugSummaryRebuild(TestCaseWithFactory):
 
     def test_script(self):
         product = self.factory.makeProduct()
+        ociproject = self.factory.makeOCIProject()
         self.factory.makeBug(target=product)
+        self.factory.makeBug(target=ociproject)
+
         self.assertEqual(0, get_bugsummary_rows(product).count())
+        self.assertEqual(0, get_bugsummary_rows(ociproject).count())
         self.assertEqual(1, get_bugsummaryjournal_rows(product).count())
+        self.assertEqual(1, get_bugsummaryjournal_rows(ociproject).count())
         transaction.commit()
 
         exit_code, out, err = run_script('scripts/bugsummary-rebuild.py')
@@ -162,7 +179,9 @@ class TestBugSummaryRebuild(TestCaseWithFactory):
 
         transaction.commit()
         self.assertEqual(1, get_bugsummary_rows(product).count())
+        self.assertEqual(1, get_bugsummary_rows(ociproject).count())
         self.assertEqual(0, get_bugsummaryjournal_rows(product).count())
+        self.assertEqual(0, get_bugsummaryjournal_rows(ociproject).count())
 
 
 class TestGetBugSummaryRows(TestCaseWithFactory):
