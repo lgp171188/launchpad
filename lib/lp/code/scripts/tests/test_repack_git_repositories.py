@@ -197,3 +197,26 @@ class TestRequestGitRepack(TestCaseWithFactory):
         self.assertTrue(repacker.isDone())
         self.assertEqual(repacker.num_repacked, 6)
         self.assertEqual(repacker.start_at, 6)
+
+    def test_auto_repack_findRepackCandidates(self):
+        repacker = RepackTunableLoop(self.log, None)
+
+        repo = []
+        for i in range(7):
+            repo.append(self.factory.makeGitRepository())
+            repo[i] = removeSecurityProxy(repo[i])
+            repo[i].loose_object_count = 7000
+            repo[i].pack_count = 43
+
+        for i in range(3):
+            repo.append(self.factory.makeGitRepository())
+        transaction.commit()
+
+        # we should only have 7 candidates at this point
+        self.assertEqual(7, len(list(repacker.findRepackCandidates())))
+
+        # there should be 0 candidates now
+        for i in range(7):
+            repo[i].loose_object_count = 3
+            repo[i].pack_count = 5
+        self.assertEqual(0, len(list(repacker.findRepackCandidates())))
