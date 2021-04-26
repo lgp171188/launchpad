@@ -135,3 +135,15 @@ also expect the fmt:displaydate to change form, and become "on yyyy-mm-dd".
     >>> test_tales('t/testfmt:displaydate', t=t)
     'on 2015-01-13'
 
+We have two more related TALES formatters, fmt:approximatedatetitle and
+fmt:displaydatetitle.  These act similarly to their siblings without
+"title", but they wrap the time description in an HTML element with "title"
+and "datetime" attributes in order that browsers show the timestamp as hover
+text.
+
+    >>> print(test_tales('t/testfmt:approximatedatetitle', t=t))
+    <time title="2015-01-13 15:35:00"
+          datetime="2015-01-13T15:35:00">2015-01-13</time>
+    >>> print(test_tales('t/testfmt:displaydatetitle', t=t))
+    <time title="2015-01-13 15:35:00"
+          datetime="2015-01-13T15:35:00">on 2015-01-13</time>

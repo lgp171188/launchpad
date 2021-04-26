@@ -505,11 +505,13 @@ class NoneFormatter:
 
     allowed_names = set([
         'approximatedate',
+        'approximatedatetitle',
         'approximateduration',
         'break-long-words',
         'date',
         'datetime',
         'displaydate',
+        'displaydatetitle',
         'isodate',
         'email-to-html',
         'exactduration',
@@ -2318,6 +2320,25 @@ class DateTimeFormatterAPI:
 
     def isodate(self):
         return self._datetime.isoformat()
+
+    def displaydatetitle(self):
+        # Like `displaydate`, but wrapped in an HTML element with `title` and
+        # `datetime` attributes in order that browsers show the timestamp as
+        # hover text.  This is suitable for use when the underlying timestamp
+        # is exact rather than being an estimate.
+        return structured(
+            '<time title="%s" datetime="%s">%s</time>',
+            self.datetime(), self.isodate(), self.displaydate()).escapedtext
+
+    def approximatedatetitle(self):
+        # Like `approximatedate`, but wrapped in an HTML element with `title`
+        # and `datetime` attributes in order that browsers show the timestamp
+        # as hover text.  This is suitable for use when the underlying
+        # timestamp is exact rather than being an estimate.
+        return structured(
+            '<time title="%s" datetime="%s">%s</time>',
+            self.datetime(), self.isodate(),
+            self.approximatedate()).escapedtext
 
     @staticmethod
     def _yearDelta(old, new):
