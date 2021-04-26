@@ -7,10 +7,7 @@ __metaclass__ = type
 
 from psycopg2.extensions import TransactionRollbackError
 import six
-from storm.expr import (
-    And,
-    Or,
-    )
+from storm.expr import Or
 import transaction
 
 from lp.code.enums import GitRepositoryStatus
@@ -42,16 +39,14 @@ class RepackTunableLoop(TunableLoop):
     def findRepackCandidates(self):
         repos = self.store.find(
             GitRepository,
-            (Or(
+            Or(
                 GitRepository.loose_object_count >=
-                config.codehosting.loose_objects_threshold,
+                    config.codehosting.loose_objects_threshold,
                 GitRepository.pack_count >=
-                config.codehosting.packs_threshold,
+                    config.codehosting.packs_threshold,
                 ),
-             And(GitRepository.status == GitRepositoryStatus.AVAILABLE),
-             And(GitRepository.id > self.start_at),
-             And(GitRepository.loose_object_count != None),
-             And(GitRepository.pack_count != None))
+            GitRepository.status == GitRepositoryStatus.AVAILABLE,
+            GitRepository.id > self.start_at,
         ).order_by(GitRepository.id)
         return repos
 
