@@ -302,14 +302,22 @@ class OCIProject(BugTargetBase, StormBase):
 
     def destroySelf(self):
         """See `IOCIProject`."""
-        from lp.oci.model.ocirecipe import OCIRecipe
+        from lp.bugs.model.bugtask import BugTask
         from lp.code.model.gitrepository import GitRepository
+        from lp.oci.model.ocirecipe import OCIRecipe
 
+        # Cannot delete this OCI project if it has recipes associated if it.
         exists_recipes = not IStore(OCIRecipe).find(
             OCIRecipe,
             OCIRecipe.oci_project == self).is_empty()
         if exists_recipes:
-            raise CannotDeleteOCIProject("This OCI recipe contains recipes.")
+            raise CannotDeleteOCIProject("This OCI project contains recipes.")
+
+        # Cannot delete this OCI project if it has bugs associated with it.
+        exists_bugs = not IStore(BugTask).find(
+            BugTask, BugTask.ociproject == self).is_empty()
+        if exists_bugs:
+            raise CannotDeleteOCIProject("This OCI project contains bugs.")
 
         git_repos = IStore(GitRepository).find(
             GitRepository, GitRepository.oci_project == self)

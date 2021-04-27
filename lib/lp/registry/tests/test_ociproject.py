@@ -159,6 +159,16 @@ class TestOCIProject(TestCaseWithFactory):
         with person_logged_in(driver):
             self.assertRaises(CannotDeleteOCIProject, oci_project.destroySelf)
 
+    def test_destroy_fails_if_there_are_bugs(self):
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+
+        self.factory.makeBug(target=oci_project)
+
+        with person_logged_in(driver):
+            self.assertRaises(CannotDeleteOCIProject, oci_project.destroySelf)
+
     def test_destroy_fails_for_non_driver_user(self):
         driver = self.factory.makePerson()
         distribution = self.factory.makeDistribution(driver=driver)
