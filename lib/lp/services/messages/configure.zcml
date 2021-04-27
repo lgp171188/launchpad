@@ -10,9 +10,9 @@
     i18n_domain="launchpad">
 
     <!-- Message -->
-    <class
-        class="lp.services.messages.model.message.Message">
-        <allow interface="lp.services.messages.interfaces.message.IMessage" />
+    <class class="lp.services.messages.model.message.Message">
+        <allow
+            interface="lp.services.messages.interfaces.message.IMessageView" />
         <!-- setVisible is required to allow IBug.setCommentVisibility() to
              change the visibility attribute whilst still ensuring restricted
              access to the attribute via the API.-->
@@ -22,13 +22,15 @@
         <require
             permission="launchpad.Admin"
             set_attributes="visible"/>
+        <require
+            permission="launchpad.Edit"
+            interface="lp.services.messages.interfaces.message.IMessageEdit" />
     </class>
 
     <!-- MessageRevision -->
     <class
         class="lp.services.messages.model.messagerevision.MessageRevision">
-        <require
-            permission="launchpad.View"
+        <allow
             interface="lp.services.messages.interfaces.messagerevision.IMessageRevisionView"/>
         <require
             permission="launchpad.Edit"

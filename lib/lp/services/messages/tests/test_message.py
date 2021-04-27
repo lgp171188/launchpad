@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -13,15 +13,26 @@ from email.utils import (
     )
 
 import six
+from testtools.matchers import (
+    Equals,
+    Is,
+    MatchesStructure,
+    )
 import transaction
+from zope.security.interfaces import Unauthorized
+from zope.security.proxy import ProxyFactory
 
 from lp.services.compat import message_as_bytes
 from lp.services.messages.model.message import MessageSet
 from lp.testing import (
     login,
+    person_logged_in,
     TestCaseWithFactory,
     )
-from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    )
 
 
 class TestMessageSet(TestCaseWithFactory):
@@ -169,3 +180,63 @@ class TestMessageSet(TestCaseWithFactory):
             'Treating unknown encoding "booga" as latin-1.'):
             result = MessageSet.decode(self.high_characters, 'booga')
         self.assertEqual(self.high_characters.decode('latin-1'), result)
+
+
+class TestMessageEditing(TestCaseWithFactory):
+    """Test editing scenarios for Message objects."""
+
+    layer = DatabaseFunctionalLayer
+
+    def makeMessage(self, owner=None, content=None):
+        if owner is None:
+            owner = self.factory.makePerson()
+        msg = self.factory.makeMessage(owner=owner, content=content)
+        return ProxyFactory(msg)
+
+    def test_msg_cannot_be_edited_by_everyone(self):
+        msg = self.makeMessage()
+        someone_else = self.factory.makePerson()
+        with person_logged_in(someone_else):
+            self.assertRaises(Unauthorized, getattr, msg, "edit_content")
+
+    def test_msg_owner_can_edit(self):
+        owner = self.factory.makePerson()
+        msg = self.makeMessage(owner=owner, content="initial content")
+        with person_logged_in(owner):
+            msg.edit_content("This is the new content")
+        self.assertEqual("This is the new content", msg.text_contents)
+        self.assertEqual(1, len(msg.revisions))
+        self.assertThat(msg.revisions[0], MatchesStructure(
+            content=Equals("initial content"),
+            message=Equals(msg),
+            date_created=Equals(msg.datecreated),
+            date_deleted=Is(None)))
+
+    def test_multiple_edits_revisions(self):
+        owner = self.factory.makePerson()
+        msg = self.makeMessage(owner=owner, content="initial content")
+        with person_logged_in(owner):
+            msg.edit_content("first edit")
+            first_edit_date = msg.date_last_edit
+        self.assertEqual("first edit", msg.text_contents)
+        self.assertEqual(1, len(msg.revisions))
+        self.assertThat(msg.revisions[0], MatchesStructure(
+            content=Equals("initial content"),
+            message=Equals(msg),
+            date_created=Equals(msg.datecreated),
+            date_deleted=Is(None)))
+
+        with person_logged_in(owner):
+            msg.edit_content("final form")
+        self.assertEqual("final form", msg.text_contents)
+        self.assertEqual(2, len(msg.revisions))
+        self.assertThat(msg.revisions[0], MatchesStructure(
+            content=Equals("first edit"),
+            message=Equals(msg),
+            date_created=Equals(first_edit_date),
+            date_deleted=Is(None)))
+        self.assertThat(msg.revisions[1], MatchesStructure(
+            content=Equals("initial content"),
+            message=Equals(msg),
+            date_created=Equals(msg.datecreated),
+            date_deleted=Is(None)))

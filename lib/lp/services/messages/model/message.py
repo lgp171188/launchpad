@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -40,6 +40,7 @@ from sqlobject import (
 from storm.locals import (
     And,
     DateTime,
+    Desc,
     Int,
     Reference,
     Store,
@@ -71,7 +72,12 @@ from lp.services.messages.interfaces.message import (
     IUserToUserEmail,
     UnknownSender,
     )
-from lp.services.propertycache import cachedproperty
+from lp.services.messages.model.messagerevision import MessageRevision
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
+from lp.services.utils import utc_now
 
 
 def utcdatetime_from_field(field_value):
@@ -100,8 +106,8 @@ class Message(SQLBase):
     _table = 'Message'
     _defaultOrder = '-id'
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_deleted = UtcDateTimeCol(notNull=False, default=UTC_NOW)
-    date_last_edit = UtcDateTimeCol(notNull=False, default=UTC_NOW)
+    date_deleted = UtcDateTimeCol(notNull=False, default=None)
+    date_last_edit = UtcDateTimeCol(notNull=False, default=None)
     subject = StringCol(notNull=False, default=None)
     owner = ForeignKey(
         dbName='owner', foreignKey='Person',
@@ -165,6 +171,41 @@ class Message(SQLBase):
     def getAPIParent(self):
         """See `IMessage`."""
         return None
+
+    @cachedproperty
+    def revisions(self):
+        """See `IMessage`."""
+        return list(Store.of(self).find(
+            MessageRevision,
+            MessageRevision.message == self
+        ).order_by(Desc(MessageRevision.date_created)))
+
+    def edit_content(self, new_content):
+        """See `IMessage`."""
+        store = Store.of(self)
+        old_content = self.text_contents
+        # Remove the current content.
+        for chunk in self._chunks:
+            store.remove(chunk)
+
+        # Create the new content.
+        new_chunk = MessageChunk(message=self, sequence=1, content=new_content)
+        store.add(new_chunk)
+
+        # Move the old content to a new revision.
+        date_created = (self.date_last_edit if self.date_last_edit is not None
+                        else self.datecreated)
+        rev = MessageRevision(message=self, content=old_content,
+                              date_created=date_created)
+        self.date_last_edit = utc_now()
+        store.add(rev)
+        store.flush()
+
+        # Clean up caches.
+        del get_property_cache(self).text_contents
+        del get_property_cache(self).chunks
+        del get_property_cache(self).revisions
+        return rev
 
 
 def get_parent_msgids(parsed_message):

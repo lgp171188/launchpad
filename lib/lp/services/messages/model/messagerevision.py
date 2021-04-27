@@ -42,5 +42,11 @@ class MessageRevision(StormBase):
     date_deleted = DateTime(
         name="date_deleted", tzinfo=pytz.UTC, allow_none=True)
 
+    def __init__(self, message, content, date_created, date_deleted=None):
+        self.message = message
+        self.content = content
+        self.date_created = date_created
+        self.date_deleted = date_deleted
+
     def destroySelf(self):
         self.date_deleted = utc_now()

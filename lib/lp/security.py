@@ -3182,6 +3182,15 @@ class SetMessageVisibility(AuthorizationBase):
         return (user.in_admin or user.in_registry_experts)
 
 
+class EditMessage(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IMessage
+
+    def checkAuthenticated(self, user):
+        """Only message owner can edit it."""
+        return user.isOwner(self.obj)
+
+
 class ViewPublisherConfig(AdminByAdminsTeam):
     usedfor = IPublisherConfig
 
