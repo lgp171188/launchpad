@@ -113,31 +113,31 @@ class OCIRecipeBuildSetRegistryUploadStatus(EnumeratedType):
     UNSCHEDULED = Item("""
         Unscheduled
 
-        No upload of this OCI build to a registry is scheduled.
+        No upload of these OCI builds to a registry is scheduled.
         """)
 
     PENDING = Item("""
         Pending
 
-        This OCI build is queued for upload to a registry.
+        These OCI builds are queued for upload to a registry.
         """)
 
     FAILEDTOUPLOAD = Item("""
         Failed to upload
 
-        The last attempt to upload this OCI build to a registry failed.
+        The last attempt to upload these OCI builds to a registry failed.
         """)
 
     UPLOADED = Item("""
         Uploaded
 
-        This OCI build was successfully uploaded to a registry.
+        These OCI builds were successfully uploaded to a registry.
         """)
 
     PARTIAL = Item("""
         Partial
 
-        Some OCI builds have uploaded.
+        Some OCI builds have uploaded to a registry.
     """)
 
 
