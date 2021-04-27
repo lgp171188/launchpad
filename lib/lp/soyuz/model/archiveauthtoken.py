@@ -102,7 +102,7 @@ class ArchiveAuthTokenSet:
         tables = [
             ArchiveAuthToken,
             LeftJoin(Person, ArchiveAuthToken.person == Person.id),
-            Join(Account, Person.account == Account.id),
+            LeftJoin(Account, Person.account == Account.id),
             ]
         clauses = [
             ArchiveAuthToken.archive == archive,
