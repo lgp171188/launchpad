@@ -129,7 +129,7 @@ class UsingDistributionCredentials(Exception):
 
     def __init__(self):
         super(UsingDistributionCredentials, self).__init__(
-            "The OCI Recipe is in a Distribution that has credentials set.")
+            "The OCI recipe is in a distribution that has credentials set.")
 
 
 @error_status(http_client.BAD_REQUEST)
