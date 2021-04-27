@@ -33,7 +33,10 @@ from zope.interface import (
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
-from lp.oci.interfaces.ocirecipebuild import OCIRecipeBuildRegistryUploadStatus
+from lp.oci.interfaces.ocirecipebuild import (
+    OCIRecipeBuildRegistryUploadStatus,
+    OCIRecipeBuildSetRegistryUploadStatus,
+    )
 from lp.oci.interfaces.ocirecipejob import (
     IOCIRecipeJob,
     IOCIRecipeRequestBuildsJob,
@@ -288,41 +291,63 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     def addUploadedManifest(self, build_id, manifest_info):
         self.metadata["uploaded_manifests"][int(build_id)] = manifest_info
 
+    @property
     def build_status(self):
+        builds = self.builds
         # This just returns a dict, but Zope is really helpful here
         status = removeSecurityProxy(
                 getUtility(IOCIRecipeSet).getStatusSummaryForBuilds(
-                    list(self.builds)))
+                    list(builds)))
 
         # This has a really long name!
-        statusEnum = OCIRecipeBuildRegistryUploadStatus
+        singleStatus = OCIRecipeBuildRegistryUploadStatus
+        setStatus = OCIRecipeBuildSetRegistryUploadStatus
 
         # Set the pending upload status if either we're not done uploading,
         # or there was no upload requested in the first place (no push rules)
         if status['status'] == BuildSetStatus.FULLYBUILT:
             upload_status = [
-                (x.registry_upload_status == statusEnum.UPLOADED or
-                 x.registry_upload_status == statusEnum.UNSCHEDULED)
+                (x.registry_upload_status == singleStatus.UPLOADED or
+                 x.registry_upload_status == singleStatus.UNSCHEDULED)
                 for x in status['builds']]
             if not all(upload_status):
                 status['status'] = BuildSetStatus.FULLYBUILT_PENDING
 
-        # Add a flag for if we're expecting a registry upload
-        status['upload_scheduled'] = any(
-            x.registry_upload_status != statusEnum.UNSCHEDULED
-            for x in status['builds'])
+        # Are we expecting an upload to be or to have been attempted?
+        # This is slightly complicated as the upload depends on the push
+        # rules at the time of build completion
+        upload_requested = False
+        # If there's an upload job for any of the builds, we have
+        # requested an upload
+        if any(x.last_registry_upload_job for x in builds):
+            upload_requested = True
+        # If all of the builds haven't finished, but the recipe currently
+        # has push rules specified, then we will attempt an upload
+        # in the future
+        if any(not x.date_finished and x.recipe.can_upload_to_registry
+               for x in builds):
+            upload_requested = True
+        status['upload_requested'] = upload_requested
 
-        # Set the equivalent of BuildSetStatus, but for registry upload
-        # If any of the builds have failed to upload
-        if any(x.registry_upload_status == statusEnum.FAILEDTOUPLOAD
-               for x in status['builds']):
-            status['upload'] = statusEnum.FAILEDTOUPLOAD
-        # If any of the builds are still waiting to upload
-        elif any(x.registry_upload_status == statusEnum.PENDING
-                 for x in status['builds']):
-            status['upload'] = statusEnum.PENDING
+        # Convert the set of registry statuses into a single line
+        # for display
+        upload_status = [x.registry_upload_status for x in builds]
+        # Any of the builds failed
+        if any(x == singleStatus.FAILEDTOUPLOAD for x in upload_status):
+            status['upload'] = setStatus.FAILEDTOUPLOAD
+        # All of the builds uploaded
+        elif all(x == singleStatus.UPLOADED for x in upload_status):
+            status['upload'] = setStatus.UPLOADED
+        # All of the builds are yet to attempt an upload
+        elif all(x == singleStatus.UNSCHEDULED for x in upload_status):
+            status['upload'] = setStatus.UNSCHEDULED
+        # Any of the builds have uploaded. Set after 'all of the builds'
+        # have uploaded.
+        elif any(x == singleStatus.UPLOADED for x in upload_status):
+            status['upload'] = setStatus.PARTIAL
+        # And if it's none of the above, we're waiting
         else:
-            status['upload'] = statusEnum.UPLOADED
+            status['upload'] = setStatus.PENDING
 
         # Get the longest date and whether any of them are estimated
         # for the summary of the builds

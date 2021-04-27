@@ -11,9 +11,13 @@ __all__ = [
 
 from lazr.uri import URI
 import pytz
+from storm.expr import LeftJoin
 from storm.locals import (
+    And,
     DateTime,
     Int,
+    Join,
+    Or,
     Reference,
     Storm,
     Unicode,
@@ -24,6 +28,8 @@ from zope.interface import implementer
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
+from lp.services.identity.interfaces.account import AccountStatus
+from lp.services.identity.model.account import Account
 from lp.soyuz.enums import ArchiveSubscriberStatus
 from lp.soyuz.interfaces.archiveauthtoken import (
     IArchiveAuthToken,
@@ -89,21 +95,40 @@ class ArchiveAuthTokenSet:
 
     def getByArchive(self, archive, with_current_subscription=False):
         """See `IArchiveAuthTokenSet`."""
-        # Circular import.
+        # Circular imports.
+        from lp.registry.model.person import Person
         from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
         store = Store.of(archive)
+        tables = [
+            ArchiveAuthToken,
+            LeftJoin(Person, ArchiveAuthToken.person == Person.id),
+            LeftJoin(Account, Person.account == Account.id),
+            ]
         clauses = [
             ArchiveAuthToken.archive == archive,
             ArchiveAuthToken.date_deactivated == None,
+            Or(
+                ArchiveAuthToken.person == None,
+                Account.status == AccountStatus.ACTIVE),
             ]
         if with_current_subscription:
-            clauses.extend([
-                ArchiveAuthToken.archive_id == ArchiveSubscriber.archive_id,
-                ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT,
-                ArchiveSubscriber.subscriber_id == TeamParticipation.teamID,
-                TeamParticipation.personID == ArchiveAuthToken.person_id,
+            tables.extend([
+                Join(
+                    ArchiveSubscriber,
+                    ArchiveAuthToken.archive_id ==
+                        ArchiveSubscriber.archive_id),
+                Join(
+                    TeamParticipation,
+                    And(
+                        ArchiveSubscriber.subscriber_id ==
+                            TeamParticipation.teamID,
+                        TeamParticipation.personID ==
+                            ArchiveAuthToken.person_id)),
                 ])
-        return store.find(ArchiveAuthToken, *clauses).config(distinct=True)
+            clauses.append(
+                ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT)
+        return store.using(*tables).find(ArchiveAuthToken, *clauses).config(
+            distinct=True)
 
     def getActiveTokenForArchiveAndPerson(self, archive, person):
         """See `IArchiveAuthTokenSet`."""
@@ -137,4 +162,10 @@ class ArchiveAuthTokenSet:
     def deactivateNamedTokensForArchive(self, archive, names):
         """See `IArchiveAuthTokenSet`."""
         tokens = self.getActiveNamedTokensForArchive(archive, names)
+        # Push this down to a subselect so that `ResultSet.set` works
+        # properly.
+        tokens = Store.of(archive).find(
+            ArchiveAuthToken,
+            ArchiveAuthToken.id.is_in(
+                tokens.get_select_expr(ArchiveAuthToken.id)))
         tokens.set(date_deactivated=UTC_NOW)

@@ -184,6 +184,26 @@ multiple paths:
     ...     new_token.archive, "bradsmith").token)
     testtoken
 
+Tokens for inactive users are not returned.
+
+    >>> from lp.services.identity.interfaces.account import AccountStatus
+
+    >>> login("admin@canonical.com")
+    >>> new_token.person.setAccountStatus(
+    ...     AccountStatus.DEACTIVATED, None, 'Bye')
+    >>> _ = login_person(joe)
+
+    >>> print(token_set.getActiveTokenForArchiveAndPerson(
+    ...     new_token.archive, new_token.person))
+    None
+    >>> print(token_set.getActiveTokenForArchiveAndPersonName(
+    ...     new_token.archive, "bradsmith"))
+    None
+
+    >>> login("admin@canonical.com")
+    >>> new_token.person.setAccountStatus(
+    ...     AccountStatus.ACTIVE, None, 'Back')
+
 
 == Amending Tokens ==
 

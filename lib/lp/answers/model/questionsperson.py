@@ -6,11 +6,22 @@ __all__ = [
     'QuestionsPersonMixin',
     ]
 
+from storm.expr import (
+    Or,
+    Select,
+    Union,
+    )
 
 from lp.answers.enums import QUESTION_STATUS_DEFAULT_SEARCH
 from lp.answers.model.answercontact import AnswerContact
-from lp.answers.model.question import QuestionPersonSearch
-from lp.services.database.sqlbase import sqlvalues
+from lp.answers.model.question import (
+    Question,
+    QuestionPersonSearch,
+    )
+from lp.answers.model.questionmessage import QuestionMessage
+from lp.answers.model.questionsubscription import QuestionSubscription
+from lp.registry.model.teammembership import TeamParticipation
+from lp.services.database.interfaces import IStore
 from lp.services.worlddata.model.language import Language
 
 
@@ -32,33 +43,36 @@ class QuestionsPersonMixin:
 
     def getQuestionLanguages(self):
         """See `IQuestionCollection`."""
-        return set(Language.select(
-            """Language.id = language AND Question.id IN (
-            SELECT id FROM Question
-                      WHERE owner = %(personID)s OR answerer = %(personID)s OR
-                           assignee = %(personID)s
-            UNION SELECT question FROM QuestionSubscription
-                  WHERE person = %(personID)s
-            UNION SELECT question
-                  FROM QuestionMessage
-                  WHERE owner = %(personID)s
-            )""" % sqlvalues(personID=self.id),
-            clauseTables=['Question'], distinct=True))
+        return set(IStore(Language).find(
+            Language,
+            Question.language == Language.id,
+            Question.id.is_in(Union(
+                Select(
+                    Question.id,
+                    where=Or(
+                        Question.owner == self,
+                        Question.answerer == self,
+                        Question.assignee == self)),
+                Select(
+                    QuestionSubscription.question_id,
+                    QuestionSubscription.person == self),
+                Select(
+                    QuestionMessage.question_id,
+                    QuestionMessage.owner == self)))).config(distinct=True))
 
     def getDirectAnswerQuestionTargets(self):
         """See `IQuestionsPerson`."""
-        answer_contacts = AnswerContact.select(
-            'person = %s' % sqlvalues(self))
+        answer_contacts = IStore(AnswerContact).find(
+            AnswerContact, AnswerContact.person == self)
         return self._getQuestionTargetsFromAnswerContacts(answer_contacts)
 
     def getTeamAnswerQuestionTargets(self):
         """See `IQuestionsPerson`."""
-        answer_contacts = AnswerContact.select(
-            '''AnswerContact.person = TeamParticipation.team
-            AND TeamParticipation.person = %(personID)s
-            AND AnswerContact.person != %(personID)s''' % sqlvalues(
-                personID=self.id),
-            clauseTables=['TeamParticipation'], distinct=True)
+        answer_contacts = IStore(AnswerContact).find(
+            AnswerContact,
+            AnswerContact.personID == TeamParticipation.teamID,
+            TeamParticipation.person == self,
+            AnswerContact.person != self).config(distinct=True)
         return self._getQuestionTargetsFromAnswerContacts(answer_contacts)
 
     def _getQuestionTargetsFromAnswerContacts(self, answer_contacts):

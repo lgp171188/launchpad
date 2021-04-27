@@ -13,6 +13,7 @@ __all__ = [
     'IOCIRecipeBuild',
     'IOCIRecipeBuildSet',
     'OCIRecipeBuildRegistryUploadStatus',
+    'OCIRecipeBuildSetRegistryUploadStatus',
     ]
 
 from lazr.enum import (
@@ -99,6 +100,44 @@ class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
 
         The upload has been cancelled because another build will upload a
         more recent version.
+    """)
+
+
+class OCIRecipeBuildSetRegistryUploadStatus(EnumeratedType):
+    """OCI build registry upload status type
+
+    OCI builds may be uploaded to a registry. This represents the state of
+    that process.
+    """
+
+    UNSCHEDULED = Item("""
+        Unscheduled
+
+        No upload of these OCI builds to a registry is scheduled.
+        """)
+
+    PENDING = Item("""
+        Pending
+
+        These OCI builds are queued for upload to a registry.
+        """)
+
+    FAILEDTOUPLOAD = Item("""
+        Failed to upload
+
+        The last attempt to upload these OCI builds to a registry failed.
+        """)
+
+    UPLOADED = Item("""
+        Uploaded
+
+        These OCI builds were successfully uploaded to a registry.
+        """)
+
+    PARTIAL = Item("""
+        Partial
+
+        Some OCI builds have uploaded to a registry.
     """)
 
 

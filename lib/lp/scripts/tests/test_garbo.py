@@ -1109,6 +1109,13 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             repo.status = GitRepositoryStatus.CREATING
             long_ago += timedelta(seconds=1)
 
+        # Create an old stale private repository as well.
+        repo = removeSecurityProxy(self.factory.makeGitRepository(
+            information_type=InformationType.USERDATA))
+        repo.date_created = long_ago
+        repo.status = GitRepositoryStatus.CREATING
+        long_ago += timedelta(seconds=1)
+
         recent_creating, old_available, recent_available = [
             removeSecurityProxy(self.factory.makeGitRepository())
             for _ in range(3)]
@@ -1122,7 +1129,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         recent_available.date_created = recently
         recent_available.status = GitRepositoryStatus.AVAILABLE
 
-        self.assertEqual(8, store.find(GitRepository).count())
+        self.assertEqual(9, store.find(GitRepository).count())
 
         self.runHourly(maximum_chunk_size=2)
 

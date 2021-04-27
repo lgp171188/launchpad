@@ -57,6 +57,7 @@ from lp.soyuz.scripts.initialize_distroseries import (
     InitializeDistroSeries,
     )
 from lp.testing import TestCaseWithFactory
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
@@ -142,14 +143,15 @@ class InitializationHelperTestCase(TestCaseWithFactory):
         pub_config = publisherconfigset.getByDistribution(child.distribution)
         if pub_config is None:
             self.factory.makePublisherConfig(distribution=child.distribution)
-        ids = InitializeDistroSeries(
-            child, [parent.id for parent in parents], arches=arches,
-            archindep_archtag=archindep_archtag,
-            packagesets=packagesets, rebuild=rebuild, overlays=overlays,
-            overlay_pockets=overlay_pockets,
-            overlay_components=overlay_components)
-        ids.check()
-        ids.initialize()
+        with dbuser('initializedistroseries'):
+            ids = InitializeDistroSeries(
+                child, [parent.id for parent in parents], arches=arches,
+                archindep_archtag=archindep_archtag,
+                packagesets=packagesets, rebuild=rebuild, overlays=overlays,
+                overlay_pockets=overlay_pockets,
+                overlay_components=overlay_components)
+            ids.check()
+            ids.initialize()
         return child
 
     def createPackageInPackageset(self, distroseries, package_name,
