@@ -150,8 +150,8 @@
                 <span tal:content="build_status/upload/title" />
               </tal:registry-upload>
               <tal:registry-upload tal:condition="not:build_status/upload_requested">
-                <span tal:condition="python: 'NEEDSBUILD' in build_status['status'].title">Waiting for builds to start.</span>
-                <span tal:condition="python: 'NEEDSBUILD' not in build_status['status'].title">No registry upload requested.</span>
+                <span tal:condition="build_status/status/enumvalue:NEEDSBUILD">Waiting for builds to start.</span>
+                <span tal:condition="not: build_status/status/enumvalue:NEEDSBUILD">No registry upload requested.</span>
               </tal:registry-upload>
             </td>
             <td>
