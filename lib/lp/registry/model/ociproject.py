@@ -319,13 +319,12 @@ class OCIProject(BugTargetBase, StormBase):
         if exists_bugs:
             raise CannotDeleteOCIProject("This OCI project contains bugs.")
 
-        git_repos = IStore(GitRepository).find(
-            GitRepository, GitRepository.oci_project == self)
-        if not git_repos.is_empty():
-            repos = ", ".join(repo.display_name for repo in git_repos)
+        # Cannot delete this OCI project if it has repos associated with it.
+        exists_repos = not IStore(GitRepository).find(
+            GitRepository, GitRepository.oci_project == self).is_empty()
+        if exists_repos:
             raise CannotDeleteOCIProject(
-                "There are git repositories associated with this OCI project: "
-                + repos)
+                "There are git repositories associated with this OCI project.")
         for series in self.series:
             series.destroySelf()
         IStore(self).remove(self)
