@@ -89,6 +89,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeFeatureDisabled,
     OCIRecipeNotOwner,
     OCIRecipePrivacyMismatch,
+    UsingDistributionCredentials,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
@@ -788,6 +789,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
             # credentials owner via the webservice API, so for compatibility
             # we give it a default.
             credentials_owner = self.owner
+        if self.use_distribution_credentials:
+            raise UsingDistributionCredentials()
         oci_credentials = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
             registrant, credentials_owner, registry_url, credentials)
         push_rule = getUtility(IOCIPushRuleSet).new(
