@@ -162,4 +162,10 @@ class ArchiveAuthTokenSet:
     def deactivateNamedTokensForArchive(self, archive, names):
         """See `IArchiveAuthTokenSet`."""
         tokens = self.getActiveNamedTokensForArchive(archive, names)
+        # Push this down to a subselect so that `ResultSet.set` works
+        # properly.
+        tokens = Store.of(archive).find(
+            ArchiveAuthToken,
+            ArchiveAuthToken.id.is_in(
+                tokens.get_select_expr(ArchiveAuthToken.id)))
         tokens.set(date_deactivated=UTC_NOW)
