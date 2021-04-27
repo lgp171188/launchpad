@@ -313,12 +313,17 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
             if not all(upload_status):
                 status['status'] = BuildSetStatus.FULLYBUILT_PENDING
 
-        # expecting an upload
-        # if there's a registry upload job for any build - yes
-        # if there isn't, and any of the builds are complete/failed - no
+        # Are we expecting an upload to be or to have been attempted?
+        # This is slightly complicated as the upload depends on the push
+        # rules at the time of build completion
         upload_requested = False
+        # If there's an upload job for any of the builds, we have
+        # requested an upload
         if any(x.last_registry_upload_job for x in builds):
             upload_requested = True
+        # If all of the builds haven't finished, but the recipe currently
+        # has push rules specified, then we will attempt an upload
+        # in the future
         if any(not x.date_finished and x.recipe.can_upload_to_registry
                for x in builds):
             upload_requested = True
@@ -326,19 +331,22 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
         # Convert the set of registry statuses into a single line
         # for display
-        if any(x.registry_upload_status == singleStatus.FAILEDTOUPLOAD
-               for x in builds):
+        upload_status = [
+            x.registry_upload_status == singleStatus.UPLOADED for x in builds]
+        # Any of the builds failed
+        if any(x == singleStatus.FAILEDTOUPLOAD for x in upload_status):
             status['upload'] = setStatus.FAILEDTOUPLOAD
-        # If any of the builds are still waiting to upload
-        elif all(x.registry_upload_status == singleStatus.UPLOADED
-                 for x in builds):
+        # All of the builds uploaded
+        elif all(x == singleStatus.UPLOADED for x in upload_status):
             status['upload'] = setStatus.UPLOADED
-        elif all(x.registry_upload_status == singleStatus.UNSCHEDULED
-                 for x in builds):
+        # All of the builds are yet to attempt an upload
+        elif all(x == singleStatus.UNSCHEDULED for x in upload_status):
             status['upload'] = setStatus.UNSCHEDULED
-        elif any(x.registry_upload_status == singleStatus.UPLOADED
-                 for x in builds):
+        # Any of the builds have uploaded. Set after 'all of the builds'
+        # have uploaded.
+        elif any(x == singleStatus.UPLOADED for x in upload_status):
             status['upload'] = setStatus.PARTIAL
+        # And if it's none of the above, we're waiting
         else:
             status['upload'] = setStatus.PENDING
 
