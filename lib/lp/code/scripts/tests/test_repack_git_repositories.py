@@ -156,6 +156,36 @@ class TestRequestGitRepack(TestCaseWithFactory):
             self.assertEqual("/repo/%s/repack" % repo[i].getInternalPath(),
                              self.turnip_server.app.contents[i])
 
+    def test_auto_repack_zero_repackCandidates(self):
+        self.makeTurnipServer()
+        repo = []
+        for i in range(2):
+            repo.append(self.factory.makeGitRepository())
+            repo[i] = removeSecurityProxy(repo[i])
+            repo[i].loose_object_count = 3
+            repo[i].pack_count = 2
+        transaction.commit()
+
+        # zero candidates
+        # assert on the log contents and the content that makes it to Turnip
+        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        self.assertIn(
+            'Requested a total of 0 automatic git repository repacks in this '
+            'run of the Automated Repack Job.', err)
+        self.assertEqual([],
+                         self.turnip_server.app.contents)
+
+        # exactly one candidate
+        repo[0].loose_object_count = 7000
+        repo[0].pack_count = 43
+        transaction.commit()
+        (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
+        self.assertIn(
+            'Requested a total of 1 automatic git repository repacks in '
+            'this run of the Automated Repack Job.', err)
+        self.assertEqual("/repo/%s/repack" % repo[0].getInternalPath(),
+                         self.turnip_server.app.contents[0])
+
     def test_auto_repack_loop_throttle(self):
         repacker = RepackTunableLoop(self.log, None)
         # We throttle at 7 for this test, we use a limit
