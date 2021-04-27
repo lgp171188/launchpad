@@ -24,6 +24,7 @@ __all__ = [
     'OCI_RECIPE_ALLOW_CREATE',
     'OCI_RECIPE_BUILD_DISTRIBUTION',
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
+    'UsingDistributionCredentials',
     ]
 
 from lazr.lifecycle.snapshot import doNotSnapshot
@@ -120,6 +121,15 @@ class DuplicateOCIRecipeName(Exception):
 class NoSuchOCIRecipe(NameLookupFailed):
     """The requested OCI Recipe does not exist."""
     _message_prefix = "No such OCI recipe exists for this OCI project"
+
+
+@error_status(http_client.BAD_REQUEST)
+class UsingDistributionCredentials(Exception):
+    """The OCI Recipe is in a Distribution that has credentials set."""
+
+    def __init__(self):
+        super(UsingDistributionCredentials, self).__init__(
+            "The OCI Recipe is in a Distribution that has credentials set.")
 
 
 @error_status(http_client.BAD_REQUEST)
