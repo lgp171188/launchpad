@@ -331,8 +331,7 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
         # Convert the set of registry statuses into a single line
         # for display
-        upload_status = [
-            x.registry_upload_status == singleStatus.UPLOADED for x in builds]
+        upload_status = [x.registry_upload_status for x in builds]
         # Any of the builds failed
         if any(x == singleStatus.FAILEDTOUPLOAD for x in upload_status):
             status['upload'] = setStatus.FAILEDTOUPLOAD
