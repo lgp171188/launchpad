@@ -108,6 +108,14 @@ class IGitNamespacePolicy(Interface):
         "True iff this namespace permits automatically setting a default "
         "repository on push.")
 
+    # XXX cjwatson 2021-04-26: This is a slight hack for the benefit of the
+    # OCI project namespace.  OCI projects don't have owners (recipes do),
+    # so the usual approach of using the target's owner doesn't work.
+    default_owner = Attribute(
+        "The default owner when automatically setting a default repository on "
+        "push for this namespace, or None if no usable default owner can be "
+        "determined.")
+
     supports_repository_forking = Attribute(
         "Does this namespace support repository forking at all?")
 

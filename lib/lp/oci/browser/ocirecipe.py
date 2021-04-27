@@ -64,6 +64,7 @@ from lp.app.widgets.itemswidgets import (
     )
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.oci.interfaces.ocipushrule import (
     IOCIPushRuleSet,
     OCIPushRuleAlreadyExists,
@@ -332,7 +333,7 @@ class OCIRecipeView(LaunchpadView):
         status = removeSecurityProxy(
                     recipe_set.getStatusSummaryForBuilds([build_job]))
         # Add the registry job status
-        status["upload_scheduled"] = upload_status != unscheduled_upload
+        status["upload_requested"] = upload_status != unscheduled_upload
         status["upload"] = upload_status
         status["date"] = build_job.date
         status["date_estimated"] = build_job.estimate
@@ -957,7 +958,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         """Setup GitRef widget indicating the user to use the default
         oci project's git repository, if possible.
         """
-        path = self.context.getDefaultGitRepositoryPath(self.user)
+        path = canonical_url(self.context, force_local_path=True)[1:]
         widget = self.widgets["git_ref"]
         widget.setUpSubWidgets()
         widget.setBranchFormatValidator(self._branch_format_validator)
@@ -965,12 +966,14 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         if widget.error():
             # Do not override more important git_ref errors.
             return
-        default_repo = self.context.getDefaultGitRepository(self.user)
+        default_repo = getUtility(IGitRepositorySet).getDefaultRepository(
+            self.context)
         if default_repo is None:
             msg = (
-                "Your git repository for this OCI project was not created yet."
-                "<br/>Check the <a href='%s'>OCI project page"
-                "</a> for instructions on how to create one.")
+                'The default git repository for this OCI project was not '
+                'created yet.<br/>'
+                'Check the <a href="%s">OCI project page</a> for instructions '
+                'on how to create one.')
             msg = structured(msg, canonical_url(self.context))
             self.widget_errors["git_ref"] = msg.escapedtext
 
@@ -1122,14 +1125,15 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         if self.context.git_ref.namespace.target != self.context.oci_project:
             msg = ("This recipe's git repository is not in the "
                    "correct namespace.<br/>")
-            default_repo = oci_proj.getDefaultGitRepository(self.context.owner)
+            default_repo = getUtility(IGitRepositorySet).getDefaultRepository(
+                oci_proj)
             if default_repo:
                 link = GitRepositoryFormatterAPI(default_repo).link('')
                 msg += "Consider using %s instead." % link
             else:
                 msg += (
-                    "Check the <a href='%(oci_proj_url)s'>OCI project page</a>"
-                    " for instructions on how to create it correctly.")
+                    'Check the <a href="%(oci_proj_url)s">OCI project page</a>'
+                    ' for instructions on how to create it correctly.')
         if msg:
             msg = structured(msg, oci_proj_url=oci_proj_url)
             self.widget_errors["git_ref"] = msg.escapedtext

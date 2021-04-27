@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """BugSummary Storm database classes."""
@@ -75,6 +75,9 @@ class BugSummary(Storm):
 
     sourcepackagename_id = Int(name='sourcepackagename')
     sourcepackagename = Reference(sourcepackagename_id, SourcePackageName.id)
+
+    ociproject_id = Int(name='ociproject')
+    ociproject = Reference(ociproject_id, 'OCIProject.id')
 
     milestone_id = Int(name='milestone')
     milestone = Reference(milestone_id, Milestone.id)

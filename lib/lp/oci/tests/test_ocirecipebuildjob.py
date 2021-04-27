@@ -7,14 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import os
 import signal
-import threading
-import time
 
 from fixtures import FakeLogger
 from storm.locals import Store
@@ -22,7 +16,6 @@ from testtools.matchers import (
     Equals,
     MatchesDict,
     MatchesListwise,
-    MatchesSetwise,
     MatchesStructure,
     )
 import transaction
@@ -54,7 +47,6 @@ from lp.oci.model.ocirecipebuildjob import (
 from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.database.locking import (
-    AdvisoryLockHeld,
     LockType,
     try_advisory_lock,
     )

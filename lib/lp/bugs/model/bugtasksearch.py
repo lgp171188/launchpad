@@ -426,7 +426,8 @@ def _build_query(params):
     if params.omit_targeted:
         extra_clauses.append(And(
             BugTaskFlat.distroseries == None,
-            BugTaskFlat.productseries == None))
+            BugTaskFlat.productseries == None,
+            BugTaskFlat.ociproject_id == None))
 
     if params.has_cve:
         where = [
