@@ -634,8 +634,7 @@ class TestGitIdentityMixin(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject()
         repository = self.factory.makeGitRepository(target=oci_project)
         with admin_logged_in():
-            self.repository_set.setDefaultRepository(
-                oci_project, repository, force_oci=True)
+            self.repository_set.setDefaultRepository(oci_project, repository)
         self.assertGitIdentity(
             repository,
             "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name))
@@ -751,8 +750,7 @@ class TestGitIdentityMixin(TestCaseWithFactory):
         with admin_logged_in():
             self.repository_set.setDefaultRepositoryForOwner(
                 repository.owner, oci_project, repository, repository.owner)
-            self.repository_set.setDefaultRepository(
-                oci_project, repository, force_oci=True)
+            self.repository_set.setDefaultRepository(oci_project, repository)
         eric_oci_project = getUtility(IPersonOCIProjectFactory).create(
             eric, oci_project)
         self.assertEqual(
@@ -3595,29 +3593,6 @@ class TestGitRepositorySet(TestCaseWithFactory):
                 self.repository_set.setDefaultRepositoryForOwner,
                 person, person, repository, user)
 
-    def test_setDefaultRepository_refuses_oci_project(self):
-        # setDefaultRepository refuses if the target is an OCI project.
-        oci_project = self.factory.makeOCIProject()
-        repository = self.factory.makeGitRepository(target=oci_project)
-        with admin_logged_in():
-            self.assertRaises(
-                GitTargetError, self.repository_set.setDefaultRepository,
-                oci_project, repository)
-
-    def test_setDefaultRepository_accepts_oci_project_override(self):
-        # setDefaultRepository refuses if the target is an OCI project.
-        oci_project = self.factory.makeOCIProject()
-        repository = self.factory.makeGitRepository(target=oci_project)
-        with admin_logged_in():
-            self.repository_set.setDefaultRepository(
-                oci_project, repository, force_oci=True)
-        identity_path = "%s/+oci/%s" % (
-                oci_project.distribution.name, oci_project.name)
-        self.assertEqual(
-            identity_path, repository.shortened_path, "shortened path")
-        self.assertEqual(
-            "lp:%s" % identity_path, repository.git_identity, "git identity")
-
     def test_setDefaultRepositoryForOwner_noop(self):
         # If a repository is already the target owner default, setting
         # the default again should no-op.
@@ -3766,12 +3741,6 @@ class TestGitRepositorySetDefaultsPackage(
 
 class TestGitRepositorySetDefaultsOCIProject(
     TestGitRepositorySetDefaultsMixin, TestCaseWithFactory):
-
-    def setUp(self):
-        super(TestGitRepositorySetDefaultsOCIProject, self).setUp()
-        self.set_method = (lambda target, repository, user:
-            self.repository_set.setDefaultRepository(
-                target, repository, force_oci=True))
 
     def makeTarget(self, template=None):
         kwargs = {}
@@ -3928,6 +3897,50 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             'date_last_repacked': Equals(UTC_NOW),
             'date_last_scanned': Equals(UTC_NOW),
             }))
+
+    def test_git_gc_owner(self):
+        # Repository owner cannot request a git GC run
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+
+        with person_logged_in(owner_db):
+            self.assertRaises(
+                Unauthorized, getattr, repository_db, 'collectGarbage')
+        self.assertEqual(0, hosting_fixture.collectGarbage.call_count)
+
+    def test_git_gc_admin(self):
+        # Admins can trigger a git GC run
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        with person_logged_in(admin):
+            repository_db.collectGarbage()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.collectGarbage.calls)
+        self.assertEqual(1, hosting_fixture.collectGarbage.call_count)
+
+    def test_git_gc_registry_expert(self):
+        # Registry experts can trigger a Git GC run
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        person = self.factory.makePerson()
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        with admin_logged_in():
+            getUtility(ILaunchpadCelebrities).registry_experts.addMember(
+                person, admin)
+        with person_logged_in(person):
+            repository_db.collectGarbage()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.collectGarbage.calls)
+        self.assertEqual(1, hosting_fixture.collectGarbage.call_count)
 
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")

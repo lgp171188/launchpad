@@ -12,12 +12,9 @@ from datetime import (
     timedelta,
     )
 
-from lazr.restfulclient.errors import HTTPError
 import pytz
 from simplejson import dumps
 from testtools.matchers import EndsWith
-import transaction
-from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.enums import QuestionStatus
 from lp.answers.errors import (
@@ -33,18 +30,15 @@ from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
+    api_url,
     celebrity_logged_in,
-    launchpadlib_for,
-    logout,
     person_logged_in,
     record_two_runs,
     TestCase,
     TestCaseWithFactory,
     time_counter,
-    ws_object,
     )
 from lp.testing.layers import (
-    AppServerLayer,
     DatabaseFunctionalLayer,
     FunctionalLayer,
     )
@@ -192,47 +186,41 @@ class TestSetCommentVisibility(TestCaseWithFactory):
         self.commenter = self.factory.makePerson()
         with person_logged_in(self.commenter):
             self.question = self.factory.makeQuestion()
+            self.question_url = api_url(self.question)
             self.message = self.question.addComment(
                 self.commenter, 'Some comment')
-        transaction.commit()
-
-    def _get_question_for_user(self, user=None):
-        """Convenience function to get the api question reference."""
-        # End any open lplib instance.
-        logout()
-        lp = launchpadlib_for("test", user)
-        return ws_object(lp, removeSecurityProxy(self.question))
-
-    def _set_visibility(self, question):
-        """Method to set visibility; needed for assertRaises."""
-        question.setCommentVisibility(
-            comment_number=0,
-            visible=False)
 
     def test_random_user_cannot_set_visible(self):
         # Logged in users without privs can't set question comment
         # visibility.
         random_user = self.factory.makePerson()
-        question = self._get_question_for_user(random_user)
-        self.assertRaises(
-            HTTPError,
-            self._set_visibility,
-            question)
+        webservice = webservice_for_person(
+            random_user, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version='devel')
+        response = webservice.named_post(
+            self.question_url, 'setCommentVisibility',
+            comment_number=0, visible=False)
+        self.assertEqual(401, response.status)
 
     def test_anon_cannot_set_visible(self):
         # Anonymous users can't set question comment
         # visibility.
-        question = self._get_question_for_user()
-        self.assertRaises(
-            HTTPError,
-            self._set_visibility,
-            question)
+        webservice = webservice_for_person(None, default_api_version='devel')
+        response = webservice.named_post(
+            self.question_url, 'setCommentVisibility',
+            comment_number=0, visible=False)
+        self.assertEqual(401, response.status)
 
     def test_comment_owner_can_set_visible(self):
         # Members of registry experts can set question comment
         # visibility.
-        question = self._get_question_for_user(self.commenter)
-        self._set_visibility(question)
+        webservice = webservice_for_person(
+            self.commenter, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version='devel')
+        response = webservice.named_post(
+            self.question_url, 'setCommentVisibility',
+            comment_number=0, visible=False)
+        self.assertEqual(200, response.status)
         self.assertFalse(self.message.visible)
 
     def test_registry_admin_can_set_visible(self):
@@ -240,8 +228,13 @@ class TestSetCommentVisibility(TestCaseWithFactory):
         # visibility.
         with celebrity_logged_in('registry_experts') as registry:
             person = registry
-        question = self._get_question_for_user(person)
-        self._set_visibility(question)
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version='devel')
+        response = webservice.named_post(
+            self.question_url, 'setCommentVisibility',
+            comment_number=0, visible=False)
+        self.assertEqual(200, response.status)
         self.assertFalse(self.message.visible)
 
     def test_admin_can_set_visible(self):
@@ -249,47 +242,58 @@ class TestSetCommentVisibility(TestCaseWithFactory):
         # visibility.
         with celebrity_logged_in('admin') as admin:
             person = admin
-        question = self._get_question_for_user(person)
-        self._set_visibility(question)
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version='devel')
+        response = webservice.named_post(
+            self.question_url, 'setCommentVisibility',
+            comment_number=0, visible=False)
+        self.assertEqual(200, response.status)
         self.assertFalse(self.message.visible)
 
 
 class TestQuestionWebServiceSubscription(TestCaseWithFactory):
 
-    layer = AppServerLayer
+    layer = DatabaseFunctionalLayer
 
     def test_subscribe(self):
         # Test subscribe() API.
         person = self.factory.makePerson()
         with person_logged_in(person):
-            db_question = self.factory.makeQuestion()
-            db_person = self.factory.makePerson()
-            launchpad = self.factory.makeLaunchpadService()
+            question = self.factory.makeQuestion()
+            question_url = api_url(question)
+            person = self.factory.makePerson()
+            person_url = api_url(person)
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version='devel')
 
-        question = ws_object(launchpad, db_question)
-        person = ws_object(launchpad, db_person)
-        question.subscribe(person=person)
-        transaction.commit()
+        response = webservice.named_post(
+            question_url, 'subscribe', person=person_url)
+        self.assertEqual(200, response.status)
 
         # Check the results.
-        self.assertTrue(db_question.isSubscribed(db_person))
+        self.assertTrue(question.isSubscribed(person))
 
     def test_unsubscribe(self):
         # Test unsubscribe() API.
         person = self.factory.makePerson()
         with person_logged_in(person):
-            db_question = self.factory.makeQuestion()
-            db_person = self.factory.makePerson()
-            db_question.subscribe(person=db_person)
-            launchpad = self.factory.makeLaunchpadService(person=db_person)
+            question = self.factory.makeQuestion()
+            question_url = api_url(question)
+            person = self.factory.makePerson()
+            person_url = api_url(person)
+            question.subscribe(person=person)
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version='devel')
 
-        question = ws_object(launchpad, db_question)
-        person = ws_object(launchpad, db_person)
-        question.unsubscribe(person=person)
-        transaction.commit()
+        response = webservice.named_post(
+            question_url, 'unsubscribe', person=person_url)
+        self.assertEqual(200, response.status)
 
         # Check the results.
-        self.assertFalse(db_question.isSubscribed(db_person))
+        self.assertFalse(question.isSubscribed(person))
 
 
 class TestQuestionSetWebService(TestCaseWithFactory):

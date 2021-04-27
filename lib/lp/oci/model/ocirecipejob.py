@@ -4,6 +4,9 @@
 """A build job for OCI Recipe."""
 
 from __future__ import absolute_import, print_function, unicode_literals
+from lp.buildmaster.model.processor import Processor
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+
 
 __metaclass__ = type
 __all__ = [
@@ -27,8 +30,13 @@ from zope.interface import (
     implementer,
     provider,
     )
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
+from lp.oci.interfaces.ocirecipebuild import (
+    OCIRecipeBuildRegistryUploadStatus,
+    OCIRecipeBuildSetRegistryUploadStatus,
+    )
 from lp.oci.interfaces.ocirecipejob import (
     IOCIRecipeJob,
     IOCIRecipeRequestBuildsJob,
@@ -37,6 +45,8 @@ from lp.oci.interfaces.ocirecipejob import (
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
+from lp.services.database.bulk import load_related
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -51,6 +61,7 @@ from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
+from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 
 
 class OCIRecipeJobType(DBEnumeratedType):
@@ -196,10 +207,16 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
             conditions.append(Job._status.is_in(statuses))
         if job_ids is not None:
             conditions.append(OCIRecipeJob.job_id.is_in(job_ids))
-        return IStore(OCIRecipeJob).find(
-            (OCIRecipeJob, Job),
+        oci_jobs = IStore(OCIRecipeJob).find(
+            OCIRecipeJob,
             OCIRecipeJob.job_id == Job.id,
             *conditions).order_by(Desc(OCIRecipeJob.job_id))
+
+        def preload_jobs(rows):
+            load_related(Job, rows, ["job_id"])
+
+        return DecoratedResultSet(
+            oci_jobs, lambda oci_job: cls(oci_job), pre_iter_hook=preload_jobs)
 
     def getOperationDescription(self):
         return "requesting builds of %s" % self.recipe
@@ -244,9 +261,13 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     def builds(self):
         """See `OCIRecipeRequestBuildsJob`."""
         build_ids = self.metadata.get("builds")
+        # Sort this by architecture/processor name, so it's consistent
+        # when displayed
         if build_ids:
             return IStore(OCIRecipeBuild).find(
-                OCIRecipeBuild, OCIRecipeBuild.id.is_in(build_ids))
+                OCIRecipeBuild, OCIRecipeBuild.id.is_in(build_ids),
+                OCIRecipeBuild.processor_id == Processor.id).order_by(
+                    Desc(Processor.name))
         else:
             return EmptyResultSet()
 
@@ -269,6 +290,72 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
     def addUploadedManifest(self, build_id, manifest_info):
         self.metadata["uploaded_manifests"][int(build_id)] = manifest_info
+
+    @property
+    def build_status(self):
+        builds = self.builds
+        # This just returns a dict, but Zope is really helpful here
+        status = removeSecurityProxy(
+                getUtility(IOCIRecipeSet).getStatusSummaryForBuilds(
+                    list(builds)))
+
+        # This has a really long name!
+        singleStatus = OCIRecipeBuildRegistryUploadStatus
+        setStatus = OCIRecipeBuildSetRegistryUploadStatus
+
+        # Set the pending upload status if either we're not done uploading,
+        # or there was no upload requested in the first place (no push rules)
+        if status['status'] == BuildSetStatus.FULLYBUILT:
+            upload_status = [
+                (x.registry_upload_status == singleStatus.UPLOADED or
+                 x.registry_upload_status == singleStatus.UNSCHEDULED)
+                for x in status['builds']]
+            if not all(upload_status):
+                status['status'] = BuildSetStatus.FULLYBUILT_PENDING
+
+        # Are we expecting an upload to be or to have been attempted?
+        # This is slightly complicated as the upload depends on the push
+        # rules at the time of build completion
+        upload_requested = False
+        # If there's an upload job for any of the builds, we have
+        # requested an upload
+        if any(x.last_registry_upload_job for x in builds):
+            upload_requested = True
+        # If all of the builds haven't finished, but the recipe currently
+        # has push rules specified, then we will attempt an upload
+        # in the future
+        if any(not x.date_finished and x.recipe.can_upload_to_registry
+               for x in builds):
+            upload_requested = True
+        status['upload_requested'] = upload_requested
+
+        # Convert the set of registry statuses into a single line
+        # for display
+        upload_status = [x.registry_upload_status for x in builds]
+        # Any of the builds failed
+        if any(x == singleStatus.FAILEDTOUPLOAD for x in upload_status):
+            status['upload'] = setStatus.FAILEDTOUPLOAD
+        # All of the builds uploaded
+        elif all(x == singleStatus.UPLOADED for x in upload_status):
+            status['upload'] = setStatus.UPLOADED
+        # All of the builds are yet to attempt an upload
+        elif all(x == singleStatus.UNSCHEDULED for x in upload_status):
+            status['upload'] = setStatus.UNSCHEDULED
+        # Any of the builds have uploaded. Set after 'all of the builds'
+        # have uploaded.
+        elif any(x == singleStatus.UPLOADED for x in upload_status):
+            status['upload'] = setStatus.PARTIAL
+        # And if it's none of the above, we're waiting
+        else:
+            status['upload'] = setStatus.PENDING
+
+        # Get the longest date and whether any of them are estimated
+        # for the summary of the builds
+        dates = [x.date for x in self.builds if x.date]
+        status['date'] = max(dates) if dates else None
+        status['date_estimated'] = any(x.estimate for x in self.builds)
+
+        return status
 
     def run(self):
         """See `IRunnableJob`."""

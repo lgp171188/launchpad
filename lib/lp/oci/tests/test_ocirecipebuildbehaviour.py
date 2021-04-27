@@ -381,7 +381,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
         job = self.makeJob(git_ref=ref)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -431,7 +431,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
         job = self.makeJob(git_ref=ref, recipe=recipe)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
@@ -487,7 +487,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
         job = self.makeJob(git_ref=ref.repository.getRefByPath("HEAD"))
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
-                job.build, job.build.distro_arch_series, None))
+                job, job.build.distro_arch_series, None))
         for archive_line in expected_archives:
             self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):

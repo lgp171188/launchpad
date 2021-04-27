@@ -145,6 +145,13 @@ class SnapBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             raise CannotBuild(
                 "Missing chroot for %s" % build.distro_arch_series.displayname)
 
+    def issueMacaroon(self):
+        """See `IBuildFarmJobBehaviour`."""
+        return cancel_on_timeout(
+            self._authserver.callRemote(
+                "issueMacaroon", "snap-build", "SnapBuild", self.build.id),
+            config.builddmaster.authentication_timeout)
+
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
         """
@@ -176,7 +183,7 @@ class SnapBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             archive_dependencies.extend(build.snap_base.dependencies)
         args["archives"], args["trusted_keys"] = (
             yield get_sources_list_for_building(
-                build, build.distro_arch_series, None,
+                self, build.distro_arch_series, None,
                 archive_dependencies=archive_dependencies,
                 tools_source=tools_source, tools_fingerprint=tools_fingerprint,
                 logger=logger))
@@ -186,10 +193,7 @@ class SnapBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             if build.snap.git_ref.repository_url is not None:
                 args["git_repository"] = build.snap.git_ref.repository_url
             elif build.snap.git_repository.private:
-                macaroon_raw = yield cancel_on_timeout(
-                    self._authserver.callRemote(
-                        "issueMacaroon", "snap-build", "SnapBuild", build.id),
-                    config.builddmaster.authentication_timeout)
+                macaroon_raw = yield self.issueMacaroon()
                 url = build.snap.git_repository.getCodebrowseUrl(
                     username=None, password=macaroon_raw)
                 args["git_repository"] = url

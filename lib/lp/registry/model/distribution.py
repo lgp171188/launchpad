@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for implementing distribution items."""
@@ -680,8 +680,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         # Circular fail.
         from lp.bugs.model.bugsummary import BugSummary
         return And(
-                BugSummary.distribution_id == self.id,
-                BugSummary.sourcepackagename_id == None)
+            BugSummary.distribution_id == self.id,
+            BugSummary.sourcepackagename_id == None,
+            BugSummary.ociproject_id == None)
 
     def _customizeSearchParams(self, search_params):
         """Customize `search_params` for this distribution."""

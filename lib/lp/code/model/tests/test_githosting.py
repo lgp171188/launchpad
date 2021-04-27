@@ -39,6 +39,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.code.errors import (
     CannotRepackRepository,
+    CannotRunGitGC,
     GitReferenceDeletionFault,
     GitRepositoryBlobNotFound,
     GitRepositoryCreationFault,
@@ -502,3 +503,16 @@ class TestGitHostingClient(TestCase):
                 "Failed to repack Git repository /repo/123: "
                 "400 Client Error: Bad Request",
                 self.client.repackRepository, "/repo/123")
+
+    def test_git_gc(self):
+        with self.mockRequests("POST", status=200):
+            gc = self.client.collectGarbage("/repo/123")
+        self.assertEqual(None, gc)
+
+    def test_git_gc_failure(self):
+        with self.mockRequests("POST", status=400):
+            self.assertRaisesWithContent(
+                CannotRunGitGC,
+                "Failed to run Git GC for repository /repo/123: "
+                "400 Client Error: Bad Request",
+                self.client.collectGarbage, "/repo/123")

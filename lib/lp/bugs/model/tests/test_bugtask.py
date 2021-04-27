@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -189,6 +189,42 @@ class TestBugTaskCreation(TestCaseWithFactory):
 
         self.assertEqual(distro_series_task.distroseries, warty)
         self.assertEqual(distro_series_task.target, warty)
+
+    def test_ociproject_from_product_bug(self):
+        """A bug that needs to be fixed in a specific oci project with a
+        product pillar.
+        """
+        bugtaskset = getUtility(IBugTaskSet)
+        bug = self.factory.makeBug()
+        person = self.factory.makePerson()
+        pillar = self.factory.makeProduct()
+        ociproject = self.factory.makeOCIProject(pillar=pillar)
+
+        bugtask = bugtaskset.createTask(
+            bug, person, ociproject,
+            status=BugTaskStatus.NEW,
+            importance=BugTaskImportance.MEDIUM)
+
+        self.assertEqual(bugtask.target, ociproject)
+        self.assertEqual(bugtask.product, pillar)
+
+    def test_ociproject_from_distro_bug(self):
+        """A bug that needs to be fixed in a specific oci project with a
+        distribution pillar.
+        """
+        bugtaskset = getUtility(IBugTaskSet)
+        bug = self.factory.makeBug()
+        person = self.factory.makePerson()
+        pillar = self.factory.makeDistribution()
+        ociproject = self.factory.makeOCIProject(pillar=pillar)
+
+        bugtask = bugtaskset.createTask(
+            bug, person, ociproject,
+            status=BugTaskStatus.NEW,
+            importance=BugTaskImportance.MEDIUM)
+
+        self.assertEqual(bugtask.target, ociproject)
+        self.assertEqual(bugtask.distribution, pillar)
 
     def test_createmany_bugtasks(self):
         """We can create a set of bugtasks around different targets"""
@@ -2045,6 +2081,14 @@ class TestAutoConfirmBugTasksFlagForDistributionSourcePackage(
         return self.factory.makeDistributionSourcePackage()
 
 
+class TestAutoConfirmBugTasksFlagForOCIProject(
+    TestAutoConfirmBugTasksFlagForDistribution):
+    """Tests for auto-confirming bug tasks."""
+
+    def makeTarget(self):
+        return self.factory.makeOCIProject()
+
+
 class TestAutoConfirmBugTasksTransitionToTarget(TestCaseWithFactory):
     """Tests for auto-confirming bug tasks."""
     # Tests for making sure that switching a task from one project that
@@ -2202,6 +2246,11 @@ class TestValidateTransitionToTarget(TestCaseWithFactory):
         self.assertTransitionWorks(
             self.factory.makeProduct(),
             self.factory.makeDistributionSourcePackage())
+
+    def test_product_to_ociproject_works(self):
+        self.assertTransitionWorks(
+            self.factory.makeProduct(),
+            self.factory.makeOCIProject())
 
     def test_distribution_to_distribution_works(self):
         self.assertTransitionWorks(
@@ -2429,13 +2478,18 @@ class TestTransitionToTarget(TestCaseWithFactory):
         self.assertEqual(milestone, task.milestone)
 
     def test_targetnamecache_updated(self):
-        new_product = self.factory.makeProduct()
-        task = self.factory.makeBugTask()
-        with person_logged_in(task.owner):
-            task.transitionToTarget(new_product, task.owner)
-        self.assertEqual(
-            new_product.bugtargetdisplayname,
-            removeSecurityProxy(task).targetnamecache)
+        new_targets = [
+            self.factory.makeProduct(),
+            self.factory.makeDistribution(),
+            self.factory.makeOCIProject()]
+        # Test it with a different target types.
+        for new_target in new_targets:
+            task = self.factory.makeBugTask()
+            with person_logged_in(task.owner):
+                task.transitionToTarget(new_target, task.owner)
+            self.assertEqual(
+                new_target.bugtargetdisplayname,
+                removeSecurityProxy(task).targetnamecache)
 
     def test_cached_recipients_cleared(self):
         # The bug's notification recipients caches are cleared when
@@ -2614,6 +2668,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=None,
                 sourcepackagename=None,
+                ociproject=None,
                 ))
 
     def test_productseries(self):
@@ -2626,6 +2681,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=None,
                 sourcepackagename=None,
+                ociproject=None,
                 ))
 
     def test_distribution(self):
@@ -2638,6 +2694,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=distro,
                 distroseries=None,
                 sourcepackagename=None,
+                ociproject=None,
                 ))
 
     def test_distroseries(self):
@@ -2650,6 +2707,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=distroseries,
                 sourcepackagename=None,
+                ociproject=None,
                 ))
 
     def test_distributionsourcepackage(self):
@@ -2662,6 +2720,7 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=dsp.distribution,
                 distroseries=None,
                 sourcepackagename=dsp.sourcepackagename,
+                ociproject=None,
                 ))
 
     def test_sourcepackage(self):
@@ -2674,6 +2733,35 @@ class TestBugTargetKeys(TestCaseWithFactory):
                 distribution=None,
                 distroseries=sp.distroseries,
                 sourcepackagename=sp.sourcepackagename,
+                ociproject=None,
+                ))
+
+    def test_ociproject_based_in_distro(self):
+        pillar = self.factory.makeDistribution()
+        ociproject = self.factory.makeOCIProject(pillar=pillar)
+        self.assertTargetKeyWorks(
+            ociproject,
+            dict(
+                product=None,
+                productseries=None,
+                distribution=pillar,
+                distroseries=None,
+                sourcepackagename=None,
+                ociproject=ociproject,
+            ))
+
+    def test_ociproject_based_in_product(self):
+        pillar = self.factory.makeProduct()
+        ociproject = self.factory.makeOCIProject(pillar=pillar)
+        self.assertTargetKeyWorks(
+            ociproject,
+            dict(
+                product=pillar,
+                productseries=None,
+                distribution=None,
+                distroseries=None,
+                sourcepackagename=None,
+                ociproject=ociproject,
                 ))
 
     def test_no_key_for_non_targets(self):
@@ -2682,7 +2770,8 @@ class TestBugTargetKeys(TestCaseWithFactory):
 
     def test_no_target_for_bad_keys(self):
         self.assertRaises(
-            AssertionError, bug_target_from_key, None, None, None, None, None)
+            AssertionError, bug_target_from_key,
+            None, None, None, None, None, None)
 
 
 class ValidateTargetMixin:
@@ -2767,6 +2856,23 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
             IllegalTarget,
             "A fix for this bug has already been requested for %s"
             % p.displayname,
+            validate_target, task.bug, p)
+
+    def test_new_ociproject_is_allowed(self):
+        # A new oci project not on the bug is OK.
+        p1 = self.factory.makeOCIProject()
+        task = self.factory.makeBugTask(target=p1)
+        p2 = self.factory.makeOCIProject()
+        validate_target(task.bug, p2)
+
+    def test_same_ociproject_is_forbidden(self):
+        # An oci project with an existing task is not.
+        p = self.factory.makeOCIProject()
+        task = self.factory.makeBugTask(target=p)
+        self.assertRaisesWithContent(
+            IllegalTarget,
+            "A fix for this bug has already been requested for %s"
+            % p.bugtargetdisplayname,
             validate_target, task.bug, p)
 
     def test_new_distribution_is_allowed(self):
@@ -2922,6 +3028,12 @@ class TestValidateNewTarget(TestCaseWithFactory, ValidateTargetMixin):
         # Used for ValidateTargetMixin.
         return validate_new_target
 
+    def test_ociprojects_are_ok(self):
+        p1 = self.factory.makeOCIProject()
+        task = self.factory.makeBugTask(target=p1)
+        p2 = self.factory.makeOCIProject()
+        validate_new_target(task.bug, p2)
+
     def test_products_are_ok(self):
         p1 = self.factory.makeProduct()
         task = self.factory.makeBugTask(target=p1)
@@ -3036,6 +3148,19 @@ class TestBugTaskUserHasBugSupervisorPrivileges(TestCaseWithFactory):
         self.assertTrue(
             bugtask.userHasBugSupervisorPrivileges(bugsupervisor))
 
+    def test_ociproject_pillar_bug_supervisor(self):
+        # The pillar bug supervisor has privileges.
+        bugsupervisor = self.factory.makePerson()
+        someone_else = self.factory.makePerson()
+        target = self.factory.makeOCIProject()
+        with admin_logged_in():
+            target.pillar.bug_supervisor = bugsupervisor
+        bugtask = self.factory.makeBugTask(target=target)
+        self.assertTrue(
+            bugtask.userHasBugSupervisorPrivileges(bugsupervisor))
+        self.assertFalse(
+            bugtask.userHasBugSupervisorPrivileges(someone_else))
+
     def test_productseries_driver_is_allowed(self):
         # The series driver has privileges.
         series = self.factory.makeProductSeries()
@@ -3081,6 +3206,10 @@ class TestBugTaskUserHasBugSupervisorPrivilegesContext(TestCaseWithFactory):
     def test_distribution(self):
         distribution = self.factory.makeDistribution()
         self.assert_userHasBugSupervisorPrivilegesContext(distribution)
+
+    def test_ociproject(self):
+        ociproject = self.factory.makeOCIProject()
+        self.assert_userHasBugSupervisorPrivilegesContext(ociproject)
 
     def test_distributionsourcepackage(self):
         dsp = self.factory.makeDistributionSourcePackage()

@@ -772,6 +772,14 @@ class IGitRepositoryExpensiveRequest(Interface):
         Raises Unauthorized if the repack was attempted by a person
         that is not an admin or a registry expert."""
 
+    @export_write_operation()
+    @operation_for_version("devel")
+    def collectGarbage():
+        """Trigger a gc run for a given git repository.
+
+        Raises Unauthorized if the repack was attempted by a person
+        that is not an admin or a registry expert."""
+
 
 class IGitRepositoryEdit(IWebhookTarget):
     """IGitRepository methods that require launchpad.Edit permission."""
@@ -1161,7 +1169,7 @@ class IGitRepositorySet(Interface):
             title=_("Git repository"), required=False, schema=IGitRepository))
     @export_write_operation()
     @operation_for_version("devel")
-    def setDefaultRepository(target, repository, force_oci=False):
+    def setDefaultRepository(target, repository):
         """Set the default repository for a target.
 
         :param target: An `IHasGitRepositories`.

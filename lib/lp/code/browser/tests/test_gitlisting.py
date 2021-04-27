@@ -428,10 +428,6 @@ class TestOCIProjectGitListingView(
             pillar=distro, ociprojectname="bar")
         self.target_path = "foo/+oci/bar"
 
-    def setDefaultRepository(self, target, repository):
-        getUtility(IGitRepositorySet).setDefaultRepository(
-            target=target, repository=repository, force_oci=True)
-
     def test_bzr_link(self):
         # There's no OCIProject:+branches, nor any ability to create Bazaar
         # branches for OCI projects.

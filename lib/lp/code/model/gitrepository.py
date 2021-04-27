@@ -494,6 +494,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         getUtility(IGitHostingClient).repackRepository(self.getInternalPath())
         self.date_last_repacked = UTC_NOW
 
+    def collectGarbage(self):
+        getUtility(IGitHostingClient).collectGarbage(self.getInternalPath())
+
     @property
     def namespace(self):
         """See `IGitRepository`."""
@@ -1908,12 +1911,8 @@ class GitRepositorySet:
                 "Personal repositories cannot be defaults for any target.")
         return IStore(GitRepository).find(GitRepository, *clauses).one()
 
-    def setDefaultRepository(self, target, repository, force_oci=False):
+    def setDefaultRepository(self, target, repository):
         """See `IGitRepositorySet`."""
-        if IOCIProject.providedBy(target) and not force_oci:
-            raise GitTargetError(
-                "Cannot manually set a default Git repository"
-                " for an OCI Project")
         if IPerson.providedBy(target):
             raise GitTargetError(
                 "Cannot set a default Git repository for a person, only "

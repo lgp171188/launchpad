@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the repack_git_repositories script."""
+import logging
 import threading
 from wsgiref.simple_server import (
     make_server,
@@ -11,6 +12,7 @@ from wsgiref.simple_server import (
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
+from lp.code.scripts.repackgitrepository import RepackTunableLoop
 from lp.services.config import config
 from lp.services.config.fixture import (
     ConfigFixture,
@@ -67,6 +69,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
     def setUp(self):
         super(TestRequestGitRepack, self).setUp()
+        self.log = logging.getLogger('repack')
 
     def runScript_no_Turnip(self):
         transaction.commit()
@@ -78,8 +81,8 @@ class TestRequestGitRepack(TestCaseWithFactory):
         self.assertIn(
             'Failed to repack Git repository 1', err)
         self.assertIn(
-            'Requested 0 automatic git repository '
-            'repacks out of the 1 qualifying for repack.', err)
+            'Requested a total of 1 automatic git repository repacks '
+            'in this run of the Automated Repack Job', err)
         transaction.commit()
 
     def runScript_with_Turnip(self):
@@ -135,7 +138,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
     def test_auto_repack_with_Turnip_multiple_repos(self):
         # Test repack works when 10 repositories
-        # qualifies for a repack
+        # qualify for a repack
         repo = []
         for i in range(10):
             repo.append(self.factory.makeGitRepository())
@@ -152,3 +155,68 @@ class TestRequestGitRepack(TestCaseWithFactory):
             self.assertIsNotNone(repo[i].date_last_repacked)
             self.assertEqual("/repo/%s/repack" % repo[i].getInternalPath(),
                              self.turnip_server.app.contents[i])
+
+    def test_auto_repack_loop_throttle(self):
+        repacker = RepackTunableLoop(self.log, None)
+        # We throttle at 7 for this test, we use a limit
+        # of 1 000 repositories in reality
+        repacker.targets = 7
+
+        # We want to allow a maximum of 3 repack requests
+        # per loop run for this test, we have a chunk size of
+        # 5 defined in reality
+        repacker.maximum_chunk_size = 3
+
+        # Test repack works when 10 repositories
+        # qualify for a repack but throttle at 7
+        repo = []
+        for i in range(10):
+            repo.append(self.factory.makeGitRepository())
+            repo[i] = removeSecurityProxy(repo[i])
+            repo[i].loose_object_count = 7000
+            repo[i].pack_count = 43
+        transaction.commit()
+
+        # Confirm the initial state is sane.
+        self.assertFalse(repacker.isDone())
+
+        # First run.
+        repacker(repacker.maximum_chunk_size)
+
+        self.assertFalse(repacker.isDone())
+        self.assertEqual(repacker.num_repacked, 3)
+        self.assertEqual(repacker.start_at, 3)
+
+        # Second run.
+        # The number of repos repacked so far (6) plus the number of
+        # repos we can request in one loop (maximum_chunk_size = 3) would
+        # put us over the maximum number of repositories we are targeting
+        # with the repack job: "targets" defined as 7 for this test.
+        repacker(repacker.maximum_chunk_size)
+
+        self.assertTrue(repacker.isDone())
+        self.assertEqual(repacker.num_repacked, 6)
+        self.assertEqual(repacker.start_at, 6)
+
+    def test_auto_repack_findRepackCandidates(self):
+        repacker = RepackTunableLoop(self.log, None)
+
+        repo = []
+        for i in range(7):
+            repo.append(self.factory.makeGitRepository())
+            repo[i] = removeSecurityProxy(repo[i])
+            repo[i].loose_object_count = 7000
+            repo[i].pack_count = 43
+
+        for i in range(3):
+            repo.append(self.factory.makeGitRepository())
+        transaction.commit()
+
+        # we should only have 7 candidates at this point
+        self.assertEqual(7, len(list(repacker.findRepackCandidates())))
+
+        # there should be 0 candidates now
+        for i in range(7):
+            repo[i].loose_object_count = 3
+            repo[i].pack_count = 5
+        self.assertEqual(0, len(list(repacker.findRepackCandidates())))

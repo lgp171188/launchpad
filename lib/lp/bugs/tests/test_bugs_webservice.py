@@ -9,13 +9,11 @@ from datetime import (
     datetime,
     timedelta,
     )
+import io
+import json
 import re
 
 from lazr.lifecycle.interfaces import IDoNotSnapshot
-from lazr.restfulclient.errors import (
-    BadRequest,
-    HTTPError,
-    )
 import pytz
 from simplejson import dumps
 import six
@@ -37,10 +35,9 @@ from lp.services.webapp import snapshot
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    ANONYMOUS,
     api_url,
-    launchpadlib_for,
     login,
-    login_person,
     logout,
     person_logged_in,
     RequestTimelineCollector,
@@ -62,29 +59,30 @@ from lp.testing.sampledata import (
 
 
 class TestBugConstraints(TestCaseWithFactory):
-    """Test constrainsts on bug inputs over the API."""
+    """Test constraints on bug inputs over the API."""
 
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestBugConstraints, self).setUp()
         product = self.factory.makeProduct(name='foo')
-        bug = self.factory.makeBug(target=product)
-        lp = launchpadlib_for('testing', product.owner)
-        self.bug = lp.bugs[bug.id]
+        self.bug = self.factory.makeBug(target=product)
+        self.bug_url = api_url(self.bug)
+        self.webservice = webservice_for_person(
+            product.owner, permission=OAuthPermission.WRITE_PUBLIC)
 
     def _update_bug(self, nick):
-        self.bug.name = nick
-        self.bug.lp_save()
+        return self.webservice.patch(
+            self.bug_url, 'application/json', json.dumps({'name': nick}))
 
     def test_numeric_nicknames_fail(self):
-        self.assertRaises(
-            HTTPError,
-            self._update_bug,
-            '1.1')
+        response = self._update_bug('1.1')
+        self.assertEqual(400, response.status)
 
     def test_non_numeric_nicknames_pass(self):
-        self._update_bug('bunny')
+        response = self._update_bug('bunny')
+        self.assertEqual(209, response.status)
+        login(ANONYMOUS)
         self.assertEqual('bunny', self.bug.name)
 
 
@@ -277,25 +275,27 @@ class TestBugMessages(TestCaseWithFactory):
     def setUp(self):
         super(TestBugMessages, self).setUp(USER_EMAIL)
         self.bug = self.factory.makeBug()
+        self.bug_url = api_url(self.bug)
         self.message1 = self.factory.makeMessage()
         self.message2 = self.factory.makeMessage(parent=self.message1)
         # Only link message2 to the bug.
         self.bug.linkMessage(self.message2)
-        self.webservice = launchpadlib_for('launchpad-library', 'salgado')
+        self.webservice = webservice_for_person(self.bug.owner)
 
     def test_messages(self):
         # When one of the messages on a bug is linked to a parent that
         # isn't linked to the bug, the webservice should still include
         # that message in the bug's associated messages.
-        bug = self.webservice.load(api_url(self.bug))
-        messages = bug.messages
-        latest_message = [message for message in messages][-1]
-        self.assertEqual(self.message2.subject, latest_message.subject)
+        ws_bug = self.getWebserviceJSON(self.webservice, self.bug_url)
+        ws_messages = self.getWebserviceJSON(
+            self.webservice, ws_bug['messages_collection_link'])
+        latest_message = ws_messages['entries'][-1]
+        self.assertEqual(self.message2.subject, latest_message['subject'])
 
         # The parent_link for the latest message should be None
         # because the parent is not a member of this bug's messages
         # collection itself.
-        self.assertIsNone(latest_message.parent)
+        self.assertIsNone(latest_message['parent_link'])
 
 
 class TestPostBugWithLargeCollections(TestCaseWithFactory):
@@ -329,23 +329,25 @@ class TestPostBugWithLargeCollections(TestCaseWithFactory):
     def test_many_subscribers(self):
         # Many subscriptions do not cause an OOPS for IBug POSTs.
         bug = self.factory.makeBug()
+        bug_url = api_url(bug)
 
         real_hard_limit_for_snapshot = snapshot.HARD_LIMIT_FOR_SNAPSHOT
         snapshot.HARD_LIMIT_FOR_SNAPSHOT = 3
 
-        webservice = launchpadlib_for('test', 'salgado')
+        webservice = webservice_for_person(
+            bug.owner, permission=OAuthPermission.WRITE_PUBLIC)
         try:
             login(ADMIN_EMAIL)
             for count in range(snapshot.HARD_LIMIT_FOR_SNAPSHOT + 1):
                 person = self.factory.makePerson()
                 bug.subscribe(person, person)
             logout()
-            lp_bug = webservice.load(api_url(bug))
 
             # Adding one more subscriber through the web service
             # doesn't cause an OOPS.
-            person_to_subscribe = webservice.load('/~name12')
-            lp_bug.subscribe(person=person_to_subscribe)
+            response = webservice.named_post(
+                bug_url, 'subscribe', person='/~name12')
+            self.assertEqual(200, response.status)
         finally:
             snapshot.HARD_LIMIT_FOR_SNAPSHOT = real_hard_limit_for_snapshot
 
@@ -356,14 +358,16 @@ class TestErrorHandling(TestCaseWithFactory):
 
     def test_add_duplicate_bugtask_for_project_gives_bad_request(self):
         bug = self.factory.makeBug()
+        bug_url = api_url(bug)
         product = self.factory.makeProduct()
         product_url = api_url(product)
         self.factory.makeBugTask(bug=bug, target=product)
 
-        launchpad = launchpadlib_for('test', bug.owner)
-        lp_bug = launchpad.load(api_url(bug))
-        self.assertRaises(
-            BadRequest, lp_bug.addTask, target=product_url)
+        webservice = webservice_for_person(
+            bug.owner, permission=OAuthPermission.WRITE_PUBLIC)
+        response = webservice.named_post(
+            bug_url, 'addTask', target=product_url)
+        self.assertEqual(400, response.status)
 
     def test_add_invalid_bugtask_to_proprietary_bug_gives_bad_request(self):
         # Test we get an error when we attempt to invalidly add a bug task to
@@ -378,24 +382,28 @@ class TestErrorHandling(TestCaseWithFactory):
         bug = self.factory.makeBug(
             target=product1, owner=owner,
             information_type=InformationType.PROPRIETARY)
+        bug_url = api_url(bug)
 
-        login_person(owner)
-        launchpad = launchpadlib_for('test', owner)
-        lp_bug = launchpad.load(api_url(bug))
-        self.assertRaises(
-            BadRequest, lp_bug.addTask, target=product2_url)
+        webservice = webservice_for_person(
+            owner, permission=OAuthPermission.WRITE_PRIVATE)
+        response = webservice.named_post(
+            bug_url, 'addTask', target=product2_url)
+        self.assertEqual(400, response.status)
 
     def test_add_attachment_with_bad_filename_raises_exception(self):
         # Test that addAttachment raises BadRequest when the filename given
         # contains slashes.
         owner = self.factory.makePerson()
         bug = self.factory.makeBug(owner=owner)
-        login_person(owner)
-        launchpad = launchpadlib_for('test', owner)
-        lp_bug = launchpad.load(api_url(bug))
-        self.assertRaises(
-            BadRequest, lp_bug.addAttachment, comment='foo', data=b'foo',
+        bug_url = api_url(bug)
+
+        webservice = webservice_for_person(
+            owner, permission=OAuthPermission.WRITE_PUBLIC)
+        response = webservice.named_post(
+            bug_url, 'addAttachment',
+            comment='foo', data=io.BytesIO(b'foo'),
             filename='/home/foo/bar.txt')
+        self.assertEqual(400, response.status)
 
 
 class BugSetTestCase(TestCaseWithFactory):
@@ -408,31 +416,37 @@ class BugSetTestCase(TestCaseWithFactory):
         target_url = api_url(project)
         with person_logged_in(project.owner):
             project.setBugSharingPolicy(bug_policy)
-        return target_url
-
-    def getBugsCollection(self):
-        webservice = launchpadlib_for('test', 'salgado')
-        return webservice.load('/bugs')
+        return project, target_url
 
     def test_default_sharing_policy_proprietary(self):
         # Verify the path through user submission, to MaloneApplication to
         # BugSet, and back to the user creates a private bug according
         # to the project's bug sharing policy.
-        target_url = self.makeAPITarget(BugSharingPolicy.PROPRIETARY_OR_PUBLIC)
-        bugs_collection = self.getBugsCollection()
-        bug = bugs_collection.createBug(
+        target, target_url = self.makeAPITarget(
+            BugSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        webservice = webservice_for_person(
+            target.owner, permission=OAuthPermission.WRITE_PRIVATE)
+        response = webservice.named_post(
+            '/bugs', 'createBug',
             target=target_url, title='title', description='desc')
-        self.assertEqual('Proprietary', bug.information_type)
+        self.assertEqual(201, response.status)
+        ws_bug = webservice.get(response.getHeader('Location')).jsonBody()
+        self.assertEqual('Proprietary', ws_bug['information_type'])
 
     def test_override_default_sharing_policy_proprietary(self):
-        # A Proprietary bug can be created if the porject's bug sharing policy
+        # A Proprietary bug can be created if the project's bug sharing policy
         # permits it.
-        target_url = self.makeAPITarget(BugSharingPolicy.PUBLIC_OR_PROPRIETARY)
-        bugs_collection = self.getBugsCollection()
-        bug = bugs_collection.createBug(
+        target, target_url = self.makeAPITarget(
+            BugSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        webservice = webservice_for_person(
+            target.owner, permission=OAuthPermission.WRITE_PRIVATE)
+        response = webservice.named_post(
+            '/bugs', 'createBug',
             target=target_url, title='title', description='desc',
             information_type='Proprietary')
-        self.assertEqual('Proprietary', bug.information_type)
+        self.assertEqual(201, response.status)
+        ws_bug = webservice.get(response.getHeader('Location')).jsonBody()
+        self.assertEqual('Proprietary', ws_bug['information_type'])
 
 
 class TestBugDateLastUpdated(TestCaseWithFactory):

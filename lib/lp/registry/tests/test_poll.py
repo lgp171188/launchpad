@@ -17,11 +17,13 @@ from testtools.matchers import (
     )
 from zope.component import getUtility
 
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.poll import (
     IPollSet,
     PollSecrecy,
     )
 from lp.registry.model.poll import Poll
+from lp.registry.personmerge import merge_people
 from lp.services.database.interfaces import IStore
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
@@ -118,6 +120,28 @@ class TestPollWebservice(TestCaseWithFactory):
         self.assertThat(response.jsonBody()["entries"], MatchesListwise([
             MatchesPollAPI(webservice, poll)
             for poll in sorted(polls, key=attrgetter("dateopens", "id"))
+            ]))
+
+    def test_find_ignores_merged(self):
+        sampledata_polls = list(IStore(Poll).find(Poll))
+        new_polls = self.makePolls()
+        merge_people(
+            new_polls[0].team,
+            getUtility(ILaunchpadCelebrities).registry_experts, self.person,
+            delete=True)
+        webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.READ_PUBLIC)
+        webservice.default_api_version = "devel"
+        logout()
+        response = webservice.named_get(
+            "/+polls", "find", order_by="by opening date")
+        login_person(self.person)
+        self.assertEqual(200, response.status)
+        self.assertThat(response.jsonBody()["entries"], MatchesListwise([
+            MatchesPollAPI(webservice, poll)
+            for poll in sorted(
+                sampledata_polls + new_polls[3:],
+                key=attrgetter("dateopens", "id"))
             ]))
 
     def test_find_by_team(self):

@@ -8,6 +8,27 @@
 >
 
 <body>
+
+  <div metal:fill-slot="head_epilogue">
+  <script type="text/javascript">
+    LPJS.use('node', 'lp.app.widgets.expander', function(Y) {
+      Y.on('domready', function() {
+        var all_expanders = Y.all('.expander-icon');
+        all_expanders.each(function(icon) {
+          var base_id = icon.get('id').replace('-expander', '');
+          console.log(base_id);
+          var content_node = Y.one('#' + base_id);
+          var animate_node = content_node.one('ul');
+          var expander = new Y.lp.app.widgets.expander.Expander(
+            icon, content_node, { animate_node: animate_node });
+          expander.setUp();
+        });
+      });
+    });
+  </script>
+</div>
+
+
   <metal:registering fill-slot="registering">
     Created by
       <tal:registrant replace="structure context/registrant/fmt:link"/>
@@ -102,55 +123,94 @@
     </div>
 
     <h2>Latest builds</h2>
-    <div tal:define="count context/pending_build_requests/count|nothing;
-                  plural string: build requests;
-                  singular string: build request;"
-         tal:condition="count">
-      You have <span tal:replace="count" /> pending
-      <tal:plural
-        metal:use-macro="context/@@+base-layout-macros/plural-message"/>.
-      The builds should start automatically soon.
-    </div>
     <table id="latest-builds-listing" class="listing"
            style="margin-bottom: 1em;">
       <thead>
         <tr>
-          <th>Status</th>
+          <th>Build status</th>
+          <th>Upload status</th>
+          <th>When requested</th>
           <th>When complete</th>
-          <th>Architecture</th>
         </tr>
       </thead>
       <tbody>
-        <tal:recipe-builds repeat="item view/builds">
-          <tr tal:define="build item"
-              tal:attributes="id string:build-${build/id}">
-            <td tal:attributes="class string:build_status ${build/status/name}">
-              <span tal:replace="structure build/image:icon"/>
-              <a tal:content="build/status/title"
-                 tal:attributes="href build/fmt:url"/>
-            </td>
-            <td class="datebuilt">
-              <tal:date replace="build/date/fmt:displaydate"/>
-              <tal:estimate condition="build/estimate">
-                (estimated)
-              </tal:estimate>
+        <tal:build-requests repeat="build_request view/build_requests">
+          <tr tal:define="build_status build_request/build_status">
+            <td tal:define="status_img python: view.getImageForStatus(build_status['status'])">
+              <span tal:attributes="id string:request-${build_request/job_id}-expander" class="expander-icon" tal:condition="python: build_status['status'].name is not 'NEEDSBUILD'">&nbsp;</span>
+              <img tal:attributes="title build_status/status/description;
+                           alt build_status/status/description;
+                           src status_img" />
+              <span tal:content="build_status/status/description" />
 
-              <tal:build-log define="file build/log" tal:condition="file">
-                <a class="sprite download"
-                   tal:attributes="href build/log_url">buildlog</a>
-                (<span tal:replace="file/content/filesize/fmt:bytes"/>)
-              </tal:build-log>
             </td>
             <td>
-              <!-- XXX cjwatson 2020-02-19: This should show a DAS
-                   architecture tag rather than a processor name once we can
-                   do that. -->
-              <a class="sprite distribution"
-                 tal:define="processor build/processor"
-                 tal:content="processor/name"/>
+
+              <tal:registry-upload tal:condition="build_status/upload_requested">
+                <span tal:content="build_status/upload/title" />
+              </tal:registry-upload>
+              <tal:registry-upload tal:condition="not:build_status/upload_requested">
+                <span tal:condition="build_status/status/enumvalue:NEEDSBUILD">Waiting for builds to start.</span>
+                <span tal:condition="not: build_status/status/enumvalue:NEEDSBUILD">No registry upload requested.</span>
+              </tal:registry-upload>
+            </td>
+            <td>
+              <span tal:content="build_request/date_created/fmt:displaydate" />
+            </td>
+            <td>
+              <span tal:content="build_status/date/fmt:displaydate" />
+              <tal:estimate condition="build_status/date_estimated">
+                (estimated)
+              </tal:estimate>
             </td>
           </tr>
-        </tal:recipe-builds>
+          <tr tal:define="build_status build_request/build_status" tal:attributes="id string:request-${build_request/job_id}" tal:condition="python: build_status['status'].name is not 'NEEDSBUILD'">
+            <td>
+              <ul tal:repeat="build build_request/builds">
+                <li  style="padding-left: 22px;">
+                  <strong>
+                    <a class="sprite distribution"
+                      tal:define="processor build/processor"
+                      tal:content="processor/name"
+                      tal:attributes="href build/fmt:url"/>
+                  </strong>
+                  <span tal:define="file build/log" tal:condition="file">
+                    <a class="sprite download"
+                      tal:attributes="href build/log_url">buildlog</a>
+                    (<span tal:replace="file/content/filesize/fmt:bytes"/>)
+                  </span>
+                  <span tal:content="build/status/title" />
+                </li>
+              </ul>
+            </td>
+            <td>
+              <ul tal:condition="build_status/upload_requested" tal:repeat="build build_request/builds">
+                <li  style="padding-left: 22px;">
+                  <strong><a class="sprite distribution"
+                    tal:define="processor build/processor"
+                    tal:content="processor/name"/></strong>
+                  <span tal:content="build/registry_upload_status/title" />
+                </li>
+              </ul>
+            </td>
+            <td>
+            </td>
+            <td>
+              <ul tal:repeat="build build_request/builds">
+                <li  style="padding-left: 22px;">
+                  <strong><a class="sprite distribution"
+                    tal:define="processor build/processor"
+                    tal:content="processor/name"/></strong>
+                  <span tal:content="build/date/fmt:displaydate" />
+                  <tal:estimate condition="build/estimate">
+                    (estimated)
+                  </tal:estimate>
+                </li>
+              </ul>
+            </td>
+
+          </tr>
+        </tal:build-requests>
       </tbody>
     </table>
     <p tal:condition="not: view/builds">

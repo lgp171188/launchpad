@@ -38,7 +38,6 @@ from lp.app.enums import (
     )
 from lp.app.interfaces.services import IService
 from lp.bugs.model.bugtarget import BugTargetBase
-from lp.code.interfaces.gitnamespace import IGitNamespaceSet
 from lp.code.model.branchnamespace import (
     BRANCH_POLICY_ALLOWED_TYPES,
     BRANCH_POLICY_REQUIRED_GRANTS,
@@ -164,8 +163,19 @@ class OCIProject(BugTargetBase, StormBase):
         return "OCI project %s for %s" % (
             self.ociprojectname.name, self.pillar.display_name)
 
+    displayname = display_name
     bugtargetname = display_name
     bugtargetdisplayname = display_name
+
+    @property
+    def driver(self):
+        """See `IOCIProject`."""
+        return self.pillar.driver
+
+    @property
+    def bug_supervisor(self):
+        """See `IOCIProject`."""
+        return self.pillar.bug_supervisor
 
     def _reconcileAccess(self):
         """Reconcile access for all OCI recipes of this project."""
@@ -289,14 +299,6 @@ class OCIProject(BugTargetBase, StormBase):
                             [self.pillar], required_grant, user))):
             return []
         return BRANCH_POLICY_ALLOWED_TYPES[self.pillar.branch_sharing_policy]
-
-    def getDefaultGitRepository(self, person):
-        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
-        return namespace.getByName(self.name)
-
-    def getDefaultGitRepositoryPath(self, person):
-        namespace = getUtility(IGitNamespaceSet).get(person, oci_project=self)
-        return namespace.name
 
     def destroySelf(self):
         """See `IOCIProject`."""
