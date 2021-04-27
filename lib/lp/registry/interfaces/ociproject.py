@@ -29,7 +29,10 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from six.moves import http_client
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Bool,
     Datetime,
@@ -43,7 +46,11 @@ from zope.security.interfaces import Unauthorized
 from lp import _
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
-from lp.bugs.interfaces.bugtarget import IBugTarget
+from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
+from lp.bugs.interfaces.bugtarget import (
+    IBugTarget,
+    IHasExpirableBugs,
+    )
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
@@ -83,6 +90,12 @@ class IOCIProjectView(IHasGitRepositories, Interface):
         title=_("Display name for this OCI project."),
         required=True, readonly=True))
 
+    displayname = Attribute(_("Display name for this OCI project."))
+
+    driver = Attribute(_("The driver for this OCI project."))
+
+    bug_supervisor = Attribute(_("The bug supervisor for this OCI Project."))
+
     def getSeriesByName(name):
         """Get an OCIProjectSeries for this OCIProject by series' name."""
 
@@ -106,15 +119,6 @@ class IOCIProjectView(IHasGitRepositories, Interface):
         of this OCI project.
 
         If the user is a Launchpad admin, any type is acceptable.
-        """
-
-    def getDefaultGitRepository(person):
-        """Returns the default git repository for the given user under the
-        namespace of this OCI project"""
-
-    def getDefaultGitRepositoryPath(person):
-        """Returns the default git repository path for this OCI Project,
-        regardless if the repository exists or not.
         """
 
 
@@ -207,7 +211,8 @@ class IOCIProjectLegitimate(Interface):
 @exported_as_webservice_entry(
     publish_web_link=True, as_of="devel", singular_name="oci_project")
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
-                  IOCIProjectEditableAttributes, IOCIProjectLegitimate):
+                  IOCIProjectEditableAttributes, IOCIProjectLegitimate,
+                  IHasBugSupervisor):
     """A project containing Open Container Initiative recipes."""
 
 

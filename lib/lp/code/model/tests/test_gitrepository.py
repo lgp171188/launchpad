@@ -3898,6 +3898,50 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             'date_last_scanned': Equals(UTC_NOW),
             }))
 
+    def test_git_gc_owner(self):
+        # Repository owner cannot request a git GC run
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+
+        with person_logged_in(owner_db):
+            self.assertRaises(
+                Unauthorized, getattr, repository_db, 'collectGarbage')
+        self.assertEqual(0, hosting_fixture.collectGarbage.call_count)
+
+    def test_git_gc_admin(self):
+        # Admins can trigger a git GC run
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        with person_logged_in(admin):
+            repository_db.collectGarbage()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.collectGarbage.calls)
+        self.assertEqual(1, hosting_fixture.collectGarbage.call_count)
+
+    def test_git_gc_registry_expert(self):
+        # Registry experts can trigger a Git GC run
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        person = self.factory.makePerson()
+        owner_db = self.factory.makePerson()
+        repository_db = self.factory.makeGitRepository(
+            owner=owner_db, name="repository")
+        with admin_logged_in():
+            getUtility(ILaunchpadCelebrities).registry_experts.addMember(
+                person, admin)
+        with person_logged_in(person):
+            repository_db.collectGarbage()
+        self.assertEqual(
+            [((repository_db.getInternalPath(),), {})],
+            hosting_fixture.collectGarbage.calls)
+        self.assertEqual(1, hosting_fixture.collectGarbage.call_count)
+
     def test_urls(self):
         owner_db = self.factory.makePerson(name="person")
         project_db = self.factory.makeProduct(name="project")

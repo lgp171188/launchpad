@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Assign karma for bugs domain activity."""
@@ -28,6 +28,11 @@ def _assign_karma_using_bugtask_context(person, bugtask, actionname):
     product = bugtask.product
     if bugtask.productseries is not None:
         product = bugtask.productseries.product
+    if (product is None and distribution is None
+            and bugtask.sourcepackagename is None):
+        # Something that does not support karma yet triggered this
+        # (OCIProject?), so let's skip karma assignment.
+        return
     person.assignKarma(
         actionname, product=product, distribution=distribution,
         sourcepackagename=bugtask.sourcepackagename)

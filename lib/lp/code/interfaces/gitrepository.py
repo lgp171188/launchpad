@@ -772,6 +772,14 @@ class IGitRepositoryExpensiveRequest(Interface):
         Raises Unauthorized if the repack was attempted by a person
         that is not an admin or a registry expert."""
 
+    @export_write_operation()
+    @operation_for_version("devel")
+    def collectGarbage():
+        """Trigger a gc run for a given git repository.
+
+        Raises Unauthorized if the repack was attempted by a person
+        that is not an admin or a registry expert."""
+
 
 class IGitRepositoryEdit(IWebhookTarget):
     """IGitRepository methods that require launchpad.Edit permission."""

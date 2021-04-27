@@ -38,6 +38,7 @@ from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.oci.browser.ocirecipe import (
     OCIRecipeAdminView,
     OCIRecipeEditView,
@@ -382,24 +383,28 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         error_message = (
-            'Your git repository for this OCI project was not created yet.'
-            "<br/>Check the <a href='{url}'>OCI project page</a> for "
-            'instructions on how to create one.').format(url=oci_project_url)
+            'The default git repository for this OCI project was not created '
+            'yet.<br/>'
+            'Check the <a href="{url}">OCI project page</a> for instructions '
+            'on how to create one.').format(url=oci_project_url)
         self.assertIn(error_message, browser.contents)
 
     def test_create_new_recipe_with_default_repo_already_created(self):
         self.setUpDistroSeries()
         oci_project = self.factory.makeOCIProject(pillar=self.distribution)
-        self.factory.makeGitRepository(
+        repository = self.factory.makeGitRepository(
             name=oci_project.name,
             target=oci_project, owner=self.person, registrant=self.person)
-        with admin_logged_in():
-            default_repo_path = oci_project.getDefaultGitRepositoryPath(
-                self.person)
+        with person_logged_in(self.distribution.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                oci_project, repository)
+            default_repo_path = "%s/+oci/%s" % (
+                self.distribution.name, oci_project.name)
         browser = self.getViewBrowser(
             oci_project, view_name="+new-recipe", user=self.person)
         error_message = (
-            'Your git repository for this OCI project was not created yet.')
+            'The default git repository for this OCI project was not created '
+            'yet.')
         self.assertNotIn(error_message, browser.contents)
         self.assertThat(browser.contents, soupmatchers.HTMLContains(
             soupmatchers.Tag(
@@ -971,7 +976,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
                 recipe, view_name="+edit", user=self.person)
         error_message = (
             "This recipe's git repository is not in the correct "
-            "namespace.<br/>Check the <a href='{url}'>OCI project page</a> "
+            'namespace.<br/>Check the <a href="{url}">OCI project page</a> '
             "for instructions on how to create it correctly.")
         self.assertIn(
             error_message.format(url=oci_project_url), browser.contents)
@@ -987,12 +992,14 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
         # Make the default git repository that should have been used by the
         # recipe.
-        self.factory.makeGitRepository(
+        default_repo = self.factory.makeGitRepository(
             name=oci_project.name,
             target=oci_project, owner=self.person, registrant=self.person)
+        with person_logged_in(self.distribution.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                oci_project, default_repo)
 
         with person_logged_in(self.person):
-            default_repo = oci_project.getDefaultGitRepository(recipe.owner)
             repo_link = GitRepositoryFormatterAPI(default_repo).link('')
             browser = self.getViewBrowser(
                 recipe, view_name="+edit", user=self.person)
