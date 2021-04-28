@@ -14,8 +14,8 @@ __all__ = [
     'PersonAdministerView',
     'PersonBrandingView',
     'PersonBreadcrumb',
-    'PersonCodeOfConductEditView',
     'PersonCloseAccountView',
+    'PersonCodeOfConductEditView',
     'PersonDeactivateAccountView',
     'PersonEditEmailsView',
     'PersonEditIRCNicknamesView',
@@ -1278,7 +1278,7 @@ class PersonAdministerView(PersonRenameFormMixin):
 
 
 class PersonCloseAccountView(LaunchpadFormView):
-    """Close and account."""
+    """Close an account."""
     schema = Interface
     label = "Close account"
 

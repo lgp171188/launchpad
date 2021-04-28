@@ -325,7 +325,7 @@ class TestPersonIndexView(BrowserTestCase):
         self.assertEqual(message, notifications[0].message)
 
     def test_closeAccount_admin(self):
-        person = self.factory.makePerson(name='finch')
+        person = self.factory.makePerson()
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         browser = self.getViewBrowser(
             person, view_name='+close-account', user=admin)
@@ -341,7 +341,7 @@ class TestPersonIndexView(BrowserTestCase):
             self.assertEqual(JobStatus.WAITING, job.status)
 
     def test_closeAccount_registry_expert(self):
-        person = self.factory.makePerson(name='finch')
+        person = self.factory.makePerson()
         registry_expert = self.factory.makeRegistryExpert()
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         with person_logged_in(registry_expert):
