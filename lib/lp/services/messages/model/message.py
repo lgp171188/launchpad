@@ -207,6 +207,12 @@ class Message(SQLBase):
         del get_property_cache(self).revisions
         return rev
 
+    def delete_content(self):
+        """See `IMessage`."""
+        for chunk in self._chunks:
+            chunk.destroySelf()
+        self.date_deleted = utc_now()
+
 
 def get_parent_msgids(parsed_message):
     """Returns a list of message ids the mail was a reply to.

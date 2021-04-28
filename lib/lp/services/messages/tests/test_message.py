@@ -24,6 +24,7 @@ from zope.security.proxy import ProxyFactory
 
 from lp.services.compat import message_as_bytes
 from lp.services.messages.model.message import MessageSet
+from lp.services.utils import utc_now
 from lp.testing import (
     login,
     person_logged_in,
@@ -193,7 +194,7 @@ class TestMessageEditing(TestCaseWithFactory):
         msg = self.factory.makeMessage(owner=owner, content=content)
         return ProxyFactory(msg)
 
-    def test_msg_cannot_be_edited_by_everyone(self):
+    def test_non_owner_cannot_edit_message(self):
         msg = self.makeMessage()
         someone_else = self.factory.makePerson()
         with person_logged_in(someone_else):
@@ -240,3 +241,22 @@ class TestMessageEditing(TestCaseWithFactory):
             message=Equals(msg),
             date_created=Equals(msg.datecreated),
             date_deleted=Is(None)))
+
+    def test_non_owner_cannot_delete_message(self):
+        owner = self.factory.makePerson()
+        msg = self.makeMessage(owner=owner, content="initial content")
+        someone_else = self.factory.makePerson()
+        with person_logged_in(someone_else):
+            self.assertRaises(Unauthorized, getattr, msg, "delete_content")
+
+    def test_delete_message(self):
+        owner = self.factory.makePerson()
+        msg = self.makeMessage(owner=owner, content="initial content")
+        with person_logged_in(owner):
+            before_delete = utc_now()
+            msg.delete_content()
+            after_delete = utc_now()
+        self.assertEqual('', msg.text_contents)
+        self.assertEqual(0, len(msg.chunks))
+        self.assertIsNotNone(msg.date_deleted)
+        self.assertTrue(after_delete > msg.date_deleted > before_delete)

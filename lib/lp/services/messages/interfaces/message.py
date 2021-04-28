@@ -56,6 +56,9 @@ class IMessageEdit(Interface):
         revision with the old content.
         """
 
+    def delete_content():
+        """Deletes this message content."""
+
 
 class IMessageView(Interface):
     """Public attributes for message.
@@ -71,6 +74,10 @@ class IMessageView(Interface):
 
     date_last_edit = Datetime(
         title=_('When this message was last edited'), required=False,
+        readonly=True)
+
+    date_deleted = Datetime(
+        title=_('When this message was deleted'), required=False,
         readonly=True)
 
     subject = exported(
