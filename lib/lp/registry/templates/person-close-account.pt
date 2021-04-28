@@ -20,7 +20,8 @@
       <div metal:use-macro="context/@@launchpad_form/form">
         <div metal:fill-slot="extra_info">
           <p>
-            This is an invasive and irreversible erasure of data operation.
+            This operation will invasively and irreversibly erase the selected user's data.
+            You must make sure that you have the user's informed consent before proceeding.
           </p>
           <p>
             It will change the account's display name to "Removed by request",

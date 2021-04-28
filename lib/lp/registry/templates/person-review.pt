@@ -39,10 +39,9 @@
                 Review the user's Launchpad information</a>.
             </p>
             <p>
-              <a tal:attributes="
-                href string:${view/person/fmt:url}/+deleteaccount"><img
-                tal:attributes="alt string:remove" src="/@@/remove" />
-                Permanently delete this account</a>.
+              <a class="sprite remove" tal:attributes="
+                href string:${view/person/fmt:url}/+close-account">
+                Permanently close this account</a>.
             </p>
              <table id="summary">
               <tr>

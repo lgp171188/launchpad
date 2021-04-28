@@ -46,7 +46,7 @@ from lp.registry.interfaces.persontransferjob import (
     IMembershipNotificationJob,
     IMembershipNotificationJobSource,
     IPersonCloseAccountJob,
-    IPersonCloseAccountJobs,
+    IPersonCloseAccountJobSource,
     IPersonDeactivateJob,
     IPersonDeactivateJobSource,
     IPersonMergeJob,
@@ -444,17 +444,17 @@ class PersonDeactivateJob(PersonTransferJobDerived):
 
 
 @implementer(IPersonCloseAccountJob)
-@provider(IPersonCloseAccountJobs)
+@provider(IPersonCloseAccountJobSource)
 class PersonCloseAccountJob(PersonTransferJobDerived):
     """A Job that closes account for a person."""
 
     class_job_type = PersonTransferJobType.CLOSE_ACCOUNT
 
-    config = config.IPersonCloseAccountJobs
+    config = config.IPersonCloseAccountJobSource
 
     @classmethod
     def create(cls, person):
-        """See `IPersonCloseAccountJobs`."""
+        """See `IPersonCloseAccountJobSource`."""
 
         # We don't delete teams
         if person.is_team:

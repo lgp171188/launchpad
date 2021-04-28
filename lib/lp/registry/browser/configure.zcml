@@ -977,11 +977,11 @@
         template="../templates/person-review.pt"
         />
     <browser:page
-        name="+deleteaccount"
+        name="+close-account"
         for="lp.registry.interfaces.person.IPerson"
-        class="lp.registry.browser.person.PersonDeleteView"
+        class="lp.registry.browser.person.PersonCloseAccountView"
         permission="launchpad.Moderate"
-        template="../templates/person-delete.pt"
+        template="../templates/person-close-account.pt"
         />
     <browser:page
         name="+reviewaccount"
