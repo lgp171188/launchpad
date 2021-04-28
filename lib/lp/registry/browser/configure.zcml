@@ -982,6 +982,13 @@
         template="../templates/person-review.pt"
         />
     <browser:page
+        name="+close-account"
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonCloseAccountView"
+        permission="launchpad.Moderate"
+        template="../templates/person-close-account.pt"
+        />
+    <browser:page
         name="+reviewaccount"
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonAccountAdministerView"
