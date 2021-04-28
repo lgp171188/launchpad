@@ -4,8 +4,10 @@
 """Remove personal details of a user from the database, leaving a stub."""
 
 __metaclass__ = type
-__all__ = ['CloseAccountScript',
-           'close_account']
+__all__ = [
+    'close_account',
+    'CloseAccountScript',
+    ]
 
 import six
 from storm.exceptions import IntegrityError
