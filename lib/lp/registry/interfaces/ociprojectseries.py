@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces to allow bug filing on multiple versions of an OCI Project."""
@@ -76,6 +76,9 @@ class IOCIProjectSeriesEditableAttributes(Interface):
 
 class IOCIProjectSeriesEdit(Interface):
     """IOCIProjectSeries attributes that require launchpad.Edit permission."""
+
+    def destroySelf():
+        """Delete this OCI project series."""
 
 
 @exported_as_webservice_entry(
