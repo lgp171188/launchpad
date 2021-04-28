@@ -74,6 +74,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
     )
+from lp.registry.interfaces.ociproject import OCIProjectRecipeInvalid
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.accesspolicy import (
     AccessArtifact,
@@ -679,7 +680,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_project=oci_project, registrant=owner)
 
         self.assertRaises(
-            ValueError, another_oci_project.setOfficialRecipeStatus,
+            OCIProjectRecipeInvalid, another_oci_project.setOfficialRecipeStatus,
             recipe, True)
 
     def test_permission_check_on_setOfficialRecipe(self):

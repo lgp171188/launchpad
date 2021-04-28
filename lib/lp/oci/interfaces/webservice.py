@@ -24,12 +24,15 @@ from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.services.webservice.apihelpers import (
     patch_collection_property,
     patch_entry_return_type,
+    patch_plain_parameter_type,
     patch_reference_property,
     )
 
 # IOCIProject
 patch_collection_property(IOCIProject, 'series', IOCIProjectSeries)
 patch_entry_return_type(IOCIProject, 'newRecipe', IOCIRecipe)
+patch_plain_parameter_type(
+    IOCIProject, 'setOfficialRecipeStatus', 'recipe', IOCIRecipe)
 
 # IOCIRecipe
 patch_collection_property(IOCIRecipe, 'builds', IOCIRecipeBuild)
