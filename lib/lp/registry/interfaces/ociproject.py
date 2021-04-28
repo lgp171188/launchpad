@@ -11,6 +11,7 @@ __all__ = [
     'IOCIProjectSet',
     'OCI_PROJECT_ALLOW_CREATE',
     'OCIProjectCreateFeatureDisabled',
+    'OCIProjectRecipeInvalid',
     ]
 
 from lazr.restful.declarations import (
@@ -63,6 +64,15 @@ from lp.services.fields import (
 
 
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
+
+
+@error_status(http_client.UNAUTHORIZED)
+class OCIProjectRecipeInvalid(Unauthorized):
+    """The given recipe is invalid for this OCI project."""
+
+    def __init__(self):
+        super(OCIProjectRecipeInvalid, self).__init__(
+            "The given recipe is invalid for this OCI project.")
 
 
 class IOCIProjectView(IHasGitRepositories, Interface):
@@ -162,12 +172,12 @@ class IOCIProjectEdit(Interface):
     @operation_parameters(
         recipe=Reference(
             Interface,
-            title=_("OCI Recipe"),
-            description=_("The OCI Recipe to change the status of."),
+            title=_("OCI recipe"),
+            description=_("The OCI recipe to change the status of."),
             required=True),
         status=Bool(
             title=_("Official status"),
-            description=_("Whether the OCI Recipe should be official or not."),
+            description=_("Whether the OCI recipe should be official or not."),
             required=True))
     @export_write_operation()
     @operation_for_version("devel")

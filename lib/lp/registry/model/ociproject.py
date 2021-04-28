@@ -47,6 +47,7 @@ from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
+    OCIProjectRecipeInvalid,
     )
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.person import IPersonSet
@@ -274,9 +275,7 @@ class OCIProject(BugTargetBase, StormBase):
     def setOfficialRecipeStatus(self, recipe, status):
         """See `IOCIProject`."""
         if recipe is not None and recipe.oci_project != self:
-            raise ValueError(
-                "An OCI recipe cannot be set as the official recipe of "
-                "another OCI project.")
+            raise OCIProjectRecipeInvalid()
         # Removing security proxy here because `_official` is a private
         # attribute not declared on the Interface, and we need to set it
         # regardless of security checks on OCIRecipe objects.

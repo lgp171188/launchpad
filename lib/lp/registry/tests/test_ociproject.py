@@ -317,8 +317,9 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
         self.assertCanCreateOCIProject(distro, self.person)
 
     def test_set_official_recipe_via_webservice(self):
-        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: 'on'}))
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
+        self.useFixture(FeatureFixture({
+            OCI_PROJECT_ALLOW_CREATE: "on",
+            OCI_RECIPE_ALLOW_CREATE: "on"}))
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution(owner=self.person)
             oci_project = self.factory.makeOCIProject(pillar=distro)
@@ -335,6 +336,28 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
             self.assertEqual(
                 [oci_recipe],
                 list(oci_project.getOfficialRecipes()))
+
+    def test_set_official_recipe_via_webservice_incorrect_recipe(self):
+        self.useFixture(FeatureFixture({
+            OCI_PROJECT_ALLOW_CREATE: "on",
+            OCI_RECIPE_ALLOW_CREATE: "on"}))
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            oci_project = self.factory.makeOCIProject(pillar=distro)
+            other_project = self.factory.makeOCIProject()
+            oci_recipe = self.factory.makeOCIRecipe(
+                oci_project=other_project)
+            oci_recipe_url = api_url(oci_recipe)
+            url = api_url(oci_project)
+
+        obj = {"recipe": oci_recipe_url, "status": True}
+        resp = self.webservice.named_post(
+            url, "setOfficialRecipeStatus", **obj)
+
+        self.assertEqual(401, resp.status)
+        self.assertEqual(
+            b"The given recipe is invalid for this OCI project.",
+            resp.body)
 
 
 class TestOCIProjectVocabulary(TestCaseWithFactory):
