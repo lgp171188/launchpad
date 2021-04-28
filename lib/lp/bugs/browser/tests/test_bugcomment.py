@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the bugcomment module."""
@@ -35,6 +35,7 @@ from lp.testing import (
     BrowserTestCase,
     celebrity_logged_in,
     login_person,
+    person_logged_in,
     TestCase,
     TestCaseWithFactory,
     verifyObject,
@@ -300,7 +301,10 @@ class TestBugCommentImplementsInterface(TestCaseWithFactory):
         bug_message = self.factory.makeBugComment()
         bugtask = bug_message.bugs[0].bugtasks[0]
         bug_comment = BugComment(1, bug_message, bugtask)
-        verifyObject(IBugComment, bug_comment)
+        # Runs verifyObject logged in as the bug owner, so we don't fail on
+        # attributes that are not public to everyone.
+        with person_logged_in(bug_message.owner):
+            verifyObject(IBugComment, bug_comment)
 
     def test_download_url(self):
         """download_url is provided and works as expected."""
