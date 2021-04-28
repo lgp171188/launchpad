@@ -12,6 +12,7 @@ __all__ = [
     'IOCIProjectSet',
     'OCI_PROJECT_ALLOW_CREATE',
     'OCIProjectCreateFeatureDisabled',
+    'OCIProjectRecipeInvalid',
     ]
 
 from lazr.restful.declarations import (
@@ -19,6 +20,7 @@ from lazr.restful.declarations import (
     error_status,
     export_destructor_operation,
     export_factory_operation,
+    export_write_operation,
     exported,
     exported_as_webservice_entry,
     operation_for_version,
@@ -49,10 +51,7 @@ from lp import _
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
-from lp.bugs.interfaces.bugtarget import (
-    IBugTarget,
-    IHasExpirableBugs,
-    )
+from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
@@ -72,6 +71,15 @@ OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 @error_status(http_client.BAD_REQUEST)
 class CannotDeleteOCIProject(Exception):
     """The OCIProject cannnot be deleted."""
+
+
+@error_status(http_client.UNAUTHORIZED)
+class OCIProjectRecipeInvalid(Unauthorized):
+    """The given recipe is invalid for this OCI project."""
+
+    def __init__(self):
+        super(OCIProjectRecipeInvalid, self).__init__(
+            "The given recipe is invalid for this OCI project.")
 
 
 class IOCIProjectView(IHasGitRepositories, Interface):
@@ -168,6 +176,18 @@ class IOCIProjectEdit(Interface):
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
         """Creates a new `IOCIProjectSeries`."""
 
+    @operation_parameters(
+        recipe=Reference(
+            Interface,
+            title=_("OCI recipe"),
+            description=_("The OCI recipe to change the status of."),
+            required=True),
+        status=Bool(
+            title=_("Official status"),
+            description=_("Whether the OCI recipe should be official or not."),
+            required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
     def setOfficialRecipeStatus(recipe, status):
         """Change whether an OCI Recipe is official or not for this project."""
 
