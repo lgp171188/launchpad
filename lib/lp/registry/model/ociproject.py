@@ -314,6 +314,13 @@ class OCIProject(BugTargetBase, StormBase):
             raise CannotDeleteOCIProject("This OCI project contains recipes.")
 
         # Cannot delete this OCI project if it has bugs associated with it.
+        # XXX pappacena 2021-04-28: BugTask table has a
+        # BugTask.ociprojectseries column, but it's not mapped to the
+        # model yet since we do not currently support bugs associated to
+        # OCIProjectSeries. Once we have support for that, this query
+        # condition should be changed to something like:
+        # Or(BugTask.ocirproject == self,
+        #    BugTask.ociprojectseries.is_in(self.series)).
         exists_bugs = not IStore(BugTask).find(
             BugTask, BugTask.ociproject == self).is_empty()
         if exists_bugs:
