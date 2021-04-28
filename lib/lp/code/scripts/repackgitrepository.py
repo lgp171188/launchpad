@@ -55,7 +55,7 @@ class RepackTunableLoop(TunableLoop):
         # that are valid repack candidates
         result = (self.findRepackCandidates().is_empty() or
                   self.num_repacked + self.maximum_chunk_size >= self.targets)
-        if result:
+        if result and not self.dry_run:
             self.logger.info(
                 'Requested a total of %d automatic git repository repacks '
                 'in this run of the Automated Repack Job.'
@@ -106,7 +106,7 @@ class RepackTunableLoop(TunableLoop):
                 'out of the %d qualifying for repack.'
                 % (counter, len(repackable_repos)))
 
-        if len(repackable_repos) >= 1:
+        if repackable_repos:
             self.start_at = repackable_repos[-1].id
 
         if not self.dry_run:
