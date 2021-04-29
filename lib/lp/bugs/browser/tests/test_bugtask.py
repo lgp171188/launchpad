@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -61,7 +61,10 @@ from lp.layers import (
     FeedsLayer,
     setFirstLayer,
     )
-from lp.registry.enums import BugSharingPolicy
+from lp.registry.enums import (
+    BugSharingPolicy,
+    DistributionDefaultTraversalPolicy,
+    )
 from lp.registry.interfaces.person import PersonVisibility
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
@@ -78,6 +81,7 @@ from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.testing import (
+    admin_logged_in,
     ANONYMOUS,
     BrowserTestCase,
     celebrity_logged_in,
@@ -657,6 +661,13 @@ class TestBugTasksTableView(TestCaseWithFactory):
         self.view.initialize()
         self.assertIs(None, self.view.getTargetLinkTitle(bug_task.target))
 
+    def test_getTargetLinkTitle_ociproject(self):
+        # The target link title is always none for ociprojects.
+        target = self.factory.makeOCIProject()
+        bug_task = self.factory.makeBugTask(bug=self.bug, target=target)
+        self.view.initialize()
+        self.assertIs(None, self.view.getTargetLinkTitle(bug_task.target))
+
     def test_getTargetLinkTitle_unpublished_distributionsourcepackage(self):
         # The target link title states that the package is not published
         # in the current release.
@@ -782,6 +793,7 @@ class TestBugTasksTableView(TestCaseWithFactory):
         # Product tasks come first, sorted by product then series.
         # Distro tasks follow, sorted by package, distribution, then
         # series (by version in the case of distribution series).
+        # OCI projects comes after their pillars.
         foo = self.factory.makeProduct(displayname='Foo')
         self.factory.makeProductSeries(product=foo, name='2.0')
         self.factory.makeProductSeries(product=foo, name='1.0')
@@ -801,9 +813,14 @@ class TestBugTasksTableView(TestCaseWithFactory):
         foo_spn = self.factory.makeSourcePackageName('foo')
         bar_spn = self.factory.makeSourcePackageName('bar')
 
+        foo_ociproject = self.factory.makeOCIProject(pillar=foo)
+        barix_ociproject = self.factory.makeOCIProject(pillar=barix)
+
         expected_targets = [
             bar, bar.getSeries('0.0'),
-            foo, foo.getSeries('1.0'), foo.getSeries('2.0'),
+            foo, foo_ociproject,
+            foo.getSeries('1.0'), foo.getSeries('2.0'),
+            barix_ociproject,
             barix.getSourcePackage(bar_spn),
             barix.getSeries('beta').getSourcePackage(bar_spn),
             barix.getSeries('aaa-release').getSourcePackage(bar_spn),
@@ -1503,6 +1520,86 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
         notifications = view.request.response.notifications
         self.assertEqual(0, len(notifications))
 
+    def test_retarget_distribution_to_oci_project(self):
+        # It should be possible to retarget a bug from a normal distribution
+        # to an OCI project of a specific OCI-distro.
+        with admin_logged_in():
+            ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+            oci_distro = self.factory.makeDistribution()
+            oci_distro.official_malone = True
+            oci_distro.default_traversal_policy = (
+                DistributionDefaultTraversalPolicy.OCI_PROJECT)
+            oci_project = self.factory.makeOCIProject(pillar=oci_distro)
+            oci_project_name = oci_project.name
+
+        bug_task = self.factory.makeBugTask(target=ubuntu)
+
+        url = canonical_url(bug_task, view_name='+editstatus')
+        browser = self.getUserBrowser(url, user=bug_task.owner)
+        browser.getControl(name='ubuntu.target').value = 'package'
+        browser.getControl(name='ubuntu.target.distribution').value = (
+            oci_distro.name)
+        browser.getControl(name='ubuntu.target.package').value = (
+            oci_project_name)
+        browser.getControl("Save Changes").click()
+
+        with admin_logged_in():
+            self.assertEqual(canonical_url(bug_task), browser.url)
+            self.assertEqual(oci_project, bug_task.target)
+
+    def test_retarget_oci_project_to_distribution(self):
+        # It should be possible to retarget a bug from an OCI project to a
+        # normal distribution.
+        with admin_logged_in():
+            ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+            oci_distro = self.factory.makeDistribution(name='oci-distro')
+            oci_distro.official_malone = True
+            oci_distro.default_traversal_policy = (
+                DistributionDefaultTraversalPolicy.OCI_PROJECT)
+            oci_project = self.factory.makeOCIProject(pillar=oci_distro)
+
+        bug_task = self.factory.makeBugTask(target=oci_project)
+
+        url = canonical_url(bug_task, view_name='+editstatus')
+        browser = self.getUserBrowser(url, user=bug_task.owner)
+        browser.getControl(name='oci-distro.target').value = 'package'
+        browser.getControl(name='oci-distro.target.distribution').value = (
+            ubuntu.name)
+        browser.getControl(name='oci-distro.target.package').value = ''
+        browser.getControl("Save Changes").click()
+
+        with admin_logged_in():
+            self.assertEqual(canonical_url(bug_task), browser.url)
+            self.assertEqual(ubuntu, bug_task.target)
+
+    def test_retarget_oci_project_to_source_package(self):
+        # It should be possible to retarget a bug from an OCI project to a
+        # source package of a distribution.
+        with admin_logged_in():
+            ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+            oci_distro = self.factory.makeDistribution(name='oci-distro')
+            oci_distro.official_malone = True
+            oci_distro.default_traversal_policy = (
+                DistributionDefaultTraversalPolicy.OCI_PROJECT)
+            oci_project = self.factory.makeOCIProject(pillar=oci_distro)
+            ds = self.factory.makeDistroSeries(distribution=ubuntu)
+            sp = self.factory.makeSourcePackage(distroseries=ds, publish=True)
+
+        bug_task = self.factory.makeBugTask(target=oci_project)
+
+        url = canonical_url(bug_task, view_name='+editstatus')
+        browser = self.getUserBrowser(url, user=bug_task.owner)
+        browser.getControl(name='oci-distro.target').value = 'package'
+        browser.getControl(name='oci-distro.target.distribution').value = (
+            ubuntu.name)
+        browser.getControl(name='oci-distro.target.package').value = sp.name
+        browser.getControl("Save Changes").click()
+
+        with admin_logged_in():
+            self.assertEqual(canonical_url(bug_task), browser.url)
+            self.assertEqual(
+                sp.sourcepackagename, bug_task.target.sourcepackagename)
+
 
 class BugTaskViewTestMixin():
 
@@ -1562,6 +1659,37 @@ class TestDistributionBugs(TestCaseWithFactory, BugTaskViewTestMixin):
 
     def test_shouldShowStructuralSubscriberWidget(self):
         self._assert_shouldShowStructuralSubscriberWidget()
+
+
+class TestOCIProjectOfProductBugs(TestCaseWithFactory, BugTaskViewTestMixin):
+    """Test the bugs overview page for OCI project based on project."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIProjectOfProductBugs, self).setUp()
+        self.initTarget()
+
+    def initTarget(self):
+        product = self.factory.makeProduct()
+        self.target = self.factory.makeOCIProject(pillar=product)
+        self.structural_label_subscriber = 'Series subscriber'
+
+    def test_structural_subscriber_label(self):
+        self._assert_structural_subscriber_label(
+            self.structural_label_subscriber)
+
+    def test_shouldShowStructuralSubscriberWidget(self):
+        self._assert_shouldShowStructuralSubscriberWidget()
+
+
+class TestOCIProjectOfDistributionBugs(TestOCIProjectOfProductBugs):
+    """Test the bugs overview page for OCI project based on distribution."""
+
+    def initTarget(self):
+        distro = self.factory.makeDistribution()
+        self.target = self.factory.makeOCIProject(pillar=distro)
+        self.structural_label_subscriber = 'Package or series subscriber'
 
 
 class TestDistroSeriesBugs(TestCaseWithFactory, BugTaskViewTestMixin):

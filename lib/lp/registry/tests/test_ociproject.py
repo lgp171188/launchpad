@@ -462,17 +462,20 @@ class TestOCIProjectVocabulary(TestCaseWithFactory):
         self.assertContainsSameOCIProjects(projects, search_result)
 
     def test_to_term(self):
-        vocabulary = self.getVocabulary()
+        vocabulary = removeSecurityProxy(self.getVocabulary())
         ociproject = self.factory.makeOCIProject()
         term = removeSecurityProxy(vocabulary).toTerm(ociproject)
 
-        expected_token = "%s/%s" % (ociproject.pillar.name, ociproject.name)
-        self.assertEqual(expected_token, term.title)
+        expected_token = ociproject.name
+        expected_title = "%s (%s)" % (
+            ociproject.name, ociproject.pillar.displayname)
         self.assertEqual(expected_token, term.token)
+        self.assertEqual(expected_title, term.title)
 
     def test_getTermByToken(self):
-        vocabulary = self.getVocabulary()
         ociproject = self.factory.makeOCIProject()
-        token = "%s/%s" % (ociproject.pillar.name, ociproject.name)
-        term = removeSecurityProxy(vocabulary).getTermByToken(token)
+        vocabulary = removeSecurityProxy(self.getVocabulary())
+        vocabulary.setPillar(ociproject.pillar)
+        token = ociproject.name
+        term = vocabulary.getTermByToken(token)
         self.assertEqual(ociproject, term.value)

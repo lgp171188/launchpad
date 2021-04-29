@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugTask-related browser views."""
@@ -154,6 +154,7 @@ from lp.registry.interfaces.distroseries import (
     IDistroSeries,
     IDistroSeriesSet,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.productseries import IProductSeries
@@ -1659,26 +1660,35 @@ def bugtask_sort_key(bugtask):
     Designed to make sense when bugtargetdisplayname is shown.
     """
     if IDistribution.providedBy(bugtask.target):
-        key = (None, bugtask.target.displayname, None, None, None)
+        key = (None, bugtask.target.displayname, None, None, None, None)
     elif IDistroSeries.providedBy(bugtask.target):
         key = (
             None, bugtask.target.distribution.displayname,
-            bugtask.target.name, None, None)
+            bugtask.target.name, None, None, None)
     elif IDistributionSourcePackage.providedBy(bugtask.target):
         key = (
             bugtask.target.sourcepackagename.name,
-            bugtask.target.distribution.displayname, None, None, None)
+            bugtask.target.distribution.displayname, None, None, None, None)
     elif ISourcePackage.providedBy(bugtask.target):
         key = (
             bugtask.target.sourcepackagename.name,
             bugtask.target.distribution.displayname,
-            Version(bugtask.target.distroseries.version), None, None)
+            Version(bugtask.target.distroseries.version), None, None, None)
     elif IProduct.providedBy(bugtask.target):
-        key = (None, None, None, bugtask.target.displayname, None)
+        key = (None, None, None, bugtask.target.displayname, None, None)
     elif IProductSeries.providedBy(bugtask.target):
         key = (
             None, None, None, bugtask.target.product.displayname,
-            bugtask.target.name)
+            bugtask.target.name, None)
+    elif IOCIProject.providedBy(bugtask.target):
+        ociproject = bugtask.target
+        pillar = ociproject.pillar
+        key = [None, None, None, None, None, ociproject.displayname]
+        if IDistribution.providedBy(pillar):
+            key[1] = pillar.displayname
+        elif IProduct.providedBy(pillar):
+            key[3] = pillar.displayname
+        key = tuple(key)
     else:
         raise AssertionError("No sort key for %r" % bugtask.target)
 
@@ -1997,6 +2007,8 @@ class BugTasksTableView(LaunchpadView):
             # fake one.
             if ISeriesBugTarget.providedBy(bugtask.target):
                 parent = bugtask.target.bugtarget_parent
+            elif IOCIProject.providedBy(bugtask.target):
+                latest_parent = parent = bugtask.target.pillar
             else:
                 latest_parent = parent = bugtask.target
 

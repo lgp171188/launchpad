@@ -26,6 +26,7 @@ from testtools.matchers import (
     MatchesDict,
     MatchesSetwise,
     MatchesStructure,
+    Not,
     )
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
@@ -1235,32 +1236,38 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             distro_arch_series=self.distroarchseries,
             date_created=date_created, **kwargs)
 
-    def test_breadcrumb(self):
+    def test_breadcrumb_and_top_header(self):
         oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution)
         oci_project_name = oci_project.name
         oci_project_url = canonical_url(oci_project)
+        pillar_name = oci_project.pillar.name
+        pillar_url = canonical_url(oci_project.pillar)
         recipe = self.makeOCIRecipe(oci_project=oci_project)
         view = create_view(recipe, "+index")
         # To test the breadcrumbs we need a correct traversal stack.
         view.request.traversed_objects = [self.person, recipe, view]
         view.initialize()
-        breadcrumbs_tag = soupmatchers.Tag(
+        content = view()
+        breadcrumbs = soupmatchers.Tag(
             "breadcrumbs", "ol", attrs={"class": "breadcrumbs"})
-        self.assertThat(
-            view(),
-            soupmatchers.HTMLContains(
-                soupmatchers.Within(
-                    breadcrumbs_tag,
-                    soupmatchers.Tag(
-                        "OCI project breadcrumb", "a",
-                        text="%s OCI project" % oci_project_name,
-                        attrs={"href": oci_project_url})),
-                soupmatchers.Within(
-                    breadcrumbs_tag,
-                    soupmatchers.Tag(
-                        "OCI recipe breadcrumb", "li",
-                        text=re.compile(r"\srecipe-name\s")))))
+
+        # Should not have a breadcrumbs (OCI project link should be at the
+        # top of the page, close to project/distribution name).
+        self.assertThat(content, Not(soupmatchers.HTMLContains(breadcrumbs)))
+
+        # OCI project should appear at the top header, right after pillar link.
+        header = soupmatchers.Tag(
+            "subtitle", "h2", attrs={"id": "watermark-heading"})
+        self.assertThat(content, soupmatchers.HTMLContains(soupmatchers.Within(
+            header, soupmatchers.Tag(
+                "pillar link", "a",
+                text=pillar_name.title(), attrs={"href": pillar_url}))))
+        self.assertThat(content, soupmatchers.HTMLContains(soupmatchers.Within(
+            header, soupmatchers.Tag(
+                    "OCI project link", "a",
+                    text="%s OCI project" % oci_project_name,
+                    attrs={"href": oci_project_url}))))
 
     def makeRecipe(self, processor_names, **kwargs):
         recipe = self.factory.makeOCIRecipe(**kwargs)
@@ -1391,7 +1398,6 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             recipe=recipe, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
-            %s OCI project
             recipe-name
             .*
             OCI recipe information
@@ -1417,7 +1423,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Successfully built
             386
             30 minutes ago
-            """ % (oci_project_name, oci_project_display, build_path),
+            """ % (oci_project_display, build_path),
             self.getMainText(build.recipe))
 
     def test_index_for_subscriber_without_git_repo_access(self):
@@ -1445,7 +1451,6 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
 
         main_text = self.getMainText(build.recipe, user=subscriber)
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
-            %s OCI project
             recipe-name
             .*
             OCI recipe information
@@ -1470,7 +1475,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Successfully built
             386
             30 minutes ago
-            """ % (oci_project_name, oci_project_display, build_path),
+            """ % (oci_project_display, build_path),
             main_text)
 
     def test_index_success_with_buildlog(self):
@@ -1617,7 +1622,6 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
         # The +request-builds page is sane.
         self.assertTextMatchesExpressionIgnoreWhitespace("""
             Request builds for recipe-name
-            oci-project-name OCI project
             recipe-name
             Request builds
             Architectures:

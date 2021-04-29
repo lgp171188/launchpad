@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -55,15 +55,17 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
     def getProductVocabulary(self):
         return 'Product'
 
-    def setUpSubWidgets(self):
-        if self._widgets_set_up:
-            return
+    def getPackageVocabularyName(self):
         if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
             # Replace the default field with a field that uses the better
             # vocabulary.
-            package_vocab = 'DistributionSourcePackage'
+            return 'DistributionSourcePackage'
         else:
-            package_vocab = 'BinaryAndSourcePackageName'
+            return 'BinaryAndSourcePackageName'
+
+    def setUpSubWidgets(self):
+        if self._widgets_set_up:
+            return
         fields = [
             Choice(
                 __name__='product', title=u'Project',
@@ -74,7 +76,7 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
                 default=getUtility(ILaunchpadCelebrities).ubuntu),
             Choice(
                 __name__='package', title=u"Package",
-                required=False, vocabulary=package_vocab),
+                required=False, vocabulary=self.getPackageVocabularyName()),
             ]
         self.distribution_widget = CustomWidgetFactory(
             LaunchpadDropdownWidget)

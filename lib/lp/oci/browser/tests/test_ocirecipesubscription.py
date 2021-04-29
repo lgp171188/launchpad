@@ -83,7 +83,6 @@ class TestPublicOCIRecipeSubscriptionViews(BaseTestOCIRecipeView):
             recipe, view_name="+subscribe", user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Subscribe to OCI recipe
-            my-oci-project OCI project
             recipe-name
             Subscribe to OCI recipe or Cancel
             """, self.extractMainText(browser))
@@ -111,8 +110,6 @@ class TestPublicOCIRecipeSubscriptionViews(BaseTestOCIRecipeView):
         browser = self.getViewBrowser(subscription, user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Edit subscription to OCI recipe for Another-user
-            my-oci-project OCI project
-            recipe-name
             If you unsubscribe from an OCI recipe it will no longer show up on
             your personal pages. or Cancel
             """, self.extractMainText(browser))
@@ -138,9 +135,6 @@ class TestPublicOCIRecipeSubscriptionViews(BaseTestOCIRecipeView):
         browser = self.getViewBrowser(
             recipe, view_name="+addsubscriber", user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            Subscribe to OCI recipe
-            my-oci-project OCI project
-            recipe-name
             Subscribe to OCI recipe
             Person:
             .*
@@ -174,8 +168,6 @@ class TestPublicOCIRecipeSubscriptionViews(BaseTestOCIRecipeView):
         browser = self.getViewBrowser(subscription, user=recipe.owner)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Edit subscription to OCI recipe for Another-user
-            my-oci-project OCI project
-            recipe-name
             If you unsubscribe from an OCI recipe it will no longer show up on
             your personal pages. or Cancel
             """, self.extractMainText(browser))
@@ -223,9 +215,6 @@ class TestPrivateOCIRecipeSubscriptionViews(BaseTestOCIRecipeView):
             recipe, view_name="+addsubscriber", user=self.person)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Subscribe to OCI recipe
-            my-oci-project OCI project
-            recipe-name
-            Subscribe to OCI recipe
             Person:
             .*
             The person subscribed to the related OCI recipe.
@@ -255,8 +244,6 @@ class TestPrivateOCIRecipeSubscriptionViews(BaseTestOCIRecipeView):
         browser = self.getViewBrowser(subscription, user=another_user)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Edit subscription to OCI recipe for Another-user
-            my-oci-project OCI project
-            recipe-name
             If you unsubscribe from an OCI  recipe it will no longer show up on
             your personal pages. or Cancel
             """, self.extractMainText(browser))

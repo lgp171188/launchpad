@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Widgets related to IBugTask."""
@@ -21,6 +21,7 @@ import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import (
+    ConversionError,
     IDisplayWidget,
     IInputWidget,
     InputErrors,
@@ -44,6 +45,7 @@ from zope.schema.vocabulary import getVocabularyRegistry
 from lp import _
 from lp.app.browser.tales import TeamFormatterAPI
 from lp.app.errors import UnexpectedFormData
+from lp.app.validators import LaunchpadValidationError
 from lp.app.widgets.helpers import get_widget_template
 from lp.app.widgets.launchpadtarget import LaunchpadTargetWidget
 from lp.app.widgets.popup import (
@@ -60,10 +62,13 @@ from lp.bugs.interfaces.bugwatch import (
     UnrecognizedBugTrackerURL,
     )
 from lp.bugs.vocabularies import UsesBugsDistributionVocabulary
+from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.product import IProduct
 from lp.services.features import getFeatureFlag
 from lp.services.fields import URIField
 from lp.services.webapp import canonical_url
@@ -473,6 +478,69 @@ class BugTaskTargetWidget(LaunchpadTargetWidget):
         distro = self.context.context.distribution
         vocabulary = UsesBugsDistributionVocabulary(distro)
         return vocabulary
+
+    def getPackageVocabularyName(self):
+        return 'DistributionPackage'
+
+    def getSelectedDistribution(self):
+        return (self.distribution_widget.getInputValue()
+                if self.distribution_widget.hasInput() else None)
+
+    @property
+    def is_oci_distribution_selected(self):
+        if not hasattr(self, 'distribution_widget'):
+            # Field not initialized yet.
+            return False
+        distribution = self.getSelectedDistribution()
+        oci_traversal_policy = DistributionDefaultTraversalPolicy.OCI_PROJECT
+        return (
+            distribution is not None and
+            distribution.default_traversal_policy == oci_traversal_policy)
+
+    def _syncPackageVocabularyDistribution(self, distribution=None):
+        """Sync the package vocabulary depending on the selected
+        distribution, so we know if we are dealing with OCI projects or
+        source/binary packages.
+        """
+        if distribution is None:
+            distribution = self.getSelectedDistribution()
+        self.package_widget.vocabulary.setDistribution(distribution)
+
+    def getInputValue(self):
+        self.setUpSubWidgets()
+        self._syncPackageVocabularyDistribution()
+        form_value = self.request.form_ng.getOne(self.name)
+        if self.is_oci_distribution_selected and form_value == 'package':
+            try:
+                distribution = self.distribution_widget.getInputValue()
+            except ConversionError:
+                entered_name = self.request.form_ng.getOne(
+                    "%s.distribution" % self.name)
+                self._error = WidgetInputError(
+                    self.name, self.label,
+                    LaunchpadValidationError(
+                        "There is no distribution named '%s' registered in"
+                        " Launchpad" % entered_name))
+                raise self._error
+            return self.package_widget.getInputValue() or distribution
+        return super(BugTaskTargetWidget, self).getInputValue()
+
+    def setRenderedValue(self, value):
+        self.setUpSubWidgets()
+        if IOCIProject.providedBy(value):
+            if IProduct.providedBy(value.pillar):
+                # We do not support project-based OCIProjects in this widget
+                # yet. If we get an OCIProject based on a project, associate
+                # the value with the project only.
+                self.default_option = 'product'
+                self.product_widget.setRenderedValue(value.pillar)
+            elif IDistribution.providedBy(value.pillar):
+                self.default_option = 'package'
+                self.distribution_widget.setRenderedValue(value.pillar)
+                self.package_widget.setRenderedValue(value)
+                self._syncPackageVocabularyDistribution(value.pillar)
+        else:
+            super(BugTaskTargetWidget, self).setRenderedValue(value)
 
 
 class BugTaskSourcePackageNameWidget(SourcePackageNameWidgetBase):
