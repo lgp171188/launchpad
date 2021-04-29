@@ -150,6 +150,10 @@
       <allow interface=".interfaces.persontransferjob.IPersonDeactivateJob"/>
     </class>
 
+    <class class=".model.persontransferjob.PersonCloseAccountJob">
+      <allow interface=".interfaces.persontransferjob.IPersonCloseAccountJob"/>
+    </class>
+
     <class class=".model.persontransferjob.TeamInvitationNotificationJob">
       <allow interface=".interfaces.persontransferjob.ITeamInvitationNotificationJob"/>
     </class>

@@ -53,7 +53,6 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
 
         getUtility(IPersonCloseAccountJobSource).create(user_to_delete)
         jobs = list(job_source.iterReady())
-        jobs[0] = removeSecurityProxy(jobs[0])
         with dbuser(config.IPersonCloseAccountJobSource.dbuser):
             JobRunner(jobs).runAll()
 
@@ -69,7 +68,6 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
             IPersonCloseAccountJobSource).create(user_to_delete)
         job_source = getUtility(IPersonCloseAccountJobSource)
         jobs = list(job_source.iterReady())
-        jobs[0] = removeSecurityProxy(jobs[0])
         with dbuser(config.IPersonCloseAccountJobSource.dbuser):
             JobRunner(jobs).runAll()
         self.assertEqual(JobStatus.COMPLETED, jobs[0].status)
