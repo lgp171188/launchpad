@@ -275,6 +275,7 @@ class TestMessageEditingAPI(WithScenarios, TestCaseWithFactory):
     scenarios = [
         ("bug", {"message_type": "bug"}),
         ("question", {"message_type": "question"}),
+        ("MP comment", {"message_type": "mp"})
         ]
 
     def setUp(self):
@@ -289,6 +290,8 @@ class TestMessageEditingAPI(WithScenarios, TestCaseWithFactory):
         elif self.message_type == "question":
             question = self.factory.makeQuestion()
             return question.giveAnswer(self.person, content)
+        elif self.message_type == "mp":
+            return self.factory.makeCodeReviewComment(sender=self.person)
 
     def getWebservice(self, person):
         return webservice_for_person(
@@ -297,7 +300,7 @@ class TestMessageEditingAPI(WithScenarios, TestCaseWithFactory):
 
     def test_edit_message(self):
         msg = self.makeMessage(content="initial content")
-        ws = self.getWebservice(msg.owner)
+        ws = self.getWebservice(self.person)
         with person_logged_in(self.person):
             url = api_url(msg)
         response = ws.named_post(
