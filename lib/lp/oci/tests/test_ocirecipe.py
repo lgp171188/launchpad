@@ -53,6 +53,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeBuildRequestStatus,
     OCIRecipeNotOwner,
     OCIRecipePrivacyMismatch,
+    UsingDistributionCredentials,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
@@ -73,6 +74,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
     )
+from lp.registry.interfaces.ociproject import OCIProjectRecipeInvalid
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.accesspolicy import (
     AccessArtifact,
@@ -587,6 +589,29 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                     recipe.registrant, url, image_name, credentials,
                     credentials_owner=other_team)
 
+    def test_newPushRule_distribution_credentials(self):
+        # If the OCIRecipe is in a Distribution with credentials set
+        # we cannot create new push rules
+        self.setConfig()
+        distribution = self.factory.makeDistribution()
+        credentials = self.factory.makeOCIRegistryCredentials()
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        with person_logged_in(distribution.owner):
+            distribution.oci_registry_credentials = credentials
+            project.setOfficialRecipeStatus(recipe, True)
+
+        url = 'asdf://foo.com'
+        image_name = self.factory.getUniqueUnicode()
+        credentials = {
+            "username": "test-username", "password": "test-password"}
+
+        with person_logged_in(recipe.owner):
+            with ExpectedException(UsingDistributionCredentials):
+                recipe.newPushRule(
+                    recipe.registrant, url, image_name, credentials,
+                    credentials_owner=recipe.registrant)
+
     def test_set_official_directly_is_forbidden(self):
         recipe = self.factory.makeOCIRecipe()
         self.assertRaises(
@@ -655,7 +680,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_project=oci_project, registrant=owner)
 
         self.assertRaises(
-            ValueError, another_oci_project.setOfficialRecipeStatus,
+            OCIProjectRecipeInvalid, another_oci_project.setOfficialRecipeStatus,
             recipe, True)
 
     def test_permission_check_on_setOfficialRecipe(self):
@@ -1546,6 +1571,31 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             "registry_url": Equals(obj["registry_url"]),
             "username": Equals("foo"),
             }))
+
+    def test_api_create_new_push_rule_distribution_credentials(self):
+        """Should not be able to create a push rule in a Distribution."""
+
+        self.setConfig()
+
+        with person_logged_in(self.person):
+            distribution = self.factory.makeDistribution()
+            credentials = self.factory.makeOCIRegistryCredentials()
+            project = self.factory.makeOCIProject(
+                pillar=distribution, registrant=self.person)
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=project, owner=self.person, registrant=self.person)
+            with person_logged_in(distribution.owner):
+                distribution.oci_registry_credentials = credentials
+                project.setOfficialRecipeStatus(recipe, True)
+            url = api_url(recipe)
+
+        obj = {
+            "registry_url": self.factory.getUniqueURL(),
+            "image_name": self.factory.getUniqueUnicode(),
+            "credentials": {"username": "foo", "password": "bar"}}
+
+        resp = self.webservice.named_post(url, "newPushRule", **obj)
+        self.assertEqual(400, resp.status, resp.body)
 
     def test_api_push_rules_exported(self):
         """Are push rules exported for a recipe?"""

@@ -50,8 +50,10 @@ from lp.code.model.branchnamespace import (
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
+    CannotDeleteOCIProject,
     IOCIProject,
     IOCIProjectSet,
+    OCIProjectRecipeInvalid,
     )
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.person import IPersonSet
@@ -311,9 +313,7 @@ class OCIProject(BugTargetBase, StructuralSubscriptionTargetMixin, StormBase):
     def setOfficialRecipeStatus(self, recipe, status):
         """See `IOCIProject`."""
         if recipe is not None and recipe.oci_project != self:
-            raise ValueError(
-                "An OCI recipe cannot be set as the official recipe of "
-                "another OCI project.")
+            raise OCIProjectRecipeInvalid()
         # Removing security proxy here because `_official` is a private
         # attribute not declared on the Interface, and we need to set it
         # regardless of security checks on OCIRecipe objects.
@@ -335,6 +335,42 @@ class OCIProject(BugTargetBase, StructuralSubscriptionTargetMixin, StormBase):
                             [self.pillar], required_grant, user))):
             return []
         return BRANCH_POLICY_ALLOWED_TYPES[self.pillar.branch_sharing_policy]
+
+    def destroySelf(self):
+        """See `IOCIProject`."""
+        from lp.bugs.model.bugtask import BugTask
+        from lp.code.model.gitrepository import GitRepository
+        from lp.oci.model.ocirecipe import OCIRecipe
+
+        # Cannot delete this OCI project if it has recipes associated if it.
+        exists_recipes = not IStore(OCIRecipe).find(
+            OCIRecipe,
+            OCIRecipe.oci_project == self).is_empty()
+        if exists_recipes:
+            raise CannotDeleteOCIProject("This OCI project contains recipes.")
+
+        # Cannot delete this OCI project if it has bugs associated with it.
+        # XXX pappacena 2021-04-28: BugTask table has a
+        # BugTask.ociprojectseries column, but it's not mapped to the
+        # model yet since we do not currently support bugs associated to
+        # OCIProjectSeries. Once we have support for that, this query
+        # condition should be changed to something like:
+        # Or(BugTask.ocirproject == self,
+        #    BugTask.ociprojectseries.is_in(self.series)).
+        exists_bugs = not IStore(BugTask).find(
+            BugTask, BugTask.ociproject == self).is_empty()
+        if exists_bugs:
+            raise CannotDeleteOCIProject("This OCI project contains bugs.")
+
+        # Cannot delete this OCI project if it has repos associated with it.
+        exists_repos = not IStore(GitRepository).find(
+            GitRepository, GitRepository.oci_project == self).is_empty()
+        if exists_repos:
+            raise CannotDeleteOCIProject(
+                "There are git repositories associated with this OCI project.")
+        for series in self.series:
+            series.destroySelf()
+        IStore(self).remove(self)
 
 
 @implementer(IOCIProjectSet)

@@ -7,16 +7,20 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'CannotDeleteOCIProject',
     'IOCIProject',
     'IOCIProjectSet',
     'OCI_PROJECT_ALLOW_CREATE',
     'OCIProjectCreateFeatureDisabled',
+    'OCIProjectRecipeInvalid',
     ]
 
 from lazr.restful.declarations import (
     call_with,
     error_status,
+    export_destructor_operation,
     export_factory_operation,
+    export_write_operation,
     exported,
     exported_as_webservice_entry,
     operation_for_version,
@@ -69,6 +73,20 @@ from lp.services.fields import (
 
 
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
+
+
+@error_status(http_client.BAD_REQUEST)
+class CannotDeleteOCIProject(Exception):
+    """The OCIProject cannnot be deleted."""
+
+
+@error_status(http_client.UNAUTHORIZED)
+class OCIProjectRecipeInvalid(Unauthorized):
+    """The given recipe is invalid for this OCI project."""
+
+    def __init__(self):
+        super(OCIProjectRecipeInvalid, self).__init__(
+            "The given recipe is invalid for this OCI project.")
 
 
 class IOCIProjectView(IHasGitRepositories, IHasOfficialBugTags, IServiceUsage,
@@ -171,8 +189,30 @@ class IOCIProjectEdit(Interface):
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
         """Creates a new `IOCIProjectSeries`."""
 
+    @operation_parameters(
+        recipe=Reference(
+            Interface,
+            title=_("OCI recipe"),
+            description=_("The OCI recipe to change the status of."),
+            required=True),
+        status=Bool(
+            title=_("Official status"),
+            description=_("Whether the OCI recipe should be official or not."),
+            required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
     def setOfficialRecipeStatus(recipe, status):
         """Change whether an OCI Recipe is official or not for this project."""
+
+    @export_destructor_operation()
+    @operation_for_version('devel')
+    def destroySelf():
+        """Delete this OCI project.
+
+        Any OCI recipe and git repository related to this OCI project should
+        be deleted beforehand. OCIProjectSeries objects are automatically
+        deleted.
+        """
 
 
 class IOCIProjectLegitimate(Interface):

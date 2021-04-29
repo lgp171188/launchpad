@@ -20,12 +20,16 @@ from zope.schema.vocabulary import getVocabularyRegistry
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.registry.interfaces.ociproject import (
+    CannotDeleteOCIProject,
     IOCIProject,
     IOCIProjectSet,
     OCI_PROJECT_ALLOW_CREATE,
     )
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
+from lp.registry.model.ociproject import OCIProject
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
@@ -132,6 +136,58 @@ class TestOCIProject(TestCaseWithFactory):
         self.assertEqual(
             'OCI project test-name for %s' % oci_project.pillar.display_name,
             oci_project.display_name)
+
+    def test_destroy_fails_if_there_are_recipes(self):
+        self.useFixture(FeatureFixture({
+            OCI_PROJECT_ALLOW_CREATE: 'on',
+            OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+
+        self.factory.makeOCIRecipe(oci_project=oci_project)
+        with person_logged_in(driver):
+            self.assertRaises(CannotDeleteOCIProject, oci_project.destroySelf)
+
+    def test_destroy_fails_if_there_are_git_repos(self):
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+
+        self.factory.makeGitRepository(target=oci_project)
+
+        with person_logged_in(driver):
+            self.assertRaises(CannotDeleteOCIProject, oci_project.destroySelf)
+
+    def test_destroy_fails_if_there_are_bugs(self):
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+
+        self.factory.makeBug(target=oci_project)
+
+        with person_logged_in(driver):
+            self.assertRaises(CannotDeleteOCIProject, oci_project.destroySelf)
+
+    def test_destroy_fails_for_non_driver_user(self):
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        with person_logged_in(self.factory.makePerson()):
+            self.assertRaises(
+                Unauthorized, getattr, oci_project, 'destroySelf')
+
+    def test_destroy(self):
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+
+        with person_logged_in(driver):
+            oci_project.newSeries("name", "summary", registrant=driver)
+            oci_project.destroySelf()
+        self.assertEqual(
+            None, IStore(OCIProject).find(
+                OCIProject, OCIProject.id == oci_project.id).one())
 
 
 class TestOCIProjectSet(TestCaseWithFactory):
@@ -314,6 +370,61 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
                 owner=other_user))
 
         self.assertCanCreateOCIProject(distro, self.person)
+
+    def test_delete(self):
+        with admin_logged_in():
+            distribution = self.factory.makeDistribution(driver=self.person)
+            oci_project = self.factory.makeOCIProject(pillar=distribution)
+        with person_logged_in(self.person):
+            url = api_url(oci_project)
+        webservice = self.webservice
+        response = webservice.delete(url, api_version='devel')
+        self.assertEqual(200, response.status)
+        response = webservice.get(url, api_version='devel')
+        self.assertEqual(404, response.status)
+
+    def test_set_official_recipe_via_webservice(self):
+        self.useFixture(FeatureFixture({
+            OCI_PROJECT_ALLOW_CREATE: "on",
+            OCI_RECIPE_ALLOW_CREATE: "on"}))
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            oci_project = self.factory.makeOCIProject(pillar=distro)
+            oci_recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project)
+            oci_recipe_url = api_url(oci_recipe)
+            url = api_url(oci_project)
+
+        obj = {"recipe": oci_recipe_url, "status": True}
+        self.webservice.named_post(
+            url, "setOfficialRecipeStatus", **obj)
+
+        with person_logged_in(self.person):
+            self.assertEqual(
+                [oci_recipe],
+                list(oci_project.getOfficialRecipes()))
+
+    def test_set_official_recipe_via_webservice_incorrect_recipe(self):
+        self.useFixture(FeatureFixture({
+            OCI_PROJECT_ALLOW_CREATE: "on",
+            OCI_RECIPE_ALLOW_CREATE: "on"}))
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            oci_project = self.factory.makeOCIProject(pillar=distro)
+            other_project = self.factory.makeOCIProject()
+            oci_recipe = self.factory.makeOCIRecipe(
+                oci_project=other_project)
+            oci_recipe_url = api_url(oci_recipe)
+            url = api_url(oci_project)
+
+        obj = {"recipe": oci_recipe_url, "status": True}
+        resp = self.webservice.named_post(
+            url, "setOfficialRecipeStatus", **obj)
+
+        self.assertEqual(401, resp.status)
+        self.assertEqual(
+            b"The given recipe is invalid for this OCI project.",
+            resp.body)
 
 
 class TestOCIProjectVocabulary(TestCaseWithFactory):

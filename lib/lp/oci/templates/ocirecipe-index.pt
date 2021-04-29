@@ -145,12 +145,13 @@
 
             </td>
             <td>
-              <tal:registry-upload tal:condition="build_status/upload_scheduled">
+
+              <tal:registry-upload tal:condition="build_status/upload_requested">
                 <span tal:content="build_status/upload/title" />
               </tal:registry-upload>
-              <tal:registry-upload tal:condition="not:build_status/upload_scheduled">
-                <span tal:condition="python: 'FULLYBUILT' in build_status['status'].title">No registry upload requested.</span>
-                <span tal:condition="python: 'FAILEDTOBUILD' in build_status['status'].title">No registry upload requested.</span>
+              <tal:registry-upload tal:condition="not:build_status/upload_requested">
+                <span tal:condition="build_status/status/enumvalue:NEEDSBUILD">Waiting for builds to start.</span>
+                <span tal:condition="not: build_status/status/enumvalue:NEEDSBUILD">No registry upload requested.</span>
               </tal:registry-upload>
             </td>
             <td>
@@ -183,7 +184,7 @@
               </ul>
             </td>
             <td>
-              <ul tal:condition="build_status/upload_scheduled" tal:repeat="build build_request/builds">
+              <ul tal:condition="build_status/upload_requested" tal:repeat="build build_request/builds">
                 <li  style="padding-left: 22px;">
                   <strong><a class="sprite distribution"
                     tal:define="processor build/processor"

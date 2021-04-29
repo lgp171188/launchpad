@@ -333,7 +333,7 @@ class OCIRecipeView(LaunchpadView):
         status = removeSecurityProxy(
                     recipe_set.getStatusSummaryForBuilds([build_job]))
         # Add the registry job status
-        status["upload_scheduled"] = upload_status != unscheduled_upload
+        status["upload_requested"] = upload_status != unscheduled_upload
         status["upload"] = upload_status
         status["date"] = build_job.date
         status["date_estimated"] = build_job.estimate

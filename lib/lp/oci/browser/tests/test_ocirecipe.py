@@ -1530,6 +1530,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             When requested
             When complete
             There are some builds waiting to be built.
+            Waiting for builds to start.
             a moment ago
             in .* \(estimated\)
             """, self.getMainText(recipe))

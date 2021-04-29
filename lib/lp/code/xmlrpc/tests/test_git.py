@@ -573,6 +573,26 @@ class TestGitAPIMixin:
         self.assertEqual(
             initial_count, getUtility(IAllGitRepositories).count())
 
+    def test_translatePath_create_oci_project_not_owner(self):
+        # Somebody without edit permission on the OCI project cannot create
+        # a repository and immediately set it as the default for that
+        # project.
+        requester = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=self.factory.makeTeam())
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        path = u"/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
+        message = "%s is not a member of %s" % (
+            requester.displayname,
+            oci_project.pillar.oci_project_admin.displayname)
+        initial_count = getUtility(IAllGitRepositories).count()
+        self.assertPermissionDenied(
+            requester, path, message=message, permission="write")
+        # No repository was created.
+        login(ANONYMOUS)
+        self.assertEqual(
+            initial_count, getUtility(IAllGitRepositories).count())
+
     def test_translatePath_grant_to_other(self):
         requester = self.factory.makePerson()
         other_person = self.factory.makePerson()
@@ -1496,13 +1516,34 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # A repository can be created and immediately set as the default for
         # an OCI project.
         requester = self.factory.makePerson()
+        oci_project_admin = self.factory.makeTeam(members=[requester])
+        distribution = self.factory.makeDistribution(
+            oci_project_admin=oci_project_admin)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        repository = self.assertCreates(
+            requester,
+            u"/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name))
+        self.assertTrue(repository.target_default)
+        self.assertTrue(repository.owner_default)
+        self.assertEqual(oci_project_admin, repository.owner)
+
+    def test_translatePath_create_oci_project_default_no_admin(self):
+        # If the OCI project's distribution has no OCI project admin, then a
+        # repository cannot (yet) be created and immediately set as the
+        # default for that OCI project.
+        requester = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
         path = u"/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
         message = (
             "Cannot automatically set the default repository for this target; "
             "push to a named repository instead.")
+        initial_count = getUtility(IAllGitRepositories).count()
         self.assertPermissionDenied(
             requester, path, message=message, permission="write")
+        # No repository was created.
+        login(ANONYMOUS)
+        self.assertEqual(
+            initial_count, getUtility(IAllGitRepositories).count())
 
     def test_translatePath_create_project_owner_default(self):
         # A repository can be created and immediately set as its owner's

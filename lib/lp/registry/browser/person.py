@@ -14,6 +14,7 @@ __all__ = [
     'PersonAdministerView',
     'PersonBrandingView',
     'PersonBreadcrumb',
+    'PersonCloseAccountView',
     'PersonCodeOfConductEditView',
     'PersonDeactivateAccountView',
     'PersonEditEmailsView',
@@ -185,6 +186,7 @@ from lp.registry.interfaces.persondistributionsourcepackage import (
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.persontransferjob import (
+    IPersonCloseAccountJobSource,
     IPersonDeactivateJobSource,
     )
 from lp.registry.interfaces.pillar import IPillarNameSet
@@ -1273,6 +1275,29 @@ class PersonAdministerView(PersonRenameFormMixin):
     def change_action(self, action, data):
         """Update the IPerson."""
         self.updateContextFromData(data)
+
+
+class PersonCloseAccountView(LaunchpadFormView):
+    """Close an account."""
+    schema = Interface
+    label = "Close account"
+
+    @property
+    def next_url(self):
+        """See `LaunchpadEditFormView`."""
+        return canonical_url(self.context)
+
+    @property
+    def cancel_url(self):
+        """See `LaunchpadEditFormView`."""
+        return canonical_url(self.context)
+
+    @action('Close', name='close')
+    def delete_action(self, action, data):
+        """Close the account."""
+        getUtility(IPersonCloseAccountJobSource).create(self.context)
+        self.request.response.addInfoNotification(
+            "This account will now be permanently closed.")
 
 
 class IAccountAdministerSchema(Interface):
