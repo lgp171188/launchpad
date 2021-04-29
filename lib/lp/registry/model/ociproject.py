@@ -33,11 +33,16 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
     PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
+    ServiceUsage,
     )
 from lp.app.interfaces.services import IService
 from lp.bugs.model.bugtarget import BugTargetBase
+from lp.bugs.model.structuralsubscription import (
+    StructuralSubscriptionTargetMixin,
+    )
 from lp.code.model.branchnamespace import (
     BRANCH_POLICY_ALLOWED_TYPES,
     BRANCH_POLICY_REQUIRED_GRANTS,
@@ -94,7 +99,7 @@ def user_has_special_oci_access(user):
 
 
 @implementer(IOCIProject)
-class OCIProject(BugTargetBase, StormBase):
+class OCIProject(BugTargetBase, StructuralSubscriptionTargetMixin, StormBase):
     """See `IOCIProject` and `IOCIProjectSet`."""
 
     __storm_table__ = "OCIProject"
@@ -123,6 +128,13 @@ class OCIProject(BugTargetBase, StormBase):
     bug_reported_acknowledgement = Unicode(name="bug_reported_acknowledgement")
     enable_bugfiling_duplicate_search = Bool(
         name="enable_bugfiling_duplicate_search")
+
+    answers_usage = ServiceUsage.NOT_APPLICABLE
+    blueprints_usage = ServiceUsage.NOT_APPLICABLE
+    codehosting_usage = ServiceUsage.NOT_APPLICABLE
+    translations_usage = ServiceUsage.NOT_APPLICABLE
+    bug_tracking_usage = ServiceUsage.LAUNCHPAD
+    uses_launchpad = True
 
     @property
     def name(self):
@@ -164,9 +176,17 @@ class OCIProject(BugTargetBase, StormBase):
         return "OCI project %s for %s" % (
             self.ociprojectname.name, self.pillar.display_name)
 
-    displayname = display_name
-    bugtargetname = display_name
-    bugtargetdisplayname = display_name
+    @property
+    def displayname(self):
+        return "%s (%s)" % (self.name, self.pillar.display_name)
+
+    bugtargetname = displayname
+    bugtargetdisplayname = displayname
+    title = displayname
+
+    def _customizeSearchParams(self, search_params):
+        """Customize `search_params` for this OCI project."""
+        search_params.setOCIProject(self)
 
     @property
     def driver(self):
@@ -177,6 +197,23 @@ class OCIProject(BugTargetBase, StormBase):
     def bug_supervisor(self):
         """See `IOCIProject`."""
         return self.pillar.bug_supervisor
+
+    def getAllowedBugInformationTypes(self):
+        """See `IOCIProject.`"""
+        return self.pillar.getAllowedBugInformationTypes()
+
+    def getBugSummaryContextWhereClause(self):
+        """See BugTargetBase."""
+        # Circular fail.
+        from lp.bugs.model.bugsummary import BugSummary
+        return BugSummary.ociproject_id == self.id
+
+    def _getOfficialTagClause(self):
+        return self.pillar._getOfficialTagClause()
+
+    @property
+    def official_bug_tags(self):
+        return self.pillar.official_bug_tags
 
     def _reconcileAccess(self):
         """Reconcile access for all OCI recipes of this project."""

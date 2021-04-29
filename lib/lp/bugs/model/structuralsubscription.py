@@ -1,4 +1,4 @@
-# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -72,6 +72,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
     )
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.milestone import IMilestone
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     validate_person,
     validate_public_person,
@@ -199,6 +200,27 @@ class DistroSeriesTargetHelper:
         self.target_arguments = {"distroseries": target}
         self.pillar = target.distribution
         self.join = (StructuralSubscription.distroseries == target)
+
+
+@implementer(IStructuralSubscriptionTargetHelper)
+@adapter(IOCIProject)
+class OCIProjectTargetHelper:
+    """A helper for `OCIProject`s."""
+    target_type_display = 'OCI project'
+
+    def __init__(self, target):
+        self.target = target.pillar
+        self.target_parent = target.pillar
+        self.pillar = target.pillar
+        if IDistribution.providedBy(target.pillar):
+            self.target_arguments = {"distribution": target.pillar}
+            self.join = (StructuralSubscription.distribution == target.pillar)
+        elif IProduct.providedBy(target.pillar):
+            self.target_arguments = {"product": target.pillar}
+            self.join = (StructuralSubscription.product == target.pillar)
+        else:
+            raise AttributeError(
+                "Invalid pillar for OCIProject subscription: " % target.pillar)
 
 
 @implementer(IStructuralSubscriptionTargetHelper)

@@ -36,6 +36,8 @@ from lp.bugs.interfaces.bugtask import (
     BugTaskStatus,
     )
 from lp.registry.enums import BugSharingPolicy
+from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.features.testing import FeatureFixture
@@ -375,26 +377,54 @@ class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
             }]
         self.assertEqual(expected_guidelines, view.bug_reporting_guidelines)
 
-    def filebug_via_view(self, information_type=None,
-                         bug_sharing_policy=None, extra_data_token=None):
+    def filebug_via_view(self, information_type=None, bug_sharing_policy=None,
+                         extra_data_token=None, target=None):
+        if target is None:
+            target = self.factory.makeProduct(official_malone=True)
+        owner = (target.owner if not IOCIProject.providedBy(target)
+                 else target.registrant)
         form = self.get_form()
         if information_type:
             form['field.information_type'] = information_type
-        product = self.factory.makeProduct(official_malone=True)
         if bug_sharing_policy:
-            self.factory.makeCommercialSubscription(product=product)
-            with person_logged_in(product.owner):
-                product.setBugSharingPolicy(bug_sharing_policy)
-        with person_logged_in(product.owner):
+            if not IProduct.providedBy(target):
+                raise ValueError("Only Product supports this.")
+            self.factory.makeCommercialSubscription(product=target)
+            with person_logged_in(owner):
+                target.setBugSharingPolicy(bug_sharing_policy)
+        with person_logged_in(owner):
             view = create_view(
-                product, '+filebug', method='POST', form=form,
-                principal=product.owner)
+                target, '+filebug', method='POST', form=form,
+                principal=owner)
             if extra_data_token is not None:
                 view = view.publishTraverse(view.request, extra_data_token)
             view.initialize()
             bug_url = view.request.response.getHeader('Location')
             bug_number = bug_url.split('/')[-1]
             return (getUtility(IBugSet).getByNameOrID(bug_number), view)
+
+    def assertFilesBugForTarget(self, target):
+        bug, view = self.filebug_via_view(target=target)
+        self.assertEqual(
+            InformationType.PUBLIC, view.default_information_type)
+        self.assertEqual([target], [i.target for i in bug.bugtasks])
+        self.assertEqual(InformationType.PUBLIC, bug.information_type)
+
+    def test_filebug_distribution(self):
+        # We should be able to open bugs for distributions.
+        self.assertFilesBugForTarget(self.factory.makeDistribution())
+
+    def test_filebug_ociproject_of_distribution(self):
+        # We should be able to open bugs for oci project of a distribution.
+        distro = self.factory.makeDistribution()
+        self.assertFilesBugForTarget(
+            self.factory.makeOCIProject(pillar=distro))
+
+    def test_filebug_ociproject_of_project(self):
+        # We should be able to open bugs for oci project of a project.
+        product = self.factory.makeProduct()
+        self.assertFilesBugForTarget(
+            self.factory.makeOCIProject(pillar=product))
 
     def test_filebug_default_information_type(self):
         # If we don't specify the bug's information_type, it is PUBLIC.

@@ -113,6 +113,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
 from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.productseries import IProductSeries
@@ -1109,6 +1110,7 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
         distroseries_context = self._distroSeriesContext()
         distrosourcepackage_context = self._distroSourcePackageContext()
         sourcepackage_context = self._sourcePackageContext()
+        ociproject_context = self._ociprojectContext()
 
         if (upstream_context or productseries_context or
             distrosourcepackage_context or sourcepackage_context):
@@ -1121,6 +1123,9 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
             return [
                 "id", "summary", "productname", "importance", "status",
                 "heat"]
+        elif ociproject_context:
+            return [
+                "id", "summary", "ociproject", "importance", "status", "heat"]
         else:
             raise AssertionError(
                 "Unrecognized context; don't know which report "
@@ -1529,15 +1534,20 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
 
     @property
     def structural_subscriber_label(self):
-        if IDistribution.providedBy(self.context):
+        if IOCIProject.providedBy(self.context):
+            target = self.context.pillar
+        else:
+            target = self.context
+
+        if IDistribution.providedBy(target):
             return 'Package or series subscriber'
-        elif IDistroSeries.providedBy(self.context):
+        elif IDistroSeries.providedBy(target):
             return 'Package subscriber'
-        elif IProduct.providedBy(self.context):
+        elif IProduct.providedBy(target):
             return 'Series subscriber'
-        elif IProjectGroup.providedBy(self.context):
+        elif IProjectGroup.providedBy(target):
             return 'Project or series subscriber'
-        elif IPerson.providedBy(self.context):
+        elif IPerson.providedBy(target):
             return 'Project, distribution, package, or series subscriber'
         else:
             return None
@@ -1549,7 +1559,12 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
         """
         # It doesn't make sense to show the target name when viewing product
         # bugs.
-        if IProduct.providedBy(self.context):
+        if IOCIProject.providedBy(self.context):
+            target = self.context.pillar
+        else:
+            target = self.context
+
+        if IProduct.providedBy(target):
             return False
         else:
             return True
@@ -1645,6 +1660,13 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
         Return the IDistributionSourcePackage if yes, otherwise return None.
         """
         return IDistributionSourcePackage(self.context, None)
+
+    def _ociprojectContext(self):
+        """Is this page being viewed in an OCI project context?
+
+        Return the IOCIProject if yes, otherwise return None.
+        """
+        return IOCIProject(self.context, None)
 
     @property
     def addquestion_url(self):

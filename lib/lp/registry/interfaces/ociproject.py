@@ -48,10 +48,17 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.app.interfaces.launchpad import IServiceUsage
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
-from lp.bugs.interfaces.bugtarget import IBugTarget
+from lp.bugs.interfaces.bugtarget import (
+    IBugTarget,
+    IHasOfficialBugTags,
+    )
+from lp.bugs.interfaces.structuralsubscription import (
+    IStructuralSubscriptionTarget,
+    )
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
@@ -82,7 +89,8 @@ class OCIProjectRecipeInvalid(Unauthorized):
             "The given recipe is invalid for this OCI project.")
 
 
-class IOCIProjectView(IHasGitRepositories, Interface):
+class IOCIProjectView(IHasGitRepositories, IHasOfficialBugTags, IServiceUsage,
+                      IStructuralSubscriptionTarget, Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
@@ -110,6 +118,11 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     driver = Attribute(_("The driver for this OCI project."))
 
     bug_supervisor = Attribute(_("The bug supervisor for this OCI Project."))
+
+    def getAllowedBugInformationTypes():
+        """Get which InformationTypes are allowed for bugs."""
+
+    title = Attribute(_("A title for this OCI project."))
 
     def getSeriesByName(name):
         """Get an OCIProjectSeries for this OCIProject by series' name."""
