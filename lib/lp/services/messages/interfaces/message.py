@@ -21,9 +21,11 @@ from lazr.delegates import delegate_to
 from lazr.restful.declarations import (
     accessor_for,
     export_read_operation,
+    export_write_operation,
     exported,
     exported_as_webservice_entry,
     operation_for_version,
+    operation_parameters,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -51,6 +53,13 @@ from lp.services.webservice.apihelpers import patch_reference_property
 
 class IMessageEdit(Interface):
 
+    @export_write_operation()
+    @operation_parameters(
+        new_content=TextLine(
+            title=_("Message content"),
+            description=_("The new message content string"),
+            required=True))
+    @operation_for_version("devel")
     def edit_content(new_content):
         """Edit the content of this message, generating a new message
         revision with the old content.

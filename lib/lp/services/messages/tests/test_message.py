@@ -13,6 +13,7 @@ from email.utils import (
     )
 
 import six
+from testscenarios import WithScenarios
 from testtools.matchers import (
     Equals,
     Is,
@@ -25,8 +26,11 @@ from zope.security.proxy import ProxyFactory
 from lp.services.compat import message_as_bytes
 from lp.services.messages.model.message import MessageSet
 from lp.services.utils import utc_now
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    api_url,
     login,
+    login_person,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -34,6 +38,7 @@ from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
     )
+from lp.testing.pages import webservice_for_person
 
 
 class TestMessageSet(TestCaseWithFactory):
@@ -260,3 +265,44 @@ class TestMessageEditing(TestCaseWithFactory):
         self.assertEqual(0, len(msg.chunks))
         self.assertIsNotNone(msg.date_deleted)
         self.assertTrue(after_delete > msg.date_deleted > before_delete)
+
+
+class TestMessageEditingAPI(WithScenarios, TestCaseWithFactory):
+    """Test editing scenarios for Message editing API."""
+
+    layer = DatabaseFunctionalLayer
+
+    scenarios = [
+        ("bug", {"message_type": "bug"}),
+        ("question", {"message_type": "question"}),
+        ]
+
+    def setUp(self):
+        super(TestMessageEditingAPI, self).setUp()
+        self.person = self.factory.makePerson()
+        login_person(self.person)
+
+    def makeMessage(self, content=None, **kwargs):
+        if self.message_type == "bug":
+            return self.factory.makeBugComment(
+                owner=self.person, body=content, **kwargs)
+        elif self.message_type == "question":
+            question = self.factory.makeQuestion()
+            return question.giveAnswer(self.person, content)
+
+    def getWebservice(self, person):
+        return webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+
+    def test_edit_message(self):
+        msg = self.makeMessage(content="initial content")
+        ws = self.getWebservice(msg.owner)
+        with person_logged_in(self.person):
+            url = api_url(msg)
+        response = ws.named_post(
+            url, 'edit_content', new_content="the new content")
+        self.assertEqual(200, response.status)
+
+        new_obj = ws.get(url).jsonBody()
+        self.assertEqual("the new content", new_obj['content'])

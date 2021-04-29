@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Question views."""
@@ -109,6 +109,7 @@ from lp.services.webapp import (
     Link,
     Navigation,
     NavigationMenu,
+    stepthrough,
     )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import Breadcrumb
@@ -255,6 +256,17 @@ class QuestionSetNavigation(Navigation):
             raise NotFoundError(name)
         return self.redirectSubTree(
             canonical_url(question, self.request), status=301)
+
+
+class QuestionNavigation(Navigation):
+    """Navigation for the IQuestion."""
+
+    usedfor = IQuestion
+
+    @stepthrough('messages')
+    def traverse_comments(self, index):
+        index = int(index) - 1
+        return self.context.messages[index]
 
 
 class QuestionBreadcrumb(Breadcrumb):

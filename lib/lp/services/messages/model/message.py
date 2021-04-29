@@ -205,7 +205,6 @@ class Message(SQLBase):
         del get_property_cache(self).text_contents
         del get_property_cache(self).chunks
         del get_property_cache(self).revisions
-        return rev
 
     def delete_content(self):
         """See `IMessage`."""
