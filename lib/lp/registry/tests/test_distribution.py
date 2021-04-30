@@ -28,6 +28,7 @@ from lp.app.enums import (
     )
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -761,7 +762,7 @@ class DistributionOCIProjectAdminPermission(TestCaseWithFactory):
         self.assertTrue(distro.canAdministerOCIProjects(admin))
 
 
-class TestDistributionWebservice(TestCaseWithFactory):
+class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
     """Test the IDistribution API.
 
     Some tests already exist in xx-distribution.txt.
@@ -842,3 +843,83 @@ class TestDistributionWebservice(TestCaseWithFactory):
             start_date=(now - day).isoformat(),
             end_date=now.isoformat())
         self.assertEqual([], empty_response.jsonBody())
+
+    def test_setOCICredentials(self):
+        # We can add OCI Credentials to the distribution
+        self.setConfig()
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            distro.oci_project_admin = self.person
+            distro_url = api_url(distro)
+
+        resp = self.webservice.named_post(
+            distro_url,
+            "setOCICredentials",
+            registry_url="http://registry.test",
+        )
+
+        self.assertEqual(200, resp.status)
+        with person_logged_in(self.person):
+            self.assertEqual(
+                "http://registry.test",
+                distro.oci_registry_credentials.url
+            )
+
+    def test_setOCICredentials_no_oci_admin(self):
+        # If there's no oci_project_admin to own the credentials, error
+        self.setConfig()
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            distro_url = api_url(distro)
+
+        resp = self.webservice.named_post(
+            distro_url,
+            "setOCICredentials",
+            registry_url="http://registry.test",
+        )
+
+        self.assertEqual(400, resp.status)
+        self.assertIn(
+            b"no OCI Project Admin for this distribution",
+            resp.body)
+
+    def test_setOCICredentials_changes_credentials(self):
+        # if we have existing credentials, we should change them
+        self.setConfig()
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            distro.oci_project_admin = self.person
+            credentials = self.factory.makeOCIRegistryCredentials()
+            distro.oci_registry_credentials = credentials
+            distro_url = api_url(distro)
+
+        resp = self.webservice.named_post(
+            distro_url,
+            "setOCICredentials",
+            registry_url="http://registry.test",
+        )
+
+        self.assertEqual(200, resp.status)
+        with person_logged_in(self.person):
+            self.assertEqual(
+                "http://registry.test",
+                distro.oci_registry_credentials.url
+            )
+
+    def test_deleteOCICredentials(self):
+        # We can remove existing credentials
+        self.setConfig()
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            distro.oci_project_admin = self.person
+            credentials = self.factory.makeOCIRegistryCredentials()
+            distro.oci_registry_credentials = credentials
+            distro_url = api_url(distro)
+
+        resp = self.webservice.named_post(
+            distro_url,
+            "deleteOCICredentials")
+
+        self.assertEqual(200, resp.status)
+        with person_logged_in(self.person):
+            self.assertIsNone(distro.oci_registry_credentials)

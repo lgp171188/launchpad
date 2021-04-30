@@ -89,6 +89,7 @@ from lp.bugs.model.structuralsubscription import (
 from lp.code.interfaces.seriessourcepackagebranch import (
     IFindOfficialBranchLinks,
     )
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -101,6 +102,7 @@ from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
+    NoOCIAdminForDistribution,
     )
 from lp.registry.interfaces.distributionmirror import (
     IDistributionMirror,
@@ -1530,6 +1532,32 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         return getUtility(IOCIProjectSet).new(
             pillar=self, registrant=registrant, name=name,
             description=description)
+
+    def setOCICredentials(self, registrant, registry_url,
+                          region, username, password):
+        """See `IDistribution`."""
+        if not self.oci_project_admin:
+            raise NoOCIAdminForDistribution()
+        new_credentials = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
+            registrant,
+            self.oci_project_admin,
+            registry_url,
+            {"username": username, "password": password, "region": region},
+            override_owner=True)
+        old_credentials = self.oci_registry_credentials
+        if self.oci_registry_credentials != new_credentials:
+            # Remove the old credentials as we're assigning new ones
+            # or clearing them
+            self.oci_registry_credentials = new_credentials
+            if old_credentials:
+                old_credentials.destroySelf()
+
+    def deleteOCICredentials(self):
+        """See `IDistribution`."""
+        old_credentials = self.oci_registry_credentials
+        if old_credentials:
+            self.oci_registry_credentials = None
+            old_credentials.destroySelf()
 
 
 @implementer(IDistributionSet)
