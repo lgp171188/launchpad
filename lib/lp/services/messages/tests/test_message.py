@@ -21,13 +21,17 @@ from testtools.matchers import (
     )
 import transaction
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import ProxyFactory
+from zope.security.proxy import removeSecurityProxy
 
+from lp.bugs.interfaces.bugmessage import IBugMessage
+from lp.bugs.model.bugmessage import BugMessage
 from lp.services.compat import message_as_bytes
+from lp.services.database.interfaces import IStore
 from lp.services.messages.model.message import MessageSet
 from lp.services.utils import utc_now
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    admin_logged_in,
     api_url,
     login,
     login_person,
@@ -188,16 +192,49 @@ class TestMessageSet(TestCaseWithFactory):
         self.assertEqual(self.high_characters.decode('latin-1'), result)
 
 
-class TestMessageEditing(TestCaseWithFactory):
+class MessageTypeScenariosMixin(WithScenarios):
+
+    scenarios = [
+        ("bug", {"message_type": "bug"}),
+        ("question", {"message_type": "question"}),
+        ("MP comment", {"message_type": "mp"})
+        ]
+
+    def setUp(self):
+        super(MessageTypeScenariosMixin, self).setUp()
+        self.person = self.factory.makePerson()
+        login_person(self.person)
+
+    def makeMessage(self, content=None, **kwargs):
+        owner = kwargs.pop('owner', self.person)
+        if self.message_type == "bug":
+            msg = self.factory.makeBugComment(
+                owner=owner, body=content, **kwargs)
+            return IStore(BugMessage).find(
+                BugMessage, BugMessage.message == msg).one()
+        elif self.message_type == "question":
+            question = self.factory.makeQuestion()
+            return question.giveAnswer(owner, content)
+        elif self.message_type == "mp":
+            return self.factory.makeCodeReviewComment(
+                sender=owner, body=content)
+
+
+class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
     """Test editing scenarios for Message objects."""
 
     layer = DatabaseFunctionalLayer
 
-    def makeMessage(self, owner=None, content=None):
-        if owner is None:
-            owner = self.factory.makePerson()
-        msg = self.factory.makeMessage(owner=owner, content=content)
-        return ProxyFactory(msg)
+    def assertIsMessageHistory(
+            self, msg_history, msg, created_at, content, deleted_at=None):
+        """Asserts that `msg_history` is a message a message history of
+        `msg` with the given extra info.
+        """
+        self.assertThat(msg_history, MatchesStructure(
+            content=Equals(content),
+            message=Equals(removeSecurityProxy(msg).message),
+            date_created=Equals(created_at),
+            date_deleted=Is(deleted_at)))
 
     def test_non_owner_cannot_edit_message(self):
         msg = self.makeMessage()
@@ -212,11 +249,9 @@ class TestMessageEditing(TestCaseWithFactory):
             msg.edit_content("This is the new content")
         self.assertEqual("This is the new content", msg.text_contents)
         self.assertEqual(1, len(msg.revisions))
-        self.assertThat(msg.revisions[0], MatchesStructure(
-            content=Equals("initial content"),
-            message=Equals(msg),
-            date_created=Equals(msg.datecreated),
-            date_deleted=Is(None)))
+        self.assertIsMessageHistory(
+            msg.revisions[0], msg,
+            created_at=msg.datecreated, content="initial content")
 
     def test_multiple_edits_revisions(self):
         owner = self.factory.makePerson()
@@ -226,26 +261,20 @@ class TestMessageEditing(TestCaseWithFactory):
             first_edit_date = msg.date_last_edit
         self.assertEqual("first edit", msg.text_contents)
         self.assertEqual(1, len(msg.revisions))
-        self.assertThat(msg.revisions[0], MatchesStructure(
-            content=Equals("initial content"),
-            message=Equals(msg),
-            date_created=Equals(msg.datecreated),
-            date_deleted=Is(None)))
+        self.assertIsMessageHistory(
+            msg.revisions[0], msg,
+            content="initial content", created_at=msg.datecreated)
 
         with person_logged_in(owner):
             msg.edit_content("final form")
         self.assertEqual("final form", msg.text_contents)
         self.assertEqual(2, len(msg.revisions))
-        self.assertThat(msg.revisions[0], MatchesStructure(
-            content=Equals("first edit"),
-            message=Equals(msg),
-            date_created=Equals(first_edit_date),
-            date_deleted=Is(None)))
-        self.assertThat(msg.revisions[1], MatchesStructure(
-            content=Equals("initial content"),
-            message=Equals(msg),
-            date_created=Equals(msg.datecreated),
-            date_deleted=Is(None)))
+        self.assertIsMessageHistory(
+            msg.revisions[0], msg,
+            content="first edit", created_at=first_edit_date)
+        self.assertIsMessageHistory(
+            msg.revisions[1], msg,
+            content="initial content", created_at=msg.datecreated)
 
     def test_non_owner_cannot_delete_message(self):
         owner = self.factory.makePerson()
@@ -267,42 +296,29 @@ class TestMessageEditing(TestCaseWithFactory):
         self.assertTrue(after_delete > msg.date_deleted > before_delete)
 
 
-class TestMessageEditingAPI(WithScenarios, TestCaseWithFactory):
+class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
     """Test editing scenarios for Message editing API."""
 
     layer = DatabaseFunctionalLayer
-
-    scenarios = [
-        ("bug", {"message_type": "bug"}),
-        ("question", {"message_type": "question"}),
-        ("MP comment", {"message_type": "mp"})
-        ]
-
-    def setUp(self):
-        super(TestMessageEditingAPI, self).setUp()
-        self.person = self.factory.makePerson()
-        login_person(self.person)
-
-    def makeMessage(self, content=None, **kwargs):
-        if self.message_type == "bug":
-            return self.factory.makeBugComment(
-                owner=self.person, body=content, **kwargs)
-        elif self.message_type == "question":
-            question = self.factory.makeQuestion()
-            return question.giveAnswer(self.person, content)
-        elif self.message_type == "mp":
-            return self.factory.makeCodeReviewComment(sender=self.person)
 
     def getWebservice(self, person):
         return webservice_for_person(
             person, permission=OAuthPermission.WRITE_PUBLIC,
             default_api_version="devel")
 
+    def getMessageAPIURL(self, msg):
+        with admin_logged_in():
+            if IBugMessage.providedBy(msg):
+                # BugMessage has a special URL mapping that uses the
+                # IMessage object itself.
+                return api_url(msg.message)
+            else:
+                return api_url(msg)
+
     def test_edit_message(self):
         msg = self.makeMessage(content="initial content")
         ws = self.getWebservice(self.person)
-        with person_logged_in(self.person):
-            url = api_url(msg)
+        url = self.getMessageAPIURL(msg)
         response = ws.named_post(
             url, 'edit_content', new_content="the new content")
         self.assertEqual(200, response.status)

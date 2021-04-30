@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -6,6 +6,7 @@ __all__ = ['BugMessage', 'BugMessageSet']
 
 from email.utils import make_msgid
 
+from lazr.delegates import delegate_to
 import six
 from storm.properties import (
     Int,
@@ -22,13 +23,15 @@ from lp.bugs.interfaces.bugmessage import (
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.messages.interfaces.message import IMessage
 from lp.services.messages.model.message import (
     Message,
     MessageChunk,
     )
 
 
-@implementer(IBugMessage)
+@implementer(IBugMessage, IMessage)
+@delegate_to(IMessage, context='message')
 class BugMessage(StormBase):
     """A table linking bugs and messages."""
 

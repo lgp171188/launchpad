@@ -198,9 +198,11 @@ The comments on a branch merge proposal are exposed through the API.
     as_quoted_email: '> This is great work'
     author_link: 'http://api.launchpad.test/devel/~...'
     branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
+    content: 'This is great work'
     date_created: '...'
     id: ...
     message_body: 'This is great work'
+    owner_link: 'http://...'
     resource_type_link: 'http://.../#code_review_comment'
     self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
     title: 'Comment on proposed merge of lp://dev/~source/fooix/fix-it into lp://dev/~target/fooix/trunk'
@@ -216,9 +218,11 @@ The comments on a branch merge proposal are exposed through the API.
     as_quoted_email: '> This is mediocre work.'
     author_link: 'http://api.launchpad.test/devel/~...'
     branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
+    content: 'This is mediocre work.'
     date_created: '...'
     id: ...
     message_body: 'This is mediocre work.'
+    owner_link: 'http://...'
     resource_type_link: 'http://.../#code_review_comment'
     self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
     title: ...
@@ -290,9 +294,11 @@ Now the code review should be made.
     as_quoted_email: '> This is great work'
     author_link: 'http://api.launchpad.test/devel/~...'
     branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
+    content: 'This is great work'
     date_created: '...'
     id: ...
     message_body: 'This is great work'
+    owner_link: 'http://...'
     resource_type_link: 'http://.../#code_review_comment'
     self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
     title: ...

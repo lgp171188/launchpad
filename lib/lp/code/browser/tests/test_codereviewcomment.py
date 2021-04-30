@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for CodeReviewComments."""
@@ -56,7 +56,8 @@ class TestCodeReviewComments(TestCaseWithFactory):
 
         display_comment = CodeReviewDisplayComment(comment)
 
-        verifyObject(ICodeReviewDisplayComment, display_comment)
+        with person_logged_in(comment.owner):
+            verifyObject(ICodeReviewDisplayComment, display_comment)
 
     def test_extra_css_classes_visibility(self):
         author = self.factory.makePerson()

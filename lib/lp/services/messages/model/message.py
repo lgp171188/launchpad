@@ -210,6 +210,8 @@ class Message(SQLBase):
         """See `IMessage`."""
         for chunk in self._chunks:
             chunk.destroySelf()
+        del get_property_cache(self).chunks
+        del get_property_cache(self).text_contents
         self.date_deleted = utc_now()
 
 

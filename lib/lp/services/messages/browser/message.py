@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Message related view classes."""
@@ -45,14 +45,28 @@ class IndexedBugMessageCanonicalUrlData:
         self.path = "comments/%d" % message.index
 
 
+@implementer(ICanonicalUrlData)
+class CodeReviewCommentCanonicalUrlData:
+    """An optimized bug message canonical_url implementation.
+    """
+    rootsite = 'code'
+
+    def __init__(self, message):
+        self.inside = message.branch_merge_proposal
+        self.path = "comments/%d" % message.id
+
+
 def message_to_canonical_url_data(message):
     """This factory creates `ICanonicalUrlData` for Message."""
     # Circular imports
     from lp.answers.interfaces.questionmessage import IQuestionMessage
+    from lp.code.interfaces.codereviewcomment import ICodeReviewComment
     if IIndexedMessage.providedBy(message):
         return IndexedBugMessageCanonicalUrlData(message)
     elif IQuestionMessage.providedBy(message):
         return QuestionMessageCanonicalUrlData(message.question, message)
+    elif ICodeReviewComment.providedBy(message):
+        return CodeReviewCommentCanonicalUrlData(message)
     else:
         if message.bugs.count() == 0:
         # Will result in a ComponentLookupError
