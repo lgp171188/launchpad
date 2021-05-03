@@ -18,7 +18,7 @@ class QuestionMessageCanonicalUrlData:
 
     def __init__(self, question, message):
         self.inside = question
-        self.path = "messages/%d" % list(question.messages).index(message)
+        self.path = "messages/%d" % message.display_index
 
 
 @implementer(ICanonicalUrlData)

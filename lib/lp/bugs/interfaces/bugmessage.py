@@ -33,7 +33,6 @@ from lp.services.comments.interfaces.conversation import IComment
 from lp.services.fields import Title
 from lp.services.messages.interfaces.message import (
     IMessage,
-    IMessageEdit,
     IMessageView,
     )
 
@@ -61,7 +60,7 @@ class IBugMessageView(IMessageView, IHasBug):
         title=u"The Message owner mirrored from the message.", readonly=True)
 
 
-class IBugMessage(IBugMessageView, IMessageEdit):
+class IBugMessage(IBugMessageView, IMessage):
     """A link between a bug and a message."""
 
 

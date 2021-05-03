@@ -30,7 +30,7 @@ from lp.services.messages.model.message import (
     )
 
 
-@implementer(IBugMessage, IMessage)
+@implementer(IBugMessage)
 @delegate_to(IMessage, context='message')
 class BugMessage(StormBase):
     """A table linking bugs and messages."""
