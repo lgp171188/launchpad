@@ -1,4 +1,4 @@
-# Copyright 2004-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2004-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug message interfaces."""
@@ -31,11 +31,15 @@ from lp.bugs.interfaces.hasbug import IHasBug
 from lp.registry.interfaces.person import IPerson
 from lp.services.comments.interfaces.conversation import IComment
 from lp.services.fields import Title
-from lp.services.messages.interfaces.message import IMessage
+from lp.services.messages.interfaces.message import (
+    IMessage,
+    IMessageEdit,
+    IMessageView,
+    )
 
 
-class IBugMessage(IHasBug):
-    """A link between a bug and a message."""
+class IBugMessageView(IMessageView, IHasBug):
+    """Public attributes for a link between a bug and a message."""
 
     bug = Object(schema=IBug, title=u"The bug.")
     # The index field is being populated in the DB; once complete it will be
@@ -55,6 +59,10 @@ class IBugMessage(IHasBug):
     owner_id = Attribute("The ID of the owner mirrored from the message")
     owner = Object(schema=IPerson,
         title=u"The Message owner mirrored from the message.", readonly=True)
+
+
+class IBugMessage(IBugMessageView, IMessageEdit):
+    """A link between a bug and a message."""
 
 
 class IBugMessageSet(Interface):

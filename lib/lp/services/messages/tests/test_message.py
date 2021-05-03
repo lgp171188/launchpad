@@ -21,7 +21,10 @@ from testtools.matchers import (
     )
 import transaction
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import removeSecurityProxy
+from zope.security.proxy import (
+    ProxyFactory,
+    removeSecurityProxy,
+    )
 
 from lp.bugs.interfaces.bugmessage import IBugMessage
 from lp.bugs.model.bugmessage import BugMessage
@@ -210,8 +213,8 @@ class MessageTypeScenariosMixin(WithScenarios):
         if self.message_type == "bug":
             msg = self.factory.makeBugComment(
                 owner=owner, body=content, **kwargs)
-            return IStore(BugMessage).find(
-                BugMessage, BugMessage.message == msg).one()
+            return ProxyFactory(IStore(BugMessage).find(
+                BugMessage, BugMessage.message == msg).one())
         elif self.message_type == "question":
             question = self.factory.makeQuestion()
             return question.giveAnswer(owner, content)
