@@ -1458,7 +1458,8 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 owner=self.person)
             oci_project = self.factory.makeOCIProject(
                 pillar=distro, registrant=self.person)
-            git_ref = self.factory.makeGitRefs()[0]
+            [git_ref] = self.factory.makeGitRefs(
+                paths=['refs/heads/v1.0-20.04'])
 
             oci_project_url = api_url(oci_project)
             git_ref_url = api_url(git_ref)
@@ -1489,6 +1490,30 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 registrant_link=Equals(self.getAbsoluteURL(self.person)),
                 build_args=Equals({"VAR": "VAR VALUE"})
             )))
+
+    def test_api_create_oci_recipe_invalid_branch_format(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(
+                owner=self.person)
+            oci_project = self.factory.makeOCIProject(
+                pillar=distro, registrant=self.person)
+            [git_ref] = self.factory.makeGitRefs(
+                paths=['refs/heads/invalid-branch'])
+
+            oci_project_url = api_url(oci_project)
+            git_ref_url = api_url(git_ref)
+            person_url = api_url(self.person)
+
+        obj = {
+            "name": "my-recipe",
+            "owner": person_url,
+            "git_ref": git_ref_url,
+            "build_file": "./Dockerfile",
+            "build_args": {"VAR": "VAR VALUE"},
+            "description": "My recipe"}
+
+        resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
+        self.assertEqual(400, resp.status, resp.body)
 
     def test_api_create_oci_recipe_non_legitimate_user(self):
         """Ensure that a non-legitimate user cannot create recipe using API"""
@@ -1527,7 +1552,8 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 owner=self.person)
             oci_project = self.factory.makeOCIProject(
                 pillar=distro, registrant=self.person)
-            git_ref = self.factory.makeGitRefs()[0]
+            [git_ref] = self.factory.makeGitRefs(
+                paths=['refs/heads/v1.0-20.04'])
 
             oci_project_url = api_url(oci_project)
             git_ref_url = api_url(git_ref)

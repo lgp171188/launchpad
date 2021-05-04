@@ -19,6 +19,7 @@ __all__ = [
     'NoSuchOCIRecipe',
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeFeatureDisabled',
+    'OCIRecipeBranchHasInvalidFormat',
     'OCIRecipeNotOwner',
     'OCIRecipePrivacyMismatch',
     'OCI_RECIPE_ALLOW_CREATE',
@@ -163,6 +164,15 @@ class OCIRecipePrivacyMismatch(Exception):
             message or
             "OCI recipe contains private information and cannot be public.")
 
+
+@error_status(http_client.BAD_REQUEST)
+class OCIRecipeBranchHasInvalidFormat(Exception):
+    """The branch name for the OCI recipe does not match the correct format."""
+
+    def __init__(self):
+        super(OCIRecipeBranchHasInvalidFormat, self).__init__(
+            "The branch name for the OCI recipe does not "
+            "match the correct format.")
 
 @exported_as_webservice_entry(
     publish_web_link=True, as_of="devel",

@@ -87,6 +87,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_BUILD_DISTRIBUTION,
     OCIRecipeBuildAlreadyPending,
     OCIRecipeFeatureDisabled,
+    OCIRecipeBranchHasInvalidFormat,
     OCIRecipeNotOwner,
     OCIRecipePrivacyMismatch,
     UsingDistributionCredentials,
@@ -840,6 +841,9 @@ class OCIRecipeSet:
 
         if self.exists(owner, oci_project, name):
             raise DuplicateOCIRecipeName
+
+        if not validate_oci_branch_name(git_ref.name):
+            raise OCIRecipeBranchHasInvalidFormat
 
         if build_path is None:
             build_path = "."
