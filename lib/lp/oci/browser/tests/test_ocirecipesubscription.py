@@ -42,7 +42,7 @@ class BaseTestOCIRecipeView(OCIConfigHelperMixin, BrowserTestCase):
     def makeOCIRecipe(self, oci_project=None, **kwargs):
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
-            paths=["refs/heads/master"])
+            paths=["refs/heads/v1.0-20.04"])
         if oci_project is None:
             project = self.factory.makeProduct(
                 owner=self.person, registrant=self.person)
