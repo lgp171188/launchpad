@@ -180,7 +180,7 @@ class Message(SQLBase):
             MessageRevision.message == self
         ).order_by(Desc(MessageRevision.date_created)))
 
-    def edit_content(self, new_content):
+    def editContent(self, new_content):
         """See `IMessage`."""
         store = Store.of(self)
         old_content = self.text_contents
@@ -207,7 +207,7 @@ class Message(SQLBase):
         del get_property_cache(self).revisions
         return rev
 
-    def delete_content(self):
+    def deleteContent(self):
         """See `IMessage`."""
         for chunk in self._chunks:
             chunk.destroySelf()

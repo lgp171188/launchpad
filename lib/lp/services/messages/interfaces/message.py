@@ -51,12 +51,12 @@ from lp.services.webservice.apihelpers import patch_reference_property
 
 class IMessageEdit(Interface):
 
-    def edit_content(new_content):
+    def editContent(new_content):
         """Edit the content of this message, generating a new message
         revision with the old content.
         """
 
-    def delete_content():
+    def deleteContent():
         """Deletes this message content."""
 
 
