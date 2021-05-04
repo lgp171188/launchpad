@@ -1577,8 +1577,12 @@ class Bug(SQLBase, InformationTypeMixin):
         # We expect:
         # 1 bugmessage -> 1 message -> small N chunks. For now, using a wide
         # query seems fine as we have to join out from bugmessage anyway.
-        result = Store.of(self).find((BugMessage, Message, MessageChunk),
-            Message.id == MessageChunk.messageID,
+        # Since "soft-deleted" messages will have 0 chunks, we should use
+        # left join here.
+        message_join = LeftJoin(
+            Message, MessageChunk, Message.id == MessageChunk.messageID)
+        query = Store.of(self).using(BugMessage, message_join)
+        result = query.find((BugMessage, Message, MessageChunk),
             BugMessage.message_id == Message.id,
             BugMessage.bug == self.id, *ranges)
         result.order_by(BugMessage.index, MessageChunk.sequence)

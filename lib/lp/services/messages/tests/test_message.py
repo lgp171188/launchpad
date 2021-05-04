@@ -326,5 +326,44 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
             url, 'edit_content', new_content="the new content")
         self.assertEqual(200, response.status)
 
-        new_obj = ws.get(url).jsonBody()
-        self.assertEqual("the new content", new_obj['content'])
+        edited_obj = ws.get(url).jsonBody()
+        self.assertEqual("the new content", edited_obj['content'])
+        self.assertIsNone(edited_obj["date_deleted"])
+        self.assertIsNotNone(edited_obj["date_last_edit"])
+
+    def test_edit_message_permission_denied_for_non_owner(self):
+        msg = self.makeMessage(content="initial content")
+        ws = self.getWebservice(self.factory.makePerson())
+        url = self.getMessageAPIURL(msg)
+        response = ws.named_post(
+            url, 'edit_content', new_content="the new content")
+        self.assertEqual(401, response.status)
+
+        edited_obj = ws.get(url).jsonBody()
+        self.assertEqual("initial content", edited_obj['content'])
+        self.assertIsNone(edited_obj["date_deleted"])
+        self.assertIsNone(edited_obj["date_last_edit"])
+
+    def test_delete_message(self):
+        msg = self.makeMessage(content="initial content")
+        ws = self.getWebservice(self.person)
+        url = self.getMessageAPIURL(msg)
+
+        response = ws.named_post(url, 'delete_content')
+        self.assertEqual(200, response.status)
+
+        deleted_obj = ws.get(url).jsonBody()
+        self.assertEqual("", deleted_obj['content'])
+        self.assertIsNotNone(deleted_obj['date_deleted'])
+
+    def test_delete_message_permission_denied_for_non_owner(self):
+        msg = self.makeMessage(content="initial content")
+        ws = self.getWebservice(self.factory.makePerson())
+        url = self.getMessageAPIURL(msg)
+
+        response = ws.named_post(url, 'delete_content')
+        self.assertEqual(401, response.status)
+
+        obj = ws.get(url).jsonBody()
+        self.assertEqual("initial content", obj['content'])
+        self.assertIsNone(obj['date_deleted'])

@@ -9,6 +9,7 @@ __all__ = [
     'IMessage',
     'IMessageChunk',
     'IMessageCommon',
+    'IMessageEdit',
     'IMessageSet',
     'IMessageView',
     'IUserToUserEmail',
@@ -67,6 +68,8 @@ class IMessageEdit(Interface):
         revision with the old content.
         """
 
+    @export_write_operation()
+    @operation_for_version("devel")
     def delete_content():
         """Deletes this message content."""
 
@@ -89,12 +92,12 @@ class IMessageCommon(Interface):
     datecreated = exported(
         Datetime(title=_('Date Created'), required=True, readonly=True),
         exported_as='date_created')
-    date_last_edit = Datetime(
+    date_last_edit = exported(Datetime(
         title=_('When this message was last edited'), required=False,
-        readonly=True)
-    date_deleted = Datetime(
+        readonly=True))
+    date_deleted = exported(Datetime(
         title=_('When this message was deleted'), required=False,
-        readonly=True)
+        readonly=True))
 
 
 class IMessageView(IMessageCommon):

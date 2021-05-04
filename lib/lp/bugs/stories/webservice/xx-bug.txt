@@ -234,6 +234,8 @@ Each bug has a collection of messages.
      'http://.../firefox/+bug/5/comments/0/bug_attachments'
     content: 'All ways of downloading firefox should provide...'
     date_created: '2005-01-14T17:27:03.702622+00:00'
+    date_deleted: None
+    date_last_edit: None
     owner_link: 'http://.../~name12'
     parent_link: None
     resource_type_link: 'http://.../#message'
@@ -1347,6 +1349,8 @@ attachment. This is where our comment is recorded.
     bug_attachments_collection_link: 'http://.../firefox/+bug/1/comments/2/bug_attachments'
     content: 'The numbers you asked for.'
     date_created: '...'
+    date_deleted: None
+    date_last_edit: None
     owner_link: 'http://.../~salgado'
     parent_link: None
     resource_type_link: 'http://.../#message'

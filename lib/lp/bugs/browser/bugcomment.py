@@ -1,4 +1,4 @@
-# Copyright 2006-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2006-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug comment browser view classes."""
@@ -72,7 +72,10 @@ def build_comments_from_chunks(
         cache = get_property_cache(message)
         if getattr(cache, 'chunks', None) is None:
             cache.chunks = []
-        cache.chunks.append(removeSecurityProxy(chunk))
+        # Soft-deleted messages will have None chunk here. Skip cache
+        # filling in this case.
+        if chunk is not None:
+            cache.chunks.append(removeSecurityProxy(chunk))
         bug_comment = comments.get(message.id)
         if bug_comment is None:
             if bugmessage.index == 0 and hide_first:
