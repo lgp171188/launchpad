@@ -243,13 +243,13 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         msg = self.makeMessage()
         someone_else = self.factory.makePerson()
         with person_logged_in(someone_else):
-            self.assertRaises(Unauthorized, getattr, msg, "edit_content")
+            self.assertRaises(Unauthorized, getattr, msg, "editContent")
 
     def test_msg_owner_can_edit(self):
         owner = self.factory.makePerson()
         msg = self.makeMessage(owner=owner, content="initial content")
         with person_logged_in(owner):
-            msg.edit_content("This is the new content")
+            msg.editContent("This is the new content")
         self.assertEqual("This is the new content", msg.text_contents)
         self.assertEqual(1, len(msg.revisions))
         self.assertIsMessageHistory(
@@ -260,7 +260,7 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         owner = self.factory.makePerson()
         msg = self.makeMessage(owner=owner, content="initial content")
         with person_logged_in(owner):
-            msg.edit_content("first edit")
+            msg.editContent("first edit")
             first_edit_date = msg.date_last_edit
         self.assertEqual("first edit", msg.text_contents)
         self.assertEqual(1, len(msg.revisions))
@@ -269,7 +269,7 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
             content="initial content", created_at=msg.datecreated)
 
         with person_logged_in(owner):
-            msg.edit_content("final form")
+            msg.editContent("final form")
         self.assertEqual("final form", msg.text_contents)
         self.assertEqual(2, len(msg.revisions))
         self.assertIsMessageHistory(
@@ -284,14 +284,14 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         msg = self.makeMessage(owner=owner, content="initial content")
         someone_else = self.factory.makePerson()
         with person_logged_in(someone_else):
-            self.assertRaises(Unauthorized, getattr, msg, "delete_content")
+            self.assertRaises(Unauthorized, getattr, msg, "deleteContent")
 
     def test_delete_message(self):
         owner = self.factory.makePerson()
         msg = self.makeMessage(owner=owner, content="initial content")
         with person_logged_in(owner):
             before_delete = utc_now()
-            msg.delete_content()
+            msg.deleteContent()
             after_delete = utc_now()
         self.assertEqual('', msg.text_contents)
         self.assertEqual(0, len(msg.chunks))
@@ -323,7 +323,7 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         ws = self.getWebservice(self.person)
         url = self.getMessageAPIURL(msg)
         response = ws.named_post(
-            url, 'edit_content', new_content="the new content")
+            url, 'editContent', new_content="the new content")
         self.assertEqual(200, response.status)
 
         edited_obj = ws.get(url).jsonBody()
@@ -336,7 +336,7 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         ws = self.getWebservice(self.factory.makePerson())
         url = self.getMessageAPIURL(msg)
         response = ws.named_post(
-            url, 'edit_content', new_content="the new content")
+            url, 'editContent', new_content="the new content")
         self.assertEqual(401, response.status)
 
         edited_obj = ws.get(url).jsonBody()
@@ -349,7 +349,7 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         ws = self.getWebservice(self.person)
         url = self.getMessageAPIURL(msg)
 
-        response = ws.named_post(url, 'delete_content')
+        response = ws.named_post(url, 'deleteContent')
         self.assertEqual(200, response.status)
 
         deleted_obj = ws.get(url).jsonBody()
@@ -361,7 +361,7 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         ws = self.getWebservice(self.factory.makePerson())
         url = self.getMessageAPIURL(msg)
 
-        response = ws.named_post(url, 'delete_content')
+        response = ws.named_post(url, 'deleteContent')
         self.assertEqual(401, response.status)
 
         obj = ws.get(url).jsonBody()

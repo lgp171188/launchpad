@@ -63,14 +63,14 @@ class IMessageEdit(Interface):
             description=_("The new message content string"),
             required=True))
     @operation_for_version("devel")
-    def edit_content(new_content):
+    def editContent(new_content):
         """Edit the content of this message, generating a new message
         revision with the old content.
         """
 
     @export_write_operation()
     @operation_for_version("devel")
-    def delete_content():
+    def deleteContent():
         """Deletes this message content."""
 
 
