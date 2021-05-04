@@ -178,7 +178,7 @@ class Message(SQLBase):
         return list(Store.of(self).find(
             MessageRevision,
             MessageRevision.message == self
-        ).order_by(Desc(MessageRevision.date_created)))
+        ).order_by(MessageRevision.date_created))
 
     def editContent(self, new_content):
         """See `IMessage`."""

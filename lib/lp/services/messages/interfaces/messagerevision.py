@@ -9,6 +9,10 @@ __all__ = [
     'IMessageRevision'
     ]
 
+from lazr.restful.declarations import (
+    exported,
+    exported_as_webservice_entry,
+    )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
 from zope.schema import (
@@ -21,25 +25,31 @@ from lp import _
 from lp.services.messages.interfaces.message import IMessage
 
 
+@exported_as_webservice_entry(publish_web_link=False, as_of="devel")
 class IMessageRevisionView(Interface):
     """IMessageRevision readable attributes."""
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    content = Text(
+    content = exported(Text(
         title=_("The message at the given revision"),
-        required=False, readonly=True)
+        required=False, readonly=True))
 
     message = Reference(
         title=_('The current message of this revision.'),
         schema=IMessage, required=True, readonly=True)
 
-    date_created = Datetime(
-        title=_("The time when this message revision was created."),
-        required=True, readonly=True)
+    message_implementation = Reference(
+        title=_('The message implementation (BugComment, QuestionMessage or '
+                'CodeReviewComment) related to this revision'),
+        schema=Interface, required=True, readonly=True)
 
-    date_deleted = Datetime(
+    date_created = exported(Datetime(
         title=_("The time when this message revision was created."),
-        required=False, readonly=True)
+        required=True, readonly=True))
+
+    date_deleted = exported(Datetime(
+        title=_("The time when this message revision was created."),
+        required=False, readonly=True))
 
 
 class IMessageRevisionEdit(Interface):

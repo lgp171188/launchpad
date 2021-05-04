@@ -273,10 +273,10 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertEqual("final form", msg.text_contents)
         self.assertEqual(2, len(msg.revisions))
         self.assertIsMessageHistory(
-            msg.revisions[0], msg,
+            msg.revisions[1], msg,
             content="first edit", created_at=first_edit_date)
         self.assertIsMessageHistory(
-            msg.revisions[1], msg,
+            msg.revisions[0], msg,
             content="initial content", created_at=msg.datecreated)
 
     def test_non_owner_cannot_delete_message(self):
