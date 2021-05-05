@@ -63,51 +63,36 @@
     <tr>
       <th>When:</th>
       <td>
-        <span
-          tal:attributes="title context/datecreated/fmt:datetime"
-          tal:content="context/datecreated/fmt:approximatedate">
-          2006-12-13
-        </span>
+        <tal:created
+          replace="structure context/datecreated/fmt:approximatedatetitle" />
       </td>
     </tr>
     <tr tal:condition="context/date_confirmed">
       <th>Confirmed:</th>
       <td>
-        <span
-          tal:attributes="title context/date_confirmed/fmt:datetime"
-          tal:content="context/date_confirmed/fmt:approximatedate">
-          2006-12-13
-        </span>
+        <tal:confirmed
+          replace="structure context/date_confirmed/fmt:approximatedatetitle" />
       </td>
     </tr>
     <tr tal:condition="context/date_assigned">
       <th>Assigned:</th>
       <td>
-        <span
-          tal:attributes="title context/date_assigned/fmt:datetime"
-          tal:content="context/date_assigned/fmt:approximatedate">
-          2006-12-13
-        </span>
+        <tal:assigned
+          replace="structure context/date_assigned/fmt:approximatedatetitle" />
       </td>
     </tr>
     <tr tal:condition="context/date_inprogress">
       <th>Started work:</th>
       <td>
-        <span
-          tal:attributes="title context/date_inprogress/fmt:datetime"
-          tal:content="context/date_inprogress/fmt:approximatedate">
-          2006-12-13
-        </span>
+        <tal:in-progress
+          replace="structure context/date_inprogress/fmt:approximatedatetitle" />
       </td>
     </tr>
     <tr tal:condition="context/date_closed">
       <th>Completed:</th>
       <td>
-        <span
-          tal:attributes="title context/date_closed/fmt:datetime"
-          tal:content="context/date_closed/fmt:approximatedate">
-          2006-12-13
-        </span>
+        <tal:closed
+          replace="structure context/date_closed/fmt:approximatedatetitle" />
       </td>
     </tr>
   </table>

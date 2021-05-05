@@ -125,7 +125,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         # This produces a git ref that does not match the 'valid' OCI branch
         # format, so will not get multiple tags. Multiple tags are tested
         # explicitly.
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(paths=['refs/heads/v1.0-20.04'])
         recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
         self.build = self.factory.makeOCIRecipeBuild(recipe=recipe)
         self.push_rule = self.factory.makeOCIPushRule(recipe=self.build.recipe)
@@ -748,7 +748,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
-            "GET", "{}/v2/{}/manifests/edge".format(
+            "GET", "{}/v2/{}/manifests/v1.0-20.04_edge".format(
                 push_rule.registry_url, push_rule.image_name),
             status=404)
         self.addManifestResponses(push_rule, status_code=201)
@@ -763,7 +763,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         auth_call, get_manifest_call, send_manifest_call = responses.calls
         self.assertEndsWith(
             send_manifest_call.request.url,
-            "/v2/%s/manifests/edge" % push_rule.image_name)
+            "/v2/%s/manifests/v1.0-20.04_edge" % push_rule.image_name)
         self.assertEqual({
             "schemaVersion": 2,
             "mediaType": "application/"
@@ -834,7 +834,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
-            "GET", "{}/v2/{}/manifests/edge".format(
+            "GET", "{}/v2/{}/manifests/v1.0-20.04_edge".format(
                 push_rule.registry_url, push_rule.image_name),
             json=current_manifest,
             status=200)
@@ -849,7 +849,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         auth_call, get_manifest_call, send_manifest_call = responses.calls
         self.assertEndsWith(
             send_manifest_call.request.url,
-            "/v2/%s/manifests/edge" % push_rule.image_name)
+            "/v2/%s/manifests/v1.0-20.04_edge" % push_rule.image_name)
         self.assertEqual({
             "schemaVersion": 2,
             "mediaType": "application/"
@@ -901,7 +901,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
-            "GET", "{}/v2/{}/manifests/edge".format(
+            "GET", "{}/v2/{}/manifests/v1.0-20.04_edge".format(
                 push_rule.registry_url, push_rule.image_name),
             json=current_manifest,
             status=200)
@@ -916,7 +916,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         auth_call, get_manifest_call, send_manifest_call = responses.calls
         self.assertEndsWith(
             send_manifest_call.request.url,
-            "/v2/%s/manifests/edge" % push_rule.image_name)
+            "/v2/%s/manifests/v1.0-20.04_edge" % push_rule.image_name)
         self.assertEqual({
             "schemaVersion": 2,
             "mediaType": "application/"
@@ -948,7 +948,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         push_rule = self.build.recipe.push_rules[0]
         responses.add(
-            "GET", "{}/v2/{}/manifests/edge".format(
+            "GET", "{}/v2/{}/manifests/v1.0-20.04_edge".format(
                 push_rule.registry_url, push_rule.image_name),
             json={"error": "Unknown"},
             status=503)

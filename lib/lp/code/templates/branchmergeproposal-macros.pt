@@ -53,7 +53,8 @@
       </td>
       <td>
         <tal:registrant replace="structure proposal/registrant/fmt:link" />
-        <tal:date replace="proposal/date_review_requested/fmt:displaydate"/>
+        <tal:date
+          replace="structure proposal/date_review_requested/fmt:displaydatetitle" />
       </td>
       <td style="text-align: right">
         <tal:size replace='proposal/preview_diff/diff_lines_count' condition="proposal/preview_diff"/>

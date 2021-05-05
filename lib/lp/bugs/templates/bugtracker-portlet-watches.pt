@@ -46,11 +46,8 @@
               </td>
               <td><tal:status tal:replace="watch/remotestatus"/></td>
               <td>
-                <span
-                  tal:attributes="title watch/lastchecked/fmt:datetime"
-                  tal:content="watch/lastchecked/fmt:approximatedate">
-                  13 Jan 2004
-                 </span>
+                <tal:last-checked
+                  replace="structure watch/lastchecked/fmt:approximatedatetitle" />
               </td>
               <td>
                 <span tal:content="watch/next_check/fmt:datetime">

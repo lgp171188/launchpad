@@ -19,7 +19,8 @@
        tal:content="source/displayname" />
       <br /><span class="registered"> Upload by
       <a tal:replace="structure source/sourcepackagerelease/creator/fmt:link" />
-      <tal:dateuploaded replace="source/dateuploaded/fmt:displaydate" />
+      <tal:dateuploaded
+        replace="structure source/dateuploaded/fmt:displaydatetitle" />
       </span>
     </li>
   </ul>

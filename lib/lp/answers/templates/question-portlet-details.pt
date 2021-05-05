@@ -62,27 +62,24 @@
     <dl tal:condition="context/answerer">
       <dt>Solved:</dt>
       <dd>
-        <span
-          tal:attributes="title context/date_solved/fmt:datetime"
-          tal:content="context/date_solved/fmt:approximatedate" />
+        <tal:solved
+          replace="structure context/date_solved/fmt:approximatedatetitle" />
       </dd>
     </dl>
 
     <dl style="clear: both;">
       <dt>Last query:</dt>
       <dd>
-        <span
-          tal:attributes="title context/datelastquery/fmt:datetime"
-          tal:content="context/datelastquery/fmt:approximatedate" />
+        <tal:last-query
+          replace="structure context/datelastquery/fmt:approximatedatetitle" />
       </dd>
     </dl>
 
     <dl>
       <dt>Last reply:</dt>
       <dd>
-        <span
-          tal:attributes="title context/datelastresponse/fmt:datetime"
-          tal:content="context/datelastresponse/fmt:approximatedate" />
+        <tal:last-response
+          replace="structure context/datelastresponse/fmt:approximatedatetitle" />
       </dd>
     </dl>
   </div>
