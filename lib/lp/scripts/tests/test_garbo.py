@@ -1099,7 +1099,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         for i in range(5):
             repo = removeSecurityProxy(self.factory.makeGitRepository())
             [ref1, ref2] = self.factory.makeGitRefs(
-                repository=repo, paths=["a", "b"])
+                repository=repo, paths=["refs/heads/a-20.04", "b"])
             self.factory.makeBranchMergeProposalForGit(
                 target_ref=ref1, source_ref=ref2)
             self.factory.makeSourcePackageRecipe(branches=[ref1])
