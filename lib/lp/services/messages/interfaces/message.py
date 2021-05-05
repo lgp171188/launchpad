@@ -94,7 +94,7 @@ class IMessageCommon(Interface):
             "Revision history of this message, sorted in descending order."),
         # Really IMessageRevision, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface),
-        required=False, readonly=True))
+        required=False, readonly=True), as_of="devel")
 
     datecreated = exported(
         Datetime(title=_('Date Created'), required=True, readonly=True),
