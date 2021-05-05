@@ -190,6 +190,9 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     # the normal job queue, so put it on a queue with longer timeouts
     task_queue = 'launchpad_job_slow'
 
+    soft_time_limit = timedelta(minutes=60)
+    lease_duration = timedelta(minutes=60)
+
     class ManifestListUploadError(Exception):
         pass
 
