@@ -45,10 +45,7 @@ from lp.oci.interfaces.ociregistryclient import (
     )
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IStore
 from lp.services.database.locking import (
     AdvisoryLockHeld,
     LockType,
@@ -188,6 +185,10 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
     """
 
     class_job_type = OCIRecipeBuildJobType.REGISTRY_UPLOAD
+
+    # This is a known slow task that will exceed the timeouts for
+    # the normal job queue, so put it on a queue with longer timeouts
+    task_queue = 'launchpad_job_slow'
 
     class ManifestListUploadError(Exception):
         pass
