@@ -116,3 +116,44 @@ class TestMessageHistoryAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
                 "content": Equals("initial content"),
                 "self_link": EndsWith("/revisions/1")
             }))
+
+    def test_delete_revision_content(self):
+        msg = self.makeMessage(content="initial content")
+        msg.editContent("new content 1")
+        msg.editContent("final content")
+
+        with person_logged_in(self.person):
+            revision_url = api_url(msg.revisions[0])
+
+        ws = self.getWebservice(self.person)
+        response = ws.named_post(revision_url, "deleteContent")
+        self.assertEqual(200, response.status)
+
+        revision = ws.get(revision_url).jsonBody()
+        self.assertThat(revision, ContainsDict({
+            "date_created": Not(Is(None)),
+            "date_deleted": Not(Is(None)),
+            "content": Is(None),
+            "self_link": EndsWith("/revisions/1")
+        }))
+
+    def test_delete_revision_content_denied_for_non_owners(self):
+        msg = self.makeMessage(content="initial content")
+        msg.editContent("new content 1")
+        msg.editContent("final content")
+        someone_else = self.factory.makePerson()
+
+        with person_logged_in(self.person):
+            revision_url = api_url(msg.revisions[0])
+
+        ws = self.getWebservice(someone_else)
+        response = ws.named_post(revision_url, "deleteContent")
+        self.assertEqual(401, response.status)
+
+        revision = ws.get(revision_url).jsonBody()
+        self.assertThat(revision, ContainsDict({
+            "date_created": Not(Is(None)),
+            "date_deleted": Is(None),
+            "content": Equals("initial content"),
+            "self_link": EndsWith("/revisions/1")
+        }))

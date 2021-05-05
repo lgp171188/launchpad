@@ -10,8 +10,10 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
+    export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -25,7 +27,6 @@ from lp import _
 from lp.services.messages.interfaces.message import IMessage
 
 
-@exported_as_webservice_entry(publish_web_link=False, as_of="devel")
 class IMessageRevisionView(Interface):
     """IMessageRevision readable attributes."""
     id = Int(title=_("ID"), required=True, readonly=True)
@@ -55,9 +56,12 @@ class IMessageRevisionView(Interface):
 class IMessageRevisionEdit(Interface):
     """IMessageRevision editable attributes."""
 
-    def destroySelf():
+    @export_write_operation()
+    @operation_for_version("devel")
+    def deleteContent():
         """Logically deletes this MessageRevision."""
 
 
+@exported_as_webservice_entry(publish_web_link=False, as_of="devel")
 class IMessageRevision(IMessageRevisionView, IMessageRevisionEdit):
     """A historical revision of a IMessage."""

@@ -36,7 +36,7 @@ class MessageRevision(StormBase):
     message_id = Int(name='message', allow_none=False)
     message = Reference(message_id, 'Message.id')
 
-    content = Unicode(name="content", allow_none=False)
+    content = Unicode(name="content", allow_none=True)
 
     date_created = DateTime(
         name="date_created", tzinfo=pytz.UTC, allow_none=False)
@@ -70,5 +70,6 @@ class MessageRevision(StormBase):
         klass = id_to_class[identifier]
         return store.find(klass, klass.message == self.message_id).one()
 
-    def destroySelf(self):
+    def deleteContent(self):
+        self.content = None
         self.date_deleted = utc_now()
