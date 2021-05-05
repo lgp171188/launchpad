@@ -45,7 +45,7 @@ class IMessageRevisionView(Interface):
 class IMessageRevisionEdit(Interface):
     """IMessageRevision editable attributes."""
 
-    def destroySelf():
+    def deleteContent():
         """Logically deletes this MessageRevision."""
 
 

@@ -48,5 +48,6 @@ class MessageRevision(StormBase):
         self.date_created = date_created
         self.date_deleted = date_deleted
 
-    def destroySelf(self):
+    def deleteContent(self):
+        self.content = None
         self.date_deleted = utc_now()
