@@ -5,6 +5,6 @@
 
   <tal:source replace="structure context/source/fmt:link"/>
   updated
-  <tal:date replace="context/date/fmt:displaydate" />
+  <tal:date replace="structure context/date/fmt:displaydatetitle" />
 
 </tal:root>

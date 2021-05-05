@@ -163,10 +163,11 @@
 
             <dl id="started-by"
                 tal:attributes="class context/starter/css:select/visible/hidden">
-               <dt>Started by</dt>
-               <dd>
-                 <tal:starter replace="structure context/starter/fmt:link" />
-                 <tal:started_date replace="context/date_started/fmt:displaydate" />
+              <dt>Started by</dt>
+              <dd>
+                <tal:starter replace="structure context/starter/fmt:link" />
+                <tal:started_date
+                  replace="structure context/date_started/fmt:displaydatetitle" />
               </dd>
             </dl>
 
@@ -174,8 +175,9 @@
                 tal:attributes="class context/completer/css:select/visible/hidden">
               <dt>Completed by</dt>
               <dd>
-                 <tal:completer replace="structure context/completer/fmt:link" />
-                 <tal:completed_date replace="context/date_completed/fmt:displaydate" />
+                <tal:completer replace="structure context/completer/fmt:link" />
+                <tal:completed_date
+                  replace="structure context/date_completed/fmt:displaydatetitle" />
               </dd>
             </dl>
           </div>

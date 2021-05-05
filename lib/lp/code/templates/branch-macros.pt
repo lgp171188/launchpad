@@ -62,9 +62,8 @@
       <div tal:condition="mergeproposal/queue_status/enumvalue:MERGED"
            class="branchstatusMERGED">
         Merged
-        <tal:merged replace="mergeproposal/date_merged/fmt:approximatedate">
-          2007-06-04
-        </tal:merged>
+        <tal:merged
+          replace="structure mergeproposal/date_merged/fmt:approximatedatetitle" />
         <tal:have-revision condition="mergeproposal/merged_revision">
           at revision <tal:revision replace="mergeproposal/merged_revision"/>
         </tal:have-revision>

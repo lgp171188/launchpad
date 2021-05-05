@@ -156,9 +156,9 @@
           (<tal:component content="row/component"/>)
         </td>
         <td>
-          <tal:date_published condition="row/date_published">
-            <span tal:replace="row/date_published/fmt:approximatedate"/>
-          </tal:date_published>
+          <tal:date_published
+            condition="row/date_published"
+            content="structure row/date_published/fmt:approximatedatetitle" />
           <tal:not_published
                condition="not: row/date_published"
                content="string:(not published)"/>

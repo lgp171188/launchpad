@@ -45,7 +45,8 @@
             tal:content="proposal/queue_status/title" />
         <td>
           <tal:registrant replace="structure proposal/registrant/fmt:link" />
-          <tal:date replace="proposal/date_review_requested/fmt:displaydate"/>
+          <tal:date
+            replace="structure proposal/date_review_requested/fmt:displaydatetitle" />
         </td>
 
         <td tal:condition="context/show_column/date_reviewed|nothing">
@@ -54,7 +55,8 @@
                 tal:content="proposal/date_reviewed/fmt:datetime">
             2005-02-12 13:45 EST
           </span>
-          <tal:date replace="proposal/date_reviewed/fmt:approximatedate"/>
+          <tal:date
+            replace="structure proposal/date_reviewed/fmt:approximatedatetitle"/>
         </td>
         <td tal:condition="context/show_column/review|nothing">
           <tal:review-vote define="comment proposal/reviewer_vote/comment|nothing">

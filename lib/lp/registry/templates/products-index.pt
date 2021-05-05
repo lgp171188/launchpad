@@ -137,7 +137,8 @@
               <td>
                 <tal:link replace="structure product/fmt:link" />
                 registered
-                <tal:date replace="product/datecreated/fmt:displaydate" />
+                <tal:date
+                  replace="structure product/datecreated/fmt:displaydatetitle" />
               </td>
             </tr>
           </tal:product>

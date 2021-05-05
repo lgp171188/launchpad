@@ -40,7 +40,7 @@
         <tal:oopsid condition="activity/oops_id">
           (<tal:oops_link replace="structure activity/oops_id/fmt:oops-id" />)
         </tal:oopsid>
-        <tal:time replace="activity/date/fmt:displaydate" />
+        <tal:time replace="structure activity/date/fmt:displaydatetitle" />
       </div>
     </tal:activity>
   </div>

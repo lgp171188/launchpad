@@ -9,11 +9,9 @@
 
     <ul>
       <li tal:repeat="reop context/reopenings">
-        <span
-          tal:attributes="title reop/datecreated/fmt:datetime"
-          tal:content="reop/datecreated/fmt:approximatedate">
-          2005-10-05
-        </span> by
+        <tal:created
+          replace="structure reop/datecreated/fmt:approximatedatetitle" />
+        by
         <a tal:replace="structure reop/reopener/fmt:link">Foo Bar</a>
       </li>
     </ul>

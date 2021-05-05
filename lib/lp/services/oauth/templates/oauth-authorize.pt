@@ -164,7 +164,7 @@
             <p tal:condition="view/token/date_expires">
               The integration you just authorized will expire
               <tal:date
-                 replace="structure view/token/date_expires/fmt:approximatedate" />.
+                 replace="structure view/token/date_expires/fmt:approximatedatetitle" />.
               At that time, you'll have to re-authorize
               <strong
                  tal:content="view/token/consumer/integrated_desktop_name">hostname</strong>,

@@ -38,8 +38,8 @@
       Last translation activity by
       <tal:name replace="context/displayname">Foo Bar</tal:name>
       was
-      <tal:date replace="view/latest_activity/date/fmt:displaydate">
-        on 2009-10-12</tal:date>.
+      <tal:date
+        replace="structure view/latest_activity/date/fmt:displaydatetitle" />.
     </tal:active>
     <tal:inactive tal:condition="not: view/latest_activity">
       No translation activities recorded for
