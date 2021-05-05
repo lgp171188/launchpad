@@ -3,45 +3,29 @@
 
 __metaclass__ = type
 
-from email.header import Header
-from email.message import Message
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import (
-    formatdate,
-    make_msgid,
-    )
-
-import six
 from testscenarios import WithScenarios
 from testtools.matchers import (
+    ContainsDict,
+    EndsWith,
     Equals,
     Is,
-    MatchesStructure,
+    MatchesListwise,
+    Not,
     )
-import transaction
-from zope.security.interfaces import Unauthorized
-from zope.security.proxy import (
-    ProxyFactory,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import ProxyFactory
 
 from lp.bugs.interfaces.bugmessage import IBugMessage
 from lp.bugs.model.bugmessage import BugMessage
-from lp.services.compat import message_as_bytes
 from lp.services.database.interfaces import IStore
-from lp.services.messages.model.message import MessageSet
-from lp.services.utils import utc_now
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
     api_url,
     login_person,
+    person_logged_in,
     TestCaseWithFactory,
     )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import webservice_for_person
 
 
@@ -92,17 +76,43 @@ class TestMessageHistoryAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
             else:
                 return api_url(msg)
 
-    def test_export_message_revisions(self):
+    def test_get_message_revision_list(self):
         msg = self.makeMessage(content="initial content")
         msg.editContent("new content 1")
         msg.editContent("final content")
         ws = self.getWebservice(self.person)
         url = self.getMessageAPIURL(msg)
-
         ws_message = ws.get(url).jsonBody()
-        if self.message_type != "question":
-            return
-        revisions = ws.get(ws_message['revisions_collection_link']).jsonBody()
-        revisions = ws.get(ws_message['revisions_collection_link']
-                           + "/1").jsonBody()
 
+        revisions = ws.get(ws_message['revisions_collection_link']).jsonBody()
+        self.assertThat(revisions, ContainsDict({
+            "start": Equals(0),
+            "total_size": Equals(2)}))
+        self.assertThat(revisions["entries"], MatchesListwise([
+            ContainsDict({
+                "date_created": Not(Is(None)),
+                "date_deleted": Is(None),
+                "content": Equals("initial content"),
+                "self_link": EndsWith("/revisions/1")
+            }),
+            ContainsDict({
+                "date_created": Not(Is(None)),
+                "date_deleted": Is(None),
+                "content": Equals("new content 1"),
+                "self_link": EndsWith("/revisions/2")
+            })]))
+
+    def test_get_single_revision(self):
+        msg = self.makeMessage(content="initial content")
+        msg.editContent("new content 1")
+        ws = self.getWebservice(self.person)
+
+        with person_logged_in(self.person):
+            revision_url = api_url(msg.revisions[0])
+        revision = ws.get(revision_url).jsonBody()
+        self.assertThat(revision, ContainsDict({
+                "date_created": Not(Is(None)),
+                "date_deleted": Is(None),
+                "content": Equals("initial content"),
+                "self_link": EndsWith("/revisions/1")
+            }))

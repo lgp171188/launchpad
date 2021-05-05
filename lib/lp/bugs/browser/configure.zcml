@@ -1,4 +1,4 @@
-<!-- Copyright 2010-2014 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -163,6 +163,10 @@
             path_expression="string:comments/${index}"
             attribute_to_parent="bugtask"
             rootsite="bugs"/>
+          <browser:navigation
+            module=".bugcomment"
+            classes="BugCommentNavigation"
+            />
         <browser:page
             for="lp.bugs.interfaces.bugmessage.IBugComment"
             name="+index"

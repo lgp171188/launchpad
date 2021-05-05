@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from zope.interface import implementer
 
+from lp.bugs.interfaces.bugmessage import IBugMessage
 from lp.services.messages.interfaces.message import IIndexedMessage
 from lp.services.webapp.interfaces import ICanonicalUrlData
 
@@ -28,6 +29,9 @@ class BugMessageCanonicalUrlData:
 
     def __init__(self, bug, message):
         self.inside = bug.default_bugtask
+        if IBugMessage.providedBy(message):
+            # bug.messages is a list of Message objects, not BugMessage.
+            message = message.message
         self.path = "comments/%d" % list(bug.messages).index(message)
 
 
