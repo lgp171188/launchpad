@@ -13,7 +13,6 @@ from datetime import (
     timedelta,
     )
 from operator import attrgetter
-import re
 
 from fixtures import FakeLogger
 import pytz
@@ -651,7 +650,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
     def test_edit_recipe(self):
         oci_project = self.factory.makeOCIProject()
         oci_project_display = oci_project.display_name
-        [old_git_ref] = self.factory.makeGitRefs()
+        [old_git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v1.0-20.04'])
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person,
             oci_project=oci_project, git_ref=old_git_ref)
@@ -696,7 +696,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
     def test_edit_recipe_invalid_branch(self):
         oci_project = self.factory.makeOCIProject()
         repository = self.factory.makeGitRepository()
-        [old_git_ref] = self.factory.makeGitRefs(repository=repository)
+        [old_git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v1.0-20.04'], repository=repository)
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person,
             oci_project=oci_project, git_ref=old_git_ref)
@@ -966,7 +967,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.setUpDistroSeries()
         repo = self.factory.makeGitRepository(
             owner=self.person, registrant=self.person)
-        [git_ref] = self.factory.makeGitRefs(repository=repo)
+        [git_ref] = self.factory.makeGitRefs(
+            repository=repo, paths=['refs/heads/v1.0-20.04'])
         oci_project = self.factory.makeOCIProject(
             registrant=self.person, pillar=self.distribution)
         recipe = self.factory.makeOCIRecipe(
@@ -986,7 +988,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.setUpDistroSeries()
         oci_project = self.factory.makeOCIProject(
             registrant=self.person, pillar=self.distribution)
-        [random_git_ref] = self.factory.makeGitRefs()
+        [random_git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v1.0-20.04'])
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person, oci_project=oci_project,
             git_ref=random_git_ref)
@@ -1018,7 +1021,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             name=oci_project.name,
             target=oci_project, owner=self.person, registrant=self.person)
 
-        [git_ref] = self.factory.makeGitRefs(repository=default_repo)
+        [git_ref] = self.factory.makeGitRefs(
+            repository=default_repo, paths=['refs/heads/v1.0-20.04'])
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person, oci_project=oci_project,
             git_ref=git_ref)
@@ -1035,7 +1039,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         oci_project = self.factory.makeOCIProject(
             registrant=self.person, pillar=self.distribution)
 
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(paths=['refs/heads/v1.0-20.04'])
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person, oci_project=oci_project,
             git_ref=git_ref)
@@ -1290,7 +1294,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         oci_project_display = oci_project.display_name
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
-            paths=["refs/heads/master"])
+            paths=["refs/heads/v1.0-20.04"])
         recipe = self.makeRecipe(
             processor_names=["amd64", "386"],
             build_file="Dockerfile", git_ref=ref,
@@ -1320,7 +1324,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             OCI recipe information
             Owner: Test Person
             OCI project: %s
-            Source: ~test-person/\\+git/recipe-repository:master
+            Source: ~test-person/\\+git/recipe-repository:v1.0-20.04
             Build file path: Dockerfile
             Build context directory: %s
             Build schedule: Built on request
@@ -1385,11 +1389,10 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
     def test_index_with_build_args(self):
         oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution)
-        oci_project_name = oci_project.name
         oci_project_display = oci_project.display_name
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
-            paths=["refs/heads/master"])
+            paths=["refs/heads/v1.0-20.04"])
         recipe = self.makeOCIRecipe(
             oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
             build_args={"VAR1": "123", "VAR2": "XXX"})
@@ -1403,7 +1406,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             OCI recipe information
             Owner: Test Person
             OCI project: %s
-            Source: ~test-person/\\+git/recipe-repository:master
+            Source: ~test-person/\\+git/recipe-repository:v1.0-20.04
             Build file path: Dockerfile
             Build context directory: %s
             Build schedule: Built on request
@@ -1429,11 +1432,10 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
     def test_index_for_subscriber_without_git_repo_access(self):
         oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution)
-        oci_project_name = oci_project.name
         oci_project_display = oci_project.display_name
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
-            paths=["refs/heads/master"],
+            paths=["refs/heads/v1.0-20.04"],
             information_type=InformationType.PRIVATESECURITY)
         recipe = self.makeOCIRecipe(
             oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
@@ -1514,7 +1516,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             pillar=self.distroseries.distribution)
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
-            paths=["refs/heads/master"])
+            paths=["refs/heads/v1.0-20.04"])
         recipe = self.makeRecipe(
             processor_names=["amd64", "386"],
             build_file="Dockerfile", git_ref=ref,

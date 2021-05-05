@@ -208,7 +208,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
-        [ref] = self.factory.makeGitRefs()
+        [ref] = self.factory.makeGitRefs(paths=['refs/heads/v1.0-20.04'])
         job = self.makeJob(git_ref=ref)
         lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
@@ -547,7 +547,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
         # If the source Git reference has been deleted, composeBuildRequest
         # raises CannotBuild.
         repository = self.factory.makeGitRepository()
-        [ref] = self.factory.makeGitRefs(repository=repository)
+        [ref] = self.factory.makeGitRefs(
+            repository=repository, paths=['refs/heads/v1.0-20.04'])
         owner = self.factory.makePerson(name="oci-owner")
 
         distribution = self.factory.makeDistribution()
