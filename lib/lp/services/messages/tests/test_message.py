@@ -13,7 +13,6 @@ from email.utils import (
     )
 
 import six
-from testscenarios import WithScenarios
 from testtools.matchers import (
     Equals,
     Is,
@@ -21,23 +20,18 @@ from testtools.matchers import (
     )
 import transaction
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import (
-    ProxyFactory,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.interfaces.bugmessage import IBugMessage
-from lp.bugs.model.bugmessage import BugMessage
 from lp.services.compat import message_as_bytes
-from lp.services.database.interfaces import IStore
 from lp.services.messages.model.message import MessageSet
+from lp.services.messages.tests.scenarios import MessageTypeScenariosMixin
 from lp.services.utils import utc_now
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
     api_url,
     login,
-    login_person,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -193,34 +187,6 @@ class TestMessageSet(TestCaseWithFactory):
             'Treating unknown encoding "booga" as latin-1.'):
             result = MessageSet.decode(self.high_characters, 'booga')
         self.assertEqual(self.high_characters.decode('latin-1'), result)
-
-
-class MessageTypeScenariosMixin(WithScenarios):
-
-    scenarios = [
-        ("bug", {"message_type": "bug"}),
-        ("question", {"message_type": "question"}),
-        ("MP comment", {"message_type": "mp"})
-        ]
-
-    def setUp(self):
-        super(MessageTypeScenariosMixin, self).setUp()
-        self.person = self.factory.makePerson()
-        login_person(self.person)
-
-    def makeMessage(self, content=None, **kwargs):
-        owner = kwargs.pop('owner', self.person)
-        if self.message_type == "bug":
-            msg = self.factory.makeBugComment(
-                owner=owner, body=content, **kwargs)
-            return ProxyFactory(IStore(BugMessage).find(
-                BugMessage, BugMessage.message == msg).one())
-        elif self.message_type == "question":
-            question = self.factory.makeQuestion()
-            return question.giveAnswer(owner, content)
-        elif self.message_type == "mp":
-            return self.factory.makeCodeReviewComment(
-                sender=owner, body=content)
 
 
 class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):

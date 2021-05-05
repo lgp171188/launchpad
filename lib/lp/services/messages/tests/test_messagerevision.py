@@ -3,7 +3,6 @@
 
 __metaclass__ = type
 
-from testscenarios import WithScenarios
 from testtools.matchers import (
     ContainsDict,
     EndsWith,
@@ -12,49 +11,18 @@ from testtools.matchers import (
     MatchesListwise,
     Not,
     )
-from zope.security.proxy import ProxyFactory
 
 from lp.bugs.interfaces.bugmessage import IBugMessage
-from lp.bugs.model.bugmessage import BugMessage
-from lp.services.database.interfaces import IStore
+from lp.services.messages.tests.scenarios import MessageTypeScenariosMixin
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
     api_url,
-    login_person,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import webservice_for_person
-
-
-class MessageTypeScenariosMixin(WithScenarios):
-
-    scenarios = [
-        ("bug", {"message_type": "bug"}),
-        ("question", {"message_type": "question"}),
-        ("MP comment", {"message_type": "mp"})
-        ]
-
-    def setUp(self):
-        super(MessageTypeScenariosMixin, self).setUp()
-        self.person = self.factory.makePerson()
-        login_person(self.person)
-
-    def makeMessage(self, content=None, **kwargs):
-        owner = kwargs.pop('owner', self.person)
-        if self.message_type == "bug":
-            msg = self.factory.makeBugComment(
-                owner=owner, body=content, **kwargs)
-            return ProxyFactory(IStore(BugMessage).find(
-                BugMessage, BugMessage.message == msg).one())
-        elif self.message_type == "question":
-            question = self.factory.makeQuestion()
-            return question.giveAnswer(owner, content)
-        elif self.message_type == "mp":
-            return self.factory.makeCodeReviewComment(
-                sender=owner, body=content)
 
 
 class TestMessageHistoryAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
