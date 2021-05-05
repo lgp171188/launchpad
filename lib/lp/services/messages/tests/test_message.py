@@ -253,6 +253,8 @@ class TestMessageEditing(TestCaseWithFactory):
         owner = self.factory.makePerson()
         msg = self.makeMessage(owner=owner, content="initial content")
         with person_logged_in(owner):
+            msg.editContent("new content")
+        with person_logged_in(owner):
             before_delete = utc_now()
             msg.deleteContent()
             after_delete = utc_now()
@@ -260,3 +262,4 @@ class TestMessageEditing(TestCaseWithFactory):
         self.assertEqual(0, len(msg.chunks))
         self.assertIsNotNone(msg.date_deleted)
         self.assertTrue(after_delete > msg.date_deleted > before_delete)
+        self.assertEqual(0, len(msg.revisions))

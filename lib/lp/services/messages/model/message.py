@@ -209,8 +209,12 @@ class Message(SQLBase):
 
     def deleteContent(self):
         """See `IMessage`."""
-        for chunk in self._chunks:
-            chunk.destroySelf()
+        store = Store.of(self)
+        store.find(MessageChunk, MessageChunk.message == self).remove()
+        store.find(MessageRevision, MessageRevision.message == self).remove()
+        del get_property_cache(self).text_contents
+        del get_property_cache(self).chunks
+        del get_property_cache(self).revisions
         self.date_deleted = utc_now()
 
 
