@@ -172,7 +172,7 @@ class OCIRecipeBranchHasInvalidFormat(Exception):
     def __init__(self):
         super(OCIRecipeBranchHasInvalidFormat, self).__init__(
             "The branch name for the OCI recipe does not "
-            "match the correct format.")
+            "match the APPVERSION-UBUNTUVERSION format (ex. v1.0-20.04)")
 
 @exported_as_webservice_entry(
     publish_web_link=True, as_of="devel",
