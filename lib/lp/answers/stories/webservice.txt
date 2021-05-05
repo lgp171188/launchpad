@@ -242,6 +242,7 @@ that indicate how the message changed the question.
     parent_link: None
     question_link: 'http://api.launchpad.test/devel/my-project/+question/...'
     resource_type_link: 'http://api.launchpad.test/devel/#question_message'
+    revisions_collection_link: 'http://...'
     self_link:
         'http://api.launchpad.test/devel/my-project/+question/.../messages/1'
     subject: 'Re: Q 1 great'
