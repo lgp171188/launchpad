@@ -12,7 +12,7 @@ start_worker() {
         --startas "$PWD/bin/celery" -- worker \
         --queues="$queue"\
         --config=lp.services.job.celeryconfig \
-        --hostname="xenial-lpdev_dev_$queue" \
+        --hostname="$queue@%n" \
         --loglevel=DEBUG \
         --logfile="/var/tmp/celeryd-$queue.log"
 
