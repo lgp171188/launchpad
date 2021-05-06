@@ -21,7 +21,7 @@ start_worker() {
 stop_worker() {
     queue=$1
     echo "Stopping worker for $queue"
-    start-stop-daemon --stop --pidfile "/var/tmp/celeryd-$queue.pid"
+    start-stop-daemon --oknodo --stop --pidfile "/var/tmp/celeryd-$queue.pid"
 }
 
 case "$1" in
