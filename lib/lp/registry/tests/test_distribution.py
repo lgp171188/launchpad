@@ -856,6 +856,9 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             distro_url,
             "setOCICredentials",
             registry_url="http://registry.test",
+            username="test-username",
+            password="test-password",
+            region="test-region"
         )
 
         self.assertEqual(200, resp.status)
@@ -864,6 +867,12 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 "http://registry.test",
                 distro.oci_registry_credentials.url
             )
+            credentials = distro.oci_registry_credentials.getCredentials()
+            self.assertDictEqual({
+                "username": "test-username",
+                "password": "test-password",
+                "region": "test-region"},
+                credentials)
 
     def test_setOCICredentials_no_oci_admin(self):
         # If there's no oci_project_admin to own the credentials, error
