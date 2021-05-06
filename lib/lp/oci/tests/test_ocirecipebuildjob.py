@@ -53,10 +53,7 @@ from lp.services.database.locking import (
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
-from lp.services.job.tests import (
-    block_on_job,
-    pop_remote_notifications,
-    )
+from lp.services.job.tests import block_on_job
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
@@ -71,7 +68,7 @@ from lp.testing.dbuser import (
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
-    CeleryJobLayer,
+    CelerySlowJobLayer,
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
     )
@@ -519,7 +516,6 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
 
         self.assertContentEqual([], ocibuild.registry_upload_jobs)
         job = OCIRegistryUploadJob.create(ocibuild)
-        client = FakeRegistryClient()
         switch_dbuser(config.IOCIRegistryUploadJobSource.dbuser)
         # Fork so that we can take an advisory lock from a different
         # PostgreSQL session.
@@ -551,8 +547,6 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
                 os.kill(pid, signal.SIGINT)
 
 
-
-
 class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,
                                         MultiArchRecipeMixin):
     """Runs OCIRegistryUploadJob via Celery, to make sure the machinery
@@ -563,7 +557,7 @@ class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,
     so we should make sure we are not breaking anything in the interaction
     with the job lifecycle via celery.
     """
-    layer = CeleryJobLayer
+    layer = CelerySlowJobLayer
 
     def setUp(self):
         super(TestOCIRegistryUploadJobViaCelery, self).setUp()
@@ -583,4 +577,5 @@ class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,
             for build in builds:
                 OCIRegistryUploadJob.create(build)
             transaction.commit()
-        self.assertEqual(0, len(pop_remote_notifications()))
+        messages = [message.as_string() for message in pop_notifications()]
+        self.assertEqual(0, len(messages))
