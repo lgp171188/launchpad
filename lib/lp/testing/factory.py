@@ -2943,7 +2943,6 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if private:
             naked_archive = removeSecurityProxy(archive)
             naked_archive.private = True
-            naked_archive.buildd_secret = "sekrit"
 
         if suppress_subscription_notifications:
             naked_archive = removeSecurityProxy(archive)
