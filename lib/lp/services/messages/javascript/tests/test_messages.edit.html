@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<!--
+Copyright 2021 Canonical Ltd.  This software is licensed under the
+GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<html>
+  <head>
+      <title>Test message edit</title>
+
+      <!-- YUI and test setup -->
+      <script type="text/javascript"
+              src="../../../../../../build/js/yui/yui/yui.js">
+      </script>
+      <link rel="stylesheet"
+      href="../../../../../../build/js/yui/console/assets/console-core.css" />
+      <link rel="stylesheet"
+      href="../../../../../../build/js/yui/test-console/assets/skins/sam/test-console.css" />
+      <link rel="stylesheet"
+      href="../../../../../../build/js/yui/test/assets/skins/sam/test.css" />
+
+      <script type="text/javascript"
+              src="../../../../../../build/js/lp/app/testing/testrunner.js"></script>
+
+      <link rel="stylesheet"
+            href="../../../../app/javascript/testing/test.css" />
+
+      <!-- Dependencies -->
+      <script type="text/javascript"
+          src="../../../../../../build/js/lp/app/client.js"></script>
+      <script type="text/javascript"
+          src="../../../../../../build/js/lp/app/lp.js"></script>
+      <script type="text/javascript"
+          src="../../../../../../build/js/lp/app/anim/anim.js"></script>
+      <script type="text/javascript"
+          src="../../../../../../build/js/lp/app/extras/extras.js"></script>
+      <script type="text/javascript"
+          src="../../../../../../build/js/lp/app/testing/mockio.js"></script>
+
+      <!-- The module under test. -->
+      <script type="text/javascript" src="../messages.edit.js"></script>
+
+      <!-- Any css assert for this module. -->
+      <!-- <link rel="stylesheet" href="../assets/archive-packages-core.css" /> -->
+
+      <!-- The test suite. -->
+      <script type="text/javascript" src="test_messages.edit.js"></script>
+
+    </head>
+    <body class="yui3-skin-sam">
+        <ul id="suites">
+            <li>lp.services.messages.edit.test</li>
+        </ul>
+
+        <div class="editable-message" id="first-message"
+             data-baseurl="/message/1">
+            <div class="editable-message-body"></div>
+            <img class="sprite edit action-icon editable-message-edit-btn">
+
+            <div class="editable-message-form">
+                <textarea></textarea>
+                <input type="button" value="Update" class="editable-message-update-btn" />
+                <input type="button" value="Cancel" class="editable-message-cancel-btn" />
+            </div>
+        </div>
+
+        <div class="editable-message" id="second-message"
+             data-baseurl="/message/2">
+            <div class="editable-message-body"></div>
+            <img class="sprite edit action-icon editable-message-edit-btn">
+
+            <div class="editable-message-form">
+                <textarea></textarea>
+                <input type="button" value="Update" class="editable-message-update-btn" />
+                <input type="button" value="Cancel" class="editable-message-cancel-btn" />
+            </div>
+        </div>
+    </body>
+</html>
