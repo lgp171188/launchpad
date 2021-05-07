@@ -326,6 +326,22 @@ class GitHostingClient:
                 "Failed to repack Git repository %s: %s" %
                 (path, six.text_type(e)))
 
+    def fetchRepackStats(self, path, logger=None):
+        """See `IGitHostingClient`."""
+
+        url = "/repo/%s/repack" % path
+        try:
+            if logger is not None:
+                logger.info(
+                    "Updating repack stats for repository %s" % (
+                        path))
+            return self._get(url)
+        except requests.RequestException as e:
+            if logger is not None:
+                logger.info(
+                    "Failed to update repack stats for repository %s" % (
+                        path))
+
     def collectGarbage(self, path, logger=None):
         """See `IGitHostingClient`."""
 

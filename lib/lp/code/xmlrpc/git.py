@@ -46,6 +46,7 @@ from lp.code.interfaces.codehosting import (
     LAUNCHPAD_SERVICES,
     )
 from lp.code.interfaces.gitapi import IGitAPI
+from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
 from lp.code.interfaces.gitlookup import (
     IGitLookup,
@@ -744,4 +745,40 @@ class GitAPI(LaunchpadXMLRPCView):
             logger.error("abortRepoCreation failed: %r", result)
         else:
             logger.info("abortRepoCreation succeeded: %s" % result)
+        return result
+
+    def _updateRepackStats(self, requester, path, auth_params):
+        logger = self._getLogger()
+        if requester == LAUNCHPAD_ANONYMOUS:
+            requester = None
+        repository = getUtility(IGitLookup).getByHostingPath(path)
+        if repository is None:
+            raise faults.GitRepositoryNotFound(path)
+
+        if auth_params is not None:
+            verified = self._verifyAuthParams(
+                requester, repository, auth_params)
+            if self._isWritable(requester, repository, verified):
+                # call Turnip to get repack data and set it
+                stats = getUtility(IGitHostingClient).fetchRepackStats(path)
+                removeSecurityProxy(repository).setRepackData(
+                    stats.get('loose_object_count'),
+                    stats.get('pack_count'))
+
+    def updateRepackStats(self, path, auth_params):
+        """See `IGitAPI`."""
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: updateRepackStats('%s')", path)
+        try:
+            result = run_with_login(
+                requester_id, self._updateRepackStats,
+                path, auth_params)
+        except Exception as e:
+            result = e
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("updateRepackStats failed: %r", result)
+        else:
+            logger.info("updateRepackStats succeeded: %s" % result)
         return result

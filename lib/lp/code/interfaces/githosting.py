@@ -164,3 +164,11 @@ class IGitHostingClient(Interface):
             service.
         :param logger: An optional logger.
         """
+
+    def fetchRepackStats(path, logger=None):
+        """Update repack stats for a Git repository.
+
+        :param path: Physical path of the new repository on the hosting
+            service.
+        :param logger: An optional logger.
+        """

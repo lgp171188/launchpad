@@ -118,3 +118,15 @@ class IGitAPI(Interface):
         :param repository_id: The database ID of the repository, provided by
                     translatePath call when repo creation is necessary.
         """
+
+    def updateRepackStats(path):
+        """Update the repack stats for the repository.
+
+        When code hosting completes a repack asynchronously
+        (Celery task), it should call back this method to
+        indicate that the operation completed and that repack stats
+        (loose_object_count, pack_count and date_last_scanned) for the
+        repository should be updated in Launchpad's database.
+
+        :param path: The path to the repository.
+        """
