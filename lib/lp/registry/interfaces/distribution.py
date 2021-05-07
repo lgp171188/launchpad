@@ -14,15 +14,18 @@ __all__ = [
     'IDistributionSet',
     'NoPartnerArchive',
     'NoSuchDistribution',
+    'NoOCIAdminForDistribution',
     ]
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
+    error_status,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
+    export_write_operation,
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
@@ -38,6 +41,7 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -113,6 +117,15 @@ from lp.translations.interfaces.hastranslationimports import (
 from lp.translations.interfaces.translationpolicy import ITranslationPolicy
 
 
+@error_status(http_client.BAD_REQUEST)
+class NoOCIAdminForDistribution(Exception):
+    """There is no OCI Project Admin for this distribution."""
+
+    def __init__(self):
+        super(NoOCIAdminForDistribution, self).__init__(
+            "There is no OCI Project Admin for this distribution.")
+
+
 class IDistributionMirrorMenuMarker(Interface):
     """Marker interface for Mirror navigation."""
 
@@ -128,6 +141,35 @@ class DistributionNameField(PillarNameField):
 
 class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
     """IDistribution properties requiring launchpad.Edit permission."""
+
+    @call_with(registrant=REQUEST_USER)
+    @operation_parameters(
+        registry_url=TextLine(
+            title=_("The registry url."),
+            description=_("The url of the OCI registry to use."),
+            required=True),
+        region=TextLine(
+            title=_("OCI registry region."),
+            description=_("The region of the OCI registry."),
+            required=False),
+        username=TextLine(
+            title=_("Username"),
+            description=_("The username for the OCI registry."),
+            required=False),
+        password=TextLine(
+            title=_("Password"),
+            description=_("The password for the OCI registry."),
+            required=False))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setOCICredentials(registrant, registry_url, region,
+                          username, password):
+        """Set the credentials for the OCI registry for OCI projects."""
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def deleteOCICredentials():
+        """Delete any existing OCI credentials for the distribution."""
 
 
 class IDistributionDriverRestricted(Interface):
@@ -726,7 +768,6 @@ class IDistributionPublic(
         description=_("Credentials and URL to use for uploading all OCI "
                       "images in this distribution to a registry."),
         required=False, readonly=False)
-
 
 @exported_as_webservice_entry(as_of="beta")
 class IDistribution(

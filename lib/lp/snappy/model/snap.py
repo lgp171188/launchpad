@@ -1187,13 +1187,6 @@ class Snap(Storm, WebhookTargetMixin):
             person.is_team and
             person.anyone_can_join())
 
-    @property
-    def subscribers(self):
-        return Store.of(self).find(
-            Person,
-            SnapSubscription.person_id == Person.id,
-            SnapSubscription.snap == self)
-
     def subscribe(self, person, subscribed_by, ignore_permissions=False):
         """See `ISnap`."""
         if not self.userCanBeSubscribed(person):

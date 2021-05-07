@@ -49,6 +49,9 @@ netbook-remix-team
 netbook-team
 oem-solutions-group
 payson
+snappy-dev/edge
+snappy-dev/image
+snappy-dev/tools
 transyl
 ubuntu-cloud-archive
 ubuntu-mobile
