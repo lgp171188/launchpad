@@ -8,7 +8,7 @@
 # Borrowed from dpkg.
 lazy_eval ?= $(or $(value CACHE_$(1)),$(eval CACHE_$(1) := $(shell $(2)))$(value CACHE_$(1)))
 
-PYTHON:=python2.7
+PYTHON?=python2.7
 
 WD:=$(shell pwd)
 PY=$(WD)/bin/py
