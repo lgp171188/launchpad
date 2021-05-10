@@ -27,7 +27,14 @@
       tal:attributes="title context/datecreated/fmt:datetime;
         datetime context/datecreated/fmt:isodate"
       tal:content="context/datecreated/fmt:displaydate">Thursday
-    13:21</time>:
+    13:21</time>
+    <span tal:condition="context/date_last_edit">
+        (last edit <time
+              itemprop="editTime"
+              tal:attributes="title context/date_last_edit/fmt:datetime;
+                datetime context/date_last_edit/fmt:isodate"
+              tal:content="context/date_last_edit/fmt:displaydate" />)
+      </span>
     </td>
     <td>
       <img class="sprite edit action-icon editable-message-edit-btn"
