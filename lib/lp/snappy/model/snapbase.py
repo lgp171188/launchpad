@@ -27,6 +27,7 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
+from lp.buildmaster.model.processor import Processor
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
 from lp.services.database.constants import DEFAULT
@@ -84,6 +85,30 @@ class SnapBase(Storm):
         self.build_channels = build_channels
         self.date_created = date_created
         self.is_default = False
+
+    def _getProcessors(self):
+        return list(Store.of(self).find(
+            Processor,
+            Processor.id == SnapBaseArch.processor_id,
+            SnapBaseArch.snap_base == self))
+
+    def setProcessors(self, processors):
+        """See `ISnapBase`."""
+        enablements = dict(Store.of(self).find(
+            (Processor, SnapBaseArch),
+            Processor.id == SnapBaseArch.processor_id,
+            SnapBaseArch.snap_base == self))
+        for proc in enablements:
+            if proc not in processors:
+                Store.of(self).remove(enablements[proc])
+        for proc in processors:
+            if proc not in self.processors:
+                snap_base_arch = SnapBaseArch()
+                snap_base_arch.snap_base = self
+                snap_base_arch.processor = proc
+                Store.of(self).add(snap_base_arch)
+
+    processors = property(_getProcessors, setProcessors)
 
     @property
     def dependencies(self):
@@ -145,18 +170,35 @@ class SnapBase(Storm):
         Store.of(self).remove(self)
 
 
+class SnapBaseArch(Storm):
+    """Link table to back `SnapArch.processors`."""
+
+    __storm_table__ = "SnapBaseArch"
+    __storm_primary__ = ("snap_base_id", "processor_id")
+
+    snap_base_id = Int(name="snap_base", allow_none=False)
+    snap_base = Reference(snap_base_id, "SnapBase.id")
+
+    processor_id = Int(name="processor", allow_none=False)
+    processor = Reference(processor_id, "Processor.id")
+
+
 @implementer(ISnapBaseSet)
 class SnapBaseSet:
     """See `ISnapBaseSet`."""
 
     def new(self, registrant, name, display_name, distro_series,
-            build_channels, date_created=DEFAULT):
+            build_channels, processors=None, date_created=DEFAULT):
         """See `ISnapBaseSet`."""
         store = IMasterStore(SnapBase)
         snap_base = SnapBase(
             registrant, name, display_name, distro_series, build_channels,
             date_created=date_created)
         store.add(snap_base)
+        if processors is None:
+            processors = [
+                das.processor for das in distro_series.enabled_architectures]
+        snap_base.setProcessors(processors)
         return snap_base
 
     def __iter__(self):

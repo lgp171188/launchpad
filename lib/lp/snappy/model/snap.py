@@ -612,7 +612,7 @@ class Snap(Storm, WebhookTargetMixin):
 
     processors = property(_getProcessors, setProcessors)
 
-    def _isBuildableArchitectureAllowed(self, das):
+    def _isBuildableArchitectureAllowed(self, das, snap_base=None):
         """Check whether we may build for a buildable `DistroArchSeries`.
 
         The caller is assumed to have already checked that a suitable chroot
@@ -624,20 +624,21 @@ class Snap(Storm, WebhookTargetMixin):
             and das.processor in self.processors
             and (
                 das.processor.supports_virtualized
-                or not self.require_virtualized))
+                or not self.require_virtualized)
+            and (snap_base is None or das.processor in snap_base.processors))
 
-    def _isArchitectureAllowed(self, das, pocket):
+    def _isArchitectureAllowed(self, das, pocket, snap_base=None):
         return (
             das.getChroot(pocket=pocket) is not None
-            and self._isBuildableArchitectureAllowed(das))
+            and self._isBuildableArchitectureAllowed(das, snap_base=snap_base))
 
-    def getAllowedArchitectures(self, distro_series=None):
+    def getAllowedArchitectures(self, distro_series=None, snap_base=None):
         """See `ISnap`."""
         if distro_series is None:
             distro_series = self.distro_series
         return [
             das for das in distro_series.buildable_architectures
-            if self._isBuildableArchitectureAllowed(das)]
+            if self._isBuildableArchitectureAllowed(das, snap_base=snap_base)]
 
     @property
     def store_distro_series(self):
@@ -779,7 +780,8 @@ class Snap(Storm, WebhookTargetMixin):
                      snap_base=None, channels=None, build_request=None):
         """See `ISnap`."""
         self._checkRequestBuild(requester, archive)
-        if not self._isArchitectureAllowed(distro_arch_series, pocket):
+        if not self._isArchitectureAllowed(
+                distro_arch_series, pocket, snap_base=snap_base):
             raise SnapBuildDisallowedArchitecture(distro_arch_series, pocket)
 
         if not channels:
@@ -898,7 +900,8 @@ class Snap(Storm, WebhookTargetMixin):
             # minimise confusion.
             supported_arches = OrderedDict(
                 (das.architecturetag, das) for das in sorted(
-                    self.getAllowedArchitectures(distro_series),
+                    self.getAllowedArchitectures(
+                        distro_series, snap_base=snap_base),
                     key=attrgetter("processor.id"))
                 if (architectures is None or
                     das.architecturetag in architectures))

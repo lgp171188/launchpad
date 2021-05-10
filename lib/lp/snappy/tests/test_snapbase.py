@@ -31,6 +31,7 @@ from lp.snappy.interfaces.snapbase import (
     )
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.testing import (
+    admin_logged_in,
     api_url,
     celebrity_logged_in,
     logout,
@@ -76,6 +77,56 @@ class TestSnapBase(TestCaseWithFactory):
         snap_base = self.factory.makeSnapBase()
         getUtility(ISnapBaseSet).setDefault(snap_base)
         self.assertRaises(CannotDeleteSnapBase, snap_base.destroySelf)
+
+
+class TestSnapBaseProcessors(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def setUp(self):
+        super(TestSnapBaseProcessors, self).setUp(user="foo.bar@canonical.com")
+        self.unrestricted_procs = [
+            self.factory.makeProcessor() for _ in range(3)]
+        self.restricted_procs = [
+            self.factory.makeProcessor(restricted=True, build_by_default=False)
+            for _ in range(2)]
+        self.procs = self.unrestricted_procs + self.restricted_procs
+        self.factory.makeProcessor()
+        self.distroseries = self.factory.makeDistroSeries()
+        for processor in self.procs:
+            self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=processor.name,
+                processor=processor)
+
+    def test_new_default_processors(self):
+        # SnapBaseSet.new creates a SnapBaseArch for each available
+        # Processor for the corresponding series.
+        snap_base = getUtility(ISnapBaseSet).new(
+            registrant=self.factory.makePerson(),
+            name=self.factory.getUniqueUnicode(),
+            display_name=self.factory.getUniqueUnicode(),
+            distro_series=self.distroseries, build_channels={})
+        self.assertContentEqual(self.procs, snap_base.processors)
+
+    def test_new_override_processors(self):
+        # SnapBaseSet.new can be given a custom set of processors.
+        snap_base = getUtility(ISnapBaseSet).new(
+            registrant=self.factory.makePerson(),
+            name=self.factory.getUniqueUnicode(),
+            display_name=self.factory.getUniqueUnicode(),
+            distro_series=self.distroseries, build_channels={},
+            processors=self.procs[:2])
+        self.assertContentEqual(self.procs[:2], snap_base.processors)
+
+    def test_set(self):
+        # The property remembers its value correctly.
+        snap_base = self.factory.makeSnapBase()
+        snap_base.setProcessors(self.restricted_procs)
+        self.assertContentEqual(self.restricted_procs, snap_base.processors)
+        snap_base.setProcessors(self.procs)
+        self.assertContentEqual(self.procs, snap_base.processors)
+        snap_base.setProcessors([])
+        self.assertContentEqual([], snap_base.processors)
 
 
 class TestSnapBaseSet(TestCaseWithFactory):
@@ -367,6 +418,71 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         with person_logged_in(person):
             self.assertEqual([], list(snap_base.dependencies))
+
+    def setUpProcessors(self):
+        self.unrestricted_procs = [
+            self.factory.makeProcessor() for _ in range(3)]
+        self.unrestricted_proc_names = [
+            processor.name for processor in self.unrestricted_procs]
+        self.restricted_procs = [
+            self.factory.makeProcessor(restricted=True, build_by_default=False)
+            for _ in range(2)]
+        self.restricted_proc_names = [
+            processor.name for processor in self.restricted_procs]
+        self.procs = self.unrestricted_procs + self.restricted_procs
+        self.factory.makeProcessor()
+        self.distroseries = self.factory.makeDistroSeries()
+        for processor in self.procs:
+            self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=processor.name,
+                processor=processor)
+
+    def setProcessors(self, user, snap_base_url, names):
+        ws = webservice_for_person(
+            user, permission=OAuthPermission.WRITE_PUBLIC)
+        return ws.named_post(
+            snap_base_url, "setProcessors",
+            processors=["/+processors/%s" % name for name in names],
+            api_version="devel")
+
+    def assertProcessors(self, user, snap_base_url, names):
+        body = webservice_for_person(user).get(
+            snap_base_url + "/processors", api_version="devel").jsonBody()
+        self.assertContentEqual(
+            names, [entry["name"] for entry in body["entries"]])
+
+    def test_setProcessors_admin(self):
+        """An admin can change the supported processor set."""
+        self.setUpProcessors()
+        with admin_logged_in():
+            snap_base = self.factory.makeSnapBase(
+                distro_series=self.distroseries,
+                processors=self.unrestricted_procs)
+            snap_base_url = api_url(snap_base)
+        admin = self.factory.makeAdministrator()
+        self.assertProcessors(
+            admin, snap_base_url, self.unrestricted_proc_names)
+
+        response = self.setProcessors(
+            admin, snap_base_url,
+            [self.unrestricted_proc_names[0], self.restricted_proc_names[0]])
+        self.assertEqual(200, response.status)
+        self.assertProcessors(
+            admin, snap_base_url,
+            [self.unrestricted_proc_names[0], self.restricted_proc_names[0]])
+
+    def test_setProcessors_non_admin_forbidden(self):
+        """Only admins and registry experts can call setProcessors."""
+        self.setUpProcessors()
+        with admin_logged_in():
+            snap_base = self.factory.makeSnapBase(
+                distro_series=self.distroseries)
+            snap_base_url = api_url(snap_base)
+        person = self.factory.makePerson()
+
+        response = self.setProcessors(
+            person, snap_base_url, [self.unrestricted_proc_names[0]])
+        self.assertEqual(401, response.status)
 
     def test_collection(self):
         # lp.snap_bases is a collection of all SnapBases.
