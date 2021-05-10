@@ -2,7 +2,8 @@
 
 body {
     /* line-height is the same as the sprite height. */
-    font-family: Ubuntu, 'Bitstream Vera Sans', 'DejaVu Sans', Tahoma, sans-serif;
+    font-family: Ubuntu, 'Bitstream Vera Sans', 'DejaVu Sans', Tahoma,
+                 sans-serif;
     font-size: 12px;
     line-height: 18px;
     color: #333;
@@ -444,7 +445,8 @@ body {
 
       table {
         th, td {
-          /* We don't want extra padding on nested tables, like batch navigation. */
+          /* We don't want extra padding on nested tables,
+             like batch navigation. */
           padding: 0;
         }
       }
@@ -541,6 +543,42 @@ body {
     padding: 2px 10px 5px 10px;
     border-bottom-right-radius: 5px;
     border-bottom-left-radius: 5px;
+  }
+
+  .editable-message {
+    .editable-message-notification {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background-color: white;
+      opacity: 0.9;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+
+      p {
+        display: block;
+        flex-basis: 100%;
+        margin-top: 10px;
+      }
+      .editable-message-notification-dismiss {
+        flex-basis: 100%;
+        text-align: center;
+        padding: 1px;
+        margin-top: -10px;
+      }
+    }
+
+    .editable-message-form {
+      padding: 0.5em 12px 0;
+      input[type="button"] {
+        padding: 1px;
+        margin: 5px;
+      }
+    }
   }
 
 @import 'typography',
