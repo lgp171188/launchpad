@@ -1003,10 +1003,10 @@ class ISnapSet(Interface):
             this user; otherwise, only return publicly-visible packages.
         """
 
-    def findByBranch(branch):
+    def findByBranch(branch, check_permissions=True):
         """Return all snap packages for the given Bazaar branch."""
 
-    def findByGitRepository(repository, paths=None):
+    def findByGitRepository(repository, paths=None, check_permissions=True):
         """Return all snap packages for the given Git repository.
 
         :param repository: An `IGitRepository`.

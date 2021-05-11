@@ -1267,7 +1267,11 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     def markSnapsStale(self, paths):
         """See `IGitRepository`."""
         snap_set = getUtility(ISnapSet)
-        for snap in snap_set.findByGitRepository(self, paths=paths):
+        snaps = snap_set.findByGitRepository(
+            self,
+            paths=paths,
+            check_permissions=False)
+        for snap in snaps:
             snap.is_stale = True
 
     def _markProposalMerged(self, proposal, merged_revision_id, logger=None):

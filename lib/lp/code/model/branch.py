@@ -685,7 +685,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
 
     def markSnapsStale(self):
         """See `IBranch`."""
-        for snap in getUtility(ISnapSet).findByBranch(self):
+        snaps = getUtility(ISnapSet).findByBranch(
+            self,
+            check_permissions=False)
+        for snap in snaps:
             snap.is_stale = True
 
     def addToLaunchBag(self, launchbag):
