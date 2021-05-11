@@ -30,24 +30,40 @@ truncated.
     ...     comment_divs = soup('div', 'boardCommentBody')
     ...     for div_tag in comment_divs:
     ...         print(div_tag)
-    >>> print_comments(browser.contents) #doctest: -ELLIPSIS
+    >>> print_comments(browser.contents) #doctest: +ELLIPSIS
     <div class="boardCommentBody">
-    <a href="http://bugs.launchpad.test/tomcat/+bug/2/comments/1/+download">Download
+    <a href="http://bugs...test/tomcat/+bug/2/comments/1/+download">Download
     full text</a> (363 bytes)
-    <div class="comment-text" itemprop="commentText"><p>This
+      <div class="editable-message-body">
+    <div class="comment-text editable-message-text"
+         itemprop="commentText"><p>This
     would be a real killer feature. If there...</p></div>
     <p>
     <a href="/tomcat/+bug/2/comments/1">Read more...</a>
     </p>
     </div>
+    <div class="editable-message-form" style="display: none">
+    <textarea rows="10" style="width: 100%">This would be a real...</textarea>
+    <input class="editable-message-update-btn" type="button" value="Update"/>
+    <input class="editable-message-cancel-btn" type="button" value="Cancel"/>
+    </div>
+    </div>
     <div class="boardCommentBody">
-    <a href="http://bugs.launchpad.test/tomcat/+bug/2/comments/2/+download">Download
+    <a href="http://bugs...test/tomcat/+bug/2/comments/2/+download">Download
     full text</a> (364 bytes)
-    <div class="comment-text" itemprop="commentText"><p>Oddly
-    enough the bug system seems only capabl...</p></div>
+      <div class="editable-message-body">
+    <div class="comment-text editable-message-text"
+          itemprop="commentText"><p>Oddly enough the bug system seems only
+      capabl...</p></div>
     <p>
     <a href="/tomcat/+bug/2/comments/2">Read more...</a>
     </p>
+    </div>
+    <div class="editable-message-form" style="display: none">
+    <textarea rows="10" style="width: 100%">Oddly enough the bug...</textarea>
+    <input class="editable-message-update-btn" type="button" value="Update"/>
+    <input class="editable-message-cancel-btn" type="button" value="Cancel"/>
+    </div>
     </div>
 
 Let's click on the first "Read more..." link.
@@ -61,15 +77,22 @@ The whole comment is visible on this page:
     >>> print(browser.title)
     Comment #1 : Bug #2 (blackhole) : Bugs : Tomcat
 
-    >>> print_comments(browser.contents) #doctest: -ELLIPSIS
+    >>> print_comments(browser.contents) #doctest: +ELLIPSIS
     <div class="boardCommentBody">
-    <div class="comment-text" itemprop="commentText"><p>This
-      would be a real killer feature. If there is already code
+    <div class="editable-message-body">
+    <div class="comment-text editable-message-text"
+         itemprop="commentText"><p>This would be a real killer feature.
+      If there is already code
       to make it possible, why aren't there tons of press announcements
       about the secuirty possibilities. Imagine - no more embarrassing
-      emails for Mr Gates... everything they delete would actually
-      disappear! I'm sure Redmond will switch over as soon as they hear
-      about this. It's not a bug, it's a feature!</p></div>
+      emails for ... disappear! I'm sure Redmond will switch over as soon as
+      they hear about this. It's not a bug, it's a feature!</p></div>
+    </div>
+    <div class="editable-message-form" style="display: none">
+    <textarea rows="10" style="width: 100%">This would be a...</textarea>
+    <input class="editable-message-update-btn" type="button" value="Update"/>
+    <input class="editable-message-cancel-btn" type="button" value="Cancel"/>
+    </div>
     </div>
 
     >>> config_data  = config.pop('max_comment_data')

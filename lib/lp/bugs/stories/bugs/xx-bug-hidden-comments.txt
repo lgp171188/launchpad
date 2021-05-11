@@ -78,7 +78,7 @@ Admin users will see the hidden message highlighted with an
 'adminHiddenComment' style.
 
     >>> print(' '.join(last_comment.parent['class']))
-    boardComment adminHiddenComment
+    boardComment editable-message adminHiddenComment
 
 Admin users can also reach the message via direct link, and it is
 highlighted with the 'adminHiddenComment style there too.
@@ -95,7 +95,7 @@ highlighted with the 'adminHiddenComment style there too.
     >>> last_comment = main_content('div', 'boardCommentBody')[-1]
     >>> last_comment_text = extract_text(last_comment.div)
     >>> print(' '.join(last_comment.parent['class']))
-    boardComment adminHiddenComment
+    boardComment editable-message adminHiddenComment
 
 Also for the owner of comment the message is still visible in the bug page.
 
@@ -112,7 +112,7 @@ Owner of the comment will see the hidden message highlighted with an
 'adminHiddenComment' style.
 
     >>> print(' '.join(last_comment.parent['class']))
-    boardComment adminHiddenComment
+    boardComment editable-message adminHiddenComment
 
 Owner of the comment can also reach the message via direct link, and it is
 highlighted with the 'adminHiddenComment style there too.
@@ -129,4 +129,4 @@ highlighted with the 'adminHiddenComment style there too.
     >>> last_comment = main_content('div', 'boardCommentBody')[-1]
     >>> last_comment_text = extract_text(last_comment.div)
     >>> print(' '.join(last_comment.parent['class']))
-    boardComment adminHiddenComment
+    boardComment editable-message adminHiddenComment

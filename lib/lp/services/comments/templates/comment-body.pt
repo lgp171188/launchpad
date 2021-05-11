@@ -16,7 +16,8 @@
     </tal:renderable >
   </div>
 
-  <div class="editable-message-form" style="display: none">
+  <div class="editable-message-form" style="display: none"
+       tal:condition="python: not getattr(context, 'hide_text', False)">
      <textarea style="width: 100%" rows="10"
                tal:content="context/text_contents" />
      <input type="button" value="Update" class="editable-message-update-btn" />
