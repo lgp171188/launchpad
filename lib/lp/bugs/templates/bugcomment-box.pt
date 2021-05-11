@@ -9,8 +9,9 @@
               python: comment.bugwatch and 'remoteBugComment' or '';
               admin_comment_hidden_class
               python: comment.show_for_admin and 'adminHiddenComment' or ''"
-  tal:attributes="class string:boardComment ${remote_bug_comment_class}
-                 ${admin_comment_hidden_class}">
+  tal:attributes="class string:boardComment editable-message
+                 ${remote_bug_comment_class} ${admin_comment_hidden_class};
+                 data-baseurl comment/fmt:url">
 
   <div class="boardCommentDetails">
     <table>
@@ -26,7 +27,14 @@
                 datetime comment/datecreated/fmt:isodate"
               tal:content="comment/datecreated/fmt:displaydate">
                 7 minutes ago
-            </time>:
+            </time>
+            <span tal:condition="comment/date_last_edit">
+              (last edit <time
+                    itemprop="editTime"
+                    tal:attributes="title comment/date_last_edit/fmt:datetime;
+                      datetime comment/date_last_edit/fmt:isodate"
+                    tal:content="comment/date_last_edit/fmt:displaydate" />)
+            </span>
               <a tal:attributes="href comment/fmt:url"
                  tal:condition="comment/display_title">
                 <strong tal:content="comment/title" />
@@ -47,11 +55,24 @@
                 datetime comment/datecreated/fmt:isodate"
               tal:content="comment/datecreated/fmt:displaydate">
               7 minutes ago
-              </time>:
+              </time>
+              <span tal:condition="comment/date_last_edit">
+                (last edit
+                <time itemprop="editTime"
+                      tal:attributes="
+                        title comment/date_last_edit/fmt:datetime;
+                        datetime comment/date_last_edit/fmt:isodate"
+                      tal:content="comment/date_last_edit/fmt:displaydate" />)
+              </span>
               <a tal:attributes="href comment/fmt:url">
                 <strong tal:condition="comment/display_title"
                         tal:content="comment/title" />
               </a>
+          </td>
+
+          <td>
+            <img class="sprite edit action-icon editable-message-edit-btn"
+                 tal:condition="view/can_edit"/>
           </td>
 
           <td class="bug-comment-index">
@@ -91,6 +112,7 @@
 
     <tal:text
       replace="structure comment/@@+comment-body-text" />
+
   </div>
 
   <div class="boardCommentActivity" tal:condition="comment/show_activity">

@@ -142,12 +142,13 @@ And three comments were added, including the empty comment that was
 created for the attachments.
 
     >>> print_comments(user_browser.contents)
-    <p>This should be added as a comment.</p>
+    <div...><p>This should be added as a comment.</p></div>
     ----------------------------------------
-    <p>This should be added as another comment.</p>
+    <div...><p>This should be added as another comment.</p></div>
     ----------------------------------------
     Attachment: attachment1
     Attachment: Attachment description.
+    <div class="comment-text editable-message-text"...></div>
     ----------------------------------------
 
 
