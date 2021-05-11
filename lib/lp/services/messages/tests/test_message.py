@@ -14,6 +14,8 @@ from email.utils import (
 
 import six
 from testtools.matchers import (
+    ContainsDict,
+    EndsWith,
     Equals,
     Is,
     MatchesStructure,
@@ -286,6 +288,18 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
                 return api_url(msg.message)
             else:
                 return api_url(msg)
+
+    def test_api_get_basic_structure(self):
+        msg = self.makeMessage(content="some content")
+        ws = self.getWebservice(self.person)
+        url = self.getMessageAPIURL(msg)
+        obj = ws.get(url).jsonBody()
+        self.assertThat(obj, ContainsDict(dict(
+            revisions_collection_link=EndsWith("/revisions"),
+            date_last_edit=Is(None),
+            date_deleted=Is(None),
+            content=Equals("some content"),
+        )))
 
     def test_edit_message(self):
         msg = self.makeMessage(content="initial content")
