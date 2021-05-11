@@ -351,7 +351,7 @@ class LaunchpadBrowserPublication(
         if non_restricted_url is not None:
             location += '?production=%s' % quote(non_restricted_url)
 
-        request.response.setResult('')
+        request.response.setResult(b'')
         request.response.redirect(location, temporary_if_possible=True)
         # Quash further traversal.
         request.setTraversalStack([])
@@ -538,7 +538,7 @@ class LaunchpadBrowserPublication(
         # Don't render any content for a HEAD.  This was done
         # by zope.app.publication.browser.BrowserPublication
         if request.method == 'HEAD':
-            request.response.setResult('')
+            request.response.setResult(b'')
 
         try:
             getUtility(IStoreSelector).pop()
@@ -759,7 +759,7 @@ class LaunchpadBrowserPublication(
         #           or is it only required because of our customisations?
         #        - Andrew Bennetts, 2005-03-08
         if request.method == 'HEAD':
-            request.response.setResult('')
+            request.response.setResult(b'')
 
     def beginErrorHandlingTransaction(self, request, ob, note):
         """Hook for when a new view is started to handle an exception.
