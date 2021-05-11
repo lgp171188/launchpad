@@ -239,7 +239,6 @@ Each bug has a collection of messages.
     owner_link: 'http://.../~name12'
     parent_link: None
     resource_type_link: 'http://.../#message'
-    revisions_collection_link: '...'
     self_link: 'http://.../firefox/+bug/5/comments/0'
     subject: 'Firefox install instructions should be complete'
     web_link: 'http://bugs.../firefox/+bug/5/comments/0'
@@ -285,7 +284,6 @@ We can add a new message to a bug by calling the newMessage method.
     content: 'This is a new message added through the webservice API.'
     ...
     resource_type_link: 'http://api.launchpad.test/beta/#message'
-    revisions_collection_link: '...'
     self_link: 'http://api.launchpad.test/beta/firefox/+bug/5/comments/1'
     subject: 'A new message'
     web_link: '...'
@@ -1356,7 +1354,6 @@ attachment. This is where our comment is recorded.
     owner_link: 'http://.../~salgado'
     parent_link: None
     resource_type_link: 'http://.../#message'
-    revisions_collection_link: '...'
     self_link: 'http://.../firefox/+bug/1/comments/2'
     subject: 'Re: Firefox does not support SVG'
     web_link: 'http://bugs.../firefox/+bug/1/comments/2'
