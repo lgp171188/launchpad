@@ -235,7 +235,7 @@ that indicate how the message changed the question.
     content: 'This is the answer'
     date_created: '20...+00:00'
     date_deleted: None
-    date_last_edit: None
+    date_last_edited: None
     index: 1
     new_status: 'Answered'
     owner_link: 'http://api.launchpad.test/devel/~contact'
