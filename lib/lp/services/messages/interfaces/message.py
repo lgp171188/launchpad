@@ -99,7 +99,8 @@ class IMessageCommon(Interface):
     datecreated = exported(
         Datetime(title=_('Date Created'), required=True, readonly=True),
         exported_as='date_created')
-    date_last_edit = exported(Datetime(
+    date_last_edited = exported(Datetime(
+
         title=_('When this message was last edited'), required=False,
         readonly=True))
     date_deleted = exported(Datetime(

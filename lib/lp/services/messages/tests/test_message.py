@@ -26,7 +26,11 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.interfaces.bugmessage import IBugMessage
 from lp.services.compat import message_as_bytes
-from lp.services.messages.model.message import MessageSet
+from lp.services.database.interfaces import IStore
+from lp.services.messages.model.message import (
+    MessageChunk,
+    MessageSet,
+    )
 from lp.services.messages.tests.scenarios import MessageTypeScenariosMixin
 from lp.services.utils import utc_now
 from lp.services.webapp.interfaces import OAuthPermission
@@ -229,7 +233,7 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         msg = self.makeMessage(owner=owner, content="initial content")
         with person_logged_in(owner):
             msg.editContent("first edit")
-            first_edit_date = msg.date_last_edit
+            first_edit_date = msg.date_last_edited
         self.assertEqual("first edit", msg.text_contents)
         self.assertEqual(1, len(msg.revisions))
         self.assertIsMessageHistory(
@@ -246,6 +250,42 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertIsMessageHistory(
             msg.revisions[0], msg,
             content="initial content", created_at=msg.datecreated)
+
+    def test_edit_message_with_blobs(self):
+        # Messages with blobs should keep the blobs untouched when the
+        # content is edited.
+        owner = self.factory.makePerson()
+        msg = self.makeMessage(owner=owner, content="initial content")
+        # The IMessage object (not the delegate one).
+        raw_msg = removeSecurityProxy(msg).message
+
+        files = [self.factory.makeLibraryFileAlias(db_only=True)
+                 for _ in range(2)]
+        store = IStore(msg)
+        for seq, blob in enumerate(files):
+            store.add(MessageChunk(
+                message=raw_msg, sequence=seq + 2, blob=blob))
+
+        with person_logged_in(owner):
+            msg.editContent("final form")
+        self.assertThat(msg.revisions[0], MatchesStructure(
+            content=Equals("initial content"),
+            message=Equals(raw_msg),
+            date_created=Equals(msg.datecreated),
+            date_deleted=Is(None)))
+
+        # Check that current message chunks are 3: the 2 old blobs, and the
+        # new text message.
+        self.assertEqual(3, len(msg.chunks))
+        self.assertEqual("final form", msg.chunks[0].content)
+        self.assertEqual(files, [i.blob for i in msg.chunks[1:]])
+
+        # Check revision chunks. It should be the old text message.
+        rev_chunks = msg.revisions[0].chunks
+        self.assertEqual(1, len(rev_chunks))
+        self.assertThat(rev_chunks[0], MatchesStructure(
+            sequence=Equals(1),
+            content=Equals("initial content")))
 
     def test_non_owner_cannot_delete_message(self):
         owner = self.factory.makePerson()
@@ -296,7 +336,7 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         obj = ws.get(url).jsonBody()
         self.assertThat(obj, ContainsDict(dict(
             revisions_collection_link=EndsWith("/revisions"),
-            date_last_edit=Is(None),
+            date_last_edited=Is(None),
             date_deleted=Is(None),
             content=Equals("some content"),
         )))
@@ -312,7 +352,7 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         edited_obj = ws.get(url).jsonBody()
         self.assertEqual("the new content", edited_obj['content'])
         self.assertIsNone(edited_obj["date_deleted"])
-        self.assertIsNotNone(edited_obj["date_last_edit"])
+        self.assertIsNotNone(edited_obj["date_last_edited"])
 
     def test_edit_message_permission_denied_for_non_owner(self):
         msg = self.makeMessage(content="initial content")
@@ -325,7 +365,7 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         edited_obj = ws.get(url).jsonBody()
         self.assertEqual("initial content", edited_obj['content'])
         self.assertIsNone(edited_obj["date_deleted"])
-        self.assertIsNone(edited_obj["date_last_edit"])
+        self.assertIsNone(edited_obj["date_last_edited"])
 
     def test_delete_message(self):
         msg = self.makeMessage(content="initial content")
