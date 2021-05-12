@@ -123,10 +123,15 @@ def group_comments_with_activity(comments, activities):
         (activity.datechanged, max_index,
             activity.person, activity_kind, activity)
         for activity in activities)
+
     # when an action and a comment happen at the same time, the action comes
     # second, when two events are tied the comment index is used to
     # disambiguate.
-    events = sorted(chain(comments, activity), key=itemgetter(0, 1, 2))
+    def event_sort_key(event):
+        date, index, person, _, _ = event
+        return date, index, person.id
+
+    events = sorted(chain(comments, activity), key=event_sort_key)
 
     def gen_event_windows(events):
         """Generate event windows.
