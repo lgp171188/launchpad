@@ -65,7 +65,7 @@ class MessageRevision(StormBase):
 
     def deleteContent(self):
         store = IStore(self)
-        store.find(MessageRevisionChunk, message=self).remove()
+        store.find(MessageRevisionChunk, message_revision=self).remove()
         self.date_deleted = utc_now()
         del get_property_cache(self).chunks
 
