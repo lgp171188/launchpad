@@ -235,7 +235,7 @@ Each bug has a collection of messages.
     content: 'All ways of downloading firefox should provide...'
     date_created: '2005-01-14T17:27:03.702622+00:00'
     date_deleted: None
-    date_last_edit: None
+    date_last_edited: None
     owner_link: 'http://.../~name12'
     parent_link: None
     resource_type_link: 'http://.../#message'
@@ -1350,7 +1350,7 @@ attachment. This is where our comment is recorded.
     content: 'The numbers you asked for.'
     date_created: '...'
     date_deleted: None
-    date_last_edit: None
+    date_last_edited: None
     owner_link: 'http://.../~salgado'
     parent_link: None
     resource_type_link: 'http://.../#message'
