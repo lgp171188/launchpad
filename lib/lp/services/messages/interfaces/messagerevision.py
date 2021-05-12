@@ -6,11 +6,15 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 __all__ = [
-    'IMessageRevision'
+    'IMessageRevision',
+    'IMessageRevisionChunk',
     ]
 
 from lazr.restful.fields import Reference
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Datetime,
     Int,
@@ -41,6 +45,8 @@ class IMessageRevisionView(Interface):
         title=_("The time when this message revision was created."),
         required=False, readonly=True)
 
+    chunks = Attribute(_('Message pieces'))
+
 
 class IMessageRevisionEdit(Interface):
     """IMessageRevision editable attributes."""
@@ -51,3 +57,11 @@ class IMessageRevisionEdit(Interface):
 
 class IMessageRevision(IMessageRevisionView, IMessageRevisionEdit):
     """A historical revision of a IMessage."""
+
+
+class IMessageRevisionChunk(Interface):
+    id = Int(title=_('ID'), required=True, readonly=True)
+    messagerevision = Int(
+        title=_('MessageRevision'), required=True, readonly=True)
+    sequence = Int(title=_('Sequence order'), required=True, readonly=True)
+    content = Text(title=_('Text content'), required=False, readonly=True)

@@ -37,6 +37,13 @@
             interface="lp.services.messages.interfaces.messagerevision.IMessageRevisionEdit"/>
     </class>
 
+    <!-- MessageChunk -->
+    <class
+        class="lp.services.messages.model.messagerevision.MessageRevisionChunk">
+        <allow
+            interface="lp.services.messages.interfaces.messagerevision.IMessageRevisionChunk"/>
+    </class>
+
     <class class="lp.services.messages.interfaces.message.IndexedMessage">
       <allow interface="lp.services.messages.interfaces.message.IMessage" />
       <allow interface="lp.services.messages.interfaces.message.IIndexedMessage" />

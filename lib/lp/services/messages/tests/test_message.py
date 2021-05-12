@@ -23,7 +23,11 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import ProxyFactory
 
 from lp.services.compat import message_as_bytes
-from lp.services.messages.model.message import MessageSet
+from lp.services.database.interfaces import IStore
+from lp.services.messages.model.message import (
+    MessageChunk,
+    MessageSet,
+    )
 from lp.services.utils import utc_now
 from lp.testing import (
     login,
@@ -218,7 +222,7 @@ class TestMessageEditing(TestCaseWithFactory):
         msg = self.makeMessage(owner=owner, content="initial content")
         with person_logged_in(owner):
             msg.editContent("first edit")
-            first_edit_date = msg.date_last_edit
+            first_edit_date = msg.date_last_edited
         self.assertEqual("first edit", msg.text_contents)
         self.assertEqual(1, len(msg.revisions))
         self.assertThat(msg.revisions[0], MatchesStructure(
@@ -241,6 +245,38 @@ class TestMessageEditing(TestCaseWithFactory):
             message=Equals(msg),
             date_created=Equals(msg.datecreated),
             date_deleted=Is(None)))
+
+    def test_edit_message_with_blobs(self):
+        # Messages with blobs should keep the blobs untouched when the
+        # content is edited.
+        owner = self.factory.makePerson()
+        msg = self.makeMessage(owner=owner, content="initial content")
+        files = [self.factory.makeLibraryFileAlias(db_only=True)
+                 for _ in range(2)]
+        store = IStore(msg)
+        for seq, blob in enumerate(files):
+            store.add(MessageChunk(message=msg, sequence=seq + 2, blob=blob))
+
+        with person_logged_in(owner):
+            msg.editContent("final form")
+        self.assertThat(msg.revisions[0], MatchesStructure(
+            content=Equals("initial content"),
+            message=Equals(msg),
+            date_created=Equals(msg.datecreated),
+            date_deleted=Is(None)))
+
+        # Check that current message chunks are 3: the 2 old blobs, and the
+        # new text message.
+        self.assertEqual(3, len(msg.chunks))
+        self.assertEqual("final form", msg.chunks[0].content)
+        self.assertEqual(files, [i.blob for i in msg.chunks[1:]])
+
+        # Check revision chunks. It should be the old text message.
+        rev_chunks = msg.revisions[0].chunks
+        self.assertEqual(1, len(rev_chunks))
+        self.assertThat(rev_chunks[0], MatchesStructure(
+            sequence=Equals(1),
+            content=Equals("initial content")))
 
     def test_non_owner_cannot_delete_message(self):
         owner = self.factory.makePerson()

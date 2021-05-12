@@ -72,7 +72,7 @@ class IMessageView(Interface):
         Datetime(title=_('Date Created'), required=True, readonly=True),
         exported_as='date_created')
 
-    date_last_edit = Datetime(
+    date_last_edited = Datetime(
         title=_('When this message was last edited'), required=False,
         readonly=True)
 
