@@ -746,22 +746,23 @@ class GitAPI(LaunchpadXMLRPCView):
             logger.info("abortRepoCreation succeeded: %s" % result)
         return result
 
-    def updateRepackStats(self, statistics, repo):
+    def updateRepackStats(self, translated_path, statistics):
         """See `IGitAPI`."""
         logger = self._getLogger()
-        logger.info(
-            "Request received: updateRepackStats('%s')", repo)
-        repository = getUtility(IGitLookup).getByHostingPath(repo)
+        logger.info("Request received: updateRepackStats('%s', '%d', '%d')",
+                    translated_path, statistics.get('loose_object_count'),
+                    statistics.get('pack_count'))
+        repository = getUtility(IGitLookup).getByHostingPath(translated_path)
         if repository is None:
-            logger.error(
-                "updateRepackStats failed: repository not found: %s", repo)
-            return
+            fault = faults.GitRepositoryNotFound(translated_path)
+            logger.error("updateRepackStats failed: %r", fault)
+            return fault
         removeSecurityProxy(repository).setRepackData(
-            statistics.get('loose_object_count'),
-            statistics.get('pack_count'))
+            loose_object_count=statistics.get('loose_object_count'),
+            pack_count=statistics.get('pack_count'))
         logger.info(
             "updateRepackStats succeeded for repo id %s with: %s %s " % (
-                repo,
+                translated_path,
                 statistics.get('loose_object_count'),
                 statistics.get('pack_count'))
         )

@@ -55,6 +55,7 @@ from lp.code.tests.helpers import GitHostingFixture
 from lp.code.xmlrpc.git import GIT_ASYNC_CREATE_REPO
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
+from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
 from lp.services.macaroons.interfaces import (
@@ -2603,29 +2604,18 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     requester, repository, [ref_path], {ref_path: []},
                     macaroon_raw=macaroon.serialize())
 
-    def assertDoesNotOops(self, request_id, func_name, *args, **kwargs):
-        with FakeLogger() as logger:
-            results = getattr(self.git_api, func_name)(*args, **kwargs)
-            self.assertThat(logger.output, MatchesRegex(
-                r"\[request-id=%s\] Request received: %s.*\n"
-                r"\[request-id=%s\] %s failed: repository not found: " % (
-                    request_id or ".*", func_name,
-                    request_id or ".*", func_name)))
-        return results
-
     def assertUpdatesRepackStats(self, repo):
-        start_time = datetime.now(pytz.UTC)
         self.assertIsNone(
             self.assertDoesNotFault(
                 None, "updateRepackStats",
-                {'loose_object_count': 5, 'pack_count': 2},
-                repo.getInternalPath()
-                ))
-        end_time = datetime.now(pytz.UTC)
+                repo.getInternalPath(),
+                {'loose_object_count': 5, 'pack_count': 2}))
         naked_repo = removeSecurityProxy(repo)
         self.assertEqual(5, naked_repo.loose_object_count)
         self.assertEqual(2, naked_repo.pack_count)
-        self.assertBetween(start_time, naked_repo.date_last_scanned, end_time)
+        self.assertEqual(
+            get_transaction_timestamp(Store.of(repo)).replace(microsecond=0),
+            naked_repo.date_last_scanned.replace(microsecond=0))
 
     def test_updateRepackStats(self):
         requester_owner = self.factory.makePerson()
@@ -2633,12 +2623,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertUpdatesRepackStats(repository)
 
     def test_updateRepackStatsNonExistentRepo(self):
-        self.assertIsNone(
-            self.assertDoesNotOops(
-                None, "updateRepackStats",
-                {'loose_object_count': 5, 'pack_count': 2},
-                "non-existent repo"
-                ))
+        self.assertFault(
+            faults.GitRepositoryNotFound("nonexistent"), None,
+            "updateRepackStats", "nonexistent",
+            {"loose_object_count": 5, "pack_count": 2})
 
 
 class TestGitAPISecurity(TestGitAPIMixin, TestCaseWithFactory):
