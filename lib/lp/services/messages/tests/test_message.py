@@ -201,12 +201,13 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def assertIsMessageHistory(
-            self, msg_history, msg, created_at, content, deleted_at=None):
+            self, msg_history, msg, rev, created_at, content, deleted_at=None):
         """Asserts that `msg_history` is a message a message history of
         `msg` with the given extra info.
         """
         self.assertThat(msg_history, MatchesStructure(
             content=Equals(content),
+            revision=Equals(rev),
             message=Equals(removeSecurityProxy(msg).message),
             date_created=Equals(created_at),
             date_deleted=Is(deleted_at)))
@@ -225,7 +226,7 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertEqual("This is the new content", msg.text_contents)
         self.assertEqual(1, len(msg.revisions))
         self.assertIsMessageHistory(
-            msg.revisions[0], msg,
+            msg.revisions[0], msg, rev=1,
             created_at=msg.datecreated, content="initial content")
 
     def test_multiple_edits_revisions(self):
@@ -237,19 +238,20 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertEqual("first edit", msg.text_contents)
         self.assertEqual(1, len(msg.revisions))
         self.assertIsMessageHistory(
-            msg.revisions[0], msg,
+            msg.revisions[0], msg, rev=1,
             content="initial content", created_at=msg.datecreated)
 
         with person_logged_in(owner):
             msg.editContent("final form")
         self.assertEqual("final form", msg.text_contents)
         self.assertEqual(2, len(msg.revisions))
+
         self.assertIsMessageHistory(
-            msg.revisions[1], msg,
-            content="first edit", created_at=first_edit_date)
-        self.assertIsMessageHistory(
-            msg.revisions[0], msg,
+            msg.revisions[0], msg, rev=1,
             content="initial content", created_at=msg.datecreated)
+        self.assertIsMessageHistory(
+            msg.revisions[1], msg, rev=2,
+            content="first edit", created_at=first_edit_date)
 
     def test_edit_message_with_blobs(self):
         # Messages with blobs should keep the blobs untouched when the
@@ -270,6 +272,7 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
             msg.editContent("final form")
         self.assertThat(msg.revisions[0], MatchesStructure(
             content=Equals("initial content"),
+            revision=Equals(1),
             message=Equals(raw_msg),
             date_created=Equals(msg.datecreated),
             date_deleted=Is(None)))
