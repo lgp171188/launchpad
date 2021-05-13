@@ -213,6 +213,7 @@ class TestMessageEditing(TestCaseWithFactory):
         self.assertEqual(1, len(msg.revisions))
         self.assertThat(msg.revisions[0], MatchesStructure(
             content=Equals("initial content"),
+            revision=Equals(1),
             message=Equals(msg),
             date_created=Equals(msg.datecreated),
             date_deleted=Is(None)))
@@ -227,6 +228,7 @@ class TestMessageEditing(TestCaseWithFactory):
         self.assertEqual(1, len(msg.revisions))
         self.assertThat(msg.revisions[0], MatchesStructure(
             content=Equals("initial content"),
+            revision=Equals(1),
             message=Equals(msg),
             date_created=Equals(msg.datecreated),
             date_deleted=Is(None)))
@@ -237,11 +239,13 @@ class TestMessageEditing(TestCaseWithFactory):
         self.assertEqual(2, len(msg.revisions))
         self.assertThat(msg.revisions[0], MatchesStructure(
             content=Equals("first edit"),
+            revision=Equals(2),
             message=Equals(msg),
             date_created=Equals(first_edit_date),
             date_deleted=Is(None)))
         self.assertThat(msg.revisions[1], MatchesStructure(
             content=Equals("initial content"),
+            revision=Equals(1),
             message=Equals(msg),
             date_created=Equals(msg.datecreated),
             date_deleted=Is(None)))
@@ -261,6 +265,7 @@ class TestMessageEditing(TestCaseWithFactory):
             msg.editContent("final form")
         self.assertThat(msg.revisions[0], MatchesStructure(
             content=Equals("initial content"),
+            revision=Equals(1),
             message=Equals(msg),
             date_created=Equals(msg.datecreated),
             date_deleted=Is(None)))
