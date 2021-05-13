@@ -747,38 +747,21 @@ class GitAPI(LaunchpadXMLRPCView):
             logger.info("abortRepoCreation succeeded: %s" % result)
         return result
 
-    def _updateRepackStats(self, requester, path, auth_params):
-        logger = self._getLogger()
-        if requester == LAUNCHPAD_ANONYMOUS:
-            requester = None
-        repository = getUtility(IGitLookup).getByHostingPath(path)
-        if repository is None:
-            raise faults.GitRepositoryNotFound(path)
-
-        if auth_params is not None:
-            verified = self._verifyAuthParams(
-                requester, repository, auth_params)
-            if self._isWritable(requester, repository, verified):
-                # call Turnip to get repack data and set it
-                stats = getUtility(IGitHostingClient).fetchRepackStats(path)
-                removeSecurityProxy(repository).setRepackData(
-                    stats.get('loose_object_count'),
-                    stats.get('pack_count'))
-
-    def updateRepackStats(self, path, auth_params):
+    def updateRepackStats(self, statistics, repo):
         """See `IGitAPI`."""
-        logger = self._getLogger(auth_params.get("request-id"))
-        requester_id = _get_requester_id(auth_params)
+        logger = self._getLogger()
         logger.info(
-            "Request received: updateRepackStats('%s')", path)
-        try:
-            result = run_with_login(
-                requester_id, self._updateRepackStats,
-                path, auth_params)
-        except Exception as e:
-            result = e
-        if isinstance(result, xmlrpc_client.Fault):
-            logger.error("updateRepackStats failed: %r", result)
-        else:
-            logger.info("updateRepackStats succeeded: %s" % result)
-        return result
+            "Request received: updateRepackStats('%s')", repo)
+        repository = getUtility(IGitLookup).getByHostingPath(repo)
+        if repository is None:
+            logger.error("updateRepackStats failed: repository not found: %s", repo)
+            return
+        removeSecurityProxy(repository).setRepackData(
+            statistics.get('loose_object_count'),
+            statistics.get('pack_count'))
+        logger.info(
+            "updateRepackStats succeeded for repo id %s with: %s %s " % (
+                repo,
+                statistics.get('loose_object_count'),
+                statistics.get('pack_count'))
+        )
