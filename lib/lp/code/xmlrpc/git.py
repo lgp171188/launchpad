@@ -46,7 +46,6 @@ from lp.code.interfaces.codehosting import (
     LAUNCHPAD_SERVICES,
     )
 from lp.code.interfaces.gitapi import IGitAPI
-from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
 from lp.code.interfaces.gitlookup import (
     IGitLookup,
@@ -754,7 +753,8 @@ class GitAPI(LaunchpadXMLRPCView):
             "Request received: updateRepackStats('%s')", repo)
         repository = getUtility(IGitLookup).getByHostingPath(repo)
         if repository is None:
-            logger.error("updateRepackStats failed: repository not found: %s", repo)
+            logger.error(
+                "updateRepackStats failed: repository not found: %s", repo)
             return
         removeSecurityProxy(repository).setRepackData(
             statistics.get('loose_object_count'),
