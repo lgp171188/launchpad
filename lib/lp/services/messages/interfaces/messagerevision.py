@@ -6,7 +6,8 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 __all__ = [
-    'IMessageRevision'
+    'IMessageRevision',
+    'IMessageRevisionChunk',
     ]
 
 from lazr.restful.declarations import (
@@ -16,7 +17,10 @@ from lazr.restful.declarations import (
     operation_for_version,
     )
 from lazr.restful.fields import Reference
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Datetime,
     Int,
@@ -30,6 +34,8 @@ from lp.services.messages.interfaces.message import IMessage
 class IMessageRevisionView(Interface):
     """IMessageRevision readable attributes."""
     id = Int(title=_("ID"), required=True, readonly=True)
+
+    revision = Int(title=_("Revision number"), required=True, readonly=True)
 
     content = exported(Text(
         title=_("The message at the given revision"),
@@ -52,6 +58,8 @@ class IMessageRevisionView(Interface):
         title=_("The time when this message revision was created."),
         required=False, readonly=True))
 
+    chunks = Attribute(_('Message pieces'))
+
 
 class IMessageRevisionEdit(Interface):
     """IMessageRevision editable attributes."""
@@ -65,3 +73,11 @@ class IMessageRevisionEdit(Interface):
 @exported_as_webservice_entry(publish_web_link=False, as_of="devel")
 class IMessageRevision(IMessageRevisionView, IMessageRevisionEdit):
     """A historical revision of a IMessage."""
+
+
+class IMessageRevisionChunk(Interface):
+    id = Int(title=_('ID'), required=True, readonly=True)
+    messagerevision = Int(
+        title=_('MessageRevision'), required=True, readonly=True)
+    sequence = Int(title=_('Sequence order'), required=True, readonly=True)
+    content = Text(title=_('Text content'), required=False, readonly=True)

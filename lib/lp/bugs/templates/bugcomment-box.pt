@@ -27,13 +27,13 @@
                 datetime comment/datecreated/fmt:isodate"
               tal:content="comment/datecreated/fmt:displaydate">
                 7 minutes ago
-            </time><span tal:condition="not:comment/date_last_edit">:</span>
-            <span tal:condition="comment/date_last_edit">
+            </time><span tal:condition="not:comment/date_last_edited">:</span>
+            <span tal:condition="comment/date_last_edited">
               (last edit <time
                     itemprop="editTime"
-                    tal:attributes="title comment/date_last_edit/fmt:datetime;
-                      datetime comment/date_last_edit/fmt:isodate"
-                    tal:content="comment/date_last_edit/fmt:displaydate" />):
+                    tal:attributes="title comment/date_last_edited/fmt:datetime;
+                      datetime comment/date_last_edited/fmt:isodate"
+                    tal:content="comment/date_last_edited/fmt:displaydate" />):
             </span>
               <a tal:attributes="href comment/fmt:url"
                  tal:condition="comment/display_title">
@@ -55,14 +55,14 @@
                 datetime comment/datecreated/fmt:isodate"
               tal:content="comment/datecreated/fmt:displaydate">
               7 minutes ago
-              </time><span tal:condition="not:comment/date_last_edit">:</span>
-              <span tal:condition="comment/date_last_edit">
+              </time><span tal:condition="not:comment/date_last_edited">:</span>
+              <span tal:condition="comment/date_last_edited">
                 (last edit
                 <time itemprop="editTime"
                       tal:attributes="
-                        title comment/date_last_edit/fmt:datetime;
-                        datetime comment/date_last_edit/fmt:isodate"
-                      tal:content="comment/date_last_edit/fmt:displaydate" />):
+                        title comment/date_last_edited/fmt:datetime;
+                        datetime comment/date_last_edited/fmt:isodate"
+                      tal:content="comment/date_last_edited/fmt:displaydate" />):
               </span>
               <a tal:attributes="href comment/fmt:url">
                 <strong tal:condition="comment/display_title"

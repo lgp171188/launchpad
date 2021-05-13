@@ -7,7 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'MessageRevision'
+    'MessageRevision',
+    'MessageRevisionChunk',
     ]
 
 import pytz
@@ -21,7 +22,14 @@ from zope.interface import implementer
 
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.messages.interfaces.messagerevision import IMessageRevision
+from lp.services.messages.interfaces.messagerevision import (
+    IMessageRevision,
+    IMessageRevisionChunk,
+    )
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
 from lp.services.utils import utc_now
 
 
@@ -36,16 +44,16 @@ class MessageRevision(StormBase):
     message_id = Int(name='message', allow_none=False)
     message = Reference(message_id, 'Message.id')
 
-    content = Unicode(name="content", allow_none=True)
+    revision = Int(name='revision', allow_none=False)
 
     date_created = DateTime(
         name="date_created", tzinfo=pytz.UTC, allow_none=False)
     date_deleted = DateTime(
         name="date_deleted", tzinfo=pytz.UTC, allow_none=True)
 
-    def __init__(self, message, content, date_created, date_deleted=None):
+    def __init__(self, message, revision, date_created, date_deleted=None):
         self.message = message
-        self.content = content
+        self.revision = revision
         self.date_created = date_created
         self.date_deleted = date_deleted
 
@@ -70,6 +78,38 @@ class MessageRevision(StormBase):
         klass = id_to_class[identifier]
         return store.find(klass, klass.message == self.message_id).one()
 
+    @cachedproperty
+    def chunks(self):
+        return list(IStore(self).find(
+            MessageRevisionChunk, message_revision=self))
+
+    @property
+    def content(self):
+        if len(self.chunks) == 0:
+            return None
+        return ''.join(i.content for i in self.chunks)
+
     def deleteContent(self):
-        self.content = None
+        store = IStore(self)
+        store.find(MessageRevisionChunk, message_revision=self).remove()
         self.date_deleted = utc_now()
+        del get_property_cache(self).chunks
+
+
+@implementer(IMessageRevisionChunk)
+class MessageRevisionChunk(StormBase):
+    __storm_table__ = 'MessageRevisionChunk'
+
+    id = Int(primary=True)
+
+    message_revision_id = Int(name='messagerevision', allow_none=False)
+    message_revision = Reference(message_revision_id, 'MessageRevision.id')
+
+    sequence = Int(name='sequence', allow_none=False)
+
+    content = Unicode(name="content", allow_none=False)
+
+    def __init__(self, message_revision, sequence, content):
+        self.message_revision = message_revision
+        self.sequence = sequence
+        self.content = content

@@ -42,6 +42,7 @@ from storm.locals import (
     DateTime,
     Desc,
     Int,
+    Max,
     Reference,
     Store,
     Storm,
@@ -72,7 +73,10 @@ from lp.services.messages.interfaces.message import (
     IUserToUserEmail,
     UnknownSender,
     )
-from lp.services.messages.model.messagerevision import MessageRevision
+from lp.services.messages.model.messagerevision import (
+    MessageRevision,
+    MessageRevisionChunk,
+    )
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -107,7 +111,7 @@ class Message(SQLBase):
     _defaultOrder = '-id'
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     date_deleted = UtcDateTimeCol(notNull=False, default=None)
-    date_last_edit = UtcDateTimeCol(notNull=False, default=None)
+    date_last_edited = UtcDateTimeCol(notNull=False, default=None)
     subject = StringCol(notNull=False, default=None)
     owner = ForeignKey(
         dbName='owner', foreignKey='Person',
@@ -178,27 +182,37 @@ class Message(SQLBase):
         return list(Store.of(self).find(
             MessageRevision,
             MessageRevision.message == self
-        ).order_by(MessageRevision.date_created))
+        ).order_by(MessageRevision.revision))
 
     def editContent(self, new_content):
         """See `IMessage`."""
         store = Store.of(self)
-        old_content = self.text_contents
-        # Remove the current content.
+
+        # Move the old content to a new revision.
+        date_created = (
+            self.date_last_edited if self.date_last_edited is not None
+            else self.datecreated)
+        current_rev_num = store.find(
+            Max(MessageRevision.revision),
+            MessageRevision.message == self).one()
+        rev_num = (current_rev_num or 0) + 1
+        rev = MessageRevision(
+            message=self, revision=rev_num, date_created=date_created)
+        self.date_last_edited = utc_now()
+        store.add(rev)
+
+        # Move the current text content to the recently created revision.
         for chunk in self._chunks:
-            store.remove(chunk)
+            if chunk.blob is None:
+                revision_chunk = MessageRevisionChunk(
+                    rev, chunk.sequence, chunk.content)
+                store.add(revision_chunk)
+                store.remove(chunk)
 
         # Create the new content.
         new_chunk = MessageChunk(message=self, sequence=1, content=new_content)
         store.add(new_chunk)
 
-        # Move the old content to a new revision.
-        date_created = (self.date_last_edit if self.date_last_edit is not None
-                        else self.datecreated)
-        rev = MessageRevision(message=self, content=old_content,
-                              date_created=date_created)
-        self.date_last_edit = utc_now()
-        store.add(rev)
         store.flush()
 
         # Clean up caches.
@@ -210,6 +224,8 @@ class Message(SQLBase):
         """See `IMessage`."""
         store = Store.of(self)
         store.find(MessageChunk, MessageChunk.message == self).remove()
+        for rev in self.revisions:
+            store.find(MessageRevisionChunk, message_revision=rev).remove()
         store.find(MessageRevision, MessageRevision.message == self).remove()
         del get_property_cache(self).text_contents
         del get_property_cache(self).chunks
