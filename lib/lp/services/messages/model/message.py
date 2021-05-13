@@ -42,6 +42,7 @@ from storm.locals import (
     DateTime,
     Desc,
     Int,
+    Max,
     Reference,
     Store,
     Storm,
@@ -181,7 +182,7 @@ class Message(SQLBase):
         return list(Store.of(self).find(
             MessageRevision,
             MessageRevision.message == self
-        ).order_by(Desc(MessageRevision.date_created)))
+        ).order_by(MessageRevision.revision))
 
     def editContent(self, new_content):
         """See `IMessage`."""
@@ -191,7 +192,12 @@ class Message(SQLBase):
         date_created = (
             self.date_last_edited if self.date_last_edited is not None
             else self.datecreated)
-        rev = MessageRevision(message=self, date_created=date_created)
+        current_rev_num = store.find(
+            Max(MessageRevision.revision),
+            MessageRevision.message == self).one()
+        rev_num = (current_rev_num or 0) + 1
+        rev = MessageRevision(
+            message=self, revision=rev_num, date_created=date_created)
         self.date_last_edited = utc_now()
         store.add(rev)
 
@@ -218,6 +224,8 @@ class Message(SQLBase):
         """See `IMessage`."""
         store = Store.of(self)
         store.find(MessageChunk, MessageChunk.message == self).remove()
+        for rev in self.revisions:
+            store.find(MessageRevisionChunk, message_revision=rev).remove()
         store.find(MessageRevision, MessageRevision.message == self).remove()
         del get_property_cache(self).text_contents
         del get_property_cache(self).chunks

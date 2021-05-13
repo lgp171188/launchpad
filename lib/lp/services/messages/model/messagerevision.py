@@ -44,13 +44,16 @@ class MessageRevision(StormBase):
     message_id = Int(name='message', allow_none=False)
     message = Reference(message_id, 'Message.id')
 
+    revision = Int(name='revision', allow_none=False)
+
     date_created = DateTime(
         name="date_created", tzinfo=pytz.UTC, allow_none=False)
     date_deleted = DateTime(
         name="date_deleted", tzinfo=pytz.UTC, allow_none=True)
 
-    def __init__(self, message, date_created, date_deleted=None):
+    def __init__(self, message, revision, date_created, date_deleted=None):
         self.message = message
+        self.revision = revision
         self.date_created = date_created
         self.date_deleted = date_deleted
 
