@@ -35,6 +35,8 @@ class IMessageRevisionView(Interface):
     """IMessageRevision readable attributes."""
     id = Int(title=_("ID"), required=True, readonly=True)
 
+    revision = Int(title=_("Revision number"), required=True, readonly=True)
+
     content = exported(Text(
         title=_("The message at the given revision"),
         required=False, readonly=True))
