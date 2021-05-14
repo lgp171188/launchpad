@@ -3193,7 +3193,6 @@ class EditMessage(AuthorizationBase):
 
 
 class EditMessageRevision(DelegatedAuthorization):
-    """Only the message owner can edit the message revision history."""
     permission = 'launchpad.Edit'
     usedfor = IMessageRevision
 
