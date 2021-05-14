@@ -773,3 +773,24 @@ class GitAPI(LaunchpadXMLRPCView):
         finally:
             # Avoid traceback reference cycles.
             del result
+
+    def updateRepackStats(self, translated_path, statistics):
+        """See `IGitAPI`."""
+        logger = self._getLogger()
+        logger.info("Request received: updateRepackStats('%s', '%d', '%d')",
+                    translated_path, statistics.get('loose_object_count'),
+                    statistics.get('pack_count'))
+        repository = getUtility(IGitLookup).getByHostingPath(translated_path)
+        if repository is None:
+            fault = faults.GitRepositoryNotFound(translated_path)
+            logger.error("updateRepackStats failed: %r", fault)
+            return fault
+        removeSecurityProxy(repository).setRepackData(
+            loose_object_count=statistics.get('loose_object_count'),
+            pack_count=statistics.get('pack_count'))
+        logger.info(
+            "updateRepackStats succeeded for repo id %s with: %s %s " % (
+                translated_path,
+                statistics.get('loose_object_count'),
+                statistics.get('pack_count'))
+        )
