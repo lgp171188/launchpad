@@ -143,7 +143,7 @@ soupmatchers==0.4
 soupsieve==1.9
 statsd==3.3.0
 # lp:~launchpad-committers/storm/lp
-storm==0.24+lp416
+storm==0.24+lp417
 subprocess32==3.2.6
 tenacity==6.1.0
 testresources==0.2.7

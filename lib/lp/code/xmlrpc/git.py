@@ -454,14 +454,18 @@ class GitAPI(LaunchpadXMLRPCView):
         result = run_with_login(
             requester_id, self._translatePath,
             six.ensure_text(path).strip("/"), permission, auth_params)
-        if isinstance(result, xmlrpc_client.Fault):
-            logger.error("translatePath failed: %r", result)
-        else:
-            # The results of path translation are not sensitive for logging
-            # purposes (they may refer to private artifacts, but contain no
-            # credentials).
-            logger.info("translatePath succeeded: %s", result)
-        return result
+        try:
+            if isinstance(result, xmlrpc_client.Fault):
+                logger.error("translatePath failed: %r", result)
+            else:
+                # The results of path translation are not sensitive for
+                # logging purposes (they may refer to private artifacts, but
+                # contain no credentials).
+                logger.info("translatePath succeeded: %s", result)
+            return result
+        finally:
+            # Avoid traceback reference cycles.
+            del result
 
     @return_fault
     def _notify(self, requester, translated_path, statistics, auth_params):
@@ -498,11 +502,15 @@ class GitAPI(LaunchpadXMLRPCView):
         result = run_with_login(
             requester_id, self._notify,
             translated_path, statistics, auth_params)
-        if isinstance(result, xmlrpc_client.Fault):
-            logger.error("notify failed: %r", result)
-        else:
-            logger.info("notify succeeded: %s" % result)
-        return result
+        try:
+            if isinstance(result, xmlrpc_client.Fault):
+                logger.error("notify failed: %r", result)
+            else:
+                logger.info("notify succeeded: %s" % result)
+            return result
+        finally:
+            # Avoid traceback reference cycles.
+            del result
 
     @return_fault
     def _getMergeProposalURL(self, requester, translated_path, branch,
@@ -536,14 +544,18 @@ class GitAPI(LaunchpadXMLRPCView):
         result = run_with_login(
             requester_id, self._getMergeProposalURL,
             translated_path, branch, auth_params)
-        if isinstance(result, xmlrpc_client.Fault):
-            logger.error("getMergeProposalURL failed: %r", result)
-        else:
-            # The result of getMergeProposalURL is not sensitive for logging
-            # purposes (it may refer to private artifacts, but contains no
-            # credentials, only the merge proposal URL).
-            logger.info("getMergeProposalURL succeeded: %s" % result)
-        return result
+        try:
+            if isinstance(result, xmlrpc_client.Fault):
+                logger.error("getMergeProposalURL failed: %r", result)
+            else:
+                # The result of getMergeProposalURL is not sensitive for
+                # logging purposes (it may refer to private artifacts, but
+                # contains no credentials, only the merge proposal URL).
+                logger.info("getMergeProposalURL succeeded: %s" % result)
+            return result
+        finally:
+            # Avoid traceback reference cycles.
+            del result
 
     @return_fault
     def _authenticateWithPassword(self, username, password):
@@ -571,15 +583,19 @@ class GitAPI(LaunchpadXMLRPCView):
         logger.info(
             "Request received: authenticateWithPassword('%s')", username)
         result = self._authenticateWithPassword(username, password)
-        if isinstance(result, xmlrpc_client.Fault):
-            logger.error("authenticateWithPassword failed: %r", result)
-        else:
-            # The results of authentication may be sensitive, but we can at
-            # least log the authenticated user.
-            logger.info(
-                "authenticateWithPassword succeeded: %s",
-                result.get("uid", result.get("user")))
-        return result
+        try:
+            if isinstance(result, xmlrpc_client.Fault):
+                logger.error("authenticateWithPassword failed: %r", result)
+            else:
+                # The results of authentication may be sensitive, but we can
+                # at least log the authenticated user.
+                logger.info(
+                    "authenticateWithPassword succeeded: %s",
+                    result.get("uid", result.get("user")))
+            return result
+        finally:
+            # Avoid traceback reference cycles.
+            del result
 
     def _renderPermissions(self, set_of_permissions):
         """Render a set of permission strings for XML-RPC output."""
@@ -647,17 +663,21 @@ class GitAPI(LaunchpadXMLRPCView):
         result = run_with_login(
             requester_id, self._checkRefPermissions,
             translated_path, ref_paths, auth_params)
-        if isinstance(result, xmlrpc_client.Fault):
-            logger.error("checkRefPermissions failed: %r", result)
-        else:
-            # The results of ref permission checks are not sensitive for
-            # logging purposes (they may refer to private artifacts, but
-            # contain no credentials).
-            logger.info(
-                "checkRefPermissions succeeded: %s",
-                [(ref_path.data, permissions)
-                 for ref_path, permissions in result])
-        return result
+        try:
+            if isinstance(result, xmlrpc_client.Fault):
+                logger.error("checkRefPermissions failed: %r", result)
+            else:
+                # The results of ref permission checks are not sensitive for
+                # logging purposes (they may refer to private artifacts, but
+                # contain no credentials).
+                logger.info(
+                    "checkRefPermissions succeeded: %s",
+                    [(ref_path.data, permissions)
+                     for ref_path, permissions in result])
+            return result
+        finally:
+            # Avoid traceback reference cycles.
+            del result
 
     def _validateRequesterCanManageRepoCreation(
             self, requester, repository, auth_params):
@@ -713,11 +733,15 @@ class GitAPI(LaunchpadXMLRPCView):
                 translated_path, auth_params)
         except Exception as e:
             result = e
-        if isinstance(result, xmlrpc_client.Fault):
-            logger.error("confirmRepoCreation failed: %r", result)
-        else:
-            logger.info("confirmRepoCreation succeeded: %s" % result)
-        return result
+        try:
+            if isinstance(result, xmlrpc_client.Fault):
+                logger.error("confirmRepoCreation failed: %r", result)
+            else:
+                logger.info("confirmRepoCreation succeeded: %s" % result)
+            return result
+        finally:
+            # Avoid traceback reference cycles.
+            del result
 
     def _abortRepoCreation(self, requester, translated_path, auth_params):
         naked_repo = removeSecurityProxy(
@@ -740,8 +764,33 @@ class GitAPI(LaunchpadXMLRPCView):
                 translated_path, auth_params)
         except Exception as e:
             result = e
-        if isinstance(result, xmlrpc_client.Fault):
-            logger.error("abortRepoCreation failed: %r", result)
-        else:
-            logger.info("abortRepoCreation succeeded: %s" % result)
-        return result
+        try:
+            if isinstance(result, xmlrpc_client.Fault):
+                logger.error("abortRepoCreation failed: %r", result)
+            else:
+                logger.info("abortRepoCreation succeeded: %s" % result)
+            return result
+        finally:
+            # Avoid traceback reference cycles.
+            del result
+
+    def updateRepackStats(self, translated_path, statistics):
+        """See `IGitAPI`."""
+        logger = self._getLogger()
+        logger.info("Request received: updateRepackStats('%s', '%d', '%d')",
+                    translated_path, statistics.get('loose_object_count'),
+                    statistics.get('pack_count'))
+        repository = getUtility(IGitLookup).getByHostingPath(translated_path)
+        if repository is None:
+            fault = faults.GitRepositoryNotFound(translated_path)
+            logger.error("updateRepackStats failed: %r", fault)
+            return fault
+        removeSecurityProxy(repository).setRepackData(
+            loose_object_count=statistics.get('loose_object_count'),
+            pack_count=statistics.get('pack_count'))
+        logger.info(
+            "updateRepackStats succeeded for repo id %s with: %s %s " % (
+                translated_path,
+                statistics.get('loose_object_count'),
+                statistics.get('pack_count'))
+        )

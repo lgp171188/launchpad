@@ -2603,6 +2603,30 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     requester, repository, [ref_path], {ref_path: []},
                     macaroon_raw=macaroon.serialize())
 
+    def assertUpdatesRepackStats(self, repo):
+        start_time = datetime.now(pytz.UTC)
+        self.assertIsNone(
+            self.assertDoesNotFault(
+                None, "updateRepackStats",
+                repo.getInternalPath(),
+                {'loose_object_count': 5, 'pack_count': 2}))
+        end_time = datetime.now(pytz.UTC)
+        naked_repo = removeSecurityProxy(repo)
+        self.assertEqual(5, naked_repo.loose_object_count)
+        self.assertEqual(2, naked_repo.pack_count)
+        self.assertBetween(start_time, naked_repo.date_last_scanned, end_time)
+
+    def test_updateRepackStats(self):
+        requester_owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester_owner)
+        self.assertUpdatesRepackStats(repository)
+
+    def test_updateRepackStatsNonExistentRepo(self):
+        self.assertFault(
+            faults.GitRepositoryNotFound("nonexistent"), None,
+            "updateRepackStats", "nonexistent",
+            {"loose_object_count": 5, "pack_count": 2})
+
 
 class TestGitAPISecurity(TestGitAPIMixin, TestCaseWithFactory):
     """Slow tests for `IGitAPI`.
