@@ -348,8 +348,12 @@ class DateTimeWidget(TextWidget):
                     failure = e
             else:
                 return
-        if failure:
-            raise ConversionError('Invalid date value', failure)
+        try:
+            if failure:
+                raise ConversionError('Invalid date value', failure)
+        finally:
+            # Avoid traceback reference cycles.
+            del failure
 
     def _toFieldValue(self, input):
         """Return parsed input (datetime) as a date."""

@@ -140,17 +140,15 @@ class GPGHandler:
 
     def getVerifiedSignatureResilient(self, content, signature=None):
         """See IGPGHandler."""
-        errors = []
+        stored_errors = []
 
         for i in range(3):
             try:
                 signature = self.getVerifiedSignature(content, signature)
             except GPGKeyNotFoundError as info:
-                errors.append(info)
+                stored_errors.append(str(info))
             else:
                 return signature
-
-        stored_errors = [str(err) for err in errors]
 
         raise GPGVerificationError(
             "Verification failed 3 times: %s " % stored_errors)

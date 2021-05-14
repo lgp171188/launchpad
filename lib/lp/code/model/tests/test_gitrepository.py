@@ -168,6 +168,7 @@ from lp.services.utils import seconds_since_epoch
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.snapshot import notify_modified
+from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     admin_logged_in,
     ANONYMOUS,
@@ -2757,6 +2758,16 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
         ref.repository.createOrUpdateRefs(
             {ref.path: {"sha1": "0" * 40, "type": GitObjectType.COMMIT}})
         self.assertFalse(snap.is_stale)
+
+    def test_private_snap(self):
+        # A private snap should be able to be marked stale
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+        [ref] = self.factory.makeGitRefs()
+        snap = self.factory.makeSnap(git_ref=ref, private=True)
+        removeSecurityProxy(snap).is_stale = False
+        ref.repository.createOrUpdateRefs(
+            {ref.path: {"sha1": "0" * 40, "type": GitObjectType.COMMIT}})
+        self.assertTrue(snap.is_stale)
 
 
 class TestGitRepositoryFork(TestCaseWithFactory):

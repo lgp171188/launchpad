@@ -104,7 +104,11 @@ class TestBugzillaRemoteComponentFinder(TestCaseWithFactory):
             finder.getRemoteProductsAndComponents()
         except Exception as e:
             asserted = e
-        self.assertIs(None, asserted)
+        try:
+            self.assertIs(None, asserted)
+        finally:
+            # Avoid traceback reference cycles.
+            del asserted
 
     @responses.activate
     def test_store(self):

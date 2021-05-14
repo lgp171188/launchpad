@@ -1494,20 +1494,24 @@ class SnapSet:
         return snaps_for_project.union(
             _getSnaps(bzr_collection)).union(_getSnaps(git_collection))
 
-    def findByBranch(self, branch, visible_by_user=None):
+    def findByBranch(self, branch, visible_by_user=None,
+                     check_permissions=True):
         """See `ISnapSet`."""
+        clauses = [Snap.branch == branch]
+        if check_permissions:
+            clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(
             Snap,
-            Snap.branch == branch,
-            get_snap_privacy_filter(visible_by_user))
+            *clauses)
 
     def findByGitRepository(self, repository, paths=None,
-                            visible_by_user=None):
+                            visible_by_user=None, check_permissions=True):
         """See `ISnapSet`."""
         clauses = [Snap.git_repository == repository]
         if paths is not None:
             clauses.append(Snap.git_path.is_in(paths))
-        clauses.append(get_snap_privacy_filter(visible_by_user))
+        if check_permissions:
+            clauses.append(get_snap_privacy_filter(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def findByGitRef(self, ref, visible_by_user=None):
