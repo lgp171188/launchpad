@@ -55,7 +55,6 @@ from lp.code.tests.helpers import GitHostingFixture
 from lp.code.xmlrpc.git import GIT_ASYNC_CREATE_REPO
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
-from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
 from lp.services.macaroons.interfaces import (
@@ -2605,17 +2604,17 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     macaroon_raw=macaroon.serialize())
 
     def assertUpdatesRepackStats(self, repo):
+        start_time = datetime.now(pytz.UTC)
         self.assertIsNone(
             self.assertDoesNotFault(
                 None, "updateRepackStats",
                 repo.getInternalPath(),
                 {'loose_object_count': 5, 'pack_count': 2}))
+        end_time = datetime.now(pytz.UTC)
         naked_repo = removeSecurityProxy(repo)
         self.assertEqual(5, naked_repo.loose_object_count)
         self.assertEqual(2, naked_repo.pack_count)
-        self.assertEqual(
-            get_transaction_timestamp(Store.of(repo)).replace(microsecond=0),
-            naked_repo.date_last_scanned.replace(microsecond=0))
+        self.assertBetween(start_time, naked_repo.date_last_scanned, end_time)
 
     def test_updateRepackStats(self):
         requester_owner = self.factory.makePerson()
