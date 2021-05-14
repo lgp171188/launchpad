@@ -59,6 +59,7 @@ from lp.services.webapp import (
     Navigation,
     stepthrough,
     )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchBag
 
 
@@ -210,6 +211,10 @@ class CodeReviewCommentView(LaunchpadView):
     def download(self):
         return download_body(
             CodeReviewDisplayComment(self.context), self.request)
+
+    @property
+    def can_edit(self):
+        return check_permission('launchpad.Edit', self.context.message)
 
     # Should the comment be shown in full?
     full_comment = True
