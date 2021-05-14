@@ -257,6 +257,8 @@ class MaloneHandler:
     def process(self, signed_msg, to_addr, filealias=None, log=None):
         """See IMailHandler."""
 
+        processing_errors = []
+
         try:
             (final_result, add_comment_to_bug,
                 commands, ) = self.extractAndAuthenticateCommands(
@@ -269,7 +271,6 @@ class MaloneHandler:
             bugtask = None
             bugtask_event = None
 
-            processing_errors = []
             while len(commands) > 0:
                 command = commands.pop(0)
                 try:
@@ -331,6 +332,10 @@ class MaloneHandler:
                 str(getUtility(ILaunchBag).user.preferredemail.email),
                 'Submit Request Failure',
                 error.message, signed_msg, error.failing_command)
+
+        finally:
+            # Avoid traceback reference cycles.
+            del processing_errors
 
         return True
 

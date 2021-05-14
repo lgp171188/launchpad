@@ -262,19 +262,23 @@ class CodeHandler:
     def processCommands(self, context, commands):
         """Process the various merge proposal commands against the context."""
         processing_errors = []
-        with BranchMergeProposalNoPreviewDiffDelta.monitor(
-                context.merge_proposal):
-            for command in commands:
-                try:
-                    command.execute(context)
-                except EmailProcessingError as error:
-                    processing_errors.append((error, command))
+        try:
+            with BranchMergeProposalNoPreviewDiffDelta.monitor(
+                    context.merge_proposal):
+                for command in commands:
+                    try:
+                        command.execute(context)
+                    except EmailProcessingError as error:
+                        processing_errors.append((error, command))
 
-        if len(processing_errors) > 0:
-            errors, commands = zip(*processing_errors)
-            raise IncomingEmailError(
-                '\n'.join(str(error) for error in errors),
-                list(commands))
+            if len(processing_errors) > 0:
+                errors, commands = zip(*processing_errors)
+                raise IncomingEmailError(
+                    '\n'.join(str(error) for error in errors),
+                    list(commands))
+        finally:
+            # Avoid traceback reference cycles.
+            del processing_errors
 
         return len(commands)
 

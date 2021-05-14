@@ -239,7 +239,11 @@ class with_timeout:
                 exc_info = t.exc_info
                 # Remove the cyclic reference for faster GC.
                 del t.exc_info
-                reraise(exc_info[0], exc_info[1], tb=exc_info[2])
+                try:
+                    reraise(exc_info[0], exc_info[1], tb=exc_info[2])
+                finally:
+                    # Avoid traceback reference cycles.
+                    del exc_info
             return t.result
 
         return call_with_timeout

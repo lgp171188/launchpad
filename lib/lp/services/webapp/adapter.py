@@ -642,7 +642,8 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
             try:
                 reraise(info[0], info[1], tb=info[2])
             finally:
-                info = None
+                # Avoid traceback reference cycles.
+                del info
 
     def connection_raw_execute_error(self, connection, raw_cursor,
                                      statement, params, error):

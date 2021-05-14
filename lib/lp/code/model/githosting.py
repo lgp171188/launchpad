@@ -89,9 +89,13 @@ class GitHostingClient:
             raise
         except Exception:
             _, val, tb = sys.exc_info()
-            reraise(
-                RequestExceptionWrapper, RequestExceptionWrapper(*val.args),
-                tb)
+            try:
+                reraise(
+                    RequestExceptionWrapper,
+                    RequestExceptionWrapper(*val.args), tb)
+            finally:
+                # Avoid traceback reference cycles.
+                del val, tb
         finally:
             action.finish()
         if response.content:
