@@ -54,7 +54,7 @@ class IMessageRevisionEdit(Interface):
     """IMessageRevision editable attributes."""
 
     def deleteContent():
-        """Logically deletes this MessageRevision."""
+        """Deletes this MessageRevision content."""
 
 
 class IMessageRevision(IMessageRevisionView, IMessageRevisionEdit):
@@ -66,4 +66,4 @@ class IMessageRevisionChunk(Interface):
     messagerevision = Int(
         title=_('MessageRevision'), required=True, readonly=True)
     sequence = Int(title=_('Sequence order'), required=True, readonly=True)
-    content = Text(title=_('Text content'), required=False, readonly=True)
+    content = Text(title=_('Text content'), required=True, readonly=True)
