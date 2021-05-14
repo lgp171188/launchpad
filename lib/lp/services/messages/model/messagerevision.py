@@ -20,6 +20,7 @@ from storm.locals import (
     )
 from zope.interface import implementer
 
+from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.messages.interfaces.messagerevision import (
@@ -30,7 +31,6 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
-from lp.services.utils import utc_now
 
 
 @implementer(IMessageRevision)
@@ -64,12 +64,12 @@ class MessageRevision(StormBase):
 
     @property
     def content(self):
-        return ''.join(i.content for i in self.chunks)
+        return '\n\n'.join(i.content for i in self.chunks)
 
     def deleteContent(self):
         store = IStore(self)
         store.find(MessageRevisionChunk, message_revision=self).remove()
-        self.date_deleted = utc_now()
+        self.date_deleted = UTC_NOW
         del get_property_cache(self).chunks
 
 
