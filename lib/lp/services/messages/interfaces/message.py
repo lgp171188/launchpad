@@ -107,6 +107,9 @@ class IMessageCommon(Interface):
         title=_('When this message was deleted'), required=False,
         readonly=True))
 
+    def getRevisionByNumber(revision_number):
+        """Returns the revision with the given number."""
+
 
 class IMessageView(IMessageCommon):
     """Public attributes for message.

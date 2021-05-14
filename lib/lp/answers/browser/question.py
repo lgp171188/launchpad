@@ -276,9 +276,8 @@ class QuestionMessageNavigation(Navigation):
     usedfor = IQuestionMessage
 
     @stepthrough('revisions')
-    def traverse_comments(self, index):
-        index = int(index) - 1
-        return self.context.revisions[index]
+    def traverse_revisions(self, revision):
+        return self.context.getRevisionByNumber(int(revision))
 
 
 class QuestionBreadcrumb(Breadcrumb):
