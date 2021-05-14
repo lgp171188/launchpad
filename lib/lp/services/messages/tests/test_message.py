@@ -27,12 +27,12 @@ from zope.security.proxy import removeSecurityProxy
 from lp.bugs.interfaces.bugmessage import IBugMessage
 from lp.services.compat import message_as_bytes
 from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.messages.model.message import (
     MessageChunk,
     MessageSet,
     )
 from lp.services.messages.tests.scenarios import MessageTypeScenariosMixin
-from lp.services.utils import utc_now
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
@@ -280,8 +280,8 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         # Check that current message chunks are 3: the 2 old blobs, and the
         # new text message.
         self.assertEqual(3, len(msg.chunks))
-        self.assertEqual("final form", msg.chunks[0].content)
-        self.assertEqual(files, [i.blob for i in msg.chunks[1:]])
+        self.assertEqual(files, [i.blob for i in msg.chunks[0:-1]])
+        self.assertEqual("final form", msg.chunks[-1].content)
 
         # Check revision chunks. It should be the old text message.
         rev_chunks = msg.revisions[0].chunks
@@ -303,13 +303,11 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         with person_logged_in(owner):
             msg.editContent("new content")
         with person_logged_in(owner):
-            before_delete = utc_now()
             msg.deleteContent()
-            after_delete = utc_now()
         self.assertEqual('', msg.text_contents)
         self.assertEqual(0, len(msg.chunks))
-        self.assertIsNotNone(msg.date_deleted)
-        self.assertTrue(after_delete > msg.date_deleted > before_delete)
+        self.assertEqual(
+            get_transaction_timestamp(IStore(msg)), msg.date_deleted)
         self.assertEqual(0, len(msg.revisions))
 
 

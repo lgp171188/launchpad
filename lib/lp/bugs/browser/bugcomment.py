@@ -65,9 +65,8 @@ class BugCommentNavigation(Navigation):
     usedfor = IBugComment
 
     @stepthrough('revisions')
-    def traverse_comments(self, index):
-        index = int(index) - 1
-        return self.context.revisions[index]
+    def traverse_revisions(self, revision):
+        return self.context.getRevisionByNumber(int(revision))
 
 
 def build_comments_from_chunks(

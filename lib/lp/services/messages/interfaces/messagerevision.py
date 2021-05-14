@@ -67,7 +67,7 @@ class IMessageRevisionEdit(Interface):
     @export_write_operation()
     @operation_for_version("devel")
     def deleteContent():
-        """Logically deletes this MessageRevision."""
+        """Deletes this MessageRevision content."""
 
 
 @exported_as_webservice_entry(publish_web_link=False, as_of="devel")
@@ -80,4 +80,4 @@ class IMessageRevisionChunk(Interface):
     messagerevision = Int(
         title=_('MessageRevision'), required=True, readonly=True)
     sequence = Int(title=_('Sequence order'), required=True, readonly=True)
-    content = Text(title=_('Text content'), required=False, readonly=True)
+    content = Text(title=_('Text content'), required=True, readonly=True)

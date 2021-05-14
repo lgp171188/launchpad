@@ -40,7 +40,6 @@ from sqlobject import (
 from storm.locals import (
     And,
     DateTime,
-    Desc,
     Int,
     Max,
     Reference,
@@ -81,7 +80,6 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
-from lp.services.utils import utc_now
 
 
 def utcdatetime_from_field(field_value):
@@ -176,13 +174,20 @@ class Message(SQLBase):
         """See `IMessage`."""
         return None
 
+    @property
+    def _revisions(self):
+        return Store.of(self).find(
+            MessageRevision,
+            MessageRevision.message == self
+        ).order_by(MessageRevision.revision)
+
     @cachedproperty
     def revisions(self):
         """See `IMessage`."""
-        return list(Store.of(self).find(
-            MessageRevision,
-            MessageRevision.message == self
-        ).order_by(MessageRevision.revision))
+        return list(self._revisions)
+
+    def getRevisionByNumber(self, revision_number):
+        return self._revisions.find(revision=revision_number).one()
 
     def editContent(self, new_content):
         """See `IMessage`."""
@@ -198,11 +203,13 @@ class Message(SQLBase):
         rev_num = (current_rev_num or 0) + 1
         rev = MessageRevision(
             message=self, revision=rev_num, date_created=date_created)
-        self.date_last_edited = utc_now()
+        self.date_last_edited = UTC_NOW
         store.add(rev)
 
         # Move the current text content to the recently created revision.
+        max_seq = 0
         for chunk in self._chunks:
+            max_seq = max(max_seq, chunk.sequence)
             if chunk.blob is None:
                 revision_chunk = MessageRevisionChunk(
                     rev, chunk.sequence, chunk.content)
@@ -210,7 +217,8 @@ class Message(SQLBase):
                 store.remove(chunk)
 
         # Create the new content.
-        new_chunk = MessageChunk(message=self, sequence=1, content=new_content)
+        new_chunk = MessageChunk(
+            message=self, sequence=max_seq + 1, content=new_content)
         store.add(new_chunk)
 
         store.flush()
@@ -224,13 +232,15 @@ class Message(SQLBase):
         """See `IMessage`."""
         store = Store.of(self)
         store.find(MessageChunk, MessageChunk.message == self).remove()
-        for rev in self.revisions:
-            store.find(MessageRevisionChunk, message_revision=rev).remove()
+        revs = [i.id for i in self.revisions]
+        store.find(
+            MessageRevisionChunk,
+            MessageRevisionChunk.message_revision_id.is_in(revs)).remove()
         store.find(MessageRevision, MessageRevision.message == self).remove()
         del get_property_cache(self).text_contents
         del get_property_cache(self).chunks
         del get_property_cache(self).revisions
-        self.date_deleted = utc_now()
+        self.date_deleted = UTC_NOW
 
 
 def get_parent_msgids(parsed_message):
