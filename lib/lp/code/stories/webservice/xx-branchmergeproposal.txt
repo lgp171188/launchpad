@@ -200,10 +200,13 @@ The comments on a branch merge proposal are exposed through the API.
     branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
     content: 'This is great work'
     date_created: '...'
+    date_deleted: None
+    date_last_edited: None
     id: ...
     message_body: 'This is great work'
     owner_link: 'http://...'
     resource_type_link: 'http://.../#code_review_comment'
+    revisions_collection_link: 'http://...'
     self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
     title: 'Comment on proposed merge of lp://dev/~source/fooix/fix-it into lp://dev/~target/fooix/trunk'
     vote: 'Approve'
@@ -220,10 +223,13 @@ The comments on a branch merge proposal are exposed through the API.
     branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
     content: 'This is mediocre work.'
     date_created: '...'
+    date_deleted: None
+    date_last_edited: None
     id: ...
     message_body: 'This is mediocre work.'
     owner_link: 'http://...'
     resource_type_link: 'http://.../#code_review_comment'
+    revisions_collection_link: 'http://...'
     self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
     title: ...
     vote: 'Abstain'
@@ -296,10 +302,13 @@ Now the code review should be made.
     branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
     content: 'This is great work'
     date_created: '...'
+    date_deleted: None
+    date_last_edited: None
     id: ...
     message_body: 'This is great work'
     owner_link: 'http://...'
     resource_type_link: 'http://.../#code_review_comment'
+    revisions_collection_link: 'http://...'
     self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
     title: ...
     vote: 'Approve'
