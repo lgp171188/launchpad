@@ -835,6 +835,10 @@ class BaseSnapEditView(SnapAuthorizeMixin, SnapInformationTypeMixin,
             if 'store_channels' in data:
                 del data['store_channels']
         need_store_reauth = self._needStoreReauth(data)
+        info_type = data.get('information_type')
+        if info_type and info_type != self.context.information_type:
+            self.context.information_type = info_type
+            del data['information_type']
         self.updateContextFromData(data)
         if need_store_reauth:
             self.requestAuthorization(self.context)
