@@ -4069,6 +4069,31 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_getRepositories_personal(self):
         self.assertGetRepositoriesWorks(self.factory.makePerson())
 
+    def test_getNumberRepositoriesForRepack(self):
+        person = self.factory.makePerson()
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_get(
+            "/+git", "getNumberRepositoriesForRepack")
+        self.assertEqual(200, response.status)
+        self.assertEqual(0, response.jsonBody())
+        with person_logged_in(person):
+            repo = []
+            for i in range(5):
+                repo.append(self.factory.makeGitRepository())
+            for i in range(3):
+                repo.append(self.factory.makeGitRepository())
+                repo[i] = removeSecurityProxy(repo[i])
+                repo[i].loose_object_count = 7000
+                repo[i].pack_count = 43
+
+        # We have a total of 3 candidates now
+        response = webservice.named_get(
+            "/+git", "getNumberRepositoriesForRepack")
+        self.assertEqual(200, response.status)
+        self.assertEqual(3, response.jsonBody())
+
     def test_get_without_default_branch(self):
         # Ensure we're not getting an error when calling
         # GET on the Webservice when a Git Repo exists in the DB

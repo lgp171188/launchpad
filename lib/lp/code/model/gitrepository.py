@@ -1859,6 +1859,20 @@ class GitRepositorySet:
             collection = collection.modifiedSince(modified_since_date)
         return collection.getRepositories(eager_load=True, sort_by=order_by)
 
+    def getNumberRepositoriesForRepack(self):
+        """See `IGitRepositorySet`."""
+        repos = IStore(GitRepository).find(
+            GitRepository,
+            Or(
+                GitRepository.loose_object_count >=
+                    config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                    config.codehosting.packs_threshold,
+                ),
+            GitRepository.status == GitRepositoryStatus.AVAILABLE,
+        ).order_by(GitRepository.id)
+        return len(list(repos))
+
     def getRepositoryVisibilityInfo(self, user, person, repository_names):
         """See `IGitRepositorySet`."""
         if user is None:
