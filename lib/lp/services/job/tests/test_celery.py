@@ -9,6 +9,7 @@ from datetime import (
     timedelta,
     )
 from time import sleep
+from unittest import mock
 
 import iso8601
 from lazr.delegates import delegate_to
@@ -27,6 +28,7 @@ from zope.interface import implementer
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.celeryjob import celery_app
 from lp.services.job.interfaces.job import (
     IJob,
     IRunnableJob,
@@ -36,7 +38,6 @@ from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.job.tests import (
     block_on_job,
-    drain_celery_queues,
     monitor_celery,
     )
 from lp.testing import TestCaseWithFactory
@@ -246,19 +247,15 @@ class TestCeleryLaneFallback(TestCaseWithFactory):
     layer = CeleryJobLayer
 
     def test_fallback_to_slow_lane(self):
-
-        from lp.services.job.celeryjob import celery_app
-
+        # Check that we re-queue a slow task into the correct queue
         self.useFixture(FeatureFixture({
-            'jobs.celery.enabled_classes': 'TestTimeoutJob'
-        }))
+            'jobs.celery.enabled_classes': 'TestTimeoutJob'}))
 
         with block_on_job(self):
             job = TestTimeoutJob()
             job.celeryRunOnCommit()
             transaction.commit()
 
-        from unittest import mock
         message_drain = mock.Mock()
 
         drain_queues(
