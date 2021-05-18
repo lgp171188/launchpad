@@ -10,8 +10,8 @@ ALTER TABLE Message
 CREATE TABLE MessageRevision (
     id serial PRIMARY KEY,
     message integer NOT NULL REFERENCES Message,
-    subject text,
     revision integer NOT NULL,
+    subject text,
     date_created timestamp without time zone NOT NULL,
     date_deleted timestamp without time zone
 ) WITH (fillfactor='100');
@@ -36,6 +36,9 @@ CREATE TABLE MessageRevisionChunk (
     sequence integer NOT NULL,
     content text NOT NULL
 ) WITH (fillfactor='100');
+
+CREATE UNIQUE INDEX messagerevisionchunk__messagerevision__sequence__key
+    ON MessageRevisionChunk(messagerevision, sequence);
 
 COMMENT ON TABLE MessageRevisionChunk
     IS 'Old chunks of a message when a revision was created for it';
