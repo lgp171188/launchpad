@@ -26,14 +26,15 @@
       itemprop="commentTime"
       tal:attributes="title context/datecreated/fmt:datetime;
         datetime context/datecreated/fmt:isodate"
-      tal:content="context/datecreated/fmt:displaydate">Thursday
-    13:21</time>
-    <span tal:condition="context/date_last_edited">
-        (last edit <time
+      tal:content="context/datecreated/fmt:displaydate">Thursday 13:21
+    </time><span class="editable-message-last-edit-date"><span tal:condition="not:context/date_last_edited">:</span>
+        <tal:last-edit condition="context/date_last_edited">
+          (last edit <time
               itemprop="editTime"
               tal:attributes="title context/date_last_edited/fmt:datetime;
                 datetime context/date_last_edited/fmt:isodate"
-              tal:content="context/date_last_edited/fmt:displaydate" />)
+              tal:content="context/date_last_edited/fmt:displaydate" />):
+        </tal:last-edit>
       </span>
     </td>
     <td>
