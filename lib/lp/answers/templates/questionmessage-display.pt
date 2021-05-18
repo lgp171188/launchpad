@@ -47,12 +47,14 @@
   </tr></tbody></table>
   </div>
 
-  <div class="boardCommentBody"
-    tal:attributes="class python: view.getBodyCSSClass() + ' editable-message-body'"
-    itemprop="commentText"
-    tal:content="structure
-      context/text_contents/fmt:obfuscate-email/fmt:email-to-html">
-    Message text.
+  <div class="editable-message-body">
+    <div class="boardCommentBody"
+      tal:attributes="class python: view.getBodyCSSClass() + ' editable-message-text'"
+      itemprop="commentText"
+      tal:content="structure
+        context/text_contents/fmt:obfuscate-email/fmt:email-to-html">
+      Message text.
+    </div>
   </div>
 
   <div class="editable-message-form" style="display: none">

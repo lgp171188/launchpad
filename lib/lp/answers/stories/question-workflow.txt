@@ -219,7 +219,7 @@ The confirmed answer is also highlighted.
     <img ... src="/@@/favourite-yes" ... title="Marked as best answer"/>
 
     >>> print(soup.find(
-    ...     'div', 'boardCommentBody highlighted editable-message-body'
+    ...     'div', 'boardCommentBody highlighted editable-message-text'
     ... ).decode_contents())
     <p>New version of the firefox package are available with SVG support
     enabled. You can use apt-get or adept to upgrade.</p>
@@ -290,8 +290,8 @@ answerer back to None.
     >>> bestAnswer.find('strong') is None
     True
 
-    >>> bestAnswer.find('div', 'boardCommentBody editable-message-body')
-    <div class="boardCommentBody editable-message-body"
+    >>> bestAnswer.find('div', 'boardCommentBody editable-message-text')
+    <div class="boardCommentBody editable-message-text"
     itemprop="commentText"><p>New version of the firefox package
     are available with SVG support enabled. You can use apt-get or adept to
     upgrade.</p></div>
@@ -357,9 +357,9 @@ The answer's message is also highlighted as the best answer.
     No Privileges Person (no-priv)
 
     >>> message = soup.find(
-    ...     'div', 'boardCommentBody highlighted editable-message-body')
+    ...     'div', 'boardCommentBody highlighted editable-message-text')
     >>> print(message)
-    <div class="boardCommentBody highlighted editable-message-body"
+    <div class="boardCommentBody highlighted editable-message-text"
     itemprop="commentText"><p>New version of the firefox package are
     available with SVG support enabled. You can use apt-get or adept to
     upgrade.</p></div>
