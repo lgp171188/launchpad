@@ -3039,6 +3039,15 @@ class TestSnapWebservice(TestCaseWithFactory):
             "git_path": Equals("HEAD"),
             }))
 
+    def test_is_stale(self):
+        # is_stale is exported and is read-only.
+        snap = self.makeSnap()
+        self.assertTrue(snap["is_stale"])
+        response = self.webservice.patch(
+            snap["self_link"], "application/json",
+            json.dumps({"is_stale": False}))
+        self.assertEqual(400, response.status)
+
     def test_getByName(self):
         # lp.snaps.getByName returns a matching Snap.
         snap = self.makeSnap()
