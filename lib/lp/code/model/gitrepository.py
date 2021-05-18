@@ -1272,7 +1272,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             paths=paths,
             check_permissions=False)
         for snap in snaps:
-            snap.is_stale = True
+            # ISnapSet.findByGitRepository returns security-proxied Snap
+            # objects on which the is_stale attribute is read-only.  Bypass
+            # this.
+            removeSecurityProxy(snap).is_stale = True
 
     def _markProposalMerged(self, proposal, merged_revision_id, logger=None):
         if logger is not None:
