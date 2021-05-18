@@ -12,6 +12,7 @@ from time import sleep
 
 import iso8601
 from lazr.delegates import delegate_to
+from lazr.jobrunner.celerytask import drain_queues
 from pytz import UTC
 from testtools.matchers import (
     GreaterThan,
@@ -35,6 +36,7 @@ from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.job.tests import (
     block_on_job,
+    drain_celery_queues,
     monitor_celery,
     )
 from lp.testing import TestCaseWithFactory
@@ -221,3 +223,51 @@ class TestJobsViaCelery(TestCaseWithFactory):
         store = IStore(Job)
         dbjob = store.find(Job, id=job_id)[0]
         self.assertEqual(JobStatus.WAITING, dbjob.status)
+
+
+class TestTimeoutJob(TestJob):
+
+    def storeDateStarted(self):
+        existing = self.job.base_json_data or {}
+        existing.setdefault('dates_started', [])
+        existing['dates_started'].append(self.job.date_started.isoformat())
+        self.job.base_json_data = existing
+
+    def run(self):
+        """Concoct various retry scenarios."""
+
+        if self.job.attempt_count == 1:
+            from celery.exceptions import SoftTimeLimitExceeded
+            raise SoftTimeLimitExceeded
+
+
+class TestCeleryLaneFallback(TestCaseWithFactory):
+
+    layer = CeleryJobLayer
+
+    def test_fallback_to_slow_lane(self):
+
+        from lp.services.job.celeryjob import celery_app
+
+        self.useFixture(FeatureFixture({
+            'jobs.celery.enabled_classes': 'TestTimeoutJob'
+        }))
+
+        with block_on_job(self):
+            job = TestTimeoutJob()
+            job.celeryRunOnCommit()
+            transaction.commit()
+
+        from unittest import mock
+        message_drain = mock.Mock()
+
+        drain_queues(
+            celery_app,
+            ['launchpad_job', 'launchpad_job_slow'], callbacks=[message_drain])
+
+        self.assertEqual(1, job.attempt_count)
+        self.assertEqual(1, message_drain.call_count)
+        self.assertEqual(
+            'launchpad_job_slow',
+            message_drain.call_args[0][1].delivery_info['routing_key'])
+
