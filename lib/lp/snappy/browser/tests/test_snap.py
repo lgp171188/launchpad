@@ -1150,6 +1150,35 @@ class TestSnapEditView(BaseTestSnapView):
             "A public snap cannot have a private owner.",
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
+    def test_edit_public_snap_make_private_in_one_go(self):
+        # Move a public snap to a private owner and mark it private in one go
+        series = self.factory.makeUbuntuDistroSeries()
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                usable_distro_series=[series])
+        login_person(self.person)
+        private_project = self.factory.makeProduct(
+            name='private-project',
+            owner=self.person, registrant=self.person,
+            information_type=InformationType.PROPRIETARY,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person, distroseries=series,
+            store_series=snappy_series, project=private_project)
+        private_team = self.factory.makeTeam(
+            owner=self.person, visibility=PersonVisibility.PRIVATE)
+        private_team_name = private_team.name
+
+        browser = self.getViewBrowser(snap, user=self.person)
+        browser.getLink("Edit snap package").click()
+        browser.getControl("Owner").value = [private_team_name]
+        browser.getControl(name="field.information_type").value = (
+            "PROPRIETARY")
+        browser.getControl("Update snap package").click()
+
+        login_admin()
+        self.assertEqual(InformationType.PROPRIETARY, snap.information_type)
+
     def test_edit_public_snap_private_branch(self):
         series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
