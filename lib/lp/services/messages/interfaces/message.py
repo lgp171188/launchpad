@@ -82,7 +82,7 @@ class IMessageCommon(Interface):
     chunks = Attribute(_('Message pieces'))
     text_contents = exported(
         Text(title=_('All the text/plain chunks joined together as a '
-                     'unicode string.')),
+                     'unicode string.'), readonly=True),
         exported_as='content')
     owner = exported(
         Reference(title=_('Person'), schema=Interface,
@@ -91,7 +91,7 @@ class IMessageCommon(Interface):
     revisions = exported(CollectionField(
         title=_("Message revision history"),
         description=_(
-            "Revision history of this message, sorted in descending order."),
+            "Revision history of this message, sorted in ascending order."),
         # Really IMessageRevision, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface),
         required=False, readonly=True), as_of="devel")

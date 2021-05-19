@@ -48,7 +48,7 @@ class IMessageRevisionView(Interface):
     message_implementation = Reference(
         title=_('The message implementation (BugComment, QuestionMessage or '
                 'CodeReviewComment) related to this revision'),
-        schema=Interface, required=True, readonly=True)
+        schema=IMessage, required=True, readonly=True)
 
     date_created = exported(Datetime(
         title=_("The time when this message revision was created."),
