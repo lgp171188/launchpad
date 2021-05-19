@@ -283,7 +283,11 @@ class QuestionMessageNavigation(Navigation):
 
     @stepthrough('revisions')
     def traverse_revisions(self, revision):
-        return self.context.getRevisionByNumber(int(revision))
+        try:
+            revision = int(revision)
+        except ValueError:
+            return None
+        return self.context.getRevisionByNumber(revision)
 
 
 class QuestionBreadcrumb(Breadcrumb):

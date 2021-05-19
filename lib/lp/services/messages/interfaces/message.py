@@ -91,7 +91,7 @@ class IMessageCommon(Interface):
     revisions = exported(CollectionField(
         title=_("Message revision history"),
         description=_(
-            "Revision history of this message, sorted in descending order."),
+            "Revision history of this message, sorted in ascending order."),
         # Really IMessageRevision, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface),
         required=False, readonly=True), as_of="devel")
