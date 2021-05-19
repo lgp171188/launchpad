@@ -1185,13 +1185,11 @@ class QuestionMessageDisplayView(LaunchpadView):
         return check_permission('launchpad.Moderate', self.context)
 
     def getBoardCommentCSSClass(self):
-        css_classes = ["boardComment"]
+        css_classes = ["boardComment", "editable-message"]
         if not self.context.visible:
             # If a comment that isn't visible is being rendered, it's being
             # rendered for an admin or registry_expert.
             css_classes.append("adminHiddenComment")
-        if self.can_edit:
-            css_classes.append("editable-message")
         return " ".join(css_classes)
 
     @property
