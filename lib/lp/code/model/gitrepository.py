@@ -1979,6 +1979,21 @@ class GitRepositorySet:
         return {
             repository.project_id: repository for repository in repositories}
 
+    def getTop50RepositoriesForRepack(self):
+        """See `IGitRepositorySet`."""
+        repos = IStore(GitRepository).find(
+            GitRepository,
+            Or(
+                GitRepository.loose_object_count >=
+                    config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                    config.codehosting.packs_threshold,
+                ),
+            GitRepository.status == GitRepositoryStatus.AVAILABLE,
+        ).order_by(GitRepository.loose_object_count).config(limit=50)
+
+        return list(repos)
+
 
 @implementer(IMacaroonIssuer)
 class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):

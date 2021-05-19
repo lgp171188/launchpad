@@ -1214,6 +1214,14 @@ class IGitRepositorySet(Interface):
             Projects that do not have default repositories are omitted.
         """
 
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getTop50RepositoriesForRepack():
+        """Get the first 50 badly packed repositories.
+
+        :return: A list of the top 50 badly packed repositories.
+        """
+
 
 class IGitRepositoryDelta(Interface):
     """The quantitative changes made to a Git repository that was edited or
