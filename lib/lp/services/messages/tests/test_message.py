@@ -233,7 +233,7 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
 
     def assertIsMessageHistory(
             self, msg_history, msg, rev, created_at, content, deleted_at=None):
-        """Asserts that `msg_history` is a message a message history of
+        """Asserts that `msg_history` is a message history of
         `msg` with the given extra info.
         """
         self.assertThat(msg_history, MatchesStructure(
@@ -241,7 +241,7 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
             revision=Equals(rev),
             message=Equals(removeSecurityProxy(msg).message),
             date_created=Equals(created_at),
-            date_deleted=Is(deleted_at)))
+            date_deleted=Equals(deleted_at)))
 
     def test_non_owner_cannot_edit_message(self):
         msg = self.makeMessage()
