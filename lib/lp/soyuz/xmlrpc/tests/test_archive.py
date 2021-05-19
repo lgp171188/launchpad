@@ -60,16 +60,6 @@ class TestArchiveAPI(TestCaseWithFactory):
             archive.reference, "+missing", "",
             "No valid tokens for '+missing' in '%s'." % archive.reference)
 
-    def test_checkArchiveAuthToken_buildd_wrong_password(self):
-        archive = removeSecurityProxy(self.factory.makeArchive(private=True))
-        self.assertUnauthorized(
-            archive.reference, "buildd", archive.buildd_secret + "-bad")
-
-    def test_checkArchiveAuthToken_buildd_correct_password(self):
-        archive = removeSecurityProxy(self.factory.makeArchive(private=True))
-        self.assertIsNone(self.archive_api.checkArchiveAuthToken(
-            archive.reference, "buildd", archive.buildd_secret))
-
     def test_checkArchiveAuthToken_buildd_macaroon_wrong_archive(self):
         archive = self.factory.makeArchive(private=True)
         build = self.factory.makeBinaryPackageBuild(archive=archive)

@@ -72,7 +72,6 @@ records to disk, including configuration and indexes.
     ...     owner=cprov, name='myprivateppa',
     ...     distribution=cprov_archive.distribution)
     >>> login("foo.bar@canonical.com")
-    >>> cprov_private_ppa.buildd_secret = 'really secret'
     >>> cprov_private_ppa.private = True
     >>> login(ANONYMOUS)
 
@@ -1487,11 +1486,9 @@ method will by default only return public archives:
     >>> login("foo.bar@canonical.com")
     >>> my_copy_archive = archive_set.getArchivesForDistribution(
     ...     ubuntu, name='my-copy-archive')[0]
-    >>> my_copy_archive.buildd_secret = 'really secret'
     >>> my_copy_archive.private = True
     >>> team_archive = archive_set.getArchivesForDistribution(
     ...     ubuntu, name='team-archive')[0]
-    >>> team_archive.buildd_secret = 'really secret'
     >>> team_archive.private = True
 
     >>> ubuntu_copy_archives = archive_set.getArchivesForDistribution(
@@ -1714,7 +1711,6 @@ So even if Joe's PPA suddenly becomes private, Carlos rights will be
 preserved.
 
     >>> login('foo.bar@canonical.com')
-    >>> joes_ppa.buildd_secret = 'x'
     >>> joes_ppa.private = True
 
     >>> login("carlos@canonical.com")

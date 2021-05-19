@@ -312,7 +312,7 @@ class Archive(SQLBase):
 
     publish = BoolCol(dbName='publish', notNull=True, default=True)
 
-    _private = BoolCol(dbName='private', notNull=True, default=False,
+    private = BoolCol(dbName='private', notNull=True, default=False,
                       storm_validator=_validate_archive_privacy)
 
     require_virtualized = BoolCol(
@@ -336,8 +336,6 @@ class Archive(SQLBase):
 
     package_description_cache = StringCol(
         dbName='package_description_cache', notNull=False, default=None)
-
-    buildd_secret = StringCol(dbName='buildd_secret', default=None)
 
     total_count = IntCol(dbName='total_count', notNull=True, default=0)
 
@@ -384,22 +382,6 @@ class Archive(SQLBase):
             alsoProvides(self, IPPA)
         else:
             alsoProvides(self, IDistributionArchive)
-
-    # Note: You may safely ignore lint when it complains about this
-    # declaration.  As of Python 2.6, this is a perfectly valid way
-    # of adding a setter
-    @property
-    def private(self):
-        return self._private
-
-    @private.setter  # pyflakes:ignore
-    def private(self, private):
-        self._private = private
-        if private:
-            if not self.buildd_secret:
-                self.buildd_secret = create_token(20)
-        else:
-            self.buildd_secret = None
 
     @property
     def title(self):
@@ -2739,7 +2721,6 @@ class ArchiveSet:
 
         # Private teams cannot have public PPAs.
         if owner.visibility == PersonVisibility.PRIVATE:
-            new_archive.buildd_secret = create_token(20)
             new_archive.private = True
         else:
             new_archive.private = private
@@ -2854,7 +2835,7 @@ class ArchiveSet:
             SourcePackagePublishingHistory,
             SourcePackagePublishingHistory.archive == Archive.id,
             SourcePackagePublishingHistory.distroseries == DistroSeries.id,
-            Archive._private == False,
+            Archive.private == False,
             Archive._enabled == True,
             DistroSeries.distribution == distribution,
             Archive.purpose == ArchivePurpose.PPA,
@@ -2893,7 +2874,7 @@ class ArchiveSet:
         """See `IArchiveSet`."""
         return IStore(Archive).find(
             Archive,
-            Archive._private == True, Archive.purpose == ArchivePurpose.PPA)
+            Archive.private == True, Archive.purpose == ArchivePurpose.PPA)
 
     def getArchivesForDistribution(self, distribution, name=None,
                                    purposes=None,
@@ -2914,7 +2895,7 @@ class ArchiveSet:
         if name is not None:
             extra_exprs.append(Archive.name == name)
 
-        public_archive = And(Archive._private == False,
+        public_archive = And(Archive.private == False,
                              Archive._enabled == True)
 
         if not check_permissions:
@@ -3019,12 +3000,12 @@ def get_archive_privacy_filter(user):
     Incorrect and deprecated. Use get_enabled_archive_filter instead.
     """
     if user is None:
-        privacy_filter = Not(Archive._private)
+        privacy_filter = Not(Archive.private)
     elif IPersonRoles(user).in_admin:
         privacy_filter = True
     else:
         privacy_filter = Or(
-            Not(Archive._private),
+            Not(Archive.private),
             Archive.ownerID.is_in(
                 Select(
                     TeamParticipation.teamID,
@@ -3044,7 +3025,7 @@ def get_enabled_archive_filter(user, purpose=None,
     if user is None:
         if include_public:
             terms = [
-                purpose_term, Archive._private == False,
+                purpose_term, Archive.private == False,
                 Archive._enabled == True]
             return And(*terms)
         else:
@@ -3089,5 +3070,5 @@ def get_enabled_archive_filter(user, purpose=None,
 
     if include_public:
         filter_terms.append(
-            And(Archive._enabled == True, Archive._private == False))
+            And(Archive._enabled == True, Archive.private == False))
     return And(purpose_term, Or(*filter_terms))

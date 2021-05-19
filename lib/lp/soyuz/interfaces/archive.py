@@ -1191,11 +1191,6 @@ class IArchiveView(IHasBuildRecords):
     def getOverridePolicy(distroseries, pocket, phased_update_percentage=None):
         """Returns an instantiated `IOverridePolicy` for the archive."""
 
-    buildd_secret = TextLine(
-        title=_("Build farm secret"), required=False,
-        description=_(
-            "The password used by the build farm to access the archive."))
-
     @call_with(eager_load=True)
     @rename_parameters_as(
         name="binary_name", distroarchseries="distro_arch_series")

@@ -658,7 +658,6 @@ class TestShouldShowPpaSection(TestCaseWithFactory):
         """Helper method to privatise a ppa."""
         login('foo.bar@canonical.com')
         ppa.private = True
-        ppa.buildd_secret = "secret"
         login(ANONYMOUS)
 
     def test_viewing_person_with_public_ppa(self):
