@@ -82,7 +82,7 @@ class IMessageCommon(Interface):
     chunks = Attribute(_('Message pieces'))
     text_contents = exported(
         Text(title=_('All the text/plain chunks joined together as a '
-                     'unicode string.')),
+                     'unicode string.'), readonly=True),
         exported_as='content')
     owner = exported(
         Reference(title=_('Person'), schema=Interface,
