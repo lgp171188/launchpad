@@ -689,7 +689,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             self,
             check_permissions=False)
         for snap in snaps:
-            snap.is_stale = True
+            # ISnapSet.findByBranch returns security-proxied Snap objects on
+            # which the is_stale attribute is read-only.  Bypass this.
+            removeSecurityProxy(snap).is_stale = True
 
     def addToLaunchBag(self, launchbag):
         """See `IBranch`."""
