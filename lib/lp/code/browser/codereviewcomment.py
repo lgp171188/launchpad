@@ -68,6 +68,10 @@ class CodeReviewCommentNavigation(Navigation):
 
     @stepthrough('revisions')
     def traverse_revisions(self, revision):
+        try:
+            revision = int(revision)
+        except ValueError:
+            return None
         return self.context.getRevisionByNumber(int(revision))
 
 
