@@ -16,12 +16,16 @@
     <td>
       <div class="message-revision-container">
         <div class="message-revision-container-header">
-          <img class="sprite remove action-icon message-revision-close"/>
+          <span>Revision history for this message</span>
+          <img src="/+icing/build/overlay/assets/skins/sam/images/close.gif"
+               class="message-revision-close"/>
         </div>
         <script type="text/template">
           <div class='message-revision-item'>
             <div class='message-revision-title'>
-                Revision #{sequence}, created at {date}
+                <a class="js-action">
+                    Revision #{revision}, created at  {date_created}
+                </a>
             </div>
             <div class='message-revision-body'>{content}</div>
           </div>
