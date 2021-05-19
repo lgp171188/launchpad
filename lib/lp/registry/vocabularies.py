@@ -1982,7 +1982,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
             # can do is search for names that are present in public archives
             # of any distribution.
             where=Or(
-                Not(Archive._private),
+                Not(Archive.private),
                 DistributionSourcePackageCache.archive == None),
             tables=LeftJoin(
                 DistributionSourcePackageCache, Archive,

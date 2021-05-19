@@ -53,12 +53,10 @@ class TestArchivePrivacySwitchingView(TestCaseWithFactory):
 
     def test_set_private_without_packages(self):
         # If a ppa does not have packages published, it is possible to
-        # update the private attribute. Marking the PPA private also
-        # generates a buildd secret.
+        # update the private attribute.
         view = self.initialize_admin_view(private=True)
         self.assertEqual(0, len(view.errors))
         self.assertTrue(view.context.private)
-        self.assertTrue(len(view.context.buildd_secret) > 4)
 
     def test_set_public_without_packages(self):
         # If a ppa does not have packages published, it is possible to

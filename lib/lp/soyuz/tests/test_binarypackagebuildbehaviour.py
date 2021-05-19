@@ -709,7 +709,7 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
         # Archive.private prevents us from setting it to True with
         # existing published sources.
         Store.of(self.build).execute("""
-            UPDATE archive SET private=True,buildd_secret='foo'
+            UPDATE archive SET private=True
             WHERE archive.id = %s""" % self.build.archive.id)
         Store.of(self.build).invalidate()
 

@@ -66,26 +66,25 @@ class ArchiveAPI(LaunchpadXMLRPCView):
 
         # If the password is a serialized macaroon for the buildd user, then
         # try macaroon authentication.
-        if (username == BUILDD_USER_NAME and
-                self._verifyMacaroon(archive, password)):
-            # Success.
-            return
+        if username == BUILDD_USER_NAME:
+            if self._verifyMacaroon(archive, password):
+                # Success.
+                return
+            else:
+                raise faults.Unauthorized()
 
         # Fall back to checking archive auth tokens.
-        if username == BUILDD_USER_NAME:
-            secret = archive.buildd_secret
+        if username.startswith("+"):
+            token = token_set.getActiveNamedTokenForArchive(
+                archive, username[1:])
         else:
-            if username.startswith("+"):
-                token = token_set.getActiveNamedTokenForArchive(
-                    archive, username[1:])
-            else:
-                token = token_set.getActiveTokenForArchiveAndPersonName(
-                    archive, username)
-            if token is None:
-                raise faults.NotFound(
-                    message="No valid tokens for '%s' in '%s'." % (
-                        username, archive_reference))
-            secret = removeSecurityProxy(token).token
+            token = token_set.getActiveTokenForArchiveAndPersonName(
+                archive, username)
+        if token is None:
+            raise faults.NotFound(
+                message="No valid tokens for '%s' in '%s'." % (
+                    username, archive_reference))
+        secret = removeSecurityProxy(token).token
         if password != secret:
             raise faults.Unauthorized()
 

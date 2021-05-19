@@ -1268,56 +1268,6 @@ class TestProcessors(TestCaseWithFactory):
         self.assertContentEqual([], self.archive.enabled_restricted_processors)
 
 
-class TestBuilddSecret(TestCaseWithFactory):
-    """Test buildd_secret security.
-
-    The buildd_secret is used by the slave scanner when generating a
-    sources.list entry for the builder to access a private archive.  It is
-    essentially the password to the archive for the builder.
-    """
-
-    layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super(TestBuilddSecret, self).setUp()
-        self.archive = self.factory.makeArchive()
-
-    def test_anonymous_cannot_set_buildd_secret(self):
-        login(ANONYMOUS)
-        e = self.assertRaises(
-            Unauthorized, setattr, self.archive, "buildd_secret", "boing")
-        self.assertEqual("launchpad.Admin", e.args[2])
-
-    def test_commercial_admin_can_set_buildd_secret(self):
-        with celebrity_logged_in("commercial_admin"):
-            self.archive.buildd_secret = "not so secret at all"
-
-    def test_admin_can_set_buildd_secret(self):
-        with celebrity_logged_in("admin"):
-            self.archive.buildd_secret = "not so secret"
-
-    def test_public_archive_has_public_buildd_secret(self):
-        # In a public PPA, the buildd "secret" is visible to anyone.
-        with celebrity_logged_in("admin"):
-            self.archive.buildd_secret = "not so secret"
-        login(ANONYMOUS)
-        self.assertFalse(self.archive.private)
-        self.assertEqual("not so secret", self.archive.buildd_secret)
-
-    def test_private_archive_has_private_buildd_secret(self):
-        # In a private PPA, the buildd secret can only be read by users with
-        # launchpad.View on the archive.
-        with celebrity_logged_in("admin"):
-            self.archive.buildd_secret = "really secret"
-            self.archive.private = True
-        login(ANONYMOUS)
-        e = self.assertRaises(
-            Unauthorized, getattr, self.archive, "buildd_secret")
-        self.assertEqual("launchpad.View", e.args[2])
-        with person_logged_in(self.archive.owner):
-            self.assertEqual("really secret", self.archive.buildd_secret)
-
-
 class TestNamedAuthTokenFeatureFlag(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
