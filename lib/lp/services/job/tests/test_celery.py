@@ -28,7 +28,6 @@ from zope.interface import implementer
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
-from lp.services.job.celeryjob import celery_app
 from lp.services.job.interfaces.job import (
     IJob,
     IRunnableJob,
@@ -248,6 +247,7 @@ class TestCeleryLaneFallback(TestCaseWithFactory):
 
     def test_fallback_to_slow_lane(self):
         # Check that we re-queue a slow task into the correct queue
+        from lp.services.job.celeryjob import celery_app
         self.useFixture(FeatureFixture({
             'jobs.celery.enabled_classes': 'TestTimeoutJob'}))
 
