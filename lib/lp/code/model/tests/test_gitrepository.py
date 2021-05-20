@@ -4069,13 +4069,13 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_getRepositories_personal(self):
         self.assertGetRepositoriesWorks(self.factory.makePerson())
 
-    def test_getTop50RepositoriesForRepack(self):
+    def test_getRepositoriesForRepack(self):
         person = self.factory.makePerson()
         webservice = webservice_for_person(
             person, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_get(
-            "/+git", "getTop50RepositoriesForRepack")
+            "/+git", "getRepositoriesForRepack", limit_at=3)
         self.assertEqual(200, response.status)
         self.assertEqual([], response.jsonBody())
         with person_logged_in(person):
@@ -4083,17 +4083,27 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             for i in range(5):
                 repo.append(self.factory.makeGitRepository())
             for i in range(3):
-                repo.append(self.factory.makeGitRepository())
-                repo[i] = removeSecurityProxy(repo[i])
-                repo[i].loose_object_count = 7000 + i
-                repo[i].pack_count = 43
+                removeSecurityProxy(repo[i]).loose_object_count = 7000 + i
+                removeSecurityProxy(repo[i]).pack_count = 43
 
         # We have a total of 3 candidates now
         response = webservice.named_get(
-            "/+git", "getTop50RepositoriesForRepack")
+            "/+git", "getRepositoriesForRepack", limit_at=10)
         self.assertEqual(200, response.status)
         self.assertContentEqual(
-            [7000, 7001, 7002],
+            [7002, 7001, 7000],
+            [entry['loose_object_count']
+             for entry in response.jsonBody()])
+
+        # When we have 5 repack candidates but limit at 4
+        # we should only get back 4 repos from the query.
+        removeSecurityProxy(repo[3]).loose_object_count = 7003
+        removeSecurityProxy(repo[4]).loose_object_count = 7004
+        response = webservice.named_get(
+            "/+git", "getRepositoriesForRepack", limit_at=4)
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(
+            [7004, 7003, 7002, 7001],
             [entry['loose_object_count']
              for entry in response.jsonBody()])
 

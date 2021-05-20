@@ -1213,11 +1213,14 @@ class IGitRepositorySet(Interface):
         :return: A dict mapping project IDs to their default repositories.
             Projects that do not have default repositories are omitted.
         """
-
+    @operation_parameters(limit_at=Int())
     @export_read_operation()
     @operation_for_version("devel")
-    def getTop50RepositoriesForRepack():
+    def getRepositoriesForRepack(limit_at):
         """Get the first 50 badly packed repositories.
+
+        :param limit_at: The number of badly packed repositories
+            that the endpoint should return - it is 50 by default.
 
         :return: A list of the top 50 badly packed repositories.
         """
