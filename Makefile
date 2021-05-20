@@ -239,8 +239,8 @@ $(LP_JS_BUILD): | $(JS_BUILD_DIR)
 	bin/lpjsmin -p $@
 
 jsbuild: $(LP_JS_BUILD) $(YUI_SYMLINK)
-	utilities/js-deps -n LP_MODULES -s build/js/lp -x '-min.js' -o \
-	build/js/lp/meta.js >/dev/null
+	LC_ALL=C.UTF-8 utilities/js-deps -n LP_MODULES -s build/js/lp \
+		-x '-min.js' -o build/js/lp/meta.js >/dev/null
 	utilities/check-js-deps
 
 requirements/combined.txt: \
