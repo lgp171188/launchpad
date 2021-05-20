@@ -1096,6 +1096,15 @@ class IGitRepositorySet(Interface):
         :return: A collection of `IGitRepository` objects.
         """
 
+    @export_read_operation()
+    @operation_for_version("devel")
+    def countRepositoriesForRepack():
+        """Get number of repositories qualifying for a repack.
+
+        :return: The number of `IGitRepository` objects qualifying
+            for a repack.
+        """
+
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         person=Reference(
