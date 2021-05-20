@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """CodeReviewComment interfaces."""
@@ -28,12 +28,15 @@ from lp import _
 from lp.code.enums import CodeReviewVote
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.registry.interfaces.person import IPerson
-from lp.services.messages.interfaces.message import IMessage
+from lp.services.messages.interfaces.message import (
+    IMessage,
+    IMessageCommon,
+    IMessageEdit,
+    )
 
 
-@exported_as_webservice_entry()
-class ICodeReviewComment(Interface):
-    """A link between a merge proposal and a message."""
+class ICodeReviewCommentView(IMessageCommon):
+    """Globally visible attributes of ICodeReviewComment."""
 
     id = exported(
         Int(
@@ -69,7 +72,7 @@ class ICodeReviewComment(Interface):
 
     message_body = exported(
         TextLine(
-            title=_('The body of the code review message.'),
+            title=_('Deprecated. Use "content" attribute instead.'),
             readonly=True))
 
     def getAttachments():
@@ -97,6 +100,11 @@ class ICodeReviewComment(Interface):
         review comment.  Comment authors can set the visibility of their own
         comments.
         """
+
+
+@exported_as_webservice_entry()
+class ICodeReviewComment(ICodeReviewCommentView, IMessageEdit):
+    """A link between a merge proposal and a message."""
 
 
 class ICodeReviewCommentDeletion(Interface):

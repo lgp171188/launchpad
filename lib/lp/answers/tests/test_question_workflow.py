@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the question workflow methods.
@@ -53,6 +53,7 @@ from lp.testing import (
     ANONYMOUS,
     login,
     login_person,
+    person_logged_in,
     TestCase,
     )
 from lp.testing.fixture import ZopeEventHandlerFixture
@@ -238,7 +239,8 @@ class BaseAnswerTrackerWorkflowTestCase(TestCase):
         It also verifies that the question status, datelastquery (or
         datelastresponse) were updated to reflect the time of the message.
         """
-        self.assertTrue(verifyObject(IQuestionMessage, message))
+        with person_logged_in(message.owner):
+            self.assertTrue(verifyObject(IQuestionMessage, message))
 
         self.assertEqual("Re: Help!", message.subject)
         self.assertEqual(expected_owner, message.owner)

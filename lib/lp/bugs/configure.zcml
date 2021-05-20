@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -773,7 +773,9 @@
     <class
         class="lp.bugs.model.bugmessage.BugMessage">
         <allow
-            interface="lp.bugs.interfaces.bugmessage.IBugMessage"/>
+            interface="lp.bugs.interfaces.bugmessage.IBugMessageView"/>
+        <require permission="launchpad.Edit"
+            interface="lp.services.messages.interfaces.message.IMessageEdit" />
         <require
             permission="launchpad.InternalScriptsOnly"
             set_attributes="remote_comment_id bugwatch index"/>

@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -23,7 +23,10 @@ from zope.interface import (
     implementer,
     Interface,
     )
-from zope.schema import Text
+from zope.schema import (
+    Object,
+    Text,
+    )
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -40,6 +43,10 @@ from lp.services.comments.browser.messagecomment import MessageComment
 from lp.services.comments.interfaces.conversation import IComment
 from lp.services.config import config
 from lp.services.librarian.interfaces import ILibraryFileAlias
+from lp.services.messages.interfaces.message import (
+    IMessage,
+    IMessageEdit,
+    )
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -55,10 +62,12 @@ from lp.services.webapp.interfaces import ILaunchBag
 
 class ICodeReviewDisplayComment(IComment, ICodeReviewComment):
     """Marker interface for displaying code review comments."""
+    message = Object(schema=IMessage, title=_('The message.'))
 
 
 @implementer(ICodeReviewDisplayComment)
 @delegate_to(ICodeReviewComment, context='comment')
+@delegate_to(IMessageEdit, context='message')
 class CodeReviewDisplayComment(MessageComment):
     """A code review comment or activity or both.
 

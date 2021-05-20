@@ -8,7 +8,10 @@ __all__ = [
     'IIndexedMessage',
     'IMessage',
     'IMessageChunk',
+    'IMessageCommon',
+    'IMessageEdit',
     'IMessageSet',
+    'IMessageView',
     'IUserToUserEmail',
     'IndexedMessage',
     'InvalidEmailMessage',
@@ -21,9 +24,11 @@ from lazr.delegates import delegate_to
 from lazr.restful.declarations import (
     accessor_for,
     export_read_operation,
+    export_write_operation,
     exported,
     exported_as_webservice_entry,
     operation_for_version,
+    operation_parameters,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -51,44 +56,62 @@ from lp.services.webservice.apihelpers import patch_reference_property
 
 class IMessageEdit(Interface):
 
+    @export_write_operation()
+    @operation_parameters(
+        new_content=TextLine(
+            title=_("Message content"),
+            description=_("The new message content string"),
+            required=True))
+    @operation_for_version("devel")
     def editContent(new_content):
         """Edit the content of this message, generating a new message
         revision with the old content.
         """
 
+    @export_write_operation()
+    @operation_for_version("devel")
     def deleteContent():
         """Deletes this message content."""
 
 
-class IMessageView(Interface):
+class IMessageCommon(Interface):
+    """Common public attributes for every IMessage implementation."""
+
+    id = Int(title=_('ID'), required=True, readonly=True)
+
+    chunks = Attribute(_('Message pieces'))
+    text_contents = exported(
+        Text(title=_('All the text/plain chunks joined together as a '
+                     'unicode string.'), readonly=True),
+        exported_as='content')
+    owner = exported(
+        Reference(title=_('Person'), schema=Interface,
+                  required=False, readonly=True))
+
+    revisions = Attribute(_('Message revision history'))
+    datecreated = exported(
+        Datetime(title=_('Date Created'), required=True, readonly=True),
+        exported_as='date_created')
+    date_last_edited = exported(Datetime(
+
+        title=_('When this message was last edited'), required=False,
+        readonly=True))
+    date_deleted = exported(Datetime(
+        title=_('When this message was deleted'), required=False,
+        readonly=True))
+
+
+class IMessageView(IMessageCommon):
     """Public attributes for message.
 
     This is like an email (RFC822) message, though it could be created through
     the web as well.
     """
 
-    id = Int(title=_('ID'), required=True, readonly=True)
-    datecreated = exported(
-        Datetime(title=_('Date Created'), required=True, readonly=True),
-        exported_as='date_created')
-
-    date_last_edited = Datetime(
-        title=_('When this message was last edited'), required=False,
-        readonly=True)
-
-    date_deleted = Datetime(
-        title=_('When this message was deleted'), required=False,
-        readonly=True)
-
     subject = exported(
         TextLine(title=_('Subject'), required=True, readonly=True))
 
-    # XXX flacoste 2006-09-08: This attribute is only used for the
-    # add form used by MessageAddView.
     content = Text(title=_("Message"), required=True, readonly=True)
-    owner = exported(
-        Reference(title=_('Person'), schema=Interface,
-                  required=False, readonly=True))
 
     # Schema is really IMessage, but this cannot be declared here. It's
     # fixed below after the IMessage definition is complete.
@@ -103,15 +126,6 @@ class IMessageView(Interface):
     bugs = CollectionField(
         title=_('Bug List'),
         value_type=Reference(schema=Interface))  # Redefined in bug.py
-
-    chunks = Attribute(_('Message pieces'))
-
-    revisions = Attribute(_('Message revision history'))
-
-    text_contents = exported(
-        Text(title=_('All the text/plain chunks joined together as a '
-                     'unicode string.')),
-        exported_as='content')
 
     title = TextLine(
         title=_('The message title, usually just the subject.'),

@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Question message interface."""
@@ -26,15 +26,14 @@ from lp.answers.enums import (
     QuestionAction,
     QuestionStatus,
     )
-from lp.services.messages.interfaces.message import IMessage
+from lp.services.messages.interfaces.message import (
+    IMessage,
+    IMessageView,
+    )
 
 
-@exported_as_webservice_entry(as_of='devel')
-class IQuestionMessage(IMessage):
-    """A message part of a question.
-
-    It adds attributes to the IMessage interface.
-    """
+class IQuestionMessageView(IMessageView):
+    """Publicly visible attributes of a message part of a question."""
     # This is really an Object field with schema=IQuestion, but that
     # would create a circular dependency between IQuestion
     # and IQuestionMessage
@@ -69,3 +68,8 @@ class IQuestionMessage(IMessage):
         description=_("Whether or not the message is visible."),
         readonly=True),
         as_of="devel")
+
+
+@exported_as_webservice_entry(as_of='devel')
+class IQuestionMessage(IQuestionMessageView, IMessage):
+    """A message part of a question."""

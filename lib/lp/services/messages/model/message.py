@@ -40,7 +40,6 @@ from sqlobject import (
 from storm.locals import (
     And,
     DateTime,
-    Desc,
     Int,
     Max,
     Reference,
@@ -181,7 +180,7 @@ class Message(SQLBase):
         return list(Store.of(self).find(
             MessageRevision,
             MessageRevision.message == self
-        ).order_by(Desc(MessageRevision.revision)))
+        ).order_by(MessageRevision.revision))
 
     def editContent(self, new_content):
         """See `IMessage`."""
@@ -235,7 +234,6 @@ class Message(SQLBase):
         del get_property_cache(self).text_contents
         del get_property_cache(self).chunks
         del get_property_cache(self).revisions
-        return rev
 
     def deleteContent(self):
         """See `IMessage`."""
