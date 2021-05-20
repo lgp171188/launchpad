@@ -1996,7 +1996,7 @@ class GitRepositorySet:
         return {
             repository.project_id: repository for repository in repositories}
 
-    def getRepositoriesForRepack(self, limit_at=50):
+    def getRepositoriesForRepack(self, limit=50):
         """See `IGitRepositorySet`."""
         repos = IStore(GitRepository).find(
             GitRepository,
@@ -2008,7 +2008,7 @@ class GitRepositorySet:
                 ),
             GitRepository.status == GitRepositoryStatus.AVAILABLE,
         ).order_by(
-            Desc(GitRepository.loose_object_count)).config(limit=limit_at)
+            Desc(GitRepository.loose_object_count)).config(limit=limit)
 
         return list(repos)
 

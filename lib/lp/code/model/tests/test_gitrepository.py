@@ -4075,7 +4075,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             person, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_get(
-            "/+git", "getRepositoriesForRepack", limit_at=3)
+            "/+git", "getRepositoriesForRepack", limit=3)
         self.assertEqual(200, response.status)
         self.assertEqual([], response.jsonBody())
         with person_logged_in(person):
@@ -4088,7 +4088,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
         # We have a total of 3 candidates now
         response = webservice.named_get(
-            "/+git", "getRepositoriesForRepack", limit_at=10)
+            "/+git", "getRepositoriesForRepack", limit=10)
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             [7002, 7001, 7000],
@@ -4100,7 +4100,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         removeSecurityProxy(repo[3]).loose_object_count = 7003
         removeSecurityProxy(repo[4]).loose_object_count = 7004
         response = webservice.named_get(
-            "/+git", "getRepositoriesForRepack", limit_at=4)
+            "/+git", "getRepositoriesForRepack", limit=4)
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             [7004, 7003, 7002, 7001],
