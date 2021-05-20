@@ -365,7 +365,7 @@
         <require
             permission="launchpad.Admin"
             interface="lp.soyuz.interfaces.archive.IArchiveAdmin"
-            set_attributes="authorized_size buildd_secret
+            set_attributes="authorized_size
                             enabled_restricted_processors
                             external_dependencies name
                             permit_obsolete_series_uploads

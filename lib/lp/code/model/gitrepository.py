@@ -1272,7 +1272,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             paths=paths,
             check_permissions=False)
         for snap in snaps:
-            snap.is_stale = True
+            # ISnapSet.findByGitRepository returns security-proxied Snap
+            # objects on which the is_stale attribute is read-only.  Bypass
+            # this.
+            removeSecurityProxy(snap).is_stale = True
 
     def _markProposalMerged(self, proposal, merged_revision_id, logger=None):
         if logger is not None:
@@ -1858,6 +1861,20 @@ class GitRepositorySet:
         if modified_since_date is not None:
             collection = collection.modifiedSince(modified_since_date)
         return collection.getRepositories(eager_load=True, sort_by=order_by)
+
+    def countRepositoriesForRepack(self):
+        """See `IGitRepositorySet`."""
+        repos = IStore(GitRepository).find(
+            GitRepository,
+            Or(
+                GitRepository.loose_object_count >=
+                    config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                    config.codehosting.packs_threshold,
+                ),
+            GitRepository.status == GitRepositoryStatus.AVAILABLE,
+        ).order_by(GitRepository.id)
+        return repos.count()
 
     def getRepositoryVisibilityInfo(self, user, person, repository_names):
         """See `IGitRepositorySet`."""

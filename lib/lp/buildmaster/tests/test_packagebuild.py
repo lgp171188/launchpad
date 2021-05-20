@@ -83,7 +83,6 @@ class TestPackageBuildMixin(TestCaseWithFactory):
         # A private package build will store the upload log on the
         # restricted librarian.
         login('admin@canonical.com')
-        self.package_build.archive.buildd_secret = 'sekrit'
         self.package_build.archive.private = True
         self.assertTrue(self.package_build.is_private)
         self.package_build.storeUploadLog("Some content")

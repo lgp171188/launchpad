@@ -98,13 +98,3 @@ class TestPrivacySwitching(TestCaseWithFactory):
 
         self.assertRaises(
             CannotSwitchPrivacy, setattr, private_ppa, 'private', False)
-
-    def test_buildd_secret_was_generated(self):
-        public_ppa = self.factory.makeArchive()
-        public_ppa.private = True
-        self.assertNotEqual(public_ppa.buildd_secret, None)
-
-    def test_discard_buildd_was_discarded(self):
-        private_ppa = self.factory.makeArchive(private=True)
-        private_ppa.private = False
-        self.assertEqual(private_ppa.buildd_secret, None)

@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface of the `SourcePackageRecipe` content type."""
@@ -277,7 +277,8 @@ class ISourcePackageRecipeEditableAttributes(IHasOwner):
     date_last_modified = exported(
         Datetime(required=True, readonly=True))
 
-    is_stale = Bool(title=_('Recipe is stale.'))
+    is_stale = exported(
+        Bool(title=_('Recipe is stale.'), required=True, readonly=True))
 
 
 class ISourcePackageRecipeEdit(Interface):
