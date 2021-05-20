@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -49,9 +49,19 @@ from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.services.webservice.apihelpers import patch_reference_property
 
 
-@exported_as_webservice_entry('message')
-class IMessage(Interface):
-    """A message.
+class IMessageEdit(Interface):
+
+    def editContent(new_content):
+        """Edit the content of this message, generating a new message
+        revision with the old content.
+        """
+
+    def deleteContent():
+        """Deletes this message content."""
+
+
+class IMessageView(Interface):
+    """Public attributes for message.
 
     This is like an email (RFC822) message, though it could be created through
     the web as well.
@@ -61,6 +71,15 @@ class IMessage(Interface):
     datecreated = exported(
         Datetime(title=_('Date Created'), required=True, readonly=True),
         exported_as='date_created')
+
+    date_last_edited = Datetime(
+        title=_('When this message was last edited'), required=False,
+        readonly=True)
+
+    date_deleted = Datetime(
+        title=_('When this message was deleted'), required=False,
+        readonly=True)
+
     subject = exported(
         TextLine(title=_('Subject'), required=True, readonly=True))
 
@@ -86,6 +105,8 @@ class IMessage(Interface):
         value_type=Reference(schema=Interface))  # Redefined in bug.py
 
     chunks = Attribute(_('Message pieces'))
+
+    revisions = Attribute(_('Message revision history'))
 
     text_contents = exported(
         Text(title=_('All the text/plain chunks joined together as a '
@@ -113,6 +134,11 @@ class IMessage(Interface):
     @operation_for_version('beta')
     def getAPIParent():
         """Return None because messages are not threaded over the API."""
+
+
+@exported_as_webservice_entry('message')
+class IMessage(IMessageEdit, IMessageView):
+    """A Message."""
 
 
 # Fix for self-referential schema.

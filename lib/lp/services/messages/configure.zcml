@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -10,9 +10,9 @@
     i18n_domain="launchpad">
 
     <!-- Message -->
-    <class
-        class="lp.services.messages.model.message.Message">
-        <allow interface="lp.services.messages.interfaces.message.IMessage" />
+    <class class="lp.services.messages.model.message.Message">
+        <allow
+            interface="lp.services.messages.interfaces.message.IMessageView" />
         <!-- setVisible is required to allow IBug.setCommentVisibility() to
              change the visibility attribute whilst still ensuring restricted
              access to the attribute via the API.-->
@@ -22,6 +22,26 @@
         <require
             permission="launchpad.Admin"
             set_attributes="visible"/>
+        <require
+            permission="launchpad.Edit"
+            interface="lp.services.messages.interfaces.message.IMessageEdit" />
+    </class>
+
+    <!-- MessageRevision -->
+    <class
+        class="lp.services.messages.model.messagerevision.MessageRevision">
+        <allow
+            interface="lp.services.messages.interfaces.messagerevision.IMessageRevisionView"/>
+        <require
+            permission="launchpad.Edit"
+            interface="lp.services.messages.interfaces.messagerevision.IMessageRevisionEdit"/>
+    </class>
+
+    <!-- MessageChunk -->
+    <class
+        class="lp.services.messages.model.messagerevision.MessageRevisionChunk">
+        <allow
+            interface="lp.services.messages.interfaces.messagerevision.IMessageRevisionChunk"/>
     </class>
 
     <class class="lp.services.messages.interfaces.message.IndexedMessage">
