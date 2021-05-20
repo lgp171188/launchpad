@@ -329,9 +329,9 @@ class GitHostingClient:
             if (e.response is not None and
                     e.response.status_code == requests.codes.NOT_FOUND):
                 if logger:
-                    logger.error(
+                    logger.warning(
                         "Git repository %s not found." % ensure_text(path))
-                return "Git repository %s not found." % ensure_text(path)
+                return None
             else:
                 raise CannotRepackRepository(
                     "Failed to repack Git repository %s: %s" %

@@ -506,9 +506,7 @@ class TestGitHostingClient(TestCase):
 
     def test_repack_failure_404(self):
         with self.mockRequests("POST", status=404):
-            repack = self.client.repackRepository("/repo/123")
-            self.assertEqual(u'Git repository /repo/123 not found.',
-                             repack)
+            self.assertIsNone(self.client.repackRepository("/repo/123"))
 
     def test_git_gc(self):
         with self.mockRequests("POST", status=200):
