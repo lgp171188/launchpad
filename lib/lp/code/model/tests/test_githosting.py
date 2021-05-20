@@ -504,6 +504,10 @@ class TestGitHostingClient(TestCase):
                 "400 Client Error: Bad Request",
                 self.client.repackRepository, "/repo/123")
 
+    def test_repack_failure_404(self):
+        with self.mockRequests("POST", status=404):
+            self.assertIsNone(self.client.repackRepository("/repo/123"))
+
     def test_git_gc(self):
         with self.mockRequests("POST", status=200):
             gc = self.client.collectGarbage("/repo/123")
