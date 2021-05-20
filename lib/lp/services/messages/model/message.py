@@ -201,18 +201,32 @@ class Message(SQLBase):
         store.add(rev)
 
         # Move the current text content to the recently created revision.
-        max_seq = 0
+        used_seq_numbers = set()
         for chunk in self._chunks:
-            max_seq = max(max_seq, chunk.sequence)
             if chunk.blob is None:
                 revision_chunk = MessageRevisionChunk(
                     rev, chunk.sequence, chunk.content)
                 store.add(revision_chunk)
                 store.remove(chunk)
+            else:
+                used_seq_numbers.add(chunk.sequence)
+
+        # Spot sequence number gaps.
+        # If there is a gap in sequence numbers, use it. Otherwise, use the
+        # max sequence number + 1.
+        min_gap = None
+        for i in range(1, len(used_seq_numbers) + 1):
+            if i not in used_seq_numbers:
+                min_gap = i
+                break
+        if min_gap is None:
+            new_seq = max(used_seq_numbers) + 1 if len(used_seq_numbers) else 1
+        else:
+            new_seq = min_gap
 
         # Create the new content.
         new_chunk = MessageChunk(
-            message=self, sequence=max_seq + 1, content=new_content)
+            message=self, sequence=new_seq, content=new_content)
         store.add(new_chunk)
 
         store.flush()
