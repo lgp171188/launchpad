@@ -4910,7 +4910,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return snappy_series
 
     def makeSnapBase(self, registrant=None, name=None, display_name=None,
-                     distro_series=None, build_channels=None,
+                     distro_series=None, build_channels=None, processors=None,
                      date_created=DEFAULT):
         """Make a new SnapBase."""
         if registrant is None:
@@ -4926,7 +4926,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             build_channels = {u"snapcraft": u"stable"}
         return getUtility(ISnapBaseSet).new(
             registrant, name, display_name, distro_series, build_channels,
-            date_created=date_created)
+            processors=processors, date_created=date_created)
 
     def makeOCIProjectName(self, name=None):
         if name is None:
