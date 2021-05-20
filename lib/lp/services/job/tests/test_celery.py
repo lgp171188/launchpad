@@ -9,9 +9,11 @@ from datetime import (
     timedelta,
     )
 from time import sleep
+from unittest import mock
 
 import iso8601
 from lazr.delegates import delegate_to
+from lazr.jobrunner.celerytask import drain_queues
 from pytz import UTC
 from testtools.matchers import (
     GreaterThan,
@@ -221,3 +223,48 @@ class TestJobsViaCelery(TestCaseWithFactory):
         store = IStore(Job)
         dbjob = store.find(Job, id=job_id)[0]
         self.assertEqual(JobStatus.WAITING, dbjob.status)
+
+
+class TestTimeoutJob(TestJob):
+
+    def storeDateStarted(self):
+        existing = self.job.base_json_data or {}
+        existing.setdefault('dates_started', [])
+        existing['dates_started'].append(self.job.date_started.isoformat())
+        self.job.base_json_data = existing
+
+    def run(self):
+        """Concoct various retry scenarios."""
+
+        if self.job.attempt_count == 1:
+            from celery.exceptions import SoftTimeLimitExceeded
+            raise SoftTimeLimitExceeded
+
+
+class TestCeleryLaneFallback(TestCaseWithFactory):
+
+    layer = CeleryJobLayer
+
+    def test_fallback_to_slow_lane(self):
+        # Check that we re-queue a slow task into the correct queue
+        from lp.services.job.celeryjob import celery_app
+        self.useFixture(FeatureFixture({
+            'jobs.celery.enabled_classes': 'TestTimeoutJob'}))
+
+        with block_on_job(self):
+            job = TestTimeoutJob()
+            job.celeryRunOnCommit()
+            transaction.commit()
+
+        message_drain = mock.Mock()
+
+        drain_queues(
+            celery_app,
+            ['launchpad_job', 'launchpad_job_slow'], callbacks=[message_drain])
+
+        self.assertEqual(1, job.attempt_count)
+        self.assertEqual(1, message_drain.call_count)
+        self.assertEqual(
+            'launchpad_job_slow',
+            message_drain.call_args[0][1].delivery_info['routing_key'])
+
