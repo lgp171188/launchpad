@@ -72,7 +72,7 @@ class ICodeReviewCommentView(IMessageCommon):
 
     message_body = exported(
         TextLine(
-            title=_('The body of the code review message.'),
+            title=_('Deprecated. Use "content" attribute instead.'),
             readonly=True))
 
     def getAttachments():
