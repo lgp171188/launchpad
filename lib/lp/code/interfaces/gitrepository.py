@@ -1098,7 +1098,7 @@ class IGitRepositorySet(Interface):
 
     @export_read_operation()
     @operation_for_version("devel")
-    def getNumberRepositoriesForRepack():
+    def countRepositoriesForRepack():
         """Get number of repositories qualifying for a repack.
 
         :return: The number of `IGitRepository` objects qualifying
