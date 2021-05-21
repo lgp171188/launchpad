@@ -134,8 +134,8 @@ sudo apt-get update
                 <span style="color: red"
                       tal:condition="not: dependency/dependency/enabled"
                  >[disabled]</span>
-                (included <span
-                 tal:replace="dependency/date_created/fmt:displaydate" />)
+                (included <tal:created
+                 replace="structure dependency/date_created/fmt:displaydatetitle" />)
               </li>
             </ul>
           </div> <!--archive-dependencies -->
@@ -256,9 +256,8 @@ sudo apt-get update
                   <span tal:replace="structure signer">Joe Bloggs</span>
                   <tal:date_published
                     condition="publishing/datepublished">
-                  (<span
-                    tal:replace="publishing/datepublished/fmt:approximatedate">
-                     2007-08-01</span>)
+                  (<tal:published
+                    replace="structure publishing/datepublished/fmt:approximatedatetitle" />)
                   </tal:date_published>
               </td>
             </tr>

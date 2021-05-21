@@ -362,12 +362,9 @@ def close_account(username, log):
     # the placeholder person row.
     skip.add(('sprintattendance', 'attendee'))
 
-    # generate_ppa_htaccess currently relies on seeing active
-    # ArchiveAuthToken rows so that it knows which ones to remove from
-    # .htpasswd files on disk in response to the cancellation of the
-    # corresponding ArchiveSubscriber rows; but even once PPA authorisation
-    # is handled dynamically, we probably still want to have the per-person
-    # audit trail here.
+    # PPA authorization is now handled dynamically and checks the
+    # subscriber's account status, so this isn't strictly necessary, but
+    # it's still nice to have the per-person audit trail.
     archive_subscriber_ids = set(store.find(
         ArchiveSubscriber.id,
         ArchiveSubscriber.subscriber_id == person.id,

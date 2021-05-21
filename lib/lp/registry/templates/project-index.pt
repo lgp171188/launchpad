@@ -26,7 +26,8 @@
   <body>
     <tal:registering metal:fill-slot="registering">
       Registered
-      <tal:created replace="context/datecreated/fmt:approximatedate" />
+      <tal:created
+        replace="structure context/datecreated/fmt:approximatedatetitle" />
       by
       <tal:registrant replace="structure context/registrant/fmt:link" />
     </tal:registering>

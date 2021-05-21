@@ -172,7 +172,7 @@
               </td>
               <td>
                 <tal:date condition="request/date_finished"
-                          replace="request/date_finished/fmt:displaydate"/>
+                          replace="structure request/date_finished/fmt:displaydatetitle"/>
                 <tal:error-message condition="request/error_message">
                   (<span tal:replace="request/error_message"/>)
                 </tal:error-message>
@@ -192,7 +192,7 @@
                    tal:attributes="href build/fmt:url"/>
               </td>
               <td class="datebuilt">
-                <tal:date replace="build/date/fmt:displaydate"/>
+                <tal:date replace="structure build/date/fmt:displaydatetitle"/>
                 <tal:estimate condition="build/estimate">
                   (estimated)
                 </tal:estimate>

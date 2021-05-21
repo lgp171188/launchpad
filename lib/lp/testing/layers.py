@@ -1899,6 +1899,24 @@ class CeleryJobLayer(AppServerLayer):
         cls.celery_worker = None
 
 
+class CelerySlowJobLayer(AppServerLayer):
+    """Layer for tests that run jobs via Celery."""
+
+    celery_worker = None
+
+    @classmethod
+    @profiled
+    def setUp(cls):
+        cls.celery_worker = celery_worker('launchpad_job_slow')
+        cls.celery_worker.__enter__()
+
+    @classmethod
+    @profiled
+    def tearDown(cls):
+        cls.celery_worker.__exit__(None, None, None)
+        cls.celery_worker = None
+
+
 class CeleryBzrsyncdJobLayer(AppServerLayer):
     """Layer for tests that run jobs that read from branches via Celery."""
 

@@ -59,7 +59,10 @@ Project group entry
 Project groups are available at their canonical URL on the API virtual
 host.
 
-    >>> from lazr.restful.testing.webservice import pprint_entry
+    >>> from lazr.restful.testing.webservice import (
+    ...     pprint_collection,
+    ...     pprint_entry,
+    ...     )
 
     >>> mozilla = webservice.get('/mozilla').jsonBody()
     >>> pprint_entry(mozilla)
@@ -447,62 +450,63 @@ hierarchy of series, milestones, and releases.
     ...     firefox['self_link'],
     ...     "get_timeline",
     ...     include_inactive=True).jsonBody()
-    >>> print(pretty(timeline))
-    {'entries': [{'http_etag': ...
-                  'is_development_focus': True,
-                  'landmarks': [{'code_name': None,
-                                 'date': '2056-10-16',
-                                 'name': '1.0',
-                                 'type': 'milestone',
-                                 'uri': '/firefox/+milestone/1.0'},
-                                {'code_name': 'One (secure) Tree Hill',
-                                 'date': '2004-10-15',
-                                 'name': '0.9.2',
-                                 'type': 'release',
-                                 'uri': '/firefox/trunk/0.9.2'},
-                                {'code_name': 'One Tree Hill (v2)',
-                                 'date': '2004-10-15',
-                                 'name': '0.9.1',
-                                 'type': 'release',
-                                 'uri': '/firefox/trunk/0.9.1'},
-                                {'code_name': 'One Tree Hill',
-                                 'date': '2004-10-15',
-                                 'name': '0.9',
-                                 'type': 'release',
-                                 'uri': '/firefox/trunk/0.9'}],
-                  'name': 'trunk',
-                  'project_link': 'http://.../firefox',
-                  'resource_type_link': '.../#timeline_project_series',
-                  'self_link': 'http://.../firefox/trunk',
-                  'status': 'Obsolete',
-                  'uri': '/firefox/trunk',
-                  'web_link': 'http://launchpad.../firefox/trunk'},
-                 {'http_etag': ...
-                  'is_development_focus': False,
-                  'landmarks': [{'code_name': 'First Stable Release',
-                                 'date': '2004-06-28',
-                                 'name': '1.0.0',
-                                 'type': 'release',
-                                 'uri': '/firefox/1.0/1.0.0'}],
-                  'name': '1.0',
-                  'project_link': 'http://.../firefox',
-                  'resource_type_link': '.../#timeline_project_series',
-                  'self_link': 'http://.../firefox/1.0',
-                  'status': 'Active Development',
-                  'uri': '/firefox/1.0',
-                  'web_link': 'http://launchpad.../firefox/1.0'},
-                 {'http_etag': ...
-                  'is_development_focus': False,
-                  'landmarks': [],
-                  'name': 'experimental',
-                  'project_link': 'http://.../firefox',
-                  'resource_type_link': '.../#timeline_project_series',
-                  'self_link': 'http://.../firefox/experimental',
-                  'status': 'Active Development',
-                  'uri': '/firefox/experimental',
-                  'web_link': 'http://launchpad.../firefox/experimental'}],
-     'start': 0,
-     'total_size': 3}
+    >>> pprint_collection(timeline)
+    start: 0
+    total_size: 3
+    ---
+    is_development_focus: True
+    landmarks: [{'code_name': None,
+                 'date': '2056-10-16',
+                 'name': '1.0',
+                 'type': 'milestone',
+                 'uri': '/firefox/+milestone/1.0'},
+                {'code_name': 'One (secure) Tree Hill',
+                 'date': '2004-10-15',
+                 'name': '0.9.2',
+                 'type': 'release',
+                 'uri': '/firefox/trunk/0.9.2'},
+                {'code_name': 'One Tree Hill (v2)',
+                 'date': '2004-10-15',
+                 'name': '0.9.1',
+                 'type': 'release',
+                 'uri': '/firefox/trunk/0.9.1'},
+                {'code_name': 'One Tree Hill',
+                 'date': '2004-10-15',
+                 'name': '0.9',
+                 'type': 'release',
+                 'uri': '/firefox/trunk/0.9'}]
+    name: 'trunk'
+    project_link: 'http://.../firefox'
+    resource_type_link: '.../#timeline_project_series'
+    self_link: 'http://.../firefox/trunk'
+    status: 'Obsolete'
+    uri: '/firefox/trunk'
+    web_link: 'http://launchpad.../firefox/trunk'
+    ---
+    is_development_focus: False
+    landmarks: [{'code_name': 'First Stable Release',
+                 'date': '2004-06-28',
+                 'name': '1.0.0',
+                 'type': 'release',
+                 'uri': '/firefox/1.0/1.0.0'}]
+    name: '1.0'
+    project_link: 'http://.../firefox'
+    resource_type_link: '.../#timeline_project_series'
+    self_link: 'http://.../firefox/1.0'
+    status: 'Active Development'
+    uri: '/firefox/1.0'
+    web_link: 'http://launchpad.../firefox/1.0'
+    ---
+    is_development_focus: False
+    landmarks: []
+    name: 'experimental'
+    project_link: 'http://.../firefox'
+    resource_type_link: '.../#timeline_project_series'
+    self_link: 'http://.../firefox/experimental'
+    status: 'Active Development'
+    uri: '/firefox/experimental'
+    web_link: 'http://launchpad.../firefox/experimental'
+    ---
 
 
 Project collection
@@ -758,17 +762,16 @@ milestones and releases.
 
     >>> timeline = webservice.named_get(
     ...     babadoo_foobadoo['self_link'], "get_timeline").jsonBody()
-    >>> print(pretty(timeline))
-    {'http_etag': ...
-     'is_development_focus': False,
-     'landmarks': [],
-     'name': 'foobadoo',
-     'project_link': 'http://.../babadoo',
-     'resource_type_link': 'http://.../#timeline_project_series',
-     'self_link': 'http://.../babadoo/foobadoo',
-     'status': 'Active Development',
-     'uri': '/babadoo/foobadoo',
-     'web_link': 'http://launchpad.../babadoo/foobadoo'}
+    >>> pprint_entry(timeline)
+    is_development_focus: False
+    landmarks: []
+    name: 'foobadoo'
+    project_link: 'http://.../babadoo'
+    resource_type_link: 'http://.../#timeline_project_series'
+    self_link: 'http://.../babadoo/foobadoo'
+    status: 'Active Development'
+    uri: '/babadoo/foobadoo'
+    web_link: 'http://launchpad.../babadoo/foobadoo'
 
 
 Creating a milestone on the product series

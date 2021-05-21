@@ -82,9 +82,6 @@ from lp.bugs.browser.structuralsubscription import (
     )
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
-from lp.oci.interfaces.ociregistrycredentials import (
-    IOCIRegistryCredentialsSet,
-    )
 from lp.registry.browser import (
     add_subscribe_link,
     RegistryEditFormView,

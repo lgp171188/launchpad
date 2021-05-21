@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugTarget-related browser views."""
@@ -126,6 +126,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
 from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.productseries import IProductSeries
@@ -812,7 +813,8 @@ class FileBugViewBase(LaunchpadFormView):
         elif (IDistribution.providedBy(context) or
               IProjectGroup.providedBy(context) or
               IDistroSeries.providedBy(context) or
-              ISourcePackage.providedBy(context)):
+              ISourcePackage.providedBy(context) or
+              IOCIProject.providedBy(context)):
             pass
         else:
             raise TypeError("Unexpected bug target: %r" % context)

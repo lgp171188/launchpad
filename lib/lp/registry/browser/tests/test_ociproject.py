@@ -13,6 +13,7 @@ from datetime import datetime
 import re
 
 import pytz
+import soupmatchers
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -90,6 +91,41 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
     def setUp(self):
         super(TestOCIProjectView, self).setUp()
         self.setConfig()
+
+    def test_facet_top_links(self):
+        oci_project = self.factory.makeOCIProject()
+        browser = self.getViewBrowser(oci_project)
+        menu = soupmatchers.Tag(
+            "facetmenu", "ul", attrs={"class": "facetmenu"})
+
+        with admin_logged_in():
+            # Expected links with (title, link, "<li> element's css classes")
+            expected_links = [
+                ("Overview", None, "overview active"),
+                ("Code", canonical_url(
+                    oci_project, view_name="+code", rootsite="code"), None),
+                ("Bugs", canonical_url(
+                    oci_project, view_name="+bugs", rootsite="bugs"), None),
+                ("Blueprints", None, "specifications disabled-tab"),
+                ("Translations", None, "translations disabled-tab"),
+                ("Answers", None, "answers disabled-tab"),
+            ]
+
+        tags = []
+        for text, link, css_classes in expected_links:
+            if link:
+                tags.append(soupmatchers.Tag(
+                    text, "a", text=text, attrs={"href": link}))
+            else:
+                tags.append(soupmatchers.Tag(
+                    text, "li",
+                    text=text,
+                    attrs={"class": css_classes}))
+
+        self.assertThat(
+            browser.contents,
+            soupmatchers.HTMLContains(*[
+                soupmatchers.Within(menu, tag) for tag in tags]))
 
     def test_index_distribution_pillar(self):
         distribution = self.factory.makeDistribution(displayname="My Distro")

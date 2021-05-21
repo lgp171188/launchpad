@@ -162,7 +162,6 @@ class TestGetPubConfigPPA(TestCaseWithFactory):
             owner=self.ppa.owner, name="myprivateppa",
             distribution=self.ubuntutest, purpose=ArchivePurpose.PPA)
         p3a.private = True
-        p3a.buildd_secret = "secret"
         p3a_config = getPubConfig(p3a)
         self.assertEqual(
             config.personalpackagearchive.private_root, p3a_config.distroroot)

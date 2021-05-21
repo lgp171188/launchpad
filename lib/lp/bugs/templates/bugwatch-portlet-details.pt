@@ -31,21 +31,15 @@
       <dl class="bugwatch-data">
         <dt>Changed:</dt>
         <dd>
-          <span
-            tal:attributes="title context/lastchanged/fmt:datetime"
-            tal:content="context/lastchanged/fmt:approximatedate">
-            12 Jan 2004
-           </span>
+          <tal:last-changed
+            replace="structure context/lastchanged/fmt:approximatedatetitle" />
         </dd>
       </dl>
       <dl class="bugwatch-data" id="bugwatch-lastchecked">
         <dt>Checked:</dt>
         <dd>
-          <span
-            tal:attributes="title context/lastchecked/fmt:datetime"
-            tal:content="context/lastchecked/fmt:approximatedate">
-            13 Jan 2004
-           </span>
+          <tal:last-checked
+            replace="structure context/lastchecked/fmt:approximatedatetitle" />
         </dd>
       </dl>
       <dl class="bugwatch-data" id="bugwatch-next_check">
@@ -65,11 +59,8 @@
       <dl class="bugwatch-data">
         <dt>Created:</dt>
         <dd>
-          <span
-            tal:attributes="title context/datecreated/fmt:datetime"
-            tal:content="context/datecreated/fmt:approximatedate">
-            15 Jan 2003
-           </span>
+          <tal:created
+            replace="structure context/datecreated/fmt:approximatedatetitle" />
         </dd>
       </dl>
       <dl class="bugwatch-data">

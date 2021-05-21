@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Vocabularies for content objects.
@@ -108,6 +108,7 @@ from lp.blueprints.interfaces.specification import ISpecification
 from lp.bugs.interfaces.bugtask import IBugTask
 from lp.code.interfaces.branch import IBranch
 from lp.registry.enums import (
+    DistributionDefaultTraversalPolicy,
     EXCLUSIVE_TEAM_POLICY,
     PersonVisibility,
     )
@@ -184,6 +185,7 @@ from lp.services.database.stormexpr import (
     rank_by_fti,
     RegexpMatch,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import (
@@ -214,6 +216,9 @@ from lp.services.webapp.vocabulary import (
     VocabularyFilter,
     )
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.binaryandsourcepackagename import (
+    BinaryAndSourcePackageNameVocabulary,
+    )
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
     )
@@ -1977,7 +1982,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
             # can do is search for names that are present in public archives
             # of any distribution.
             where=Or(
-                Not(Archive._private),
+                Not(Archive.private),
                 DistributionSourcePackageCache.archive == None),
             tables=LeftJoin(
                 DistributionSourcePackageCache, Archive,
@@ -2213,15 +2218,21 @@ class OCIProjectVocabulary(StormVocabularyBase):
     displayname = 'Select an OCI project'
     step_title = 'Search'
 
+    def __init__(self, context=None):
+        super(OCIProjectVocabulary, self).__init__(context)
+        self.pillar = None
+
+    def setPillar(self, pillar):
+        self.pillar = pillar
+
     def toTerm(self, ociproject):
-        token = "%s/%s" % (ociproject.pillar.name, ociproject.name)
-        title = "%s" % token
+        token = ociproject.name
+        title = "%s (%s)" % (ociproject.name, ociproject.pillar.displayname)
         return SimpleTerm(ociproject, token, title)
 
     def getTermByToken(self, token):
-        pillar_name, name = token.split('/')
         ociproject = getUtility(IOCIProjectSet).getByPillarAndName(
-            pillar_name, name)
+            self.pillar, token)
         if ociproject is None:
             raise LookupError(token)
         return self.toTerm(ociproject)
@@ -2229,5 +2240,71 @@ class OCIProjectVocabulary(StormVocabularyBase):
     def search(self, query, vocab_filter=None):
         return getUtility(IOCIProjectSet).searchByName(query)
 
+    @property
     def _entries(self):
-        return getUtility(IOCIProjectSet).searchByName('')
+        return getUtility(IOCIProjectSet).searchByName(u'')
+
+    def __contains__(self, obj):
+        found_obj = IStore(self._table).find(
+            self._table,
+            self._table.id == obj.id).one()
+        return found_obj is not None and found_obj == obj
+
+
+@implementer(IHugeVocabulary)
+class DistributionPackageVocabulary:
+    """A simple wrapper to automatically select package vocabulary
+    (BinaryAndSourcePackageNameVocabulary, DistributionSourcePackageVocabulary
+    or OCIProjectVocabulary) depending on which type of distribution
+    we are dealing with.
+    """
+
+    def __init__(self, context=None):
+        super(DistributionPackageVocabulary, self).__init__()
+        if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
+            # Replace the default field with a field that uses the better
+            # vocabulary.
+            self.packages_vocabulary = DistributionSourcePackageVocabulary(
+                context)
+        else:
+            self.packages_vocabulary = BinaryAndSourcePackageNameVocabulary(
+                context)
+
+        self.oci_projects_vocabulary = OCIProjectVocabulary(context)
+        self.distribution = None
+        self.context = context
+
+    def setDistribution(self, distribution):
+        self.distribution = distribution
+        self.oci_projects_vocabulary.setPillar(distribution)
+        if isinstance(
+                self.packages_vocabulary, DistributionSourcePackageVocabulary):
+            self.packages_vocabulary.setDistribution(distribution)
+
+    @property
+    def is_oci_distribution(self):
+        distribution = self.distribution
+        if distribution is None and self.context is not None:
+            # If distribution was not set yet, try to guess it from context.
+            distribution = getattr(self.context, 'distribution', None)
+        oci_traversal_policy = DistributionDefaultTraversalPolicy.OCI_PROJECT
+        return (
+            distribution is not None and
+            distribution.default_traversal_policy == oci_traversal_policy)
+
+    @property
+    def _real_vocabulary(self):
+        if self.is_oci_distribution:
+            return self.oci_projects_vocabulary
+        else:
+            return self.packages_vocabulary
+
+    def __getattr__(self, item):
+        return getattr(self._real_vocabulary, item)
+
+    # Special methods should be explicitly declared at the class declaration.
+    def __iter__(self):
+        return self._real_vocabulary.__iter__()
+
+    def __contains__(self, obj):
+        return self._real_vocabulary.__contains__(obj)

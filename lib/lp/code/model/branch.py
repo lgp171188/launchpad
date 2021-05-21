@@ -685,8 +685,13 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
 
     def markSnapsStale(self):
         """See `IBranch`."""
-        for snap in getUtility(ISnapSet).findByBranch(self):
-            snap.is_stale = True
+        snaps = getUtility(ISnapSet).findByBranch(
+            self,
+            check_permissions=False)
+        for snap in snaps:
+            # ISnapSet.findByBranch returns security-proxied Snap objects on
+            # which the is_stale attribute is read-only.  Bypass this.
+            removeSecurityProxy(snap).is_stale = True
 
     def addToLaunchBag(self, launchbag):
         """See `IBranch`."""

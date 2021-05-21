@@ -102,9 +102,8 @@
             An import is currently running on
             <tal:machine content="structure job/machine/fmt:link" />,
             and was started
-            <tal:date-started replace="job/date_started/fmt:displaydate">
-              2 hours ago
-            </tal:date-started>.
+            <tal:date-started
+              replace="structure job/date_started/fmt:displaydatetitle" />.
             <tal:is-logtail condition="job/logtail">
               The last few lines of the job's output were:
               <div class="logtail">
@@ -124,9 +123,8 @@
                 </tal:requested-by-user>)</tal:requested-by>.
             </tal:overdue>
             <tal:not-overdue condition="not: job/isOverdue">
-              <tal:date-started replace="job/date_due/fmt:displaydate">
-                in 2 hours
-              </tal:date-started>.
+              <tal:date-started
+                replace="structure job/date_due/fmt:displaydatetitle" />.
               <tal:button
                  condition="view/user"
                  replace="structure view/context/@@+request-import" />
@@ -146,9 +144,8 @@
         <tal:last-successful condition="code_import/date_last_successful">
           <p>
             Last successful import was
-            <tal:last-successful replace="code_import/date_last_successful/fmt:displaydate">
-              2 hours ago
-            </tal:last-successful>.
+            <tal:last-successful
+              replace="structure code_import/date_last_successful/fmt:displaydatetitle" />.
           </p>
         </tal:last-successful>
 

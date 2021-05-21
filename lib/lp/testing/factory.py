@@ -2943,7 +2943,6 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if private:
             naked_archive = removeSecurityProxy(archive)
             naked_archive.private = True
-            naked_archive.buildd_secret = "sekrit"
 
         if suppress_subscription_notifications:
             naked_archive = removeSecurityProxy(archive)
@@ -4911,7 +4910,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return snappy_series
 
     def makeSnapBase(self, registrant=None, name=None, display_name=None,
-                     distro_series=None, build_channels=None,
+                     distro_series=None, build_channels=None, processors=None,
                      date_created=DEFAULT):
         """Make a new SnapBase."""
         if registrant is None:
@@ -4927,7 +4926,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             build_channels = {u"snapcraft": u"stable"}
         return getUtility(ISnapBaseSet).new(
             registrant, name, display_name, distro_series, build_channels,
-            date_created=date_created)
+            processors=processors, date_created=date_created)
 
     def makeOCIProjectName(self, name=None):
         if name is None:

@@ -320,7 +320,7 @@ class DistributionSourcePackage(BugTargetBase,
             Archive,
             Archive.distribution == self.distribution,
             Archive._enabled == True,
-            Archive._private == False,
+            Archive.private == False,
             SourcePackagePublishingHistory.archive == Archive.id,
             (SourcePackagePublishingHistory.status ==
                 PackagePublishingStatus.PUBLISHED),

@@ -216,7 +216,11 @@ class LoopTuner:
                 # failure, so log it.
                 self.log.exception("Unhandled exception in cleanUp")
             # Reraise the original exception.
-            reraise(exc_info[0], exc_info[1], tb=exc_info[2])
+            try:
+                reraise(exc_info[0], exc_info[1], tb=exc_info[2])
+            finally:
+                # Avoid traceback reference cycles.
+                del exc_info
         else:
             cleanup()
 

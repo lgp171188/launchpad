@@ -58,6 +58,7 @@ from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import override_environ
 from lp.services.webhooks.testing import LogsScheduledWebhooks
+from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import (
     dbuser,
@@ -782,6 +783,17 @@ class TestMarkSnapsStale(BzrSyncTestCase):
         switch_dbuser("branchscanner")
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         self.assertFalse(snap.is_stale)
+
+    @run_as_db_user(config.launchpad.dbuser)
+    def test_mark_private_snap_stale(self):
+        # Private snaps should be correctly marked as stale.
+        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+        snap = self.factory.makeSnap(
+            branch=self.db_branch, private=True)
+        removeSecurityProxy(snap).is_stale = False
+        switch_dbuser("branchscanner")
+        self.makeBzrSync(self.db_branch).syncBranchAndClose()
+        self.assertTrue(snap.is_stale)
 
 
 class TestTriggerWebhooks(BzrSyncTestCase):

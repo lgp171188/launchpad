@@ -16,7 +16,9 @@
                         href question/fmt:url;"
         tal:content="question/title/fmt:shorten/80">question title</a>
       <br /><span class="registered">
-        Posted <tal:when replace="question/datecreated/fmt:displaydate" />
+        Posted
+        <tal:when
+          replace="structure question/datecreated/fmt:displaydatetitle" />
       </span>
     </li>
   </ul>

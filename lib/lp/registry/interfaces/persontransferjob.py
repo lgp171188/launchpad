@@ -10,7 +10,7 @@ __all__ = [
     'IMembershipNotificationJob',
     'IMembershipNotificationJobSource',
     'IPersonCloseAccountJob',
-    'IPersonCloseAccountJobs',
+    'IPersonCloseAccountJobSource',
     'IPersonDeactivateJob',
     'IPersonDeactivateJobSource',
     'IPersonMergeJob',
@@ -185,7 +185,7 @@ class IPersonCloseAccountJob(IPersonTransferJob):
         """See `BaseRunnableJob`."""
 
 
-class IPersonCloseAccountJobs(IJobSource):
+class IPersonCloseAccountJobSource(IJobSource):
     """An interface for acquiring ICloseAccountJobs."""
 
     def create(person):

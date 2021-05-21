@@ -1096,6 +1096,15 @@ class IGitRepositorySet(Interface):
         :return: A collection of `IGitRepository` objects.
         """
 
+    @export_read_operation()
+    @operation_for_version("devel")
+    def countRepositoriesForRepack():
+        """Get number of repositories qualifying for a repack.
+
+        :return: The number of `IGitRepository` objects qualifying
+            for a repack.
+        """
+
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         person=Reference(
@@ -1212,6 +1221,18 @@ class IGitRepositorySet(Interface):
 
         :return: A dict mapping project IDs to their default repositories.
             Projects that do not have default repositories are omitted.
+        """
+
+    @operation_parameters(limit=Int())
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getRepositoriesForRepack(limit=50):
+        """Get the top badly packed repositories.
+
+        :param limit: The number of badly packed repositories
+            that the endpoint should return - it is 50 by default.
+
+        :return: A list of the worst badly packed repositories.
         """
 
 

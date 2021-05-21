@@ -49,6 +49,9 @@ netbook-remix-team
 netbook-team
 oem-solutions-group
 payson
+snappy-dev/edge
+snappy-dev/image
+snappy-dev/tools
 transyl
 ubuntu-cloud-archive
 ubuntu-mobile
@@ -128,7 +131,7 @@ class ArchiveExpirer(LaunchpadCronScript):
                             full_archive_name.is_in(self.blacklist)),
                         Archive.purpose == ArchivePurpose.PPA),
                     And(
-                        IsTrue(Archive._private),
+                        IsTrue(Archive.private),
                         Not(full_archive_name.is_in(self.whitelist))),
                     Not(Archive.purpose.is_in(archive_types)),
                     xPPH.dateremoved > UTC_NOW - stay_of_execution,

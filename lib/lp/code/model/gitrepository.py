@@ -1267,8 +1267,15 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     def markSnapsStale(self, paths):
         """See `IGitRepository`."""
         snap_set = getUtility(ISnapSet)
-        for snap in snap_set.findByGitRepository(self, paths=paths):
-            snap.is_stale = True
+        snaps = snap_set.findByGitRepository(
+            self,
+            paths=paths,
+            check_permissions=False)
+        for snap in snaps:
+            # ISnapSet.findByGitRepository returns security-proxied Snap
+            # objects on which the is_stale attribute is read-only.  Bypass
+            # this.
+            removeSecurityProxy(snap).is_stale = True
 
     def _markProposalMerged(self, proposal, merged_revision_id, logger=None):
         if logger is not None:
@@ -1855,6 +1862,20 @@ class GitRepositorySet:
             collection = collection.modifiedSince(modified_since_date)
         return collection.getRepositories(eager_load=True, sort_by=order_by)
 
+    def countRepositoriesForRepack(self):
+        """See `IGitRepositorySet`."""
+        repos = IStore(GitRepository).find(
+            GitRepository,
+            Or(
+                GitRepository.loose_object_count >=
+                    config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                    config.codehosting.packs_threshold,
+                ),
+            GitRepository.status == GitRepositoryStatus.AVAILABLE,
+        ).order_by(GitRepository.id)
+        return repos.count()
+
     def getRepositoryVisibilityInfo(self, user, person, repository_names):
         """See `IGitRepositorySet`."""
         if user is None:
@@ -1974,6 +1995,22 @@ class GitRepositorySet:
             extra_conditions=[GitRepository.target_default == True])
         return {
             repository.project_id: repository for repository in repositories}
+
+    def getRepositoriesForRepack(self, limit=50):
+        """See `IGitRepositorySet`."""
+        repos = IStore(GitRepository).find(
+            GitRepository,
+            Or(
+                GitRepository.loose_object_count >=
+                    config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                    config.codehosting.packs_threshold,
+                ),
+            GitRepository.status == GitRepositoryStatus.AVAILABLE,
+        ).order_by(
+            Desc(GitRepository.loose_object_count)).config(limit=limit)
+
+        return list(repos)
 
 
 @implementer(IMacaroonIssuer)

@@ -1,0 +1,39 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_only"
+  i18n:domain="launchpad"
+>
+  <head>
+    <metal:css fill-slot="head_epilogue">
+    <style type="text/css">
+      .yui-main {
+        clear: both;
+      }
+    </style>
+    </metal:css>
+  </head>
+  <body>
+    <div metal:fill-slot="main">
+      <div metal:use-macro="context/@@launchpad_form/form">
+        <div metal:fill-slot="extra_info">
+          <p>
+            This operation will invasively and irreversibly erase the selected user's data.
+            You must make sure that you have the user's informed consent before proceeding.
+          </p>
+          <p>
+            It will change the account's display name to "Removed by request",
+            change the username to an anonymous generated name starting with "removed",
+            remove all email addresses and OpenID identifiers, unassign all bugs and questions
+            assigned to the user, mark all unsolved questions as Solved,
+            and remove all code-of-conduct signatures, OpenPGP keys, subscriptions,
+            links to other accounts, SSH keys, karma, team memberships, answer contacts,
+            and attendance records for future sprints.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

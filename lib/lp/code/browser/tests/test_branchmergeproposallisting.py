@@ -31,6 +31,7 @@ from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.registry.enums import SharingPermission
 from lp.registry.model.personproduct import PersonProduct
 from lp.services.database.sqlbase import flush_database_caches
+from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
     admin_logged_in,
@@ -973,6 +974,9 @@ class ActiveReviewsPerformanceMixin:
         recorder1, view1 = self.createProductBMPsAndRecordQueries(base_bmps)
         self.assertEqual(base_bmps, view1.proposal_count)
         self.addDetail("r1tb", text_content(str(recorder1)))
+        # Clear the LaunchBag so that the user's time zone is fetched again,
+        # for fmt:displaydatetitle.
+        getUtility(IOpenLaunchBag).clear()
         recorder2, view2 = self.createProductBMPsAndRecordQueries(
             base_bmps + added_bmps)
         self.assertEqual(base_bmps + added_bmps, view2.proposal_count)

@@ -17,7 +17,9 @@
         tal:content="sprint/title" />
       on <tal:when replace="sprint/time_starts/fmt:date" />
       <br/><span class="registered">
-        Registered <tal:when replace="sprint/datecreated/fmt:displaydate" />
+        Registered
+        <tal:when
+          replace="structure sprint/datecreated/fmt:displaydatetitle" />
       </span>
     </li>
   </ul>

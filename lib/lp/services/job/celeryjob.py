@@ -67,8 +67,12 @@ class CeleryRunJob(RunJob):
         :param dbuser: The database user to run under.  This should match the
             dbuser specified by the job's config.
         """
+        self.dbuser = dbuser
         task_init(dbuser)
         super(CeleryRunJob, self).run(job_id)
+
+    def reQueue(self, job_id, fallback_queue):
+        self.apply_async(args=(job_id, self.dbuser), queue=fallback_queue)
 
 
 @celery_app.task(base=CeleryRunJob, bind=True)

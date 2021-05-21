@@ -44,12 +44,14 @@ from zope.schema import (
     Datetime,
     Dict,
     Int,
+    List,
     TextLine,
     )
 
 from lp import _
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
+from lp.buildmaster.interfaces.processor import IProcessor
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.services.fields import (
     ContentNameField,
@@ -125,6 +127,12 @@ class ISnapBaseView(Interface):
             could not be found.
         """
 
+    processors = exported(CollectionField(
+        title=_("Processors"),
+        description=_("The architectures that the snap base supports."),
+        value_type=Reference(schema=IProcessor),
+        readonly=True))
+
 
 class ISnapBaseEditableAttributes(Interface):
     """`ISnapBase` attributes that can be edited.
@@ -197,6 +205,14 @@ class ISnapBaseEdit(Interface):
         :param dependency: an `IArchive`.
         """
 
+    @operation_parameters(
+        processors=List(
+            value_type=Reference(schema=IProcessor), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setProcessors(processors):
+        """Set the architectures that the snap base supports."""
+
     @export_destructor_operation()
     @operation_for_version("devel")
     def destroySelf():
@@ -218,11 +234,14 @@ class ISnapBaseSetEdit(Interface):
     """`ISnapBaseSet` methods that require launchpad.Edit permission."""
 
     @call_with(registrant=REQUEST_USER)
+    @operation_parameters(
+        processors=List(
+            value_type=Reference(schema=IProcessor), required=False))
     @export_factory_operation(
         ISnapBase, ["name", "display_name", "distro_series", "build_channels"])
     @operation_for_version("devel")
     def new(registrant, name, display_name, distro_series, build_channels,
-            date_created=None):
+            processors=None, date_created=None):
         """Create an `ISnapBase`."""
 
     @operation_parameters(

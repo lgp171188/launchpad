@@ -75,7 +75,8 @@
                    tal:attributes="href build/fmt:url"/>
               </td>
               <td>
-                <tal:date replace="buildview/date/fmt:displaydate"/>
+                <tal:date
+                  replace="structure buildview/date/fmt:displaydatetitle"/>
                 <tal:estimate condition="buildview/estimate">
                   (estimated)
                 </tal:estimate>

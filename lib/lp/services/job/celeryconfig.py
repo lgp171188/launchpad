@@ -72,9 +72,7 @@ def configure(argv):
         # now that we're on Celery 3.1.
         result['task_soft_time_limit'] = config[queue].timeout
         if config[queue].fallback_queue != '':
-            # XXX wgrant 2015-08-03: lazr.jobrunner actually looks for
-            # FALLBACK_QUEUE; this probably isn't doing anything.
-            result['FALLBACK'] = config[queue].fallback_queue
+            result['FALLBACK_QUEUE'] = config[queue].fallback_queue
         # XXX wgrant 2015-08-03: This is mostly per-queue because we
         # can't run *_job and *_job_slow in the same worker, which will be
         # fixed once the CELERYD_TASK_SOFT_TIME_LIMIT override is gone.

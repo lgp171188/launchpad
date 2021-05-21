@@ -13,7 +13,6 @@ from datetime import (
     timedelta,
     )
 from operator import attrgetter
-import re
 
 from fixtures import FakeLogger
 import pytz
@@ -26,6 +25,7 @@ from testtools.matchers import (
     MatchesDict,
     MatchesSetwise,
     MatchesStructure,
+    Not,
     )
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
@@ -650,7 +650,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
     def test_edit_recipe(self):
         oci_project = self.factory.makeOCIProject()
         oci_project_display = oci_project.display_name
-        [old_git_ref] = self.factory.makeGitRefs()
+        [old_git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v1.0-20.04'])
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person,
             oci_project=oci_project, git_ref=old_git_ref)
@@ -695,7 +696,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
     def test_edit_recipe_invalid_branch(self):
         oci_project = self.factory.makeOCIProject()
         repository = self.factory.makeGitRepository()
-        [old_git_ref] = self.factory.makeGitRefs(repository=repository)
+        [old_git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v1.0-20.04'], repository=repository)
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person,
             oci_project=oci_project, git_ref=old_git_ref)
@@ -965,7 +967,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.setUpDistroSeries()
         repo = self.factory.makeGitRepository(
             owner=self.person, registrant=self.person)
-        [git_ref] = self.factory.makeGitRefs(repository=repo)
+        [git_ref] = self.factory.makeGitRefs(
+            repository=repo, paths=['refs/heads/v1.0-20.04'])
         oci_project = self.factory.makeOCIProject(
             registrant=self.person, pillar=self.distribution)
         recipe = self.factory.makeOCIRecipe(
@@ -985,7 +988,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         self.setUpDistroSeries()
         oci_project = self.factory.makeOCIProject(
             registrant=self.person, pillar=self.distribution)
-        [random_git_ref] = self.factory.makeGitRefs()
+        [random_git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v1.0-20.04'])
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person, oci_project=oci_project,
             git_ref=random_git_ref)
@@ -1017,7 +1021,8 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
             name=oci_project.name,
             target=oci_project, owner=self.person, registrant=self.person)
 
-        [git_ref] = self.factory.makeGitRefs(repository=default_repo)
+        [git_ref] = self.factory.makeGitRefs(
+            repository=default_repo, paths=['refs/heads/v1.0-20.04'])
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person, oci_project=oci_project,
             git_ref=git_ref)
@@ -1034,7 +1039,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         oci_project = self.factory.makeOCIProject(
             registrant=self.person, pillar=self.distribution)
 
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(paths=['refs/heads/v1.0-20.04'])
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person, oci_project=oci_project,
             git_ref=git_ref)
@@ -1235,32 +1240,38 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             distro_arch_series=self.distroarchseries,
             date_created=date_created, **kwargs)
 
-    def test_breadcrumb(self):
+    def test_breadcrumb_and_top_header(self):
         oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution)
         oci_project_name = oci_project.name
         oci_project_url = canonical_url(oci_project)
+        pillar_name = oci_project.pillar.name
+        pillar_url = canonical_url(oci_project.pillar)
         recipe = self.makeOCIRecipe(oci_project=oci_project)
         view = create_view(recipe, "+index")
         # To test the breadcrumbs we need a correct traversal stack.
         view.request.traversed_objects = [self.person, recipe, view]
         view.initialize()
-        breadcrumbs_tag = soupmatchers.Tag(
+        content = view()
+        breadcrumbs = soupmatchers.Tag(
             "breadcrumbs", "ol", attrs={"class": "breadcrumbs"})
-        self.assertThat(
-            view(),
-            soupmatchers.HTMLContains(
-                soupmatchers.Within(
-                    breadcrumbs_tag,
-                    soupmatchers.Tag(
-                        "OCI project breadcrumb", "a",
-                        text="%s OCI project" % oci_project_name,
-                        attrs={"href": oci_project_url})),
-                soupmatchers.Within(
-                    breadcrumbs_tag,
-                    soupmatchers.Tag(
-                        "OCI recipe breadcrumb", "li",
-                        text=re.compile(r"\srecipe-name\s")))))
+
+        # Should not have a breadcrumbs (OCI project link should be at the
+        # top of the page, close to project/distribution name).
+        self.assertThat(content, Not(soupmatchers.HTMLContains(breadcrumbs)))
+
+        # OCI project should appear at the top header, right after pillar link.
+        header = soupmatchers.Tag(
+            "subtitle", "h2", attrs={"id": "watermark-heading"})
+        self.assertThat(content, soupmatchers.HTMLContains(soupmatchers.Within(
+            header, soupmatchers.Tag(
+                "pillar link", "a",
+                text=pillar_name.title(), attrs={"href": pillar_url}))))
+        self.assertThat(content, soupmatchers.HTMLContains(soupmatchers.Within(
+            header, soupmatchers.Tag(
+                    "OCI project link", "a",
+                    text="%s OCI project" % oci_project_name,
+                    attrs={"href": oci_project_url}))))
 
     def makeRecipe(self, processor_names, **kwargs):
         recipe = self.factory.makeOCIRecipe(**kwargs)
@@ -1283,7 +1294,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         oci_project_display = oci_project.display_name
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
-            paths=["refs/heads/master"])
+            paths=["refs/heads/v1.0-20.04"])
         recipe = self.makeRecipe(
             processor_names=["amd64", "386"],
             build_file="Dockerfile", git_ref=ref,
@@ -1313,7 +1324,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             OCI recipe information
             Owner: Test Person
             OCI project: %s
-            Source: ~test-person/\\+git/recipe-repository:master
+            Source: ~test-person/\\+git/recipe-repository:v1.0-20.04
             Build file path: Dockerfile
             Build context directory: %s
             Build schedule: Built on request
@@ -1378,11 +1389,10 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
     def test_index_with_build_args(self):
         oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution)
-        oci_project_name = oci_project.name
         oci_project_display = oci_project.display_name
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
-            paths=["refs/heads/master"])
+            paths=["refs/heads/v1.0-20.04"])
         recipe = self.makeOCIRecipe(
             oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
             build_args={"VAR1": "123", "VAR2": "XXX"})
@@ -1391,13 +1401,12 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             recipe=recipe, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
-            %s OCI project
             recipe-name
             .*
             OCI recipe information
             Owner: Test Person
             OCI project: %s
-            Source: ~test-person/\\+git/recipe-repository:master
+            Source: ~test-person/\\+git/recipe-repository:v1.0-20.04
             Build file path: Dockerfile
             Build context directory: %s
             Build schedule: Built on request
@@ -1417,17 +1426,16 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Successfully built
             386
             30 minutes ago
-            """ % (oci_project_name, oci_project_display, build_path),
+            """ % (oci_project_display, build_path),
             self.getMainText(build.recipe))
 
     def test_index_for_subscriber_without_git_repo_access(self):
         oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution)
-        oci_project_name = oci_project.name
         oci_project_display = oci_project.display_name
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
-            paths=["refs/heads/master"],
+            paths=["refs/heads/v1.0-20.04"],
             information_type=InformationType.PRIVATESECURITY)
         recipe = self.makeOCIRecipe(
             oci_project=oci_project, git_ref=ref, build_file="Dockerfile",
@@ -1445,7 +1453,6 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
 
         main_text = self.getMainText(build.recipe, user=subscriber)
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
-            %s OCI project
             recipe-name
             .*
             OCI recipe information
@@ -1470,7 +1477,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Successfully built
             386
             30 minutes ago
-            """ % (oci_project_name, oci_project_display, build_path),
+            """ % (oci_project_display, build_path),
             main_text)
 
     def test_index_success_with_buildlog(self):
@@ -1509,7 +1516,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             pillar=self.distroseries.distribution)
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
-            paths=["refs/heads/master"])
+            paths=["refs/heads/v1.0-20.04"])
         recipe = self.makeRecipe(
             processor_names=["amd64", "386"],
             build_file="Dockerfile", git_ref=ref,
@@ -1617,7 +1624,6 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
         # The +request-builds page is sane.
         self.assertTextMatchesExpressionIgnoreWhitespace("""
             Request builds for recipe-name
-            oci-project-name OCI project
             recipe-name
             Request builds
             Architectures:

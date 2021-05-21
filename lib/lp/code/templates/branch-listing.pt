@@ -120,10 +120,8 @@ replace='structure string:&lt;script type="text/javascript"&gt;
                 tal:content="branch/date_created/fmt:datetime">
             2005-02-12 13:45 EST
           </span>
-          <span tal:attributes="title branch/date_created/fmt:datetime"
-                tal:content="branch/date_created/fmt:approximatedate">
-            sometime
-            </span>
+          <tal:created
+            replace="structure branch/date_created/fmt:approximatedatetitle" />
         </td>
         <td tal:condition="context/show_column/product|nothing">
           <a tal:condition="branch/product"
@@ -138,10 +136,8 @@ replace='structure string:&lt;script type="text/javascript"&gt;
                 tal:content="branch/date_last_modified/fmt:datetime">
             2005-02-12 13:45 EST
           </span>
-          <span tal:attributes="title branch/date_last_modified/fmt:datetime"
-                tal:content="branch/date_last_modified/fmt:approximatedate">
-            sometime
-          </span>
+          <tal:last-modified
+            replace="structure branch/date_last_modified/fmt:approximatedatetitle" />
         </td>
 
         <tal:no_commit condition="not: branch/last_commit">

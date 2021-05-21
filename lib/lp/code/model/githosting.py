@@ -89,9 +89,13 @@ class GitHostingClient:
             raise
         except Exception:
             _, val, tb = sys.exc_info()
-            reraise(
-                RequestExceptionWrapper, RequestExceptionWrapper(*val.args),
-                tb)
+            try:
+                reraise(
+                    RequestExceptionWrapper,
+                    RequestExceptionWrapper(*val.args), tb)
+            finally:
+                # Avoid traceback reference cycles.
+                del val, tb
         finally:
             action.finish()
         if response.content:
@@ -322,9 +326,16 @@ class GitHostingClient:
                         path))
             return self._post(url)
         except requests.RequestException as e:
-            raise CannotRepackRepository(
-                "Failed to repack Git repository %s: %s" %
-                (path, six.text_type(e)))
+            if (e.response is not None and
+                    e.response.status_code == requests.codes.NOT_FOUND):
+                if logger:
+                    logger.warning(
+                        "Git repository %s not found." % ensure_text(path))
+                return None
+            else:
+                raise CannotRepackRepository(
+                    "Failed to repack Git repository %s: %s" %
+                    (path, six.text_type(e)))
 
     def collectGarbage(self, path, logger=None):
         """See `IGitHostingClient`."""
