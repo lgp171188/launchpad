@@ -71,6 +71,7 @@ from lp.answers.interfaces.question import (
     IQuestionLinkFAQForm,
     )
 from lp.answers.interfaces.questioncollection import IQuestionSet
+from lp.answers.interfaces.questionmessage import IQuestionMessage
 from lp.answers.interfaces.questiontarget import (
     IAnswersFrontPageSearchForm,
     IQuestionTarget,
@@ -273,6 +274,20 @@ class QuestionNavigation(Navigation):
             return self.context.messages[index]
         except IndexError:
             return None
+
+
+class QuestionMessageNavigation(Navigation):
+    """Navigation for the IQuestionMessage."""
+
+    usedfor = IQuestionMessage
+
+    @stepthrough('revisions')
+    def traverse_revisions(self, revision):
+        try:
+            revision = int(revision)
+        except ValueError:
+            return None
+        return self.context.getRevisionByNumber(revision)
 
 
 class QuestionBreadcrumb(Breadcrumb):

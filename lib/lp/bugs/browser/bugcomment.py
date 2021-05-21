@@ -49,12 +49,27 @@ from lp.services.propertycache import (
 from lp.services.webapp import (
     canonical_url,
     LaunchpadView,
+    Navigation,
+    stepthrough,
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import ILaunchBag
 
 
 COMMENT_ACTIVITY_GROUPING_WINDOW = timedelta(minutes=5)
+
+
+class BugCommentNavigation(Navigation):
+    """Navigation for the `IBugComment`."""
+    usedfor = IBugComment
+
+    @stepthrough('revisions')
+    def traverse_revisions(self, revision):
+        try:
+            revision = int(revision)
+        except ValueError:
+            return None
+        return self.context.getRevisionByNumber(revision)
 
 
 def build_comments_from_chunks(

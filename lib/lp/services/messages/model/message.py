@@ -174,13 +174,20 @@ class Message(SQLBase):
         """See `IMessage`."""
         return None
 
+    @property
+    def _revisions(self):
+        return Store.of(self).find(
+            MessageRevision,
+            MessageRevision.message == self
+        ).order_by(MessageRevision.revision)
+
     @cachedproperty
     def revisions(self):
         """See `IMessage`."""
-        return list(Store.of(self).find(
-            MessageRevision,
-            MessageRevision.message == self
-        ).order_by(MessageRevision.revision))
+        return list(self._revisions)
+
+    def getRevisionByNumber(self, revision_number):
+        return self._revisions.find(revision=revision_number).one()
 
     def editContent(self, new_content):
         """See `IMessage`."""

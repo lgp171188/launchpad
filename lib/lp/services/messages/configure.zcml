@@ -82,4 +82,5 @@
     />
 
   <webservice:register module="lp.services.messages.interfaces.webservice" />
+  <include package=".browser"/>
 </configure>

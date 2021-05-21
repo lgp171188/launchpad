@@ -149,6 +149,7 @@ from lp.services.messages.interfaces.message import (
     IMessage,
     IUserToUserEmail,
     )
+from lp.services.messages.interfaces.messagerevision import IMessageRevision
 from lp.services.webservice.apihelpers import (
     patch_collection_property,
     patch_collection_return_type,
@@ -612,6 +613,7 @@ patch_reference_property(IIndexedMessage, 'inside', IBugTask)
 
 # IMessage
 patch_reference_property(IMessage, 'owner', IPerson)
+patch_collection_property(IMessage, 'revisions', IMessageRevision)
 
 # IUserToUserEmail
 patch_reference_property(IUserToUserEmail, 'sender', IPerson)

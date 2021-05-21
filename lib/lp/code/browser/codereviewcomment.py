@@ -56,8 +56,23 @@ from lp.services.webapp import (
     ContextMenu,
     LaunchpadView,
     Link,
+    Navigation,
+    stepthrough,
     )
 from lp.services.webapp.interfaces import ILaunchBag
+
+
+class CodeReviewCommentNavigation(Navigation):
+    """Navigation for the `ICodeReviewComment`."""
+    usedfor = ICodeReviewComment
+
+    @stepthrough('revisions')
+    def traverse_revisions(self, revision):
+        try:
+            revision = int(revision)
+        except ValueError:
+            return None
+        return self.context.getRevisionByNumber(int(revision))
 
 
 class ICodeReviewDisplayComment(IComment, ICodeReviewComment):

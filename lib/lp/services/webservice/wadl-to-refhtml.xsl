@@ -406,6 +406,12 @@
                 <xsl:text>/comments/</xsl:text>
                 <var>&lt;index&gt;</var>
             </xsl:when>
+            <xsl:when test="@id = 'message_revision'">
+                <xsl:text>/</xsl:text>
+                <var>&lt;message-url&gt;</var>
+                <xsl:text>/revisions/</xsl:text>
+                <var>&lt;index&gt;</var>
+            </xsl:when>
             <xsl:when test="@id = 'milestone'">
                 <xsl:text>/</xsl:text>
                 <var>&lt;target.name&gt;</var>
