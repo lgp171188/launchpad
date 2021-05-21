@@ -1996,6 +1996,22 @@ class GitRepositorySet:
         return {
             repository.project_id: repository for repository in repositories}
 
+    def getRepositoriesForRepack(self, limit=50):
+        """See `IGitRepositorySet`."""
+        repos = IStore(GitRepository).find(
+            GitRepository,
+            Or(
+                GitRepository.loose_object_count >=
+                    config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                    config.codehosting.packs_threshold,
+                ),
+            GitRepository.status == GitRepositoryStatus.AVAILABLE,
+        ).order_by(
+            Desc(GitRepository.loose_object_count)).config(limit=limit)
+
+        return list(repos)
+
 
 @implementer(IMacaroonIssuer)
 class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):

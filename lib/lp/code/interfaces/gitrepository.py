@@ -1223,6 +1223,18 @@ class IGitRepositorySet(Interface):
             Projects that do not have default repositories are omitted.
         """
 
+    @operation_parameters(limit=Int())
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getRepositoriesForRepack(limit=50):
+        """Get the top badly packed repositories.
+
+        :param limit: The number of badly packed repositories
+            that the endpoint should return - it is 50 by default.
+
+        :return: A list of the worst badly packed repositories.
+        """
+
 
 class IGitRepositoryDelta(Interface):
     """The quantitative changes made to a Git repository that was edited or
