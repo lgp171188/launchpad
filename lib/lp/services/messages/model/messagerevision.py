@@ -57,6 +57,27 @@ class MessageRevision(StormBase):
         self.date_created = date_created
         self.date_deleted = date_deleted
 
+    @property
+    def message_implementation(self):
+        from lp.bugs.model.bugmessage import BugMessage
+        from lp.code.model.codereviewcomment import CodeReviewComment
+        from lp.answers.model.questionmessage import QuestionMessage
+
+        store = IStore(self)
+        (identifier, ) = store.execute("""
+            SELECT 'bug' FROM BugMessage WHERE message = %s
+            UNION
+            SELECT 'question' FROM QuestionMessage WHERE message = %s
+            UNION
+            SELECT 'mp' FROM CodeReviewMessage WHERE message = %s;
+        """, params=[self.message_id] * 3).get_one()
+        id_to_class = {
+            "bug": BugMessage,
+            "question": QuestionMessage,
+            "mp": CodeReviewComment}
+        klass = id_to_class[identifier]
+        return store.find(klass, klass.message == self.message_id).one()
+
     @cachedproperty
     def chunks(self):
         return list(IStore(self).find(

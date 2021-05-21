@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -556,6 +556,9 @@
         path_expression="string:comments/${id}"
         attribute_to_parent="branch_merge_proposal"
         rootsite="code"/>
+    <browser:navigation
+        module=".codereviewcomment"
+        classes="CodeReviewCommentNavigation" />
     <browser:defaultView
         for="lp.code.interfaces.codereviewcomment.ICodeReviewComment"
         name="+index"/>

@@ -88,7 +88,14 @@ class IMessageCommon(Interface):
         Reference(title=_('Person'), schema=Interface,
                   required=False, readonly=True))
 
-    revisions = Attribute(_('Message revision history'))
+    revisions = exported(CollectionField(
+        title=_("Message revision history"),
+        description=_(
+            "Revision history of this message, sorted in ascending order."),
+        # Really IMessageRevision, patched in _schema_circular_imports.
+        value_type=Reference(schema=Interface),
+        required=False, readonly=True), as_of="devel")
+
     datecreated = exported(
         Datetime(title=_('Date Created'), required=True, readonly=True),
         exported_as='date_created')
@@ -99,6 +106,9 @@ class IMessageCommon(Interface):
     date_deleted = exported(Datetime(
         title=_('When this message was deleted'), required=False,
         readonly=True))
+
+    def getRevisionByNumber(revision_number):
+        """Returns the revision with the given number."""
 
 
 class IMessageView(IMessageCommon):

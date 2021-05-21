@@ -282,6 +282,10 @@
     module=".question"
     classes="QuestionNavigation"
     />
+  <browser:navigation
+    module=".question"
+    classes="QuestionMessageNavigation"
+    />
 
   <browser:url
     for="lp.answers.interfaces.questioncollection.IQuestionSet"
