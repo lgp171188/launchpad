@@ -94,7 +94,7 @@ oops-amqp==0.1.0
 oops-datedir-repo==0.0.24
 oops-timeline==0.0.3
 oops-twisted==0.0.8
-oops-wsgi==0.0.14
+oops-wsgi==0.0.15
 oslo.config==1.3.0
 paramiko==2.4.1
 Paste==3.3.0
