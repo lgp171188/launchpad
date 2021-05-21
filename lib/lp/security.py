@@ -2636,8 +2636,8 @@ class CodeReviewCommentView(DelegatedAuthorization):
             obj, obj.branch_merge_proposal)
 
 
-class CodeReviewCommentDrive(AuthorizationBase):
-    permission = 'launchpad.Driver'
+class CodeReviewCommentOwner(AuthorizationBase):
+    permission = 'launchpad.Owner'
     usedfor = ICodeReviewComment
 
     def checkAuthenticated(self, user):
