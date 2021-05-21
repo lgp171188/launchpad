@@ -548,7 +548,7 @@
   <!-- CodeReviewComment -->
 
   <class class="lp.code.model.codereviewcomment.CodeReviewComment">
-    <require permission="launchpad.Edit"
+    <require permission="launchpad.Owner"
              interface="lp.services.messages.interfaces.message.IMessageEdit" />
     <allow interface="lp.code.interfaces.codereviewcomment.ICodeReviewCommentView"/>
     <allow interface="lp.code.interfaces.branchtarget.IHasBranchTarget"/>
