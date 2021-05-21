@@ -234,6 +234,8 @@ that indicate how the message changed the question.
     bug_attachments_collection_link: '...'
     content: 'This is the answer'
     date_created: '20...+00:00'
+    date_deleted: None
+    date_last_edited: None
     index: 1
     new_status: 'Answered'
     owner_link: 'http://api.launchpad.test/devel/~contact'

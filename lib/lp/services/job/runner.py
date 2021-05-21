@@ -321,9 +321,15 @@ class BaseRunnableJob(BaseRunnableJobSource):
         """See `IJob`."""
         if self.job.attempt_count > 0:
             self.job.scheduled_start = datetime.now(utc) + self.retry_delay
+        # If we're aborting the transaction, we probably don't want to
+        # start the task again
+        if manage_transaction and abort_transaction:
+            commit_hook = None
+        else:
+            commit_hook = self.celeryRunOnCommit
         self.job.queue(
             manage_transaction, abort_transaction,
-            add_commit_hook=self.celeryRunOnCommit)
+            add_commit_hook=commit_hook)
 
     def start(self, manage_transaction=False):
         """See `IJob`."""

@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The database implementation class for CodeReviewComment."""
@@ -10,6 +10,7 @@ __all__ = [
 
 from textwrap import TextWrapper
 
+from lazr.delegates import delegate_to
 from storm.locals import (
     Int,
     Reference,
@@ -27,6 +28,10 @@ from lp.code.interfaces.codereviewcomment import (
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 from lp.services.mail.signedmessage import signed_message_from_bytes
+from lp.services.messages.interfaces.message import (
+    IMessageCommon,
+    IMessageEdit,
+    )
 
 
 def quote_text_as_email(text, width=80):
@@ -61,7 +66,9 @@ def quote_text_as_email(text, width=80):
     return '\n'.join(result)
 
 
-@implementer(ICodeReviewComment, ICodeReviewCommentDeletion, IHasBranchTarget)
+@implementer(ICodeReviewComment, ICodeReviewCommentDeletion, IHasBranchTarget,
+             IMessageCommon, IMessageEdit)
+@delegate_to(IMessageCommon, IMessageEdit, context='message')
 class CodeReviewComment(StormBase):
     """A table linking branch merge proposals and messages."""
 

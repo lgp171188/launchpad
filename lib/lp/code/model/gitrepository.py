@@ -1862,6 +1862,20 @@ class GitRepositorySet:
             collection = collection.modifiedSince(modified_since_date)
         return collection.getRepositories(eager_load=True, sort_by=order_by)
 
+    def countRepositoriesForRepack(self):
+        """See `IGitRepositorySet`."""
+        repos = IStore(GitRepository).find(
+            GitRepository,
+            Or(
+                GitRepository.loose_object_count >=
+                    config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                    config.codehosting.packs_threshold,
+                ),
+            GitRepository.status == GitRepositoryStatus.AVAILABLE,
+        ).order_by(GitRepository.id)
+        return repos.count()
+
     def getRepositoryVisibilityInfo(self, user, person, repository_names):
         """See `IGitRepositorySet`."""
         if user is None:
@@ -1981,6 +1995,22 @@ class GitRepositorySet:
             extra_conditions=[GitRepository.target_default == True])
         return {
             repository.project_id: repository for repository in repositories}
+
+    def getRepositoriesForRepack(self, limit=50):
+        """See `IGitRepositorySet`."""
+        repos = IStore(GitRepository).find(
+            GitRepository,
+            Or(
+                GitRepository.loose_object_count >=
+                    config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >=
+                    config.codehosting.packs_threshold,
+                ),
+            GitRepository.status == GitRepositoryStatus.AVAILABLE,
+        ).order_by(
+            Desc(GitRepository.loose_object_count)).config(limit=limit)
+
+        return list(repos)
 
 
 @implementer(IMacaroonIssuer)

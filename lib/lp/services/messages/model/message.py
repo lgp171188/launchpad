@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -41,6 +41,7 @@ from storm.locals import (
     And,
     DateTime,
     Int,
+    Max,
     Reference,
     Store,
     Storm,
@@ -71,7 +72,14 @@ from lp.services.messages.interfaces.message import (
     IUserToUserEmail,
     UnknownSender,
     )
-from lp.services.propertycache import cachedproperty
+from lp.services.messages.model.messagerevision import (
+    MessageRevision,
+    MessageRevisionChunk,
+    )
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
 
 
 def utcdatetime_from_field(field_value):
@@ -100,6 +108,8 @@ class Message(SQLBase):
     _table = 'Message'
     _defaultOrder = '-id'
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    date_deleted = UtcDateTimeCol(notNull=False, default=None)
+    date_last_edited = UtcDateTimeCol(notNull=False, default=None)
     subject = StringCol(notNull=False, default=None)
     owner = ForeignKey(
         dbName='owner', foreignKey='Person',
@@ -163,6 +173,81 @@ class Message(SQLBase):
     def getAPIParent(self):
         """See `IMessage`."""
         return None
+
+    @cachedproperty
+    def revisions(self):
+        """See `IMessage`."""
+        return list(Store.of(self).find(
+            MessageRevision,
+            MessageRevision.message == self
+        ).order_by(MessageRevision.revision))
+
+    def editContent(self, new_content):
+        """See `IMessage`."""
+        store = Store.of(self)
+
+        # Move the old content to a new revision.
+        date_created = (
+            self.date_last_edited if self.date_last_edited is not None
+            else self.datecreated)
+        current_rev_num = store.find(
+            Max(MessageRevision.revision),
+            MessageRevision.message == self).one()
+        rev_num = (current_rev_num or 0) + 1
+        rev = MessageRevision(
+            message=self, revision=rev_num, date_created=date_created)
+        self.date_last_edited = UTC_NOW
+        store.add(rev)
+
+        # Move the current text content to the recently created revision.
+        used_seq_numbers = set()
+        for chunk in self._chunks:
+            if chunk.blob is None:
+                revision_chunk = MessageRevisionChunk(
+                    rev, chunk.sequence, chunk.content)
+                store.add(revision_chunk)
+                store.remove(chunk)
+            else:
+                used_seq_numbers.add(chunk.sequence)
+
+        # Spot sequence number gaps.
+        # If there is a gap in sequence numbers, use it. Otherwise, use the
+        # max sequence number + 1.
+        min_gap = None
+        for i in range(1, len(used_seq_numbers) + 1):
+            if i not in used_seq_numbers:
+                min_gap = i
+                break
+        if min_gap is None:
+            new_seq = max(used_seq_numbers) + 1 if len(used_seq_numbers) else 1
+        else:
+            new_seq = min_gap
+
+        # Create the new content.
+        new_chunk = MessageChunk(
+            message=self, sequence=new_seq, content=new_content)
+        store.add(new_chunk)
+
+        store.flush()
+
+        # Clean up caches.
+        del get_property_cache(self).text_contents
+        del get_property_cache(self).chunks
+        del get_property_cache(self).revisions
+
+    def deleteContent(self):
+        """See `IMessage`."""
+        store = Store.of(self)
+        store.find(MessageChunk, MessageChunk.message == self).remove()
+        revs = [i.id for i in self.revisions]
+        store.find(
+            MessageRevisionChunk,
+            MessageRevisionChunk.message_revision_id.is_in(revs)).remove()
+        store.find(MessageRevision, MessageRevision.message == self).remove()
+        del get_property_cache(self).text_contents
+        del get_property_cache(self).chunks
+        del get_property_cache(self).revisions
+        self.date_deleted = UTC_NOW
 
 
 def get_parent_msgids(parsed_message):

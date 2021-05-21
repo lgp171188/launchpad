@@ -3,25 +3,26 @@ Distribution Source Packages
 
 Source packages can be obtained from the context of a distribution.
 
+    >>> from lazr.restful.testing.webservice import pprint_entry
+
     >>> debian = webservice.get('/debian').jsonBody()
 
     >>> mozilla_firefox = webservice.named_get(
     ...     debian['self_link'], 'getSourcePackage',
     ...     name='mozilla-firefox').jsonBody()
 
-    >>> print(pretty(mozilla_firefox))
-    {'bug_reported_acknowledgement': None,
-     'bug_reporting_guidelines': None,
-     'display_name': 'mozilla-firefox in Debian',
-     'distribution_link': 'http://.../debian',
-     'http_etag': '...',
-     'name': 'mozilla-firefox',
-     'official_bug_tags': [],
-     'resource_type_link': 'http://.../#distribution_source_package',
-     'self_link': 'http://.../debian/+source/mozilla-firefox',
-     'title': 'mozilla-firefox package in Debian',
-     'upstream_product_link': None,
-     'web_link': 'http://launchpad.../debian/+source/mozilla-firefox'}
+    >>> pprint_entry(mozilla_firefox)
+    bug_reported_acknowledgement: None
+    bug_reporting_guidelines: None
+    display_name: 'mozilla-firefox in Debian'
+    distribution_link: 'http://.../debian'
+    name: 'mozilla-firefox'
+    official_bug_tags: []
+    resource_type_link: 'http://.../#distribution_source_package'
+    self_link: 'http://.../debian/+source/mozilla-firefox'
+    title: 'mozilla-firefox package in Debian'
+    upstream_product_link: None
+    web_link: 'http://launchpad.../debian/+source/mozilla-firefox'
 
 It's also possible to search for tasks with the "searchTasks" method:
 
@@ -51,10 +52,13 @@ package.
     >>> upstream_product = webservice.get(
     ...     ubuntu_firefox['upstream_product_link']).jsonBody()
 
-    >>> print(pretty(upstream_product))
-    {...
-     'display_name': 'Mozilla Firefox'...
-     'self_link': 'http://.../firefox'...}
+    >>> pprint_entry(upstream_product)
+    active: True
+    ...
+    display_name: 'Mozilla Firefox'
+    ...
+    self_link: 'http://.../firefox'
+    ...
 
 If the package isn't linked to an upstream product its
 upstream_product_link will be None.

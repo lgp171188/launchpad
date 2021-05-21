@@ -4069,6 +4069,67 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_getRepositories_personal(self):
         self.assertGetRepositoriesWorks(self.factory.makePerson())
 
+    def test_getRepositoriesForRepack(self):
+        person = self.factory.makePerson()
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_get(
+            "/+git", "getRepositoriesForRepack", limit=3)
+        self.assertEqual(200, response.status)
+        self.assertEqual([], response.jsonBody())
+        with person_logged_in(person):
+            repo = []
+            for i in range(5):
+                repo.append(self.factory.makeGitRepository())
+            for i in range(3):
+                removeSecurityProxy(repo[i]).loose_object_count = 7000 + i
+                removeSecurityProxy(repo[i]).pack_count = 43
+
+        # We have a total of 3 candidates now
+        response = webservice.named_get(
+            "/+git", "getRepositoriesForRepack", limit=10)
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(
+            [7002, 7001, 7000],
+            [entry['loose_object_count']
+             for entry in response.jsonBody()])
+
+        # When we have 5 repack candidates but limit at 4
+        # we should only get back 4 repos from the query.
+        removeSecurityProxy(repo[3]).loose_object_count = 7003
+        removeSecurityProxy(repo[4]).loose_object_count = 7004
+        response = webservice.named_get(
+            "/+git", "getRepositoriesForRepack", limit=4)
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(
+            [7004, 7003, 7002, 7001],
+            [entry['loose_object_count']
+             for entry in response.jsonBody()])
+
+    def test_getNumberRepositoriesForRepack(self):
+        person = self.factory.makePerson()
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_get(
+            "/+git", "countRepositoriesForRepack")
+        self.assertEqual(200, response.status)
+        self.assertEqual(0, response.jsonBody())
+        with person_logged_in(person):
+            for _ in range(5):
+                self.factory.makeGitRepository()
+            for _ in range(3):
+                repo = self.factory.makeGitRepository()
+                removeSecurityProxy(repo).loose_object_count = 7000
+                removeSecurityProxy(repo).pack_count = 43
+
+        # We have a total of 3 candidates now
+        response = webservice.named_get(
+            "/+git", "countRepositoriesForRepack")
+        self.assertEqual(200, response.status)
+        self.assertEqual(3, response.jsonBody())
+
     def test_get_without_default_branch(self):
         # Ensure we're not getting an error when calling
         # GET on the Webservice when a Git Repo exists in the DB

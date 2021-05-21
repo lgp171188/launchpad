@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -548,7 +548,9 @@
   <!-- CodeReviewComment -->
 
   <class class="lp.code.model.codereviewcomment.CodeReviewComment">
-    <allow interface="lp.code.interfaces.codereviewcomment.ICodeReviewComment"/>
+    <require permission="launchpad.Edit"
+             interface="lp.services.messages.interfaces.message.IMessageEdit" />
+    <allow interface="lp.code.interfaces.codereviewcomment.ICodeReviewCommentView"/>
     <allow interface="lp.code.interfaces.branchtarget.IHasBranchTarget"/>
   </class>
   <subscriber
