@@ -2636,12 +2636,12 @@ class CodeReviewCommentView(DelegatedAuthorization):
             obj, obj.branch_merge_proposal)
 
 
-class CodeReviewCommentEdit(AuthorizationBase):
-    permission = 'launchpad.Edit'
+class CodeReviewCommentDrive(AuthorizationBase):
+    permission = 'launchpad.Driver'
     usedfor = ICodeReviewComment
 
     def checkAuthenticated(self, user):
-        """Only message owner can edit it."""
+        """Only message owner can edit its content."""
         return user.isOwner(self.obj)
 
 
