@@ -389,12 +389,15 @@ class TestAsyncOCIRecipeBuildBehaviour(
         # Asserts that nothing here is a zope proxy, to avoid errors when
         # serializing it for XML-RPC call.
         self.assertHasNoZopeSecurityProxy(args)
+        arch_tag = job.build.distro_arch_series.architecturetag
         self.assertThat(args, MatchesDict({
             "archive_private": Is(False),
             "archives": Equals(expected_archives),
             "arch_tag": Equals("i386"),
             "build_file": Equals(job.build.recipe.build_file),
-            "build_args": Equals({"BUILD_VAR": "123"}),
+            "build_args": Equals({
+                "BUILD_VAR": "123",
+                "LAUNCHPAD_BUILD_ARCH": arch_tag}),
             "build_path": Equals(job.build.recipe.build_path),
             "build_url": Equals(canonical_url(job.build)),
             "fast_cleanup": Is(True),
@@ -440,12 +443,15 @@ class TestAsyncOCIRecipeBuildBehaviour(
         # serializing it for XML-RPC call.
         self.assertHasNoZopeSecurityProxy(args)
         split_browse_root = urlsplit(config.codehosting.git_browse_root)
+        arch_tag = job.build.distro_arch_series.architecturetag
         self.assertThat(args, MatchesDict({
             "archive_private": Is(False),
             "archives": Equals(expected_archives),
             "arch_tag": Equals("i386"),
             "build_file": Equals(job.build.recipe.build_file),
-            "build_args": Equals({"BUILD_VAR": "123"}),
+            "build_args": Equals({
+                "BUILD_VAR": "123",
+                "LAUNCHPAD_BUILD_ARCH": arch_tag}),
             "build_path": Equals(job.build.recipe.build_path),
             "build_url": Equals(canonical_url(job.build)),
             "fast_cleanup": Is(True),
@@ -493,12 +499,15 @@ class TestAsyncOCIRecipeBuildBehaviour(
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertHasNoZopeSecurityProxy(args)
+        arch_tag = job.build.distro_arch_series.architecturetag
         self.assertThat(args, MatchesDict({
             "archive_private": Is(False),
             "archives": Equals(expected_archives),
             "arch_tag": Equals("i386"),
             "build_file": Equals(job.build.recipe.build_file),
-            "build_args": Equals({"BUILD_VAR": "123"}),
+            "build_args": Equals({
+                "BUILD_VAR": "123",
+                "LAUNCHPAD_BUILD_ARCH": arch_tag}),
             "build_path": Equals(job.build.recipe.build_path),
             "build_url": Equals(canonical_url(job.build)),
             "fast_cleanup": Is(True),
