@@ -141,10 +141,16 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
                 logger=logger))
 
         args['build_file'] = build.recipe.build_file
+
+        # Do our work on a new dict, so we don't try to update the
+        # copy on the model
+        build_args = {
+            "LAUNCHPAD_BUILD_ARCH": build.distro_arch_series.architecturetag}
         # We have to remove the security proxy that Zope applies to this
         # dict, since otherwise we'll be unable to serialise it to
         # XML-RPC.
-        args['build_args'] = removeSecurityProxy(build.recipe.build_args)
+        build_args.update(removeSecurityProxy(build.recipe.build_args))
+        args['build_args'] = build_args
         args['build_path'] = build.recipe.build_path
         args['metadata'] = self._getBuildInfoArgs()
 
