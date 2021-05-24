@@ -1200,7 +1200,13 @@ class QuestionMessageDisplayView(LaunchpadView):
             # If a comment that isn't visible is being rendered, it's being
             # rendered for an admin or registry_expert.
             css_classes.append("adminHiddenComment")
+        if self.can_edit:
+            css_classes.append("editable-message")
         return " ".join(css_classes)
+
+    @property
+    def can_edit(self):
+        return check_permission('launchpad.Edit', self.context)
 
     def canConfirmAnswer(self):
         """Return True if the user can confirm this answer."""

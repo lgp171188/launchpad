@@ -58,7 +58,7 @@ class IMessageEdit(Interface):
 
     @export_write_operation()
     @operation_parameters(
-        new_content=TextLine(
+        new_content=Text(
             title=_("Message content"),
             description=_("The new message content string"),
             required=True))
