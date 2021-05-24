@@ -52,7 +52,10 @@ from zope.publisher.interfaces.browser import (
     IDefaultSkin,
     )
 from zope.publisher.publish import mapply
-from zope.security.management import newInteraction
+from zope.security.management import (
+    endInteraction,
+    newInteraction,
+    )
 from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
@@ -785,6 +788,15 @@ class LaunchpadBrowserPublication(
     def endRequest(self, request, object):
         superclass = zope.app.publication.browser.BrowserPublication
         superclass.endRequest(self, request, object)
+        # BrowserPublication.endRequest calls endInteraction as well, but
+        # calling it once leaves a reference to the previous interaction
+        # around in
+        # zope.security.management.thread_local.previous_interaction just in
+        # case somebody might want to call restoreInteraction later,
+        # significantly complicating memory leak analysis.  We won't need to
+        # restore the previous interaction in this case, so call
+        # endInteraction again to discard it.
+        endInteraction()
 
         da.clear_request_started()
 
