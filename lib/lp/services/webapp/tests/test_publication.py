@@ -25,6 +25,10 @@ from zope.publisher.interfaces import (
     NotFound,
     Retry,
     )
+from zope.publisher.publish import publish
+from zope.security.management import (
+    thread_local as zope_security_thread_local,
+    )
 
 from lp.services.database.interfaces import IMasterStore
 from lp.services.identity.model.emailaddress import EmailAddress
@@ -83,6 +87,25 @@ class TestLaunchpadBrowserPublication(TestCase):
         publication.callTraversalHooks(request, obj1)
         publication.callTraversalHooks(request, obj2)
         self.assertEqual(request.traversed_objects, [obj1])
+
+
+class TestLaunchpadBrowserPublicationInteractionHandling(TestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_endRequest_removes_previous_interaction(self):
+        # Zope's BrowserPublication.endRequest leaves a reference to the
+        # previous interaction around in
+        # zope.security.management.thread_local.previous_interaction, which
+        # can complicate memory leak analysis.  Since we don't need this
+        # reference, LaunchpadBrowserPublication.endRequest removes it.
+        request = LaunchpadTestRequest(PATH_INFO='/')
+        request.setPublication(LaunchpadBrowserPublication(None))
+        publish(request)
+        self.assertIsNone(
+            getattr(zope_security_thread_local, 'interaction', None))
+        self.assertIsNone(
+            getattr(zope_security_thread_local, 'previous_interaction', None))
 
 
 class TestWebServicePublication(TestCaseWithFactory):

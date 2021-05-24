@@ -360,9 +360,9 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertIsNone(edited_obj["date_deleted"])
         self.assertIsNotNone(edited_obj["date_last_edited"])
 
-    def test_edit_message_permission_denied_for_non_owner(self):
+    def assertPermissionDeniedEditMessage(self, caller_person):
         msg = self.makeMessage(content="initial content")
-        ws = self.getWebservice(self.factory.makePerson())
+        ws = self.getWebservice(caller_person)
         url = self.getMessageAPIURL(msg)
         response = ws.named_post(
             url, 'editContent', new_content="the new content")
@@ -372,6 +372,13 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertEqual("initial content", edited_obj['content'])
         self.assertIsNone(edited_obj["date_deleted"])
         self.assertIsNone(edited_obj["date_last_edited"])
+
+    def test_edit_message_permission_denied_for_non_owner(self):
+        self.assertPermissionDeniedEditMessage(self.factory.makePerson())
+
+    def test_edit_message_permission_denied_for_admin(self):
+        self.assertPermissionDeniedEditMessage(
+            self.factory.makeAdministrator())
 
     def test_delete_message(self):
         msg = self.makeMessage(content="initial content")
