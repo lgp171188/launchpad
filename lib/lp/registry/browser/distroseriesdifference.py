@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for DistroSeriesDifferences."""
@@ -9,6 +9,7 @@ __all__ = [
     'DistroSeriesDifferenceView',
     ]
 
+from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IWebServiceClientRequest
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
@@ -46,6 +47,7 @@ from lp.services.comments.interfaces.conversation import (
     IComment,
     IConversation,
     )
+from lp.services.messages.interfaces.message import IMessage
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     LaunchpadView,
@@ -240,11 +242,12 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
             self.show_package_diffs_request_link)
 
 
-class IDistroSeriesDifferenceDisplayComment(IComment):
+class IDistroSeriesDifferenceDisplayComment(IComment, IMessage):
     """Marker interface."""
 
 
 @implementer(IDistroSeriesDifferenceDisplayComment)
+@delegate_to(IMessage, context='_message')
 class DistroSeriesDifferenceDisplayComment(MessageComment):
     """Used simply to provide `IComment` for rendering."""
 
@@ -258,6 +261,7 @@ class DistroSeriesDifferenceDisplayComment(MessageComment):
         """Setup the attributes required by `IComment`."""
         super(DistroSeriesDifferenceDisplayComment, self).__init__(None)
         self.comment = comment
+        self._message = comment.message
 
 
 def get_message(comment):
