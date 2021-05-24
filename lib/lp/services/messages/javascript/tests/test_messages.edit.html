@@ -91,5 +91,14 @@ GNU Affero General Public License version 3 (see the file LICENSE).
                 <input type="button" value="Cancel" class="editable-message-cancel-btn" />
             </div>
         </div>
+
+        <!-- A deleted message may not define all tags.
+        Let's add one of those deleted messages here to make sure that
+        Y.lp.services.messages.edit.setup() will not crash. -->
+        <div class="editable-message" id="deleted-message"
+             data-baseurl="/message/2">
+            Deleted msg.
+        </div>
+
     </body>
 </html>
