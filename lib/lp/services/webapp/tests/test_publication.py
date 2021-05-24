@@ -26,7 +26,9 @@ from zope.publisher.interfaces import (
     Retry,
     )
 from zope.publisher.publish import publish
-from zope.security.management import thread_local as zope_security_thread_local
+from zope.security.management import (
+    thread_local as zope_security_thread_local,
+    )
 
 from lp.services.database.interfaces import IMasterStore
 from lp.services.identity.model.emailaddress import EmailAddress
