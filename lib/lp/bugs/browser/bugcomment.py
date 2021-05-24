@@ -52,6 +52,7 @@ from lp.services.webapp import (
     Navigation,
     stepthrough,
     )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import ILaunchBag
 
@@ -353,11 +354,19 @@ class BugCommentBoxView(LaunchpadView, BugCommentBoxViewMixin):
 
     expand_reply_box = False
 
+    @property
+    def can_edit(self):
+        return check_permission('launchpad.Edit', self.context)
+
 
 class BugCommentBoxExpandedReplyView(LaunchpadView, BugCommentBoxViewMixin):
     """Render a comment box with reply field expanded."""
 
     expand_reply_box = True
+
+    @property
+    def can_edit(self):
+        return False
 
 
 @adapter(IBugComment, IWebServiceClientRequest)

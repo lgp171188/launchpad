@@ -84,7 +84,7 @@ bugtask directly.
 They see their comment was appended to the bug report's messages.
 
     >>> print(extract_text(
-    ...     find_tags_by_class(str(content), 'boardCommentBody')[-1]))
+    ...     find_tags_by_class(str(content), 'editable-message-text')[-1]))
     This bug is a question.
 
 No Privileges Person looks at the page heading and sees that Foo Bar is
