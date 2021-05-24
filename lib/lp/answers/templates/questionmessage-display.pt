@@ -7,7 +7,8 @@
   itemtype="http://schema.org/UserComments"
   tal:define="css_classes view/getBoardCommentCSSClass"
   tal:attributes="class string:${css_classes};
-                  id string:comment-${context/index}">
+                  id string:comment-${context/index};
+                  data-baseurl context/fmt:url">
   <div class="boardCommentDetails">
     <table>
       <tbody>
@@ -25,8 +26,18 @@
       itemprop="commentTime"
       tal:attributes="title context/datecreated/fmt:datetime;
         datetime context/datecreated/fmt:isodate"
-      tal:content="context/datecreated/fmt:displaydate">Thursday
-    13:21</time>:
+      tal:content="context/datecreated/fmt:displaydate">Thursday 13:21
+    </time><span class="editable-message-last-edit-date"><tal:last-edit condition="context/date_last_edited">
+        (last edit <time
+            itemprop="editTime"
+            tal:attributes="title context/date_last_edited/fmt:datetime;
+              datetime context/date_last_edited/fmt:isodate"
+            tal:content="context/date_last_edited/fmt:displaydate" />)</tal:last-edit>:
+      </span>
+    </td>
+    <td>
+      <img class="sprite edit action-icon editable-message-edit-btn"
+           tal:condition="view/can_edit"/>
     </td>
     <td class="bug-comment-index">
       <a
@@ -35,12 +46,21 @@
   </tr></tbody></table>
   </div>
 
-  <div class="boardCommentBody"
-    tal:attributes="class view/getBodyCSSClass"
-    itemprop="commentText"
-    tal:content="structure
-      context/text_contents/fmt:obfuscate-email/fmt:email-to-html">
-    Message text.
+  <div class="editable-message-body">
+    <div class="boardCommentBody"
+      tal:attributes="class python: view.getBodyCSSClass() + ' editable-message-text'"
+      itemprop="commentText"
+      tal:content="structure
+        context/text_contents/fmt:obfuscate-email/fmt:email-to-html">
+      Message text.
+    </div>
+  </div>
+
+  <div class="editable-message-form" style="display: none">
+     <textarea style="width: 100%" rows="10"
+               tal:content="context/text_contents" />
+     <input type="button" value="Update" class="editable-message-update-btn" />
+     <input type="button" value="Cancel" class="editable-message-cancel-btn" />
   </div>
 
   <div class="confirmBox"

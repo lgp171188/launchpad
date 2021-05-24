@@ -5,11 +5,22 @@
 
   <a tal:replace="structure view/download_link"
      tal:condition="context/too_long">Download full text</a>
-  <div class="comment-text" itemprop="commentText" tal:content="structure
-      context/text_for_display/fmt:obfuscate-email/fmt:email-to-html" />
-  <tal:renderable condition="not: context/too_long_to_render">
-  <p tal:condition="context/too_long">
-    <a tal:attributes="href context/fmt:url">Read more...</a>
-  </p>
-  </tal:renderable >
+  <div class="editable-message-body">
+    <div class="comment-text editable-message-text" itemprop="commentText"
+         tal:content="structure
+         context/text_for_display/fmt:obfuscate-email/fmt:email-to-html" />
+    <tal:renderable condition="not: context/too_long_to_render">
+    <p tal:condition="context/too_long">
+      <a tal:attributes="href context/fmt:url">Read more...</a>
+    </p>
+    </tal:renderable >
+  </div>
+
+  <div class="editable-message-form" style="display: none"
+       tal:condition="python: not getattr(context, 'hide_text', False)">
+     <textarea style="width: 100%" rows="10"
+               tal:content="context/text_contents" />
+     <input type="button" value="Update" class="editable-message-update-btn" />
+     <input type="button" value="Cancel" class="editable-message-cancel-btn" />
+  </div>
 </tal:root>

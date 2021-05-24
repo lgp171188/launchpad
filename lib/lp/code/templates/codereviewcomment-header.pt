@@ -18,7 +18,13 @@
             datetime context/comment_date/fmt:isodate"
           tal:content="context/comment_date/fmt:displaydate">
           7 minutes ago
-        </time>:
+        </time><span class="editable-message-last-edit-date"><tal:last-edit condition="context/date_last_edited">
+            (last edit <time
+                itemprop="editTime"
+                tal:attributes="title context/date_last_edited/fmt:datetime;
+                  datetime context/date_last_edited/fmt:isodate"
+                tal:content="context/date_last_edited/fmt:displaydate" />)</tal:last-edit>:
+          </span>
         <span
           tal:condition="context/from_superseded"
           class="sprite warning-icon"
@@ -27,6 +33,11 @@
               tal:attributes="href context/branch_merge_proposal/fmt:url">a
               previous version</a>
             of this proposal</span>
+      </td>
+
+      <td>
+        <img class="sprite edit action-icon editable-message-edit-btn"
+             tal:condition="view/can_edit"/>
       </td>
 
       <td class="bug-comment-index">

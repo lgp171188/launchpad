@@ -39,7 +39,7 @@ to the main merge proposal page.
 
     >>> print_comments('boardCommentDetails')
     Eric the Viking (eric) wrote ...
-    >>> print_comments('boardCommentBody')
+    >>> print_comments('comment-text')
     This is a very long comment about what things should be done to the
     source branch to land it. When this comment is replied to, it should
     wrap the line properly.
@@ -82,7 +82,7 @@ since it failed spuriously in buildbot.
 
 After this, we are taken to the main page for the merge proposal
 
-    >>> print_comments('boardCommentBody', eric_browser, index=1)
+    >>> print_comments('comment-text', eric_browser, index=1)
     I like this.
     I wish I had time to review it properly
     This is a longer message with several lines
@@ -91,7 +91,7 @@ After this, we are taken to the main page for the merge proposal
 Email addresses in code review comments are hidden for users not logged in.
 
     >>> anon_browser.open(merge_proposal_url)
-    >>> print_comments('boardCommentBody', anon_browser, index=1)
+    >>> print_comments('comment-text', anon_browser, index=1)
     I like this.
     I wish I had time to review it properly
     This is a longer message with several lines
@@ -106,7 +106,7 @@ are also displayed in the new proposal.
     >>> new_merge_proposal_url = canonical_url(new_merge_proposal)
     >>> logout()
     >>> anon_browser.open(new_merge_proposal_url)
-    >>> print_comments('boardCommentBody', anon_browser, index=0)
+    >>> print_comments('comment-text', anon_browser, index=0)
     This is a very long comment about what things should be done to the
     source branch to land it. When this comment is replied to, it should
     wrap the line properly.
