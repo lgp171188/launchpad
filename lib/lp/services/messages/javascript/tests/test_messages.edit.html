@@ -52,10 +52,45 @@ GNU Affero General Public License version 3 (see the file LICENSE).
             <li>lp.services.messages.edit.test</li>
         </ul>
 
+        <!-- First editable message -->
         <div class="editable-message" id="first-message"
              data-baseurl="/message/1">
+            <!-- Revision list container and its template -->
+            <div class="message-revision-container">
+              <!-- The revision list pop-up header, with the image that closes
+              the pop-up when clicked. -->
+              <div class="message-revision-container-header">
+                <span>Revision history for this message</span>
+                <img src="/+icing/build/overlay/assets/skins/sam/images/close.gif"
+                     class="message-revision-close"/>
+              </div>
+              <!-- The template for each revision item in the list. The
+              content of this tag will be repeated multiple times, replacing
+               the {variable} with each MessageRevision entry returned by
+               the API.
+               -->
+              <script type="text/template">
+                <div class='message-revision-item'>
+                  <!-- The description of the revision, that will expand the
+                   revision content once clicked. -->
+                  <div class='message-revision-title'>
+                      <a class="js-action">Revision #{revision}, created at  {date_created}</a>
+                  </div>
+                  <!-- The revision content itself -->
+                  <div class='message-revision-body'>{content}</div>
+                </div>
+              </script>
+              <!-- This is the place where all the revisions will be placed,
+               by applying the above template to each MessageRevision entry
+               returned by the API.
+               -->
+              <div class="message-revision-list"></div>
+            </div>
+
+            <!-- Message body -->
             <div>
                 Comment from @some-user a while ago
+                                Comment from @some-user a while ago
                 <span class="editable-message-last-edit-date">:</span>
             </div>
             <div class="editable-message-body">
@@ -71,12 +106,34 @@ GNU Affero General Public License version 3 (see the file LICENSE).
             </div>
         </div>
 
+        <!-- Second editable message -->
         <div class="editable-message" id="second-message"
              data-baseurl="/message/2">
+            <!-- Revision list container and its template -->
+            <div class="message-revision-container">
+              <div class="message-revision-container-header">
+                <span>Revision history for this message</span>
+                <img src="/+icing/build/overlay/assets/skins/sam/images/close.gif"
+                     class="message-revision-close"/>
+              </div>
+              <script type="text/template">
+                <div class='message-revision-item'>
+                  <div class='message-revision-title'>
+                      <a class="js-action">Revision #{revision}, created at {date_created}</a>
+                  </div>
+                  <div class='message-revision-body'>{content}</div>
+                </div>
+              </script>
+              <div class="message-revision-list"></div>
+            </div>
+
+            <!-- Message body -->
             <div>
                 Comment from @some-user a while ago
                 <span class="editable-message-last-edit-date">
-                    (last edit 5 minutes ago):
+                    <a href="#" class="editable-message-last-edit-link">
+                        (last edit 5 minutes ago):
+                    </a>
                 </span>
             </div>
             <div class="editable-message-body">
