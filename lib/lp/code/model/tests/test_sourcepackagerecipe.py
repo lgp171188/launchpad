@@ -14,6 +14,7 @@ from datetime import (
 import textwrap
 
 from breezy.plugins.builder.recipe import ForbiddenInstructionError
+from lazr.restfulclient.errors import BadRequest
 from pytz import UTC
 from storm.locals import Store
 from testtools.matchers import Equals
@@ -1231,6 +1232,13 @@ class TestWebserviceMixin:
         recipe = self.makeRecipe(version='1.0')[0]
         recipe.setRecipeText(recipe_text=recipe_text2)
         self.assertEqual(recipe_text2, recipe.recipe_text)
+
+    def test_is_stale(self):
+        """is_stale is exported and is read-only."""
+        recipe = self.makeRecipe()[0]
+        self.assertTrue(recipe.is_stale)
+        recipe.is_stale = False
+        self.assertRaises(BadRequest, recipe.lp_save)
 
     def test_getRecipe(self):
         """Person.getRecipe returns the named recipe."""

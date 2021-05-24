@@ -143,11 +143,8 @@
           <td>
             <span class="sortkey"
               tal:content="question/datecreated/fmt:datetime" />
-            <span
-              tal:attributes="title question/datecreated/fmt:datetime"
-              tal:content="question/datecreated/fmt:approximatedate">
-              2006-07-17
-            </span>
+            <tal:created
+              replace="structure question/datecreated/fmt:approximatedatetitle" />
           </td>
           <td><a tal:replace="structure question/owner/fmt:link">Foo Bar</a></td>
           <td class="question-target"

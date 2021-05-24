@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Model implementing `IOCIProjectSeries`."""
@@ -25,6 +25,7 @@ from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
 from lp.services.database.enumcol import DBEnum
+from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 
 
@@ -63,3 +64,6 @@ class OCIProjectSeries(StormBase):
         self.registrant = registrant
         self.status = status
         self.date_created = date_created
+
+    def destroySelf(self):
+        IStore(self).remove(self)

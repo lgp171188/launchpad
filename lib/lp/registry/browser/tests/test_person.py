@@ -33,7 +33,9 @@ from testtools.testcase import ExpectedException
 import transaction
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.browser.lazrjs import TextAreaEditorWidget
 from lp.app.browser.tales import DateTimeFormatterAPI
@@ -55,7 +57,10 @@ from lp.registry.browser.person import PersonView
 from lp.registry.browser.team import TeamInvitationView
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.karma import IKarmaCacheManager
-from lp.registry.interfaces.persontransferjob import IPersonMergeJobSource
+from lp.registry.interfaces.persontransferjob import (
+    IPersonCloseAccountJobSource,
+    IPersonMergeJobSource,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
@@ -70,6 +75,7 @@ from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.log.logger import DevNullLogger
 from lp.services.mail import stub
 from lp.services.propertycache import clear_property_cache
@@ -317,6 +323,69 @@ class TestPersonIndexView(BrowserTestCase):
         message = 'Finch is queued to be merged in a few minutes.'
         self.assertEqual(1, len(notifications))
         self.assertEqual(message, notifications[0].message)
+
+    def test_closeAccount_admin(self):
+        person = self.factory.makePerson()
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        browser = self.getViewBrowser(
+            person, view_name='+close-account', user=admin)
+        browser.getControl("Close").click()
+        self.assertIn(
+            "This account will now be permanently closed.",
+            six.ensure_text(browser.contents))
+
+        # the close account job is created with Waiting status
+        job_source = getUtility(IPersonCloseAccountJobSource)
+        with person_logged_in(admin):
+            job = removeSecurityProxy(job_source.find(person).one())
+            self.assertEqual(JobStatus.WAITING, job.status)
+
+    def test_closeAccount_registry_expert(self):
+        person = self.factory.makePerson()
+        registry_expert = self.factory.makeRegistryExpert()
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        with person_logged_in(registry_expert):
+            browser = self.getViewBrowser(
+                person, view_name='+close-account', user=registry_expert)
+            browser.getControl("Close").click()
+            self.assertIn(
+                "This account will now be permanently closed.",
+                six.ensure_text(browser.contents))
+        # the close account job is created with Waiting status
+        job_source = getUtility(IPersonCloseAccountJobSource)
+        with person_logged_in(admin):
+            job = removeSecurityProxy(job_source.find(person).one())
+            self.assertEqual(JobStatus.WAITING, job.status)
+
+    def test_closeAccount_user_themselves(self):
+        # The user themselves cannot close their own account
+        person = self.factory.makePerson()
+
+        # The user themselves will not see the Administer Account
+        # option in the context menu so they won't be able to navigate
+        # to the Close Account screen
+        browser = self.getViewBrowser(
+            person, view_name='+index', user=person)
+        self.assertRaises(LinkNotFoundError, browser.getLink,
+                          "Administer Account")
+        # if the user goes to the URL directly they will get
+        # an Unauthorized
+        self.assertRaises(Unauthorized, self.getViewBrowser,
+                          person, view_name='+close-account', user=person)
+
+    def test_closeAccount_other_user(self):
+        # Another user cannot close the account for a regular permissions user
+        person = self.factory.makePerson()
+        other_user = self.factory.makePerson()
+
+        browser = self.getViewBrowser(
+            person, view_name='+index', user=other_user)
+        self.assertRaises(LinkNotFoundError, browser.getLink,
+                          "Administer Account")
+        # if the other user goes to the URL directly they will get
+        # an Unauthorized
+        self.assertRaises(Unauthorized, self.getViewBrowser,
+                          person, view_name='+close-account', user=other_user)
 
     def test_display_utcoffset(self):
         person = self.factory.makePerson(time_zone='Asia/Kolkata')
@@ -589,7 +658,6 @@ class TestShouldShowPpaSection(TestCaseWithFactory):
         """Helper method to privatise a ppa."""
         login('foo.bar@canonical.com')
         ppa.private = True
-        ppa.buildd_secret = "secret"
         login(ANONYMOUS)
 
     def test_viewing_person_with_public_ppa(self):

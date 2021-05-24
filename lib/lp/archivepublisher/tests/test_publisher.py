@@ -12,7 +12,6 @@ from collections import (
     defaultdict,
     OrderedDict,
     )
-import crypt
 from datetime import (
     datetime,
     timedelta,
@@ -2327,44 +2326,6 @@ class TestPublisher(TestPublisherBase):
         self._assertPublishesSeriesAlias(publisher, "hoary-test")
         hoary_pub.requestDeletion(self.ubuntutest.owner)
         self._assertPublishesSeriesAlias(publisher, "breezy-autotest")
-
-    def testHtaccessForPrivatePPA(self):
-        # A htaccess file is created for new private PPA's.
-
-        ppa = self.factory.makeArchive(
-            distribution=self.ubuntutest, private=True)
-        ppa.buildd_secret = "geheim"
-
-        # Set up the publisher for it and publish its repository.
-        # setupArchiveDirs is what actually configures the htaccess file.
-        getPublisher(ppa, [], self.logger).setupArchiveDirs()
-        pubconf = getPubConfig(ppa)
-        htaccess_path = os.path.join(pubconf.archiveroot, ".htaccess")
-        self.assertTrue(os.path.exists(htaccess_path))
-        with open(htaccess_path, 'r') as htaccess_f:
-            self.assertEqual(dedent("""
-                AuthType           Basic
-                AuthName           "Token Required"
-                AuthUserFile       %s/.htpasswd
-                Require            valid-user
-                """) % pubconf.archiveroot,
-                htaccess_f.read())
-
-        htpasswd_path = os.path.join(pubconf.archiveroot, ".htpasswd")
-
-        # Read it back in.
-        with open(htpasswd_path, "r") as htpasswd_f:
-            file_contents = htpasswd_f.readlines()
-
-        self.assertEqual(1, len(file_contents))
-
-        # The first line should be the buildd_secret.
-        [user, password] = file_contents[0].strip().split(":", 1)
-        self.assertEqual("buildd", user)
-        # We can re-encrypt the buildd_secret and it should match the
-        # one in the .htpasswd file.
-        encrypted_secret = crypt.crypt(ppa.buildd_secret, password)
-        self.assertEqual(encrypted_secret, password)
 
     def testWriteSuiteI18n(self):
         """Test i18n/Index writing."""

@@ -719,8 +719,8 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         duplicate = self.factory.makePerson()
         mergee = self.factory.makePerson()
-        [ref] = self.factory.makeGitRefs()
-        [ref2] = self.factory.makeGitRefs()
+        [ref] = self.factory.makeGitRefs(paths=[u'refs/heads/v1.0-20.04'])
+        [ref2] = self.factory.makeGitRefs(paths=[u'refs/heads/v1.0-20.04'])
         self.factory.makeOCIRecipe(
             registrant=duplicate, owner=duplicate, name=u'foo', git_ref=ref)
         self.factory.makeOCIRecipe(

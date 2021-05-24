@@ -280,8 +280,13 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         # Check that current message chunks are 3: the 2 old blobs, and the
         # new text message.
         self.assertEqual(3, len(msg.chunks))
-        self.assertEqual(files, [i.blob for i in msg.chunks[0:-1]])
-        self.assertEqual("final form", msg.chunks[-1].content)
+        # Make sure we avoid gaps in sequence.
+        self.assertEqual([1, 2, 3], sorted([i.sequence for i in msg.chunks]))
+        self.assertThat(msg.chunks[0], MatchesStructure(
+            content=Equals("final form"),
+            sequence=Equals(1),
+        ))
+        self.assertEqual(files, [i.blob for i in msg.chunks[1:]])
 
         # Check revision chunks. It should be the old text message.
         rev_chunks = msg.revisions[0].chunks
@@ -355,9 +360,9 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertIsNone(edited_obj["date_deleted"])
         self.assertIsNotNone(edited_obj["date_last_edited"])
 
-    def test_edit_message_permission_denied_for_non_owner(self):
+    def assertPermissionDeniedEditMessage(self, caller_person):
         msg = self.makeMessage(content="initial content")
-        ws = self.getWebservice(self.factory.makePerson())
+        ws = self.getWebservice(caller_person)
         url = self.getMessageAPIURL(msg)
         response = ws.named_post(
             url, 'editContent', new_content="the new content")
@@ -367,6 +372,13 @@ class TestMessageEditingAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertEqual("initial content", edited_obj['content'])
         self.assertIsNone(edited_obj["date_deleted"])
         self.assertIsNone(edited_obj["date_last_edited"])
+
+    def test_edit_message_permission_denied_for_non_owner(self):
+        self.assertPermissionDeniedEditMessage(self.factory.makePerson())
+
+    def test_edit_message_permission_denied_for_admin(self):
+        self.assertPermissionDeniedEditMessage(
+            self.factory.makeAdministrator())
 
     def test_delete_message(self):
         msg = self.makeMessage(content="initial content")

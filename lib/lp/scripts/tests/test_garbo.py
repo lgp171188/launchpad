@@ -12,8 +12,11 @@ from datetime import (
     datetime,
     timedelta,
     )
+from functools import partial
 import hashlib
 import logging
+import re
+from textwrap import dedent
 import time
 
 from pytz import UTC
@@ -33,6 +36,7 @@ from storm.store import Store
 from testtools.content import text_content
 from testtools.matchers import (
     AfterPreprocessing,
+    ContainsDict,
     Equals,
     GreaterThan,
     Is,
@@ -133,7 +137,11 @@ from lp.snappy.model.snapbuildjob import (
     SnapBuildJob,
     SnapStoreUploadJob,
     )
-from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.enums import (
+    ArchiveSubscriberStatus,
+    PackagePublishingStatus,
+    )
+from lp.soyuz.interfaces.archive import NAMED_AUTH_TOKEN_FEATURE_FLAG
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
@@ -154,6 +162,7 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
     )
+from lp.testing.mail_helpers import pop_notifications
 from lp.translations.model.pofile import POFile
 from lp.translations.model.potmsgset import POTMsgSet
 from lp.translations.model.translationtemplateitem import (
@@ -1099,7 +1108,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         for i in range(5):
             repo = removeSecurityProxy(self.factory.makeGitRepository())
             [ref1, ref2] = self.factory.makeGitRefs(
-                repository=repo, paths=["a", "b"])
+                repository=repo, paths=["refs/heads/a-20.04", "b"])
             self.factory.makeBranchMergeProposalForGit(
                 target_ref=ref1, source_ref=ref2)
             self.factory.makeSourcePackageRecipe(branches=[ref1])
@@ -1738,6 +1747,238 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Snap binary files attached to builds with no store upload job are
         # retained.
         self._test_SnapFilePruner('foo.snap', None, 7, expected_count=1)
+
+    def test_ArchiveSubscriptionExpirer_expires_subscriptions(self):
+        # Archive subscriptions with expiry dates in the past have their
+        # statuses set to EXPIRED.
+        switch_dbuser('testadmin')
+        ppa = self.factory.makeArchive(private=True)
+        subs = [
+            ppa.newSubscription(self.factory.makePerson(), ppa.owner)
+            for _ in range(2)]
+        now = datetime.now(UTC)
+        subs[0].date_expires = now - timedelta(minutes=3)
+        self.assertEqual(ArchiveSubscriberStatus.CURRENT, subs[0].status)
+        subs[1].date_expires = now + timedelta(minutes=3)
+        self.assertEqual(ArchiveSubscriberStatus.CURRENT, subs[1].status)
+        Store.of(subs[0]).flush()
+
+        self.runFrequently()
+
+        switch_dbuser('testadmin')
+        self.assertEqual(ArchiveSubscriberStatus.EXPIRED, subs[0].status)
+        self.assertEqual(ArchiveSubscriberStatus.CURRENT, subs[1].status)
+
+    def test_ArchiveAuthTokenDeactivator_ignores_named_tokens(self):
+        switch_dbuser('testadmin')
+        self.useFixture(FeatureFixture({NAMED_AUTH_TOKEN_FEATURE_FLAG: 'on'}))
+        ppa = self.factory.makeArchive(private=True)
+        named_tokens = [
+            ppa.newNamedAuthToken(self.factory.getUniqueUnicode())
+            for _ in range(2)]
+        named_tokens[1].deactivate()
+
+        self.runHourly()
+
+        switch_dbuser('testadmin')
+        self.assertIsNone(named_tokens[0].date_deactivated)
+
+    def test_ArchiveAuthTokenDeactivator_leave_subscribed_team(self):
+        # Somebody who leaves a subscribed team loses their token, but other
+        # team members keep theirs.
+        switch_dbuser('testadmin')
+        ppa = self.factory.makeArchive(private=True)
+        team = self.factory.makeTeam()
+        people = []
+        for _ in range(3):
+            person = self.factory.makePerson()
+            team.addMember(person, team.teamowner)
+            people.append(person)
+        ppa.newSubscription(team, ppa.owner)
+        tokens = {person: ppa.newAuthToken(person) for person in people}
+
+        self.runHourly()
+        switch_dbuser('testadmin')
+        for person in tokens:
+            self.assertIsNone(tokens[person].date_deactivated)
+
+        people[0].leave(team)
+        # Clear out emails generated when leaving a team.
+        pop_notifications()
+
+        self.runHourly()
+        switch_dbuser('testadmin')
+        self.assertIsNotNone(tokens[people[0]].date_deactivated)
+        del tokens[people[0]]
+        for person in tokens:
+            self.assertIsNone(tokens[person].date_deactivated)
+
+        # A cancellation email was sent.
+        self.assertEmailQueueLength(1)
+
+    def test_ArchiveAuthTokenDeactivator_leave_only_one_subscribed_team(self):
+        # Somebody who leaves a subscribed team retains their token if they
+        # are still subscribed via another team.
+        switch_dbuser('testadmin')
+        ppa = self.factory.makeArchive(private=True)
+        teams = [self.factory.makeTeam() for _ in range(2)]
+        people = []
+        for _ in range(3):
+            for team in teams:
+                person = self.factory.makePerson()
+                team.addMember(person, team.teamowner)
+                people.append(person)
+        parent_team = self.factory.makeTeam()
+        parent_team.addMember(
+            teams[1], parent_team.teamowner, force_team_add=True)
+        multiple_teams_person = self.factory.makePerson()
+        for team in teams:
+            team.addMember(multiple_teams_person, team.teamowner)
+        people.append(multiple_teams_person)
+        ppa.newSubscription(teams[0], ppa.owner)
+        ppa.newSubscription(parent_team, ppa.owner)
+        tokens = {person: ppa.newAuthToken(person) for person in people}
+
+        self.runHourly()
+        switch_dbuser('testadmin')
+        for person in tokens:
+            self.assertIsNone(tokens[person].date_deactivated)
+
+        multiple_teams_person.leave(teams[0])
+        # Clear out emails generated when leaving a team.
+        pop_notifications()
+
+        self.runHourly()
+        switch_dbuser('testadmin')
+        self.assertIsNone(tokens[multiple_teams_person].date_deactivated)
+        for person in tokens:
+            self.assertIsNone(tokens[person].date_deactivated)
+
+        # A cancellation email was not sent.
+        self.assertEmailQueueLength(0)
+
+    def test_ArchiveAuthTokenDeactivator_leave_indirect_subscription(self):
+        # Members of a team that leaves a subscribed parent team lose their
+        # tokens.
+        switch_dbuser('testadmin')
+        ppa = self.factory.makeArchive(private=True)
+        child_team = self.factory.makeTeam()
+        people = []
+        for _ in range(3):
+            person = self.factory.makePerson()
+            child_team.addMember(person, child_team.teamowner)
+            people.append(person)
+        parent_team = self.factory.makeTeam()
+        parent_team.addMember(
+            child_team, parent_team.teamowner, force_team_add=True)
+        directly_subscribed_person = self.factory.makePerson()
+        people.append(directly_subscribed_person)
+        ppa.newSubscription(parent_team, ppa.owner)
+        ppa.newSubscription(directly_subscribed_person, ppa.owner)
+        tokens = {person: ppa.newAuthToken(person) for person in people}
+
+        self.runHourly()
+        switch_dbuser('testadmin')
+        for person in tokens:
+            self.assertIsNone(tokens[person].date_deactivated)
+
+        # child_team now leaves parent_team, and all its members lose their
+        # tokens.
+        parent_team.setMembershipData(
+            child_team, TeamMembershipStatus.APPROVED, parent_team.teamowner)
+        parent_team.setMembershipData(
+            child_team, TeamMembershipStatus.DEACTIVATED,
+            parent_team.teamowner)
+        self.assertFalse(child_team.inTeam(parent_team))
+        self.runHourly()
+        switch_dbuser('testadmin')
+        for person in people[:3]:
+            self.assertIsNotNone(tokens[person].date_deactivated)
+
+        # directly_subscribed_person still has their token; they're not in
+        # any teams.
+        self.assertIsNone(tokens[directly_subscribed_person].date_deactivated)
+
+    def test_ArchiveAuthTokenDeactivator_cancellation_email(self):
+        # When a token is deactivated, its user gets an email, which
+        # contains the correct headers and body.
+        switch_dbuser('testadmin')
+        # Avoid hyphens in owner and archive names; while these work fine,
+        # MailWrapper may wrap at hyphens, which makes it inconvenient to
+        # write a precise test for the email body text.
+        owner = self.factory.makePerson(
+            name='someperson', displayname='Some Person')
+        ppa = self.factory.makeArchive(
+            owner=owner, name='someppa', private=True)
+        subscriber = self.factory.makePerson()
+        subscription = ppa.newSubscription(subscriber, owner)
+        token = ppa.newAuthToken(subscriber)
+        subscription.cancel(owner)
+        pop_notifications()
+
+        self.runHourly()
+
+        switch_dbuser('testadmin')
+        self.assertIsNotNone(token.date_deactivated)
+        [email] = pop_notifications()
+        self.assertThat(dict(email), ContainsDict({
+            'From': AfterPreprocessing(
+                partial(re.sub, r'\n[\t ]', ' '),
+                Equals('%s <noreply@launchpad.net>' % ppa.displayname)),
+            'To': Equals(subscriber.preferredemail.email),
+            'Subject': AfterPreprocessing(
+                partial(re.sub, r'\n[\t ]', ' '),
+                Equals('PPA access cancelled for %s' % ppa.displayname)),
+            'Sender': Equals('bounces@canonical.com'),
+            }))
+        expected_body = dedent("""\
+            Hello {subscriber},
+
+            Launchpad: cancellation of archive access
+            -----------------------------------------
+
+            Your access to the private software archive "{archive}", which
+            is hosted by Launchpad, has been cancelled.
+
+            You will now no longer be able to download software from this
+            archive. If you think this cancellation is in error, you should
+            contact the owner of the archive to verify it.
+
+            You can contact the archive owner by visiting their Launchpad
+            page here:
+
+            <http://launchpad\\.test/~{archive_owner_name}>
+
+            If you have any concerns you can contact the Launchpad team by
+            emailing feedback@launchpad\\.net
+
+
+            Regards,
+            The Launchpad team
+            """).format(
+                subscriber=subscriber.display_name,
+                archive=ppa.displayname,
+                archive_owner_name=owner.name)
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            expected_body, email.get_payload())
+
+    def test_ArchiveAuthTokenDeactivator_suppressed_archive(self):
+        # When a token is deactivated for an archive with
+        # suppress_subscription_notifications set, no email is sent.
+        switch_dbuser('testadmin')
+        ppa = self.factory.makeArchive(
+            private=True, suppress_subscription_notifications=True)
+        subscriber = self.factory.makePerson()
+        subscription = ppa.newSubscription(subscriber, ppa.owner)
+        token = ppa.newAuthToken(subscriber)
+        subscription.cancel(ppa.owner)
+        pop_notifications()
+
+        self.runHourly()
+
+        switch_dbuser('testadmin')
+        self.assertIsNotNone(token.date_deactivated)
+        self.assertEmailQueueLength(0)
 
 
 class TestGarboTasks(TestCaseWithFactory):

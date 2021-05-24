@@ -40,7 +40,7 @@ class IMessageRevisionView(Interface):
 
     content = exported(Text(
         title=_("The message at the given revision"),
-        required=False, readonly=True))
+        required=True, readonly=True))
 
     message = Reference(
         title=_('The current message of this revision.'),

@@ -27,7 +27,8 @@
     <tal:vote-tags condition="review/review_type_str">
       (<tal:tag replace="review/review_type_str"/>)
     </tal:vote-tags>
-    <tal:date replace="review/date_of_comment/fmt:displaydate" />
+    <tal:date
+      replace="structure review/date_of_comment/fmt:displaydatetitle" />
   </dd>
   <dd tal:repeat="review view/requested_reviews"
       tal:attributes="id string:review-${review/reviewer/name}">
@@ -39,7 +40,8 @@
       (<tal:tag replace="review/review_type_str"/>)
     </tal:vote-tags>
     requested
-    <tal:date replace="review/date_requested/fmt:approximatedate"/>
+    <tal:date
+      replace="structure review/date_requested/fmt:approximatedatetitle" />
   </dd>
   <dd tal:condition="context/preview_diff"
       tal:attributes="class string:popup-diff mp-${context/id}">

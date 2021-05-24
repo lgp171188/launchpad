@@ -52,7 +52,10 @@ from zope.publisher.interfaces.browser import (
     IDefaultSkin,
     )
 from zope.publisher.publish import mapply
-from zope.security.management import newInteraction
+from zope.security.management import (
+    endInteraction,
+    newInteraction,
+    )
 from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
@@ -351,7 +354,7 @@ class LaunchpadBrowserPublication(
         if non_restricted_url is not None:
             location += '?production=%s' % quote(non_restricted_url)
 
-        request.response.setResult('')
+        request.response.setResult(b'')
         request.response.redirect(location, temporary_if_possible=True)
         # Quash further traversal.
         request.setTraversalStack([])
@@ -538,7 +541,7 @@ class LaunchpadBrowserPublication(
         # Don't render any content for a HEAD.  This was done
         # by zope.app.publication.browser.BrowserPublication
         if request.method == 'HEAD':
-            request.response.setResult('')
+            request.response.setResult(b'')
 
         try:
             getUtility(IStoreSelector).pop()
@@ -759,7 +762,7 @@ class LaunchpadBrowserPublication(
         #           or is it only required because of our customisations?
         #        - Andrew Bennetts, 2005-03-08
         if request.method == 'HEAD':
-            request.response.setResult('')
+            request.response.setResult(b'')
 
     def beginErrorHandlingTransaction(self, request, ob, note):
         """Hook for when a new view is started to handle an exception.
@@ -785,6 +788,15 @@ class LaunchpadBrowserPublication(
     def endRequest(self, request, object):
         superclass = zope.app.publication.browser.BrowserPublication
         superclass.endRequest(self, request, object)
+        # BrowserPublication.endRequest calls endInteraction as well, but
+        # calling it once leaves a reference to the previous interaction
+        # around in
+        # zope.security.management.thread_local.previous_interaction just in
+        # case somebody might want to call restoreInteraction later,
+        # significantly complicating memory leak analysis.  We won't need to
+        # restore the previous interaction in this case, so call
+        # endInteraction again to discard it.
+        endInteraction()
 
         da.clear_request_started()
 

@@ -5,7 +5,7 @@
 <div
   itemscope=""
   itemtype="http://schema.org/UserComments"
-  tal:define="css_classes python: view.getBoardCommentCSSClass()"
+  tal:define="css_classes view/getBoardCommentCSSClass"
   tal:attributes="class string:${css_classes};
                   id string:comment-${context/index};
                   data-baseurl context/fmt:url">
@@ -46,15 +46,13 @@
       tal:attributes="title context/datecreated/fmt:datetime;
         datetime context/datecreated/fmt:isodate"
       tal:content="context/datecreated/fmt:displaydate">Thursday 13:21
-    </time><span class="editable-message-last-edit-date"><span tal:condition="not:context/date_last_edited">:</span>
+    </time><span class="editable-message-last-edit-date"><tal:last-edit condition="context/date_last_edited">
         <a href="#" class="editable-message-last-edit-link"
-            tal:condition="context/date_last_edited">(last edit
-            <time
-              itemprop="editTime"
-              tal:attributes="title context/date_last_edited/fmt:datetime;
-                datetime context/date_last_edited/fmt:isodate"
-              tal:content="context/date_last_edited/fmt:displaydate" />):
-        </a>
+            tal:condition="context/date_last_edited">(last edit <time
+            itemprop="editTime"
+            tal:attributes="title context/date_last_edited/fmt:datetime;
+              datetime context/date_last_edited/fmt:isodate"
+            tal:content="context/date_last_edited/fmt:displaydate" />)</a></tal:last-edit>:
       </span>
     </td>
     <td>

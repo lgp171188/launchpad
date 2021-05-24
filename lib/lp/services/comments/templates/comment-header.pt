@@ -5,5 +5,5 @@
 
   <tal:author replace="structure context/comment_author/fmt:link-display-name-id"/>
   <tal:has-body condition="context/has_body">wrote</tal:has-body>
-  <tal:date replace="context/comment_date/fmt:displaydate" />
+  <tal:date replace="structure context/comment_date/fmt:displaydatetitle" />
 </tal:root>

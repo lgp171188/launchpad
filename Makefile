@@ -8,7 +8,7 @@
 # Borrowed from dpkg.
 lazy_eval ?= $(or $(value CACHE_$(1)),$(eval CACHE_$(1) := $(shell $(2)))$(value CACHE_$(1)))
 
-PYTHON:=python2.7
+PYTHON?=python2.7
 
 WD:=$(shell pwd)
 PY=$(WD)/bin/py
@@ -239,8 +239,8 @@ $(LP_JS_BUILD): | $(JS_BUILD_DIR)
 	bin/lpjsmin -p $@
 
 jsbuild: $(LP_JS_BUILD) $(YUI_SYMLINK)
-	utilities/js-deps -n LP_MODULES -s build/js/lp -x '-min.js' -o \
-	build/js/lp/meta.js >/dev/null
+	LC_ALL=C.UTF-8 utilities/js-deps -n LP_MODULES -s build/js/lp \
+		-x '-min.js' -o build/js/lp/meta.js >/dev/null
 	utilities/check-js-deps
 
 requirements/combined.txt: \

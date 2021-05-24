@@ -53,6 +53,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeBuildRequestStatus,
     OCIRecipeNotOwner,
     OCIRecipePrivacyMismatch,
+    UsingDistributionCredentials,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
@@ -73,6 +74,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
     )
+from lp.registry.interfaces.ociproject import OCIProjectRecipeInvalid
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.accesspolicy import (
     AccessArtifact,
@@ -587,6 +589,29 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                     recipe.registrant, url, image_name, credentials,
                     credentials_owner=other_team)
 
+    def test_newPushRule_distribution_credentials(self):
+        # If the OCIRecipe is in a Distribution with credentials set
+        # we cannot create new push rules
+        self.setConfig()
+        distribution = self.factory.makeDistribution()
+        credentials = self.factory.makeOCIRegistryCredentials()
+        project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=project)
+        with person_logged_in(distribution.owner):
+            distribution.oci_registry_credentials = credentials
+            project.setOfficialRecipeStatus(recipe, True)
+
+        url = 'asdf://foo.com'
+        image_name = self.factory.getUniqueUnicode()
+        credentials = {
+            "username": "test-username", "password": "test-password"}
+
+        with person_logged_in(recipe.owner):
+            with ExpectedException(UsingDistributionCredentials):
+                recipe.newPushRule(
+                    recipe.registrant, url, image_name, credentials,
+                    credentials_owner=recipe.registrant)
+
     def test_set_official_directly_is_forbidden(self):
         recipe = self.factory.makeOCIRecipe()
         self.assertRaises(
@@ -655,7 +680,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_project=oci_project, registrant=owner)
 
         self.assertRaises(
-            ValueError, another_oci_project.setOfficialRecipeStatus,
+            OCIProjectRecipeInvalid, another_oci_project.setOfficialRecipeStatus,
             recipe, True)
 
     def test_permission_check_on_setOfficialRecipe(self):
@@ -823,7 +848,8 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
         [private_git_ref] = self.factory.makeGitRefs(
             target=pillar, owner=owner,
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY,
+            paths=['refs/heads/v1.0-20.04'])
 
         private_recipe = self.factory.makeOCIRecipe(
             owner=private_team, registrant=owner,
@@ -1067,7 +1093,8 @@ class TestOCIRecipeProcessors(TestCaseWithFactory):
         recipe = getUtility(IOCIRecipeSet).new(
             name=self.factory.getUniqueUnicode(), registrant=owner,
             owner=owner, oci_project=oci_project,
-            git_ref=self.factory.makeGitRefs()[0],
+            git_ref=self.factory.makeGitRefs(
+                paths=['refs/heads/v1.0-20.04'])[0],
             build_file=self.factory.getUniqueUnicode())
         self.assertContentEqual(
             ["386", "amd64", "hppa", "default"],
@@ -1081,7 +1108,8 @@ class TestOCIRecipeProcessors(TestCaseWithFactory):
         recipe = getUtility(IOCIRecipeSet).new(
             name=self.factory.getUniqueUnicode(), registrant=owner,
             owner=owner, oci_project=oci_project,
-            git_ref=self.factory.makeGitRefs()[0],
+            git_ref=self.factory.makeGitRefs(
+                paths=['refs/heads/v1.0-20.04'])[0],
             build_file=self.factory.getUniqueUnicode(), processors=[self.arm])
         self.assertContentEqual(
             ["arm"], [processor.name for processor in recipe.processors])
@@ -1139,20 +1167,25 @@ class TestOCIRecipeProcessors(TestCaseWithFactory):
         self.assertTrue(recipe.is_valid_branch_format)
 
     def test_valid_branch_format_invalid(self):
+        # We can't use OCIRecipeSet.new with an invalid path
+        # so create a valid one, then change it after
+        recipe = self.factory.makeOCIRecipe()
         [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0-foo"])
-        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        recipe.git_ref = git_ref
         self.assertFalse(recipe.is_valid_branch_format)
 
     def test_valid_branch_format_invalid_uses_risk(self):
         for risk in ["stable", "candidate", "beta", "edge"]:
+            recipe = self.factory.makeOCIRecipe()
             path = "refs/heads/{}-20.04".format(risk)
             [git_ref] = self.factory.makeGitRefs(paths=[path])
-            recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+            recipe.git_ref = git_ref
             self.assertFalse(recipe.is_valid_branch_format)
 
     def test_valid_branch_format_invalid_with_slash(self):
+        recipe = self.factory.makeOCIRecipe()
         [git_ref] = self.factory.makeGitRefs(paths=["refs/heads/v1.0/bar-foo"])
-        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        recipe.git_ref = git_ref
         self.assertFalse(recipe.is_valid_branch_format)
 
 
@@ -1173,7 +1206,8 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         registrant = self.factory.makePerson()
         owner = self.factory.makeTeam(members=[registrant])
         oci_project = self.factory.makeOCIProject()
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs(
+                paths=['refs/heads/v1.0-20.04'])
         target = getUtility(IOCIRecipeSet).new(
             name='a name',
             registrant=registrant,
@@ -1226,7 +1260,8 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         owner = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
         recipe_set = getUtility(IOCIRecipeSet)
-        [git_ref] = self.factory.makeGitRefs()
+        [git_ref]=self.factory.makeGitRefs(
+                paths=['refs/heads/v1.0-20.04']),
         self.assertRaises(
             NoSourceForOCIRecipe,
             recipe_set.new,
@@ -1270,7 +1305,9 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         oci_recipes = []
         for repository in repositories:
             for i in range(2):
-                [ref] = self.factory.makeGitRefs(repository=repository)
+                [ref] = self.factory.makeGitRefs(
+                    repository=repository,
+                    paths=['refs/heads/v1.0-20.04'])
                 oci_recipes.append(self.factory.makeOCIRecipe(git_ref=ref))
         oci_recipe_set = getUtility(IOCIRecipeSet)
         self.assertContentEqual(
@@ -1286,7 +1323,10 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         oci_recipes = []
         for repository in repositories:
             for i in range(3):
-                [ref] = self.factory.makeGitRefs(repository=repository)
+                [ref] = self.factory.makeGitRefs(
+                    repository=repository,
+                    # Needs a unique path, otherwise we can't search for it.
+                    paths=['refs/heads/v1.{}-20.04'.format(str(i))])
                 oci_recipes.append(self.factory.makeOCIRecipe(git_ref=ref))
         oci_recipe_set = getUtility(IOCIRecipeSet)
         self.assertContentEqual(
@@ -1309,7 +1349,9 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         refs = []
         for repository in repositories:
             for i in range(2):
-                [ref] = self.factory.makeGitRefs(repository=repository)
+                [ref] = self.factory.makeGitRefs(
+                    repository=repository,
+                    paths=['refs/heads/v1.0-20.04'])
                 paths.append(ref.path)
                 refs.append(ref)
                 oci_recipes.append(self.factory.makeOCIRecipe(
@@ -1433,7 +1475,8 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 owner=self.person)
             oci_project = self.factory.makeOCIProject(
                 pillar=distro, registrant=self.person)
-            git_ref = self.factory.makeGitRefs()[0]
+            [git_ref] = self.factory.makeGitRefs(
+                paths=['refs/heads/v1.0-20.04'])
 
             oci_project_url = api_url(oci_project)
             git_ref_url = api_url(git_ref)
@@ -1464,6 +1507,30 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 registrant_link=Equals(self.getAbsoluteURL(self.person)),
                 build_args=Equals({"VAR": "VAR VALUE"})
             )))
+
+    def test_api_create_oci_recipe_invalid_branch_format(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(
+                owner=self.person)
+            oci_project = self.factory.makeOCIProject(
+                pillar=distro, registrant=self.person)
+            [git_ref] = self.factory.makeGitRefs(
+                paths=['refs/heads/invalid-branch'])
+
+            oci_project_url = api_url(oci_project)
+            git_ref_url = api_url(git_ref)
+            person_url = api_url(self.person)
+
+        obj = {
+            "name": "my-recipe",
+            "owner": person_url,
+            "git_ref": git_ref_url,
+            "build_file": "./Dockerfile",
+            "build_args": {"VAR": "VAR VALUE"},
+            "description": "My recipe"}
+
+        resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
+        self.assertEqual(400, resp.status, resp.body)
 
     def test_api_create_oci_recipe_non_legitimate_user(self):
         """Ensure that a non-legitimate user cannot create recipe using API"""
@@ -1502,7 +1569,8 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                 owner=self.person)
             oci_project = self.factory.makeOCIProject(
                 pillar=distro, registrant=self.person)
-            git_ref = self.factory.makeGitRefs()[0]
+            [git_ref] = self.factory.makeGitRefs(
+                paths=['refs/heads/v1.0-20.04'])
 
             oci_project_url = api_url(oci_project)
             git_ref_url = api_url(git_ref)
@@ -1546,6 +1614,31 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             "registry_url": Equals(obj["registry_url"]),
             "username": Equals("foo"),
             }))
+
+    def test_api_create_new_push_rule_distribution_credentials(self):
+        """Should not be able to create a push rule in a Distribution."""
+
+        self.setConfig()
+
+        with person_logged_in(self.person):
+            distribution = self.factory.makeDistribution()
+            credentials = self.factory.makeOCIRegistryCredentials()
+            project = self.factory.makeOCIProject(
+                pillar=distribution, registrant=self.person)
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=project, owner=self.person, registrant=self.person)
+            with person_logged_in(distribution.owner):
+                distribution.oci_registry_credentials = credentials
+                project.setOfficialRecipeStatus(recipe, True)
+            url = api_url(recipe)
+
+        obj = {
+            "registry_url": self.factory.getUniqueURL(),
+            "image_name": self.factory.getUniqueUnicode(),
+            "credentials": {"username": "foo", "password": "bar"}}
+
+        resp = self.webservice.named_post(url, "newPushRule", **obj)
+        self.assertEqual(400, resp.status, resp.body)
 
     def test_api_push_rules_exported(self):
         """Are push rules exported for a recipe?"""

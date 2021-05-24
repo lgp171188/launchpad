@@ -26,7 +26,8 @@
       <td>
         <tal:date-requested condition="review/show_date_requested">
           <span tal:attributes="title string:Requested by ${review/registrant/displayname}">
-            <tal:date replace="review/date_requested/fmt:approximatedate"/>
+            <tal:date
+              replace="structure review/date_requested/fmt:approximatedatetitle" />
           </span>
         </tal:date-requested>
       </td>
@@ -35,7 +36,8 @@
               tal:content="review/status_text">
           Approved
         </span>
-        <tal:date replace="review/date_of_comment/fmt:displaydate" />
+        <tal:date
+          replace="structure review/date_of_comment/fmt:displaydatetitle" />
         <a tal:condition="review/can_change_review" href="+review">
           <img src="/@@/edit" title="Vote again" alt="vote"/>
         </a>
@@ -55,7 +57,8 @@
       <td>
         <tal:date-requested condition="review/show_date_requested">
           <span tal:attributes="title string:Requested by ${review/registrant/displayname}">
-            <tal:date replace="review/date_requested/fmt:approximatedate"/>
+            <tal:date
+              replace="structure review/date_requested/fmt:approximatedatetitle" />
           </span>
         </tal:date-requested>
       </td>

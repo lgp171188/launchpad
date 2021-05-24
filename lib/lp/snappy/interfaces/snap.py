@@ -827,9 +827,9 @@ class ISnapEditableAttributes(IHasOwner):
             "this snap package.  Currently only 'core', 'core18', "
             "'core20' and 'snapcraft' keys are supported.")))
 
-    is_stale = Bool(
+    is_stale = exported(Bool(
         title=_("Snap package is stale and is due to be rebuilt."),
-        required=True, readonly=False)
+        required=True, readonly=True))
 
     store_upload = exported(Bool(
         title=_("Automatically upload to store"),
@@ -1003,10 +1003,10 @@ class ISnapSet(Interface):
             this user; otherwise, only return publicly-visible packages.
         """
 
-    def findByBranch(branch):
+    def findByBranch(branch, check_permissions=True):
         """Return all snap packages for the given Bazaar branch."""
 
-    def findByGitRepository(repository, paths=None):
+    def findByGitRepository(repository, paths=None, check_permissions=True):
         """Return all snap packages for the given Git repository.
 
         :param repository: An `IGitRepository`.

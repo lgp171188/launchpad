@@ -16,7 +16,7 @@
   <p tal:condition="context/commercial_subscription/date_expires | nothing">
     <strong>Current subscription expires
     <tal:date_expire
-     tal:replace="context/commercial_subscription/date_expires/fmt:displaydate"
+     replace="structure context/commercial_subscription/date_expires/fmt:displaydatetitle"
      />.</strong>
   </p>
 

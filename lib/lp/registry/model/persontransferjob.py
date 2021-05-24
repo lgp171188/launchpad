@@ -46,7 +46,7 @@ from lp.registry.interfaces.persontransferjob import (
     IMembershipNotificationJob,
     IMembershipNotificationJobSource,
     IPersonCloseAccountJob,
-    IPersonCloseAccountJobs,
+    IPersonCloseAccountJobSource,
     IPersonDeactivateJob,
     IPersonDeactivateJobSource,
     IPersonMergeJob,
@@ -444,17 +444,17 @@ class PersonDeactivateJob(PersonTransferJobDerived):
 
 
 @implementer(IPersonCloseAccountJob)
-@provider(IPersonCloseAccountJobs)
+@provider(IPersonCloseAccountJobSource)
 class PersonCloseAccountJob(PersonTransferJobDerived):
     """A Job that closes account for a person."""
 
     class_job_type = PersonTransferJobType.CLOSE_ACCOUNT
 
-    config = config.IPersonCloseAccountJobs
+    config = config.IPersonCloseAccountJobSource
 
     @classmethod
     def create(cls, person):
-        """See `IPersonCloseAccountJobs`."""
+        """See `IPersonCloseAccountJobSource`."""
 
         # We don't delete teams
         if person.is_team:
@@ -468,16 +468,16 @@ class PersonCloseAccountJob(PersonTransferJobDerived):
     def find(cls, person=None):
         """See `IPersonMergeJobSource`."""
         conditions = [
-            PersonCloseAccountJob.job_type == cls.class_job_type,
-            PersonCloseAccountJob.job_id == Job.id,
+            PersonTransferJob.job_type == cls.class_job_type,
+            PersonTransferJob.job_id == Job.id,
             Job._status.is_in(Job.PENDING_STATUSES)]
         arg_conditions = []
         if person:
-            arg_conditions.append(PersonCloseAccountJob.major_person == person)
+            arg_conditions.append(PersonTransferJob.major_person == person)
         conditions.extend(arg_conditions)
         return DecoratedResultSet(
-            IStore(PersonCloseAccountJob).find(
-                PersonCloseAccountJob, *conditions), cls)
+            IStore(PersonTransferJob).find(
+                PersonTransferJob, *conditions), cls)
 
     @property
     def person(self):

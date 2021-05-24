@@ -40,9 +40,8 @@
     <a tal:replace="structure context/importer/fmt:link">
       Arne Goetje
     </a>
-    <tal:upload_date replace="context/dateimported/fmt:displaydate">
-      2010-02-10
-    </tal:upload_date>.
+    <tal:upload_date
+      replace="structure context/dateimported/fmt:displaydatetitle" />.
     <tal:status_change replace="view/status_change_date">
       Entry last changed on 2010-02-12.
     </tal:status_change>

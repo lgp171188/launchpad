@@ -56,7 +56,8 @@
 <tal:registering metal:fill-slot="registering">
   Proposed by
   <tal:registrant replace="structure context/registrant/fmt:link"/>
-  <tal:modified replace="context/date_created/fmt:displaydate" />
+  <tal:modified
+    replace="structure context/date_created/fmt:displaydatetitle" />
 </tal:registering>
 
 

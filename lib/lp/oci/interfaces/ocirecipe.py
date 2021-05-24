@@ -19,11 +19,13 @@ __all__ = [
     'NoSuchOCIRecipe',
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeFeatureDisabled',
+    'OCIRecipeBranchHasInvalidFormat',
     'OCIRecipeNotOwner',
     'OCIRecipePrivacyMismatch',
     'OCI_RECIPE_ALLOW_CREATE',
     'OCI_RECIPE_BUILD_DISTRIBUTION',
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
+    'UsingDistributionCredentials',
     ]
 
 from lazr.lifecycle.snapshot import doNotSnapshot
@@ -123,6 +125,15 @@ class NoSuchOCIRecipe(NameLookupFailed):
 
 
 @error_status(http_client.BAD_REQUEST)
+class UsingDistributionCredentials(Exception):
+    """The OCI Recipe is in a Distribution that has credentials set."""
+
+    def __init__(self):
+        super(UsingDistributionCredentials, self).__init__(
+            "The OCI recipe is in a distribution that has credentials set.")
+
+
+@error_status(http_client.BAD_REQUEST)
 class NoSourceForOCIRecipe(Exception):
     """OCI Recipes must have a source and build file."""
 
@@ -153,6 +164,15 @@ class OCIRecipePrivacyMismatch(Exception):
             message or
             "OCI recipe contains private information and cannot be public.")
 
+
+@error_status(http_client.BAD_REQUEST)
+class OCIRecipeBranchHasInvalidFormat(Exception):
+    """The branch name for the OCI recipe does not match the correct format."""
+
+    def __init__(self):
+        super(OCIRecipeBranchHasInvalidFormat, self).__init__(
+            "The branch name for the OCI recipe does not "
+            "match the APPVERSION-UBUNTUVERSION format (ex. v1.0-20.04)")
 
 @exported_as_webservice_entry(
     publish_web_link=True, as_of="devel",

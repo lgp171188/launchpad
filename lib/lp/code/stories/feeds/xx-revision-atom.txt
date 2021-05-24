@@ -112,6 +112,19 @@ of that team.
     <id>tag:launchpad.net,...:/revision/rev2</id>
     <id>tag:launchpad.net,...:/revision/rev1</id>
 
+A HEAD request works too.
+
+    >>> response = http(r"""
+    ... HEAD /~mike/revisions.atom HTTP/1.1
+    ... Host: feeds.launchpad.test
+    ... """)
+    >>> print(str(response).split('\n')[0])
+    HTTP/1.1 200 Ok
+    >>> print(response.getHeader('Content-Length'))
+    0
+    >>> print(six.ensure_text(response.getBody()))
+    <BLANKLINE>
+
 
 == Feed for a product's revisions ==
 

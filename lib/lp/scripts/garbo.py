@@ -36,12 +36,14 @@ import six
 from storm.expr import (
     And,
     Cast,
+    Except,
     In,
     Join,
     Max,
     Min,
     Or,
     Row,
+    Select,
     SQL,
     )
 from storm.info import ClassAlias
@@ -74,19 +76,25 @@ from lp.code.model.revision import (
     RevisionCache,
     )
 from lp.oci.model.ocirecipebuild import OCIFile
+from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.registry.model.teammembership import TeamMembership
+from lp.registry.model.teammembership import (
+    TeamMembership,
+    TeamParticipation,
+    )
 from lp.services.config import config
 from lp.services.database import postgresql
 from lp.services.database.bulk import (
     create,
     dbify_value,
+    load_related,
     )
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.sqlbase import (
+    convert_storm_clause_to_string,
     cursor,
     session_store,
     sqlvalues,
@@ -109,6 +117,13 @@ from lp.services.job.model.job import Job
 from lp.services.librarian.model import TimeLimitedToken
 from lp.services.log.logger import PrefixFilter
 from lp.services.looptuner import TunableLoop
+from lp.services.mail.helpers import get_email_template
+from lp.services.mail.mailwrapper import MailWrapper
+from lp.services.mail.sendmail import (
+    format_address,
+    set_immediate_mail_delivery,
+    simple_sendmail,
+    )
 from lp.services.openid.model.openidconsumer import OpenIDConsumerNonce
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts.base import (
@@ -118,12 +133,16 @@ from lp.services.scripts.base import (
     )
 from lp.services.session.model import SessionData
 from lp.services.verification.model.logintoken import LoginToken
+from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookJobSource
 from lp.services.webhooks.model import WebhookJob
 from lp.snappy.model.snapbuild import SnapFile
 from lp.snappy.model.snapbuildjob import SnapBuildJobType
+from lp.soyuz.enums import ArchiveSubscriberStatus
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
+from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
     )
@@ -1556,6 +1575,150 @@ class GitRepositoryPruner(TunableLoop):
         transaction.commit()
 
 
+class ArchiveSubscriptionExpirer(BulkPruner):
+    """Expire archive subscriptions as necessary.
+
+    If an `ArchiveSubscriber`'s date_expires has passed, then set its status
+    to EXPIRED.
+    """
+    target_table_class = ArchiveSubscriber
+
+    ids_to_prune_query = convert_storm_clause_to_string(Select(
+        ArchiveSubscriber.id,
+        where=And(
+            ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT,
+            ArchiveSubscriber.date_expires != None,
+            ArchiveSubscriber.date_expires <= UTC_NOW)))
+
+    maximum_chunk_size = 1000
+
+    _num_removed = None
+
+    def __call__(self, chunk_size):
+        """See `ITunableLoop`."""
+        chunk_size = int(chunk_size + 0.5)
+        newly_expired_subscriptions = list(self.store.find(
+            ArchiveSubscriber,
+            ArchiveSubscriber.id.is_in(SQL(
+                "SELECT * FROM cursor_fetch(%s, %s) AS f(id integer)",
+                params=(self.cursor_name, chunk_size)))))
+        load_related(Archive, newly_expired_subscriptions, ["archive_id"])
+        load_related(Person, newly_expired_subscriptions, ["subscriber_id"])
+        subscription_names = [
+            sub.displayname for sub in newly_expired_subscriptions]
+        if subscription_names:
+            self.store.find(
+                ArchiveSubscriber,
+                ArchiveSubscriber.id.is_in(
+                    [sub.id for sub in newly_expired_subscriptions]),
+                ).set(status=ArchiveSubscriberStatus.EXPIRED)
+            self.log.info(
+                "Expired subscriptions: %s" % ", ".join(subscription_names))
+        self._num_removed = len(subscription_names)
+        transaction.commit()
+
+
+class ArchiveAuthTokenDeactivator(BulkPruner):
+    """Deactivate archive auth tokens as necessary.
+
+    If an active token for a PPA no longer has any subscribers, we
+    deactivate the token, and send an email to the person whose subscription
+    was cancelled.
+    """
+    target_table_class = ArchiveAuthToken
+
+    # A token is invalid if it is active and the token owner is *not* a
+    # subscriber to the archive that the token is for.  The subscription can
+    # be either direct or through a team.
+    ids_to_prune_query = convert_storm_clause_to_string(Except(
+        # All valid tokens.
+        Select(
+            ArchiveAuthToken.id, tables=[ArchiveAuthToken],
+            where=And(
+                ArchiveAuthToken.name == None,
+                ArchiveAuthToken.date_deactivated == None)),
+        # Active tokens for which there is a matching current archive
+        # subscription for a team of which the token owner is a member.
+        # Removing these from the set of all valid tokens leaves only the
+        # invalid tokens.
+        Select(
+            ArchiveAuthToken.id,
+            tables=[ArchiveAuthToken, ArchiveSubscriber, TeamParticipation],
+            where=And(
+                ArchiveAuthToken.name == None,
+                ArchiveAuthToken.date_deactivated == None,
+                ArchiveAuthToken.archive_id == ArchiveSubscriber.archive_id,
+                ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT,
+                ArchiveSubscriber.subscriber_id == TeamParticipation.teamID,
+                TeamParticipation.personID == ArchiveAuthToken.person_id))))
+
+    maximum_chunk_size = 10
+
+    def _sendCancellationEmail(self, token):
+        """Send an email to the person whose subscription was cancelled."""
+        if token.archive.suppress_subscription_notifications:
+            # Don't send an email if they should be suppressed for the
+            # archive.
+            return
+        send_to_person = token.person
+        ppa_name = token.archive.displayname
+        ppa_owner_url = canonical_url(token.archive.owner)
+        subject = "PPA access cancelled for %s" % ppa_name
+        template = get_email_template(
+            "ppa-subscription-cancelled.txt", app="soyuz")
+
+        if send_to_person.is_team:
+            raise AssertionError(
+                "Token.person is a team, it should always be individuals.")
+
+        if send_to_person.preferredemail is None:
+            # The person has no preferred email set, so we don't email them.
+            return
+
+        to_address = [send_to_person.preferredemail.email]
+        replacements = {
+            "recipient_name": send_to_person.display_name,
+            "ppa_name": ppa_name,
+            "ppa_owner_url": ppa_owner_url,
+            }
+        body = MailWrapper(72).format(
+            template % replacements, force_wrap=True)
+
+        from_address = format_address(
+            ppa_name,
+            config.canonical.noreply_from_address)
+
+        headers = {
+            "Sender": config.canonical.bounce_address,
+            }
+
+        simple_sendmail(from_address, to_address, subject, body, headers)
+
+    def __call__(self, chunk_size):
+        """See `ITunableLoop`."""
+        chunk_size = int(chunk_size + 0.5)
+        tokens = list(self.store.find(
+            ArchiveAuthToken,
+            ArchiveAuthToken.id.is_in(SQL(
+                "SELECT * FROM cursor_fetch(%s, %s) AS f(id integer)",
+                params=(self.cursor_name, chunk_size)))))
+        affected_ppas = load_related(Archive, tokens, ["archive_id"])
+        load_related(Person, affected_ppas, ["ownerID"])
+        getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            [token.person_id for token in tokens], need_preferred_email=True)
+        for token in tokens:
+            self._sendCancellationEmail(token)
+        self.store.find(
+            ArchiveAuthToken,
+            ArchiveAuthToken.id.is_in([token.id for token in tokens]),
+            ).set(date_deactivated=UTC_NOW)
+        self.log.info(
+            "Deactivated %s tokens, %s PPAs affected" %
+            (len(tokens), len(affected_ppas)))
+        self._num_removed = len(tokens)
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
     script_name = None  # Script name for locking and database user. Override.
@@ -1599,6 +1762,10 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
 
     def main(self):
         self.start_time = time.time()
+
+        # Any email we send can safely be queued until the transaction is
+        # committed.
+        set_immediate_mail_delivery(False)
 
         # Stores the number of failed tasks.
         self.failure_count = 0
@@ -1783,6 +1950,7 @@ class FrequentDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     script_name = 'garbo-frequently'
     tunable_loops = [
         AntiqueSessionPruner,
+        ArchiveSubscriptionExpirer,
         BugSummaryJournalRollup,
         BugWatchScheduler,
         OpenIDConsumerAssociationPruner,
@@ -1805,6 +1973,7 @@ class HourlyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     """
     script_name = 'garbo-hourly'
     tunable_loops = [
+        ArchiveAuthTokenDeactivator,
         BugHeatUpdater,
         DuplicateSessionPruner,
         GitRepositoryPruner,

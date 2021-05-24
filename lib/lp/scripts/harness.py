@@ -62,7 +62,8 @@ def _get_locals():
     # $PYTHONSTARTUP file.
     startup = os.environ.get('PYTHONSTARTUP')
     if startup:
-        execfile(startup)
+        with open(startup) as f:
+            exec(f.read())
     store = IMasterStore(Person)
 
     if dbuser == 'launchpad':
