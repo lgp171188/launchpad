@@ -2315,7 +2315,9 @@ class TestBranchMergeProposal(BrowserTestCase):
         comment = self.factory.makeCodeReviewComment(body='x y' * 2000)
         has_read_more = self.has_read_more(comment)
         browser = self.getViewBrowser(comment.branch_merge_proposal)
-        self.assertNotIn('x y' * 2000, browser.contents)
+        txt = extract_text(
+            find_tags_by_class(browser.contents, "comment-text")[0])
+        self.assertNotIn('x y' * 2000, txt)
         self.assertThat(browser.contents, has_read_more)
 
     def test_short_conversation_comments_no_download(self):
