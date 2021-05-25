@@ -271,6 +271,7 @@ They read their comment that was appended to the bug report's messages.
 
     >>> print(extract_text(
     ...     find_tags_by_class(str(content), 'boardComment')[-1]))
+    Revision history for this message
     No Privileges Person (no-priv)
     wrote
     ...

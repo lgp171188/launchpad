@@ -11,6 +11,7 @@ entered within Launchpad itself.
     >>> details = remote_bug_comment.find(
     ...     attrs={'class': 'boardCommentDetails'})
     >>> print(extract_text(details))
+    Revision history for this message
     In
     Debian Bug tracker #308994,
     josh (jbuhl-nospam)
@@ -21,7 +22,7 @@ entered within Launchpad itself.
 Remote comments are decorated with the bug watch icon, to distinguish
 them from comments posted directly by Launchpad users.
 
-    >>> print(details.find('img')['src'])
+    >>> print(details.find_all('img')[1]['src'])
     /@@/bug-remote
 
 Since it's possible to reply to imported comments and have them
@@ -52,6 +53,7 @@ The new comment appears, formatted as a remote bug comment.
     >>> new_bug_comment = find_tags_by_class(
     ...     user_browser.contents, 'remoteBugComment')[-1]
     >>> print(extract_text(new_bug_comment))
+    Revision history for this message
     In
     Debian Bug tracker #308994,
     ...
@@ -91,6 +93,7 @@ the 'awaiting synchronization' mark goes away.
     >>> last_bug_comment = find_tags_by_class(
     ...     user_browser.contents, 'remoteBugComment')[-1]
     >>> print(extract_text(last_bug_comment))
+    Revision history for this message
     In
     Debian Bug tracker #308994,
     ...

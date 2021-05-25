@@ -12,6 +12,7 @@ of bug #11 is:
     >>> browser.open("http://bugs.launchpad.test/redfish/+bug/11")
     >>> comment_1 = find_tags_by_class(browser.contents, 'boardComment')[0]
     >>> print(extract_text(comment_1))
+    Revision history for this message
     Valentina Commissari (tsukimi)
     wrote
     on 2007-03-15:
@@ -43,6 +44,7 @@ displayed as the bug report).
     >>> browser.open("http://bugs.launchpad.test/redfish/+bug/11")
     >>> comment_0 = find_tags_by_class(browser.contents, 'boardComment')[0]
     >>> print(extract_text(comment_0))
+    Revision history for this message
     Daniel Silverstone (kinnison)
     wrote
     on 2007-03-15:

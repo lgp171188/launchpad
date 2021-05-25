@@ -63,6 +63,7 @@ page.
     ...     "Here's a comment for testing, like.")
     >>> user_browser.getControl('Post Comment').click()
     >>> print_comments(user_browser.contents, slice(None))
+    Revision history for this message
     In...
     Bug Watch Updater (bug-watch-updater)
     on 2007-12-18
@@ -70,6 +71,7 @@ page.
     status:
     Unknown → New
     --------
+    Revision history for this message
     No Privileges Person (no-priv)
     ...
     #7
@@ -88,6 +90,7 @@ that have been added.
 
     >>> user_browser.open('http://launchpad.test/bugs/15')
     >>> print_comments(user_browser.contents, slice(None))
+    Revision history for this message
     In...
     Bug
     ...
@@ -226,6 +229,7 @@ bundled with that comment in the UI.
 Note that "Lookit, a change!" appears twice: once displaying the message
 itself, and once again inside the textarea to edit the message.
     >>> print_comments(admin_browser.contents)
+    Revision history for this message
     Foo Bar (name16)
     wrote
     ... ago:
@@ -252,6 +256,7 @@ If a target of a bug task is changed the old and new value will be shown.
     ...     ).value = 'linux-source-2.6.15'
     >>> admin_browser.getControl("Save Changes").click()
     >>> print_comments(admin_browser.contents)
+    Revision history for this message
     Foo Bar (name16)
     wrote
     ... ago:
