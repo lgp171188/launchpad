@@ -637,6 +637,7 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
                 # action may be None if the tracer was installed after
                 # the statement was submitted.
                 action.finish()
+                connection._lp_statement_action = None
             info = sys.exc_info()
             transaction.doom()
             try:
@@ -732,6 +733,7 @@ class LaunchpadStatementTracer:
             # statement was submitted or if the timeline tracer is not
             # installed.
             action.finish()
+            connection._lp_statement_action = None
         log_sql = getattr(_local, 'sql_logging', None)
         if log_sql is not None or self._debug_sql or self._debug_sql_extra:
             data = None
