@@ -236,7 +236,7 @@ $(LP_JS_BUILD): | $(JS_BUILD_DIR)
 		cp -a $$jsdir $@/$$app; \
 	done
 	find $@ -name 'tests' -type d | xargs rm -rf
-	bin/lpjsmin -p $@
+	LC_ALL=C.UTF-8 bin/lpjsmin -p $@
 
 jsbuild: $(LP_JS_BUILD) $(YUI_SYMLINK)
 	LC_ALL=C.UTF-8 utilities/js-deps -n LP_MODULES -s build/js/lp \
