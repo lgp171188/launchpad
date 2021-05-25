@@ -4,6 +4,7 @@
 __metaclass__ = type
 
 from lp.services.config import DatabaseConfig
+from lp.services.propertycache import get_property_cache
 from lp.testing import TestCase
 from lp.testing.layers import DatabaseLayer
 
@@ -41,3 +42,19 @@ class TestDatabaseConfig(TestCase):
         self.assertEqual('not_launchpad', dbc.dbuser)
         dbc.reset()
         self.assertEqual('launchpad_main', dbc.dbuser)
+
+    def test_main_slave(self):
+        # If rw_main_slave is a comma-separated list, then the main_slave
+        # property selects among them randomly, and caches the result.
+        dbc = DatabaseConfig()
+        original_standby = dbc.main_slave
+        standbys = [
+            'dbname=launchpad_standby1 port=5433',
+            'dbname=launchpad_standby2 port=5433',
+            ]
+        dbc.override(rw_main_slave=','.join(standbys))
+        selected_standby = dbc.main_slave
+        self.assertIn(selected_standby, standbys)
+        self.assertEqual(selected_standby, get_property_cache(dbc).main_slave)
+        dbc.reset()
+        self.assertEqual(original_standby, dbc.main_slave)
