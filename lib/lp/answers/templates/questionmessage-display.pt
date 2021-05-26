@@ -14,6 +14,25 @@
       <tbody>
         <tr>
     <td>
+      <div class="message-revision-container">
+        <div class="message-revision-container-header">
+          <span>Revision history for this message</span>
+          <img src="/+icing/build/overlay/assets/skins/sam/images/close.gif"
+               class="message-revision-close"/>
+        </div>
+        <script type="text/template">
+          <div class='message-revision-item'>
+            <div class='message-revision-title'>
+                <a class="js-action">
+                    Revision #{revision}, created at  {date_created}
+                </a>
+            </div>
+            <div class='message-revision-body'>{content}</div>
+          </div>
+        </script>
+
+        <div class="message-revision-list"></div>
+      </div>
     <tal:bestanswer condition="view/isBestAnswer">
       <img src="/@@/favourite-yes" style="float:right;" alt="Best"
            title="Marked as best answer" />
@@ -28,11 +47,12 @@
         datetime context/datecreated/fmt:isodate"
       tal:content="context/datecreated/fmt:displaydate">Thursday 13:21
     </time><span class="editable-message-last-edit-date"><tal:last-edit condition="context/date_last_edited">
-        (last edit <time
+        <a href="#" class="editable-message-last-edit-link"
+            tal:condition="context/date_last_edited">(last edit <time
             itemprop="editTime"
             tal:attributes="title context/date_last_edited/fmt:datetime;
               datetime context/date_last_edited/fmt:isodate"
-            tal:content="context/date_last_edited/fmt:displaydate" />)</tal:last-edit>:
+            tal:content="context/date_last_edited/fmt:displaydate" />)</a></tal:last-edit>:
       </span>
     </td>
     <td>
