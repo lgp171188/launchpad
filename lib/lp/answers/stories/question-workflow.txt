@@ -215,7 +215,7 @@ The confirmed answer is also highlighted.
 
     >>> soup = find_main_content(owner_browser.contents)
     >>> bestAnswer = soup.find_all('div', 'boardComment')[-2]
-    >>> print(bestAnswer.find('img'))
+    >>> print(bestAnswer.find_all('img')[1])
     <img ... src="/@@/favourite-yes" ... title="Marked as best answer"/>
 
     >>> print(soup.find(
