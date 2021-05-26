@@ -20,6 +20,7 @@ except ImportError:
     import importlib_resources as resources
 import logging
 import os
+import random
 import sys
 
 from lazr.config import ImplicitTypeSchema
@@ -32,6 +33,10 @@ from six.moves.urllib.parse import (
 import ZConfig
 
 from lp.services.osutils import open_for_writing
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
 
 
 __all__ = [
@@ -500,9 +505,9 @@ class DatabaseConfig:
     def main_master(self):
         return self.rw_main_master
 
-    @property
+    @cachedproperty
     def main_slave(self):
-        return self.rw_main_slave
+        return random.choice(self.rw_main_slave.split(','))
 
     def override(self, **kwargs):
         """Override one or more config attributes.
@@ -517,9 +522,12 @@ class DatabaseConfig:
                     delattr(self.overrides, attr)
             else:
                 setattr(self.overrides, attr, value)
+                if attr == 'rw_main_slave':
+                    del get_property_cache(self).main_slave
 
     def reset(self):
         self.overrides = DatabaseConfigOverrides()
+        del get_property_cache(self).main_slave
 
     def _getConfigSections(self):
         """Returns a list of sections to search for database configuration.
