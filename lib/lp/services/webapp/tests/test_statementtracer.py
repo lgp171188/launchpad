@@ -368,3 +368,23 @@ class TestLoggingWithinRequest(TestCaseWithFactory):
                 tracer.connection_raw_execute_success(
                     self.connection, None, 'SELECT * FROM three', ())
             self.assertEqual(['SELECT * FROM three'], logger.statements)
+
+    def test_clears_timeline_action_reference(self):
+        # The tracer doesn't leave TimedAction references lying around in
+        # the connection.
+        tracer = da.LaunchpadStatementTracer()
+        with person_logged_in(self.person):
+            with StormStatementRecorder():
+                tracer.connection_raw_execute(
+                    self.connection, None, 'SELECT * FROM one', ())
+                self.assertIsNotNone(self.connection._lp_statement_action)
+                tracer.connection_raw_execute_success(
+                    self.connection, None, 'SELECT * FROM one', ())
+                self.assertIsNone(self.connection._lp_statement_action)
+                tracer.connection_raw_execute(
+                    self.connection, None, 'SELECT * FROM one', ())
+                self.assertIsNotNone(self.connection._lp_statement_action)
+                tracer.connection_raw_execute_error(
+                    self.connection, None, 'SELECT * FROM one', (),
+                    Exception())
+                self.assertIsNone(self.connection._lp_statement_action)
