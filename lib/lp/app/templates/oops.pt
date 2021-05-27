@@ -33,8 +33,8 @@
         </p>
         <p tal:condition="not: view/user|nothing">
           <strong>If you can't login</strong>, join us on
-          <a href="irc://irc.freenode.net/launchpad">#launchpad IRC channel</a>
-          at irc.freenode.net,
+          <a href="irc://irc.libera.chat/launchpad">#launchpad IRC channel</a>
+          at irc.libera.chat,
           <a href="mailto:feedback@launchpad.net">e-mail us</a>
           or visit our
           <a href="https://help.launchpad.net/Feedback">feedback page</a>.
