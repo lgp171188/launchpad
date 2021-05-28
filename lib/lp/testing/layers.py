@@ -607,6 +607,15 @@ class MemcachedLayer(BaseLayer):
         if not BaseLayer.persist_test_services:
             # Kill our memcached, and there is no reason to be nice about it.
             kill_by_pidfile(MemcachedLayer.getPidFile())
+            # Also try killing the subprocess just in case it's different
+            # from what's recorded in the pid file, to avoid deadlocking on
+            # wait().
+            try:
+                MemcachedLayer._memcached_process.kill()
+            except OSError:
+                pass
+            # Clean up the resulting zombie.
+            MemcachedLayer._memcached_process.wait()
             MemcachedLayer._memcached_process = None
 
     @classmethod
