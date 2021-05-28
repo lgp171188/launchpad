@@ -153,21 +153,21 @@ CREATE INDEX charmfile__build__idx
 CREATE INDEX charmfile__library_file__idx
     ON CharmFile (library_file);
 
-CREATE TABLE CharmJob (
+CREATE TABLE CharmRecipeJob (
     job integer PRIMARY KEY REFERENCES job ON DELETE CASCADE NOT NULL,
     recipe integer NOT NULL REFERENCES charmrecipe,
     job_type integer NOT NULL,
     json_data jsonb NOT NULL
 );
 
-COMMENT ON TABLE CharmJob IS 'Contains references to jobs that are executed for a charm recipe.';
-COMMENT ON COLUMN CharmJob.job IS 'A reference to a Job row that has all the common job details.';
-COMMENT ON COLUMN CharmJob.recipe IS 'The charm recipe that this job is for.';
-COMMENT ON COLUMN CharmJob.job_type IS 'The type of a job, such as a build request.';
-COMMENT ON COLUMN CharmJob.json_data IS 'Data that is specific to a particular job type.';
+COMMENT ON TABLE CharmRecipeJob IS 'Contains references to jobs that are executed for a charm recipe.';
+COMMENT ON COLUMN CharmRecipeJob.job IS 'A reference to a Job row that has all the common job details.';
+COMMENT ON COLUMN CharmRecipeJob.recipe IS 'The charm recipe that this job is for.';
+COMMENT ON COLUMN CharmRecipeJob.job_type IS 'The type of a job, such as a build request.';
+COMMENT ON COLUMN CharmRecipeJob.json_data IS 'Data that is specific to a particular job type.';
 
-CREATE INDEX charmjob__recipe__job_type__job__idx
-    ON CharmJob (recipe, job_type, job);
+CREATE INDEX charmrecipejob__recipe__job_type__job__idx
+    ON CharmRecipeJob (recipe, job_type, job);
 
 CREATE TABLE CharmRecipeBuildJob (
     job integer PRIMARY KEY REFERENCES job ON DELETE CASCADE NOT NULL,
