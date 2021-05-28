@@ -7,23 +7,37 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from testtools.matchers import (
+    Equals,
+    Is,
+    MatchesDict,
+    MatchesSetwise,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
+    CharmRecipeBuildRequestStatus,
     CharmRecipeFeatureDisabled,
     CharmRecipePrivateFeatureDisabled,
     ICharmRecipe,
     ICharmRecipeSet,
     NoSourceForCharmRecipe,
     )
+from lp.charms.interfaces.charmrecipejob import (
+    ICharmRecipeRequestBuildsJobSource,
+    )
 from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
     )
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     admin_logged_in,
@@ -89,6 +103,80 @@ class TestCharmRecipe(TestCaseWithFactory):
             pass
         self.assertSqlAttributeEqualsDate(
             recipe, "date_last_modified", UTC_NOW)
+
+    def test_requestBuilds(self):
+        # requestBuilds schedules a job and returns a corresponding
+        # CharmRecipeBuildRequest.
+        recipe = self.factory.makeCharmRecipe()
+        now = get_transaction_timestamp(IStore(recipe))
+        with person_logged_in(recipe.owner.teamowner):
+            request = recipe.requestBuilds(recipe.owner.teamowner)
+        self.assertThat(request, MatchesStructure(
+            date_requested=Equals(now),
+            date_finished=Is(None),
+            recipe=Equals(recipe),
+            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+            error_message=Is(None),
+            channels=Is(None),
+            architectures=Is(None)))
+        [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
+        self.assertThat(job, MatchesStructure(
+            job_id=Equals(request.id),
+            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+            recipe=Equals(recipe),
+            requester=Equals(recipe.owner.teamowner),
+            channels=Is(None),
+            architectures=Is(None)))
+
+    def test_requestBuilds_with_channels(self):
+        # If asked to build using particular snap channels, requestBuilds
+        # passes those through to the job.
+        recipe = self.factory.makeCharmRecipe()
+        now = get_transaction_timestamp(IStore(recipe))
+        with person_logged_in(recipe.owner.teamowner):
+            request = recipe.requestBuilds(
+                recipe.owner.teamowner, channels={"charmcraft": "edge"})
+        self.assertThat(request, MatchesStructure(
+            date_requested=Equals(now),
+            date_finished=Is(None),
+            recipe=Equals(recipe),
+            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+            error_message=Is(None),
+            channels=MatchesDict({"charmcraft": Equals("edge")}),
+            architectures=Is(None)))
+        [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
+        self.assertThat(job, MatchesStructure(
+            job_id=Equals(request.id),
+            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+            recipe=Equals(recipe),
+            requester=Equals(recipe.owner.teamowner),
+            channels=Equals({"charmcraft": "edge"}),
+            architectures=Is(None)))
+
+    def test_requestBuilds_with_architectures(self):
+        # If asked to build for particular architectures, requestBuilds
+        # passes those through to the job.
+        recipe = self.factory.makeCharmRecipe()
+        now = get_transaction_timestamp(IStore(recipe))
+        with person_logged_in(recipe.owner.teamowner):
+            request = recipe.requestBuilds(
+                recipe.owner.teamowner, architectures={"amd64", "i386"})
+        self.assertThat(request, MatchesStructure(
+            date_requested=Equals(now),
+            date_finished=Is(None),
+            recipe=Equals(recipe),
+            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+            error_message=Is(None),
+            channels=Is(None),
+            architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
+        [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
+        self.assertThat(job, MatchesStructure(
+            job_id=Equals(request.id),
+            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+            recipe=Equals(recipe),
+            requester=Equals(recipe.owner.teamowner),
+            channels=Is(None),
+            architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
 
     def test_delete_without_builds(self):
         # A charm recipe with no builds can be deleted.
