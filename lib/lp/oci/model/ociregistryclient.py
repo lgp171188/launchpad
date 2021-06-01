@@ -404,20 +404,45 @@ class OCIRegistryClient:
             # Avoid traceback reference cycles.
             del exceptions
 
+    _arch_to_platform = {
+        "amd64": {"os": "linux", "architecture": "amd64"},
+        "arm64": {"os": "linux", "architecture": "arm64", "variant": "v8"},
+        "armhf": {"os": "linux", "architecture": "arm", "variant": "v7"},
+        "i386": {"os": "linux", "architecture": "386"},
+        "ppc64el": {"os": "linux", "architecture": "ppc64le"},
+        "riscv64": {"os": "linux", "architecture": "riscv64"},
+        "s390x": {"os": "linux", "architecture": "s390x"},
+        }
+
+    @classmethod
+    def _makePlatformSpecifiers(cls, arch):
+        """Make OCI platform specifiers for an architecture tag.
+
+        OCI platform specifiers are based on Go architecture names, which
+        aren't identical to dpkg architecture tags in all cases.  Do the
+        necessary mapping.
+
+        The first specifier in the list returned by this method is the
+        preferred one; subsequent specifiers may have been set by old code
+        and should still be searched for when finding existing manifests.
+        """
+        platforms = []
+        oci_platform = cls._arch_to_platform.get(arch)
+        if oci_platform is not None:
+            platforms.append(oci_platform)
+        else:
+            log.warning("No OCI platform specifier known for %s", arch)
+        legacy_platform = {"os": "linux", "architecture": arch}
+        if legacy_platform != oci_platform:
+            platforms.append(legacy_platform)
+        return platforms
+
     @classmethod
     def makeMultiArchManifest(cls, http_client, push_rule, build_request,
                               uploaded_builds, tag):
         """Returns the multi-arch manifest content including all uploaded
         builds of the given build_request.
         """
-        def get_manifest_for_architecture(manifests, arch):
-            """Find, in the manifests list, the manifest for the given arch."""
-            expected_platform = {"architecture": arch, "os": "linux"}
-            for m in manifests:
-                if m["platform"] == expected_platform:
-                    return m
-            return None
-
         try:
             current_manifest = cls._getCurrentRegistryManifest(
                 http_client, tag)
@@ -454,9 +479,11 @@ class OCIRegistryClient:
             log.info("Build manifest found for build {}".format(build.id))
             digest = build_manifest["digest"]
             size = build_manifest["size"]
-            arch = build.processor.name
+            arch = build.distro_arch_series.architecturetag
+            platforms = cls._makePlatformSpecifiers(arch)
 
-            manifest = get_manifest_for_architecture(manifests, arch)
+            manifest = next(
+                (m for m in manifests if m["platform"] in platforms), None)
             if manifest is None:
                 log.info(
                     "Appending multi-arch manifest for build {} "
@@ -466,7 +493,7 @@ class OCIRegistryClient:
                                   "vnd.docker.distribution.manifest.v2+json"),
                     "size": size,
                     "digest": digest,
-                    "platform": {"architecture": arch, "os": "linux"}
+                    "platform": platforms[0],
                 }
                 manifests.append(manifest)
             else:
@@ -475,7 +502,7 @@ class OCIRegistryClient:
                     "with arch {}".format(build.id, arch))
                 manifest["digest"] = digest
                 manifest["size"] = size
-                manifest["platform"]["architecture"] = arch
+                manifest["platform"] = platforms[0]
 
         return current_manifest
 
