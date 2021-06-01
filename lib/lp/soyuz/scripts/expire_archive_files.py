@@ -39,6 +39,9 @@ BLACKLISTED_PPAS = """
 bzr
 bzr-beta-ppa
 bzr-nightly-ppa
+canonical-foundations/ubuntu-image
+canonical-foundations/uc20-build-ppa
+canonical-foundations/uc20-staging-ppa
 chelsea-team
 ci-train-ppa-service/stable-phone-overlay
 dennis-team
