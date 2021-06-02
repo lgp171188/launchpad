@@ -125,8 +125,9 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         # This produces a git ref that does not match the 'valid' OCI branch
         # format, so will not get multiple tags. Multiple tags are tested
         # explicitly.
-        [git_ref] = self.factory.makeGitRefs(paths=['refs/heads/v1.0-20.04'])
-        recipe = self.factory.makeOCIRecipe(git_ref=git_ref)
+        [self.git_ref] = self.factory.makeGitRefs(
+            paths=['refs/heads/v1.0-20.04'])
+        recipe = self.factory.makeOCIRecipe(git_ref=self.git_ref)
         self.build = self.factory.makeOCIRecipeBuild(recipe=recipe)
         self.push_rule = self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.client = OCIRegistryClient()
@@ -687,6 +688,33 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 }),
             ))
 
+    def test_platform_specifiers(self):
+        expected_platforms = {
+            "amd64": [{"os": "linux", "architecture": "amd64"}],
+            "arm64": [
+                {"os": "linux", "architecture": "arm64", "variant": "v8"},
+                {"os": "linux", "architecture": "arm64"},
+                ],
+            "armhf": [
+                {"os": "linux", "architecture": "arm", "variant": "v7"},
+                {"os": "linux", "architecture": "armhf"},
+                ],
+            "i386": [
+                {"os": "linux", "architecture": "386"},
+                {"os": "linux", "architecture": "i386"},
+                ],
+            "ppc64el": [
+                {"os": "linux", "architecture": "ppc64le"},
+                {"os": "linux", "architecture": "ppc64el"},
+                ],
+            "riscv64": [{"os": "linux", "architecture": "riscv64"}],
+            "s390x": [{"os": "linux", "architecture": "s390x"}],
+            "unknown": [{"os": "linux", "architecture": "unknown"}],
+            }
+        for arch, platforms in expected_platforms.items():
+            self.assertEqual(
+                platforms, self.client._makePlatformSpecifiers(arch))
+
     @responses.activate
     def test_multi_arch_manifest_upload_skips_superseded_builds(self):
         recipe = self.build.recipe
@@ -718,18 +746,23 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         """Ensure that multi-arch manifest upload works and tags correctly
         the uploaded image."""
         # Creates a build request with 2 builds.
-        recipe = self.build.recipe
-        build1 = self.build
+        recipe = self.factory.makeOCIRecipe(git_ref=self.git_ref)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=recipe.distribution, status=SeriesStatus.CURRENT)
+        for architecturetag, processor_name in (
+                ("i386", "386"),
+                ("amd64", "amd64"),
+                ("hppa", "hppa"),
+                ):
+            self.factory.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag=architecturetag,
+                processor=getUtility(IProcessorSet).getByName(processor_name))
+        build1 = self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distroseries["i386"])
         build2 = self.factory.makeOCIRecipeBuild(
-            recipe=recipe)
+            recipe=recipe, distro_arch_series=distroseries["amd64"])
         build3 = self.factory.makeOCIRecipeBuild(
-            recipe=recipe)
-        naked_build1 = removeSecurityProxy(build1)
-        naked_build2 = removeSecurityProxy(build2)
-        naked_build3 = removeSecurityProxy(build3)
-        naked_build1.processor = getUtility(IProcessorSet).getByName('386')
-        naked_build2.processor = getUtility(IProcessorSet).getByName('amd64')
-        naked_build3.processor = getUtility(IProcessorSet).getByName('hppa')
+            recipe=recipe, distro_arch_series=distroseries["hppa"])
 
         # Creates a mock IOCIRecipeRequestBuildsJobSource, as it was created
         # by the celery job and triggered the 3 registry uploads already.
@@ -746,7 +779,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
         build_request = OCIRecipeBuildRequest(recipe, -1)
 
-        push_rule = self.build.recipe.push_rules[0]
+        push_rule = self.factory.makeOCIPushRule(recipe=recipe)
         responses.add(
             "GET", "{}/v2/{}/manifests/v1.0-20.04_edge".format(
                 push_rule.registry_url, push_rule.image_name),
@@ -809,14 +842,20 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         # Creates a build request with 2 builds: amd64 (which is already in
         # the manifest) and hppa (that should be added)
-        recipe = self.build.recipe
-        build1 = self.build
+        recipe = self.factory.makeOCIRecipe(git_ref=self.git_ref)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=recipe.distribution, status=SeriesStatus.CURRENT)
+        for architecturetag, processor_name in (
+                ("amd64", "amd64"),
+                ("hppa", "hppa"),
+                ):
+            self.factory.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag=architecturetag,
+                processor=getUtility(IProcessorSet).getByName(processor_name))
+        build1 = self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distroseries["amd64"])
         build2 = self.factory.makeOCIRecipeBuild(
-            recipe=recipe)
-        naked_build1 = removeSecurityProxy(build1)
-        naked_build2 = removeSecurityProxy(build2)
-        naked_build1.processor = getUtility(IProcessorSet).getByName('amd64')
-        naked_build2.processor = getUtility(IProcessorSet).getByName('hppa')
+            recipe=recipe, distro_arch_series=distroseries["hppa"])
 
         # Creates a mock IOCIRecipeRequestBuildsJobSource, as it was created
         # by the celery job and triggered the 3 registry uploads already.
@@ -832,7 +871,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
         build_request = OCIRecipeBuildRequest(recipe, -1)
 
-        push_rule = self.build.recipe.push_rules[0]
+        push_rule = self.factory.makeOCIPushRule(recipe=recipe)
         responses.add(
             "GET", "{}/v2/{}/manifests/v1.0-20.04_edge".format(
                 push_rule.registry_url, push_rule.image_name),
@@ -883,10 +922,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         current_manifest = {'schemaVersion': 1, 'layers': []}
 
         # Creates a build request with 1 build for amd64.
-        recipe = self.build.recipe
-        build1 = self.build
-        naked_build1 = removeSecurityProxy(build1)
-        naked_build1.processor = getUtility(IProcessorSet).getByName('amd64')
+        recipe = self.factory.makeOCIRecipe(git_ref=self.git_ref)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=recipe.distribution, status=SeriesStatus.CURRENT)
+        das = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="amd64",
+            processor=getUtility(IProcessorSet).getByName("amd64"))
+        build1 = self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=das)
 
         job = mock.Mock()
         job.builds = [build1]
@@ -899,7 +942,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
         build_request = OCIRecipeBuildRequest(recipe, -1)
 
-        push_rule = self.build.recipe.push_rules[0]
+        push_rule = self.factory.makeOCIPushRule(recipe=recipe)
         responses.add(
             "GET", "{}/v2/{}/manifests/v1.0-20.04_edge".format(
                 push_rule.registry_url, push_rule.image_name),
