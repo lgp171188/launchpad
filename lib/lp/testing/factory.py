@@ -5158,7 +5158,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if recipe is None:
             recipe = self.makeCharmRecipe()
         if requester is None:
-            requester = recipe.owner.teamowner
+            if recipe.owner.is_team:
+                requester = recipe.owner.teamowner
+            else:
+                requester = recipe.owner
         return recipe.requestBuilds(
             requester, channels=channels, architectures=architectures)
 
