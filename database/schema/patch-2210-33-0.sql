@@ -69,8 +69,9 @@ CREATE TABLE CharmRecipeBuild (
     build_request integer NOT NULL REFERENCES job,
     requester integer NOT NULL REFERENCES person,
     recipe integer NOT NULL REFERENCES charmrecipe,
-    processor integer NOT NULL REFERENCES processor,
+    distro_arch_series integer NOT NULL REFERENCES distroarchseries,
     channels jsonb,
+    processor integer NOT NULL REFERENCES processor,
     virtualized boolean NOT NULL,
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
     date_started timestamp without time zone,
@@ -91,8 +92,9 @@ COMMENT ON TABLE CharmRecipeBuild IS 'A build record for a charm recipe.';
 COMMENT ON COLUMN CharmRecipeBuild.build_request IS 'The build request that caused this build to be created.';
 COMMENT ON COLUMN CharmRecipeBuild.requester IS 'The person who requested this charm recipe build.';
 COMMENT ON COLUMN CharmRecipeBuild.recipe IS 'The charm recipe to build.';
-COMMENT ON COLUMN CharmRecipeBuild.processor IS 'The processor that the charm recipe should be built for.';
+COMMENT ON COLUMN CharmRecipeBuild.distro_arch_series IS 'The distroarchseries that the charm recipe should build from.';
 COMMENT ON COLUMN CharmRecipeBuild.channels IS 'A dictionary mapping snap names to channels to use for this build.';
+COMMENT ON COLUMN CharmRecipeBuild.processor IS 'The processor that the charm recipe should be built for.';
 COMMENT ON COLUMN CharmRecipeBuild.virtualized IS 'The virtualization setting required by this build farm job.';
 COMMENT ON COLUMN CharmRecipeBuild.date_created IS 'When the build farm job record was created.';
 COMMENT ON COLUMN CharmRecipeBuild.date_started IS 'When the build farm job started being processed.';
@@ -122,8 +124,8 @@ CREATE INDEX charmrecipebuild__build_farm_job__idx
     ON CharmRecipeBuild (build_farm_job);
 
 -- CharmRecipe.requestBuild
-CREATE INDEX charmrecipebuild__recipe__processor__status__idx
-    ON CharmRecipeBuild (recipe, processor, status);
+CREATE INDEX charmrecipebuild__recipe__das__status__idx
+    ON CharmRecipeBuild (recipe, distro_arch_series, status);
 
 -- CharmRecipe.builds, CharmRecipe.completed_builds,
 -- CharmRecipe.pending_builds
@@ -133,8 +135,8 @@ CREATE INDEX charmrecipebuild__recipe__status__started__finished__created__id__i
         date_created DESC, id DESC);
 
 -- CharmRecipeBuild.getMedianBuildDuration
-CREATE INDEX charmrecipebuild__recipe__processor__status__finished__idx
-    ON CharmRecipeBuild (recipe, processor, status, date_finished DESC)
+CREATE INDEX charmrecipebuild__recipe__das__status__finished__idx
+    ON CharmRecipeBuild (recipe, distro_arch_series, status, date_finished DESC)
     -- 1 == FULLYBUILT
     WHERE status = 1;
 
