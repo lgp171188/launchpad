@@ -20,6 +20,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
+    CHARM_RECIPE_BUILD_DISTRIBUTION,
     CharmRecipeBuildRequestStatus,
     CharmRecipeFeatureDisabled,
     CharmRecipePrivateFeatureDisabled,
@@ -30,6 +31,7 @@ from lp.charms.interfaces.charmrecipe import (
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
@@ -103,6 +105,70 @@ class TestCharmRecipe(TestCaseWithFactory):
             pass
         self.assertSqlAttributeEqualsDate(
             recipe, "date_last_modified", UTC_NOW)
+
+    def test__default_distribution_default(self):
+        # If the CHARM_RECIPE_BUILD_DISTRIBUTION feature rule is not set, we
+        # default to Ubuntu.
+        recipe = self.factory.makeCharmRecipe()
+        self.assertEqual(
+            "ubuntu", removeSecurityProxy(recipe)._default_distribution.name)
+
+    def test__default_distribution_feature_rule(self):
+        # If the CHARM_RECIPE_BUILD_DISTRIBUTION feature rule is set, we
+        # default to the distribution with the given name.
+        distro_name = "mydistro"
+        distribution = self.factory.makeDistribution(name=distro_name)
+        recipe = self.factory.makeCharmRecipe()
+        with FeatureFixture({CHARM_RECIPE_BUILD_DISTRIBUTION: distro_name}):
+            self.assertEqual(
+                distribution,
+                removeSecurityProxy(recipe)._default_distribution)
+
+    def test__default_distribution_feature_rule_nonexistent(self):
+        # If we mistakenly set the rule to a non-existent distribution,
+        # things break explicitly.
+        recipe = self.factory.makeCharmRecipe()
+        with FeatureFixture({CHARM_RECIPE_BUILD_DISTRIBUTION: "nonexistent"}):
+            expected_msg = (
+                "'nonexistent' is not a valid value for feature rule '%s'" %
+                CHARM_RECIPE_BUILD_DISTRIBUTION)
+            self.assertRaisesWithContent(
+                ValueError, expected_msg,
+                getattr, removeSecurityProxy(recipe), "_default_distribution")
+
+    def test__default_distro_series_feature_rule(self):
+        # If the appropriate per-distribution feature rule is set, we
+        # default to the named distro series.
+        distro_name = "mydistro"
+        distribution = self.factory.makeDistribution(name=distro_name)
+        distro_series_name = "myseries"
+        distro_series = self.factory.makeDistroSeries(
+            distribution=distribution, name=distro_series_name)
+        self.factory.makeDistroSeries(distribution=distribution)
+        recipe = self.factory.makeCharmRecipe()
+        with FeatureFixture({
+                CHARM_RECIPE_BUILD_DISTRIBUTION: distro_name,
+                "charm.default_build_series.%s" % distro_name: (
+                    distro_series_name),
+                }):
+            self.assertEqual(
+                distro_series,
+                removeSecurityProxy(recipe)._default_distro_series)
+
+    def test__default_distro_series_no_feature_rule(self):
+        # If the appropriate per-distribution feature rule is not set, we
+        # default to the distribution's current series.
+        distro_name = "mydistro"
+        distribution = self.factory.makeDistribution(name=distro_name)
+        self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.SUPPORTED)
+        current_series = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.DEVELOPMENT)
+        recipe = self.factory.makeCharmRecipe()
+        with FeatureFixture({CHARM_RECIPE_BUILD_DISTRIBUTION: distro_name}):
+            self.assertEqual(
+                current_series,
+                removeSecurityProxy(recipe)._default_distro_series)
 
     def test_requestBuilds(self):
         # requestBuilds schedules a job and returns a corresponding
