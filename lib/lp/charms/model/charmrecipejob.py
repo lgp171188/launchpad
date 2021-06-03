@@ -33,6 +33,11 @@ from zope.interface import (
     )
 
 from lp.app.errors import NotFoundError
+from lp.charms.interfaces.charmrecipe import (
+    CannotFetchCharmcraftYaml,
+    CannotParseCharmcraftYaml,
+    MissingCharmcraftYaml,
+    )
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeJob,
     ICharmRecipeRequestBuildsJob,
@@ -166,6 +171,12 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
 
     class_job_type = CharmRecipeJobType.REQUEST_BUILDS
 
+    user_error_types = (
+        CannotParseCharmcraftYaml,
+        MissingCharmcraftYaml,
+        )
+    retry_error_types = (CannotFetchCharmcraftYaml,)
+
     max_retries = 5
 
     config = config.ICharmRecipeRequestBuildsJobSource
@@ -297,9 +308,10 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
                 "Skipping %r because the requester has been deleted." % self)
             return
         try:
-            # XXX cjwatson 2021-05-28: Implement this once we have a
-            # CharmRecipeBuild model.
-            raise NotImplementedError
+            self.builds = self.recipe.requestBuildsFromJob(
+                self.build_request, channels=self.channels,
+                architectures=self.architectures, logger=log)
+            self.error_message = None
         except Exception as e:
             self.error_message = str(e)
             # The normal job infrastructure will abort the transaction, but

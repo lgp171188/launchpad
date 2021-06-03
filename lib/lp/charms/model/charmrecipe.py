@@ -10,7 +10,10 @@ __all__ = [
     "CharmRecipe",
     ]
 
-from operator import itemgetter
+from operator import (
+    attrgetter,
+    itemgetter,
+    )
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
@@ -25,6 +28,7 @@ from storm.locals import (
     Store,
     Unicode,
     )
+import yaml
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -37,7 +41,10 @@ from lp.app.enums import (
     )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
+from lp.charms.adapters.buildarch import determine_instances_to_build
 from lp.charms.interfaces.charmrecipe import (
+    CannotFetchCharmcraftYaml,
+    CannotParseCharmcraftYaml,
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_BUILD_DISTRIBUTION,
     CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
@@ -52,6 +59,7 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipe,
     ICharmRecipeBuildRequest,
     ICharmRecipeSet,
+    MissingCharmcraftYaml,
     NoSourceForCharmRecipe,
     )
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
@@ -59,6 +67,10 @@ from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
 from lp.charms.model.charmrecipebuild import CharmRecipeBuild
+from lp.code.errors import (
+    GitRepositoryBlobNotFound,
+    GitRepositoryScanFault,
+    )
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
@@ -457,6 +469,60 @@ class CharmRecipe(StormBase):
             self, requester, channels=channels, architectures=architectures)
         return self.getBuildRequest(job.job_id)
 
+    def requestBuildsFromJob(self, build_request, channels=None,
+                             architectures=None, allow_failures=False,
+                             logger=None):
+        """See `ICharmRecipe`."""
+        try:
+            charmcraft_data = removeSecurityProxy(
+                getUtility(ICharmRecipeSet).getCharmcraftYaml(self))
+
+            # Sort by (Distribution.id, DistroSeries.id, Processor.id) for
+            # determinism.  This is chosen to be a similar order as in
+            # BinaryPackageBuildSet.createForSource, to minimize confusion.
+            supported_arches = [
+                das for das in sorted(
+                    self.getAllowedArchitectures(),
+                    key=attrgetter(
+                        "distroseries.distribution.id", "distroseries.id",
+                        "processor.id"))
+                if (architectures is None or
+                    das.architecturetag in architectures)]
+            instances_to_build = determine_instances_to_build(
+                charmcraft_data, supported_arches, self._default_distro_series)
+        except Exception as e:
+            if not allow_failures:
+                raise
+            elif logger is not None:
+                logger.exception(
+                    " - %s/%s/%s: %s",
+                    self.owner.name, self.project.name, self.name, e)
+
+        builds = []
+        for das in instances_to_build:
+            try:
+                build = self.requestBuild(
+                    build_request, das, channels=channels)
+                if logger is not None:
+                    logger.debug(
+                        " - %s/%s/%s %s/%s/%s: Build requested.",
+                        self.owner.name, self.project.name, self.name,
+                        das.distroseries.distribution.name,
+                        das.distroseries.name, das.architecturetag)
+                builds.append(build)
+            except CharmRecipeBuildAlreadyPending:
+                pass
+            except Exception as e:
+                if not allow_failures:
+                    raise
+                elif logger is not None:
+                    logger.exception(
+                        " - %s/%s/%s %s/%s/%s: %s",
+                        self.owner.name, self.project.name, self.name,
+                        das.distroseries.distribution.name,
+                        das.distroseries.name, das.architecturetag, e)
+        return builds
+
     def getBuildRequest(self, job_id):
         """See `ICharmRecipe`."""
         return CharmRecipeBuildRequest(self, job_id)
@@ -559,6 +625,50 @@ class CharmRecipeSet:
 
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
+
+    def getCharmcraftYaml(self, context, logger=None):
+        """See `ICharmRecipeSet`."""
+        if ICharmRecipe.providedBy(context):
+            recipe = context
+            source = context.git_ref
+        else:
+            recipe = None
+            source = context
+        if source is None:
+            raise CannotFetchCharmcraftYaml("Charm source is not defined")
+        try:
+            path = "charmcraft.yaml"
+            if recipe is not None and recipe.build_path is not None:
+                path = "/".join((recipe.build_path, path))
+            try:
+                blob = source.getBlob(path)
+            except GitRepositoryBlobNotFound:
+                if logger is not None:
+                    logger.exception(
+                        "Cannot find charmcraft.yaml in %s",
+                        source.unique_name)
+                raise MissingCharmcraftYaml(source.unique_name)
+        except GitRepositoryScanFault as e:
+            msg = "Failed to get charmcraft.yaml from %s"
+            if logger is not None:
+                logger.exception(msg, source.unique_name)
+            raise CannotFetchCharmcraftYaml(
+                "%s: %s" % (msg % source.unique_name, e))
+
+        try:
+            charmcraft_data = yaml.safe_load(blob)
+        except Exception as e:
+            # Don't bother logging parsing errors from user-supplied YAML.
+            raise CannotParseCharmcraftYaml(
+                "Cannot parse charmcraft.yaml from %s: %s" %
+                (source.unique_name, e))
+
+        if not isinstance(charmcraft_data, dict):
+            raise CannotParseCharmcraftYaml(
+                "The top level of charmcraft.yaml from %s is not a mapping" %
+                source.unique_name)
+
+        return charmcraft_data
 
     def findByGitRepository(self, repository, paths=None):
         """See `ICharmRecipeSet`."""
