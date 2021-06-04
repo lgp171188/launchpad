@@ -7,14 +7,22 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    "CharmRecipeNavigation",
     "CharmRecipeURL",
     ]
 
 from zope.component import getUtility
 from zope.interface import implementer
 
+from lp.charms.interfaces.charmrecipe import ICharmRecipe
+from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
 from lp.registry.interfaces.personproduct import IPersonProductFactory
+from lp.services.webapp import (
+    Navigation,
+    stepthrough,
+    )
 from lp.services.webapp.interfaces import ICanonicalUrlData
+from lp.soyuz.browser.build import get_build_by_id_str
 
 
 @implementer(ICanonicalUrlData)
@@ -34,3 +42,22 @@ class CharmRecipeURL:
     @property
     def path(self):
         return "+charm/%s" % self.recipe.name
+
+
+class CharmRecipeNavigation(Navigation):
+    usedfor = ICharmRecipe
+
+    @stepthrough("+build-request")
+    def traverse_build_request(self, name):
+        try:
+            job_id = int(name)
+        except ValueError:
+            return None
+        return self.context.getBuildRequest(job_id)
+
+    @stepthrough("+build")
+    def traverse_build(self, name):
+        build = get_build_by_id_str(ICharmRecipeBuildSet, name)
+        if build is None or build.recipe != self.context:
+            return None
+        return build

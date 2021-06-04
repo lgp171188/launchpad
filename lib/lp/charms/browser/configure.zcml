@@ -11,5 +11,16 @@
         <browser:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
             urldata="lp.charms.browser.charmrecipe.CharmRecipeURL" />
+        <browser:navigation
+            module="lp.charms.browser.charmrecipe"
+            classes="CharmRecipeNavigation" />
+        <browser:url
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipeBuildRequest"
+            path_expression="string:+build-request/${id}"
+            attribute_to_parent="recipe" />
+        <browser:url
+            for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
+            path_expression="string:+build/${id}"
+            attribute_to_parent="recipe" />
     </facet>
 </configure>
