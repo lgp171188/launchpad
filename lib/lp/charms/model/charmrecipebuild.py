@@ -44,6 +44,7 @@ from lp.charms.interfaces.charmrecipebuild import (
     ICharmRecipeBuild,
     ICharmRecipeBuildSet,
     )
+from lp.charms.mail.charmrecipebuild import CharmRecipeBuildMailer
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.person import Person
@@ -389,7 +390,8 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
             return
         if self.status == BuildStatus.FULLYBUILT:
             return
-        # XXX cjwatson 2021-05-28: Send email notifications.
+        mailer = CharmRecipeBuildMailer.forStatus(self)
+        mailer.sendAll()
 
 
 @implementer(ICharmRecipeBuildSet)
