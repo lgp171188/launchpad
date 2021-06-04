@@ -14,7 +14,10 @@ __all__ = [
 
 import collections
 from io import BytesIO
-from operator import attrgetter
+from operator import (
+    attrgetter,
+    itemgetter,
+    )
 
 import apt_pkg
 from lazr.delegates import delegate_to
@@ -167,6 +170,7 @@ from lp.soyuz.model.publishing import (
 from lp.soyuz.model.queue import (
     PackageUpload,
     PackageUploadQueue,
+    PackageUploadSource,
     )
 from lp.soyuz.model.section import Section
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
@@ -1235,23 +1239,22 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     def getLatestUploads(self):
         """See `IDistroSeries`."""
-        query = """
-        sourcepackagerelease.id=packageuploadsource.sourcepackagerelease
-        AND sourcepackagerelease.sourcepackagename=sourcepackagename.id
-        AND packageuploadsource.packageupload=packageupload.id
-        AND packageupload.status=%s
-        AND packageupload.distroseries=%s
-        AND packageupload.archive IN %s
-        """ % sqlvalues(
-                PackageUploadStatus.DONE,
-                self,
-                self.distribution.all_distro_archive_ids)
+        clauses = [
+            SourcePackageRelease.id ==
+                PackageUploadSource.sourcepackagereleaseID,
+            SourcePackageRelease.sourcepackagenameID == SourcePackageName.id,
+            PackageUploadSource.packageuploadID == PackageUpload.id,
+            PackageUpload.status == PackageUploadStatus.DONE,
+            PackageUpload.distroseries == self,
+            PackageUpload.archiveID.is_in(
+                self.distribution.all_distro_archive_ids),
+            ]
 
-        last_uploads = SourcePackageRelease.select(
-            query, limit=5, prejoins=['sourcepackagename'],
-            clauseTables=['SourcePackageName', 'PackageUpload',
-                          'PackageUploadSource'],
-            orderBy=['-packageupload.id'])
+        last_uploads = DecoratedResultSet(
+            IStore(SourcePackageRelease).find(
+                (SourcePackageRelease, SourcePackageName),
+                *clauses).order_by(Desc(PackageUpload.id))[:5],
+            result_decorator=itemgetter(0))
 
         distro_sprs = [
             self.distribution.getSourcePackageRelease(spr)
