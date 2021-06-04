@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for a distribution series."""
@@ -33,10 +33,14 @@ from sqlobject import (
     )
 from storm.expr import (
     And,
+    Column,
     Desc,
     Join,
     Or,
+    Select,
     SQL,
+    Table,
+    With,
     )
 from storm.locals import (
     Int,
@@ -1239,21 +1243,30 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     def getLatestUploads(self):
         """See `IDistroSeries`."""
+        # Without this CTE, PostgreSQL sometimes decides to scan the primary
+        # key index on PackageUpload instead, which is very slow.
+        RelevantUpload = Table("RelevantUpload")
+        relevant_upload_cte = With(
+            RelevantUpload.name,
+            Select(
+                PackageUpload.id,
+                And(
+                    PackageUpload.status == PackageUploadStatus.DONE,
+                    PackageUpload.distroseries == self,
+                    PackageUpload.archiveID.is_in(
+                        self.distribution.all_distro_archive_ids))))
         clauses = [
             SourcePackageRelease.id ==
                 PackageUploadSource.sourcepackagereleaseID,
             SourcePackageRelease.sourcepackagenameID == SourcePackageName.id,
-            PackageUploadSource.packageuploadID == PackageUpload.id,
-            PackageUpload.status == PackageUploadStatus.DONE,
-            PackageUpload.distroseries == self,
-            PackageUpload.archiveID.is_in(
-                self.distribution.all_distro_archive_ids),
+            PackageUploadSource.packageuploadID == Column(
+                "id", RelevantUpload),
             ]
 
         last_uploads = DecoratedResultSet(
-            IStore(SourcePackageRelease).find(
+            IStore(SourcePackageRelease).with_(relevant_upload_cte).find(
                 (SourcePackageRelease, SourcePackageName),
-                *clauses).order_by(Desc(PackageUpload.id))[:5],
+                *clauses).order_by(Desc(Column("id", RelevantUpload)))[:5],
             result_decorator=itemgetter(0))
 
         distro_sprs = [
