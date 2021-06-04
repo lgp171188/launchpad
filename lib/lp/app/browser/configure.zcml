@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -578,6 +578,12 @@
       />
   <adapter
       for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.BuildImageDisplayAPI"
+      name="image"
+      />
+  <adapter
+      for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.BuildImageDisplayAPI"
       name="image"

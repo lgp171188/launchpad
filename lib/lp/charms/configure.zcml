@@ -12,6 +12,8 @@
 
     <include package=".browser" />
 
+    <lp:help-folder folder="help" name="+help-charms" />
+
     <!-- CharmRecipe -->
     <class class="lp.charms.model.charmrecipe.CharmRecipe">
         <require
