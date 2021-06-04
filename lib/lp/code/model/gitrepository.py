@@ -93,6 +93,7 @@ from lp.app.interfaces.launchpad import (
     IPrivacy,
     )
 from lp.app.interfaces.services import IService
+from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import (
     BranchMergeProposalStatus,
@@ -1647,6 +1648,11 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             alteration_operations.append(DeletionCallable(
                 None, msg("Some OCI recipes build from this repository."),
                 getUtility(IOCIRecipeSet).detachFromGitRepository, self))
+        if not getUtility(ICharmRecipeSet).findByGitRepository(
+                self).is_empty():
+            alteration_operations.append(DeletionCallable(
+                None, msg("Some charm recipes build from this repository."),
+                getUtility(ICharmRecipeSet).detachFromGitRepository, self))
 
         return (alteration_operations, deletion_operations)
 
