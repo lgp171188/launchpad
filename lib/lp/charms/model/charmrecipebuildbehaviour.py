@@ -1,0 +1,109 @@
+# Copyright 2021 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""An `IBuildFarmJobBehaviour` for `CharmRecipeBuild`.
+
+Dispatches charm recipe build jobs to build-farm slaves.
+"""
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+__metaclass__ = type
+__all__ = [
+    "CharmRecipeBuildBehaviour",
+    ]
+
+from twisted.internet import defer
+from zope.component import adapter
+from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
+
+from lp.buildmaster.enums import BuildBaseImageType
+from lp.buildmaster.interfaces.builder import CannotBuild
+from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    IBuildFarmJobBehaviour,
+    )
+from lp.buildmaster.model.buildfarmjobbehaviour import (
+    BuildFarmJobBehaviourBase,
+    )
+from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
+from lp.registry.interfaces.series import SeriesStatus
+from lp.soyuz.adapters.archivedependencies import (
+    get_sources_list_for_building,
+    )
+
+
+@adapter(ICharmRecipeBuild)
+@implementer(IBuildFarmJobBehaviour)
+class CharmRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
+    """Dispatches `CharmRecipeBuild` jobs to slaves."""
+
+    builder_type = "charm"
+    image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
+
+    def getLogFileName(self):
+        das = self.build.distro_arch_series
+
+        # Examples:
+        #   buildlog_charm_ubuntu_wily_amd64_name_FULLYBUILT.txt
+        return "buildlog_charm_%s_%s_%s_%s_%s.txt" % (
+            das.distroseries.distribution.name, das.distroseries.name,
+            das.architecturetag, self.build.recipe.name,
+            self.build.status.name)
+
+    def verifyBuildRequest(self, logger):
+        """Assert some pre-build checks.
+
+        The build request is checked:
+         * Virtualized builds can't build on a non-virtual builder
+         * Ensure that we have a chroot
+        """
+        build = self.build
+        if build.virtualized and not self._builder.virtualized:
+            raise AssertionError(
+                "Attempt to build virtual item on a non-virtual builder.")
+
+        chroot = build.distro_arch_series.getChroot()
+        if chroot is None:
+            raise CannotBuild(
+                "Missing chroot for %s" % build.distro_arch_series.displayname)
+
+    @defer.inlineCallbacks
+    def extraBuildArgs(self, logger=None):
+        """
+        Return the extra arguments required by the slave for the given build.
+        """
+        build = self.build
+        args = yield super(CharmRecipeBuildBehaviour, self).extraBuildArgs(
+            logger=logger)
+        args["name"] = build.recipe.store_name or build.recipe.name
+        channels = build.channels or {}
+        # We have to remove the security proxy that Zope applies to this
+        # dict, since otherwise we'll be unable to serialise it to XML-RPC.
+        args["channels"] = removeSecurityProxy(channels)
+        args["archives"], args["trusted_keys"] = (
+            yield get_sources_list_for_building(
+                self, build.distro_arch_series, None, logger=logger))
+        if build.recipe.git_ref is not None:
+            args["git_repository"] = build.recipe.git_repository.git_https_url
+            # "git clone -b" doesn't accept full ref names.  If this becomes
+            # a problem then we could change launchpad-buildd to do "git
+            # clone" followed by "git checkout" instead.
+            if build.recipe.git_path != "HEAD":
+                args["git_path"] = build.recipe.git_ref.name
+        else:
+            raise CannotBuild(
+                "Source repository for ~%s/%s/+charm/%s has been deleted." % (
+                    build.recipe.owner.name, build.recipe.project.name,
+                    build.recipe.name))
+        args["private"] = build.is_private
+        defer.returnValue(args)
+
+    def verifySuccessfulBuild(self):
+        """See `IBuildFarmJobBehaviour`."""
+        # The implementation in BuildFarmJobBehaviourBase checks whether the
+        # target suite is modifiable in the target archive.  However, a
+        # `CharmRecipeBuild`'s archive is a source rather than a target, so
+        # that check does not make sense.  We do, however, refuse to build
+        # for obsolete series.
+        assert self.build.distro_series.status != SeriesStatus.OBSOLETE
