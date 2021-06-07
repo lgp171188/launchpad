@@ -625,9 +625,6 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
             super(LaunchpadTimeoutTracer, self).connection_raw_execute(
                 connection, raw_cursor, statement, params)
         except (RequestExpired, TimeoutError):
-            # XXX: This code does not belong here - see bug=636804.
-            # Robert Collins 20100913.
-            OpStats.stats['timeouts'] += 1
             # XXX bug=636801 Robert Colins 20100914 This is duplicated
             # from the statement tracer, because the tracers are not
             # arranged in a stack rather a queue: the done-code in the
@@ -654,7 +651,6 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
         if not isinstance(connection._database, LaunchpadDatabase):
             return
         if isinstance(error, QueryCanceledError):
-            OpStats.stats['timeouts'] += 1
             raise LaunchpadTimeoutError(statement, params, error)
 
     def get_remaining_time(self):
