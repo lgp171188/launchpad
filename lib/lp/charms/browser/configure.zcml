@@ -28,13 +28,53 @@
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
             factory="lp.charms.browser.charmrecipe.CharmRecipeBreadcrumb"
             permission="zope.Public" />
+
         <browser:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipeBuildRequest"
             path_expression="string:+build-request/${id}"
             attribute_to_parent="recipe" />
+
         <browser:url
             for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="recipe" />
+        <browser:menus
+            module="lp.charms.browser.charmrecipebuild"
+            classes="CharmRecipeBuildContextMenu" />
+        <browser:navigation
+            module="lp.charms.browser.charmrecipebuild"
+            classes="CharmRecipeBuildNavigation" />
+        <browser:defaultView
+            for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
+            name="+index" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
+            class="lp.charms.browser.charmrecipebuild.CharmRecipeBuildView"
+            permission="launchpad.View"
+            name="+index"
+            template="../templates/charmrecipebuild-index.pt" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
+            class="lp.charms.browser.charmrecipebuild.CharmRecipeBuildRetryView"
+            permission="launchpad.Edit"
+            name="+retry"
+            template="../templates/charmrecipebuild-retry.pt" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
+            class="lp.charms.browser.charmrecipebuild.CharmRecipeBuildCancelView"
+            permission="launchpad.Edit"
+            name="+cancel"
+            template="../../app/templates/generic-edit.pt" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
+            class="lp.charms.browser.charmrecipebuild.CharmRecipeBuildRescoreView"
+            permission="launchpad.Admin"
+            name="+rescore"
+            template="../../app/templates/generic-edit.pt" />
+        <adapter
+            provides="lp.services.webapp.interfaces.IBreadcrumb"
+            for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
+            factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
+            permission="zope.Public" />
     </facet>
 </configure>
