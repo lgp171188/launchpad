@@ -76,7 +76,6 @@ from lp.services.timeline.requesttimeline import (
 from lp.services.timeout import set_default_timeout_function
 from lp.services.webapp import LaunchpadView
 from lp.services.webapp.interaction import get_interaction_extras
-from lp.services.webapp.opstats import OpStats
 
 
 __all__ = [
