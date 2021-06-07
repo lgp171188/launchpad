@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for a distribution series."""
@@ -14,7 +14,10 @@ __all__ = [
 
 import collections
 from io import BytesIO
-from operator import attrgetter
+from operator import (
+    attrgetter,
+    itemgetter,
+    )
 
 import apt_pkg
 from lazr.delegates import delegate_to
@@ -30,10 +33,14 @@ from sqlobject import (
     )
 from storm.expr import (
     And,
+    Column,
     Desc,
     Join,
     Or,
+    Select,
     SQL,
+    Table,
+    With,
     )
 from storm.locals import (
     Int,
@@ -167,6 +174,7 @@ from lp.soyuz.model.publishing import (
 from lp.soyuz.model.queue import (
     PackageUpload,
     PackageUploadQueue,
+    PackageUploadSource,
     )
 from lp.soyuz.model.section import Section
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
@@ -1235,23 +1243,31 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     def getLatestUploads(self):
         """See `IDistroSeries`."""
-        query = """
-        sourcepackagerelease.id=packageuploadsource.sourcepackagerelease
-        AND sourcepackagerelease.sourcepackagename=sourcepackagename.id
-        AND packageuploadsource.packageupload=packageupload.id
-        AND packageupload.status=%s
-        AND packageupload.distroseries=%s
-        AND packageupload.archive IN %s
-        """ % sqlvalues(
-                PackageUploadStatus.DONE,
-                self,
-                self.distribution.all_distro_archive_ids)
+        # Without this CTE, PostgreSQL sometimes decides to scan the primary
+        # key index on PackageUpload instead, which is very slow.
+        RelevantUpload = Table("RelevantUpload")
+        relevant_upload_cte = With(
+            RelevantUpload.name,
+            Select(
+                PackageUpload.id,
+                And(
+                    PackageUpload.status == PackageUploadStatus.DONE,
+                    PackageUpload.distroseries == self,
+                    PackageUpload.archiveID.is_in(
+                        self.distribution.all_distro_archive_ids))))
+        clauses = [
+            SourcePackageRelease.id ==
+                PackageUploadSource.sourcepackagereleaseID,
+            SourcePackageRelease.sourcepackagenameID == SourcePackageName.id,
+            PackageUploadSource.packageuploadID == Column(
+                "id", RelevantUpload),
+            ]
 
-        last_uploads = SourcePackageRelease.select(
-            query, limit=5, prejoins=['sourcepackagename'],
-            clauseTables=['SourcePackageName', 'PackageUpload',
-                          'PackageUploadSource'],
-            orderBy=['-packageupload.id'])
+        last_uploads = DecoratedResultSet(
+            IStore(SourcePackageRelease).with_(relevant_upload_cte).find(
+                (SourcePackageRelease, SourcePackageName),
+                *clauses).order_by(Desc(Column("id", RelevantUpload)))[:5],
+            result_decorator=itemgetter(0))
 
         distro_sprs = [
             self.distribution.getSourcePackageRelease(spr)
