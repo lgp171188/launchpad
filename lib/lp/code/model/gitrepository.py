@@ -793,6 +793,12 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         Store.of(self).find(
             GitRef,
             GitRef.repository == self, GitRef.path.is_in(paths)).remove()
+        # Clear cached references to the removed refs.
+        # XXX cjwatson 2021-06-08: We should probably do something similar
+        # for OCIRecipe, and for Snap if we start caching git_ref there.
+        for recipe in getUtility(ICharmRecipeSet).findByGitRepository(
+                self, paths=paths):
+            get_property_cache(recipe)._git_ref = None
         self.date_last_modified = UTC_NOW
 
     def planRefChanges(self, hosting_path, logger=None):

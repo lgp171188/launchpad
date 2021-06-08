@@ -34,6 +34,7 @@ from lp.buildmaster.interfaces.processor import (
     )
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.charms.interfaces.charmrecipe import (
+    BadCharmRecipeSearchContext,
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_BUILD_DISTRIBUTION,
     CharmRecipeBuildAlreadyPending,
@@ -583,6 +584,40 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             getUtility(ICharmRecipeSet).getByName(
                 owner, project, "proj-charm"))
 
+    def test_findByPerson(self):
+        # ICharmRecipeSet.findByPerson returns all charm recipes with the
+        # given owner or based on repositories with the given owner.
+        owners = [self.factory.makePerson() for i in range(2)]
+        recipes = []
+        for owner in owners:
+            recipes.append(self.factory.makeCharmRecipe(
+                registrant=owner, owner=owner))
+            [ref] = self.factory.makeGitRefs(owner=owner)
+            recipes.append(self.factory.makeCharmRecipe(git_ref=ref))
+        recipe_set = getUtility(ICharmRecipeSet)
+        self.assertContentEqual(
+            recipes[:2], recipe_set.findByPerson(owners[0]))
+        self.assertContentEqual(
+            recipes[2:], recipe_set.findByPerson(owners[1]))
+
+    def test_findByProject(self):
+        # ICharmRecipeSet.findByProject returns all charm recipes based on
+        # repositories for the given project, and charm recipes associated
+        # directly with the project.
+        projects = [self.factory.makeProduct() for i in range(2)]
+        recipes = []
+        for project in projects:
+            [ref] = self.factory.makeGitRefs(target=project)
+            recipes.append(self.factory.makeCharmRecipe(git_ref=ref))
+            recipes.append(self.factory.makeCharmRecipe(project=project))
+        [ref] = self.factory.makeGitRefs(target=None)
+        recipes.append(self.factory.makeCharmRecipe(git_ref=ref))
+        recipe_set = getUtility(ICharmRecipeSet)
+        self.assertContentEqual(
+            recipes[:2], recipe_set.findByProject(projects[0]))
+        self.assertContentEqual(
+            recipes[2:4], recipe_set.findByProject(projects[1]))
+
     def test_findByGitRepository(self):
         # ICharmRecipeSet.findByGitRepository returns all charm recipes with
         # the given Git repository.
@@ -619,6 +654,55 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             recipe_set.findByGitRepository(
                 repositories[0],
                 paths=[recipes[0].git_ref.path, recipes[1].git_ref.path]))
+
+    def test_findByGitRef(self):
+        # ICharmRecipeSet.findByGitRef returns all charm recipes with the
+        # given Git reference.
+        repositories = [self.factory.makeGitRepository() for i in range(2)]
+        refs = []
+        recipes = []
+        for repository in repositories:
+            refs.extend(self.factory.makeGitRefs(
+                paths=["refs/heads/master", "refs/heads/other"]))
+            recipes.append(self.factory.makeCharmRecipe(git_ref=refs[-2]))
+            recipes.append(self.factory.makeCharmRecipe(git_ref=refs[-1]))
+        recipe_set = getUtility(ICharmRecipeSet)
+        for ref, recipe in zip(refs, recipes):
+            self.assertContentEqual([recipe], recipe_set.findByGitRef(ref))
+
+    def test_findByContext(self):
+        # ICharmRecipeSet.findByContext returns all charm recipes with the
+        # given context.
+        person = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        repository = self.factory.makeGitRepository(
+            owner=person, target=project)
+        refs = self.factory.makeGitRefs(
+            repository=repository,
+            paths=["refs/heads/master", "refs/heads/other"])
+        other_repository = self.factory.makeGitRepository()
+        other_refs = self.factory.makeGitRefs(
+            repository=other_repository,
+            paths=["refs/heads/master", "refs/heads/other"])
+        recipes = []
+        recipes.append(self.factory.makeCharmRecipe(git_ref=refs[0]))
+        recipes.append(self.factory.makeCharmRecipe(git_ref=refs[1]))
+        recipes.append(self.factory.makeCharmRecipe(
+            registrant=person, owner=person, git_ref=other_refs[0]))
+        recipes.append(self.factory.makeCharmRecipe(
+            project=project, git_ref=other_refs[1]))
+        recipe_set = getUtility(ICharmRecipeSet)
+        self.assertContentEqual(recipes[:3], recipe_set.findByContext(person))
+        self.assertContentEqual(
+            [recipes[0], recipes[1], recipes[3]],
+            recipe_set.findByContext(project))
+        self.assertContentEqual(
+            recipes[:2], recipe_set.findByContext(repository))
+        self.assertContentEqual(
+            [recipes[0]], recipe_set.findByContext(refs[0]))
+        self.assertRaises(
+            BadCharmRecipeSearchContext, recipe_set.findByContext,
+            self.factory.makeDistribution())
 
     def test_detachFromGitRepository(self):
         # ICharmRecipeSet.detachFromGitRepository clears the given Git

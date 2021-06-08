@@ -47,6 +47,8 @@ from lp.charms.interfaces.charmrecipebuild import (
 from lp.charms.mail.charmrecipebuild import CharmRecipeBuildMailer
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.distribution import Distribution
+from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
 from lp.services.config import config
 from lp.services.database.bulk import load_related
@@ -67,6 +69,7 @@ from lp.services.propertycache import (
     get_property_cache,
     )
 from lp.services.webapp.snapshot import notify_modified
+from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
 @implementer(ICharmRecipeBuild)
@@ -431,6 +434,11 @@ class CharmRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
         load_related(LibraryFileContent, lfas, ["contentID"])
+        distroarchserieses = load_related(
+            DistroArchSeries, builds, ["distro_arch_series_id"])
+        distroserieses = load_related(
+            DistroSeries, distroarchserieses, ["distroseriesID"])
+        load_related(Distribution, distroserieses, ["distributionID"])
         recipes = load_related(CharmRecipe, builds, ["recipe_id"])
         getUtility(ICharmRecipeSet).preloadDataForRecipes(recipes)
 

@@ -38,6 +38,7 @@
            replace="structure context/@@++ref-pending-merges" />
       <tal:ref-recipes replace="structure context/@@++ref-recipes" />
       <div metal:use-macro="context/@@+snap-macros/related-snaps" />
+      <div metal:use-macro="context/@@+charm-recipe-macros/related-charm-recipes" />
     </div>
   </div>
 

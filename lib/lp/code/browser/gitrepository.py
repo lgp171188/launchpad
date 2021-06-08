@@ -75,6 +75,7 @@ from lp.app.errors import (
     )
 from lp.app.vocabularies import InformationTypeVocabulary
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidgetWithDescription
+from lp.charms.browser.hascharmrecipes import HasCharmRecipesViewMixin
 from lp.code.browser.branch import CodeEditOwnerMixin
 from lp.code.browser.branchmergeproposal import (
     latest_proposals_for_each_branch,
@@ -368,7 +369,8 @@ class GitRefBatchNavigator(TableBatchNavigator):
 
 
 class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
-                        HasSnapsViewMixin, CodeImportTargetMixin):
+                        HasSnapsViewMixin, HasCharmRecipesViewMixin,
+                        CodeImportTargetMixin):
 
     @property
     def page_title(self):

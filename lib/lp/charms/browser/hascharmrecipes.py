@@ -1,0 +1,64 @@
+# Copyright 2021 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""Mixins for browser classes for objects that have charm recipes."""
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+__metaclass__ = type
+__all__ = [
+    "HasCharmRecipesMenuMixin",
+    "HasCharmRecipesViewMixin",
+    ]
+
+from zope.component import getUtility
+
+from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
+from lp.code.interfaces.gitrepository import IGitRepository
+from lp.services.webapp import (
+    canonical_url,
+    Link,
+    )
+from lp.services.webapp.escaping import structured
+
+
+class HasCharmRecipesMenuMixin:
+    """A mixin for context menus for objects that have charm recipes."""
+
+    def view_charm_recipes(self):
+        text = "View charm recipes"
+        enabled = not getUtility(ICharmRecipeSet).findByContext(
+            self.context, visible_by_user=self.user).is_empty()
+        return Link("+charm-recipes", text, icon="info", enabled=enabled)
+
+
+class HasCharmRecipesViewMixin:
+    """A view mixin for objects that have charm recipes."""
+
+    @property
+    def charm_recipes(self):
+        return getUtility(ICharmRecipeSet).findByContext(
+            self.context, visible_by_user=self.user)
+
+    @property
+    def charm_recipes_link(self):
+        """A link to charm recipes for this object."""
+        count = self.charm_recipes.count()
+        if IGitRepository.providedBy(self.context):
+            context_type = "repository"
+        else:
+            context_type = "branch"
+        if count == 0:
+            # Nothing to link to.
+            return "No charm recipes using this %s." % context_type
+        elif count == 1:
+            # Link to the single charm recipe.
+            return structured(
+                '<a href="%s">1 charm recipe</a> using this %s.',
+                canonical_url(self.charm_recipes.one()),
+                context_type).escapedtext
+        else:
+            # Link to a charm recipe listing.
+            return structured(
+                '<a href="+charm-recipes">%s charm recipes</a> using this %s.',
+                count, context_type).escapedtext
