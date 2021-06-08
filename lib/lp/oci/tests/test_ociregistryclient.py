@@ -535,12 +535,14 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             self.client._upload(
                 "test-digest", push_rule,
                 None, 0, RegistryHTTPClient(push_rule))
-        except RetryError:
-            pass
-        # Check that tenacity and our counting agree
-        self.assertEqual(
-            5, self.client._upload.retry.statistics["attempt_number"])
-        self.assertEqual(5, self.retry_count)
+        except ConnectionError:
+            # Check that tenacity and our counting agree
+            self.assertEqual(
+                5, self.client._upload.retry.statistics["attempt_number"])
+            self.assertEqual(5, self.retry_count)
+        except Exception:
+            # We should see the original exception, not a RetryError
+            raise
 
     @responses.activate
     def test_upload_put_blob_raises_error(self):
