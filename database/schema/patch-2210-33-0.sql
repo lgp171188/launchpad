@@ -20,7 +20,7 @@ CREATE TABLE CharmRecipe (
     access_policy integer,
     access_grants integer[],
     auto_build boolean DEFAULT false NOT NULL,
-    auto_build_channels text,
+    auto_build_channels jsonb,
     is_stale boolean DEFAULT true NOT NULL,
     store_upload boolean DEFAULT false NOT NULL,
     store_name text,
