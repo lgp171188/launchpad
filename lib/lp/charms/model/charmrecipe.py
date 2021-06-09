@@ -20,6 +20,7 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 from storm.databases.postgres import JSON
 from storm.locals import (
+    And,
     Bool,
     DateTime,
     Desc,
@@ -28,6 +29,7 @@ from storm.locals import (
     Not,
     Or,
     Reference,
+    Select,
     Store,
     Unicode,
     )
@@ -46,6 +48,8 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
+from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.charms.adapters.buildarch import determine_instances_to_build
 from lp.charms.interfaces.charmrecipe import (
     BadCharmRecipeSearchContext,
@@ -67,12 +71,14 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipeSet,
     MissingCharmcraftYaml,
     NoSourceForCharmRecipe,
+    NoSuchCharmRecipe,
     )
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
 from lp.charms.model.charmrecipebuild import CharmRecipeBuild
+from lp.charms.model.charmrecipejob import CharmRecipeJob
 from lp.code.errors import (
     GitRepositoryBlobNotFound,
     GitRepositoryScanFault,
@@ -116,6 +122,7 @@ from lp.services.database.stormexpr import (
     )
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import (
     cachedproperty,
@@ -639,7 +646,35 @@ class CharmRecipe(StormBase):
 
     def destroySelf(self):
         """See `ICharmRecipe`."""
-        IStore(CharmRecipe).remove(self)
+        store = IStore(self)
+        # Remove build jobs.  There won't be many queued builds, so we can
+        # afford to do this the safe but slow way via BuildQueue.destroySelf
+        # rather than in bulk.
+        buildqueue_records = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id ==
+                CharmRecipeBuild.build_farm_job_id,
+            CharmRecipeBuild.recipe == self)
+        for buildqueue_record in buildqueue_records:
+            buildqueue_record.destroySelf()
+        build_farm_job_ids = list(store.find(
+            CharmRecipeBuild.build_farm_job_id,
+            CharmRecipeBuild.recipe == self))
+        store.execute("""
+            DELETE FROM CharmFile
+            USING CharmRecipeBuild
+            WHERE
+                CharmFile.build = CharmRecipeBuild.id AND
+                CharmRecipeBuild.recipe = ?
+            """, (self.id,))
+        store.find(CharmRecipeBuild, CharmRecipeBuild.recipe == self).remove()
+        affected_jobs = Select(
+            [CharmRecipeJob.job_id],
+            And(CharmRecipeJob.job == Job.id, CharmRecipeJob.recipe == self))
+        store.find(Job, Job.id.is_in(affected_jobs)).remove()
+        store.remove(self)
+        store.find(
+            BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
 
 
 @implementer(ICharmRecipeSet)
@@ -664,7 +699,7 @@ class CharmRecipeSet:
 
         if git_ref is None:
             raise NoSourceForCharmRecipe
-        if self.getByName(owner, project, name) is not None:
+        if self.exists(owner, project, name):
             raise DuplicateCharmRecipeName
 
         # The relevant validators will do their own checks as well, but we
@@ -690,10 +725,20 @@ class CharmRecipeSet:
 
         return recipe
 
-    def getByName(self, owner, project, name):
-        """See `ICharmRecipeSet`."""
+    def _getByName(self, owner, project, name):
         return IStore(CharmRecipe).find(
             CharmRecipe, owner=owner, project=project, name=name).one()
+
+    def exists(self, owner, project, name):
+        """See `ICharmRecipeSet`."""
+        return self._getByName(owner, project, name) is not None
+
+    def getByName(self, owner, project, name):
+        """See `ICharmRecipeSet`."""
+        recipe = self._getByName(owner, project, name)
+        if recipe is None:
+            raise NoSuchCharmRecipe(name)
+        return recipe
 
     def _getRecipesFromCollection(self, collection, owner=None,
                                   visible_by_user=None):

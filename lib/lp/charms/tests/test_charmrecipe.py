@@ -32,6 +32,7 @@ from lp.buildmaster.interfaces.processor import (
     IProcessorSet,
     ProcessorNotFound,
     )
+from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.charms.interfaces.charmrecipe import (
     BadCharmRecipeSearchContext,
@@ -46,28 +47,40 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipeSet,
     NoSourceForCharmRecipe,
     )
-from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
+from lp.charms.interfaces.charmrecipebuild import (
+    ICharmRecipeBuild,
+    ICharmRecipeBuildSet,
+    )
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
+from lp.charms.model.charmrecipebuild import CharmFile
+from lp.charms.model.charmrecipejob import CharmRecipeJob
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
     )
+from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import get_transaction_timestamp
+from lp.services.database.sqlbase import (
+    flush_database_caches,
+    get_transaction_timestamp,
+    )
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.runner import JobRunner
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     admin_logged_in,
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
 
@@ -500,12 +513,95 @@ class TestCharmRecipe(TestCaseWithFactory):
         project = self.factory.makeProduct()
         recipe = self.factory.makeCharmRecipe(
             registrant=owner, owner=owner, project=project, name="condemned")
-        self.assertIsNotNone(
-            getUtility(ICharmRecipeSet).getByName(owner, project, "condemned"))
+        self.assertTrue(
+            getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
         with person_logged_in(recipe.owner):
             recipe.destroySelf()
-        self.assertIsNone(
-            getUtility(ICharmRecipeSet).getByName(owner, project, "condemned"))
+        self.assertFalse(
+            getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
+
+
+class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super(TestCharmRecipeDeleteWithBuilds, self).setUp()
+        self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
+
+    def test_delete_with_builds(self):
+        # A charm recipe with build requests and builds can be deleted.
+        # Doing so deletes all its build requests, their builds, and their
+        # files.
+        owner = self.factory.makePerson()
+        project = self.factory.makeProduct()
+        distroseries = self.factory.makeDistroSeries()
+        processor = self.factory.makeProcessor(supports_virtualized=True)
+        das = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag=processor.name,
+            processor=processor)
+        das.addOrUpdateChroot(
+            self.factory.makeLibraryFileAlias(
+                filename="fake_chroot.tar.gz", db_only=True))
+        self.useFixture(GitHostingFixture(blob=dedent("""\
+            bases:
+              - build-on:
+                  - name: "%s"
+                    channel: "%s"
+                    architectures: [%s]
+            """ % (
+                distroseries.distribution.name, distroseries.name,
+                processor.name))))
+        [git_ref] = self.factory.makeGitRefs()
+        condemned_recipe = self.factory.makeCharmRecipe(
+            registrant=owner, owner=owner, project=project, name="condemned",
+            git_ref=git_ref)
+        other_recipe = self.factory.makeCharmRecipe(
+            registrant=owner, owner=owner, project=project, git_ref=git_ref)
+        self.assertTrue(
+            getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
+        with person_logged_in(owner):
+            requests = []
+            jobs = []
+            for recipe in (condemned_recipe, other_recipe):
+                requests.append(recipe.requestBuilds(owner))
+                jobs.append(removeSecurityProxy(requests[-1])._job)
+            with dbuser(config.ICharmRecipeRequestBuildsJobSource.dbuser):
+                JobRunner(jobs).runAll()
+            for job in jobs:
+                self.assertEqual(JobStatus.COMPLETED, job.job.status)
+            [build] = requests[0].builds
+            [other_build] = requests[1].builds
+            charm_file = self.factory.makeCharmFile(build=build)
+            other_charm_file = self.factory.makeCharmFile(build=other_build)
+        store = Store.of(condemned_recipe)
+        store.flush()
+        job_ids = [job.job_id for job in jobs]
+        build_id = build.id
+        build_queue_id = build.buildqueue_record.id
+        build_farm_job_id = removeSecurityProxy(build).build_farm_job_id
+        charm_file_id = removeSecurityProxy(charm_file).id
+        with person_logged_in(condemned_recipe.owner):
+            condemned_recipe.destroySelf()
+        flush_database_caches()
+        # The deleted recipe, its build requests, and its builds are gone.
+        self.assertFalse(
+            getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
+        self.assertIsNone(store.get(CharmRecipeJob, job_ids[0]))
+        self.assertIsNone(getUtility(ICharmRecipeBuildSet).getByID(build_id))
+        self.assertIsNone(store.get(BuildQueue, build_queue_id))
+        self.assertIsNone(store.get(BuildFarmJob, build_farm_job_id))
+        self.assertIsNone(store.get(CharmFile, charm_file_id))
+        # Unrelated build requests and builds are still present.
+        self.assertEqual(
+            removeSecurityProxy(jobs[1]).context,
+            store.get(CharmRecipeJob, job_ids[1]))
+        self.assertEqual(
+            other_build,
+            getUtility(ICharmRecipeBuildSet).getByID(other_build.id))
+        self.assertIsNotNone(other_build.buildqueue_record)
+        self.assertIsNotNone(
+            store.get(CharmFile, removeSecurityProxy(other_charm_file).id))
 
 
 class TestCharmRecipeSet(TestCaseWithFactory):
