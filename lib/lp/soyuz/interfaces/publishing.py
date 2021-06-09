@@ -428,6 +428,11 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             `IBinaryPackagePublishingHistory`.
         """
 
+    @export_read_operation()
+    @operation_for_version("devel")
+    def hasRestrictedFiles():
+        """Return whether or not a given source files has restricted files."""
+
     # Really IBuild (fixed in _schema_circular_imports.py)
     @operation_returns_collection_of(Interface)
     @export_read_operation()
