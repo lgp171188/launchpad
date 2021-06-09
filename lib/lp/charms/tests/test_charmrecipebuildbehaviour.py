@@ -299,6 +299,17 @@ class TestAsyncCharmRecipeBuildBehaviour(
         self.assertEqual(expected_archives, extra_args["archives"])
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_build_path(self):
+        # If the recipe specifies a build path, extraBuildArgs sends it.
+        job = self.makeJob(build_path="src", with_builder=True)
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job, job.build.distro_arch_series, None))
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual("src", args["build_path"])
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_private(self):
         # If the recipe is private, extraBuildArgs sends the appropriate
         # arguments.

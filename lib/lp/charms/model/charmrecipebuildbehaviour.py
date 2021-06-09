@@ -84,6 +84,8 @@ class CharmRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
         args["archives"], args["trusted_keys"] = (
             yield get_sources_list_for_building(
                 self, build.distro_arch_series, None, logger=logger))
+        if build.recipe.build_path is not None:
+            args["build_path"] = build.recipe.build_path
         if build.recipe.git_ref is not None:
             args["git_repository"] = build.recipe.git_repository.git_https_url
             # "git clone -b" doesn't accept full ref names.  If this becomes
