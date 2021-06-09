@@ -318,6 +318,11 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             title=_('Reason why this publication is going to be removed.'),
             required=False, readonly=False,
         ))
+    has_restricted_files = exported(
+        Bool(
+            title=_("Whether or not a given source files has restricted files."),
+            required=False, readonly=False
+        ))
 
     meta_sourcepackage = Attribute(
         "Return an ISourcePackage meta object correspondent to the "

@@ -619,6 +619,18 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         getUtility(IPublishingSet).requestDeletion(
             [self], removed_by, removal_comment)
 
+    def has_restricted_files(self):
+        """See ISourcePackagePublishingHistory."""
+        for source_file in self.sourcepackagerelease.files:
+            if source_file.libraryfile.restricted:
+                return True
+
+        for binary in self.getBuiltBinaries():
+            for binary_file in binary.binarypackagerelease.files:
+                if binary_file.libraryfile.restricted:
+                    return True
+
+        return False
 
 @implementer(IBinaryPackagePublishingHistory)
 class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):

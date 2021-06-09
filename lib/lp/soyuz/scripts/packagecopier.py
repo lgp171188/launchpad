@@ -111,21 +111,6 @@ def update_files_privacy(pub_record):
     return changed_files
 
 
-# XXX cprov 2009-07-01: should be part of `ISourcePackagePublishingHistory`.
-def has_restricted_files(source):
-    """Whether or not a given source files has restricted files."""
-    for source_file in source.sourcepackagerelease.files:
-        if source_file.libraryfile.restricted:
-            return True
-
-    for binary in source.getBuiltBinaries():
-        for binary_file in binary.binarypackagerelease.files:
-            if binary_file.libraryfile.restricted:
-                return True
-
-    return False
-
-
 @delegate_to(ISourcePackagePublishingHistory)
 class CheckedCopy:
     """Representation of a copy that was checked and approved.
@@ -508,7 +493,7 @@ class CopyChecker:
                     (ancestry.displayname, ancestry.distroseries.name))
 
         requires_unembargo = (
-            not self.archive.private and has_restricted_files(source))
+            not self.archive.private and source.has_restricted_files())
 
         if requires_unembargo and not self.unembargo:
             raise CannotCopy(
@@ -663,7 +648,7 @@ def do_copy(sources, archive, series, pocket, include_binaries=False,
                 announce_from_person=announce_from_person,
                 previous_version=old_version, logger=logger)
             mailer.sendAll()
-        if not archive.private and has_restricted_files(source):
+        if not archive.private and source.has_restricted_files():
             # Fix copies by unrestricting files with privacy mismatch.
             # We must do this *after* calling mailer.sendAll (which only
             # actually sends mail on commit), because otherwise the new
