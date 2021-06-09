@@ -318,11 +318,6 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             title=_('Reason why this publication is going to be removed.'),
             required=False, readonly=False,
         ))
-    has_restricted_files = exported(
-        Bool(
-            title=_("Whether or not a given source files has restricted files."),
-            required=False, readonly=False
-        ))
 
     meta_sourcepackage = Attribute(
         "Return an ISourcePackage meta object correspondent to the "
@@ -432,6 +427,11 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         :return: a list containing all unique
             `IBinaryPackagePublishingHistory`.
         """
+
+    @export_read_operation()
+    @operation_for_version("devel")
+    def hasRestrictedFiles():
+        """Return whether or not a given source files has restricted files."""
 
     # Really IBuild (fixed in _schema_circular_imports.py)
     @operation_returns_collection_of(Interface)

@@ -493,7 +493,7 @@ class CopyChecker:
                     (ancestry.displayname, ancestry.distroseries.name))
 
         requires_unembargo = (
-            not self.archive.private and source.has_restricted_files())
+            not self.archive.private and source.hasRestrictedFiles())
 
         if requires_unembargo and not self.unembargo:
             raise CannotCopy(
@@ -648,7 +648,7 @@ def do_copy(sources, archive, series, pocket, include_binaries=False,
                 announce_from_person=announce_from_person,
                 previous_version=old_version, logger=logger)
             mailer.sendAll()
-        if not archive.private and source.has_restricted_files():
+        if not archive.private and source.hasRestrictedFiles():
             # Fix copies by unrestricting files with privacy mismatch.
             # We must do this *after* calling mailer.sendAll (which only
             # actually sends mail on commit), because otherwise the new

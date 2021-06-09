@@ -619,7 +619,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         getUtility(IPublishingSet).requestDeletion(
             [self], removed_by, removal_comment)
 
-    def has_restricted_files(self):
+    def hasRestrictedFiles(self):
         """See ISourcePackagePublishingHistory."""
         for source_file in self.sourcepackagerelease.files:
             if source_file.libraryfile.restricted:
