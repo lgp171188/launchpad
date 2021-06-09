@@ -4,6 +4,10 @@
 
 <table class="subordinate">
   <tr>
+    <td>charmcraft</td>
+    <td><div tal:content="structure view/charmcraft_widget" /></td>
+  </tr>
+  <tr>
     <td>core</td>
     <td><div tal:content="structure view/core_widget" /></td>
   </tr>
@@ -14,10 +18,6 @@
   <tr>
     <td>core20</td>
     <td><div tal:content="structure view/core20_widget" /></td>
-  </tr>
-  <tr>
-    <td>charmcraft</td>
-    <td><div tal:content="structure view/charmcraft_widget" /></td>
   </tr>
 </table>
 

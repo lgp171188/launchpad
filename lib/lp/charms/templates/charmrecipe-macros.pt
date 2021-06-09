@@ -17,6 +17,12 @@
     </div>
   </div>
 
+  <span
+    tal:define="link context_menu/create_charm_recipe|nothing"
+    tal:condition="python: link and link.enabled"
+    tal:replace="structure link/render"
+    />
+
 </div>
 
 </tal:root>

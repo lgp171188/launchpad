@@ -170,25 +170,35 @@
             </p>
 
             <ul class="horizontal" id="project-link-info">
-              <li tal:condition="overview_menu/series_add/enabled">
+              <li class="nowrap"
+                  tal:condition="overview_menu/series_add/enabled">
                 <a tal:replace="structure overview_menu/series_add/fmt:link" />
               </li>
-              <li>
+              <li class="nowrap">
                 <a tal:replace="structure overview_menu/milestones/fmt:link" />
               </li>
-              <li tal:define="link context/menu:overview/view_recipes"
+              <li class="nowrap"
+                  tal:define="link context/menu:overview/view_recipes"
                   tal:condition="link/enabled">
                 <a tal:replace="structure link/fmt:link" />
               </li>
-              <li tal:define="link context/menu:overview/view_snaps"
+              <li class="nowrap"
+                  tal:define="link context/menu:overview/view_snaps"
                   tal:condition="link/enabled">
                 <a tal:replace="structure link/fmt:link" />
               </li>
-              <li tal:define="link context/menu:overview/create_snap"
+              <li class="nowrap"
+                  tal:define="link context/menu:overview/create_snap"
                   tal:condition="link/enabled">
                 <a tal:replace="structure link/fmt:link" />
               </li>
-              <li tal:define="link context/menu:overview/view_charm_recipes"
+              <li class="nowrap"
+                  tal:define="link context/menu:overview/view_charm_recipes"
+                  tal:condition="link/enabled">
+                <a tal:replace="structure link/fmt:link" />
+              </li>
+              <li class="nowrap"
+                  tal:define="link context/menu:overview/create_charm_recipe"
                   tal:condition="link/enabled">
                 <a tal:replace="structure link/fmt:link" />
               </li>

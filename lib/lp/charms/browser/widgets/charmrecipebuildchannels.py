@@ -34,7 +34,7 @@ class CharmRecipeBuildChannelsWidget(BrowserWidget, InputWidget):
 
     template = ViewPageTemplateFile("templates/charmrecipebuildchannels.pt")
     hint = False
-    snap_names = ["core", "core18", "core20", "charmcraft"]
+    snap_names = ["charmcraft", "core", "core18", "core20"]
     _widgets_set_up = False
 
     def __init__(self, context, request):

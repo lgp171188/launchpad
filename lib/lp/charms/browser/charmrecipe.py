@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    "CharmRecipeAddView",
     "CharmRecipeAdminView",
     "CharmRecipeDeleteView",
     "CharmRecipeEditView",
@@ -30,6 +31,7 @@ from zope.security.interfaces import Unauthorized
 from lp.app.browser.launchpadform import (
     action,
     LaunchpadEditFormView,
+    LaunchpadFormView,
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
@@ -43,7 +45,9 @@ from lp.charms.interfaces.charmrecipe import (
     )
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
 from lp.code.browser.widgets.gitref import GitRefWidget
+from lp.code.interfaces.gitref import IGitRef
 from lp.registry.interfaces.personproduct import IPersonProductFactory
+from lp.registry.interfaces.product import IProduct
 from lp.services.propertycache import cachedproperty
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp import (
@@ -238,6 +242,96 @@ class ICharmRecipeEditSchema(Interface):
     # care of adjusting the required attribute.
     store_name = copy_field(ICharmRecipe["store_name"], required=True)
     store_channels = copy_field(ICharmRecipe["store_channels"], required=True)
+
+
+class CharmRecipeAddView(LaunchpadFormView):
+    """View for creating charm recipes."""
+
+    page_title = label = "Create a new charm recipe"
+
+    schema = ICharmRecipeEditSchema
+
+    custom_widget_git_ref = GitRefWidget
+    custom_widget_auto_build_channels = CharmRecipeBuildChannelsWidget
+    custom_widget_store_channels = StoreChannelsWidget
+
+    @property
+    def field_names(self):
+        fields = ["owner", "name"]
+        if self.is_project_context:
+            fields += ["git_ref"]
+        else:
+            fields += ["project"]
+        return fields + [
+            "auto_build",
+            "auto_build_channels",
+            "store_upload",
+            "store_name",
+            "store_channels",
+            ]
+
+    @property
+    def is_project_context(self):
+        return IProduct.providedBy(self.context)
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    @property
+    def initial_values(self):
+        initial_values = {"owner": self.user}
+        if (IGitRef.providedBy(self.context) and
+                IProduct.providedBy(self.context.target)):
+            initial_values["project"] = self.context.target
+        return initial_values
+
+    def validate_widgets(self, data, names=None):
+        """See `LaunchpadFormView`."""
+        if self.widgets.get("store_upload") is not None:
+            # Set widgets as required or optional depending on the
+            # store_upload field.
+            super(CharmRecipeAddView, self).validate_widgets(
+                data, ["store_upload"])
+            store_upload = data.get("store_upload", False)
+            self.widgets["store_name"].context.required = store_upload
+            self.widgets["store_channels"].context.required = store_upload
+        super(CharmRecipeAddView, self).validate_widgets(data, names=names)
+
+    @action("Create charm recipe", name="create")
+    def create_action(self, action, data):
+        if IGitRef.providedBy(self.context):
+            project = data["project"]
+            git_ref = self.context
+        elif self.is_project_context:
+            project = self.context
+            git_ref = data["git_ref"]
+        else:
+            raise NotImplementedError(
+                "Unknown context for charm recipe creation.")
+        recipe = getUtility(ICharmRecipeSet).new(
+            self.user, data["owner"], project, data["name"], git_ref=git_ref,
+            auto_build=data["auto_build"],
+            auto_build_channels=data["auto_build_channels"],
+            store_upload=data["store_upload"],
+            store_name=data["store_name"],
+            store_channels=data.get("store_channels"))
+        self.next_url = canonical_url(recipe)
+
+    def validate(self, data):
+        super(CharmRecipeAddView, self).validate(data)
+        owner = data.get("owner", None)
+        if self.is_project_context:
+            project = self.context
+        else:
+            project = data.get("project", None)
+        name = data.get("name", None)
+        if owner and project and name:
+            if getUtility(ICharmRecipeSet).exists(owner, project, name):
+                self.setFieldError(
+                    "name",
+                    "There is already a charm recipe owned by %s in %s with "
+                    "this name." % (owner.display_name, project.display_name))
 
 
 class BaseCharmRecipeEditView(LaunchpadEditFormView):
