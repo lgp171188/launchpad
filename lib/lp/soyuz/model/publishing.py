@@ -632,6 +632,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
 
         return False
 
+
 @implementer(IBinaryPackagePublishingHistory)
 class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     """A binary package publishing record."""
