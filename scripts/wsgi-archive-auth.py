@@ -55,10 +55,8 @@ def main():
     result = check_password(
         {"SCRIPT_NAME": args.archive_path}, args.username, args.password)
     if result is None:
-        print("Archive or user does not exist.", file=sys.stderr)
         return 2
     elif result is False:
-        print("Password does not match.", file=sys.stderr)
         return 1
     elif result is True:
         return 0
