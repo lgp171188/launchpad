@@ -16,6 +16,7 @@ __all__ = [
 import crypt
 from random import SystemRandom
 import string
+import sys
 import time
 
 import six
@@ -26,6 +27,17 @@ from six.moves.xmlrpc_client import (
 
 from lp.services.config import config
 from lp.services.memcache.client import memcache_client_factory
+
+
+def _log(environ, message, *args):
+    """Log a message to the WSGI error stream."""
+    # Ideally we might set up a proper logger instead, but that's more
+    # effort than is justified by something this small.
+    error_stream = environ.get("wsgi.errors", sys.stderr)
+    if args:
+        message = message % args
+    error_stream.write(message + "\n")
+    error_stream.flush()
 
 
 def _get_archive_reference(environ):
@@ -39,6 +51,8 @@ def _get_archive_reference(environ):
     path_parts = path.lstrip("/").split("/")
     if len(path_parts) >= 3:
         return "~%s/%s/%s" % (path_parts[0], path_parts[2], path_parts[1])
+    else:
+        _log(environ, "No archive reference found in URL '%s'.", path)
 
 
 _sr = SystemRandom()
@@ -74,6 +88,7 @@ def check_password(environ, user, password):
     crypted_password = _memcache_client.get(memcache_key)
     if (crypted_password and
             crypt.crypt(password, crypted_password) == crypted_password):
+        _log(environ, "%s@%s: Authorized (cached).", user, archive_reference)
         return True
     proxy = ServerProxy(config.personalpackagearchive.archive_api_endpoint)
     try:
@@ -81,10 +96,15 @@ def check_password(environ, user, password):
         # Cache positive responses for a minute to reduce database load.
         _memcache_client.set(
             memcache_key, _crypt_sha256(password), time.time() + 60)
+        _log(environ, "%s@%s: Authorized.", user, archive_reference)
         return True
     except Fault as e:
         if e.faultCode == 410:  # Unauthorized
+            _log(
+                environ, "%s@%s: Password does not match.",
+                user, archive_reference)
             return False
         else:
             # Interpret any other fault as NotFound (320).
+            _log(environ, e.faultString)
             return None
