@@ -25,6 +25,7 @@ from storm.database import STATE_DISCONNECTED
 from storm.exceptions import (
     DisconnectionError,
     IntegrityError,
+    TimeoutError,
     )
 from storm.zope.interfaces import IZStorm
 import transaction
@@ -695,6 +696,9 @@ class LaunchpadBrowserPublication(
         # the exception as a Retry.
         if isinstance(exc_info[1], DisconnectionError):
             getUtility(IErrorReportingUtility).raising(exc_info, request)
+
+        if isinstance(exc_info[1], (da.RequestExpired, TimeoutError)):
+            OpStats.stats['timeouts'] += 1
 
         def should_retry(exc_info):
             if not retry_allowed:
