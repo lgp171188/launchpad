@@ -7,6 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from functools import partial
 
+from zope.security.proxy import removeSecurityProxy
+
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
@@ -81,6 +83,26 @@ class SourcePackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
                 "sha256": sprf.libraryfile.content.sha256,
                 } for sprf in spph.sourcepackagerelease.files]
         self.assertContentEqual(expected_info, info)
+
+    def test_hasRestrictedFiles(self):
+        person = self.factory.makePerson()
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.READ_PUBLIC)
+        spph, url = self.make_spph_for(person)
+
+        response = webservice.named_get(
+            url, 'hasRestrictedFiles', api_version='devel')
+        self.assertEqual(200, response.status)
+        self.assertFalse(response.jsonBody())
+
+        with person_logged_in(person):
+            sprf = spph.sourcepackagerelease.files[0]
+            removeSecurityProxy(sprf.libraryfile).restricted = True
+
+        response = webservice.named_get(
+            url, 'hasRestrictedFiles', api_version='devel')
+        self.assertEqual(200, response.status)
+        self.assertTrue(response.jsonBody())
 
 
 class BinaryPackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
