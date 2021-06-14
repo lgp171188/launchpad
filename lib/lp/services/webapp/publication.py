@@ -699,6 +699,7 @@ class LaunchpadBrowserPublication(
 
         if isinstance(exc_info[1], (da.RequestExpired, TimeoutError)):
             OpStats.stats['timeouts'] += 1
+            getUtility(IStatsdClient).incr('timeouts.hard')
 
         def should_retry(exc_info):
             if not retry_allowed:
@@ -810,8 +811,10 @@ class LaunchpadBrowserPublication(
         # Maintain operational statistics.
         if getattr(request, '_wants_retry', False):
             OpStats.stats['retries'] += 1
+            statsd_client.incr('requests.retries')
         else:
             OpStats.stats['requests'] += 1
+            statsd_client.incr('requests.all')
 
             # Increment counters for HTTP status codes we track individually
             # NB. We use IBrowserRequest, as other request types such as
@@ -820,6 +823,7 @@ class LaunchpadBrowserPublication(
             # and XML-RPC requests.
             if IBrowserRequest.providedBy(request):
                 OpStats.stats['http requests'] += 1
+                statsd_client.incr('requests.http')
                 status = request.response.getStatus()
                 if status == 404:  # Not Found
                     OpStats.stats['404s'] += 1
@@ -832,13 +836,14 @@ class LaunchpadBrowserPublication(
                     statsd_client.incr('errors.503')
 
                 # Increment counters for status code groups.
-                status_group = str(status)[0] + 'XXs'
-                OpStats.stats[status_group] += 1
+                status_group = str(status)[0] + 'XX'
+                OpStats.stats[status_group + 's'] += 1
+                statsd_client.incr('errors.%s' % status_group)
 
                 # Increment counter for 5XXs_b.
-                if is_browser(request) and status_group == '5XXs':
+                if is_browser(request) and status_group == '5XX':
                     OpStats.stats['5XXs_b'] += 1
-                    statsd_client.incr('errors.5XX')
+                    statsd_client.incr('errors.5XX.browser')
 
         # Make sure our databases are in a sane state for the next request.
         thread_name = threading.current_thread().name
