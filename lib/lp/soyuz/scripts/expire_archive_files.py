@@ -27,6 +27,8 @@ bzr-nightly-ppa
 canonical-foundations/ubuntu-image
 canonical-foundations/uc20-build-ppa
 canonical-foundations/uc20-staging-ppa
+canonical-kernel-team/uc20-release
+canonical-kernel-dgx/release
 chelsea-team
 ci-train-ppa-service/stable-phone-overlay
 dennis-team
