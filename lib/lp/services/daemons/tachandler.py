@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test harness for TAC (Twisted Application Configuration) files."""
@@ -45,7 +45,7 @@ class TacTestSetup(TacTestFixture):
         # hard-to-diagnose race conditions. Delete the logfile to make sure
         # this does not happen.
         self.removeLog()
-        with override_environ(LP_DEBUG_SQL=None):
+        with override_environ(LP_DEBUG_SQL=None, LP_DEBUG_SQL_EXTRA=None):
             TacTestFixture.setUp(self,
                 python_path=sys.executable,
                 twistd_script=twistd_script)

@@ -78,6 +78,7 @@ from lp.services.oauth.interfaces import (
     TokenException,
     )
 from lp.services.propertycache import cachedproperty
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.webapp.authentication import (
     check_oauth_signature,
     get_oauth_authorization,
@@ -1439,9 +1440,11 @@ class PublicXMLRPCPublication(LaunchpadBrowserPublication):
         LaunchpadBrowserPublication.handleException(
                 self, object, request, exc_info, retry_allowed)
         OpStats.stats['xml-rpc faults'] += 1
+        getUtility(IStatsdClient).incr('errors.xmlrpc')
 
     def endRequest(self, request, object):
         OpStats.stats['xml-rpc requests'] += 1
+        getUtility(IStatsdClient).incr('requests.xmlrpc')
         return LaunchpadBrowserPublication.endRequest(self, request, object)
 
 
