@@ -35,7 +35,7 @@ from lp.soyuz.model.publishing import (
     )
 
 # PPA owners or particular PPAs that we never want to expire.
-BLACKLISTED_PPAS = """
+NEVER_EXPIRE_PPAS = """
 bzr
 bzr-beta-ppa
 bzr-nightly-ppa
@@ -61,9 +61,9 @@ ubuntu-mobile
 wheelbarrow
 """.split()
 
-# Particular PPAs (not owners, unlike the whitelist) that should be
+# Particular PPAs (not owners, unlike the never-expire list) that should be
 # expired even if they're private.
-WHITELISTED_PPAS = """
+ALWAYS_EXPIRE_PPAS = """
 adobe-isv/flash64
 adobe-isv/ppa
 kubuntu-ninjas/ppa
@@ -78,8 +78,8 @@ class ArchiveExpirer(LaunchpadCronScript):
     Any PPA binary older than 30 days that is superseded or deleted
     will be marked for immediate expiry.
     """
-    blacklist = BLACKLISTED_PPAS
-    whitelist = WHITELISTED_PPAS
+    never_expire = NEVER_EXPIRE_PPAS
+    always_expire = ALWAYS_EXPIRE_PPAS
 
     def add_my_options(self):
         """Add script command line options."""
@@ -109,9 +109,9 @@ class ArchiveExpirer(LaunchpadCronScript):
         full_archive_name = Concatenate(
             Person.name, Concatenate('/', Archive.name))
 
-        # The subquery here has to repeat the checks for privacy and
-        # blacklisting on *other* publications that are also done in
-        # the main loop for the archive being considered.
+        # The subquery here has to repeat the checks for privacy and expiry
+        # control on *other* publications that are also done in the main
+        # loop for the archive being considered.
         eligible = Select(
             LFA.id,
             where=And(
@@ -130,12 +130,12 @@ class ArchiveExpirer(LaunchpadCronScript):
                 Or(
                     And(
                         Or(
-                            Person.name.is_in(self.blacklist),
-                            full_archive_name.is_in(self.blacklist)),
+                            Person.name.is_in(self.never_expire),
+                            full_archive_name.is_in(self.never_expire)),
                         Archive.purpose == ArchivePurpose.PPA),
                     And(
                         IsTrue(Archive.private),
-                        Not(full_archive_name.is_in(self.whitelist))),
+                        Not(full_archive_name.is_in(self.always_expire))),
                     Not(Archive.purpose.is_in(archive_types)),
                     xPPH.dateremoved > UTC_NOW - stay_of_execution,
                     xPPH.dateremoved == None)))
