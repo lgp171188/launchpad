@@ -228,7 +228,7 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
 
     Here we make use of the common test cases defined in the base class but
     also add tests specific to PPAs (excluding particular PPAs from expiry
-    based on a "black list" or on the fact that PPA is private).
+    based on lists or on the fact that the PPA is private).
     """
 
     def setUp(self):
@@ -239,35 +239,35 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
             distribution=getUtility(IDistributionSet)['ubuntutest'])
         self.archive2 = self.factory.makeArchive()
 
-    def testBlacklistingWorks(self):
-        """Test that blacklisted PPA owners are not expired."""
+    def testNeverExpireWorks(self):
+        """Test that never-expiring PPA owners are not expired."""
         source, binary = self._setUpExpirablePublications(
             archive=self.archive)
         script = self.getScript()
-        script.blacklist = [self.archive.owner.name, ]
+        script.never_expire = [self.archive.owner.name, ]
         switch_dbuser(self.dbuser)
         script.main()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
 
-    def testBlacklistingArchivesWorks(self):
-        """Test that blacklisted individual PPAs are not expired."""
+    def testNeverExpireArchivesWorks(self):
+        """Test that never-expiring individual PPAs are not expired."""
         source, binary = self._setUpExpirablePublications(
             archive=self.archive)
         script = self.getScript()
-        script.blacklist = [
+        script.never_expire = [
             '%s/%s' % (self.archive.owner.name, self.archive.name)]
         switch_dbuser(self.dbuser)
         script.main()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
 
-    def testWhitelistingWorks(self):
-        """Test that whitelisted private PPAs are expired anyway."""
+    def testAlwaysExpireWorks(self):
+        """Test that always-expiring private PPAs are expired anyway."""
         p3a = self.factory.makeArchive(private=True)
         source, binary = self._setUpExpirablePublications(archive=p3a)
         script = self.getScript()
-        script.whitelist = ['%s/%s' % (p3a.owner.name, p3a.name)]
+        script.always_expire = ['%s/%s' % (p3a.owner.name, p3a.name)]
         switch_dbuser(self.dbuser)
         script.main()
         self.assertSourceExpired(source)
