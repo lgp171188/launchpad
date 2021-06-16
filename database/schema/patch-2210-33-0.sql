@@ -116,6 +116,8 @@ CREATE INDEX charmrecipebuild__requester__idx
     ON CharmRecipeBuild (requester);
 CREATE INDEX charmrecipebuild__recipe__idx
     ON CharmRecipeBuild (recipe);
+CREATE INDEX charmrecipebuild__distro_arch_series__idx
+    ON CharmRecipeBuild (distro_arch_series);
 CREATE INDEX charmrecipebuild__log__idx
     ON CharmRecipeBuild (log);
 CREATE INDEX charmrecipebuild__upload_log__idx
