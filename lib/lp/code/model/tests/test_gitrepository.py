@@ -59,6 +59,7 @@ from lp.app.enums import (
     )
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
 from lp.code.enums import (
     BranchMergeProposalStatus,
     BranchSubscriptionDiffSize,
@@ -1162,6 +1163,33 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         self.assertIsNone(snap1.git_path)
         self.assertIsNone(snap2.git_repository)
         self.assertIsNone(snap2.git_path)
+
+    def test_charm_recipe_requirements(self):
+        # If a repository is used by a charm recipe, the deletion
+        # requirements indicate this.
+        self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
+        [ref] = self.factory.makeGitRefs()
+        self.factory.makeCharmRecipe(git_ref=ref)
+        self.assertEqual(
+            {None:
+             ("alter", _("Some charm recipes build from this repository."))},
+            ref.repository.getDeletionRequirements())
+
+    def test_charm_recipe_deletion(self):
+        # break_references allows deleting a repository used by a charm
+        # recipe.
+        self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
+        repository = self.factory.makeGitRepository()
+        [ref1, ref2] = self.factory.makeGitRefs(
+            repository=repository, paths=["refs/heads/1", "refs/heads/2"])
+        recipe1 = self.factory.makeCharmRecipe(git_ref=ref1)
+        recipe2 = self.factory.makeCharmRecipe(git_ref=ref2)
+        repository.destroySelf(break_references=True)
+        transaction.commit()
+        self.assertIsNone(recipe1.git_repository)
+        self.assertIsNone(recipe1.git_path)
+        self.assertIsNone(recipe2.git_repository)
+        self.assertIsNone(recipe2.git_path)
 
     def test_ClearPrerequisiteRepository(self):
         # ClearPrerequisiteRepository.__call__ must clear the prerequisite
