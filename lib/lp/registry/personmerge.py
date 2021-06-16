@@ -827,6 +827,10 @@ def merge_people(from_person, to_person, reviewer, delete=False):
         # OCI recipe code, but can be ignored for the purpose of deploying
         # the database tables.
         ('ocirecipe', 'owner'),
+        # XXX cjwatson 2021-05-24: This needs handling before we deploy the
+        # charm recipe code, but can be ignored for the purpose of deploying
+        # the database tables.
+        ('charmrecipe', 'owner'),
         ]
 
     references = list(postgresql.listReferences(cur, 'person', 'id'))
