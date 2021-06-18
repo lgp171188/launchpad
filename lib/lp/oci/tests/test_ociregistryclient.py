@@ -23,7 +23,6 @@ from requests.exceptions import (
     HTTPError,
     )
 import responses
-from tenacity import RetryError
 from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
@@ -1005,6 +1004,30 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertRaises(
             HTTPError, self.client.uploadManifestList,
             build_request, [self.build])
+
+    @responses.activate
+    def test_upload_layer_put_gziped_blob(self):
+        lfa = self.factory.makeLibraryFileAlias(
+            content=LaunchpadWriteTarFile.files_to_bytes(
+                {"6d56becb66b184f.tar.gz": b"test gzipped layer"}))
+        transaction.commit()
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
+        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        upload_url = "{}/blobs/uploads/{}".format(
+            http_client.api_url, uuid.uuid4())
+        responses.add("HEAD", blobs_url, status=404)
+        responses.add("POST", uploads_url, headers={"Location": upload_url})
+        responses.add("PUT", upload_url, status=201)
+        self.client._upload_layer("test-digest", push_rule, lfa, http_client)
+        self.assertThat(responses.calls[2].request, MatchesStructure(
+            method=Equals("PUT"),
+            headers=ContainsDict({
+                "Content-Length": Equals(str(lfa.content.filesize)),
+                }),
+            ))
 
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,

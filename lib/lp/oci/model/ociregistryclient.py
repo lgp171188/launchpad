@@ -165,20 +165,27 @@ class OCIRegistryClient:
         try:
             with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
                 for tarinfo in un_zipped:
-                    if tarinfo.name != 'layer.tar':
-                        continue
-                    fileobj = un_zipped.extractfile(tarinfo)
-                    # XXX Work around requests handling of objects that have
-                    # fileno, but error on access in python3:
-                    # https://github.com/psf/requests/pull/5239
-                    fileobj.len = tarinfo.size
-                    try:
+                    if tarinfo.name == 'layer.tar':
+                        fileobj = un_zipped.extractfile(tarinfo)
+                        # XXX Work around requests handling of objects that have
+                        # fileno, but error on access in python3:
+                        # https://github.com/psf/requests/pull/5239
+                        fileobj.len = tarinfo.size
+                        try:
+                            cls._upload(
+                                digest, push_rule, fileobj, tarinfo.size,
+                                http_client)
+                        finally:
+                            fileobj.close()
+                        return tarinfo.size
+                    else:
+                        size = lfa.content.filesize
+                        wrapper = LibraryFileAliasWrapper(lfa)
+                        wrapper.len = size
                         cls._upload(
-                            digest, push_rule, fileobj, tarinfo.size,
+                            digest, push_rule, wrapper, size,
                             http_client)
-                    finally:
-                        fileobj.close()
-                    return tarinfo.size
+                        return size
         finally:
             lfa.close()
 
@@ -686,6 +693,25 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
                     url, auth_retry=False, headers=headers,
                     *args, **request_kwargs)
             raise
+
+
+class LibraryFileAliasWrapper:
+
+    def __init__(self, lfa):
+        self.lfa = lfa
+        self.position = 0
+
+    def __len__(self):
+        return self.lfa.content.filesize - self.position
+
+    def read(self, length=-1):
+        chunksize = None if length == -1 else length
+        data = self.lfa.read(chunksize=chunksize)
+        if chunksize is None:
+            self.position = self.lfa.content.filesize
+        else:
+            self.position += length
+        return data
 
 
 class AWSAuthenticatorMixin:
