@@ -343,9 +343,15 @@ def gunicornify_zope_config_file():
         content = fd.read()
 
     # Remove unwanted tags.
-    for tag in ['server', 'accesslog']:
+    for tag in ['server', 'accesslog', 'logger']:
         content = re.sub(
-            r"<%s>(.*)</%s>" % (tag, tag), "", content, flags=re.S)
+            r"<%s>.*?</%s>" % (tag, tag), "", content, flags=re.S)
+
+    # Remove unwanted contents of required tags.
+    for tag in ['eventlog']:
+        content = re.sub(
+            r"<%s>.*?</%s>" % (tag, tag), "<%s>\n</%s>" % (tag, tag), content,
+            flags=re.S)
 
     # Remove unwanted single-line directives.
     for directive in ['interrupt-check-interval']:

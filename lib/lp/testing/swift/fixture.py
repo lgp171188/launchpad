@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Mock Swift test fixture."""
@@ -86,7 +86,7 @@ class SwiftFixture(TacTestFixture):
         """Return a valid connection to our mock Swift"""
         connection_kwargs = {
             "authurl": config.librarian_server.os_auth_url,
-            "auth_version": "2.0",
+            "auth_version": config.librarian_server.os_auth_version,
             "tenant_name": config.librarian_server.os_tenant_name,
             "user": config.librarian_server.os_username,
             "key": config.librarian_server.os_password,

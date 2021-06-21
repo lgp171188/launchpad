@@ -18,6 +18,7 @@ from zope.interface import implementer
 from zope.traversing.interfaces import IPathAdapter
 
 from lp.app.errors import NotFoundError
+from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.browser.vcslisting import PersonTargetDefaultVCSNavigationMixin
 from lp.code.interfaces.branchnamespace import get_branch_namespace
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
@@ -59,6 +60,13 @@ class PersonProductNavigation(PersonTargetDefaultVCSNavigationMixin,
         return getUtility(ISnapSet).getByPillarAndName(
             owner=self.context.person,
             pillar=self.context.product,
+            name=name)
+
+    @stepthrough('+charm')
+    def traverse_charm(self, name):
+        return getUtility(ICharmRecipeSet).getByName(
+            owner=self.context.person,
+            project=self.context.product,
             name=name)
 
 
