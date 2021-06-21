@@ -1,4 +1,4 @@
-# Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Move files from Librarian disk storage into Swift."""
@@ -412,7 +412,7 @@ class ConnectionPool:
             user=config.librarian_server.os_username,
             key=config.librarian_server.os_password,
             tenant_name=config.librarian_server.os_tenant_name,
-            auth_version='2.0',
+            auth_version=config.librarian_server.os_auth_version,
             )
 
 
