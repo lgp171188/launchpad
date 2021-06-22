@@ -55,6 +55,9 @@ class RepackTunableLoop(TunableLoop):
                 GitRepository.pack_count >=
                     config.codehosting.packs_threshold,
                 ),
+            # XXX cjwatson 2021-06-22: Despite the confusing name,
+            # date_last_repacked is actually when the repack was last
+            # requested, not when it was completed.
             Or(
                 GitRepository.date_last_repacked == None,
                 GitRepository.date_last_repacked < threshold_date),
