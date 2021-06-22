@@ -224,6 +224,9 @@ class IGitRepositoryView(IHasRecipes):
         title=_("Loose object count"), readonly=True, required=False,
         description=_("The number of loose objects for this repository.")))
 
+    # XXX cjwatson 2021-06-22: This is actually when a repack was last
+    # requested on the Launchpad side, not when the hosting service finished
+    # the repack.
     date_last_repacked = exported(Datetime(
         title=_("Date last repacked"), readonly=True, required=False,
         description=_("The date that this repository was last repacked.")))
