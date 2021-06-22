@@ -5,15 +5,21 @@
 
 __metaclass__ = type
 
+from datetime import timedelta
+
 from psycopg2.extensions import TransactionRollbackError
 import six
-from storm.expr import Or
+from storm.expr import (
+    Cast,
+    Or,
+    )
 import transaction
 
 from lp.code.enums import GitRepositoryStatus
 from lp.code.errors import CannotRepackRepository
 from lp.code.model.gitrepository import GitRepository
 from lp.services.config import config
+from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.looptuner import (
     LoopTuner,
@@ -37,6 +43,10 @@ class RepackTunableLoop(TunableLoop):
         self.store = IStore(GitRepository)
 
     def findRepackCandidates(self):
+        threshold_date = (
+            UTC_NOW - Cast(
+                timedelta(minutes=config.codehosting.auto_repack_frequency),
+                "interval"))
         repos = self.store.find(
             GitRepository,
             Or(
@@ -45,6 +55,9 @@ class RepackTunableLoop(TunableLoop):
                 GitRepository.pack_count >=
                     config.codehosting.packs_threshold,
                 ),
+            Or(
+                GitRepository.date_last_repacked == None,
+                GitRepository.date_last_repacked < threshold_date),
             GitRepository.status == GitRepositoryStatus.AVAILABLE,
             GitRepository.id > self.start_at,
         ).order_by(GitRepository.id)
@@ -68,7 +81,7 @@ class RepackTunableLoop(TunableLoop):
         for repo in repackable_repos:
             try:
                 if self.dry_run:
-                    print ('Would repack %s' % repo.identity)
+                    print('Would repack %s' % repo.identity)
                 else:
                     self.logger.info(
                         'Requesting automatic git repository repack for %s.'
