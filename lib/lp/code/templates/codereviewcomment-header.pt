@@ -13,7 +13,7 @@
     <div class='message-revision-item'>
       <div class='message-revision-title'>
           <a class="js-action">
-              Revision #{revision}, created at  {date_created}
+              Revision #{revision}, created at {date_created_display}
           </a>
       </div>
       <div class='message-revision-body'>{content}</div>

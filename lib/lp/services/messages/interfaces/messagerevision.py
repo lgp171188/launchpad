@@ -25,6 +25,7 @@ from zope.schema import (
     Datetime,
     Int,
     Text,
+    TextLine,
     )
 
 from lp import _
@@ -53,6 +54,12 @@ class IMessageRevisionView(Interface):
 
     date_created = exported(Datetime(
         title=_("The time when this message revision was created."),
+        required=True, readonly=True))
+
+    date_created_display = exported(TextLine(
+        title=_(
+            "The time when this message revision was created, rendered in the "
+            "user's timezone for the web UI."),
         required=True, readonly=True))
 
     date_deleted = exported(Datetime(
