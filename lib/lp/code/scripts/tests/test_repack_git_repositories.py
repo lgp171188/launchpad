@@ -2,6 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the repack_git_repositories script."""
+
+from datetime import (
+    datetime,
+    timedelta,
+    )
 import logging
 import threading
 from wsgiref.simple_server import (
@@ -9,6 +14,7 @@ from wsgiref.simple_server import (
     WSGIRequestHandler,
     )
 
+import pytz
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
@@ -85,12 +91,12 @@ class TestRequestGitRepack(TestCaseWithFactory):
             'in this run of the Automated Repack Job', err)
         transaction.commit()
 
-    def runScript_with_Turnip(self):
+    def runScript_with_Turnip(self, expected_count=1):
         transaction.commit()
         (ret, out, err) = run_script('cronscripts/repack_git_repositories.py')
         self.assertIn(
-            'Requested 1 automatic git repository repacks '
-            'out of the 1 qualifying for repack.', err)
+            'Requested a total of %d automatic git repository repacks '
+            'in this run of the Automated Repack Job.' % expected_count, err)
         transaction.commit()
 
     def makeTurnipServer(self):
@@ -149,7 +155,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
         self.makeTurnipServer()
 
-        self.runScript_with_Turnip()
+        self.runScript_with_Turnip(expected_count=10)
 
         for i in range(10):
             self.assertIsNotNone(repo[i].date_last_repacked)
@@ -228,6 +234,32 @@ class TestRequestGitRepack(TestCaseWithFactory):
         self.assertEqual(repacker.num_repacked, 6)
         self.assertEqual(repacker.start_at, 6)
 
+    def test_auto_repack_frequency(self):
+        self.makeTurnipServer()
+
+        repo = self.factory.makeGitRepository()
+        removeSecurityProxy(repo).loose_object_count = (
+            config.codehosting.loose_objects_threshold + 50)
+        removeSecurityProxy(repo).pack_count = (
+            config.codehosting.packs_threshold + 5)
+        self.assertIsNone(repo.date_last_repacked)
+
+        # An initial run requests a repack.
+        self.runScript_with_Turnip(expected_count=1)
+        self.assertIsNotNone(repo.date_last_repacked)
+
+        # A second run does not request a repack, since the repository
+        # already had a repack requested recently.
+        self.runScript_with_Turnip(expected_count=0)
+        self.assertIsNotNone(repo.date_last_repacked)
+
+        # If we pretend that the last repack request was long enough ago,
+        # then a third run requests another repack.
+        removeSecurityProxy(repo).date_last_repacked = (
+            datetime.now(pytz.UTC) -
+            timedelta(minutes=config.codehosting.auto_repack_frequency + 1))
+        self.runScript_with_Turnip(expected_count=1)
+
     def test_auto_repack_findRepackCandidates(self):
         repacker = RepackTunableLoop(self.log, None)
 
@@ -240,7 +272,6 @@ class TestRequestGitRepack(TestCaseWithFactory):
 
         for i in range(3):
             repo.append(self.factory.makeGitRepository())
-        transaction.commit()
 
         # we should only have 7 candidates at this point
         self.assertEqual(7, len(list(repacker.findRepackCandidates())))

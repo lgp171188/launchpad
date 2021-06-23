@@ -20,6 +20,7 @@ from storm.locals import (
     )
 from zope.interface import implementer
 
+from lp.app.browser.tales import DateTimeFormatterAPI
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -86,6 +87,10 @@ class MessageRevision(StormBase):
     @property
     def content(self):
         return '\n\n'.join(i.content for i in self.chunks)
+
+    @property
+    def date_created_display(self):
+        return DateTimeFormatterAPI(self.date_created).datetime()
 
     def deleteContent(self):
         store = IStore(self)

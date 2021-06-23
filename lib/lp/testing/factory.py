@@ -505,7 +505,7 @@ class ObjectFactory(
         if scheme is None:
             scheme = 'http'
         if host is None:
-            host = "%s.domain.com" % self.getUniqueUnicode('domain')
+            host = "%s.example.com" % self.getUniqueUnicode('domain')
         return '%s://%s/%s' % (scheme, host, self.getUniqueUnicode('path'))
 
     def getUniqueDate(self):
