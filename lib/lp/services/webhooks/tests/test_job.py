@@ -618,7 +618,8 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         raise Exception("Unexpected jobs.")
 
     def test_automatic_retries(self):
-        hook = self.factory.makeWebhook()
+        self.useFixture(MockPatch("psutil.net_if_addrs", return_value={}))
+        hook = self.factory.makeWebhook(delivery_url=u"http://192.168.1.1/")
         job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
         client = MockWebhookClient(response_status=503)
         self.useFixture(ZopeUtilityFixture(client, IWebhookClient))
