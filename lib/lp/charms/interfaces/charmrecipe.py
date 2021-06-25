@@ -9,6 +9,8 @@ __metaclass__ = type
 __all__ = [
     "BadCharmRecipeSource",
     "BadCharmRecipeSearchContext",
+    "CannotFetchCharmcraftYaml",
+    "CannotParseCharmcraftYaml",
     "CHARM_RECIPE_ALLOW_CREATE",
     "CHARM_RECIPE_BUILD_DISTRIBUTION",
     "CHARM_RECIPE_PRIVATE_FEATURE_FLAG",
@@ -23,6 +25,7 @@ __all__ = [
     "ICharmRecipe",
     "ICharmRecipeBuildRequest",
     "ICharmRecipeSet",
+    "MissingCharmcraftYaml",
     "NoSourceForCharmRecipe",
     "NoSuchCharmRecipe",
     ]
@@ -139,6 +142,22 @@ class CharmRecipePrivacyMismatch(Exception):
 
 class BadCharmRecipeSearchContext(Exception):
     """The context is not valid for a charm recipe search."""
+
+
+class MissingCharmcraftYaml(Exception):
+    """The repository for this charm recipe does not have a charmcraft.yaml."""
+
+    def __init__(self, branch_name):
+        super(MissingCharmcraftYaml, self).__init__(
+            "Cannot find charmcraft.yaml in %s" % branch_name)
+
+
+class CannotFetchCharmcraftYaml(Exception):
+    """Launchpad cannot fetch this charm recipe's charmcraft.yaml."""
+
+
+class CannotParseCharmcraftYaml(Exception):
+    """Launchpad cannot parse this charm recipe's charmcraft.yaml."""
 
 
 @error_status(http_client.BAD_REQUEST)
@@ -282,6 +301,26 @@ class ICharmRecipeView(Interface):
             with these architecture tags (in addition to any other
             applicable constraints).
         :return: An `ICharmRecipeBuildRequest`.
+        """
+
+    def requestBuildsFromJob(build_request, channels=None, architectures=None,
+                             allow_failures=False, logger=None):
+        """Synchronous part of `CharmRecipe.requestBuilds`.
+
+        Request that the charm recipe be built for relevant architectures.
+
+        :param build_request: The `ICharmRecipeBuildRequest` job being
+            processed.
+        :param channels: A dictionary mapping snap names to channels to use
+            for these builds.
+        :param architectures: If not None, limit builds to architectures
+            with these architecture tags (in addition to any other
+            applicable constraints).
+        :param allow_failures: If True, log exceptions other than "already
+            pending" from individual build requests; if False, raise them to
+            the caller.
+        :param logger: An optional logger.
+        :return: A sequence of `ICharmRecipeBuild` instances.
         """
 
     def getBuildRequest(job_id):
@@ -439,6 +478,23 @@ class ICharmRecipeSet(Interface):
 
     def preloadDataForRecipes(recipes, user):
         """Load the data related to a list of charm recipes."""
+
+    def getCharmcraftYaml(context, logger=None):
+        """Fetch a recipe's charmcraft.yaml from code hosting, if possible.
+
+        :param context: Either an `ICharmRecipe` or the source branch for a
+            charm recipe.
+        :param logger: An optional logger.
+
+        :return: The recipe's parsed charmcraft.yaml.
+        :raises MissingCharmcraftYaml: if this recipe has no
+            charmcraft.yaml.
+        :raises CannotFetchCharmcraftYaml: if it was not possible to fetch
+            charmcraft.yaml from the code hosting backend for some other
+            reason.
+        :raises CannotParseCharmcraftYaml: if the fetched charmcraft.yaml
+            cannot be parsed.
+        """
 
     def findByGitRepository(repository, paths=None):
         """Return all charm recipes for the given Git repository.
