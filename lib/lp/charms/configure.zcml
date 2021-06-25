@@ -77,6 +77,13 @@
         <allow interface="lp.charms.interfaces.charmrecipebuild.ICharmFile" />
     </class>
 
+    <!-- CharmRecipeBuildBehaviour -->
+    <adapter
+        for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
+        provides="lp.buildmaster.interfaces.buildfarmjobbehaviour.IBuildFarmJobBehaviour"
+        factory="lp.charms.model.charmrecipebuildbehaviour.CharmRecipeBuildBehaviour"
+        permission="zope.Public" />
+
     <!-- Charm-related jobs -->
     <class class="lp.charms.model.charmrecipejob.CharmRecipeJob">
         <allow interface="lp.charms.interfaces.charmrecipejob.ICharmRecipeJob" />
