@@ -41,7 +41,10 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from six.moves import http_client
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Bool,
     Choice,
@@ -260,6 +263,9 @@ class ICharmRecipeView(Interface):
         vocabulary="ValidPersonOrTeam",
         description=_("The person who registered this charm recipe."))
 
+    source = Attribute(
+        "The source branch for this charm recipe (VCS-agnostic).")
+
     private = Bool(
         title=_("Private"), required=False, readonly=False,
         description=_("Whether this charm recipe is private."))
@@ -329,6 +335,40 @@ class ICharmRecipeView(Interface):
         :param job_id: The ID of the build request.
         :return: `ICharmRecipeBuildRequest`.
         """
+
+    pending_build_requests = CollectionField(
+        title=_("Pending build requests for this charm recipe."),
+        value_type=Reference(ICharmRecipeBuildRequest),
+        required=True, readonly=True)
+
+    failed_build_requests = CollectionField(
+        title=_("Failed build requests for this charm recipe."),
+        value_type=Reference(ICharmRecipeBuildRequest),
+        required=True, readonly=True)
+
+    builds = CollectionField(
+        title=_("All builds of this charm recipe."),
+        description=_(
+            "All builds of this charm recipe, sorted in descending order "
+            "of finishing (or starting if not completed successfully)."),
+        # Really ICharmRecipeBuild.
+        value_type=Reference(schema=Interface), readonly=True)
+
+    completed_builds = CollectionField(
+        title=_("Completed builds of this charm recipe."),
+        description=_(
+            "Completed builds of this charm recipe, sorted in descending "
+            "order of finishing."),
+        # Really ICharmRecipeBuild.
+        value_type=Reference(schema=Interface), readonly=True)
+
+    pending_builds = CollectionField(
+        title=_("Pending builds of this charm recipe."),
+        description=_(
+            "Pending builds of this charm recipe, sorted in descending "
+            "order of creation."),
+        # Really ICharmRecipeBuild.
+        value_type=Reference(schema=Interface), readonly=True)
 
 
 class ICharmRecipeEdit(Interface):

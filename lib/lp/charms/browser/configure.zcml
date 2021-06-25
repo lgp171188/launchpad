@@ -11,9 +11,23 @@
         <browser:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
             urldata="lp.charms.browser.charmrecipe.CharmRecipeURL" />
+        <browser:defaultView
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
+            name="+index" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
+            class="lp.charms.browser.charmrecipe.CharmRecipeView"
+            permission="launchpad.View"
+            name="+index"
+            template="../templates/charmrecipe-index.pt" />
         <browser:navigation
             module="lp.charms.browser.charmrecipe"
             classes="CharmRecipeNavigation" />
+        <adapter
+            provides="lp.services.webapp.interfaces.IBreadcrumb"
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
+            factory="lp.charms.browser.charmrecipe.CharmRecipeBreadcrumb"
+            permission="zope.Public" />
         <browser:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipeBuildRequest"
             path_expression="string:+build-request/${id}"

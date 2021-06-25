@@ -21,8 +21,10 @@ from storm.databases.postgres import JSON
 from storm.locals import (
     Bool,
     DateTime,
+    Desc,
     Int,
     Join,
+    Not,
     Or,
     Reference,
     Store,
@@ -41,6 +43,8 @@ from lp.app.enums import (
     )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmaster.model.builder import Builder
 from lp.charms.adapters.buildarch import determine_instances_to_build
 from lp.charms.interfaces.charmrecipe import (
     CannotFetchCharmcraftYaml,
@@ -94,6 +98,10 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import (
+    Greatest,
+    NullsLast,
+    )
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.librarian.model import LibraryFileAlias
@@ -325,6 +333,11 @@ class CharmRecipe(StormBase):
             self.git_path = None
 
     @property
+    def source(self):
+        """See `ICharmRecipe`."""
+        return self.git_ref
+
+    @property
     def store_channels(self):
         """See `ICharmRecipe`."""
         return self._store_channels or []
@@ -526,6 +539,83 @@ class CharmRecipe(StormBase):
     def getBuildRequest(self, job_id):
         """See `ICharmRecipe`."""
         return CharmRecipeBuildRequest(self, job_id)
+
+    @property
+    def pending_build_requests(self):
+        """See `ICharmRecipe`."""
+        job_source = getUtility(ICharmRecipeRequestBuildsJobSource)
+        # The returned jobs are ordered by descending ID.
+        jobs = job_source.findByRecipe(
+            self, statuses=(JobStatus.WAITING, JobStatus.RUNNING))
+        return DecoratedResultSet(
+            jobs, result_decorator=CharmRecipeBuildRequest.fromJob)
+
+    @property
+    def failed_build_requests(self):
+        """See `ICharmRecipe`."""
+        job_source = getUtility(ICharmRecipeRequestBuildsJobSource)
+        # The returned jobs are ordered by descending ID.
+        jobs = job_source.findByRecipe(self, statuses=(JobStatus.FAILED,))
+        return DecoratedResultSet(
+            jobs, result_decorator=CharmRecipeBuildRequest.fromJob)
+
+    def _getBuilds(self, filter_term, order_by):
+        """The actual query to get the builds."""
+        query_args = [
+            CharmRecipeBuild.recipe == self,
+            ]
+        if filter_term is not None:
+            query_args.append(filter_term)
+        result = Store.of(self).find(CharmRecipeBuild, *query_args)
+        result.order_by(order_by)
+
+        def eager_load(rows):
+            getUtility(ICharmRecipeBuildSet).preloadBuildsData(rows)
+            getUtility(IBuildQueueSet).preloadForBuildFarmJobs(rows)
+            load_related(Builder, rows, ["builder_id"])
+
+        return DecoratedResultSet(result, pre_iter_hook=eager_load)
+
+    @property
+    def builds(self):
+        """See `ICharmRecipe`."""
+        order_by = (
+            NullsLast(Desc(Greatest(
+                CharmRecipeBuild.date_started,
+                CharmRecipeBuild.date_finished))),
+            Desc(CharmRecipeBuild.date_created),
+            Desc(CharmRecipeBuild.id))
+        return self._getBuilds(None, order_by)
+
+    @property
+    def _pending_states(self):
+        """All the build states we consider pending (non-final)."""
+        return [
+            BuildStatus.NEEDSBUILD,
+            BuildStatus.BUILDING,
+            BuildStatus.UPLOADING,
+            BuildStatus.CANCELLING,
+            ]
+
+    @property
+    def completed_builds(self):
+        """See `ICharmRecipe`."""
+        filter_term = Not(CharmRecipeBuild.status.is_in(self._pending_states))
+        order_by = (
+            NullsLast(Desc(Greatest(
+                CharmRecipeBuild.date_started,
+                CharmRecipeBuild.date_finished))),
+            Desc(CharmRecipeBuild.id))
+        return self._getBuilds(filter_term, order_by)
+
+    @property
+    def pending_builds(self):
+        """See `ICharmRecipe`."""
+        filter_term = (CharmRecipeBuild.status.is_in(self._pending_states))
+        # We want to order by date_created but this is the same as ordering
+        # by id (since id increases monotonically) and is less expensive.
+        order_by = Desc(CharmRecipeBuild.id)
+        return self._getBuilds(filter_term, order_by)
 
     def destroySelf(self):
         """See `ICharmRecipe`."""
