@@ -7,6 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from textwrap import dedent
+
 from storm.locals import Store
 from testtools.matchers import (
     Equals,
@@ -15,10 +17,12 @@ from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,
     )
+import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import (
     BuildQueueStatus,
     BuildStatus,
@@ -45,6 +49,7 @@ from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
+from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import (
     ONE_DAY_AGO,
@@ -391,6 +396,102 @@ class TestCharmRecipe(TestCaseWithFactory):
             requester=Equals(recipe.owner.teamowner),
             channels=Is(None),
             architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
+
+    def makeRequestBuildsJob(self, distro_series_version, arch_tags,
+                             git_ref=None):
+        recipe = self.factory.makeCharmRecipe(git_ref=git_ref)
+        distro_series = self.factory.makeDistroSeries(
+            distribution=getUtility(ILaunchpadCelebrities).ubuntu,
+            version=distro_series_version)
+        for arch_tag in arch_tags:
+            self.makeBuildableDistroArchSeries(
+                distroseries=distro_series, architecturetag=arch_tag)
+        return getUtility(ICharmRecipeRequestBuildsJobSource).create(
+            recipe, recipe.owner.teamowner, {"charmcraft": "edge"})
+
+    def assertRequestedBuildsMatch(self, builds, job, distro_series_version,
+                                   arch_tags, channels):
+        self.assertThat(builds, MatchesSetwise(
+            *(MatchesStructure(
+                requester=Equals(job.requester),
+                recipe=Equals(job.recipe),
+                distro_arch_series=MatchesStructure(
+                    distroseries=MatchesStructure.byEquality(
+                        version=distro_series_version),
+                    architecturetag=Equals(arch_tag)),
+                channels=Equals(channels))
+              for arch_tag in arch_tags)))
+
+    def test_requestBuildsFromJob_restricts_explicit_list(self):
+        # requestBuildsFromJob limits builds targeted at an explicit list of
+        # architectures to those allowed for the recipe.
+        self.useFixture(GitHostingFixture(blob=dedent("""\
+            bases:
+              - build-on:
+                  - name: ubuntu
+                    channel: "20.04"
+                    architectures: [sparc]
+              - build-on:
+                  - name: ubuntu
+                    channel: "20.04"
+                    architectures: [i386]
+              - build-on:
+                  - name: ubuntu
+                    channel: "20.04"
+                    architectures: [avr]
+            """)))
+        job = self.makeRequestBuildsJob("20.04", ["sparc", "avr", "mips64el"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created)
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels))
+        self.assertRequestedBuildsMatch(
+            builds, job, "20.04", ["sparc", "avr"], job.channels)
+
+    def test_requestBuildsFromJob_no_explicit_bases(self):
+        # If the recipe doesn't specify any bases, requestBuildsFromJob
+        # requests builds for all configured architectures for the default
+        # series.
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
+            "charm.default_build_series.ubuntu": "20.04",
+            }))
+        self.useFixture(GitHostingFixture(blob="name: foo\n"))
+        old_distro_series = self.factory.makeDistroSeries(
+            distribution=getUtility(ILaunchpadCelebrities).ubuntu,
+            version="18.04")
+        for arch_tag in ("mips64el", "riscv64"):
+            self.makeBuildableDistroArchSeries(
+                distroseries=old_distro_series, architecturetag=arch_tag)
+        job = self.makeRequestBuildsJob("20.04", ["mips64el", "riscv64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created)
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels))
+        self.assertRequestedBuildsMatch(
+            builds, job, "20.04", ["mips64el", "riscv64"], job.channels)
+
+    def test_requestBuildsFromJob_architectures_parameter(self):
+        # If an explicit set of architectures was given as a parameter,
+        # requestBuildsFromJob intersects those with any other constraints
+        # when requesting builds.
+        self.useFixture(GitHostingFixture(blob="name: foo\n"))
+        job = self.makeRequestBuildsJob(
+            "20.04", ["avr", "mips64el", "riscv64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created)
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels),
+                architectures={"avr", "riscv64"})
+        self.assertRequestedBuildsMatch(
+            builds, job, "20.04", ["avr", "riscv64"], job.channels)
 
     def test_delete_without_builds(self):
         # A charm recipe with no builds can be deleted.

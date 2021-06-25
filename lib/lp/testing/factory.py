@@ -5129,7 +5129,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 registrant, membership_policy=membership_policy)
         if project is None:
             branch_sharing_policy = (
-                BranchSharingPolicy.PUBLIC_OR_PROPRIETARY if not private
+                BranchSharingPolicy.PUBLIC if not private
                 else BranchSharingPolicy.PROPRIETARY)
             project = self.makeProduct(
                 owner=registrant, registrant=registrant,
