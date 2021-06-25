@@ -28,8 +28,10 @@ from lp.app.enums import (
     InformationType,
     PUBLIC_INFORMATION_TYPES,
     )
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
+    CHARM_RECIPE_BUILD_DISTRIBUTION,
     CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
     CharmRecipeBuildRequestStatus,
     CharmRecipeFeatureDisabled,
@@ -47,6 +49,7 @@ from lp.charms.interfaces.charmrecipejob import (
     )
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
+from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import (
     DEFAULT,
@@ -282,6 +285,33 @@ class CharmRecipe(StormBase):
     def store_channels(self, value):
         """See `ICharmRecipe`."""
         self._store_channels = value or None
+
+    @cachedproperty
+    def _default_distribution(self):
+        """See `ICharmRecipe`."""
+        # Use the default distribution set by this feature rule, or Ubuntu
+        # if none is set.
+        distro_name = getFeatureFlag(CHARM_RECIPE_BUILD_DISTRIBUTION)
+        if not distro_name:
+            return getUtility(ILaunchpadCelebrities).ubuntu
+        distro = getUtility(IDistributionSet).getByName(distro_name)
+        if not distro:
+            raise ValueError(
+                "'%s' is not a valid value for feature rule '%s'" % (
+                    distro_name, CHARM_RECIPE_BUILD_DISTRIBUTION))
+        return distro
+
+    @cachedproperty
+    def _default_distro_series(self):
+        """See `ICharmRecipe`."""
+        # Use the series set by this feature rule, or the current series of
+        # the default distribution if the feature rule is not set.
+        series_name = getFeatureFlag(
+            "charm.default_build_series.%s" % self._default_distribution.name)
+        if series_name:
+            return self._default_distribution.getSeries(series_name)
+        else:
+            return self._default_distribution.currentseries
 
     def getAllowedInformationTypes(self, user):
         """See `ICharmRecipe`."""

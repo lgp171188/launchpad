@@ -10,6 +10,7 @@ __all__ = [
     "BadCharmRecipeSource",
     "BadCharmRecipeSearchContext",
     "CHARM_RECIPE_ALLOW_CREATE",
+    "CHARM_RECIPE_BUILD_DISTRIBUTION",
     "CHARM_RECIPE_PRIVATE_FEATURE_FLAG",
     "CharmRecipeBuildRequestStatus",
     "CharmRecipeFeatureDisabled",
@@ -67,6 +68,7 @@ from lp.snappy.validators.channels import channels_validator
 
 CHARM_RECIPE_ALLOW_CREATE = "charm.recipe.create.enabled"
 CHARM_RECIPE_PRIVATE_FEATURE_FLAG = "charm.recipe.allow_private"
+CHARM_RECIPE_BUILD_DISTRIBUTION = "charm.default_build_distribution"
 
 
 @error_status(http_client.UNAUTHORIZED)
