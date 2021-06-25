@@ -68,6 +68,12 @@ class SigningKeyType(DBEnumeratedType):
         An Ambarella CV2 kernel signing key.
         """)
 
+    ANDROID_KERNEL = DBItem(8, """
+        Android Kernel
+
+        An Android kernel signing key.
+        """)
+
 
 class OpenPGPKeyAlgorithm(EnumeratedType):
 

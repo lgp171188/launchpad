@@ -299,6 +299,8 @@ class SigningUpload(CustomUpload):
                     key_type = SigningKeyType.FIT
                 elif filename.endswith(".cv2-kernel"):
                     key_type = SigningKeyType.CV2_KERNEL
+                elif filename.endswith(".android-kernel"):
+                    key_type = SigningKeyType.ANDROID_KERNEL
                 else:
                     continue
 
@@ -398,7 +400,8 @@ class SigningUpload(CustomUpload):
             raise SigningServiceError(
                 "Could not sign message with key %s: %s" % (signing_key, e))
 
-        if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
+        if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT,
+                        SigningKeyType.ANDROID_KERNEL):
             file_suffix = ".signed"
             public_key_suffix = ".crt"
         else:
