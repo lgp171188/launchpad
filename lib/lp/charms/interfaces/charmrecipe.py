@@ -12,6 +12,8 @@ __all__ = [
     "CHARM_RECIPE_ALLOW_CREATE",
     "CHARM_RECIPE_BUILD_DISTRIBUTION",
     "CHARM_RECIPE_PRIVATE_FEATURE_FLAG",
+    "CharmRecipeBuildAlreadyPending",
+    "CharmRecipeBuildDisallowedArchitecture",
     "CharmRecipeBuildRequestStatus",
     "CharmRecipeFeatureDisabled",
     "CharmRecipeNotOwner",
@@ -139,6 +141,25 @@ class BadCharmRecipeSearchContext(Exception):
     """The context is not valid for a charm recipe search."""
 
 
+@error_status(http_client.BAD_REQUEST)
+class CharmRecipeBuildAlreadyPending(Exception):
+    """A build was requested when an identical build was already pending."""
+
+    def __init__(self):
+        super(CharmRecipeBuildAlreadyPending, self).__init__(
+            "An identical build of this charm recipe is already pending.")
+
+
+@error_status(http_client.BAD_REQUEST)
+class CharmRecipeBuildDisallowedArchitecture(Exception):
+    """A build was requested for a disallowed architecture."""
+
+    def __init__(self, das):
+        super(CharmRecipeBuildDisallowedArchitecture, self).__init__(
+            "This charm recipe is not allowed to build for %s/%s." %
+            (das.distroseries.name, das.architecturetag))
+
+
 class CharmRecipeBuildRequestStatus(EnumeratedType):
     """The status of a request to build a charm recipe."""
 
@@ -232,6 +253,20 @@ class ICharmRecipeView(Interface):
 
     def visibleByUser(user):
         """Can the specified user see this charm recipe?"""
+
+    def requestBuild(build_request, distro_arch_series, channels=None):
+        """Request a single build of this charm recipe.
+
+        This method is for internal use; external callers should use
+        `requestBuilds` instead.
+
+        :param build_request: The `ICharmRecipeBuildRequest` job being
+            processed.
+        :param distro_arch_series: The architecture to build for.
+        :param channels: A dictionary mapping snap names to channels to use
+            for this build.
+        :return: `ICharmRecipeBuild`.
+        """
 
     def requestBuilds(requester, channels=None, architectures=None):
         """Request that the charm recipe be built.

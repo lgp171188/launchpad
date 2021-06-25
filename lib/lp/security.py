@@ -69,6 +69,7 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipe,
     ICharmRecipeBuildRequest,
     )
+from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.code.interfaces.branch import (
     IBranch,
     user_has_special_branch_access,
@@ -3668,3 +3669,32 @@ class ViewCharmRecipeBuildRequest(DelegatedAuthorization):
     def __init__(self, obj):
         super(ViewCharmRecipeBuildRequest, self).__init__(
             obj, obj.recipe, 'launchpad.View')
+
+
+class ViewCharmRecipeBuild(DelegatedAuthorization):
+    permission = 'launchpad.View'
+    usedfor = ICharmRecipeBuild
+
+    def iter_objects(self):
+        yield self.obj.recipe
+
+
+class EditCharmRecipeBuild(AdminByBuilddAdmin):
+    permission = 'launchpad.Edit'
+    usedfor = ICharmRecipeBuild
+
+    def checkAuthenticated(self, user):
+        """Check edit access for snap package builds.
+
+        Allow admins, buildd admins, and the owner of the charm recipe.
+        (Note that the requester of the build is required to be in the team
+        that owns the charm recipe.)
+        """
+        auth_recipe = EditCharmRecipe(self.obj.recipe)
+        if auth_recipe.checkAuthenticated(user):
+            return True
+        return super(EditCharmRecipeBuild, self).checkAuthenticated(user)
+
+
+class AdminCharmRecipeBuild(AdminByBuilddAdmin):
+    usedfor = ICharmRecipeBuild
