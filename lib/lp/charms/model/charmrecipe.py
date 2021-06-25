@@ -31,14 +31,19 @@ from lp.app.enums import (
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
+    CharmRecipeBuildRequestStatus,
     CharmRecipeFeatureDisabled,
     CharmRecipeNotOwner,
     CharmRecipePrivacyMismatch,
     CharmRecipePrivateFeatureDisabled,
     DuplicateCharmRecipeName,
     ICharmRecipe,
+    ICharmRecipeBuildRequest,
     ICharmRecipeSet,
     NoSourceForCharmRecipe,
+    )
+from lp.charms.interfaces.charmrecipejob import (
+    ICharmRecipeRequestBuildsJobSource,
     )
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
@@ -54,6 +59,11 @@ from lp.services.database.interfaces import (
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
+from lp.services.job.interfaces.job import JobStatus
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
 
 
 def charm_recipe_modified(recipe, event):
@@ -63,6 +73,68 @@ def charm_recipe_modified(recipe, event):
     events on charm recipes.
     """
     removeSecurityProxy(recipe).date_last_modified = UTC_NOW
+
+
+@implementer(ICharmRecipeBuildRequest)
+class CharmRecipeBuildRequest:
+    """See `ICharmRecipeBuildRequest`.
+
+    This is not directly backed by a database table; instead, it is a
+    webservice-friendly view of an asynchronous build request.
+    """
+
+    def __init__(self, recipe, id):
+        self.recipe = recipe
+        self.id = id
+
+    @classmethod
+    def fromJob(cls, job):
+        """See `ICharmRecipeBuildRequest`."""
+        request = cls(job.recipe, job.job_id)
+        get_property_cache(request)._job = job
+        return request
+
+    @cachedproperty
+    def _job(self):
+        job_source = getUtility(ICharmRecipeRequestBuildsJobSource)
+        return job_source.getByRecipeAndID(self.recipe, self.id)
+
+    @property
+    def date_requested(self):
+        """See `ICharmRecipeBuildRequest`."""
+        return self._job.date_created
+
+    @property
+    def date_finished(self):
+        """See `ICharmRecipeBuildRequest`."""
+        return self._job.date_finished
+
+    @property
+    def status(self):
+        """See `ICharmRecipeBuildRequest`."""
+        status_map = {
+            JobStatus.WAITING: CharmRecipeBuildRequestStatus.PENDING,
+            JobStatus.RUNNING: CharmRecipeBuildRequestStatus.PENDING,
+            JobStatus.COMPLETED: CharmRecipeBuildRequestStatus.COMPLETED,
+            JobStatus.FAILED: CharmRecipeBuildRequestStatus.FAILED,
+            JobStatus.SUSPENDED: CharmRecipeBuildRequestStatus.PENDING,
+            }
+        return status_map[self._job.job.status]
+
+    @property
+    def error_message(self):
+        """See `ICharmRecipeBuildRequest`."""
+        return self._job.error_message
+
+    @property
+    def channels(self):
+        """See `ICharmRecipeBuildRequest`."""
+        return self._job.channels
+
+    @property
+    def architectures(self):
+        """See `ICharmRecipeBuildRequest`."""
+        return self._job.architectures
 
 
 @implementer(ICharmRecipe)
@@ -224,6 +296,24 @@ class CharmRecipe(StormBase):
         # XXX cjwatson 2021-05-27: Finish implementing this once we have
         # more privacy infrastructure.
         return False
+
+    def _checkRequestBuild(self, requester):
+        """May `requester` request builds of this charm recipe?"""
+        if not requester.inTeam(self.owner):
+            raise CharmRecipeNotOwner(
+                "%s cannot create charm recipe builds owned by %s." %
+                (requester.display_name, self.owner.display_name))
+
+    def requestBuilds(self, requester, channels=None, architectures=None):
+        """See `ICharmRecipe`."""
+        self._checkRequestBuild(requester)
+        job = getUtility(ICharmRecipeRequestBuildsJobSource).create(
+            self, requester, channels=channels, architectures=architectures)
+        return self.getBuildRequest(job.job_id)
+
+    def getBuildRequest(self, job_id):
+        """See `ICharmRecipe`."""
+        return CharmRecipeBuildRequest(self, job_id)
 
     def destroySelf(self):
         """See `ICharmRecipe`."""

@@ -11,17 +11,23 @@ __all__ = [
     "BadCharmRecipeSearchContext",
     "CHARM_RECIPE_ALLOW_CREATE",
     "CHARM_RECIPE_PRIVATE_FEATURE_FLAG",
+    "CharmRecipeBuildRequestStatus",
     "CharmRecipeFeatureDisabled",
     "CharmRecipeNotOwner",
     "CharmRecipePrivacyMismatch",
     "CharmRecipePrivateFeatureDisabled",
     "DuplicateCharmRecipeName",
     "ICharmRecipe",
+    "ICharmRecipeBuildRequest",
     "ICharmRecipeSet",
     "NoSourceForCharmRecipe",
     "NoSuchCharmRecipe",
     ]
 
+from lazr.enum import (
+    EnumeratedType,
+    Item,
+    )
 from lazr.restful.declarations import error_status
 from lazr.restful.fields import (
     Reference,
@@ -36,6 +42,7 @@ from zope.schema import (
     Dict,
     Int,
     List,
+    Set,
     Text,
     TextLine,
     )
@@ -128,6 +135,62 @@ class BadCharmRecipeSearchContext(Exception):
     """The context is not valid for a charm recipe search."""
 
 
+class CharmRecipeBuildRequestStatus(EnumeratedType):
+    """The status of a request to build a charm recipe."""
+
+    PENDING = Item("""
+        Pending
+
+        This charm recipe build request is pending.
+        """)
+
+    FAILED = Item("""
+        Failed
+
+        This charm recipe build request failed.
+        """)
+
+    COMPLETED = Item("""
+        Completed
+
+        This charm recipe build request completed successfully.
+        """)
+
+
+class ICharmRecipeBuildRequest(Interface):
+    """A request to build a charm recipe."""
+
+    id = Int(title=_("ID"), required=True, readonly=True)
+
+    date_requested = Datetime(
+        title=_("The time when this request was made"),
+        required=True, readonly=True)
+
+    date_finished = Datetime(
+        title=_("The time when this request finished"),
+        required=False, readonly=True)
+
+    recipe = Reference(
+        # Really ICharmRecipe.
+        Interface,
+        title=_("Charm recipe"), required=True, readonly=True)
+
+    status = Choice(
+        title=_("Status"), vocabulary=CharmRecipeBuildRequestStatus,
+        required=True, readonly=True)
+
+    error_message = TextLine(
+        title=_("Error message"), required=True, readonly=True)
+
+    channels = Dict(
+        title=_("Source snap channels for builds produced by this request"),
+        key_type=TextLine(), required=False, readonly=True)
+
+    architectures = Set(
+        title=_("If set, this request is limited to these architecture tags"),
+        value_type=TextLine(), required=False, readonly=True)
+
+
 class ICharmRecipeView(Interface):
     """`ICharmRecipe` attributes that require launchpad.View permission."""
 
@@ -155,6 +218,29 @@ class ICharmRecipeView(Interface):
 
     def visibleByUser(user):
         """Can the specified user see this charm recipe?"""
+
+    def requestBuilds(requester, channels=None, architectures=None):
+        """Request that the charm recipe be built.
+
+        This is an asynchronous operation; once the operation has finished,
+        the resulting build request's C{status} will be "Completed" and its
+        C{builds} collection will return the resulting builds.
+
+        :param requester: The person requesting the builds.
+        :param channels: A dictionary mapping snap names to channels to use
+            for these builds.
+        :param architectures: If not None, limit builds to architectures
+            with these architecture tags (in addition to any other
+            applicable constraints).
+        :return: An `ICharmRecipeBuildRequest`.
+        """
+
+    def getBuildRequest(job_id):
+        """Get an asynchronous build request by ID.
+
+        :param job_id: The ID of the build request.
+        :return: `ICharmRecipeBuildRequest`.
+        """
 
 
 class ICharmRecipeEdit(Interface):
