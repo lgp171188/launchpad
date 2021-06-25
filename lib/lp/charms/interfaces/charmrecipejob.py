@@ -20,6 +20,7 @@ from zope.interface import (
 from zope.schema import (
     Datetime,
     Dict,
+    List,
     Set,
     TextLine,
     )
@@ -29,6 +30,7 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipe,
     ICharmRecipeBuildRequest,
     )
+from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.registry.interfaces.person import IPerson
 from lp.services.job.interfaces.job import (
     IJob,
@@ -85,6 +87,11 @@ class ICharmRecipeRequestBuildsJob(IRunnableJob):
     build_request = Reference(
         title=_("The build request corresponding to this job."),
         schema=ICharmRecipeBuildRequest, required=True, readonly=True)
+
+    builds = List(
+        title=_("The builds created by this request."),
+        value_type=Reference(schema=ICharmRecipeBuild),
+        required=True, readonly=True)
 
 
 class ICharmRecipeRequestBuildsJobSource(IJobSource):

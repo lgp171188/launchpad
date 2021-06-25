@@ -31,6 +31,7 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import error_status
 from lazr.restful.fields import (
+    CollectionField,
     Reference,
     ReferenceChoice,
     )
@@ -58,6 +59,7 @@ from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.services.fields import (
     PersonChoice,
@@ -183,6 +185,16 @@ class ICharmRecipeBuildRequest(Interface):
 
     error_message = TextLine(
         title=_("Error message"), required=True, readonly=True)
+
+    builds = CollectionField(
+        title=_("Builds produced by this request"),
+        # Really ICharmRecipeBuild.
+        value_type=Reference(schema=Interface),
+        required=True, readonly=True)
+
+    requester = Reference(
+        title=_("The person requesting the builds."), schema=IPerson,
+        required=True, readonly=True)
 
     channels = Dict(
         title=_("Source snap channels for builds produced by this request"),
@@ -389,6 +401,9 @@ class ICharmRecipeSet(Interface):
 
     def isValidInformationType(information_type, owner, git_ref=None):
         """Whether the information type context is valid."""
+
+    def preloadDataForRecipes(recipes, user):
+        """Load the data related to a list of charm recipes."""
 
     def findByGitRepository(repository, paths=None):
         """Return all charm recipes for the given Git repository.

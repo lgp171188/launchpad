@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Common build interfaces."""
@@ -168,6 +168,12 @@ class BuildFarmJobType(DBEnumeratedType):
         OCI image build
 
         Build an OCI image from a recipe.
+        """)
+
+    CHARMRECIPEBUILD = DBItem(8, """
+        Charm recipe build
+
+        Build a charm from a recipe.
         """)
 
 

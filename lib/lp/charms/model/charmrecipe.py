@@ -47,10 +47,15 @@ from lp.charms.interfaces.charmrecipe import (
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
+from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.registry.interfaces.person import validate_public_person
+from lp.registry.interfaces.person import (
+    IPersonSet,
+    validate_public_person,
+    )
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
@@ -128,6 +133,16 @@ class CharmRecipeBuildRequest:
     def error_message(self):
         """See `ICharmRecipeBuildRequest`."""
         return self._job.error_message
+
+    @property
+    def builds(self):
+        """See `ICharmRecipeBuildRequest`."""
+        return self._job.builds
+
+    @property
+    def requester(self):
+        """See `ICharmRecipeBuildRequest`."""
+        return self._job.requester
 
     @property
     def channels(self):
@@ -421,6 +436,28 @@ class CharmRecipeSet:
             return False
 
         return True
+
+    def preloadDataForRecipes(self, recipes, user=None):
+        """See `ICharmRecipeSet`."""
+        recipes = [removeSecurityProxy(recipe) for recipe in recipes]
+
+        person_ids = set()
+        for recipe in recipes:
+            person_ids.add(recipe.registrant_id)
+            person_ids.add(recipe.owner_id)
+
+        repositories = load_related(
+            GitRepository, recipes, ["git_repository_id"])
+        if repositories:
+            GenericGitCollection.preloadDataForRepositories(repositories)
+
+        # Add repository owners to the list of pre-loaded persons.  We need
+        # the target repository owner as well, since repository unique names
+        # aren't trigger-maintained.
+        person_ids.update(repository.owner_id for repository in repositories)
+
+        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            person_ids, need_validity=True))
 
     def findByGitRepository(self, repository, paths=None):
         """See `ICharmRecipeSet`."""
