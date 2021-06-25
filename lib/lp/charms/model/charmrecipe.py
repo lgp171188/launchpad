@@ -10,16 +10,23 @@ __all__ = [
     "CharmRecipe",
     ]
 
+from operator import itemgetter
+
+from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 from storm.databases.postgres import JSON
 from storm.locals import (
     Bool,
     DateTime,
     Int,
+    Join,
+    Or,
     Reference,
+    Store,
     Unicode,
     )
 from zope.component import getUtility
+from zope.event import notify
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -28,9 +35,14 @@ from lp.app.enums import (
     InformationType,
     PUBLIC_INFORMATION_TYPES,
     )
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.buildmaster.enums import BuildStatus
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
+    CHARM_RECIPE_BUILD_DISTRIBUTION,
     CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
+    CharmRecipeBuildAlreadyPending,
+    CharmRecipeBuildDisallowedArchitecture,
     CharmRecipeBuildRequestStatus,
     CharmRecipeFeatureDisabled,
     CharmRecipeNotOwner,
@@ -42,16 +54,28 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipeSet,
     NoSourceForCharmRecipe,
     )
+from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
+from lp.charms.model.charmrecipebuild import CharmRecipeBuild
+from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
-from lp.registry.interfaces.person import validate_public_person
+from lp.registry.interfaces.distribution import IDistributionSet
+from lp.registry.interfaces.person import (
+    IPersonSet,
+    validate_public_person,
+    )
+from lp.registry.model.distribution import Distribution
+from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.series import ACTIVE_STATUSES
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -60,9 +84,14 @@ from lp.services.database.interfaces import (
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
+    )
+from lp.soyuz.model.distroarchseries import (
+    DistroArchSeries,
+    PocketChroot,
     )
 
 
@@ -125,6 +154,16 @@ class CharmRecipeBuildRequest:
     def error_message(self):
         """See `ICharmRecipeBuildRequest`."""
         return self._job.error_message
+
+    @property
+    def builds(self):
+        """See `ICharmRecipeBuildRequest`."""
+        return self._job.builds
+
+    @property
+    def requester(self):
+        """See `ICharmRecipeBuildRequest`."""
+        return self._job.requester
 
     @property
     def channels(self):
@@ -283,6 +322,33 @@ class CharmRecipe(StormBase):
         """See `ICharmRecipe`."""
         self._store_channels = value or None
 
+    @cachedproperty
+    def _default_distribution(self):
+        """See `ICharmRecipe`."""
+        # Use the default distribution set by this feature rule, or Ubuntu
+        # if none is set.
+        distro_name = getFeatureFlag(CHARM_RECIPE_BUILD_DISTRIBUTION)
+        if not distro_name:
+            return getUtility(ILaunchpadCelebrities).ubuntu
+        distro = getUtility(IDistributionSet).getByName(distro_name)
+        if not distro:
+            raise ValueError(
+                "'%s' is not a valid value for feature rule '%s'" % (
+                    distro_name, CHARM_RECIPE_BUILD_DISTRIBUTION))
+        return distro
+
+    @cachedproperty
+    def _default_distro_series(self):
+        """See `ICharmRecipe`."""
+        # Use the series set by this feature rule, or the current series of
+        # the default distribution if the feature rule is not set.
+        series_name = getFeatureFlag(
+            "charm.default_build_series.%s" % self._default_distribution.name)
+        if series_name:
+            return self._default_distribution.getSeries(series_name)
+        else:
+            return self._default_distribution.currentseries
+
     def getAllowedInformationTypes(self, user):
         """See `ICharmRecipe`."""
         # XXX cjwatson 2021-05-26: Only allow free information types until
@@ -297,12 +363,92 @@ class CharmRecipe(StormBase):
         # more privacy infrastructure.
         return False
 
+    def _isBuildableArchitectureAllowed(self, das):
+        """Check whether we may build for a buildable `DistroArchSeries`.
+
+        The caller is assumed to have already checked that a suitable chroot
+        is available (either directly or via
+        `DistroSeries.buildable_architectures`).
+        """
+        return (
+            das.enabled
+            and (
+                das.processor.supports_virtualized
+                or not self.require_virtualized))
+
+    def _isArchitectureAllowed(self, das):
+        """Check whether we may build for a `DistroArchSeries`."""
+        return (
+            das.getChroot() is not None
+            and self._isBuildableArchitectureAllowed(das))
+
+    def getAllowedArchitectures(self):
+        """See `IOCIRecipe`."""
+        store = Store.of(self)
+        origin = [
+            DistroArchSeries,
+            Join(DistroSeries,
+                 DistroArchSeries.distroseries == DistroSeries.id),
+            Join(Distribution, DistroSeries.distribution == Distribution.id),
+            Join(PocketChroot,
+                 PocketChroot.distroarchseries == DistroArchSeries.id),
+            Join(LibraryFileAlias,
+                 PocketChroot.chroot == LibraryFileAlias.id),
+            ]
+        # Preload DistroSeries and Distribution, since we'll need those in
+        # determine_architectures_to_build.
+        results = store.using(*origin).find(
+            (DistroArchSeries, DistroSeries, Distribution),
+            DistroSeries.status.is_in(ACTIVE_STATUSES))
+        all_buildable_dases = DecoratedResultSet(results, itemgetter(0))
+        return [
+            das for das in all_buildable_dases
+            if self._isBuildableArchitectureAllowed(das)]
+
     def _checkRequestBuild(self, requester):
         """May `requester` request builds of this charm recipe?"""
         if not requester.inTeam(self.owner):
             raise CharmRecipeNotOwner(
                 "%s cannot create charm recipe builds owned by %s." %
                 (requester.display_name, self.owner.display_name))
+
+    def requestBuild(self, build_request, distro_arch_series, channels=None):
+        """Request a single build of this charm recipe.
+
+        This method is for internal use; external callers should use
+        `requestBuilds` instead.
+
+        :param build_request: The `ICharmRecipeBuildRequest` job being
+            processed.
+        :param distro_arch_series: The architecture to build for.
+        :param channels: A dictionary mapping snap names to channels to use
+            for this build.
+        :return: `ICharmRecipeBuild`.
+        """
+        self._checkRequestBuild(build_request.requester)
+        if not self._isArchitectureAllowed(distro_arch_series):
+            raise CharmRecipeBuildDisallowedArchitecture(distro_arch_series)
+
+        if not channels:
+            channels_clause = Or(
+                CharmRecipeBuild.channels == None,
+                CharmRecipeBuild.channels == {})
+        else:
+            channels_clause = CharmRecipeBuild.channels == channels
+        pending = IStore(self).find(
+            CharmRecipeBuild,
+            CharmRecipeBuild.recipe == self,
+            CharmRecipeBuild.processor == distro_arch_series.processor,
+            channels_clause,
+            CharmRecipeBuild.status == BuildStatus.NEEDSBUILD)
+        if pending.any() is not None:
+            raise CharmRecipeBuildAlreadyPending
+
+        build = getUtility(ICharmRecipeBuildSet).new(
+            build_request, self, distro_arch_series, channels=channels)
+        build.queueBuild()
+        notify(ObjectCreatedEvent(build, user=build_request.requester))
+        return build
 
     def requestBuilds(self, requester, channels=None, architectures=None):
         """See `ICharmRecipe`."""
@@ -391,6 +537,28 @@ class CharmRecipeSet:
             return False
 
         return True
+
+    def preloadDataForRecipes(self, recipes, user=None):
+        """See `ICharmRecipeSet`."""
+        recipes = [removeSecurityProxy(recipe) for recipe in recipes]
+
+        person_ids = set()
+        for recipe in recipes:
+            person_ids.add(recipe.registrant_id)
+            person_ids.add(recipe.owner_id)
+
+        repositories = load_related(
+            GitRepository, recipes, ["git_repository_id"])
+        if repositories:
+            GenericGitCollection.preloadDataForRepositories(repositories)
+
+        # Add repository owners to the list of pre-loaded persons.  We need
+        # the target repository owner as well, since repository unique names
+        # aren't trigger-maintained.
+        person_ids.update(repository.owner_id for repository in repositories)
+
+        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            person_ids, need_validity=True))
 
     def findByGitRepository(self, repository, paths=None):
         """See `ICharmRecipeSet`."""

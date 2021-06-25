@@ -111,6 +111,8 @@ from lp.buildmaster.enums import (
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
+from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
+from lp.charms.model.charmrecipebuild import CharmFile
 from lp.code.enums import (
     BranchMergeProposalStatus,
     BranchSubscriptionNotificationLevel,
@@ -5156,9 +5158,53 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if recipe is None:
             recipe = self.makeCharmRecipe()
         if requester is None:
-            requester = recipe.owner.teamowner
+            if recipe.owner.is_team:
+                requester = recipe.owner.teamowner
+            else:
+                requester = recipe.owner
         return recipe.requestBuilds(
             requester, channels=channels, architectures=architectures)
+
+    def makeCharmRecipeBuild(self, registrant=None, recipe=None,
+                             build_request=None, requester=None,
+                             distro_arch_series=None, channels=None,
+                             store_upload_metadata=None, date_created=DEFAULT,
+                             status=BuildStatus.NEEDSBUILD, builder=None,
+                             duration=None, **kwargs):
+        if recipe is None:
+            if registrant is None:
+                if build_request is not None:
+                    registrant = build_request.requester
+                else:
+                    registrant = requester
+            recipe = self.makeCharmRecipe(registrant=registrant, **kwargs)
+        if distro_arch_series is None:
+            distro_arch_series = self.makeDistroArchSeries()
+        if build_request is None:
+            build_request = self.makeCharmRecipeBuildRequest(
+                recipe=recipe, requester=requester, channels=channels)
+        build = getUtility(ICharmRecipeBuildSet).new(
+            build_request, recipe, distro_arch_series, channels=channels,
+            store_upload_metadata=store_upload_metadata,
+            date_created=date_created)
+        if duration is not None:
+            removeSecurityProxy(build).updateStatus(
+                BuildStatus.BUILDING, builder=builder,
+                date_started=build.date_created)
+            removeSecurityProxy(build).updateStatus(
+                status, builder=builder,
+                date_finished=build.date_started + duration)
+        else:
+            removeSecurityProxy(build).updateStatus(status, builder=builder)
+        IStore(build).flush()
+        return build
+
+    def makeCharmFile(self, build=None, library_file=None):
+        if build is None:
+            build = self.makeCharmRecipeBuild()
+        if library_file is None:
+            library_file = self.makeLibraryFileAlias()
+        return ProxyFactory(CharmFile(build=build, library_file=library_file))
 
 
 # Some factory methods return simple Python types. We don't add

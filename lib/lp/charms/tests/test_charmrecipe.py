@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from storm.locals import Store
 from testtools.matchers import (
     Equals,
     Is,
@@ -18,8 +19,21 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.buildmaster.enums import (
+    BuildQueueStatus,
+    BuildStatus,
+    )
+from lp.buildmaster.interfaces.buildqueue import IBuildQueue
+from lp.buildmaster.interfaces.processor import (
+    IProcessorSet,
+    ProcessorNotFound,
+    )
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
+    CHARM_RECIPE_BUILD_DISTRIBUTION,
+    CharmRecipeBuildAlreadyPending,
+    CharmRecipeBuildDisallowedArchitecture,
     CharmRecipeBuildRequestStatus,
     CharmRecipeFeatureDisabled,
     CharmRecipePrivateFeatureDisabled,
@@ -27,9 +41,11 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipeSet,
     NoSourceForCharmRecipe,
     )
+from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
@@ -103,6 +119,204 @@ class TestCharmRecipe(TestCaseWithFactory):
             pass
         self.assertSqlAttributeEqualsDate(
             recipe, "date_last_modified", UTC_NOW)
+
+    def test__default_distribution_default(self):
+        # If the CHARM_RECIPE_BUILD_DISTRIBUTION feature rule is not set, we
+        # default to Ubuntu.
+        recipe = self.factory.makeCharmRecipe()
+        self.assertEqual(
+            "ubuntu", removeSecurityProxy(recipe)._default_distribution.name)
+
+    def test__default_distribution_feature_rule(self):
+        # If the CHARM_RECIPE_BUILD_DISTRIBUTION feature rule is set, we
+        # default to the distribution with the given name.
+        distro_name = "mydistro"
+        distribution = self.factory.makeDistribution(name=distro_name)
+        recipe = self.factory.makeCharmRecipe()
+        with FeatureFixture({CHARM_RECIPE_BUILD_DISTRIBUTION: distro_name}):
+            self.assertEqual(
+                distribution,
+                removeSecurityProxy(recipe)._default_distribution)
+
+    def test__default_distribution_feature_rule_nonexistent(self):
+        # If we mistakenly set the rule to a non-existent distribution,
+        # things break explicitly.
+        recipe = self.factory.makeCharmRecipe()
+        with FeatureFixture({CHARM_RECIPE_BUILD_DISTRIBUTION: "nonexistent"}):
+            expected_msg = (
+                "'nonexistent' is not a valid value for feature rule '%s'" %
+                CHARM_RECIPE_BUILD_DISTRIBUTION)
+            self.assertRaisesWithContent(
+                ValueError, expected_msg,
+                getattr, removeSecurityProxy(recipe), "_default_distribution")
+
+    def test__default_distro_series_feature_rule(self):
+        # If the appropriate per-distribution feature rule is set, we
+        # default to the named distro series.
+        distro_name = "mydistro"
+        distribution = self.factory.makeDistribution(name=distro_name)
+        distro_series_name = "myseries"
+        distro_series = self.factory.makeDistroSeries(
+            distribution=distribution, name=distro_series_name)
+        self.factory.makeDistroSeries(distribution=distribution)
+        recipe = self.factory.makeCharmRecipe()
+        with FeatureFixture({
+                CHARM_RECIPE_BUILD_DISTRIBUTION: distro_name,
+                "charm.default_build_series.%s" % distro_name: (
+                    distro_series_name),
+                }):
+            self.assertEqual(
+                distro_series,
+                removeSecurityProxy(recipe)._default_distro_series)
+
+    def test__default_distro_series_no_feature_rule(self):
+        # If the appropriate per-distribution feature rule is not set, we
+        # default to the distribution's current series.
+        distro_name = "mydistro"
+        distribution = self.factory.makeDistribution(name=distro_name)
+        self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.SUPPORTED)
+        current_series = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.DEVELOPMENT)
+        recipe = self.factory.makeCharmRecipe()
+        with FeatureFixture({CHARM_RECIPE_BUILD_DISTRIBUTION: distro_name}):
+            self.assertEqual(
+                current_series,
+                removeSecurityProxy(recipe)._default_distro_series)
+
+    def makeBuildableDistroArchSeries(self, architecturetag=None,
+                                      processor=None,
+                                      supports_virtualized=True,
+                                      supports_nonvirtualized=True, **kwargs):
+        if architecturetag is None:
+            architecturetag = self.factory.getUniqueUnicode("arch")
+        if processor is None:
+            try:
+                processor = getUtility(IProcessorSet).getByName(
+                    architecturetag)
+            except ProcessorNotFound:
+                processor = self.factory.makeProcessor(
+                    name=architecturetag,
+                    supports_virtualized=supports_virtualized,
+                    supports_nonvirtualized=supports_nonvirtualized)
+        das = self.factory.makeDistroArchSeries(
+            architecturetag=architecturetag, processor=processor, **kwargs)
+        fake_chroot = self.factory.makeLibraryFileAlias(
+            filename="fake_chroot.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_chroot)
+        return das
+
+    def test_requestBuild(self):
+        # requestBuild creates a new CharmRecipeBuild.
+        recipe = self.factory.makeCharmRecipe()
+        das = self.makeBuildableDistroArchSeries()
+        build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
+        build = recipe.requestBuild(build_request, das)
+        self.assertTrue(ICharmRecipeBuild.providedBy(build))
+        self.assertThat(build, MatchesStructure(
+            requester=Equals(recipe.owner.teamowner),
+            distro_arch_series=Equals(das),
+            channels=Is(None),
+            status=Equals(BuildStatus.NEEDSBUILD),
+            ))
+        store = Store.of(build)
+        store.flush()
+        build_queue = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id ==
+                removeSecurityProxy(build).build_farm_job_id).one()
+        self.assertProvides(build_queue, IBuildQueue)
+        self.assertEqual(recipe.require_virtualized, build_queue.virtualized)
+        self.assertEqual(BuildQueueStatus.WAITING, build_queue.status)
+
+    def test_requestBuild_score(self):
+        # Build requests have a relatively low queue score (2510).
+        recipe = self.factory.makeCharmRecipe()
+        das = self.makeBuildableDistroArchSeries()
+        build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
+        build = recipe.requestBuild(build_request, das)
+        queue_record = build.buildqueue_record
+        queue_record.score()
+        self.assertEqual(2510, queue_record.lastscore)
+
+    def test_requestBuild_channels(self):
+        # requestBuild can select non-default channels.
+        recipe = self.factory.makeCharmRecipe()
+        das = self.makeBuildableDistroArchSeries()
+        build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
+        build = recipe.requestBuild(
+            build_request, das, channels={"charmcraft": "edge"})
+        self.assertEqual({"charmcraft": "edge"}, build.channels)
+
+    def test_requestBuild_rejects_repeats(self):
+        # requestBuild refuses if there is already a pending build.
+        recipe = self.factory.makeCharmRecipe()
+        distro_series = self.factory.makeDistroSeries()
+        arches = [
+            self.makeBuildableDistroArchSeries(distroseries=distro_series)
+            for _ in range(2)]
+        build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
+        old_build = recipe.requestBuild(build_request, arches[0])
+        self.assertRaises(
+            CharmRecipeBuildAlreadyPending, recipe.requestBuild,
+            build_request, arches[0])
+        # We can build for a different distroarchseries.
+        recipe.requestBuild(build_request, arches[1])
+        # channels=None and channels={} are treated as equivalent, but
+        # anything else allows a new build.
+        self.assertRaises(
+            CharmRecipeBuildAlreadyPending, recipe.requestBuild,
+            build_request, arches[0], channels={})
+        recipe.requestBuild(
+            build_request, arches[0], channels={"core": "edge"})
+        self.assertRaises(
+            CharmRecipeBuildAlreadyPending, recipe.requestBuild,
+            build_request, arches[0], channels={"core": "edge"})
+        # Changing the status of the old build allows a new build.
+        old_build.updateStatus(BuildStatus.BUILDING)
+        old_build.updateStatus(BuildStatus.FULLYBUILT)
+        recipe.requestBuild(build_request, arches[0])
+
+    def test_requestBuild_virtualization(self):
+        # New builds are virtualized if any of the processor or recipe
+        # require it.
+        recipe = self.factory.makeCharmRecipe()
+        distro_series = self.factory.makeDistroSeries()
+        dases = {}
+        for proc_nonvirt in True, False:
+            das = self.makeBuildableDistroArchSeries(
+                distroseries=distro_series, supports_virtualized=True,
+                supports_nonvirtualized=proc_nonvirt)
+            dases[proc_nonvirt] = das
+        for proc_nonvirt, recipe_virt, build_virt in (
+                (True, False, False),
+                (True, True, True),
+                (False, False, True),
+                (False, True, True),
+                ):
+            das = dases[proc_nonvirt]
+            recipe = self.factory.makeCharmRecipe(
+                require_virtualized=recipe_virt)
+            build_request = self.factory.makeCharmRecipeBuildRequest(
+                recipe=recipe)
+            build = recipe.requestBuild(build_request, das)
+            self.assertEqual(build_virt, build.virtualized)
+
+    def test_requestBuild_nonvirtualized(self):
+        # A non-virtualized processor can build a charm recipe iff the
+        # recipe has require_virtualized set to False.
+        recipe = self.factory.makeCharmRecipe()
+        distro_series = self.factory.makeDistroSeries()
+        das = self.makeBuildableDistroArchSeries(
+            distroseries=distro_series, supports_virtualized=False,
+            supports_nonvirtualized=True)
+        build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
+        self.assertRaises(
+            CharmRecipeBuildDisallowedArchitecture, recipe.requestBuild,
+            build_request, das)
+        with admin_logged_in():
+            recipe.require_virtualized = False
+        recipe.requestBuild(build_request, das)
 
     def test_requestBuilds(self):
         # requestBuilds schedules a job and returns a corresponding

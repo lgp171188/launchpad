@@ -24,6 +24,7 @@ from storm.locals import (
     Int,
     Reference,
     )
+from storm.store import EmptyResultSet
 import transaction
 from zope.component import getUtility
 from zope.interface import (
@@ -37,6 +38,7 @@ from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJob,
     ICharmRecipeRequestBuildsJobSource,
     )
+from lp.charms.model.charmrecipebuild import CharmRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.bulk import load_related
@@ -271,6 +273,21 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
     def build_request(self):
         """See `ICharmRecipeRequestBuildsJob`."""
         return self.recipe.getBuildRequest(self.job.id)
+
+    @property
+    def builds(self):
+        """See `ICharmRecipeRequestBuildsJob`."""
+        build_ids = self.metadata.get("builds")
+        if build_ids:
+            return IStore(CharmRecipeBuild).find(
+                CharmRecipeBuild, CharmRecipeBuild.id.is_in(build_ids))
+        else:
+            return EmptyResultSet()
+
+    @builds.setter
+    def builds(self, builds):
+        """See `ICharmRecipeRequestBuildsJob`."""
+        self.metadata["builds"] = [build.id for build in builds]
 
     def run(self):
         """See `IRunnableJob`."""
