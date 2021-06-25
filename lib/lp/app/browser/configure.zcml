@@ -877,6 +877,12 @@
       name="fmt"
       />
   <adapter
+      for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.CharmRecipeFormatterAPI"
+      name="fmt"
+      />
+  <adapter
       for="lp.blueprints.interfaces.specification.ISpecification"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.SpecificationFormatterAPI"
