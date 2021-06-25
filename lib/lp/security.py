@@ -65,7 +65,10 @@ from lp.buildmaster.interfaces.builder import (
     )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
-from lp.charms.interfaces.charmrecipe import ICharmRecipe
+from lp.charms.interfaces.charmrecipe import (
+    ICharmRecipe,
+    ICharmRecipeBuildRequest,
+    )
 from lp.code.interfaces.branch import (
     IBranch,
     user_has_special_branch_access,
@@ -3656,3 +3659,12 @@ class AdminCharmRecipe(AuthorizationBase):
         return (
             user.in_ppa_self_admins
             and EditCharmRecipe(self.obj).checkAuthenticated(user))
+
+
+class ViewCharmRecipeBuildRequest(DelegatedAuthorization):
+    permission = 'launchpad.View'
+    usedfor = ICharmRecipeBuildRequest
+
+    def __init__(self, obj):
+        super(ViewCharmRecipeBuildRequest, self).__init__(
+            obj, obj.recipe, 'launchpad.View')

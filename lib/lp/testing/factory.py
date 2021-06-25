@@ -5150,6 +5150,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         IStore(recipe).flush()
         return recipe
 
+    def makeCharmRecipeBuildRequest(self, recipe=None, requester=None,
+                                    channels=None, architectures=None):
+        """Make a new CharmRecipeBuildRequest."""
+        if recipe is None:
+            recipe = self.makeCharmRecipe()
+        if requester is None:
+            requester = recipe.owner.teamowner
+        return recipe.requestBuilds(
+            requester, channels=channels, architectures=architectures)
+
 
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by
