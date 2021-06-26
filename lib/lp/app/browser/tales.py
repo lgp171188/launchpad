@@ -1951,6 +1951,18 @@ class SnappySeriesFormatterAPI(CustomizableFormatter):
         return {'title': self._context.title}
 
 
+class CharmRecipeFormatterAPI(CustomizableFormatter):
+    """Adapter providing fmt support for ICharmRecipe objects."""
+
+    _link_summary_template = _(
+        'Charm recipe %(name)s for %(owner)s in %(project)s')
+
+    def _link_summary_values(self):
+        return {'name': self._context.name,
+                'owner': self._context.owner.displayname,
+                'project': self._context.project.displayname}
+
+
 class SpecificationFormatterAPI(CustomizableFormatter):
     """Adapter providing fmt support for Specification objects"""
 
