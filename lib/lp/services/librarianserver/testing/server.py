@@ -92,6 +92,8 @@ class LibrarianServerFixture(TacTestSetup):
             warnings.warn("Attempt to tearDown inactive fixture.",
                 DeprecationWarning, stacklevel=3)
             return
+        self.config_fixture.remove_section(self.service_config)
+        config.reloadConfig()
         TacTestSetup.cleanUp(self)
 
     def clear(self):

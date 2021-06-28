@@ -663,11 +663,12 @@ class RabbitMQLayer(BaseLayer):
     def tearDown(cls):
         if not cls._is_setup:
             return
+        cls.appserver_config_fixture.remove_section(
+            cls.rabbit.config.service_config)
+        cls.config_fixture.remove_section(
+            cls.rabbit.config.service_config)
         cls.rabbit.cleanUp()
         cls._is_setup = False
-        # Can't pop the config above, so bail here and let the test runner
-        # start a sub-process.
-        raise NotImplementedError
 
     @classmethod
     @profiled
@@ -795,8 +796,8 @@ class LibrarianLayer(DatabaseLayer):
 
         # Make sure things using the appserver config know the
         # correct Librarian port numbers.
-        cls.appserver_config_fixture.add_section(
-            cls.librarian_fixture.service_config)
+        cls.appserver_service_config = cls.librarian_fixture.service_config
+        cls.appserver_config_fixture.add_section(cls.appserver_service_config)
 
     @classmethod
     @profiled
@@ -805,6 +806,8 @@ class LibrarianLayer(DatabaseLayer):
         # responsibilities : not desirable though.
         if cls.librarian_fixture is None:
             return
+        cls.appserver_config_fixture.remove_section(
+            cls.appserver_service_config)
         try:
             cls._check_and_reset()
         finally:
