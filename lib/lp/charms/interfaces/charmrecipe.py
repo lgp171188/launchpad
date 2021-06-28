@@ -513,6 +513,9 @@ class ICharmRecipeSet(Interface):
     def getByName(owner, project, name):
         """Returns the appropriate `ICharmRecipe` for the given objects."""
 
+    def exists(owner, project, name):
+        """Check to see if a matching charm recipe exists."""
+
     def findByPerson(person, visible_by_user=None):
         """Return all charm recipes relevant to `person`.
 
