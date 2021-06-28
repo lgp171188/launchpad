@@ -1,0 +1,22 @@
+<tal:root
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  omit-tag="">
+
+<div
+  metal:define-macro="related-charm-recipes"
+  tal:define="context_menu context/menu:context"
+  id="related-charm-recipes">
+
+  <h3>Related charm recipes</h3>
+
+  <div id="charm-recipe-links" class="actions">
+    <div id="charm-recipe-summary">
+      <tal:charm_recipes replace="structure view/charm_recipes_link" />
+    </div>
+  </div>
+
+</div>
+
+</tal:root>

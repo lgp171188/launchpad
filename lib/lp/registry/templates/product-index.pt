@@ -188,6 +188,10 @@
                   tal:condition="link/enabled">
                 <a tal:replace="structure link/fmt:link" />
               </li>
+              <li tal:define="link context/menu:overview/view_charm_recipes"
+                  tal:condition="link/enabled">
+                <a tal:replace="structure link/fmt:link" />
+              </li>
             </ul>
           </div>
         </div>
