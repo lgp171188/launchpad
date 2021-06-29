@@ -180,8 +180,8 @@ class TestSwiftFixture(TestCase):
         # With no Swift server, a fresh connection fails with
         # a swiftclient.ClientException when it fails to
         # authenticate.
-        self.swift_fixture.shutdown()
         client = self.swift_fixture.connect()
+        self.swift_fixture.shutdown()
         self.assertRaises(
             swiftclient.ClientException,
             client.get_object, "size", str(size))
