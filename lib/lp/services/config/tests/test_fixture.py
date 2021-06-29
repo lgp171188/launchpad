@@ -5,13 +5,16 @@
 
 __metaclass__ = type
 
-from testtools import TestCase
+import os.path
+from textwrap import dedent
 
 from lp.services.config import config
 from lp.services.config.fixture import (
     ConfigFixture,
+    ConfigMismatchError,
     ConfigUseFixture,
     )
+from lp.testing import TestCase
 
 
 class TestConfigUseFixture(TestCase):
@@ -52,5 +55,88 @@ class TestConfigFixture(TestCase):
                 "[meta]\n"
                 "extends: ../testrunner/launchpad-lazr.conf",
                 lazr_config.strip())
+        finally:
+            fixture.cleanUp()
+
+    def test_add_and_remove_section(self):
+        fixture = ConfigFixture('testtestconfig', 'testrunner')
+        fixture.setUp()
+        try:
+            confpath = 'configs/testtestconfig/launchpad-lazr.conf'
+            with open(confpath) as f:
+                lazr_config = f.read()
+            self.assertEqual(dedent("""\
+                [meta]
+                extends: ../testrunner/launchpad-lazr.conf
+                """), lazr_config)
+
+            fixture.add_section(dedent("""\
+                [test1]
+                key: false
+                """))
+            with open(confpath) as f:
+                lazr_config = f.read()
+            self.assertEqual(dedent("""\
+                [meta]
+                extends: ../testrunner/launchpad-lazr.conf
+
+                [test1]
+                key: false
+                """), lazr_config)
+
+            fixture.add_section(dedent("""\
+                [test2]
+                key: true
+                """))
+            with open(confpath) as f:
+                lazr_config = f.read()
+            self.assertEqual(dedent("""\
+                [meta]
+                extends: ../testrunner/launchpad-lazr.conf
+
+                [test1]
+                key: false
+
+                [test2]
+                key: true
+                """), lazr_config)
+
+            fixture.remove_section(dedent("""\
+                [test1]
+                key: false
+                """))
+            with open(confpath) as f:
+                lazr_config = f.read()
+            self.assertEqual(dedent("""\
+                [meta]
+                extends: ../testrunner/launchpad-lazr.conf
+
+                [test2]
+                key: true
+                """), lazr_config)
+        finally:
+            fixture.cleanUp()
+
+    def test_remove_section_unexpected_value(self):
+        fixture = ConfigFixture('testtestconfig', 'testrunner')
+        fixture.setUp()
+        try:
+            confpath = os.path.abspath(
+                'configs/testtestconfig/launchpad-lazr.conf')
+
+            fixture.add_section(dedent("""\
+                [test1]
+                key: false
+                """))
+
+            self.assertRaisesWithContent(
+                ConfigMismatchError,
+                "Can't remove test1.key option from %s: "
+                "expected value 'true', current value 'false'" % confpath,
+                fixture.remove_section,
+                dedent("""\
+                    [test1]
+                    key: true
+                    """))
         finally:
             fixture.cleanUp()
