@@ -412,7 +412,7 @@ class ICharmRecipeEditableAttributes(Interface):
             "recipe."))
 
     git_path = TextLine(
-        title=_("Git branch path"), required=False, readonly=False,
+        title=_("Git branch path"), required=False, readonly=True,
         description=_(
             "The path of the Git branch containing a charmcraft.yaml "
             "recipe."))
@@ -445,8 +445,8 @@ class ICharmRecipeEditableAttributes(Interface):
         key_type=TextLine(), required=False, readonly=False,
         description=_(
             "A dictionary mapping snap names to channels to use when building "
-            "this charm recipe.  Currently only 'core', 'core18', 'core20', "
-            "and 'charmcraft' keys are supported."))
+            "this charm recipe.  Currently only 'charmcraft', 'core', "
+            "'core18', and 'core20' keys are supported."))
 
     is_stale = Bool(
         title=_("Charm recipe is stale and is due to be rebuilt."),
@@ -513,6 +513,52 @@ class ICharmRecipeSet(Interface):
     def getByName(owner, project, name):
         """Returns the appropriate `ICharmRecipe` for the given objects."""
 
+    def exists(owner, project, name):
+        """Check to see if a matching charm recipe exists."""
+
+    def findByPerson(person, visible_by_user=None):
+        """Return all charm recipes relevant to `person`.
+
+        This returns charm recipes for Git branches owned by `person`, or
+        where `person` is the owner of the charm recipe.
+
+        :param person: An `IPerson`.
+        :param visible_by_user: If not None, only return recipes visible by
+            this user; otherwise, only return publicly-visible recipes.
+        """
+
+    def findByProject(project, visible_by_user=None):
+        """Return all charm recipes for the given project.
+
+        :param project: An `IProduct`.
+        :param visible_by_user: If not None, only return recipes visible by
+            this user; otherwise, only return publicly-visible recipes.
+        """
+
+    def findByGitRepository(repository, paths=None, check_permissions=True):
+        """Return all charm recipes for the given Git repository.
+
+        :param repository: An `IGitRepository`.
+        :param paths: If not None, only return charm recipes for one of
+            these Git reference paths.
+        """
+
+    def findByGitRef(ref):
+        """Return all charm recipes for the given Git reference."""
+
+    def findByContext(context, visible_by_user=None, order_by_date=True):
+        """Return all charm recipes for the given context.
+
+        :param context: An `IPerson`, `IProduct`, `IGitRepository`, or
+            `IGitRef`.
+        :param visible_by_user: If not None, only return recipes visible by
+            this user; otherwise, only return publicly-visible recipes.
+        :param order_by_date: If True, order recipes by descending
+            modification date.
+        :raises BadCharmRecipeSearchContext: if the context is not
+            understood.
+        """
+
     def isValidInformationType(information_type, owner, git_ref=None):
         """Whether the information type context is valid."""
 
@@ -534,14 +580,6 @@ class ICharmRecipeSet(Interface):
             reason.
         :raises CannotParseCharmcraftYaml: if the fetched charmcraft.yaml
             cannot be parsed.
-        """
-
-    def findByGitRepository(repository, paths=None):
-        """Return all charm recipes for the given Git repository.
-
-        :param repository: An `IGitRepository`.
-        :param paths: If not None, only return charm recipes for one of
-            these Git reference paths.
         """
 
     def detachFromGitRepository(repository):

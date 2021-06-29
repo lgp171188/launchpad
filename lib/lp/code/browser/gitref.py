@@ -35,6 +35,10 @@ from lp.app.browser.launchpadform import (
     action,
     LaunchpadFormView,
     )
+from lp.charms.browser.hascharmrecipes import (
+    HasCharmRecipesMenuMixin,
+    HasCharmRecipesViewMixin,
+    )
 from lp.code.browser.branchmergeproposal import (
     latest_proposals_for_each_branch,
     )
@@ -71,17 +75,21 @@ from lp.snappy.browser.hassnaps import (
     )
 
 
-class GitRefContextMenu(ContextMenu, HasRecipesMenuMixin, HasSnapsMenuMixin):
+class GitRefContextMenu(
+        ContextMenu, HasRecipesMenuMixin, HasSnapsMenuMixin,
+        HasCharmRecipesMenuMixin):
     """Context menu for Git references."""
 
     usedfor = IGitRef
     facet = 'branches'
     links = [
         'browse_commits',
+        'create_charm_recipe',
         'create_recipe',
         'create_snap',
         'register_merge',
         'source',
+        'view_charm_recipes',
         'view_recipes',
         ]
 
@@ -111,7 +119,7 @@ class GitRefContextMenu(ContextMenu, HasRecipesMenuMixin, HasSnapsMenuMixin):
         return Link("+new-recipe", text, enabled=enabled, icon="add")
 
 
-class GitRefView(LaunchpadView, HasSnapsViewMixin):
+class GitRefView(LaunchpadView, HasSnapsViewMixin, HasCharmRecipesViewMixin):
 
     # This is set at self.commit_infos, and should be accessed by the view
     # as self.commit_info_message.

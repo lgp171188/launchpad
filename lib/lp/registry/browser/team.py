@@ -93,6 +93,7 @@ from lp.app.widgets.itemswidgets import (
     )
 from lp.app.widgets.owner import HiddenUserWidget
 from lp.app.widgets.popup import PersonPickerWidget
+from lp.charms.browser.hascharmrecipes import HasCharmRecipesMenuMixin
 from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
 from lp.oci.browser.hasocirecipes import HasOCIRecipesMenuMixin
 from lp.registry.browser.branding import BrandingChangeView
@@ -1624,7 +1625,8 @@ class TeamMenuMixin(PPANavigationMenuMixIn, CommonMenuLinks):
 
 
 class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin,
-                       HasSnapsMenuMixin, HasOCIRecipesMenuMixin):
+                       HasSnapsMenuMixin, HasOCIRecipesMenuMixin,
+                       HasCharmRecipesMenuMixin):
 
     usedfor = ITeam
     facet = 'overview'
@@ -1652,6 +1654,7 @@ class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin,
         'maintained',
         'ppa',
         'related_software_summary',
+        'view_charm_recipes',
         'view_recipes',
         'view_snaps',
         'view_oci_recipes',

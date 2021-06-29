@@ -11,6 +11,12 @@
         <browser:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
             urldata="lp.charms.browser.charmrecipe.CharmRecipeURL" />
+        <browser:menus
+            module="lp.charms.browser.charmrecipe"
+            classes="CharmRecipeNavigationMenu" />
+        <browser:navigation
+            module="lp.charms.browser.charmrecipe"
+            classes="CharmRecipeNavigation" />
         <browser:defaultView
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
             name="+index" />
@@ -20,14 +26,42 @@
             permission="launchpad.View"
             name="+index"
             template="../templates/charmrecipe-index.pt" />
-        <browser:navigation
-            module="lp.charms.browser.charmrecipe"
-            classes="CharmRecipeNavigation" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
+            class="lp.charms.browser.charmrecipe.CharmRecipeAdminView"
+            permission="launchpad.Admin"
+            name="+admin"
+            template="../../app/templates/generic-edit.pt" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
+            class="lp.charms.browser.charmrecipe.CharmRecipeEditView"
+            permission="launchpad.Edit"
+            name="+edit"
+            template="../templates/charmrecipe-edit.pt" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
+            class="lp.charms.browser.charmrecipe.CharmRecipeDeleteView"
+            permission="launchpad.Edit"
+            name="+delete"
+            template="../../app/templates/generic-edit.pt" />
         <adapter
             provides="lp.services.webapp.interfaces.IBreadcrumb"
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
             factory="lp.charms.browser.charmrecipe.CharmRecipeBreadcrumb"
             permission="zope.Public" />
+
+        <browser:page
+            for="lp.code.interfaces.gitref.IGitRef"
+            class="lp.charms.browser.charmrecipe.CharmRecipeAddView"
+            permission="launchpad.AnyPerson"
+            name="+new-charm-recipe"
+            template="../templates/charmrecipe-new.pt" />
+        <browser:page
+            for="lp.registry.interfaces.product.IProduct"
+            class="lp.charms.browser.charmrecipe.CharmRecipeAddView"
+            permission="launchpad.AnyPerson"
+            name="+new-charm-recipe"
+            template="../templates/charmrecipe-new.pt" />
 
         <browser:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipeBuildRequest"
@@ -76,5 +110,36 @@
             for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
             factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
             permission="zope.Public" />
+
+        <browser:page
+            for="*"
+            class="lp.app.browser.launchpad.Macro"
+            permission="zope.Public"
+            name="+charm-recipe-macros"
+            template="../templates/charmrecipe-macros.pt" />
+        <browser:page
+            for="lp.code.interfaces.gitrepository.IGitRepository"
+            class="lp.charms.browser.charmrecipelisting.GitCharmRecipeListingView"
+            permission="launchpad.View"
+            name="+charm-recipes"
+            template="../templates/charmrecipe-listing.pt" />
+        <browser:page
+            for="lp.code.interfaces.gitref.IGitRef"
+            class="lp.charms.browser.charmrecipelisting.GitCharmRecipeListingView"
+            permission="launchpad.View"
+            name="+charm-recipes"
+            template="../templates/charmrecipe-listing.pt" />
+        <browser:page
+            for="lp.registry.interfaces.person.IPerson"
+            class="lp.charms.browser.charmrecipelisting.PersonCharmRecipeListingView"
+            permission="launchpad.View"
+            name="+charm-recipes"
+            template="../templates/charmrecipe-listing.pt" />
+        <browser:page
+            for="lp.registry.interfaces.product.IProduct"
+            class="lp.charms.browser.charmrecipelisting.ProjectCharmRecipeListingView"
+            permission="launchpad.View"
+            name="+charm-recipes"
+            template="../templates/charmrecipe-listing.pt" />
     </facet>
 </configure>

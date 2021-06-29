@@ -67,6 +67,9 @@ class SwiftFixture(TacTestFixture):
                 fakeswift.DEFAULT_PASSWORD, fakeswift.DEFAULT_TENANT_NAME))
         BaseLayer.config_fixture.add_section(service_config)
         config.reloadConfig()
+        self.addCleanup(config.reloadConfig)
+        self.addCleanup(
+            BaseLayer.config_fixture.remove_section, service_config)
         assert config.librarian_server.os_tenant_name == 'test'
 
     def setUpRoot(self):

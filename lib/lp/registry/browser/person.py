@@ -135,6 +135,7 @@ from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.buildmaster.enums import BuildStatus
+from lp.charms.browser.hascharmrecipes import HasCharmRecipesMenuMixin
 from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
 from lp.code.errors import InvalidNamespace
 from lp.code.interfaces.branchnamespace import IBranchNamespaceSet
@@ -812,7 +813,8 @@ class PersonMenuMixin(CommonMenuLinks):
 
 
 class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin, HasRecipesMenuMixin,
-                         HasSnapsMenuMixin, HasOCIRecipesMenuMixin):
+                         HasSnapsMenuMixin, HasOCIRecipesMenuMixin,
+                         HasCharmRecipesMenuMixin):
 
     usedfor = IPerson
     facet = 'overview'
@@ -842,6 +844,7 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin, HasRecipesMenuMixin,
         'oauth_tokens',
         'oci_registry_credentials',
         'related_software_summary',
+        'view_charm_recipes',
         'view_recipes',
         'view_snaps',
         'view_oci_recipes',

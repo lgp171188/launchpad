@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     "CharmRecipe",
+    "get_charm_recipe_privacy_filter",
     ]
 
 from operator import (
@@ -19,6 +20,7 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 from storm.databases.postgres import JSON
 from storm.locals import (
+    And,
     Bool,
     DateTime,
     Desc,
@@ -27,6 +29,7 @@ from storm.locals import (
     Not,
     Or,
     Reference,
+    Select,
     Store,
     Unicode,
     )
@@ -45,8 +48,11 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.builder import Builder
+from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.charms.adapters.buildarch import determine_instances_to_build
 from lp.charms.interfaces.charmrecipe import (
+    BadCharmRecipeSearchContext,
     CannotFetchCharmcraftYaml,
     CannotParseCharmcraftYaml,
     CHARM_RECIPE_ALLOW_CREATE,
@@ -65,26 +71,38 @@ from lp.charms.interfaces.charmrecipe import (
     ICharmRecipeSet,
     MissingCharmcraftYaml,
     NoSourceForCharmRecipe,
+    NoSuchCharmRecipe,
     )
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
 from lp.charms.model.charmrecipebuild import CharmRecipeBuild
+from lp.charms.model.charmrecipejob import CharmRecipeJob
 from lp.code.errors import (
     GitRepositoryBlobNotFound,
     GitRepositoryScanFault,
     )
+from lp.code.interfaces.gitcollection import (
+    IAllGitRepositories,
+    IGitCollection,
+    )
+from lp.code.interfaces.gitref import IGitRef
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.model.gitcollection import GenericGitCollection
+from lp.code.model.gitref import GitRef
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import (
+    IPerson,
     IPersonSet,
     validate_public_person,
     )
+from lp.registry.interfaces.product import IProduct
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.product import Product
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
@@ -104,6 +122,7 @@ from lp.services.database.stormexpr import (
     )
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import (
     cachedproperty,
@@ -314,13 +333,17 @@ class CharmRecipe(StormBase):
         """See `ICharmRecipe`."""
         return self.information_type not in PUBLIC_INFORMATION_TYPES
 
-    @property
-    def git_ref(self):
-        """See `ICharmRecipe`."""
+    @cachedproperty
+    def _git_ref(self):
         if self.git_repository is not None:
             return self.git_repository.getRefByPath(self.git_path)
         else:
             return None
+
+    @property
+    def git_ref(self):
+        """See `ICharmRecipe`."""
+        return self._git_ref
 
     @git_ref.setter
     def git_ref(self, value):
@@ -331,6 +354,7 @@ class CharmRecipe(StormBase):
         else:
             self.git_repository = None
             self.git_path = None
+        get_property_cache(self)._git_ref = value
 
     @property
     def source(self):
@@ -384,9 +408,12 @@ class CharmRecipe(StormBase):
         """See `ICharmRecipe`."""
         if self.information_type in PUBLIC_INFORMATION_TYPES:
             return True
-        # XXX cjwatson 2021-05-27: Finish implementing this once we have
-        # more privacy infrastructure.
-        return False
+        if user is None:
+            return False
+        return not IStore(CharmRecipe).find(
+            CharmRecipe,
+            CharmRecipe.id == self.id,
+            get_charm_recipe_privacy_filter(user)).is_empty()
 
     def _isBuildableArchitectureAllowed(self, das):
         """Check whether we may build for a buildable `DistroArchSeries`.
@@ -619,7 +646,35 @@ class CharmRecipe(StormBase):
 
     def destroySelf(self):
         """See `ICharmRecipe`."""
-        IStore(CharmRecipe).remove(self)
+        store = IStore(self)
+        # Remove build jobs.  There won't be many queued builds, so we can
+        # afford to do this the safe but slow way via BuildQueue.destroySelf
+        # rather than in bulk.
+        buildqueue_records = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id ==
+                CharmRecipeBuild.build_farm_job_id,
+            CharmRecipeBuild.recipe == self)
+        for buildqueue_record in buildqueue_records:
+            buildqueue_record.destroySelf()
+        build_farm_job_ids = list(store.find(
+            CharmRecipeBuild.build_farm_job_id,
+            CharmRecipeBuild.recipe == self))
+        store.execute("""
+            DELETE FROM CharmFile
+            USING CharmRecipeBuild
+            WHERE
+                CharmFile.build = CharmRecipeBuild.id AND
+                CharmRecipeBuild.recipe = ?
+            """, (self.id,))
+        store.find(CharmRecipeBuild, CharmRecipeBuild.recipe == self).remove()
+        affected_jobs = Select(
+            [CharmRecipeJob.job_id],
+            And(CharmRecipeJob.job == Job.id, CharmRecipeJob.recipe == self))
+        store.find(Job, Job.id.is_in(affected_jobs)).remove()
+        store.remove(self)
+        store.find(
+            BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
 
 
 @implementer(ICharmRecipeSet)
@@ -644,7 +699,7 @@ class CharmRecipeSet:
 
         if git_ref is None:
             raise NoSourceForCharmRecipe
-        if self.getByName(owner, project, name) is not None:
+        if self.exists(owner, project, name):
             raise DuplicateCharmRecipeName
 
         # The relevant validators will do their own checks as well, but we
@@ -670,10 +725,96 @@ class CharmRecipeSet:
 
         return recipe
 
-    def getByName(self, owner, project, name):
-        """See `ICharmRecipeSet`."""
+    def _getByName(self, owner, project, name):
         return IStore(CharmRecipe).find(
             CharmRecipe, owner=owner, project=project, name=name).one()
+
+    def exists(self, owner, project, name):
+        """See `ICharmRecipeSet`."""
+        return self._getByName(owner, project, name) is not None
+
+    def getByName(self, owner, project, name):
+        """See `ICharmRecipeSet`."""
+        recipe = self._getByName(owner, project, name)
+        if recipe is None:
+            raise NoSuchCharmRecipe(name)
+        return recipe
+
+    def _getRecipesFromCollection(self, collection, owner=None,
+                                  visible_by_user=None):
+        id_column = CharmRecipe.git_repository_id
+        ids = collection.getRepositoryIds()
+        expressions = [id_column.is_in(ids._get_select())]
+        if owner is not None:
+            expressions.append(CharmRecipe.owner == owner)
+        expressions.append(get_charm_recipe_privacy_filter(visible_by_user))
+        return IStore(CharmRecipe).find(CharmRecipe, *expressions)
+
+    def findByPerson(self, person, visible_by_user=None):
+        """See `ICharmRecipeSet`."""
+        def _getRecipes(collection):
+            collection = collection.visibleByUser(visible_by_user)
+            owned = self._getRecipesFromCollection(
+                collection.ownedBy(person), visible_by_user=visible_by_user)
+            packaged = self._getRecipesFromCollection(
+                collection, owner=person, visible_by_user=visible_by_user)
+            return owned.union(packaged)
+
+        git_collection = removeSecurityProxy(getUtility(IAllGitRepositories))
+        git_recipes = _getRecipes(git_collection)
+        return git_recipes
+
+    def findByProject(self, project, visible_by_user=None):
+        """See `ICharmRecipeSet`."""
+        def _getRecipes(collection):
+            return self._getRecipesFromCollection(
+                collection.visibleByUser(visible_by_user),
+                visible_by_user=visible_by_user)
+
+        recipes_for_project = IStore(CharmRecipe).find(
+            CharmRecipe,
+            CharmRecipe.project == project,
+            get_charm_recipe_privacy_filter(visible_by_user))
+        git_collection = removeSecurityProxy(IGitCollection(project))
+        return recipes_for_project.union(_getRecipes(git_collection))
+
+    def findByGitRepository(self, repository, paths=None,
+                            visible_by_user=None, check_permissions=True):
+        """See `ICharmRecipeSet`."""
+        clauses = [CharmRecipe.git_repository == repository]
+        if paths is not None:
+            clauses.append(CharmRecipe.git_path.is_in(paths))
+        if check_permissions:
+            clauses.append(get_charm_recipe_privacy_filter(visible_by_user))
+        return IStore(CharmRecipe).find(CharmRecipe, *clauses)
+
+    def findByGitRef(self, ref, visible_by_user=None):
+        """See `ICharmRecipeSet`."""
+        return IStore(CharmRecipe).find(
+            CharmRecipe,
+            CharmRecipe.git_repository == ref.repository,
+            CharmRecipe.git_path == ref.path,
+            get_charm_recipe_privacy_filter(visible_by_user))
+
+    def findByContext(self, context, visible_by_user=None, order_by_date=True):
+        """See `ICharmRecipeSet`."""
+        if IPerson.providedBy(context):
+            recipes = self.findByPerson(
+                context, visible_by_user=visible_by_user)
+        elif IProduct.providedBy(context):
+            recipes = self.findByProject(
+                context, visible_by_user=visible_by_user)
+        elif IGitRepository.providedBy(context):
+            recipes = self.findByGitRepository(
+                context, visible_by_user=visible_by_user)
+        elif IGitRef.providedBy(context):
+            recipes = self.findByGitRef(
+                context, visible_by_user=visible_by_user)
+        else:
+            raise BadCharmRecipeSearchContext(context)
+        if order_by_date:
+            recipes = recipes.order_by(Desc(CharmRecipe.date_last_modified))
+        return recipes
 
     def isValidInformationType(self, information_type, owner, git_ref=None):
         """See `ICharmRecipeSet`."""
@@ -698,6 +839,8 @@ class CharmRecipeSet:
         """See `ICharmRecipeSet`."""
         recipes = [removeSecurityProxy(recipe) for recipe in recipes]
 
+        load_related(Product, recipes, ["project_id"])
+
         person_ids = set()
         for recipe in recipes:
             person_ids.add(recipe.registrant_id)
@@ -707,6 +850,13 @@ class CharmRecipeSet:
             GitRepository, recipes, ["git_repository_id"])
         if repositories:
             GenericGitCollection.preloadDataForRepositories(repositories)
+
+        git_refs = GitRef.findByReposAndPaths(
+            [(recipe.git_repository, recipe.git_path) for recipe in recipes])
+        for recipe in recipes:
+            git_ref = git_refs.get((recipe.git_repository, recipe.git_path))
+            if git_ref is not None:
+                get_property_cache(recipe)._git_ref = git_ref
 
         # Add repository owners to the list of pre-loaded persons.  We need
         # the target repository owner as well, since repository unique names
@@ -760,16 +910,20 @@ class CharmRecipeSet:
 
         return charmcraft_data
 
-    def findByGitRepository(self, repository, paths=None):
-        """See `ICharmRecipeSet`."""
-        clauses = [CharmRecipe.git_repository == repository]
-        if paths is not None:
-            clauses.append(CharmRecipe.git_path.is_in(paths))
-        # XXX cjwatson 2021-05-26: Check permissions once we have some
-        # privacy infrastructure.
-        return IStore(CharmRecipe).find(CharmRecipe, *clauses)
-
     def detachFromGitRepository(self, repository):
         """See `ICharmRecipeSet`."""
-        self.findByGitRepository(repository).set(
+        recipes = self.findByGitRepository(repository)
+        for recipe in recipes:
+            get_property_cache(recipe)._git_ref = None
+        recipes.set(
             git_repository_id=None, git_path=None, date_last_modified=UTC_NOW)
+
+
+def get_charm_recipe_privacy_filter(user):
+    """Return a Storm query filter to find charm recipes visible to `user`."""
+    public_filter = CharmRecipe.information_type.is_in(
+        PUBLIC_INFORMATION_TYPES)
+
+    # XXX cjwatson 2021-06-07: Flesh this out once we have more privacy
+    # infrastructure.
+    return [public_filter]
