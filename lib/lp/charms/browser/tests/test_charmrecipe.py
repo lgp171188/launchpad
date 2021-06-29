@@ -66,6 +66,7 @@ from lp.testing.pages import (
     extract_text,
     find_main_content,
     find_tags_by_class,
+    find_tag_by_id,
     )
 from lp.testing.publication import test_traverse
 from lp.testing.views import (
@@ -109,6 +110,155 @@ class BaseTestCharmRecipeView(BrowserTestCase):
         self.useFixture(FakeLogger())
         self.person = self.factory.makePerson(
             name="test-person", displayname="Test Person")
+
+
+class TestCharmRecipeAddView(BaseTestCharmRecipeView):
+
+    def test_create_new_recipe_not_logged_in(self):
+        [git_ref] = self.factory.makeGitRefs()
+        self.assertRaises(
+            Unauthorized, self.getViewBrowser, git_ref,
+            view_name="+new-charm-recipe", no_login=True)
+
+    def test_create_new_recipe_git(self):
+        self.factory.makeProduct(
+            name="test-project", displayname="Test Project")
+        [git_ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person)
+        source_display = git_ref.display_name
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-charm-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "charm-name"
+        self.assertEqual("", browser.getControl(name="field.project").value)
+        browser.getControl(name="field.project").value = "test-project"
+        browser.getControl("Create charm recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("charm-name", extract_text(content.h1))
+        self.assertThat(
+            "Test Person", MatchesPickerText(content, "edit-owner"))
+        self.assertThat(
+            "Project:\nTest Project\nEdit charm recipe",
+            MatchesTagText(content, "project"))
+        self.assertThat(
+            "Source:\n%s\nEdit charm recipe" % source_display,
+            MatchesTagText(content, "source"))
+        self.assertThat(
+            "Build schedule:\n(?)\nBuilt on request\nEdit charm recipe\n",
+            MatchesTagText(content, "auto_build"))
+        self.assertIsNone(find_tag_by_id(content, "auto_build_channels"))
+        self.assertThat(
+            "Builds of this charm recipe are not automatically uploaded to "
+            "the store.\nEdit charm recipe",
+            MatchesTagText(content, "store_upload"))
+
+    def test_create_new_recipe_git_project_namespace(self):
+        # If the Git repository is already in a project namespace, then that
+        # project is the default for the new recipe.
+        project = self.factory.makeProduct(
+            name="test-project", displayname="Test Project")
+        [git_ref] = self.factory.makeGitRefs(target=project)
+        source_display = git_ref.display_name
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-charm-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "charm-name"
+        self.assertEqual(
+            "test-project", browser.getControl(name="field.project").value)
+        browser.getControl("Create charm recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("charm-name", extract_text(content.h1))
+        self.assertThat(
+            "Test Person", MatchesPickerText(content, "edit-owner"))
+        self.assertThat(
+            "Project:\nTest Project\nEdit charm recipe",
+            MatchesTagText(content, "project"))
+        self.assertThat(
+            "Source:\n%s\nEdit charm recipe" % source_display,
+            MatchesTagText(content, "source"))
+        self.assertThat(
+            "Build schedule:\n(?)\nBuilt on request\nEdit charm recipe\n",
+            MatchesTagText(content, "auto_build"))
+        self.assertIsNone(find_tag_by_id(content, "auto_build_channels"))
+        self.assertThat(
+            "Builds of this charm recipe are not automatically uploaded to "
+            "the store.\nEdit charm recipe",
+            MatchesTagText(content, "store_upload"))
+
+    def test_create_new_recipe_project(self):
+        project = self.factory.makeProduct(displayname="Test Project")
+        [git_ref] = self.factory.makeGitRefs()
+        source_display = git_ref.display_name
+        browser = self.getViewBrowser(
+            project, view_name="+new-charm-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "charm-name"
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref.repository.shortened_path)
+        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        browser.getControl("Create charm recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual("charm-name", extract_text(content.h1))
+        self.assertThat(
+            "Test Person", MatchesPickerText(content, "edit-owner"))
+        self.assertThat(
+            "Project:\nTest Project\nEdit charm recipe",
+            MatchesTagText(content, "project"))
+        self.assertThat(
+            "Source:\n%s\nEdit charm recipe" % source_display,
+            MatchesTagText(content, "source"))
+        self.assertThat(
+            "Build schedule:\n(?)\nBuilt on request\nEdit charm recipe\n",
+            MatchesTagText(content, "auto_build"))
+        self.assertIsNone(find_tag_by_id(content, "auto_build_channels"))
+        self.assertThat(
+            "Builds of this charm recipe are not automatically uploaded to "
+            "the store.\nEdit charm recipe",
+            MatchesTagText(content, "store_upload"))
+
+    def test_create_new_recipe_users_teams_as_owner_options(self):
+        # Teams that the user is in are options for the charm recipe owner.
+        self.factory.makeTeam(
+            name="test-team", displayname="Test Team", members=[self.person])
+        [git_ref] = self.factory.makeGitRefs()
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-charm-recipe", user=self.person)
+        options = browser.getControl("Owner").displayOptions
+        self.assertEqual(
+            ["Test Person (test-person)", "Test Team (test-team)"],
+            sorted(str(option) for option in options))
+
+    def test_create_new_recipe_auto_build(self):
+        # Creating a new recipe and asking for it to be automatically built
+        # sets all the appropriate fields.
+        self.factory.makeProduct(
+            name="test-project", displayname="Test Project")
+        [git_ref] = self.factory.makeGitRefs()
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-charm-recipe", user=self.person)
+        browser.getControl(name="field.name").value = "charm-name"
+        browser.getControl(name="field.project").value = "test-project"
+        browser.getControl(
+            "Automatically build when branch changes").selected = True
+        browser.getControl(
+            name="field.auto_build_channels.charmcraft").value = "edge"
+        browser.getControl(
+            name="field.auto_build_channels.core").value = "stable"
+        browser.getControl(
+            name="field.auto_build_channels.core18").value = "beta"
+        browser.getControl(
+            name="field.auto_build_channels.core20").value = "edge/feature"
+        browser.getControl("Create charm recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
+            MatchesTagText(content, "auto_build"))
+        self.assertThat(
+            "Source snap channels for automatic builds:\nEdit charm recipe\n"
+            "charmcraft\nedge\ncore\nstable\ncore18\nbeta\n"
+            "core20\nedge/feature\n",
+            MatchesTagText(content, "auto_build_channels"))
 
 
 class TestCharmRecipeAdminView(BaseTestCharmRecipeView):

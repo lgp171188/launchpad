@@ -84,6 +84,7 @@ class GitRefContextMenu(
     facet = 'branches'
     links = [
         'browse_commits',
+        'create_charm_recipe',
         'create_recipe',
         'create_snap',
         'register_merge',

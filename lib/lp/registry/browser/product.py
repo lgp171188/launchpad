@@ -588,6 +588,7 @@ class ProductOverviewMenu(ApplicationMenu, ProductEditLinksMixin,
         'view_charm_recipes',
         'view_recipes',
         'view_snaps',
+        'create_charm_recipe',
         'create_snap',
         ]
 

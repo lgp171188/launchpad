@@ -50,6 +50,19 @@
             factory="lp.charms.browser.charmrecipe.CharmRecipeBreadcrumb"
             permission="zope.Public" />
 
+        <browser:page
+            for="lp.code.interfaces.gitref.IGitRef"
+            class="lp.charms.browser.charmrecipe.CharmRecipeAddView"
+            permission="launchpad.AnyPerson"
+            name="+new-charm-recipe"
+            template="../templates/charmrecipe-new.pt" />
+        <browser:page
+            for="lp.registry.interfaces.product.IProduct"
+            class="lp.charms.browser.charmrecipe.CharmRecipeAddView"
+            permission="launchpad.AnyPerson"
+            name="+new-charm-recipe"
+            template="../templates/charmrecipe-new.pt" />
+
         <browser:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipeBuildRequest"
             path_expression="string:+build-request/${id}"

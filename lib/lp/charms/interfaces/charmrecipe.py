@@ -445,8 +445,8 @@ class ICharmRecipeEditableAttributes(Interface):
         key_type=TextLine(), required=False, readonly=False,
         description=_(
             "A dictionary mapping snap names to channels to use when building "
-            "this charm recipe.  Currently only 'core', 'core18', 'core20', "
-            "and 'charmcraft' keys are supported."))
+            "this charm recipe.  Currently only 'charmcraft', 'core', "
+            "'core18', and 'core20' keys are supported."))
 
     is_stale = Bool(
         title=_("Charm recipe is stale and is due to be rebuilt."),
