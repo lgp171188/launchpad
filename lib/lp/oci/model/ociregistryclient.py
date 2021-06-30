@@ -139,7 +139,8 @@ class OCIRegistryClient:
                 post_location,
                 params=query_parsed,
                 data=fileobj,
-                headers={"Content-Length": str(length)},
+                headers={"Content-Length": str(length),
+                         "Content-Type": "application/octet-stream"},
                 method="PUT")
         except HTTPError as http_error:
             put_response = http_error.response
@@ -165,7 +166,7 @@ class OCIRegistryClient:
         try:
             with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
                 for tarinfo in un_zipped:
-                    if tarinfo.name == 'layer.tar':
+                    if tarinfo.name.decode('utf8') == 'layer.tar':
                         fileobj = un_zipped.extractfile(tarinfo)
                         # XXX Work around requests handling of objects that have
                         # fileno, but error on access in python3:
@@ -177,15 +178,16 @@ class OCIRegistryClient:
                                 http_client)
                         finally:
                             fileobj.close()
-                        return tarinfo.size
-                    else:
+                            return tarinfo.size
+                    elif 'tar.gz' in tarinfo.name.decode('utf8'):
                         size = lfa.content.filesize
                         wrapper = LibraryFileAliasWrapper(lfa)
-                        wrapper.len = size
                         cls._upload(
                             digest, push_rule, wrapper, size,
                             http_client)
                         return size
+                    else:
+                        continue
         finally:
             lfa.close()
 
