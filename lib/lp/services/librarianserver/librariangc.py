@@ -7,6 +7,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+try:
+    from contextlib import ExitStack
+except ImportError:
+    from contextlib2 import ExitStack
 from datetime import (
     datetime,
     timedelta,
@@ -59,16 +63,17 @@ def file_exists(content_id):
     """
     swift_enabled = getFeatureFlag('librarian.swift.enabled') or False
     if swift_enabled:
-        swift_connection = swift.connection_pool.get()
-        container, name = swift.swift_location(content_id)
-        try:
-            swift.quiet_swiftclient(
-                swift_connection.head_object, container, name)
-            return True
-        except swiftclient.ClientException as x:
-            if x.http_status != 404:
-                raise
-            swift.connection_pool.put(swift_connection)
+        for connection_pool in swift.connection_pools:
+            swift_connection = connection_pool.get()
+            container, name = swift.swift_location(content_id)
+            try:
+                swift.quiet_swiftclient(
+                    swift_connection.head_object, container, name)
+                return True
+            except swiftclient.ClientException as x:
+                if x.http_status != 404:
+                    raise
+                connection_pool.put(swift_connection)
     return os.path.exists(get_file_path(content_id))
 
 
@@ -84,16 +89,20 @@ def open_stream(content_id):
     """
     swift_enabled = getFeatureFlag('librarian.swift.enabled') or False
     if swift_enabled:
-        try:
-            swift_connection = swift.connection_pool.get()
-            container, name = swift.swift_location(content_id)
-            chunks = swift.quiet_swiftclient(
-                swift_connection.get_object,
-                container, name, resp_chunk_size=STREAM_CHUNK_SIZE)[1]
-            return swift.SwiftStream(swift_connection, chunks)
-        except swiftclient.ClientException as x:
-            if x.http_status != 404:
-                raise
+        for connection_pool in swift.connection_pools:
+            try:
+                swift_connection = connection_pool.get()
+                container, name = swift.swift_location(content_id)
+                chunks = swift.quiet_swiftclient(
+                    swift_connection.get_object,
+                    container, name, resp_chunk_size=STREAM_CHUNK_SIZE)[1]
+                return swift.SwiftStream(
+                    connection_pool, swift_connection, chunks)
+            except swiftclient.ClientException as x:
+                if x.http_status == 404:
+                    connection_pool.put(swift_connection)
+                else:
+                    raise
     path = get_file_path(content_id)
     if os.path.exists(path):
         return open(path, 'rb')
@@ -540,14 +549,15 @@ class UnreferencedContentPruner:
         # Remove the file from Swift, if it hasn't already been.
         if self.swift_enabled:
             container, name = swift.swift_location(content_id)
-            with swift.connection() as swift_connection:
-                try:
-                    swift.quiet_swiftclient(
-                        swift_connection.delete_object, container, name)
-                    removed.append('Swift')
-                except swiftclient.ClientException as x:
-                    if x.http_status != 404:
-                        raise
+            for connection_pool in swift.connection_pools:
+                with swift.connection(connection_pool) as swift_connection:
+                    try:
+                        swift.quiet_swiftclient(
+                            swift_connection.delete_object, container, name)
+                        removed.append('Swift')
+                    except swiftclient.ClientException as x:
+                        if x.http_status != 404:
+                            raise
     
         if removed:
             log.debug3(
@@ -737,13 +747,19 @@ def delete_unwanted_disk_files(con):
 
 
 def swift_files(max_lfc_id):
-    """Generate the (container, name) of all files stored in Swift.
+    """Generate all files stored in all configured Swift instances.
 
-    Results are yielded in numerical order.
+    For each file, yield (connection_pool, container, name).  Results are
+    yielded in numerical order; if the same file is present in multiple
+    Swift instances, all copies of it are yielded before moving on to the
+    next file.
     """
     final_container = swift.swift_location(max_lfc_id)[0]
 
-    with swift.connection() as swift_connection:
+    with ExitStack() as stack:
+        swift_connections = [
+            stack.enter_context(swift.connection(connection_pool))
+            for connection_pool in swift.connection_pools]
         # We generate the container names, rather than query the
         # server, because the mock Swift implementation doesn't
         # support that operation.
@@ -753,21 +769,24 @@ def swift_files(max_lfc_id):
             container_num += 1
             container = swift.SWIFT_CONTAINER_PREFIX + str(container_num)
             seen_names = set()
-            try:
-                objs = sorted(
-                    swift.quiet_swiftclient(
-                        swift_connection.get_container,
-                        container, full_listing=True)[1],
-                    key=lambda x: [
-                        int(segment) for segment in x['name'].split('/')])
-                for obj in objs:
-                    if obj['name'] not in seen_names:
-                        yield (container, obj)
-                    seen_names.add(obj['name'])
-            except swiftclient.ClientException as x:
-                if x.http_status == 404:
-                    continue
-                raise
+            objs = []
+            for pool_index, swift_connection in enumerate(swift_connections):
+                try:
+                    objs.extend([
+                        (obj, pool_index)
+                        for obj in swift.quiet_swiftclient(
+                            swift_connection.get_container,
+                            container, full_listing=True)[1]])
+                except swiftclient.ClientException as x:
+                    if x.http_status == 404:
+                        continue
+                    raise
+            objs.sort(key=lambda x: (
+                [int(segment) for segment in x[0]['name'].split('/')], x[1]))
+            for obj, pool_index in objs:
+                if (obj['name'], pool_index) not in seen_names:
+                    yield (swift.connection_pools[pool_index], container, obj)
+                seen_names.add((obj['name'], pool_index))
 
 
 def delete_unwanted_swift_files(con):
@@ -799,7 +818,7 @@ def delete_unwanted_swift_files(con):
     removed_count = 0
     content_id = next_wanted_content_id = -1
 
-    for container, obj in swift_files(max_lfc_id):
+    for connection_pool, container, obj in swift_files(max_lfc_id):
         name = obj['name']
 
         # We may have a segment of a large file.
@@ -833,14 +852,15 @@ def delete_unwanted_swift_files(con):
                 log.debug3(
                     "File %d not removed - created too recently", content_id)
             else:
-                with swift.connection() as swift_connection:
+                with swift.connection(connection_pool) as swift_connection:
                     try:
                         swift_connection.delete_object(container, name)
                     except swiftclient.ClientException as e:
                         if e.http_status != 404:
                             raise
                 log.debug3(
-                    'Deleted ({0}, {1}) from Swift'.format(container, name))
+                    'Deleted (%s, %s) from Swift (%s)',
+                    container, name, connection_pool.os_auth_url)
                 removed_count += 1
 
     if next_wanted_content_id == content_id:

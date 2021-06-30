@@ -8,6 +8,7 @@ import os.path
 import time
 
 from fixtures import TempDir
+from swiftclient import client as swiftclient
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
@@ -157,19 +158,24 @@ class LibrarianStorageSwiftTests(TestCase):
         self.pushConfig('librarian_server', root=self.directory)
         self.storage = LibrarianStorage(self.directory, db.Library())
         transaction.commit()
-        self.addCleanup(swift.connection_pool.clear)
 
-    def moveToSwift(self, lfc_id):
-        # Move a file to Swift so that we know it can't accidentally be
-        # retrieved from the local file system.  We set its modification
-        # time far enough in the past that it isn't considered potentially
-        # in progress.
+    def copyToSwift(self, lfc_id, swift_fixture=None):
+        # Copy a file to Swift.
+        if swift_fixture is None:
+            swift_fixture = self.swift_fixture
         path = swift.filesystem_path(lfc_id)
-        mtime = time.time() - 25 * 60 * 60
-        os.utime(path, (mtime, mtime))
-        self.assertTrue(os.path.exists(path))
-        swift.to_swift(DevNullLogger(), remove_func=os.unlink)
-        self.assertFalse(os.path.exists(path))
+        swift_connection = swift_fixture.connect()
+        try:
+            swift._to_swift_file(
+                DevNullLogger(), swift_connection, lfc_id, path)
+        finally:
+            swift_connection.close()
+
+    def moveToSwift(self, lfc_id, swift_fixture=None):
+        # Move a file to Swift so that we know it can't accidentally be
+        # retrieved from the local file system.
+        self.copyToSwift(lfc_id, swift_fixture=swift_fixture)
+        os.unlink(swift.filesystem_path(lfc_id))
 
     @defer.inlineCallbacks
     def test_completed_fetch_reuses_connection(self):
@@ -190,7 +196,7 @@ class LibrarianStorageSwiftTests(TestCase):
                 break
             chunks.append(chunk)
         self.assertEqual(b''.join(chunks), data)
-        self.assertEqual(1, len(swift.connection_pool._pool))
+        self.assertEqual(1, len(swift.connection_pools[-1]._pool))
 
     @defer.inlineCallbacks
     def test_partial_fetch_does_not_reuse_connection(self):
@@ -209,7 +215,7 @@ class LibrarianStorageSwiftTests(TestCase):
         stream.close()
         with ExpectedException(ValueError, 'I/O operation on closed file'):
             yield stream.read(self.storage.CHUNK_SIZE)
-        self.assertEqual(0, len(swift.connection_pool._pool))
+        self.assertEqual(0, len(swift.connection_pools[-1]._pool))
 
     @defer.inlineCallbacks
     def test_fetch_with_close_at_end_does_not_reuse_connection(self):
@@ -235,4 +241,71 @@ class LibrarianStorageSwiftTests(TestCase):
         self.assertEqual(b'', chunk)
         # In principle we might be able to reuse the connection here, but
         # SwiftStream.close doesn't know that.
-        self.assertEqual(0, len(swift.connection_pool._pool))
+        self.assertEqual(0, len(swift.connection_pools[-1]._pool))
+
+    @defer.inlineCallbacks
+    def test_multiple_swift_instances(self):
+        # If multiple Swift instances are configured, LibrarianStorage tries
+        # each in turn until it finds the object.
+        old_swift_fixture = self.useFixture(SwiftFixture(old_instance=True))
+        # We need to push this again, since setting up SwiftFixture reloads
+        # the config.
+        self.pushConfig('librarian_server', root=self.directory)
+
+        old_data = b'x' * (self.storage.CHUNK_SIZE * 4 + 1)
+        old_file = self.storage.startAddFile('file1', len(old_data))
+        old_file.mimetype = 'text/plain'
+        old_file.append(old_data)
+        old_lfc_id, _ = old_file.store()
+        self.moveToSwift(old_lfc_id, swift_fixture=old_swift_fixture)
+
+        both_data = b'y' * (self.storage.CHUNK_SIZE * 4 + 1)
+        both_file = self.storage.startAddFile('file2', len(both_data))
+        both_file.mimetype = 'text/plain'
+        both_file.append(both_data)
+        both_lfc_id, _ = both_file.store()
+        self.copyToSwift(both_lfc_id, swift_fixture=old_swift_fixture)
+        self.moveToSwift(both_lfc_id)
+
+        new_data = b'z' * (self.storage.CHUNK_SIZE * 4 + 1)
+        new_file = self.storage.startAddFile('file3', len(new_data))
+        new_file.mimetype = 'text/plain'
+        new_file.append(new_data)
+        new_lfc_id, _ = new_file.store()
+        self.moveToSwift(new_lfc_id)
+
+        old_stream = yield self.storage.open(old_lfc_id)
+        self.assertIsNotNone(old_stream)
+        self.assertEqual(
+            swift.connection_pools[0], old_stream._connection_pool)
+        chunks = []
+        while True:
+            chunk = yield old_stream.read(self.storage.CHUNK_SIZE)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        self.assertEqual(b''.join(chunks), old_data)
+
+        both_stream = yield self.storage.open(both_lfc_id)
+        self.assertIsNotNone(both_stream)
+        self.assertEqual(
+            swift.connection_pools[1], both_stream._connection_pool)
+        chunks = []
+        while True:
+            chunk = yield both_stream.read(self.storage.CHUNK_SIZE)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        self.assertEqual(b''.join(chunks), both_data)
+
+        new_stream = yield self.storage.open(new_lfc_id)
+        self.assertIsNotNone(new_stream)
+        self.assertEqual(
+            swift.connection_pools[1], new_stream._connection_pool)
+        chunks = []
+        while True:
+            chunk = yield new_stream.read(self.storage.CHUNK_SIZE)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        self.assertEqual(b''.join(chunks), new_data)

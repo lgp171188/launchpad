@@ -9,9 +9,10 @@ __metaclass__ = type
 __all__ = [
     'SWIFT_CONTAINER_PREFIX',
     'connection',
-    'connection_pool',
+    'connection_pools',
     'filesystem_path',
     'quiet_swiftclient',
+    'reconfigure_connection_pools',
     'swift_location',
     'to_swift',
     ]
@@ -70,7 +71,7 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
     If remove_func is set, it is called for every file after being copied into
     Swift.
     '''
-    swift_connection = connection_pool.get()
+    swift_connection = connection_pools[-1].get()
     fs_root = os.path.abspath(config.librarian_server.root)
 
     if start_lfc_id is None:
@@ -154,39 +155,49 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
                     lfc))
                 continue
 
-            container, obj_name = swift_location(lfc)
-
-            try:
-                quiet_swiftclient(swift_connection.head_container, container)
-                log.debug2('{0} container already exists'.format(container))
-            except swiftclient.ClientException as x:
-                if x.http_status != 404:
-                    raise
-                log.info('Creating {0} container'.format(container))
-                swift_connection.put_container(container)
-
-            try:
-                headers = quiet_swiftclient(
-                    swift_connection.head_object, container, obj_name)
-                log.debug(
-                    "{0} already exists in Swift({1}, {2})".format(
-                        lfc, container, obj_name))
-                if ('X-Object-Manifest' not in headers and
-                        int(headers['content-length'])
-                        != os.path.getsize(fs_path)):
-                    raise AssertionError(
-                        '{0} has incorrect size in Swift'.format(lfc))
-            except swiftclient.ClientException as x:
-                if x.http_status != 404:
-                    raise
-                log.info('Putting {0} into Swift ({1}, {2})'.format(
-                    lfc, container, obj_name))
-                _put(log, swift_connection, lfc, container, obj_name, fs_path)
+            _to_swift_file(log, swift_connection, lfc, fs_path)
 
             if remove_func:
                 remove_func(fs_path)
 
-    connection_pool.put(swift_connection)
+    connection_pools[-1].put(swift_connection)
+
+
+def _to_swift_file(log, swift_connection, lfc_id, fs_path):
+    '''Copy a single file into Swift.
+
+    This is separate for the benefit of tests; production code should use
+    `to_swift` rather than calling this function directly, since this omits
+    a number of checks.
+    '''
+    container, obj_name = swift_location(lfc_id)
+
+    try:
+        quiet_swiftclient(swift_connection.head_container, container)
+        log.debug2('{0} container already exists'.format(container))
+    except swiftclient.ClientException as x:
+        if x.http_status != 404:
+            raise
+        log.info('Creating {0} container'.format(container))
+        swift_connection.put_container(container)
+
+    try:
+        headers = quiet_swiftclient(
+            swift_connection.head_object, container, obj_name)
+        log.debug(
+            "{0} already exists in Swift({1}, {2})".format(
+                lfc_id, container, obj_name))
+        if ('X-Object-Manifest' not in headers and
+                int(headers['content-length'])
+                != os.path.getsize(fs_path)):
+            raise AssertionError(
+                '{0} has incorrect size in Swift'.format(lfc_id))
+    except swiftclient.ClientException as x:
+        if x.http_status != 404:
+            raise
+        log.info('Putting {0} into Swift ({1}, {2})'.format(
+            lfc_id, container, obj_name))
+        _put(log, swift_connection, lfc_id, container, obj_name, fs_path)
 
 
 def rename(path):
@@ -283,7 +294,8 @@ def filesystem_path(lfc_id):
 
 
 class SwiftStream:
-    def __init__(self, swift_connection, chunks):
+    def __init__(self, connection_pool, swift_connection, chunks):
+        self._connection_pool = connection_pool
         self._swift_connection = swift_connection
         self._chunks = chunks  # Generator from swiftclient.get_object()
 
@@ -311,7 +323,7 @@ class SwiftStream:
                     # If we have drained the data successfully,
                     # the connection can be reused saving on auth
                     # handshakes.
-                    connection_pool.put(self._swift_connection)
+                    self._connection_pool.put(self._swift_connection)
                     self._swift_connection = None
                     self._chunks = None
                     break
@@ -378,14 +390,20 @@ class HashStream:
 class ConnectionPool:
     MAX_POOL_SIZE = 10
 
-    def __init__(self):
+    def __init__(self, os_auth_url, os_username, os_password, os_tenant_name,
+                 os_auth_version):
+        self.os_auth_url = os_auth_url
+        self.os_username = os_username
+        self.os_password = os_password
+        self.os_tenant_name = os_tenant_name
+        self.os_auth_version = os_auth_version
         self.clear()
 
     def clear(self):
         self._pool = []
 
     def get(self):
-        '''Return a conection from the pool, or a fresh connection.'''
+        '''Return a connection from the pool, or a fresh connection.'''
         try:
             return self._pool.pop()
         except IndexError:
@@ -408,20 +426,51 @@ class ConnectionPool:
 
     def _new_connection(self):
         return swiftclient.Connection(
-            authurl=config.librarian_server.os_auth_url,
-            user=config.librarian_server.os_username,
-            key=config.librarian_server.os_password,
-            tenant_name=config.librarian_server.os_tenant_name,
-            auth_version=config.librarian_server.os_auth_version,
+            authurl=self.os_auth_url,
+            user=self.os_username,
+            key=self.os_password,
+            tenant_name=self.os_tenant_name,
+            auth_version=self.os_auth_version,
             )
 
 
-connection_pool = ConnectionPool()
+connection_pools = []
+
+
+def reconfigure_connection_pools():
+    del connection_pools[:]
+    # The zero-one-infinity principle suggests that we should generalize
+    # this to more than two pools.  However, lazr.config makes this a bit
+    # awkward (there's no native support for lists of key-value pairs with
+    # schema enforcement nor for multi-line values, so we'd have to encode
+    # lists as JSON and check the schema manually), and at the moment the
+    # only use case for this is for migrating from an old Swift instance to
+    # a new one.
+    if config.librarian_server.old_os_auth_url:
+        connection_pools.append(
+            ConnectionPool(
+                config.librarian_server.old_os_auth_url,
+                config.librarian_server.old_os_username,
+                config.librarian_server.old_os_password,
+                config.librarian_server.old_os_tenant_name,
+                config.librarian_server.old_os_auth_version))
+    if config.librarian_server.os_auth_url:
+        connection_pools.append(
+            ConnectionPool(
+                config.librarian_server.os_auth_url,
+                config.librarian_server.os_username,
+                config.librarian_server.os_password,
+                config.librarian_server.os_tenant_name,
+                config.librarian_server.os_auth_version))
+
+
+reconfigure_connection_pools()
 
 
 @contextmanager
-def connection():
-    global connection_pool
+def connection(connection_pool=None):
+    if connection_pool is None:
+        connection_pool = connection_pools[-1]
     con = connection_pool.get()
     yield con
 
