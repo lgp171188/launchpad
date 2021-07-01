@@ -72,11 +72,8 @@
             <td>
               <span class="sortkey"
                 tal:content="group/datecreated/fmt:datetime" />
-              <span
-                tal:attributes="title group/datecreated/fmt:datetime"
-                tal:content="group/datecreated/fmt:approximatedate">
-                2007-08-15
-              </span>
+              <tal:created
+                replace="structure group/datecreated/fmt:approximatedatetitle" />
             </td>
           </tr>
         </tbody>

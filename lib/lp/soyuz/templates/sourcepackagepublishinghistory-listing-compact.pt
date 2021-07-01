@@ -22,12 +22,9 @@
            tal:attributes="title view/date_last_changed/fmt:datetime"
            tal:content="view/date_last_changed/fmt:datetime" />
        </span>
-       <span
-         tal:condition="not: context/status/enumvalue:PENDING"
-         tal:attributes="title view/date_last_changed/fmt:datetime"
-         tal:content="view/date_last_changed/fmt:displaydate">
-         2005-09-16
-       </span>
+       <tal:last-changed
+         condition="not: context/status/enumvalue:PENDING"
+         replace="structure view/date_last_changed/fmt:displaydatetitle" />
        <span tal:condition="view/wasDeleted">(Reason:
          <tal:removal-comment tal:replace="view/removal_comment/fmt:shorten/60">
            sample reason.

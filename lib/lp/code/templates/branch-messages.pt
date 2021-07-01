@@ -23,8 +23,8 @@
           <tal:failed-once tal:condition="view/mirror_failed_once">
             This branch may be out of date, as Launchpad was not able to
             access it
-            <span tal:attributes="title branch/last_mirror_attempt/fmt:datetime"
-                  tal:content="branch/last_mirror_attempt/fmt:displaydate" />.
+            <tal:last-mirror-attempt
+              replace="structure branch/last_mirror_attempt/fmt:displaydatetitle" />.
           </tal:failed-once>
 
           <tal:failed-multiple tal:condition="not:view/mirror_failed_once">
@@ -40,8 +40,8 @@
             <tal:not-mirrored-yet tal:condition="not:branch/last_mirrored">
               Launchpad has not been able to mirror this branch. The last attempt
               was
-              <span tal:attributes="title branch/last_mirror_attempt/fmt:datetime"
-                    tal:content="branch/last_mirror_attempt/fmt:displaydate" />.
+              <tal:last-mirror-attempt
+                replace="structure branch/last_mirror_attempt/fmt:displaydatetitle" />.
             </tal:not-mirrored-yet>
           </tal:failed-multiple>
         </tal:mirror-scheduled>

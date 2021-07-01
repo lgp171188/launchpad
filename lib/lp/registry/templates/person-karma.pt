@@ -59,10 +59,9 @@
             <tr tal:repeat="karma latest_karma">
               <td>
                 <span class="sortkey"
-                tal:content="karma/datecreated/fmt:datetime">2005-10-06</span>
-                <span
-                  tal:attributes="title karma/datecreated/fmt:datetime"
-                  tal:content="karma/datecreated/fmt:approximatedate" />
+                      tal:content="karma/datecreated/fmt:datetime" />
+                <tal:created
+                  replace="structure karma/datecreated/fmt:approximatedatetitle" />
               </td>
               <td tal:content="karma/action/title">Bug Filed</td>
             </tr>

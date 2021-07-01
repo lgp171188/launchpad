@@ -69,9 +69,8 @@
     <h2>Voting has closed</h2>
 
     <p>Voting closed
-      <span
-        tal:attributes="title context/datecloses/fmt:datetime"
-        tal:content="context/datecloses/fmt:displaydate" />.
+      <tal:closes
+        replace="structure context/datecloses/fmt:displaydatetitle" />.
     </p>
 
     <tal:block condition="view/userVoted">
@@ -189,9 +188,8 @@
 
     <p>
       The vote will commence
-      <span
-        tal:attributes="title context/dateopens/fmt:datetime"
-        tal:content="context/dateopens/fmt:displaydate" />.
+      <tal:opens
+        replace="structure context/dateopens/fmt:displaydatetitle" />.
     </p>
   </tal:block>
 

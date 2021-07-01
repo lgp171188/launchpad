@@ -19,10 +19,7 @@
 
       <table class="listing" id="activity-table">
         <tr tal:repeat="record view/batchnav/currentBatch">
-          <td tal:attributes="title record/date_last_touched/fmt:datetime"
-              tal:content="record/date_last_touched/fmt:approximatedate">
-            2009-10-28
-          </td>
+          <td tal:content="structure record/date_last_touched/fmt:approximatedatetitle" />
           <td>
             <a tal:attributes="href python:view.composeURL(record.pofile)"
                tal:content="record/pofile/title">

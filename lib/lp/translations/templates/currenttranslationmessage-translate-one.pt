@@ -325,11 +325,8 @@
           Translated by
           <a tal:content="submitter/displayname"
              tal:attributes="href submitter/fmt:url">Foo Bar</a>
-          <span
-            tal:attributes="title context/date_created/fmt:datetime"
-            tal:content="context/date_created/fmt:displaydate">
-            on 2006-08-05
-          </span>
+          <tal:created
+            replace="structure context/date_created/fmt:displaydatetitle" />
         </td>
       </tr>
       <tr class="lesser secondary translation"
@@ -341,11 +338,8 @@
           Translated and reviewed by
           <a tal:content="context/reviewer/displayname"
              tal:attributes="href context/reviewer/fmt:url">Foo Bar</a>
-          <span
-            tal:attributes="title context/date_reviewed/fmt:datetime"
-            tal:content="context/date_reviewed/fmt:displaydate">
-            on 2006-08-05
-          </span>
+          <tal:reviewed
+            replace="structure context/date_reviewed/fmt:displaydatetitle" />
         </td>
         <td tal:condition=
               "not:translation_dictionary/same_translator_and_reviewer"
@@ -354,11 +348,8 @@
           Reviewed by
           <a tal:content="context/reviewer/displayname"
              tal:attributes="href context/reviewer/fmt:url">Foo Bar</a>
-          <span
-            tal:attributes="title context/date_reviewed/fmt:datetime"
-            tal:content="context/date_reviewed/fmt:displaydate">
-            on 2006-08-05
-          </span>
+          <tal:reviewed
+            replace="structure context/date_reviewed/fmt:displaydatetitle" />
         </td>
       </tr>
     </tal:has-submitter>

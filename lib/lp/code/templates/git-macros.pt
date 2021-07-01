@@ -209,8 +209,7 @@
     <tal:unknown-person condition="not: author/person">
       <strong tal:content="author/name/fmt:obfuscate-email" />
     </tal:unknown-person>
-    <span tal:attributes="title author_date/fmt:datetime"
-          tal:content="author_date/fmt:displaydate" />
+    <tal:author-date replace="structure author_date/fmt:displaydatetitle" />
   </dt>
   <dd class="subordinate commit-message"
       tal:define="commit_message python:commit_info['commit_message']">
