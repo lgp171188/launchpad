@@ -405,60 +405,6 @@ class TestNotification(TestCaseWithFactory):
             PackagePublishingPocket.RELEASE)
         self.assertContentEqual(expected, observed.keys())
 
-    def test_getRecipientsForAction_primary(self):
-        blamer, maintainer, changer = self._setup_recipients()
-        changes = {
-            'Date': b'2001-01-01',
-            'Changed-By': b'Changer <changer@example.com>',
-            'Maintainer': b'Maintainer <maintainer@example.com>',
-            'Changes': b' * Foo!',
-            }
-        distribution = self.factory.makeDistribution()
-        archive = self.factory.makeArchive(
-            distribution=distribution, purpose=ArchivePurpose.PRIMARY)
-        distroseries = self.factory.makeDistroSeries(distribution=distribution)
-        distroseries.changeslist = "blah@example.com"
-        # Now set the uploaders.
-        component = getUtility(IComponentSet).ensure('main')
-        if component not in distroseries.components:
-            self.factory.makeComponentSelection(
-                distroseries=distroseries, component=component)
-        distribution.main_archive.newComponentUploader(maintainer, component)
-        distribution.main_archive.newComponentUploader(changer, component)
-        info = fetch_information(None, None, changes)
-        observed, _ = PackageUploadMailer.getRecipientsForAction(
-            'accepted', info, blamer, None, [], archive, distroseries,
-            PackagePublishingPocket.RELEASE)
-        email_addresses = [x.preferredemail.email for x in observed.keys()]
-        self.assertIn("blah@example.com", email_addresses)
-
-    def test_getRecipientsForAction_copy(self):
-        blamer, maintainer, changer = self._setup_recipients()
-        changes = {
-            'Date': b'2001-01-01',
-            'Changed-By': b'Changer <changer@example.com>',
-            'Maintainer': b'Maintainer <maintainer@example.com>',
-            'Changes': b' * Foo!',
-            }
-        distribution = self.factory.makeDistribution()
-        archive = self.factory.makeArchive(
-            distribution=distribution, purpose=ArchivePurpose.COPY)
-        distroseries = self.factory.makeDistroSeries(distribution=distribution)
-        distroseries.changeslist = "blah@example.com"
-        # Now set the uploaders.
-        component = getUtility(IComponentSet).ensure('main')
-        if component not in distroseries.components:
-            self.factory.makeComponentSelection(
-                distroseries=distroseries, component=component)
-        distribution.main_archive.newComponentUploader(maintainer, component)
-        distribution.main_archive.newComponentUploader(changer, component)
-        info = fetch_information(None, None, changes)
-        observed, _ = PackageUploadMailer.getRecipientsForAction(
-            'accepted', info, blamer, None, [], archive, distroseries,
-            PackagePublishingPocket.RELEASE)
-        email_addresses = [x.preferredemail.email for x in observed.keys()]
-        self.assertNotIn("blah@example.com", email_addresses)
-
     def test_getRecipientsForAction_good_emails(self):
         # Test getRecipientsForAction with good email addresses..
         blamer, maintainer, changer = self._setup_recipients()
@@ -537,6 +483,60 @@ class TestNotification(TestCaseWithFactory):
         self.assertRecipientsEqual(
             [blamer, changer], changes, blamer, maintainer, changer,
             purpose=ArchivePurpose.PPA)
+
+    def test_getRecipientsForAction_primary(self):
+        blamer, maintainer, changer = self._setup_recipients()
+        changes = {
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer@example.com>',
+            'Maintainer': b'Maintainer <maintainer@example.com>',
+            'Changes': b' * Foo!',
+            }
+        distribution = self.factory.makeDistribution()
+        archive = self.factory.makeArchive(
+            distribution=distribution, purpose=ArchivePurpose.PRIMARY)
+        distroseries = self.factory.makeDistroSeries(distribution=distribution)
+        distroseries.changeslist = "blah@example.com"
+        # Now set the uploaders.
+        component = getUtility(IComponentSet).ensure('main')
+        if component not in distroseries.components:
+            self.factory.makeComponentSelection(
+                distroseries=distroseries, component=component)
+        distribution.main_archive.newComponentUploader(maintainer, component)
+        distribution.main_archive.newComponentUploader(changer, component)
+        info = fetch_information(None, None, changes)
+        observed, _ = PackageUploadMailer.getRecipientsForAction(
+            'accepted', info, blamer, None, [], archive, distroseries,
+            PackagePublishingPocket.RELEASE)
+        email_addresses = [x.preferredemail.email for x in observed.keys()]
+        self.assertIn("blah@example.com", email_addresses)
+
+    def test_getRecipientsForAction_copy(self):
+        blamer, maintainer, changer = self._setup_recipients()
+        changes = {
+            'Date': b'2001-01-01',
+            'Changed-By': b'Changer <changer@example.com>',
+            'Maintainer': b'Maintainer <maintainer@example.com>',
+            'Changes': b' * Foo!',
+            }
+        distribution = self.factory.makeDistribution()
+        archive = self.factory.makeArchive(
+            distribution=distribution, purpose=ArchivePurpose.COPY)
+        distroseries = self.factory.makeDistroSeries(distribution=distribution)
+        distroseries.changeslist = "blah@example.com"
+        # Now set the uploaders.
+        component = getUtility(IComponentSet).ensure('main')
+        if component not in distroseries.components:
+            self.factory.makeComponentSelection(
+                distroseries=distroseries, component=component)
+        distribution.main_archive.newComponentUploader(maintainer, component)
+        distribution.main_archive.newComponentUploader(changer, component)
+        info = fetch_information(None, None, changes)
+        observed, _ = PackageUploadMailer.getRecipientsForAction(
+            'accepted', info, blamer, None, [], archive, distroseries,
+            PackagePublishingPocket.RELEASE)
+        email_addresses = [x.preferredemail.email for x in observed.keys()]
+        self.assertNotIn("blah@example.com", email_addresses)
 
     def test__getHeaders_primary(self):
         # _getHeaders returns useful values for headers used for filtering.
