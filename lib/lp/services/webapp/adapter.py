@@ -461,6 +461,11 @@ def break_main_thread_db_access(*ignored):
     easier to do on module load, but the test suite has legitimate uses
     for using connections from the main thread.
     """
+    # This check is only applicable to zope.server.  gunicorn uses a
+    # different model with an arbiter parent process.
+    if config.use_gunicorn:
+        return
+
     # Record the ID of the main thread.
     global _main_thread_id
     _main_thread_id = threading.current_thread().ident
