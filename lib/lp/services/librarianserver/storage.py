@@ -120,24 +120,30 @@ class LibrarianStorage:
                 log.msg('{} Swift download attempts, {} failures'.format(
                     self.swift_download_attempts, self.swift_download_fails))
 
-            # First, try and stream the file from Swift.
+            # First, try and stream the file from Swift.  Try the newest
+            # configured instance first.
+            swift_download_fail = False
             container, name = swift.swift_location(fileid)
-            swift_connection = swift.connection_pool.get()
-            try:
-                headers, chunks = yield deferToThread(
-                    swift.quiet_swiftclient, swift_connection.get_object,
-                    container, name, resp_chunk_size=self.CHUNK_SIZE)
-                swift_stream = TxSwiftStream(swift_connection, chunks)
-                defer.returnValue(swift_stream)
-            except swiftclient.ClientException as x:
-                if x.http_status == 404:
-                    swift.connection_pool.put(swift_connection)
-                else:
-                    self.swift_download_fails += 1
+            for connection_pool in reversed(swift.connection_pools):
+                swift_connection = connection_pool.get()
+                try:
+                    headers, chunks = yield deferToThread(
+                        swift.quiet_swiftclient, swift_connection.get_object,
+                        container, name, resp_chunk_size=self.CHUNK_SIZE)
+                    swift_stream = TxSwiftStream(
+                        connection_pool, swift_connection, chunks)
+                    defer.returnValue(swift_stream)
+                except swiftclient.ClientException as x:
+                    if x.http_status == 404:
+                        connection_pool.put(swift_connection)
+                    else:
+                        swift_download_fail = True
+                        log.err(x)
+                except Exception as x:
+                    swift_download_fail = True
                     log.err(x)
-            except Exception as x:
+            if swift_download_fail:
                 self.swift_download_fails += 1
-                log.err(x)
             # If Swift failed, for any reason, fall through to try and
             # stream the data from disk. In particular, files cannot be
             # found in Swift until librarian-feed-swift.py has put them
@@ -176,7 +182,7 @@ class TxSwiftStream(swift.SwiftStream):
                 # the connection can be reused saving on auth
                 # handshakes.
                 if self._swift_connection is not None:
-                    swift.connection_pool.put(self._swift_connection)
+                    self._connection_pool.put(self._swift_connection)
                     self._swift_connection = None
                 self._chunks = None
                 defer.returnValue(b'')
