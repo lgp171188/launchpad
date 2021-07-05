@@ -13,7 +13,9 @@
             urldata="lp.charms.browser.charmrecipe.CharmRecipeURL" />
         <browser:menus
             module="lp.charms.browser.charmrecipe"
-            classes="CharmRecipeNavigationMenu" />
+            classes="
+                CharmRecipeNavigationMenu
+                CharmRecipeContextMenu" />
         <browser:navigation
             module="lp.charms.browser.charmrecipe"
             classes="CharmRecipeNavigation" />
@@ -44,6 +46,12 @@
             permission="launchpad.Edit"
             name="+delete"
             template="../../app/templates/generic-edit.pt" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
+            class="lp.charms.browser.charmrecipe.CharmRecipeRequestBuildsView"
+            permission="launchpad.Edit"
+            name="+request-builds"
+            template="../templates/charmrecipe-request-builds.pt" />
         <adapter
             provides="lp.services.webapp.interfaces.IBreadcrumb"
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"

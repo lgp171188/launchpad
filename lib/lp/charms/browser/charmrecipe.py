@@ -9,10 +9,12 @@ __metaclass__ = type
 __all__ = [
     "CharmRecipeAddView",
     "CharmRecipeAdminView",
+    "CharmRecipeContextMenu",
     "CharmRecipeDeleteView",
     "CharmRecipeEditView",
     "CharmRecipeNavigation",
     "CharmRecipeNavigationMenu",
+    "CharmRecipeRequestBuildsView",
     "CharmRecipeURL",
     "CharmRecipeView",
     ]
@@ -26,8 +28,13 @@ from zope.interface import (
     implementer,
     Interface,
     )
+from zope.schema import (
+    Dict,
+    TextLine,
+    )
 from zope.security.interfaces import Unauthorized
 
+from lp import _
 from lp.app.browser.launchpadform import (
     action,
     LaunchpadEditFormView,
@@ -52,6 +59,7 @@ from lp.services.propertycache import cachedproperty
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp import (
     canonical_url,
+    ContextMenu,
     enabled_with_permission,
     LaunchpadView,
     Link,
@@ -137,6 +145,20 @@ class CharmRecipeNavigationMenu(NavigationMenu):
     @enabled_with_permission("launchpad.Edit")
     def delete(self):
         return Link("+delete", "Delete charm recipe", icon="trash-icon")
+
+
+class CharmRecipeContextMenu(ContextMenu):
+    """Context menu for charm recipes."""
+
+    usedfor = ICharmRecipe
+
+    facet = "overview"
+
+    links = ("request_builds",)
+
+    @enabled_with_permission("launchpad.Edit")
+    def request_builds(self):
+        return Link("+request-builds", "Request builds", icon="add")
 
 
 class CharmRecipeView(LaunchpadView):
@@ -462,3 +484,40 @@ class CharmRecipeDeleteView(BaseCharmRecipeEditView):
         owner = self.context.owner
         self.context.destroySelf()
         self.next_url = canonical_url(owner, view_name="+charm-recipes")
+
+
+class CharmRecipeRequestBuildsView(LaunchpadFormView):
+    """A view for requesting builds of a charm recipe."""
+
+    @property
+    def label(self):
+        return "Request builds for %s" % self.context.name
+
+    page_title = "Request builds"
+
+    class schema(Interface):
+        """Schema for requesting a build."""
+
+        channels = Dict(
+            title="Source snap channels", key_type=TextLine(), required=True,
+            description=ICharmRecipe["auto_build_channels"].description)
+
+    custom_widget_channels = CharmRecipeBuildChannelsWidget
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    @property
+    def initial_values(self):
+        """See `LaunchpadFormView`."""
+        return {
+            "channels": self.context.auto_build_channels,
+            }
+
+    @action("Request builds", name="request")
+    def request_action(self, action, data):
+        self.context.requestBuilds(self.user, channels=data["channels"])
+        self.request.response.addNotification(
+            _("Builds will be dispatched soon."))
+        self.next_url = self.cancel_url
