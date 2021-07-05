@@ -554,7 +554,8 @@ class UnreferencedContentPruner:
                     try:
                         swift.quiet_swiftclient(
                             swift_connection.delete_object, container, name)
-                        removed.append('Swift')
+                        removed.append(
+                            'Swift {}'.format(connection_pool.os_auth_url))
                     except swiftclient.ClientException as x:
                         if x.http_status != 404:
                             raise
