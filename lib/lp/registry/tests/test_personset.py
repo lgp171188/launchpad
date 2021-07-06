@@ -72,6 +72,7 @@ from lp.testing import (
     TestCase,
     TestCaseWithFactory,
     )
+from lp.services.webapp.publisher import canonical_url
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 
@@ -1132,3 +1133,50 @@ class TestPersonDeleteSSHKeyFromSSO(TestCaseWithFactory):
                 SSHKeyAdditionError,
                 getUtility(IPersonSet).deleteSSHKeyFromSSO,
                 self.sso, u'openid', 'badtype key comment', False)
+
+
+class TestGDPRUserRetrieval(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestGDPRUserRetrieval, self).setUp()
+        self.person_set = getUtility(IPersonSet)
+
+    def test_no_data(self):
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"no@example.com")
+        self.assertDictEqual({"status": "no data held"}, result)
+
+    def test_account_data(self):
+        person = self.factory.makePerson(email="test@example.com")
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertDictEqual({
+            "status": "account only; no other data",
+            "account": canonical_url(person)},
+            result)
+
+    def test_account_data_hidden(self):
+        person = self.factory.makePerson(email="test@example.com")
+        with person_logged_in(person):
+            person.hide_email_addresses = True
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertDictEqual({
+            "status": "account only; no other data",
+            "account": canonical_url(person)},
+            result)
+
+    def test_account_data_invalid_email_status(self):
+        person = self.factory.makePerson(email="test@example.com")
+        self.factory.makeEmail(
+            'new@example.com',
+            person,
+            email_status=EmailAddressStatus.NEW)
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"new@example.com")
+        self.assertDictEqual({
+            "status": "account only; no other data",
+            "account": canonical_url(person)},
+            result)

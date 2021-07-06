@@ -310,6 +310,7 @@ from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
 from lp.services.verification.model.logintoken import LoginToken
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.publisher import canonical_url
 from lp.services.worlddata.model.language import Language
 from lp.soyuz.enums import (
     ArchivePurpose,
@@ -4068,6 +4069,28 @@ class PersonSet:
         return DecoratedResultSet(raw_result,
             pre_iter_hook=preload_for_people,
             result_decorator=prepopulate_person)
+
+    def getUserData(self, email):
+        """See `IPersonSet`."""
+        find_results = list(self.find(email))
+        email_results = list(x[1] for x in self.getByEmails(
+            [email], include_hidden=True, filter_status=False))
+
+        # ideally, this should be a .union, but the order_by and filters
+        # make the result sets incompatible
+        overall_results = list(set(find_results + email_results))
+        # We should only have one result
+        if len(overall_results) > 1:
+            raise ValueError("Multiple records for {}".format(email))
+
+        # If we don't have any results at all, we have no data!
+        if len(overall_results) == 0:
+            return {"status": "no data held"}
+
+        account = overall_results[0]
+        return_data = {"status": "account only; no other data"}
+        return_data["account"] = canonical_url(account)
+        return return_data
 
 
 # Provide a storm alias from Person to Owner. This is useful in queries on
