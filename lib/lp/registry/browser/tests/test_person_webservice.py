@@ -777,6 +777,8 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
                 "account": canonical_url(target)},
                 response)
 
+    # See TestGDPRUserRetrieval for more details tests of the
+    # various data output options available for this endpoint.
     def test_user_data_retrieval_protected(self):
         with admin_logged_in():
             self.factory.makePerson(email="test@example.com")

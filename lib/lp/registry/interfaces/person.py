@@ -2076,7 +2076,7 @@ class IPersonSetModerate(Interface):
         email=TextLine(required=True, constraint=email_validator))
     @operation_for_version("devel")
     def getUserData(email):
-        """Get GDRP related data for a user from their email address."""
+        """Get GDPR-related data for a user from their email address."""
 
 
 class IPersonSetPublic(Interface):
