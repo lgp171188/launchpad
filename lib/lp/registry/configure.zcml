@@ -1144,14 +1144,20 @@
 
         <class
             class="lp.registry.model.person.PersonSet">
+            <require
+                permission="launchpad.Moderate"
+                interface="lp.registry.interfaces.person.IPersonSetModerate" />
             <allow
-                interface="lp.registry.interfaces.person.IPersonSet"/>
+                interface="lp.registry.interfaces.person.IPersonSetPublic"/>
         </class>
         <securedutility
             class="lp.registry.model.person.PersonSet"
             provides="lp.registry.interfaces.person.IPersonSet">
+            <require
+                permission="launchpad.Moderate"
+                interface="lp.registry.interfaces.person.IPersonSetModerate" />
             <allow
-                interface="lp.registry.interfaces.person.IPersonSet"/>
+                interface="lp.registry.interfaces.person.IPersonSetPublic"/>
         </securedutility>
         <securedutility
             class="lp.services.webservice.me.MeLink"
