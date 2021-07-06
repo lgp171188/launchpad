@@ -774,7 +774,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
         with admin_logged_in():
             self.assertDictEqual({
                 "status": "account only; no other data",
-                "account": canonical_url(target)},
+                "person": canonical_url(target)},
                 response)
 
     # See TestGDPRUserRetrieval for more details tests of the

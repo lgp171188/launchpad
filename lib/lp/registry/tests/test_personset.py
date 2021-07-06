@@ -1154,7 +1154,7 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
             result = self.person_set.getUserData(u"test@example.com")
         self.assertDictEqual({
             "status": "account only; no other data",
-            "account": canonical_url(person)},
+            "person": canonical_url(person)},
             result)
 
     def test_account_data_hidden(self):
@@ -1165,7 +1165,7 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
             result = self.person_set.getUserData(u"test@example.com")
         self.assertDictEqual({
             "status": "account only; no other data",
-            "account": canonical_url(person)},
+            "person": canonical_url(person)},
             result)
 
     def test_account_data_invalid_email_status(self):
@@ -1178,5 +1178,5 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
             result = self.person_set.getUserData(u"new@example.com")
         self.assertDictEqual({
             "status": "account only; no other data",
-            "account": canonical_url(person)},
+            "person": canonical_url(person)},
             result)

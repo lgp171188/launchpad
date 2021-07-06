@@ -4072,24 +4072,22 @@ class PersonSet:
 
     def getUserData(self, email):
         """See `IPersonSet`."""
-        find_results = list(self.find(email))
-        email_results = list(x[1] for x in self.getByEmails(
-            [email], include_hidden=True, filter_status=False))
+        email_results = self.getByEmails(
+            [email], include_hidden=True, filter_status=False)
 
-        # ideally, this should be a .union, but the order_by and filters
-        # make the result sets incompatible
-        overall_results = list(set(find_results + email_results))
         # We should only have one result
-        if len(overall_results) > 1:
+        if email_results.count() > 1:
             raise ValueError("Multiple records for {}".format(email))
 
         # If we don't have any results at all, we have no data!
-        if len(overall_results) == 0:
+        if email_results.is_empty():
             return {"status": "no data held"}
 
-        account = overall_results[0]
+        account = email_results.one()[1]
+        # This is only an 'account' in terms of the end user view,
+        # it does not refer to an `IAccount`.
         return_data = {"status": "account only; no other data"}
-        return_data["account"] = canonical_url(account)
+        return_data["person"] = canonical_url(account)
         return return_data
 
 
