@@ -400,8 +400,7 @@ class SigningUpload(CustomUpload):
             raise SigningServiceError(
                 "Could not sign message with key %s: %s" % (signing_key, e))
 
-        if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT,
-                        SigningKeyType.ANDROID_KERNEL):
+        if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
             file_suffix = ".signed"
             public_key_suffix = ".crt"
         else:

@@ -1655,8 +1655,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 '1.0/control/fit.crt',
                 '1.0/empty.cv2-kernel', '1.0/empty.cv2-kernel.sig',
                 '1.0/control/cv2-kernel.pub',
-                '1.0/empty.android-kernel', '1.0/empty.android-kernel.signed',
-                '1.0/control/android-kernel.crt',
+                '1.0/empty.android-kernel', '1.0/empty.android-kernel.sig',
+                '1.0/control/android-kernel.x509',
                 ], tarball.getnames())
         self.assertEqual(0, self.signing_service_client.generate.call_count)
         keys = self.signing_keys
@@ -1710,7 +1710,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             "1.0/empty.sipl.sig", "1.0/control/sipl.x509",
             "1.0/empty.fit.signed", "1.0/control/fit.crt",
             "1.0/empty.cv2-kernel.sig", "1.0/control/cv2-kernel.pub",
-            "1.0/empty.android-kernel.signed", "1.0/control/android-kernel.crt",
+            "1.0/empty.android-kernel.sig", "1.0/control/android-kernel.x509",
         ]))
         self.assertEqual(0, self.signing_service_client.generate.call_count)
         keys = self.signing_keys
@@ -1770,7 +1770,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 '1.0/empty.sipl.sig', '1.0/control/sipl.x509',
                 '1.0/empty.fit.signed', '1.0/control/fit.crt',
                 '1.0/empty.cv2-kernel.sig', '1.0/control/cv2-kernel.pub',
-                '1.0/empty.android-kernel.signed', '1.0/control/android-kernel.crt',
+                '1.0/empty.android-kernel.sig', '1.0/control/android-kernel.x509',
             ], tarball.getnames())
         self.assertEqual(0, self.signing_service_client.generate.call_count)
         keys = self.signing_keys
@@ -1921,13 +1921,13 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             "1.0/empty.efi.signed", "1.0/empty.ko.sig",
             "1.0/empty.opal.sig", "1.0/empty.sipl.sig",
             "1.0/empty.fit.signed", "1.0/empty.cv2-kernel.sig",
-            "1.0/empty.android-kernel.signed"]
+            "1.0/empty.android-kernel.sig"]
 
         expected_public_keys_filenames = [
             "1.0/control/uefi.crt", "1.0/control/kmod.x509",
             "1.0/control/opal.x509", "1.0/control/sipl.x509",
             "1.0/control/fit.crt", "1.0/control/cv2-kernel.pub",
-            "1.0/control/android-kernel.crt"]
+            "1.0/control/android-kernel.x509"]
 
         signed_path = self.getSignedPath("test", "amd64")
         self.assertThat(signed_path, SignedMatches(
