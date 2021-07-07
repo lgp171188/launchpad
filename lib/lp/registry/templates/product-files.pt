@@ -59,9 +59,8 @@
                   from the
                   <a tal:attributes="href series/fmt:url"
                      tal:content="series/name">name</a> series released
-                  <span
-                     tal:attributes="title release/datereleased/fmt:datetime"
-                     tal:content="release/datereleased/fmt:approximatedate" />
+                  <tal:released
+                    replace="structure release/datereleased/fmt:approximatedatetitle" />
                 </h3>
 
                 <div tal:attributes="id release/version/fmt:css-id/release-information-"

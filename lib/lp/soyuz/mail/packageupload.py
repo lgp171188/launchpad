@@ -391,7 +391,7 @@ class PackageUploadMailer(BaseMailer):
         # announce if possible. Avoid announcing backports, binary-only
         # security uploads, or autosync uploads.
         if (action == 'accepted' and distroseries.changeslist
-                and not archive.is_ppa
+                and archive.is_main
                 and pocket != PackagePublishingPocket.BACKPORTS
                 and not (
                     pocket == PackagePublishingPocket.SECURITY and spr is None)

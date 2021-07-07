@@ -101,9 +101,8 @@
           </tal:not-probe>
           <tal:probe condition="probe">
               <p>This mirror was last verified
-                <span
-                   tal:attributes="title probe/date_created/fmt:datetime"
-                   tal:content="probe/date_created/fmt:displaydate" />.
+                <tal:created
+                  replace="structure probe/date_created/fmt:displaydatetitle" />.
 
                 <tal:is-owner condition="context/required:launchpad.Edit">
                   You can see the

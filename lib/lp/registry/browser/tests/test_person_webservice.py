@@ -12,6 +12,7 @@ from zope.component import getUtility
 from zope.security.management import endInteraction
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.person import (
     IPersonSet,
     TeamMembershipStatus,
@@ -37,6 +38,7 @@ from lp.testing import (
     record_two_runs,
     TestCaseWithFactory,
     )
+from lp.services.webapp.publisher import canonical_url
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
@@ -759,3 +761,29 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
 
     def test_deleteSSHKeyFromSSO_is_restricted_dry_run(self):
         self.test_deleteSSHKeyFromSSO_is_restricted(True)
+
+    def test_user_data_retrieval(self):
+        with admin_logged_in():
+            target = self.factory.makePerson(email="test@example.com")
+            webservice = webservice_for_person(
+                getUtility(ILaunchpadCelebrities).admin.teamowner,
+                permission=OAuthPermission.WRITE_PRIVATE)
+        response = webservice.named_get(
+            "/people", "getUserData", email="test@example.com",
+            api_version="devel").jsonBody()
+        with admin_logged_in():
+            self.assertDictEqual({
+                "status": "account only; no other data",
+                "person": canonical_url(target)},
+                response)
+
+    # See TestGDPRUserRetrieval for more details tests of the
+    # various data output options available for this endpoint.
+    def test_user_data_retrieval_protected(self):
+        with admin_logged_in():
+            self.factory.makePerson(email="test@example.com")
+            webservice = webservice_for_person(self.factory.makePerson())
+        response = webservice.named_get(
+            "/people", "getUserData", email="test@example.com",
+            api_version="devel")
+        self.assertEqual(401, response.status)

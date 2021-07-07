@@ -16,9 +16,7 @@
       </dl>
       <dl>
         <dt>Uploaded:</dt>
-        <dd><span
-          tal:attributes="title current/dateuploaded/fmt:datetime"
-          tal:content="current/dateuploaded/fmt:approximatedate" /></dd>
+        <dd tal:content="structure current/dateuploaded/fmt:approximatedatetitle" />
       </dl>
       <dl>
         <dt>Urgency:</dt>

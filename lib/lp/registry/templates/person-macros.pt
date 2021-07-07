@@ -148,11 +148,7 @@
          tal:content="spr/version">
       </a>
     </td>
-    <td
-      tal:attributes="title spr/dateuploaded/fmt:datetime"
-      tal:content="spr/dateuploaded/fmt:approximatedate">
-      2005-10-24
-    </td>
+    <td tal:content="structure spr/dateuploaded/fmt:approximatedatetitle" />
     <td>
       <tal:needs_building condition="spr/needs_building">
           Not yet built
@@ -199,11 +195,7 @@
          tal:content="spr/version">
       </a>
     </td>
-    <td
-      tal:attributes="title spph/datecreated/fmt:datetime"
-      tal:content="spph/datecreated/fmt:approximatedate">
-      2005-10-24
-    </td>
+    <td tal:content="structure spph/datecreated/fmt:approximatedatetitle" />
     <td>
       <tal:needs_building condition="spph/needs_building">
           Not yet built

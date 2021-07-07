@@ -52,11 +52,8 @@
               <td>
                 <span class="sortkey"
                   tal:content="membership/datejoined/fmt:datetime" />
-                <span
-                  tal:attributes="title membership/datejoined/fmt:datetime"
-                  tal:content="membership/datejoined/fmt:approximatedate">
-                  2005-06-14
-                </span>
+                <tal:joined
+                  replace="structure membership/datejoined/fmt:approximatedatetitle" />
               </td>
               <td>
                 <tal:block condition="not: membership/dateexpires">
@@ -64,11 +61,8 @@
                 </tal:block>
                 <span class="sortkey"
                   tal:content="membership/dateexpires/fmt:datetime" />
-                <span
-                  tal:attributes="title membership/dateexpires/fmt:datetime"
-                  tal:content="membership/dateexpires/fmt:approximatedate">
-                  2005-06-14
-                </span>
+                <tal:expires
+                  replace="structure membership/dateexpires/fmt:approximatedatetitle" />
               </td>
               <td tal:content="membership/status/title"></td>
               <td tal:condition="user_can_edit_memberships">
@@ -137,11 +131,8 @@
                 <td>
                   <span class="sortkey"
                     tal:content="membership/date_proposed/fmt:datetime" />
-                  <span
-                    tal:attributes="title membership/date_proposed/fmt:datetime"
-                    tal:content="membership/date_proposed/fmt:approximatedate">
-                    2005-06-14
-                  </span>
+                  <tal:proposed
+                    replace="structure membership/date_proposed/fmt:approximatedatetitle" />
                 </td>
                 <td tal:condition="membership/status/enumvalue:INVITED">
                   Pending
@@ -182,11 +173,8 @@
                 <td>
                   <span class="sortkey"
                     tal:content="membership/date_proposed/fmt:datetime" />
-                  <span
-                    tal:attributes="title membership/date_proposed/fmt:datetime"
-                    tal:content="membership/date_proposed/fmt:approximatedate">
-                    2005-06-14
-                  </span>
+                  <tal:proposed
+                    replace="structure membership/date_proposed/fmt:approximatedatetitle" />
                 </td>
               <td tal:condition="user_can_edit_memberships">
                 <a tal:attributes="href membership/fmt:url"

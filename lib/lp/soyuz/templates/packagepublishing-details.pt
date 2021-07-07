@@ -8,39 +8,39 @@
                                and not view.wasCopied()
                                and not view.wasDeleted()">
       Created
-      <span tal:attributes="title context/datecreated/fmt:datetime"
-            tal:content="context/datecreated/fmt:displaydate" />
+      <tal:created
+        replace="structure context/datecreated/fmt:displaydatetitle" />
       by <a tal:replace="structure context/creator/fmt:link"/>
     </li>
     <li tal:condition="view/isRemoved">
       Removed from disk
-      <span tal:attributes="title context/dateremoved/fmt:datetime"
-            tal:content="context/dateremoved/fmt:displaydate" />.
+      <tal:removed
+        replace="structure context/dateremoved/fmt:displaydatetitle" />.
     </li>
     <li tal:condition="view/isPendingRemoval">
       Removal requested
-      <span tal:attributes="title context/scheduleddeletiondate/fmt:datetime"
-         tal:content="context/scheduleddeletiondate/fmt:displaydate" />.
+      <tal:scheduled-deletion
+        replace="structure context/scheduleddeletiondate/fmt:displaydatetitle" />.
     </li>
     <li tal:condition="view/wasDeleted">
       Deleted
-      <span tal:attributes="title context/datesuperseded/fmt:datetime"
-            tal:content="context/datesuperseded/fmt:displaydate" />
+      <tal:superseded
+        replace="structure context/datesuperseded/fmt:displaydatetitle" />
       by <a tal:replace="structure context/removed_by/fmt:link"/>
       <div tal:condition="context/removal_comment"
            tal:content="structure context/removal_comment/fmt:text-to-html" />
     </li>
     <li tal:condition="view/wasSuperseded">
       Superseded
-      <span tal:attributes="title context/datesuperseded/fmt:datetime"
-            tal:content="context/datesuperseded/fmt:displaydate"/>
+      <tal:superseded
+        replace="structure context/datesuperseded/fmt:displaydatetitle" />
       by <span tal:replace="context/supersededby/title" />
     </li>
     <li tal:content="structure view/recipe_build_details" tal:condition="view/is_source" />
     <li tal:condition="context/datepublished">
       Published
-      <span tal:attributes="title context/datepublished/fmt:datetime"
-            tal:content="context/datepublished/fmt:displaydate" />
+      <tal:published
+        replace="structure context/datepublished/fmt:displaydatetitle" />
     </li>
 
     <tal:comment condition="nothing">

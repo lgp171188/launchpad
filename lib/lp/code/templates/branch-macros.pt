@@ -259,10 +259,8 @@
       </tal:unknown-person>
     </tal:revision-author>
 
-    <span
-        tal:attributes="title rev_no/revision/revision_date/fmt:datetime"
-        tal:content="rev_no/revision/revision_date/fmt:displaydate"
-        >2005-10-05 14:34:22 WST</span>
+    <tal:revision-date
+      replace="structure rev_no/revision/revision_date/fmt:displaydatetitle" />
   </dt>
   <dd class="subordinate revision-comment">
     <tal:commit-message

@@ -35,18 +35,14 @@
     <p>
       This topic was proposed by
       <a tal:replace="structure context/registrant/fmt:link">Foo Bar</a>
-      <span
-        tal:attributes="title context/date_created/fmt:datetime"
-        tal:content="context/date_created/fmt:displaydate">2006-12-13</span>.
+      <tal:created
+        replace="structure context/date_created/fmt:displaydatetitle" />.
       <tal:already_decided condition="context/decider">
         It was previously marked "<span tal:replace="context/status/title">
         Approved</span>" for the agenda by
         <a tal:replace="structure context/decider/fmt:link">Foo Bar</a>
-        <span
-          tal:attributes="title context/date_decided/fmt:datetime"
-          tal:content="context/date_decided/fmt:displaydate">
-          2006-12-13
-        </span>.
+        <tal:decided
+          replace="structure context/date_decided/fmt:displaydatetitle" />.
       </tal:already_decided>
     </p>
 

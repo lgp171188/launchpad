@@ -90,13 +90,7 @@
                          class="edit sprite action-icon"></a>
                   </tal:notadmin>
                 </td>
-                <td>
-                  <span
-                     tal:attributes="title translator/datecreated/fmt:datetime"
-                     tal:content="translator/datecreated/fmt:approximatedate">
-                    2007-09-17
-                  </span>
-                </td>
+                <td tal:content="structure translator/datecreated/fmt:approximatedatetitle" />
                 <td tal:condition="view/user_can_edit">
                   <a tal:attributes="
                       href translator/context/fmt:url;

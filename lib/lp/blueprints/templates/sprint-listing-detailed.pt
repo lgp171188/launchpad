@@ -29,9 +29,8 @@
         <a
           tal:attributes="href context/owner/fmt:url"
           tal:content="context/owner/displayname">Foo Bar</a>
-        <span
-          tal:attributes="title context/datecreated/fmt:datetime"
-          tal:content="context/datecreated/fmt:displaydate">2005-10-05</span>
+        <tal:created
+          replace="structure context/datecreated/fmt:displaydatetitle" />
       </div>
     </div>
   </td>

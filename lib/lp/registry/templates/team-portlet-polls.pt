@@ -17,9 +17,8 @@
         <a tal:attributes="href poll/fmt:url">
           <span tal:replace="poll/title" />
         </a> - closes
-        <span
-          tal:attributes="title poll/datecloses/fmt:datetime"
-          tal:content="poll/datecloses/fmt:displaydate" />.
+        <tal:closes
+          replace="structure poll/datecloses/fmt:displaydatetitle" />.
 
         <tal:block define="user request/lp:person" condition="user">
           <tal:block condition="python: poll.personVoted(user)">
@@ -42,9 +41,8 @@
         <a tal:attributes="href poll/fmt:url">
           <span tal:replace="poll/title" />
         </a> - opens
-        <span
-          tal:attributes="title poll/dateopens/fmt:datetime"
-          tal:content="poll/dateopens/fmt:displaydate" />
+        <tal:opens
+          replace="structure poll/dateopens/fmt:displaydatetitle" />
       </li>
     </ul>
 

@@ -139,11 +139,8 @@
                 <td style="padding-top: 5px">
                   <span class="sortkey"
                     tal:content="packageupload/date_created/fmt:datetime" />
-                  <span
-                    tal:attributes="title packageupload/date_created/fmt:datetime"
-                    tal:content="packageupload/date_created/fmt:approximatedate">
-                    2006-03-15
-                  </span>
+                  <tal:created
+                    replace="structure packageupload/date_created/fmt:approximatedatetitle" />
                 </td>
              </tr>
            </tbody>
@@ -157,8 +154,8 @@
 
                <td colspan="8" style="border: 0">
                  <span tal:content="log/new_status/title"></span>
-                 <span tal:attributes="title log/date_created/fmt:datetime"
-                       tal:content="log/date_created/fmt:displaydate" />
+                 <tal:created
+                   replace="structure log/date_created/fmt:displaydatetitle" />
                  by <span tal:content="structure log/reviewer/fmt:link" />
                  <p tal:condition="log/comment" tal:content="log/comment" />
                </td>

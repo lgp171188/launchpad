@@ -43,12 +43,9 @@
       </tal:empty-date>
     </td>
     <td tal:condition="not: view/is_distroseries_milestone">
-      <span
-        tal:condition="release"
-        tal:attributes="title release/datereleased/fmt:datetime"
-        tal:content="release/datereleased/fmt:approximatedate">
-        2005-12-13
-      </span>
+      <tal:released
+        condition="release"
+        replace="structure release/datereleased/fmt:approximatedatetitle" />
       <tal:no-release condition="not: release">
         <em tal:condition="not: milestone/active">
           <img src="/@@/info"/> This is an inactive milestone

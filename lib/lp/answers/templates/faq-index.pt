@@ -10,9 +10,8 @@
     <metal:registering fill-slot="registering">
       Created by <a tal:replace="structure context/owner/fmt:link" />
       on
-      <span
-        tal:attributes="title context/date_created/fmt:datetime"
-        tal:content="context/date_created/fmt:displaydate">2005-10-05</span>
+      <tal:created
+        replace="structure context/date_created/fmt:displaydatetitle" />
     </metal:registering>
 
     <metal:portlets fill-slot="side">
@@ -33,9 +32,8 @@
             <dd>
               <a tal:replace="structure context/last_updated_by/fmt:link" />
               on
-             <span tal:attributes="title context/date_last_updated/fmt:datetime"
-                tal:content="context/date_last_updated/fmt:displaydate"
-                >2005-10-05</span>
+              <tal:last-updated
+                replace="structure context/date_last_updated/fmt:displaydatetitle" />
             </dd>
           </dl>
         </tal:last_updated_by>
