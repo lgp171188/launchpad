@@ -15,7 +15,8 @@
       know-how it takes to operate it, such as how to combine and work with
       other related applications or how to upgrade it.  Launchpad can build
       charms using <a href="https://juju.is/docs/sdk">charmcraft</a>, from
-      any Git branch on Launchpad that has a <tt>charmcraft.yaml</tt> file.
+      any Git branch on Launchpad that has <tt>metadata.yaml</tt>,
+      <tt>requirements.txt</tt>, and <tt>src/charm.py</tt> files.
     </p>
   </div>
 

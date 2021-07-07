@@ -408,23 +408,20 @@ class ICharmRecipeEditableAttributes(Interface):
         schema=IGitRepository, vocabulary="GitRepository",
         required=False, readonly=True,
         description=_(
-            "A Git repository with a branch containing a charmcraft.yaml "
-            "recipe."))
+            "A Git repository with a branch containing a charm recipe."))
 
     git_path = TextLine(
         title=_("Git branch path"), required=False, readonly=True,
-        description=_(
-            "The path of the Git branch containing a charmcraft.yaml "
-            "recipe."))
+        description=_("The path of the Git branch containing a charm recipe."))
 
     git_ref = Reference(
         IGitRef, title=_("Git branch"), required=False, readonly=False,
-        description=_("The Git branch containing a charmcraft.yaml recipe."))
+        description=_("The Git branch containing a charm recipe."))
 
     build_path = TextLine(
         title=_("Build path"),
         description=_(
-            "Subdirectory within the branch containing charmcraft.yaml."),
+            "Subdirectory within the branch containing metadata.yaml."),
         constraint=path_does_not_escape, required=False, readonly=False)
 
     information_type = Choice(
@@ -437,8 +434,8 @@ class ICharmRecipeEditableAttributes(Interface):
         title=_("Automatically build when branch changes"),
         required=True, readonly=False,
         description=_(
-            "Whether this charm recipe is built automatically when the branch "
-            "containing its charmcraft.yaml recipe changes."))
+            "Whether this charm recipe is built automatically when its branch "
+            "changes."))
 
     auto_build_channels = Dict(
         title=_("Source snap channels for automatic builds"),
