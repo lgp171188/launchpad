@@ -26,6 +26,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_entry,
     operation_for_version,
+    operation_parameters,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -296,6 +297,8 @@ class IOCIRecipeBuildEdit(Interface):
         non-scored BuildQueue entry is created for it.
         """
 
+    @export_write_operation()
+    @operation_for_version("devel")
     def cancel():
         """Cancel the build if it is either pending or in progress.
 
@@ -314,6 +317,9 @@ class IOCIRecipeBuildEdit(Interface):
 class IOCIRecipeBuildAdmin(Interface):
     """`IOCIRecipeBuild` attributes that require launchpad.Admin permission."""
 
+    @operation_parameters(score=Int(title=_("Score"), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
     def rescore(score):
         """Change the build's score."""
 
