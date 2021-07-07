@@ -271,6 +271,8 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
             self.recipe.git_repository is None or
             self.recipe.git_repository.private)
 
+    private = is_private
+
     def retry(self):
         """See `IOCIRecipeBuild`."""
         assert self.can_be_retried, "Build %s cannot be retried" % self.id

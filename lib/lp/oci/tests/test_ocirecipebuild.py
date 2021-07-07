@@ -28,6 +28,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
+from lp.app.interfaces.launchpad import IPrivacy
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
@@ -46,6 +47,10 @@ from lp.oci.interfaces.ocirecipebuild import (
 from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.enums import (
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
@@ -113,6 +118,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         with admin_logged_in():
             self.assertProvides(self.build, IOCIRecipeBuild)
             self.assertProvides(self.build, IPackageBuild)
+            self.assertProvides(self.build, IPrivacy)
 
     def test_addFile(self):
         lfa = self.factory.makeLibraryFileAlias()
@@ -258,6 +264,20 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(self.build.virtualized, bq.virtualized)
         self.assertIsNotNone(bq.processor)
         self.assertEqual(bq, self.build.buildqueue_record)
+
+    def test_is_private(self):
+        # An OCIRecipeBuild is private if its owner is.
+        self.assertFalse(self.build.is_private)
+        self.assertFalse(self.build.private)
+        private_team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
+            visibility=PersonVisibility.PRIVATE)
+        with person_logged_in(private_team.teamowner):
+            build = self.factory.makeOCIRecipeBuild(
+                requester=private_team.teamowner, owner=private_team,
+                information_type=InformationType.USERDATA)
+            self.assertTrue(build.is_private)
+            self.assertTrue(build.private)
 
     def test_updateStatus_triggers_webhooks(self):
         # Updating the status of an OCIRecipeBuild triggers webhooks on the
