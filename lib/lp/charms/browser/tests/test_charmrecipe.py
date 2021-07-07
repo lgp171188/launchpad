@@ -17,7 +17,9 @@ from fixtures import FakeLogger
 import pytz
 import soupmatchers
 from testtools.matchers import (
+    AfterPreprocessing,
     Equals,
+    Is,
     MatchesListwise,
     MatchesStructure,
     )
@@ -37,7 +39,10 @@ from lp.charms.browser.charmrecipe import (
     CharmRecipeEditView,
     CharmRecipeView,
     )
-from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
+from lp.charms.interfaces.charmrecipe import (
+    CHARM_RECIPE_ALLOW_CREATE,
+    CharmRecipeBuildRequestStatus,
+    )
 from lp.registry.enums import PersonVisibility
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
@@ -65,8 +70,8 @@ from lp.testing.matchers import (
 from lp.testing.pages import (
     extract_text,
     find_main_content,
-    find_tags_by_class,
     find_tag_by_id,
+    find_tags_by_class,
     )
 from lp.testing.publication import test_traverse
 from lp.testing.views import (
@@ -666,3 +671,78 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
         view = create_initialized_view(recipe, "+index")
         self.assertEqual(
             "track/stable/fix-123, track/edge/fix-123", view.store_channels)
+
+
+class TestCharmRecipeRequestBuildsView(BaseTestCharmRecipeView):
+
+    def setUp(self):
+        super(TestCharmRecipeRequestBuildsView, self).setUp()
+        self.project = self.factory.makeProduct(
+            name="test-project", displayname="Test Project")
+        self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        self.distroseries = self.factory.makeDistroSeries(
+            distribution=self.ubuntu)
+        self.architectures = []
+        for processor, architecture in ("386", "i386"), ("amd64", "amd64"):
+            das = self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=architecture,
+                processor=getUtility(IProcessorSet).getByName(processor))
+            das.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            self.architectures.append(das)
+        self.recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, owner=self.person, project=self.project,
+            name="charm-name")
+
+    def test_request_builds_page(self):
+        # The +request-builds page is sensible.
+        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
+            Request builds for charm-name
+            Test Project
+            charm-name
+            Request builds
+            Source snap channels:
+            charmcraft
+            core
+            core18
+            core20
+            The channels to use for build tools when building the charm
+            recipe.
+            or
+            Cancel
+            """,
+            self.getMainText(self.recipe, "+request-builds", user=self.person))
+
+    def test_request_builds_not_owner(self):
+        # A user without launchpad.Edit cannot request builds.
+        self.assertRaises(
+            Unauthorized, self.getViewBrowser, self.recipe, "+request-builds")
+
+    def test_request_builds_action(self):
+        # Requesting a build creates a pending build request.
+        browser = self.getViewBrowser(
+            self.recipe, "+request-builds", user=self.person)
+        browser.getControl("Request builds").click()
+
+        login_person(self.person)
+        [request] = self.recipe.pending_build_requests
+        self.assertThat(removeSecurityProxy(request), MatchesStructure(
+            recipe=Equals(self.recipe),
+            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+            error_message=Is(None),
+            builds=AfterPreprocessing(list, Equals([])),
+            _job=MatchesStructure(
+                requester=Equals(self.person),
+                channels=Equals({}),
+                architectures=Is(None))))
+
+    def test_request_builds_channels(self):
+        # Selecting different channels creates a build request using those
+        # channels.
+        browser = self.getViewBrowser(
+            self.recipe, "+request-builds", user=self.person)
+        browser.getControl(name="field.channels.core").value = "edge"
+        browser.getControl("Request builds").click()
+
+        login_person(self.person)
+        [request] = self.recipe.pending_build_requests
+        self.assertEqual({"core": "edge"}, request.channels)
