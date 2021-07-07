@@ -71,12 +71,7 @@
                   tal:attributes="class string:branchstatus${branch/lifecycle_status/name}">
             Status</span>
           </td>
-          <td>
-            <span tal:attributes="title branch/date_last_modified/fmt:datetime"
-                  tal:content="branch/date_last_modified/fmt:approximatedate">
-              sometime
-              </span>
-          </td>
+          <td tal:content="structure branch/date_last_modified/fmt:approximatedatetitle" />
         </tr>
         <tr tal:condition="group/more-branch-count">
           <td colspan="4" style="padding-left: 2em">

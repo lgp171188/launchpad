@@ -11,9 +11,8 @@
 
     <tal:registering metal:fill-slot="registering">
         created
-        <span tal:content="context/date_created/fmt:displaydate"
-              tal:attributes="title context/date_created/fmt:datetime"
-          >on 2005-01-01</span>
+        <tal:created
+          replace="structure context/date_created/fmt:displaydatetitle" />
     </tal:registering>
 
     <div metal:fill-slot="main">

@@ -78,15 +78,9 @@
                 tal:content="language_stats/last_changed_date/fmt:datetime">
                 time sort key
               </span>
-              <span
-                tal:condition="language_stats/last_changed_date"
-                tal:attributes="
-                  title language_stats/last_changed_date/fmt:datetime"
-                tal:content="
-                  language_stats/last_changed_date/fmt:approximatedate"
-                >
-                2007-02-10
-              </span>
+              <tal:last-changed
+                condition="language_stats/last_changed_date"
+                replace="structure language_stats/last_changed_date/fmt:approximatedatetitle" />
               <tal:block condition="not: language_stats/last_changed_date">
                   &mdash;
               </tal:block>

@@ -6,8 +6,7 @@
           <pillar tal:replace="structure pillar/fmt:link:bugs" />,
         </tal:per_pillar>
       reported
-      <span
-        tal:attributes="title context/datecreated/fmt:datetime"
-        tal:content="context/datecreated/fmt:displaydate">2005-10-05</span>
+      <tal:created
+        replace="structure context/datecreated/fmt:displaydatetitle" />
     </span>
 </li>

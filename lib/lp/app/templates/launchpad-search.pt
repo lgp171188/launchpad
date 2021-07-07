@@ -55,9 +55,8 @@
                       <b tal:content="pillar/displayname" />,
                     </tal:per_pillar>
                   reported
-                  <span
-                    tal:attributes="title view/bug/datecreated/fmt:datetime"
-                    tal:content="view/bug/datecreated/fmt:displaydate">2005-10-05</span>
+                  <tal:created
+                    replace="structure view/bug/datecreated/fmt:displaydatetitle" />
                   by
                   <a
                     tal:attributes="href view/bug/owner/fmt:url"
@@ -71,9 +70,8 @@
                 </div>
                 <div class="summary">
                   posted
-                  <span
-                    tal:attributes="title view/question/datecreated/fmt:datetime"
-                    tal:content="view/question/datecreated/fmt:displaydate">2005-10-05</span>
+                  <tal:created
+                    replace="structure view/question/datecreated/fmt:displaydatetitle" />
                   by
                   <a tal:replace="structure view/question/owner/fmt:link"
                     >Foo Bar</a><tal:assignee condition="view/question/assignee">,
@@ -113,10 +111,9 @@
                       # Product and ProjectGroup still use the wrong name for
                       # date_created.
                     </tal:XXX>
-                    <span
-                      tal:define="date_created view/pillar/datecreated|view/pillar/date_created|nothing"
-                      tal:attributes="title date_created/fmt:datetime"
-                      tal:content="date_created/fmt:displaydate">2005-10-12</span>
+                    <tal:created
+                      define="date_created view/pillar/datecreated|view/pillar/date_created|nothing"
+                      replace="structure date_created/fmt:displaydatetitle" />
                   </div>
                 </div>
               </li>
@@ -137,18 +134,16 @@
                     </div>
                     <div>
                       Created
-                      <span
-                        tal:attributes="title view/person_or_team/datecreated/fmt:datetime"
-                        tal:content="view/person_or_team/datecreated/fmt:displaydate">2005-10-05</span>
+                      <tal:created
+                        replace="structure view/person_or_team/datecreated/fmt:displaydatetitle" />
                     </div>
                   </tal:team>
                   <tal:person
                     tal:condition="not: view/person_or_team/is_team">
                     <div>
                       joined
-                      <span
-                        tal:attributes="title view/person_or_team/datecreated/fmt:datetime"
-                        tal:content="view/person_or_team/datecreated/fmt:displaydate">2005-10-05</span>,
+                      <tal:created
+                        replace="structure view/person_or_team/datecreated/fmt:displaydatetitle" />,
                         with <tal:karma content="view/person_or_team/karma">1000</tal:karma> karma
                     </div>
                   </tal:person>

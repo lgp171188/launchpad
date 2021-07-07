@@ -74,9 +74,8 @@
     <tal:registering metal:fill-slot="registering">
       Bug #<tal:id replace="context/bug/id">1</tal:id> reported by
       <tal:reporter replace="structure context/bug/owner/fmt:link" />
-      <span
-        tal:attributes="title context/bug/datecreated/fmt:datetime"
-        tal:content="context/bug/datecreated/fmt:displaydate" />
+      <tal:created
+        replace="structure context/bug/datecreated/fmt:displaydatetitle" />
     </tal:registering>
 
     <metal:heading fill-slot="heading" tal:define="context_menu context/menu:context">

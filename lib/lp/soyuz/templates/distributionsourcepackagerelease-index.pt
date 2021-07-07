@@ -29,9 +29,8 @@
             <dd>
              <span tal:replace="structure context/creator/fmt:link"
                >Foo Bar</span>
-             <span tal:content="context/dateuploaded/fmt:displaydate"
-                   tal:attributes="title context/dateuploaded/fmt:datetime"
-               >on </span>
+             <tal:uploaded
+               replace="structure context/dateuploaded/fmt:displaydatetitle" />
             </dd>
         </dl>
         <dl tal:condition="view/sponsor">
@@ -95,12 +94,7 @@
                tal:content="publishing/distroseries/displayname">Hoary Mock</a>
           </td>
           <td tal:content="publishing/pocket/title/fmt:lower">release</td>
-          <td>
-            <span tal:content="publishing/datepublished/fmt:displaydate"
-                  tal:attributes="title
-                                  publishing/datecreated/fmt:datetime"
-              >two minutes ago</span>
-          </td>
+          <td tal:content="structure publishing/datepublished/fmt:displaydatetitle" />
           <td tal:content="publishing/component/name">main</td>
           <td tal:content="publishing/section/name">devel</td>
          </tr>

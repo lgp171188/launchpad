@@ -18,9 +18,8 @@
   <tal:registering metal:fill-slot="registering">
     Registered by
     <tal:registrant tal:replace="structure context/owner/fmt:link" />
-    <span
-        tal:attributes="title context/datecreated/fmt:datetime"
-        tal:content="context/datecreated/fmt:displaydate" />
+    <tal:created
+      replace="structure context/datecreated/fmt:displaydatetitle" />
   </tal:registering>
 
 <metal:heading fill-slot="heading">

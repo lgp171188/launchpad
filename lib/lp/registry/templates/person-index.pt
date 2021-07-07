@@ -120,9 +120,8 @@
       <p><span tal:replace="context/displayname" /> does not use Launchpad.
         <tal:block condition="context/creation_comment">
           This page was created
-          <span
-            tal:attributes="title context/datecreated/fmt:datetime"
-            tal:content="context/datecreated/fmt:displaydate" />
+          <tal:created
+            replace="structure context/datecreated/fmt:displaydatetitle" />
           <tal:user-created
             condition="context/creation_rationale/enumvalue:USER_CREATED">
             by <a tal:attributes="href context/registrant/fmt:url">
@@ -138,9 +137,8 @@
         </tal:block>
         <tal:block condition="not: context/creation_comment">
           This page was created
-          <span
-            tal:attributes="title context/datecreated/fmt:datetime"
-            tal:content="context/datecreated/fmt:displaydate" />.
+          <tal:created
+            replace="structure context/datecreated/fmt:displaydatetitle" />.
         </tal:block>
       </p>
 

@@ -99,9 +99,9 @@
                 <tal:has_release condition="view/release">
                   <dl>
                     <dt>Released:</dt>
-                    <dd><span
-                      tal:attributes="title view/release/datereleased/fmt:datetime"
-                      tal:content="view/release/datereleased/fmt:approximatedate" />
+                    <dd>
+                      <tal:released
+                        replace="structure view/release/datereleased/fmt:approximatedatetitle" />
                       &nbsp;
                       <a tal:replace="structure release_menu/delete/fmt:icon" />
                       <a tal:replace="structure release_menu/edit/fmt:icon" />
@@ -115,9 +115,7 @@
 
                   <dl>
                     <dt>Release registered:</dt>
-                    <dd><span
-                      tal:attributes="title view/release/datecreated/fmt:datetime"
-                      tal:content="view/release/datecreated/fmt:approximatedate" /></dd>
+                    <dd tal:content="structure view/release/datecreated/fmt:approximatedatetitle" />
                   </dl>
                 </tal:has_release>
               </tal:is_not_project_milestone_tag>

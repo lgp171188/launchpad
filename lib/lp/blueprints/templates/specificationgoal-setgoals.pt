@@ -70,9 +70,8 @@
                 <span tal:replace="context/displayname">Edgy</span>
                 by
                 <a tal:replace="structure spec/goal_proposer/fmt:link" />
-                <span
-                  tal:attributes="title spec/date_goal_proposed/fmt:datetime"
-                  tal:content="spec/date_goal_proposed/fmt:displaydate" />.
+                <tal:goal-proposed
+                  replace="structure spec/date_goal_proposed/fmt:displaydatetitle" />.
               </div>
             </td>
           </tr>

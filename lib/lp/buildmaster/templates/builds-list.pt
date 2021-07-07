@@ -56,13 +56,9 @@
             </div>
             <div tal:condition="build/was_built">
               Build started
-              <tal:soyuz_record condition="build/duration">
-                 <span
-                   tal:attributes="
-                     title build/date_started/fmt:datetime"
-                   tal:content="
-                   build/date_started/fmt:displaydate" />
-              </tal:soyuz_record>
+              <tal:soyuz_record
+                condition="build/duration"
+                replace="structure build/date_started/fmt:displaydatetitle" />
               <tal:gina_record condition="not: build/duration">
                   <i>at an unknown time</i>
               </tal:gina_record>
@@ -79,9 +75,8 @@
               </tal:show_builder_info>
               <tal:date_built condition="build/date_finished">
                 and finished
-                <span
-                  tal:attributes="title build/date_finished/fmt:datetime"
-                  tal:content="build/date_finished/fmt:displaydate" />
+                <tal:finished
+                  replace="structure build/date_finished/fmt:displaydatetitle" />
                 taking
                 <tal:time
                   content="build/duration/fmt:approximateduration" />
@@ -100,9 +95,8 @@
                 </tal:pending>
                 <tal:building condition="bq/builder">
                   Build started
-                  <span
-                    tal:attributes="title bq/date_started/fmt:datetime"
-                    tal:content="bq/date_started/fmt:displaydate" />
+                  <tal:started
+                    replace="structure bq/date_started/fmt:displaydatetitle" />
                   on
                   <a tal:content="bq/builder/title"
                      tal:attributes="href bq/builder/fmt:url"/>

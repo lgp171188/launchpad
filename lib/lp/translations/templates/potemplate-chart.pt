@@ -67,15 +67,9 @@
               pf/date_changed/fmt:datetime">
             time sort key
           </span>
-          <span
+          <tal:changed
             tal:condition="pf/date_changed"
-            tal:attributes="
-              title pf/date_changed/fmt:datetime"
-            tal:content="
-              pf/date_changed/fmt:approximatedate"
-            >
-            2007-02-10
-          </span>
+            tal:replace="structure pf/date_changed/fmt:approximatedatetitle" />
           <tal:block condition="not: pf/date_changed">
               &mdash;
           </tal:block>

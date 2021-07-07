@@ -48,8 +48,7 @@
         no signer
       </tal:no_signer>
     </td>
-    <td tal:attributes="title context/datepublished/fmt:datetime"
-        tal:content="context/datepublished/fmt:approximatedate">2005-09-16</td>
+    <td tal:content="structure context/datepublished/fmt:approximatedatetitle" />
     <td tal:content="context/status/title">PUBLISHED</td>
     <td tal:content="context/distroseries/name/capitalize">Dapper</td>
     <td tal:content="context/section/name/capitalize">Web</td>

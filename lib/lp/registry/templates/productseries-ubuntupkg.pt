@@ -46,13 +46,7 @@
 
           <tbody>
             <tr tal:repeat="packaging view/ubuntu_history">
-              <td>
-                <span
-                  tal:attributes="title packaging/datecreated/fmt:datetime"
-                  tal:content="packaging/datecreated/fmt:approximatedate">
-                  13-05-2004
-                </span>
-              </td>
+              <td tal:content="structure packaging/datecreated/fmt:approximatedatetitle" />
               <td>
                 <a tal:replace="structure packaging/distroseries/fmt:link" />
               </td>

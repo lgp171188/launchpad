@@ -11,9 +11,8 @@
     </div>
     <div class="registered">
       Joined
-      <span
-        tal:attributes="title context/datejoined/fmt:datetime"
-        tal:content="context/datejoined/fmt:displaydate" />
+      <tal:joined
+        replace="structure context/datejoined/fmt:displaydatetitle" />
     </div>
   </td>
 </tr>
