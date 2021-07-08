@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test Archive features."""
@@ -4584,9 +4584,35 @@ class TestMarkSuiteDirty(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         self.assertIsNone(archive.dirty_suites)
 
-    def test_requires_owner(self):
+    def test_unprivileged_disallowed(self):
         archive = self.factory.makeArchive()
         self.assertRaises(Unauthorized, getattr, archive, "markSuiteDirty")
+
+    def test_primary_archive_uploader_disallowed(self):
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
+        person = self.factory.makePerson()
+        with person_logged_in(archive.distribution.owner):
+            archive.newComponentUploader(person, "main")
+        with person_logged_in(person):
+            self.assertRaises(Unauthorized, getattr, archive, "markSuiteDirty")
+
+    def test_primary_archive_owner_allowed(self):
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
+        # Simulate Ubuntu's situation where the primary archive is owned by
+        # an archive admin team while the distribution is owned by the
+        # technical board, allowing us to tell the difference between
+        # permissions granted to the archive owner vs. the distribution
+        # owner.
+        with person_logged_in(archive.distribution.owner):
+            archive.distribution.owner = (
+                getUtility(ILaunchpadCelebrities).ubuntu_techboard)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution)
+        with person_logged_in(archive.owner):
+            archive.markSuiteDirty(
+                distroseries, PackagePublishingPocket.UPDATES)
+        self.assertEqual(
+            ["%s-updates" % distroseries.name], archive.dirty_suites)
 
     def test_first_suite(self):
         archive = self.factory.makeArchive()
