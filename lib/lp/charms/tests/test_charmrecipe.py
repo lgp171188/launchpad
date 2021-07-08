@@ -56,13 +56,14 @@ from lp.charms.interfaces.charmrecipejob import (
     )
 from lp.charms.model.charmrecipebuild import CharmFile
 from lp.charms.model.charmrecipejob import CharmRecipeJob
+from lp.code.errors import GitRepositoryBlobNotFound
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.config import config
 from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
     )
-from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_caches,
@@ -474,6 +475,34 @@ class TestCharmRecipe(TestCaseWithFactory):
             "charm.default_build_series.ubuntu": "20.04",
             }))
         self.useFixture(GitHostingFixture(blob="name: foo\n"))
+        old_distro_series = self.factory.makeDistroSeries(
+            distribution=getUtility(ILaunchpadCelebrities).ubuntu,
+            version="18.04")
+        for arch_tag in ("mips64el", "riscv64"):
+            self.makeBuildableDistroArchSeries(
+                distroseries=old_distro_series, architecturetag=arch_tag)
+        job = self.makeRequestBuildsJob("20.04", ["mips64el", "riscv64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created)
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels))
+        self.assertRequestedBuildsMatch(
+            builds, job, "20.04", ["mips64el", "riscv64"], job.channels)
+
+    def test_requestBuildsFromJob_no_charmcraft_yaml(self):
+        # If the recipe has no charmcraft.yaml file, requestBuildsFromJob
+        # treats this as equivalent to a charmcraft.yaml file that doesn't
+        # specify any bases: that is, it requests builds for all configured
+        # architectures for the default series.
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
+            "charm.default_build_series.ubuntu": "20.04",
+            }))
+        self.useFixture(GitHostingFixture()).getBlob.failure = (
+            GitRepositoryBlobNotFound("placeholder", "charmcraft.yaml"))
         old_distro_series = self.factory.makeDistroSeries(
             distribution=getUtility(ILaunchpadCelebrities).ubuntu,
             version="18.04")
