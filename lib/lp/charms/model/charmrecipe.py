@@ -514,8 +514,13 @@ class CharmRecipe(StormBase):
                              logger=None):
         """See `ICharmRecipe`."""
         try:
-            charmcraft_data = removeSecurityProxy(
-                getUtility(ICharmRecipeSet).getCharmcraftYaml(self))
+            try:
+                charmcraft_data = removeSecurityProxy(
+                    getUtility(ICharmRecipeSet).getCharmcraftYaml(self))
+            except MissingCharmcraftYaml:
+                # charmcraft doesn't currently require charmcraft.yaml, and
+                # we have reasonable defaults without it.
+                charmcraft_data = {}
 
             # Sort by (Distribution.id, DistroSeries.id, Processor.id) for
             # determinism.  This is chosen to be a similar order as in
