@@ -215,6 +215,9 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         self.client.upload(self.build)
 
+        # We should have uploaded to the digest, not the tag
+        self.assertIn('sha256:', responses.calls[1].request.url)
+        self.assertNotIn('edge', responses.calls[1].request.url)
         request = json.loads(responses.calls[1].request.body.decode("UTF-8"))
 
         self.assertThat(request, MatchesDict({
@@ -1069,6 +1072,26 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
 
         self.client.uploadManifestList(build_request, [build1])
         self.assertEqual(3, len(responses.calls))
+
+        # Check that we have the old manifest for 386,
+        # but the new one for amd64
+        self.assertEqual({
+            "schemaVersion": 2,
+            "mediaType": "application/"
+                         "vnd.docker.distribution.manifest.list.v2+json",
+            "manifests": [
+                {
+                    "platform": {"os": "linux", "architecture": "386"},
+                    "mediaType": "application"
+                                 "/vnd.docker.distribution.manifest.v2+json",
+                    "digest": "initial-386-digest", "size": 110},
+                {
+                    "platform": {"os": "linux", "architecture": "amd64"},
+                    "mediaType": "application"
+                                 "/vnd.docker.distribution.manifest.v2+json",
+                    "digest": "new-build1-digest", "size": 1111
+                }]
+        }, json.loads(responses.calls[2].request.body.decode("UTF-8")))
 
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
