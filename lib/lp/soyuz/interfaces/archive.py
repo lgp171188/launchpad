@@ -1831,6 +1831,26 @@ class IArchiveAppend(Interface):
         :param job_id: The ID of the `PlainPackageCopyJob` to be removed.
         """
 
+    @operation_parameters(
+        distroseries=Reference(
+            IDistroSeries, title=_("Distro series"), required=True),
+        pocket=Choice(
+            title=_("Pocket"),
+            vocabulary=PackagePublishingPocket,
+            required=True),
+        )
+    @export_write_operation()
+    @operation_for_version("devel")
+    def markSuiteDirty(distroseries, pocket):
+        """Mark a suite as dirty in this archive.
+
+        The next publisher run will publish this suite regardless of whether
+        it has any pending publications.
+
+        :param distroseries: An `IDistroSeries`.
+        :param pocket: A `PackagePublishingPocket`.
+        """
+
 
 class IArchiveEdit(Interface):
     """Archive interface for operations restricted by edit privilege."""
@@ -2217,26 +2237,6 @@ class IArchiveEdit(Interface):
         """Deactivate named authorization tokens in bulk.
 
         :param names: A list of token names.
-        """
-
-    @operation_parameters(
-        distroseries=Reference(
-            IDistroSeries, title=_("Distro series"), required=True),
-        pocket=Choice(
-            title=_("Pocket"),
-            vocabulary=PackagePublishingPocket,
-            required=True),
-        )
-    @export_write_operation()
-    @operation_for_version("devel")
-    def markSuiteDirty(distroseries, pocket):
-        """Mark a suite as dirty in this archive.
-
-        The next publisher run will publish this suite regardless of whether
-        it has any pending publications.
-
-        :param distroseries: An `IDistroSeries`.
-        :param pocket: A `PackagePublishingPocket`.
         """
 
 
