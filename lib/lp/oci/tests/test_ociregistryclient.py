@@ -23,7 +23,6 @@ from requests.exceptions import (
     HTTPError,
     )
 import responses
-from tenacity import RetryError
 from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
@@ -1005,6 +1004,71 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertRaises(
             HTTPError, self.client.uploadManifestList,
             build_request, [self.build])
+
+    @responses.activate
+    def test_multi_arch_manifest_with_existing_architectures(self):
+        """Ensure that an existing arch release does not vanish
+        while waiting for a new upload."""
+        current_manifest = {
+            "schemaVersion": 2,
+            "mediaType": "application/"
+                         "vnd.docker.distribution.manifest.list.v2+json",
+            "manifests": [{
+                "platform": {"os": "linux", "architecture": "386"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "initial-386-digest",
+                "size": 110
+            }, {
+                "platform": {"os": "linux", "architecture": "amd64"},
+                "mediaType": "application/"
+                             "vnd.docker.distribution.manifest.v2+json",
+                "digest": "initial-amd64-digest",
+                "size": 220
+            }]
+        }
+
+        recipe = self.factory.makeOCIRecipe(git_ref=self.git_ref)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=recipe.distribution, status=SeriesStatus.CURRENT)
+        for architecturetag, processor_name in (
+                ("amd64", "amd64"),
+                ("i386", "386"),
+                ):
+            self.factory.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag=architecturetag,
+                processor=getUtility(IProcessorSet).getByName(processor_name))
+        build1 = self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distroseries["amd64"])
+        build2 = self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distroseries["i386"])
+
+        job = mock.Mock()
+        job.builds = [build1, build2]
+        job.uploaded_manifests = {
+            build1.id: {"digest": "new-build1-digest", "size": 1111},
+            build2.id: {"digest": "new-build2-digest", "size": 2222},
+        }
+        job_source = mock.Mock()
+        job_source.getByOCIRecipeAndID.return_value = job
+        self.useFixture(
+            ZopeUtilityFixture(job_source, IOCIRecipeRequestBuildsJobSource))
+        build_request = OCIRecipeBuildRequest(recipe, -1)
+
+        push_rule = self.factory.makeOCIPushRule(recipe=recipe)
+        responses.add(
+            "GET", "{}/v2/{}/manifests/v1.0-20.04_edge".format(
+                push_rule.registry_url, push_rule.image_name),
+            json=current_manifest,
+            status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        responses.add(
+            "GET", "{}/v2/".format(push_rule.registry_url), status=200)
+        self.addManifestResponses(push_rule, status_code=201)
+
+        self.client.uploadManifestList(build_request, [build1])
+        self.assertEqual(3, len(responses.calls))
 
 
 class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,

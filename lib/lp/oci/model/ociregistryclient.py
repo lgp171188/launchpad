@@ -296,6 +296,8 @@ class OCIRegistryClient:
         # Specifically the Schema 2 manifest.
         digest = None
         data = json.dumps(registry_manifest).encode("UTF-8")
+        if tag is None:
+            tag = "sha256:{}".format(hashlib.sha256(data).hexdigest())
         size = len(data)
         content_type = registry_manifest.get(
             "mediaType",
@@ -323,7 +325,8 @@ class OCIRegistryClient:
 
     @classmethod
     def _upload_to_push_rule(
-            cls, push_rule, build, manifest, digests, preloaded_data, tag):
+            cls, push_rule, build, manifest, digests, preloaded_data,
+            tag=None):
         http_client = RegistryHTTPClient.getInstance(push_rule)
 
         for section in manifest:
@@ -390,13 +393,12 @@ class OCIRegistryClient:
         exceptions = []
         try:
             for push_rule in build.recipe.push_rules:
-                for tag in cls._calculateTags(build.recipe):
-                    try:
-                        cls._upload_to_push_rule(
-                            push_rule, build, manifest, digests,
-                            preloaded_data, tag)
-                    except Exception as e:
-                        exceptions.append(e)
+                try:
+                    cls._upload_to_push_rule(
+                        push_rule, build, manifest, digests,
+                        preloaded_data, tag=None)
+                except Exception as e:
+                    exceptions.append(e)
             if len(exceptions) == 1:
                 raise exceptions[0]
             elif len(exceptions) > 1:
