@@ -24,6 +24,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import (
+    BuildBaseImageType,
     BuildQueueStatus,
     BuildStatus,
     )
@@ -221,9 +222,15 @@ class TestCharmRecipe(TestCaseWithFactory):
                     supports_nonvirtualized=supports_nonvirtualized)
         das = self.factory.makeDistroArchSeries(
             architecturetag=architecturetag, processor=processor, **kwargs)
+        # Add both a chroot and a LXD image to test that
+        # getAllowedArchitectures doesn't get confused by multiple
+        # PocketChroot rows for a single DistroArchSeries.
         fake_chroot = self.factory.makeLibraryFileAlias(
             filename="fake_chroot.tar.gz", db_only=True)
         das.addOrUpdateChroot(fake_chroot)
+        fake_lxd = self.factory.makeLibraryFileAlias(
+            filename="fake_lxd.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_lxd, image_type=BuildBaseImageType.LXD)
         return das
 
     def test_requestBuild(self):
