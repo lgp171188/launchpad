@@ -451,7 +451,7 @@ class CharmRecipe(StormBase):
         # determine_architectures_to_build.
         results = store.using(*origin).find(
             (DistroArchSeries, DistroSeries, Distribution),
-            DistroSeries.status.is_in(ACTIVE_STATUSES))
+            DistroSeries.status.is_in(ACTIVE_STATUSES)).config(distinct=True)
         all_buildable_dases = DecoratedResultSet(results, itemgetter(0))
         return [
             das for das in all_buildable_dases
