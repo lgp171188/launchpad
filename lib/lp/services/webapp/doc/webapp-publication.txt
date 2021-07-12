@@ -589,10 +589,14 @@ Page ID
 -------
 
 Our publication implementation sets a WSGI variable 'launchpad.pageid'.
-This is an identifier of the form ContextName:ViewName.
+This is an identifier of the form ContextName:ViewName.  We also set the
+'pageid' key in the Talisker logging context.
 
+    >>> from talisker.context import Context
+    >>> from talisker.logs import logging_context
     >>> from lp.services.webapp.interfaces import (
     ...     IPlacelessAuthUtility)
+    >>> _ = Context.new()
     >>> auth_utility = getUtility(IPlacelessAuthUtility)
     >>> request, publication = get_request_and_publication()
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
@@ -600,6 +604,8 @@ This is an identifier of the form ContextName:ViewName.
 Originally, this variable isn't set.
 
     >>> 'launchpad.pageid' in request._orig_env
+    False
+    >>> 'pageid' in logging_context
     False
     >>> logout()
 
@@ -624,6 +630,8 @@ name of the context class and the view class name.
     >>> publication.afterTraversal(request, view)
     >>> print(request._orig_env['launchpad.pageid'])
     TestContext:TestView
+    >>> print(logging_context['pageid'])
+    TestContext:TestView
     >>> from lp.services.webapp.adapter import (
     ...     clear_request_started, set_request_started)
     >>> clear_request_started()
@@ -637,6 +645,7 @@ durations for the traversal and object publication processes in WSGI
 variables which aren't set originally.
 
     >>> import time
+    >>> _ = Context.new()
     >>> request, publication = get_request_and_publication()
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
     >>> logout()
@@ -649,14 +658,25 @@ current thread.
 
     >>> 'launchpad.traversalduration' in request._orig_env
     False
+    >>> 'traversal_duration_ms' in logging_context
+    False
     >>> 'launchpad.traversalthreadduration' in request._orig_env
+    False
+    >>> 'traversal_thread_duration_ms' in logging_context
     False
     >>> publication.beforeTraversal(request)
     >>> publication.afterTraversal(request, None)
     >>> 'launchpad.traversalduration' in request._orig_env
     True
+    >>> 'traversal_duration_ms' in logging_context
+    True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.traversalthreadduration' in request._orig_env
+    ... else:
+    ...     True
+    True
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'traversal_thread_duration_ms' in logging_context
     ... else:
     ...     True
     True
@@ -669,7 +689,11 @@ current thread.
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
+    >>> 'publication_duration_ms' in logging_context
+    False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
+    False
+    >>> 'publication_thread_duration_ms' in logging_context
     False
     >>> print(publication.callObject(
     ...     request, TestView(TestContext(), request)))
@@ -677,8 +701,15 @@ current thread.
     >>> publication.afterCall(request, None)
     >>> 'launchpad.publicationduration' in request._orig_env
     True
+    >>> 'publication_duration_ms' in logging_context
+    True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.publicationthreadduration' in request._orig_env
+    ... else:
+    ...     True
+    True
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'publication_thread_duration_ms' in logging_context
     ... else:
     ...     True
     True
@@ -694,6 +725,7 @@ If the exception is raised before we even start the traversal, then
 there's nothing to store.
 
     >>> logger.setLevel(logging.CRITICAL)
+    >>> _ = Context.new()
     >>> request, publication = get_request_and_publication()
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
     >>> import sys
@@ -706,11 +738,19 @@ there's nothing to store.
     ...     None, request, exc_info, retry_allowed=False)
     >>> 'launchpad.traversalduration' in request._orig_env
     False
+    >>> 'traversal_duration_ms' in logging_context
+    False
     >>> 'launchpad.traversalthreadduration' in request._orig_env
+    False
+    >>> 'traversal_thread_duration_ms' in logging_context
     False
     >>> 'launchpad.publicationduration' in request._orig_env
     False
+    >>> 'publication_duration_ms' in logging_context
+    False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
+    False
+    >>> 'publication_thread_duration_ms' in logging_context
     False
     >>> clear_request_started()
 
@@ -722,14 +762,25 @@ the duration for the traversal and not for the publication.
     ...     None, request, exc_info, retry_allowed=False)
     >>> 'launchpad.traversalduration' in request._orig_env
     True
+    >>> 'traversal_duration_ms' in logging_context
+    True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.traversalthreadduration' in request._orig_env
     ... else:
     ...     True
     True
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'traversal_thread_duration_ms' in logging_context
+    ... else:
+    ...     True
+    True
     >>> 'launchpad.publicationduration' in request._orig_env
     False
+    >>> 'publication_duration_ms' in logging_context
+    False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
+    False
+    >>> 'publication_thread_duration_ms' in logging_context
     False
     >>> clear_request_started()
 
@@ -746,15 +797,29 @@ the publication, up to the point where it was forcefully stopped.
     ...     None, request, exc_info, retry_allowed=False)
     >>> 'launchpad.traversalduration' in request._orig_env
     True
+    >>> 'traversal_duration_ms' in logging_context
+    True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.traversalthreadduration' in request._orig_env
     ... else:
     ...     True
     True
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'traversal_thread_duration_ms' in logging_context
+    ... else:
+    ...     True
+    True
     >>> 'launchpad.publicationduration' in request._orig_env
+    True
+    >>> 'publication_duration_ms' in logging_context
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.publicationthreadduration' in request._orig_env
+    ... else:
+    ...     True
+    True
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'publication_thread_duration_ms' in logging_context
     ... else:
     ...     True
     True
@@ -764,14 +829,20 @@ the publication, up to the point where it was forcefully stopped.
 When a Retry or DisconnectionError exception is raised and the request
 supports retry, it will be retried with a copy of the WSGI environment.
 If that happens, though, we'll remove the
-{publication,traversal}{,thread}duration variables from there.
+{publication,traversal}{,thread}duration variables from there, and unwind
+the Talisker logging context.
 
+    >>> _ = Context.new()
     >>> request, publication = get_request_and_publication()
+    >>> publication.initializeLoggingContext(request)
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
     >>> request._orig_env['launchpad.traversalduration'] = 0.5
     >>> request._orig_env['launchpad.traversalthreadduration'] = 0.4
     >>> request._orig_env['launchpad.publicationduration'] = 0.5
     >>> request._orig_env['launchpad.publicationthreadduration'] = 0.4
+    >>> _ = logging_context.push(
+    ...     traversal_duration_ms=500, traversal_thread_duration_ms=400,
+    ...     publication_duration_ms=500, publication_thread_duration_ms=400)
     >>> request.supportsRetry()
     True
     >>> from zope.publisher.interfaces import Retry
@@ -788,19 +859,32 @@ If that happens, though, we'll remove the
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
+    >>> 'publication_duration_ms' in logging_context
+    False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
+    False
+    >>> 'publication_thread_duration_ms' in logging_context
     False
     >>> 'launchpad.traversalduration' in request._orig_env
     False
+    >>> 'traversal_duration_ms' in logging_context
+    False
     >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
+    >>> 'traversal_thread_duration_ms' in logging_context
+    False
 
+    >>> _ = Context.new()
     >>> request, publication = get_request_and_publication()
+    >>> publication.initializeLoggingContext(request)
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
     >>> request._orig_env['launchpad.traversalduration'] = 0.5
     >>> request._orig_env['launchpad.traversalthreadduration'] = 0.4
     >>> request._orig_env['launchpad.publicationduration'] = 0.5
     >>> request._orig_env['launchpad.publicationthreadduration'] = 0.4
+    >>> _ = logging_context.push(
+    ...     traversal_duration_ms=500, traversal_thread_duration_ms=400,
+    ...     publication_duration_ms=500, publication_thread_duration_ms=400)
     >>> request.supportsRetry()
     True
     >>> from storm.exceptions import DisconnectionError
@@ -817,23 +901,36 @@ If that happens, though, we'll remove the
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
+    >>> 'publication_duration_ms' in logging_context
+    False
+    >>> 'publication_thread_duration_ms' in logging_context
+    False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
     >>> 'launchpad.traversalduration' in request._orig_env
     False
+    >>> 'traversal_duration_ms' in logging_context
+    False
     >>> 'launchpad.traversalthreadduration' in request._orig_env
+    False
+    >>> 'traversal_thread_duration_ms' in logging_context
     False
 
 Of course, any request can only be retried a certain number of times and
 when we reach that number of retries we don't pop the durations from the
 WSGI env.
 
+    >>> _ = Context.new()
     >>> request, publication = get_request_and_publication()
+    >>> publication.initializeLoggingContext(request)
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
     >>> request._orig_env['launchpad.traversalduration'] = 0.5
     >>> request._orig_env['launchpad.traversalthreadduration'] = 0.4
     >>> request._orig_env['launchpad.publicationduration'] = 0.5
     >>> request._orig_env['launchpad.publicationthreadduration'] = 0.4
+    >>> _ = logging_context.push(
+    ...     traversal_duration_ms=500, traversal_thread_duration_ms=400,
+    ...     publication_duration_ms=500, publication_thread_duration_ms=400)
     >>> request.supportsRetry = lambda: False
     >>> request.supportsRetry()
     False
@@ -850,12 +947,20 @@ WSGI env.
 
     >>> request._orig_env['launchpad.publicationduration']
     0.5
+    >>> logging_context['publication_duration_ms']
+    500
     >>> request._orig_env['launchpad.publicationthreadduration']
     0.4
+    >>> logging_context['publication_thread_duration_ms']
+    400
     >>> request._orig_env['launchpad.traversalduration']
     0.5
+    >>> logging_context['traversal_duration_ms']
+    500
     >>> request._orig_env['launchpad.traversalthreadduration']
     0.4
+    >>> logging_context['traversal_thread_duration_ms']
+    400
 
 (A bit of cleanup so the test can continue)
 

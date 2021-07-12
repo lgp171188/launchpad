@@ -23,6 +23,7 @@ from lazr.uri import URI
 import six
 from six.moves import xmlrpc_client
 from six.moves.urllib.parse import parse_qs
+from talisker.logs import logging_context
 import transaction
 from transaction.interfaces import ISynchronizer
 from zc.zservertracelog.tracelog import Server as ZServerTracelogServer
@@ -626,6 +627,19 @@ class BasicLaunchpadRequest(LaunchpadBrowserRequestMixin):
 
         # Publish revision information.
         self.response.setHeader('X-Launchpad-Revision', versioninfo.revision)
+
+        # Talisker doesn't normally bother logging the Host: header, but
+        # since we have a number of different virtual hosts it's useful to
+        # have it do so.  Log the scheme as well so that log parsers can
+        # reconstruct the full URL.
+        extra = {}
+        if 'HTTP_HOST' in environ:
+            extra['host'] = environ['HTTP_HOST']
+        if environ.get('HTTPS', '').lower() == 'on':
+            extra['scheme'] = 'https'
+        else:
+            extra['scheme'] = 'http'
+        logging_context.push(**extra)
 
     @property
     def stepstogo(self):

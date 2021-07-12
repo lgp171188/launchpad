@@ -85,6 +85,7 @@ from six.moves.urllib.parse import (
     urlparse,
     )
 from six.moves.urllib.request import urlopen
+from talisker.context import Context
 import transaction
 from webob.request import environ_from_url as orig_environ_from_url
 import wsgi_intercept
@@ -955,6 +956,22 @@ class LaunchpadLayer(LibrarianLayer, MemcachedLayer, RabbitMQLayer):
             "DELETE FROM SessionData")
 
 
+class BasicTaliskerMiddleware:
+    """Middleware to set up a Talisker context.
+
+    The full `talisker.wsgi.TaliskerMiddleware` does a lot of things we
+    don't need in our tests, but it's useful to at least have a context so
+    that we can test logging behaviour.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        Context.new()
+        return self.app(environ, start_response)
+
+
 class TransactionMiddleware:
     """Middleware to commit the current transaction before the test.
 
@@ -1022,6 +1039,7 @@ class _FunctionalBrowserLayer(zope.testbrowser.wsgi.Layer, ZCMLFileLayer):
             RemoteAddrMiddleware,
             SortHeadersMiddleware,
             TransactionMiddleware,
+            BasicTaliskerMiddleware,
             ]
 
     def setUp(self):
