@@ -419,23 +419,23 @@ class TestBasicLaunchpadRequest(TestCase):
     def test_baserequest_logging_context_no_host_header(self):
         Context.new()
         LaunchpadBrowserRequest(io.BytesIO(b''), {})
-        self.assertNotIn('host', logging_context)
+        self.assertNotIn('host', logging_context.flat)
 
     def test_baserequest_logging_context_host_header(self):
         Context.new()
         env = {'HTTP_HOST': 'launchpad.test'}
         LaunchpadBrowserRequest(io.BytesIO(b''), env)
-        self.assertEqual('launchpad.test', logging_context['host'])
+        self.assertEqual('launchpad.test', logging_context.flat['host'])
 
     def test_baserequest_logging_context_https(self):
         Context.new()
         LaunchpadBrowserRequest(io.BytesIO(b''), {'HTTPS': 'on'})
-        self.assertEqual('https', logging_context['scheme'])
+        self.assertEqual('https', logging_context.flat['scheme'])
 
     def test_baserequest_logging_context_http(self):
         Context.new()
         LaunchpadBrowserRequest(io.BytesIO(b''), {})
-        self.assertEqual('http', logging_context['scheme'])
+        self.assertEqual('http', logging_context.flat['scheme'])
 
     def test_request_with_invalid_query_string_recovers(self):
         # When the query string has invalid utf-8, it is decoded with
