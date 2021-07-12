@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -21,6 +21,8 @@ from lazr.restful.testing.webservice import (
     IGenericEntry,
     WebServiceTestCase,
     )
+from talisker.context import Context
+from talisker.logs import logging_context
 from zope.component import (
     getGlobalSiteManager,
     getUtility,
@@ -413,6 +415,27 @@ class TestBasicLaunchpadRequest(TestCase):
         env = {'PATH_INFO': bad_path}
         request = LaunchpadBrowserRequest(io.BytesIO(b''), env)
         self.assertEqual(u'fnord/trunk\xE4', request.getHeader('PATH_INFO'))
+
+    def test_baserequest_logging_context_no_host_header(self):
+        Context.new()
+        LaunchpadBrowserRequest(io.BytesIO(b''), {})
+        self.assertNotIn('host', logging_context)
+
+    def test_baserequest_logging_context_host_header(self):
+        Context.new()
+        env = {'HTTP_HOST': 'launchpad.test'}
+        LaunchpadBrowserRequest(io.BytesIO(b''), env)
+        self.assertEqual('launchpad.test', logging_context['host'])
+
+    def test_baserequest_logging_context_https(self):
+        Context.new()
+        LaunchpadBrowserRequest(io.BytesIO(b''), {'HTTPS': 'on'})
+        self.assertEqual('https', logging_context['scheme'])
+
+    def test_baserequest_logging_context_http(self):
+        Context.new()
+        LaunchpadBrowserRequest(io.BytesIO(b''), {})
+        self.assertEqual('http', logging_context['scheme'])
 
     def test_request_with_invalid_query_string_recovers(self):
         # When the query string has invalid utf-8, it is decoded with

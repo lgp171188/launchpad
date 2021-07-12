@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -35,6 +35,7 @@ from storm.databases.postgres import (
 from storm.exceptions import TimeoutError
 from storm.store import Store
 from storm.tracer import install_tracer
+from talisker.logs import logging_context
 from timeline.timeline import Timeline
 import transaction
 from zope.component import getUtility
@@ -266,8 +267,11 @@ def store_sql_statements_and_request_duration(event):
     actions = get_request_timeline(get_current_browser_request()).actions
     event.request.setInWSGIEnvironment(
         'launchpad.nonpythonactions', len(actions))
+    logging_context.push(nonpython_actions=len(actions))
     event.request.setInWSGIEnvironment(
         'launchpad.requestduration', get_request_duration())
+    # Talisker already tracks the request duration itself, so there's no
+    # need to push that onto the logging context here.
 
 
 def get_request_statements():
