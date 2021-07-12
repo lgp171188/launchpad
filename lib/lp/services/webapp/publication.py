@@ -536,6 +536,8 @@ class LaunchpadBrowserPublication(
         if publication_thread_duration is not None:
             tracelog_entry += ' %d' % (publication_thread_duration * 1000)
         tracelog(request, 't', tracelog_entry)
+        logging_context.push(
+            sql_statements=len(sql_statements), sql_ms=sql_milliseconds)
 
         # Annotate the transaction with user data. That was done by
         # zope.app.publication.zopepublication.ZopePublication.
