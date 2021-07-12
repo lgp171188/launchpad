@@ -605,7 +605,7 @@ Originally, this variable isn't set.
 
     >>> 'launchpad.pageid' in request._orig_env
     False
-    >>> 'pageid' in logging_context
+    >>> 'pageid' in logging_context.flat
     False
     >>> logout()
 
@@ -630,7 +630,7 @@ name of the context class and the view class name.
     >>> publication.afterTraversal(request, view)
     >>> print(request._orig_env['launchpad.pageid'])
     TestContext:TestView
-    >>> print(logging_context['pageid'])
+    >>> print(logging_context.flat['pageid'])
     TestContext:TestView
     >>> from lp.services.webapp.adapter import (
     ...     clear_request_started, set_request_started)
@@ -658,17 +658,17 @@ current thread.
 
     >>> 'launchpad.traversalduration' in request._orig_env
     False
-    >>> 'traversal_duration_ms' in logging_context
+    >>> 'traversal_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
-    >>> 'traversal_thread_duration_ms' in logging_context
+    >>> 'traversal_thread_duration_ms' in logging_context.flat
     False
     >>> publication.beforeTraversal(request)
     >>> publication.afterTraversal(request, None)
     >>> 'launchpad.traversalduration' in request._orig_env
     True
-    >>> 'traversal_duration_ms' in logging_context
+    >>> 'traversal_duration_ms' in logging_context.flat
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.traversalthreadduration' in request._orig_env
@@ -676,7 +676,7 @@ current thread.
     ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'traversal_thread_duration_ms' in logging_context
+    ...     'traversal_thread_duration_ms' in logging_context.flat
     ... else:
     ...     True
     True
@@ -689,11 +689,11 @@ current thread.
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
-    >>> 'publication_duration_ms' in logging_context
+    >>> 'publication_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
-    >>> 'publication_thread_duration_ms' in logging_context
+    >>> 'publication_thread_duration_ms' in logging_context.flat
     False
     >>> print(publication.callObject(
     ...     request, TestView(TestContext(), request)))
@@ -701,7 +701,7 @@ current thread.
     >>> publication.afterCall(request, None)
     >>> 'launchpad.publicationduration' in request._orig_env
     True
-    >>> 'publication_duration_ms' in logging_context
+    >>> 'publication_duration_ms' in logging_context.flat
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.publicationthreadduration' in request._orig_env
@@ -709,7 +709,7 @@ current thread.
     ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'publication_thread_duration_ms' in logging_context
+    ...     'publication_thread_duration_ms' in logging_context.flat
     ... else:
     ...     True
     True
@@ -738,19 +738,19 @@ there's nothing to store.
     ...     None, request, exc_info, retry_allowed=False)
     >>> 'launchpad.traversalduration' in request._orig_env
     False
-    >>> 'traversal_duration_ms' in logging_context
+    >>> 'traversal_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
-    >>> 'traversal_thread_duration_ms' in logging_context
+    >>> 'traversal_thread_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.publicationduration' in request._orig_env
     False
-    >>> 'publication_duration_ms' in logging_context
+    >>> 'publication_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
-    >>> 'publication_thread_duration_ms' in logging_context
+    >>> 'publication_thread_duration_ms' in logging_context.flat
     False
     >>> clear_request_started()
 
@@ -762,7 +762,7 @@ the duration for the traversal and not for the publication.
     ...     None, request, exc_info, retry_allowed=False)
     >>> 'launchpad.traversalduration' in request._orig_env
     True
-    >>> 'traversal_duration_ms' in logging_context
+    >>> 'traversal_duration_ms' in logging_context.flat
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.traversalthreadduration' in request._orig_env
@@ -770,17 +770,17 @@ the duration for the traversal and not for the publication.
     ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'traversal_thread_duration_ms' in logging_context
+    ...     'traversal_thread_duration_ms' in logging_context.flat
     ... else:
     ...     True
     True
     >>> 'launchpad.publicationduration' in request._orig_env
     False
-    >>> 'publication_duration_ms' in logging_context
+    >>> 'publication_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
-    >>> 'publication_thread_duration_ms' in logging_context
+    >>> 'publication_thread_duration_ms' in logging_context.flat
     False
     >>> clear_request_started()
 
@@ -797,7 +797,7 @@ the publication, up to the point where it was forcefully stopped.
     ...     None, request, exc_info, retry_allowed=False)
     >>> 'launchpad.traversalduration' in request._orig_env
     True
-    >>> 'traversal_duration_ms' in logging_context
+    >>> 'traversal_duration_ms' in logging_context.flat
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.traversalthreadduration' in request._orig_env
@@ -805,13 +805,13 @@ the publication, up to the point where it was forcefully stopped.
     ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'traversal_thread_duration_ms' in logging_context
+    ...     'traversal_thread_duration_ms' in logging_context.flat
     ... else:
     ...     True
     True
     >>> 'launchpad.publicationduration' in request._orig_env
     True
-    >>> 'publication_duration_ms' in logging_context
+    >>> 'publication_duration_ms' in logging_context.flat
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'launchpad.publicationthreadduration' in request._orig_env
@@ -819,7 +819,7 @@ the publication, up to the point where it was forcefully stopped.
     ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'publication_thread_duration_ms' in logging_context
+    ...     'publication_thread_duration_ms' in logging_context.flat
     ... else:
     ...     True
     True
@@ -859,19 +859,19 @@ the Talisker logging context.
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
-    >>> 'publication_duration_ms' in logging_context
+    >>> 'publication_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
-    >>> 'publication_thread_duration_ms' in logging_context
+    >>> 'publication_thread_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.traversalduration' in request._orig_env
     False
-    >>> 'traversal_duration_ms' in logging_context
+    >>> 'traversal_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
-    >>> 'traversal_thread_duration_ms' in logging_context
+    >>> 'traversal_thread_duration_ms' in logging_context.flat
     False
 
     >>> _ = Context.new()
@@ -901,19 +901,19 @@ the Talisker logging context.
 
     >>> 'launchpad.publicationduration' in request._orig_env
     False
-    >>> 'publication_duration_ms' in logging_context
+    >>> 'publication_duration_ms' in logging_context.flat
     False
-    >>> 'publication_thread_duration_ms' in logging_context
+    >>> 'publication_thread_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
     >>> 'launchpad.traversalduration' in request._orig_env
     False
-    >>> 'traversal_duration_ms' in logging_context
+    >>> 'traversal_duration_ms' in logging_context.flat
     False
     >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
-    >>> 'traversal_thread_duration_ms' in logging_context
+    >>> 'traversal_thread_duration_ms' in logging_context.flat
     False
 
 Of course, any request can only be retried a certain number of times and
@@ -947,19 +947,19 @@ WSGI env.
 
     >>> request._orig_env['launchpad.publicationduration']
     0.5
-    >>> logging_context['publication_duration_ms']
+    >>> logging_context.flat['publication_duration_ms']
     500
     >>> request._orig_env['launchpad.publicationthreadduration']
     0.4
-    >>> logging_context['publication_thread_duration_ms']
+    >>> logging_context.flat['publication_thread_duration_ms']
     400
     >>> request._orig_env['launchpad.traversalduration']
     0.5
-    >>> logging_context['traversal_duration_ms']
+    >>> logging_context.flat['traversal_duration_ms']
     500
     >>> request._orig_env['launchpad.traversalthreadduration']
     0.4
-    >>> logging_context['traversal_thread_duration_ms']
+    >>> logging_context.flat['traversal_thread_duration_ms']
     400
 
 (A bit of cleanup so the test can continue)
