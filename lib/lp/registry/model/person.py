@@ -4088,7 +4088,48 @@ class PersonSet:
         # it does not refer to an `IAccount`.
         return_data = {"status": "account only; no other data"}
         return_data["person"] = canonical_url(account)
+        # Get the data behind the overview screen
+        overview = self.getUserOverview(account)
+        return_data.update(overview)
         return return_data
+
+    def getUserOverview(self, person):
+        """See `IPersonSet`."""
+        overview = {}
+        maintained_packages = person.hasMaintainedPackages()
+        uploaded_packages = person.hasUploadedButNotMaintainedPackages()
+        ppa_packages = person.hasUploadedPPAPackages()
+        synchronised_packages = person.hasSynchronisedPublishings()
+
+        # Related packages is a general overview, if we have any of them
+        # the related packages exist
+        if any(maintained_packages, uploaded_packages,
+               ppa_packages, synchronised_packages):
+            overview['related-packages'] = canonical_url(
+                person, view_name='+related-packages')
+
+        if maintained_packages:
+            overview['maintained-packages'] = canonical_url(
+                person, view_name="+maintained-packages")
+        if uploaded_packages:
+            overview["uploaded-packages"] = canonical_url(
+                person, view_name="+uploaded-packages")
+        if ppa_packages:
+            overview["ppa-packages"] = canonical_url(
+                person, view_name="+ppa-packages")
+        if synchronised_packages:
+            overview["synchronised-packages"] = canonical_url(
+                person, view_name="+synchronised-packages")
+
+        related_projects = not person.getAffiliatedPillars(person).is_empty()
+        if related_projects:
+            overview["related-projects"] = canonical_url(
+                person, view_name="+related-projects")
+        owned_teams = not person.getOwnedTeams(person).is_empty()
+        if owned_teams:
+            overview["owned-teams"] = canonical_url(
+                person, view_name="+owned-teams")
+        return overview
 
 
 # Provide a storm alias from Person to Owner. This is useful in queries on
