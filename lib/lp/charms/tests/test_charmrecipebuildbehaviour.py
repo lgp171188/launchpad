@@ -7,16 +7,24 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import base64
+from datetime import datetime
 import os.path
+import time
+import uuid
 
+from fixtures import MockPatch
 from pymacaroons import Macaroon
+from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
+    ContainsDict,
     Equals,
     Is,
     IsInstance,
     MatchesDict,
     MatchesListwise,
+    StartsWith,
     )
 from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
@@ -35,6 +43,7 @@ from lp.buildmaster.enums import (
     BuildBaseImageType,
     BuildStatus,
     )
+from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
@@ -43,6 +52,12 @@ from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.tests.mock_slaves import (
     MockBuilder,
     OkSlave,
+    SlaveTestHelpers,
+    )
+from lp.buildmaster.tests.snapbuildproxy import (
+    InProcessProxyAuthAPIFixture,
+    ProxyURLMatcher,
+    RevocationEndpointMatcher,
     )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
@@ -84,7 +99,7 @@ class TestCharmRecipeBuildBehaviourBase(TestCaseWithFactory):
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         super(TestCharmRecipeBuildBehaviourBase, self).setUp()
 
-    def makeJob(self, distribution=None, with_builder=False, **kwargs):
+    def makeJob(self, distribution=None, **kwargs):
         """Create a sample `ICharmRecipeBuildBehaviour`."""
         if distribution is None:
             distribution = self.factory.makeDistribution(name="distro")
@@ -101,12 +116,7 @@ class TestCharmRecipeBuildBehaviourBase(TestCaseWithFactory):
 
         build = self.factory.makeCharmRecipeBuild(
             distro_arch_series=distroarchseries, name="test-charm", **kwargs)
-        job = IBuildFarmJobBehaviour(build)
-        if with_builder:
-            builder = MockBuilder()
-            builder.processor = processor
-            job.setBuilder(builder, None)
-        return job
+        return IBuildFarmJobBehaviour(build)
 
 
 class TestCharmRecipeBuildBehaviour(TestCharmRecipeBuildBehaviourBase):
@@ -166,13 +176,40 @@ class TestAsyncCharmRecipeBuildBehaviour(
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30)
 
+    @defer.inlineCallbacks
     def setUp(self):
         super(TestAsyncCharmRecipeBuildBehaviour, self).setUp()
+        build_username = 'OCIBUILD-1'
+        self.token = {'secret': uuid.uuid4().hex,
+                      'username': build_username,
+                      'timestamp': datetime.utcnow().isoformat()}
+        self.proxy_url = ("http://{username}:{password}"
+                          "@{host}:{port}".format(
+                            username=self.token['username'],
+                            password=self.token['secret'],
+                            host=config.snappy.builder_proxy_host,
+                            port=config.snappy.builder_proxy_port))
+        self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
+        yield self.proxy_api.start()
+        self.now = time.time()
+        self.useFixture(MockPatch("time.time", return_value=self.now))
+        self.addCleanup(shut_down_default_process_pool)
         self.setUpStats()
+
+    def makeJob(self, **kwargs):
+        # We need a builder in these tests, in order that requesting a proxy
+        # token can piggyback on its reactor and pool.
+        job = super(TestAsyncCharmRecipeBuildBehaviour, self).makeJob(**kwargs)
+        builder = MockBuilder()
+        builder.processor = job.build.processor
+        slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
+        job.setBuilder(builder, slave)
+        self.addCleanup(slave.pool.closeCachedConnections)
+        return job
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
-        job = self.makeJob(with_builder=True)
+        job = self.makeJob()
         lfa = self.factory.makeLibraryFileAlias(db_only=True)
         job.build.distro_arch_series.addOrUpdateChroot(lfa)
         build_request = yield job.composeBuildRequest(None)
@@ -185,11 +222,44 @@ class TestAsyncCharmRecipeBuildBehaviour(
             ]))
 
     @defer.inlineCallbacks
+    def test_requestProxyToken_unconfigured(self):
+        self.pushConfig("snappy", builder_proxy_auth_api_admin_secret=None)
+        job = self.makeJob()
+        expected_exception_msg = (
+            "builder_proxy_auth_api_admin_secret is not configured.")
+        with ExpectedException(CannotBuild, expected_exception_msg):
+            yield job.extraBuildArgs()
+
+    @defer.inlineCallbacks
+    def test_requestProxyToken(self):
+        job = self.makeJob()
+        yield job.extraBuildArgs()
+        expected_uri = urlsplit(
+            config.snappy.builder_proxy_auth_api_endpoint).path.encode("UTF-8")
+        self.assertThat(self.proxy_api.tokens.requests, MatchesListwise([
+            MatchesDict({
+                "method": Equals(b"POST"),
+                "uri": Equals(expected_uri),
+                "headers": ContainsDict({
+                    b"Authorization": MatchesListwise([
+                        Equals(b"Basic " + base64.b64encode(
+                            b"admin-launchpad.test:admin-secret"))]),
+                    b"Content-Type": MatchesListwise([
+                        Equals(b"application/json"),
+                        ]),
+                    }),
+                "json": MatchesDict({
+                    "username": StartsWith(job.build.build_cookie + "-"),
+                    }),
+                }),
+            ]))
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_git(self):
         # extraBuildArgs returns appropriate arguments if asked to build a
         # job for a Git branch.
         [ref] = self.factory.makeGitRefs()
-        job = self.makeJob(git_ref=ref, with_builder=True)
+        job = self.makeJob(git_ref=ref)
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job, job.build.distro_arch_series, None))
@@ -208,6 +278,8 @@ class TestAsyncCharmRecipeBuildBehaviour(
             "git_path": Equals(ref.name),
             "name": Equals("test-charm"),
             "private": Is(False),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -218,8 +290,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
         # job for the default branch in a Launchpad-hosted Git repository.
         [ref] = self.factory.makeGitRefs()
         removeSecurityProxy(ref.repository)._default_branch = ref.path
-        job = self.makeJob(
-            git_ref=ref.repository.getRefByPath("HEAD"), with_builder=True)
+        job = self.makeJob(git_ref=ref.repository.getRefByPath("HEAD"))
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job, job.build.distro_arch_series, None))
@@ -237,6 +308,8 @@ class TestAsyncCharmRecipeBuildBehaviour(
             "git_repository": Equals(ref.repository.git_https_url),
             "name": Equals("test-charm"),
             "private": Is(False),
+            "proxy_url": ProxyURLMatcher(job, self.now),
+            "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -245,7 +318,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
     def test_extraBuildArgs_prefers_store_name(self):
         # For the "name" argument, extraBuildArgs prefers
         # CharmRecipe.store_name over CharmRecipe.name if the former is set.
-        job = self.makeJob(store_name="something-else", with_builder=True)
+        job = self.makeJob(store_name="something-else")
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertEqual("something-else", args["name"])
@@ -258,7 +331,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
         key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
         yield IArchiveGPGSigningKey(distribution.main_archive).setSigningKey(
             key_path, async_keyserver=True)
-        job = self.makeJob(distribution=distribution, with_builder=True)
+        job = self.makeJob(distribution=distribution)
         self.factory.makeBinaryPackagePublishingHistory(
             distroarchseries=job.build.distro_arch_series,
             pocket=job.build.pocket, archive=distribution.main_archive,
@@ -272,7 +345,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
     @defer.inlineCallbacks
     def test_extraBuildArgs_channels(self):
         # If the build needs particular channels, extraBuildArgs sends them.
-        job = self.makeJob(channels={"charmcraft": "edge"}, with_builder=True)
+        job = self.makeJob(channels={"charmcraft": "edge"})
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job, job.build.distro_arch_series, None))
@@ -285,7 +358,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
     def test_extraBuildArgs_archives_primary(self):
         # The build uses the release, security, and updates pockets from the
         # primary archive.
-        job = self.makeJob(with_builder=True)
+        job = self.makeJob()
         expected_archives = [
             "deb %s %s main universe" % (
                 job.archive.archive_url, job.build.distro_series.name),
@@ -301,7 +374,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
     @defer.inlineCallbacks
     def test_extraBuildArgs_build_path(self):
         # If the recipe specifies a build path, extraBuildArgs sends it.
-        job = self.makeJob(build_path="src", with_builder=True)
+        job = self.makeJob(build_path="src")
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job, job.build.distro_arch_series, None))
@@ -317,11 +390,17 @@ class TestAsyncCharmRecipeBuildBehaviour(
             CHARM_RECIPE_ALLOW_CREATE: "on",
             CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
             }))
-        job = self.makeJob(
-            information_type=InformationType.PROPRIETARY, with_builder=True)
+        job = self.makeJob(information_type=InformationType.PROPRIETARY)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertTrue(args["private"])
+
+    @defer.inlineCallbacks
+    def test_composeBuildRequest_proxy_url_set(self):
+        job = self.makeJob()
+        build_request = yield job.composeBuildRequest(None)
+        self.assertThat(
+            build_request[4]["proxy_url"], ProxyURLMatcher(job, self.now))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_git_ref_deleted(self):
@@ -332,8 +411,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
         owner = self.factory.makePerson(name="charm-owner")
         project = self.factory.makeProduct(name="charm-project")
         job = self.makeJob(
-            registrant=owner, owner=owner, project=project, git_ref=ref,
-            with_builder=True)
+            registrant=owner, owner=owner, project=project, git_ref=ref)
         repository.removeRefs([ref.path])
         self.assertIsNone(job.build.recipe.git_ref)
         expected_exception_msg = (
@@ -344,6 +422,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_prefers_lxd(self):
+        self.pushConfig("snappy", builder_proxy_host=None)
         job = self.makeJob()
         builder = MockBuilder()
         builder.processor = job.build.processor
@@ -366,6 +445,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_falls_back_to_chroot(self):
+        self.pushConfig("snappy", builder_proxy_host=None)
         job = self.makeJob()
         builder = MockBuilder()
         builder.processor = job.build.processor
