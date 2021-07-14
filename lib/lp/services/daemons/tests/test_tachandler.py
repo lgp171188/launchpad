@@ -1,4 +1,4 @@
-# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for lp.services.daemons.tachandler"""
@@ -97,6 +97,21 @@ class TacTestSetupTestCase(testtools.TestCase):
 
         # Fire up the fixture, capturing warnings.
         with override_environ(LP_DEBUG_SQL="1"):
+            with warnings.catch_warnings(record=True) as warnings_log:
+                with fixture:
+                    self.assertThat(fixture, IsRunning())
+                self.assertThat(fixture, Not(IsRunning()))
+
+        # No warnings are emitted.
+        self.assertEqual([], warnings_log)
+
+    def test_debug_sql_extra(self):
+        """TacTestSetup works even under LP_DEBUG_SQL_EXTRA=1."""
+        tempdir = self.useFixture(TempDir()).path
+        fixture = SimpleTac("okay", tempdir)
+
+        # Fire up the fixture, capturing warnings.
+        with override_environ(LP_DEBUG_SQL_EXTRA="1"):
             with warnings.catch_warnings(record=True) as warnings_log:
                 with fixture:
                     self.assertThat(fixture, IsRunning())

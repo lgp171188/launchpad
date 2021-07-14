@@ -29,20 +29,8 @@
           <a tal:content="membership/person/displayname"
              tal:attributes="href membership/person/fmt:url" />
         </td>
-        <td>
-          <span
-            tal:attributes="title membership/datejoined/fmt:datetime"
-            tal:content="membership/datejoined/fmt:approximatedate">
-            12-12-2004
-          </span>
-        </td>
-        <td>
-          <span
-            tal:attributes="title membership/dateexpires/fmt:datetime"
-            tal:content="membership/dateexpires/fmt:approximatedate">
-            12-12-2005
-          </span>
-        </td>
+        <td tal:content="structure membership/datejoined/fmt:approximatedatetitle" />
+        <td tal:content="structure membership/dateexpires/fmt:approximatedatetitle" />
         <td tal:content="membership/status/title">Administrator</td>
       </tr>
     </tbody>

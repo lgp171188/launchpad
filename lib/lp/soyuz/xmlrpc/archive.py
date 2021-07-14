@@ -10,6 +10,8 @@ __all__ = [
     'ArchiveAPI',
     ]
 
+import logging
+
 from pymacaroons import Macaroon
 from zope.component import (
     ComponentLookupError,
@@ -28,6 +30,9 @@ from lp.soyuz.interfaces.archiveapi import IArchiveAPI
 from lp.soyuz.interfaces.archiveauthtoken import IArchiveAuthTokenSet
 from lp.xmlrpc import faults
 from lp.xmlrpc.helpers import return_fault
+
+
+log = logging.getLogger(__name__)
 
 
 BUILDD_USER_NAME = "buildd"
@@ -59,6 +64,7 @@ class ArchiveAPI(LaunchpadXMLRPCView):
     def _checkArchiveAuthToken(self, archive_reference, username, password):
         archive = getUtility(IArchiveSet).getByReference(archive_reference)
         if archive is None:
+            log.info("%s@%s: No archive found", username, archive_reference)
             raise faults.NotFound(
                 message="No archive found for '%s'." % archive_reference)
         archive = removeSecurityProxy(archive)
@@ -69,8 +75,12 @@ class ArchiveAPI(LaunchpadXMLRPCView):
         if username == BUILDD_USER_NAME:
             if self._verifyMacaroon(archive, password):
                 # Success.
+                log.info("%s@%s: Authorized", username, archive_reference)
                 return
             else:
+                log.info(
+                    "%s@%s: Macaroon verification failed",
+                    username, archive_reference)
                 raise faults.Unauthorized()
 
         # Fall back to checking archive auth tokens.
@@ -81,12 +91,17 @@ class ArchiveAPI(LaunchpadXMLRPCView):
             token = token_set.getActiveTokenForArchiveAndPersonName(
                 archive, username)
         if token is None:
+            log.info("%s@%s: No valid tokens", username, archive_reference)
             raise faults.NotFound(
                 message="No valid tokens for '%s' in '%s'." % (
                     username, archive_reference))
         secret = removeSecurityProxy(token).token
         if password != secret:
+            log.info(
+                "%s@%s: Password does not match", username, archive_reference)
             raise faults.Unauthorized()
+        else:
+            log.info("%s@%s: Authorized", username, archive_reference)
 
     def checkArchiveAuthToken(self, archive_reference, username, password):
         """See `IArchiveAPI`."""

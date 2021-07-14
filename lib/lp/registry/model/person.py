@@ -310,6 +310,7 @@ from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
 from lp.services.verification.model.logintoken import LoginToken
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.publisher import canonical_url
 from lp.services.worlddata.model.language import Language
 from lp.soyuz.enums import (
     ArchivePurpose,
@@ -4068,6 +4069,67 @@ class PersonSet:
         return DecoratedResultSet(raw_result,
             pre_iter_hook=preload_for_people,
             result_decorator=prepopulate_person)
+
+    def getUserData(self, email):
+        """See `IPersonSet`."""
+        email_results = self.getByEmails(
+            [email], include_hidden=True, filter_status=False)
+
+        # We should only have one result
+        if email_results.count() > 1:
+            raise ValueError("Multiple records for {}".format(email))
+
+        # If we don't have any results at all, we have no data!
+        if email_results.is_empty():
+            return {"status": "no data held"}
+
+        account = email_results.one()[1]
+        # This is only an 'account' in terms of the end user view,
+        # it does not refer to an `IAccount`.
+        return_data = {"status": "account only; no other data"}
+        return_data["person"] = canonical_url(account)
+        # Get the data behind the overview screen
+        overview = self.getUserOverview(account)
+        return_data.update(overview)
+        return return_data
+
+    def getUserOverview(self, person):
+        """See `IPersonSet`."""
+        overview = {}
+        maintained_packages = person.hasMaintainedPackages()
+        uploaded_packages = person.hasUploadedButNotMaintainedPackages()
+        ppa_packages = person.hasUploadedPPAPackages()
+        synchronised_packages = person.hasSynchronisedPublishings()
+
+        # Related packages is a general overview, if we have any of them
+        # the related packages exist
+        if any(maintained_packages, uploaded_packages,
+               ppa_packages, synchronised_packages):
+            overview['related-packages'] = canonical_url(
+                person, view_name='+related-packages')
+
+        if maintained_packages:
+            overview['maintained-packages'] = canonical_url(
+                person, view_name="+maintained-packages")
+        if uploaded_packages:
+            overview["uploaded-packages"] = canonical_url(
+                person, view_name="+uploaded-packages")
+        if ppa_packages:
+            overview["ppa-packages"] = canonical_url(
+                person, view_name="+ppa-packages")
+        if synchronised_packages:
+            overview["synchronised-packages"] = canonical_url(
+                person, view_name="+synchronised-packages")
+
+        related_projects = not person.getAffiliatedPillars(person).is_empty()
+        if related_projects:
+            overview["related-projects"] = canonical_url(
+                person, view_name="+related-projects")
+        owned_teams = not person.getOwnedTeams(person).is_empty()
+        if owned_teams:
+            overview["owned-teams"] = canonical_url(
+                person, view_name="+owned-teams")
+        return overview
 
 
 # Provide a storm alias from Person to Owner. This is useful in queries on

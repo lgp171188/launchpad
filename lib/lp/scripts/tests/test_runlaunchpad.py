@@ -205,16 +205,32 @@ class TestAppServerStart(lp.testing.TestCase):
           type XXX
           address 123
         </server>
-        
+
         <zodb>
           <mappingstorage/>
         </zodb>
-        
+
         <accesslog>
           <logfile>
             path logs/test-appserver-layer.log
           </logfile>
         </accesslog>
+
+        <eventlog>
+          <logfile>
+            path logs/test-appserver-layer.log
+          </logfile>
+        </eventlog>
+
+        <logger>
+          name zc.tracelog
+          propagate false
+
+          <logfile>
+            format %(message)s
+            path logs/test-appserver-layer-trace.log
+          </logfile>
+        </logger>
         """)
         config_filename = tempfile.mktemp()
         with open(config_filename, "w") as fd:
@@ -233,12 +249,18 @@ class TestAppServerStart(lp.testing.TestCase):
                 site-definition zcml/webapp.zcml
                 # With some comment
                 devmode off
-                
-                
-                
+
+
+
+
                 <zodb>
                   <mappingstorage/>
                 </zodb>
+
+
+
+                <eventlog>
+                </eventlog>
 
 
                 """), new_file.read())

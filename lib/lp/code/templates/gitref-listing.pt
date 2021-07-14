@@ -47,8 +47,8 @@ function hide_git_commit(id) {
           <td>
             <span class="sortkey"
                   tal:content="ref/committer_date/fmt:datetime" />
-            <span tal:attributes="title ref/committer_date/fmt:datetime"
-                  tal:content="ref/committer_date/fmt:approximatedate" />
+            <tal:committer-date
+              replace="structure ref/committer_date/fmt:approximatedatetitle" />
           </td>
           <td tal:attributes="onmouseover string:show_git_commit(${repeat/ref/index});
                               onmouseout string:hide_git_commit(${repeat/ref/index});">

@@ -299,6 +299,8 @@ class SigningUpload(CustomUpload):
                     key_type = SigningKeyType.FIT
                 elif filename.endswith(".cv2-kernel"):
                     key_type = SigningKeyType.CV2_KERNEL
+                elif filename.endswith(".android-kernel"):
+                    key_type = SigningKeyType.ANDROID_KERNEL
                 else:
                     continue
 

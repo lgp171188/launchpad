@@ -14,10 +14,12 @@ from swiftclient import client as swiftclient
 from testtools.matchers import (
     GreaterThan,
     LessThan,
+    MatchesStructure,
     Not,
     )
 
 from lp.services.config import config
+from lp.services.librarianserver import swift
 from lp.testing import TestCase
 from lp.testing.factory import ObjectFactory
 from lp.testing.layers import BaseLayer
@@ -180,8 +182,8 @@ class TestSwiftFixture(TestCase):
         # With no Swift server, a fresh connection fails with
         # a swiftclient.ClientException when it fails to
         # authenticate.
-        self.swift_fixture.shutdown()
         client = self.swift_fixture.connect()
+        self.swift_fixture.shutdown()
         self.assertRaises(
             swiftclient.ClientException,
             client.get_object, "size", str(size))
@@ -205,14 +207,62 @@ class TestSwiftFixture(TestCase):
         self.assertEqual(body, b"0" * size)
 
     def test_env(self):
-        self.assertEqual(
-            fakeswift.DEFAULT_USERNAME, config.librarian_server.os_username)
-        self.assertEqual(
-            fakeswift.DEFAULT_PASSWORD, config.librarian_server.os_password)
-        self.assertEqual(
-            'http://localhost:{0}/keystone/v2.0/'.format(
+        self.assertThat(config.librarian_server, MatchesStructure.byEquality(
+            os_auth_url='http://localhost:{0}/keystone/v2.0/'.format(
                 self.swift_fixture.daemon_port),
-            config.librarian_server.os_auth_url)
-        self.assertEqual(
-            fakeswift.DEFAULT_TENANT_NAME,
-            config.librarian_server.os_tenant_name)
+            os_username=fakeswift.DEFAULT_USERNAME,
+            os_password=fakeswift.DEFAULT_PASSWORD,
+            os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
+            ))
+
+    def test_old_instance_env(self):
+        old_swift_fixture = self.useFixture(SwiftFixture(old_instance=True))
+        self.assertThat(config.librarian_server, MatchesStructure.byEquality(
+            os_auth_url='http://localhost:{0}/keystone/v2.0/'.format(
+                self.swift_fixture.daemon_port),
+            os_username=fakeswift.DEFAULT_USERNAME,
+            os_password=fakeswift.DEFAULT_PASSWORD,
+            os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
+            old_os_auth_url='http://localhost:{0}/keystone/v2.0/'.format(
+                old_swift_fixture.daemon_port),
+            old_os_username=fakeswift.DEFAULT_USERNAME,
+            old_os_password=fakeswift.DEFAULT_PASSWORD,
+            old_os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
+            ))
+
+    def test_reconfigures_librarian_server(self):
+        # Fixtures providing old and new Swift instances don't interfere
+        # with each other, and they reconfigure the librarian server
+        # appropriately on setup.
+        self.assertEqual(1, len(swift.connection_pools))
+        message = b"Hello World!"
+        with swift.connection() as client:
+            cname, oname = self.makeSampleObject(
+                client, message, "text/something")
+            headers, body = client.get_object(cname, oname)
+            self.assertEqual(message, body)
+        self.useFixture(SwiftFixture(old_instance=True))
+        self.assertEqual(2, len(swift.connection_pools))
+        with swift.connection() as client:
+            headers, body = client.get_object(cname, oname)
+            self.assertEqual(message, body)
+        with swift.connection(swift.connection_pools[0]) as old_client:
+            exc = self.assertRaises(
+                swiftclient.ClientException,
+                old_client.get_object, cname, oname)
+            self.assertEqual(404, exc.http_status)
+            old_cname, old_oname = self.makeSampleObject(
+                old_client, message, "text/something")
+            headers, body = old_client.get_object(old_cname, old_oname)
+            self.assertEqual(message, body)
+        with swift.connection(swift.connection_pools[1]) as client:
+            exc = self.assertRaises(
+                swiftclient.ClientException,
+                client.get_object, old_cname, old_oname)
+            self.assertEqual(404, exc.http_status)
+        # The last (i.e. newest) connection pool is the default.
+        with swift.connection() as client:
+            exc = self.assertRaises(
+                swiftclient.ClientException,
+                client.get_object, old_cname, old_oname)
+            self.assertEqual(404, exc.http_status)

@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Error logging facilities."""
@@ -21,6 +21,7 @@ import oops_timeline
 import pytz
 import six
 from six.moves.urllib.parse import urlparse
+from zope.component import getUtility
 from zope.component.interfaces import ObjectEvent
 from zope.error.interfaces import IErrorReportingUtility
 from zope.event import notify
@@ -33,6 +34,7 @@ from lp.app import versioninfo
 from lp.layers import WebServiceLayer
 from lp.services.config import config
 from lp.services.messaging import rabbit
+from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.webapp.adapter import (
     get_request_duration,
@@ -508,6 +510,7 @@ def end_request(event):
     # the soft timeout has expired, log an OOPS.
     if event.request.oopsid is None and soft_timeout_expired():
         OpStats.stats['soft timeouts'] += 1
+        getUtility(IStatsdClient).incr('timeouts.soft')
         globalErrorUtility.raising(
             (SoftRequestTimeout, SoftRequestTimeout(event.object), None),
             event.request)

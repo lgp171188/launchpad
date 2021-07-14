@@ -32,6 +32,10 @@ from six.moves.urllib.parse import urljoin
 from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from swiftclient import client as swiftclient
+from testtools.matchers import (
+    Equals,
+    MatchesListwise,
+    )
 import transaction
 
 from lp.services.config import config
@@ -720,7 +724,6 @@ class TestSwiftLibrarianGarbageCollection(
         # the lp.testing.layers code and save the per-test overhead.
 
         self.swift_fixture = self.useFixture(SwiftFixture())
-        self.addCleanup(swift.connection_pool.clear)
 
         self.useFixture(FeatureFixture({'librarian.swift.enabled': True}))
 
@@ -732,24 +735,34 @@ class TestSwiftLibrarianGarbageCollection(
         swift.to_swift(BufferLogger(), remove_func=os.unlink)
         assert not os.path.exists(path), "to_swift failed to move files"
 
-    def file_exists(self, content_id, suffix=None):
+    def file_exists(self, content_id, suffix=None, pool_index=None):
         container, name = swift.swift_location(content_id)
         if suffix:
             name += suffix
-        with swift.connection() as swift_connection:
-            try:
-                swift.quiet_swiftclient(
-                    swift_connection.head_object, container, name)
-                return True
-            except swiftclient.ClientException as x:
-                if x.http_status == 404:
-                    return False
-                raise
+        connection_pools = (
+            [swift.connection_pools[pool_index]] if pool_index is not None
+            else swift.connection_pools)
+        for connection_pool in connection_pools:
+            with swift.connection(connection_pool) as swift_connection:
+                try:
+                    swift.quiet_swiftclient(
+                        swift_connection.head_object, container, name)
+                    return True
+                except swiftclient.ClientException as x:
+                    if x.http_status != 404:
+                        raise
+        return False
 
     def remove_file(self, content_id):
         container, name = swift.swift_location(content_id)
-        with swift.connection() as swift_connection:
-            swift_connection.delete_object(container, name)
+        for connection_pool in swift.connection_pools:
+            with swift.connection(connection_pool) as swift_connection:
+                try:
+                    swift.quiet_swiftclient(
+                        swift_connection.delete_object, container, name)
+                except swiftclient.ClientException as x:
+                    if x.http_status != 404:
+                        raise
 
     def test_delete_unwanted_files_handles_segments(self):
         # Large files are handled by Swift as multiple segments joined
@@ -918,6 +931,142 @@ class TestSwiftLibrarianGarbageCollection(
                 librariangc.delete_unwanted_files, self.con)
         self.assertFalse(self.file_exists(f1_id))
         self.assertTrue(self.file_exists(f2_id))
+
+
+class TestTwoSwiftsLibrarianGarbageCollection(
+        TestSwiftLibrarianGarbageCollection):
+    """Garbage-collection tests with two Swift instances."""
+
+    def setUp(self):
+        self.old_swift_fixture = self.useFixture(
+            SwiftFixture(old_instance=True))
+        super(TestTwoSwiftsLibrarianGarbageCollection, self).setUp()
+
+    def test_swift_files_multiple_instances(self):
+        # swift_files yields files in the correct order across multiple
+        # Swift instances.
+        switch_dbuser('testadmin')
+        content = b'foo'
+        lfas = [
+            LibraryFileAlias.get(self.client.addFile(
+                'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
+            for _ in range(12)]
+        lfc_ids = [lfa.contentID for lfa in lfas]
+        transaction.commit()
+
+        # Simulate a migration in progress.  Some files are only in the old
+        # Swift instance and have not been copied over yet; some are in both
+        # instances; some were created after the migration started and so
+        # are only in the new instance.
+        old_lfc_ids = [
+            lfc_id for i, lfc_id in enumerate(lfc_ids)
+            if i in {0, 1, 3, 4, 6, 7, 8, 9}]
+        for lfc_id in old_lfc_ids:
+            with swift.connection(
+                    swift.connection_pools[0]) as swift_connection:
+                swift._to_swift_file(
+                    BufferLogger(), swift_connection, lfc_id,
+                    swift.filesystem_path(lfc_id))
+        new_lfc_ids = [
+            lfc_id for i, lfc_id in enumerate(lfc_ids)
+            if i in {1, 2, 3, 8, 9, 10}]
+        for lfc_id in new_lfc_ids:
+            with swift.connection() as swift_connection:
+                swift._to_swift_file(
+                    BufferLogger(), swift_connection, lfc_id,
+                    swift.filesystem_path(lfc_id))
+
+        self.assertThat(
+            [(pool, container, int(obj['name']))
+             for pool, container, obj in librariangc.swift_files(lfc_ids[-1])
+             if int(obj['name']) >= lfc_ids[0]],
+            MatchesListwise([
+                Equals((
+                    swift.connection_pools[pool_index], container, lfc_ids[i]))
+                for pool_index, container, i in (
+                    (0, 'librarian_0', 0),
+                    (0, 'librarian_0', 1),
+                    (1, 'librarian_0', 1),
+                    (1, 'librarian_0', 2),
+                    (0, 'librarian_0', 3),
+                    (1, 'librarian_0', 3),
+                    (0, 'librarian_0', 4),
+                    (0, 'librarian_0', 6),
+                    (0, 'librarian_0', 7),
+                    (0, 'librarian_0', 8),
+                    (1, 'librarian_0', 8),
+                    (0, 'librarian_0', 9),
+                    (1, 'librarian_0', 9),
+                    (1, 'librarian_0', 10),
+                    )]))
+
+    def test_delete_unwanted_files_handles_multiple_instances(self):
+        # GC handles cases where files only exist in one or the other Swift
+        # instance.
+        switch_dbuser('testadmin')
+        content = b'foo'
+        lfas = [
+            LibraryFileAlias.get(self.client.addFile(
+                'foo.txt', len(content), io.BytesIO(content), 'text/plain'))
+            for _ in range(12)]
+        lfc_ids = [lfa.contentID for lfa in lfas]
+        transaction.commit()
+
+        for lfc_id in lfc_ids:
+            # Make the files old so they don't look in-progress.
+            os.utime(swift.filesystem_path(lfc_id), (0, 0))
+
+        # Simulate a migration in progress.  Some files are only in the old
+        # Swift instance and have not been copied over yet; some are in both
+        # instances; some were created after the migration started and so
+        # are only in the new instance.
+        old_lfc_ids = [
+            lfc_id for i, lfc_id in enumerate(lfc_ids)
+            if i in {0, 1, 3, 4, 6, 7, 8}]
+        for lfc_id in old_lfc_ids:
+            with swift.connection(
+                    swift.connection_pools[0]) as swift_connection:
+                swift._to_swift_file(
+                    BufferLogger(), swift_connection, lfc_id,
+                    swift.filesystem_path(lfc_id))
+        new_lfc_ids = [
+            lfc_id for i, lfc_id in enumerate(lfc_ids)
+            if i in {1, 2, 3, 8, 9, 10}]
+        for lfc_id in new_lfc_ids:
+            with swift.connection() as swift_connection:
+                swift._to_swift_file(
+                    BufferLogger(), swift_connection, lfc_id,
+                    swift.filesystem_path(lfc_id))
+
+        # All the files survive the first run.
+        with self.librariangc_thinking_it_is_tomorrow():
+            librariangc.delete_unwanted_files(self.con)
+        for lfc_id in lfc_ids:
+            self.assertEqual(
+                lfc_id in old_lfc_ids, self.file_exists(lfc_id, pool_index=0))
+            self.assertEqual(
+                lfc_id in new_lfc_ids, self.file_exists(lfc_id, pool_index=1))
+
+        # Remove one file that is only in the old instance, one that is in
+        # both instances, and one that is only in the new instance.
+        for i in (0, 3, 9):
+            content = lfas[i].content
+            Store.of(lfas[i]).remove(lfas[i])
+            Store.of(content).remove(content)
+        transaction.commit()
+
+        # The now-unreferenced files are removed, but the others are intact.
+        with self.librariangc_thinking_it_is_tomorrow():
+            librariangc.delete_unwanted_files(self.con)
+        old_lfc_ids = [
+            lfc_id for i, lfc_id in enumerate(lfc_ids) if i in {1, 4, 6, 7, 8}]
+        new_lfc_ids = [
+            lfc_id for i, lfc_id in enumerate(lfc_ids) if i in {1, 2, 8, 10}]
+        for lfc_id in lfc_ids:
+            self.assertEqual(
+                lfc_id in old_lfc_ids, self.file_exists(lfc_id, pool_index=0))
+            self.assertEqual(
+                lfc_id in new_lfc_ids, self.file_exists(lfc_id, pool_index=1))
 
 
 class TestBlobCollection(TestCase):

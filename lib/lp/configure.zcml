@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -27,6 +27,7 @@
     <include package="lp.blueprints" />
     <include package="lp.bugs" />
     <include package="lp.buildmaster" />
+    <include package="lp.charms" />
     <include package="lp.code" />
     <include package="lp.coop.answersbugs" />
     <include package="lp.oci" />

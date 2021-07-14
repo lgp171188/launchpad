@@ -43,8 +43,6 @@ class TestFeedSwift(TestCase):
         self.useFixture(FeatureFixture({'librarian.swift.enabled': True}))
         transaction.commit()
 
-        self.addCleanup(swift.connection_pool.clear)
-
         # Restart the Librarian so it picks up the OS_* environment
         # variables.
         LibrarianLayer.librarian_fixture.cleanUp()
@@ -166,6 +164,45 @@ class TestFeedSwift(TestCase):
             container, name = swift.swift_location(lfc.id)
             headers, obj = swift_client.get_object(container, name)
             self.assertEqual(contents, obj, 'Did not round trip')
+
+    def test_move_to_swift_multiple_instances(self):
+        # If multiple Swift instances are configured, we only migrate to the
+        # newest one.
+        old_swift_fixture = self.useFixture(SwiftFixture(old_instance=True))
+
+        log = BufferLogger()
+
+        # Confirm that files exist on disk where we expect to find them.
+        for lfc in self.lfcs:
+            path = swift.filesystem_path(lfc.id)
+            self.assertTrue(os.path.exists(path))
+
+        # Migrate all the files into Swift.
+        swift.to_swift(log, remove_func=os.unlink)
+
+        # Confirm that all the files have gone from disk.
+        for lfc in self.lfcs:
+            self.assertFalse(os.path.exists(swift.filesystem_path(lfc.id)))
+
+        # Confirm all the files are in the correct Swift instance.
+        swift_client = self.swift_fixture.connect()
+        try:
+            for lfc, contents in zip(self.lfcs, self.contents):
+                container, name = swift.swift_location(lfc.id)
+                headers, obj = swift_client.get_object(container, name)
+                self.assertEqual(contents, obj, 'Did not round trip')
+        finally:
+            swift_client.close()
+
+        old_swift_client = old_swift_fixture.connect()
+        try:
+            for lfc, contents in zip(self.lfcs, self.contents):
+                container, name = swift.swift_location(lfc.id)
+                self.assertRaises(
+                    swiftclient.ClientException, swift.quiet_swiftclient,
+                    old_swift_client.get_object, container, name)
+        finally:
+            old_swift_client.close()
 
     def test_librarian_serves_from_swift(self):
         log = BufferLogger()
@@ -289,7 +326,7 @@ class TestFeedSwift(TestCase):
         # Our object round tripped
         self.assertEqual(obj1 + obj2 + obj3, expected_content)
 
-    def test_multiple_instances(self):
+    def test_multiple_feed_instances(self):
         log = BufferLogger()
 
         # Confirm that files exist on disk where we expect to find them.

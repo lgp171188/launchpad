@@ -138,6 +138,17 @@ class TestGroupCommentsWithActivities(TestCase):
             [[activity1], comment1, [activity2], comment2],
             self.group(comments=comments, activities=activities))
 
+    def test_activities_identical_timestamp_no_common_actor(self):
+        # When two activities have an identical timestamp but different
+        # actors, no grouping is possible.  (This can happen when a bug task
+        # was auto-confirmed due to multiple affected users; in that case
+        # the status change is ascribed to ~janitor.)
+        activity_time = next(self.time_index)[0]
+        activities = [BugActivityStub(activity_time) for _ in range(2)]
+        self.assertEqual(
+            [[activity] for activity in activities],
+            self.group(comments=[], activities=activities))
+
     def test_comment_then_activity_close_by_common_actor(self):
         # An activity shortly after a comment by the same person is grouped
         # into the comment.

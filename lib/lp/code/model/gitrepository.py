@@ -93,6 +93,7 @@ from lp.app.interfaces.launchpad import (
     IPrivacy,
     )
 from lp.app.interfaces.services import IService
+from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import (
     BranchMergeProposalStatus,
@@ -792,6 +793,12 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         Store.of(self).find(
             GitRef,
             GitRef.repository == self, GitRef.path.is_in(paths)).remove()
+        # Clear cached references to the removed refs.
+        # XXX cjwatson 2021-06-08: We should probably do something similar
+        # for OCIRecipe, and for Snap if we start caching git_ref there.
+        for recipe in getUtility(ICharmRecipeSet).findByGitRepository(
+                self, paths=paths):
+            get_property_cache(recipe)._git_ref = None
         self.date_last_modified = UTC_NOW
 
     def planRefChanges(self, hosting_path, logger=None):
@@ -1647,6 +1654,11 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             alteration_operations.append(DeletionCallable(
                 None, msg("Some OCI recipes build from this repository."),
                 getUtility(IOCIRecipeSet).detachFromGitRepository, self))
+        if not getUtility(ICharmRecipeSet).findByGitRepository(
+                self).is_empty():
+            alteration_operations.append(DeletionCallable(
+                None, msg("Some charm recipes build from this repository."),
+                getUtility(ICharmRecipeSet).detachFromGitRepository, self))
 
         return (alteration_operations, deletion_operations)
 

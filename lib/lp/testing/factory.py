@@ -110,6 +110,9 @@ from lp.buildmaster.enums import (
     )
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
+from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
+from lp.charms.model.charmrecipebuild import CharmFile
 from lp.code.enums import (
     BranchMergeProposalStatus,
     BranchSubscriptionNotificationLevel,
@@ -504,7 +507,7 @@ class ObjectFactory(
         if scheme is None:
             scheme = 'http'
         if host is None:
-            host = "%s.domain.com" % self.getUniqueUnicode('domain')
+            host = "%s.example.com" % self.getUniqueUnicode('domain')
         return '%s://%s/%s' % (scheme, host, self.getUniqueUnicode('path'))
 
     def getUniqueDate(self):
@@ -5104,6 +5107,104 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             recipe=recipe,
             registry_credentials=registry_credentials,
             image_name=image_name)
+
+    def makeCharmRecipe(self, registrant=None, owner=None, project=None,
+                        name=None, description=None, git_ref=None,
+                        build_path=None, require_virtualized=True,
+                        information_type=InformationType.PUBLIC,
+                        auto_build=False, auto_build_channels=None,
+                        is_stale=None, store_upload=False, store_name=None,
+                        store_secrets=None, store_channels=None,
+                        date_created=DEFAULT):
+        """Make a new charm recipe."""
+        if registrant is None:
+            registrant = self.makePerson()
+        private = information_type not in PUBLIC_INFORMATION_TYPES
+        if owner is None:
+            # Private charm recipes cannot be owned by non-moderated teams.
+            membership_policy = (
+                TeamMembershipPolicy.OPEN if private
+                else TeamMembershipPolicy.MODERATED)
+            owner = self.makeTeam(
+                registrant, membership_policy=membership_policy)
+        if project is None:
+            branch_sharing_policy = (
+                BranchSharingPolicy.PUBLIC if not private
+                else BranchSharingPolicy.PROPRIETARY)
+            project = self.makeProduct(
+                owner=registrant, registrant=registrant,
+                information_type=information_type,
+                branch_sharing_policy=branch_sharing_policy)
+        if name is None:
+            name = self.getUniqueUnicode(u"charm-name")
+        if git_ref is None:
+            git_ref = self.makeGitRefs()[0]
+        recipe = getUtility(ICharmRecipeSet).new(
+            registrant=registrant, owner=owner, project=project, name=name,
+            description=description, git_ref=git_ref, build_path=build_path,
+            require_virtualized=require_virtualized,
+            information_type=information_type, auto_build=auto_build,
+            auto_build_channels=auto_build_channels, store_upload=store_upload,
+            store_name=store_name, store_secrets=store_secrets,
+            store_channels=store_channels, date_created=date_created)
+        if is_stale is not None:
+            removeSecurityProxy(recipe).is_stale = is_stale
+        IStore(recipe).flush()
+        return recipe
+
+    def makeCharmRecipeBuildRequest(self, recipe=None, requester=None,
+                                    channels=None, architectures=None):
+        """Make a new CharmRecipeBuildRequest."""
+        if recipe is None:
+            recipe = self.makeCharmRecipe()
+        if requester is None:
+            if recipe.owner.is_team:
+                requester = recipe.owner.teamowner
+            else:
+                requester = recipe.owner
+        return recipe.requestBuilds(
+            requester, channels=channels, architectures=architectures)
+
+    def makeCharmRecipeBuild(self, registrant=None, recipe=None,
+                             build_request=None, requester=None,
+                             distro_arch_series=None, channels=None,
+                             store_upload_metadata=None, date_created=DEFAULT,
+                             status=BuildStatus.NEEDSBUILD, builder=None,
+                             duration=None, **kwargs):
+        if recipe is None:
+            if registrant is None:
+                if build_request is not None:
+                    registrant = build_request.requester
+                else:
+                    registrant = requester
+            recipe = self.makeCharmRecipe(registrant=registrant, **kwargs)
+        if distro_arch_series is None:
+            distro_arch_series = self.makeDistroArchSeries()
+        if build_request is None:
+            build_request = self.makeCharmRecipeBuildRequest(
+                recipe=recipe, requester=requester, channels=channels)
+        build = getUtility(ICharmRecipeBuildSet).new(
+            build_request, recipe, distro_arch_series, channels=channels,
+            store_upload_metadata=store_upload_metadata,
+            date_created=date_created)
+        if duration is not None:
+            removeSecurityProxy(build).updateStatus(
+                BuildStatus.BUILDING, builder=builder,
+                date_started=build.date_created)
+            removeSecurityProxy(build).updateStatus(
+                status, builder=builder,
+                date_finished=build.date_started + duration)
+        else:
+            removeSecurityProxy(build).updateStatus(status, builder=builder)
+        IStore(build).flush()
+        return build
+
+    def makeCharmFile(self, build=None, library_file=None):
+        if build is None:
+            build = self.makeCharmRecipeBuild()
+        if library_file is None:
+            library_file = self.makeLibraryFileAlias()
+        return ProxyFactory(CharmFile(build=build, library_file=library_file))
 
 
 # Some factory methods return simple Python types. We don't add

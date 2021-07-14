@@ -34,10 +34,12 @@
   <ul class="horizontal" style="margin-top: 0;"
       tal:define="recipes_link context/menu:overview/view_recipes;
                   snaps_link context/menu:overview/view_snaps;
-                  oci_recipes_link context/menu:overview/view_oci_recipes"
+                  oci_recipes_link context/menu:overview/view_oci_recipes;
+                  charm_recipes_link context/menu:overview/view_charm_recipes"
       tal:condition="python: recipes_link.enabled
                              or snaps_link.enabled
-                             or oci_recipes_link.enabled">
+                             or oci_recipes_link.enabled
+                             or charm_recipes_link.enabled">
     <li tal:condition="recipes_link/enabled">
       <a tal:replace="structure recipes_link/fmt:link" />
     </li>
@@ -46,6 +48,9 @@
     </li>
     <li tal:condition="oci_recipes_link/enabled">
       <a tal:replace="structure oci_recipes_link/fmt:link" />
+    </li>
+    <li tal:condition="charm_recipes_link/enabled">
+      <a tal:replace="structure charm_recipes_link/fmt:link" />
     </li>
   </ul>
 </tal:root>

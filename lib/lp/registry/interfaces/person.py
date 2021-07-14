@@ -2068,8 +2068,21 @@ class ITeam(IPerson, ITeamPublic):
             "Launchpad."))
 
 
-@exported_as_webservice_collection(IPerson)
-class IPersonSet(Interface):
+class IPersonSetModerate(Interface):
+    """Actions for the set of Persons that require launchpad.Moderate"""
+
+    @export_read_operation()
+    @operation_parameters(
+        email=TextLine(required=True, constraint=email_validator))
+    @operation_for_version("devel")
+    def getUserData(email):
+        """Get GDPR-related data for a user from their email address."""
+
+    def getUserOverview(person):
+        """Get the overview data required for GDPR purposes."""
+
+
+class IPersonSetPublic(Interface):
     """The set of Persons."""
 
     title = Attribute('Title')
@@ -2569,6 +2582,11 @@ class IPersonSet(Interface):
             cached.
         :param need_validity: The is_valid attribute will be cached.
         """
+
+
+@exported_as_webservice_collection(IPerson)
+class IPersonSet(IPersonSetPublic, IPersonSetModerate):
+    """Combined schema for operations on a group of Persons."""
 
 
 class IRequestPeopleMerge(Interface):

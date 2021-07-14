@@ -90,10 +90,7 @@
         </p>
         <table class="summary">
           <tr tal:repeat="activity activities">
-            <td tal:attributes="title activity/date/fmt:datetime"
-                tal:content="activity/date/fmt:approximatedate">
-              2009-08-15
-            </td>
+            <td tal:content="structure activity/date/fmt:approximatedatetitle" />
             <td>
               <a tal:content="activity/title"
                  tal:attributes="href activity/url">foo bar in package bla</a>

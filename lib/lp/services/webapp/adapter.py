@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -35,6 +35,7 @@ from storm.databases.postgres import (
 from storm.exceptions import TimeoutError
 from storm.store import Store
 from storm.tracer import install_tracer
+from talisker.logs import logging_context
 from timeline.timeline import Timeline
 import transaction
 from zope.component import getUtility
@@ -76,7 +77,6 @@ from lp.services.timeline.requesttimeline import (
 from lp.services.timeout import set_default_timeout_function
 from lp.services.webapp import LaunchpadView
 from lp.services.webapp.interaction import get_interaction_extras
-from lp.services.webapp.opstats import OpStats
 
 
 __all__ = [
@@ -267,8 +267,11 @@ def store_sql_statements_and_request_duration(event):
     actions = get_request_timeline(get_current_browser_request()).actions
     event.request.setInWSGIEnvironment(
         'launchpad.nonpythonactions', len(actions))
+    logging_context.push(nonpython_actions=len(actions))
     event.request.setInWSGIEnvironment(
         'launchpad.requestduration', get_request_duration())
+    # Talisker already tracks the request duration itself, so there's no
+    # need to push that onto the logging context here.
 
 
 def get_request_statements():
@@ -462,6 +465,11 @@ def break_main_thread_db_access(*ignored):
     easier to do on module load, but the test suite has legitimate uses
     for using connections from the main thread.
     """
+    # This check is only applicable to zope.server.  gunicorn uses a
+    # different model with an arbiter parent process.
+    if config.use_gunicorn:
+        return
+
     # Record the ID of the main thread.
     global _main_thread_id
     _main_thread_id = threading.current_thread().ident
@@ -625,9 +633,6 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
             super(LaunchpadTimeoutTracer, self).connection_raw_execute(
                 connection, raw_cursor, statement, params)
         except (RequestExpired, TimeoutError):
-            # XXX: This code does not belong here - see bug=636804.
-            # Robert Collins 20100913.
-            OpStats.stats['timeouts'] += 1
             # XXX bug=636801 Robert Colins 20100914 This is duplicated
             # from the statement tracer, because the tracers are not
             # arranged in a stack rather a queue: the done-code in the
@@ -654,7 +659,6 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
         if not isinstance(connection._database, LaunchpadDatabase):
             return
         if isinstance(error, QueryCanceledError):
-            OpStats.stats['timeouts'] += 1
             raise LaunchpadTimeoutError(statement, params, error)
 
     def get_remaining_time(self):

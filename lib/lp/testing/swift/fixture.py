@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Mock Swift test fixture."""
@@ -19,6 +19,7 @@ import testtools.content_type
 from txfixtures.tachandler import TacTestFixture
 
 from lp.services.config import config
+from lp.services.librarianserver import swift
 from lp.testing.layers import BaseLayer
 from lp.testing.swift import fakeswift
 
@@ -30,6 +31,15 @@ class SwiftFixture(TacTestFixture):
     logfile = None
     root = None
     daemon_port = None
+
+    def __init__(self, old_instance=False):
+        super(SwiftFixture, self).__init__()
+        self.old_instance = old_instance
+
+    def _getConfig(self, key):
+        return getattr(
+            config.librarian_server,
+            'old_' + key if self.old_instance else key)
 
     def setUp(self, spew=False, umask=None):
         # Pick a random, free port.
@@ -56,18 +66,26 @@ class SwiftFixture(TacTestFixture):
             self, logfile, 'swift-log', testtools.content_type.UTF8_TEXT,
             buffer_now=False)
 
+        self.addCleanup(swift.reconfigure_connection_pools)
         service_config = dedent("""\
             [librarian_server]
-            os_auth_url: http://localhost:{0}/keystone/v2.0/
-            os_username: {1}
-            os_password: {2}
-            os_tenant_name: {3}
+            {prefix}os_auth_url: http://localhost:{port}/keystone/v2.0/
+            {prefix}os_username: {username}
+            {prefix}os_password: {password}
+            {prefix}os_tenant_name: {tenant_name}
             """.format(
-                self.daemon_port, fakeswift.DEFAULT_USERNAME,
-                fakeswift.DEFAULT_PASSWORD, fakeswift.DEFAULT_TENANT_NAME))
+                prefix=('old_' if self.old_instance else ''),
+                port=self.daemon_port,
+                username=fakeswift.DEFAULT_USERNAME,
+                password=fakeswift.DEFAULT_PASSWORD,
+                tenant_name=fakeswift.DEFAULT_TENANT_NAME))
         BaseLayer.config_fixture.add_section(service_config)
         config.reloadConfig()
-        assert config.librarian_server.os_tenant_name == 'test'
+        self.addCleanup(config.reloadConfig)
+        self.addCleanup(
+            BaseLayer.config_fixture.remove_section, service_config)
+        assert self._getConfig('os_tenant_name') == 'test'
+        swift.reconfigure_connection_pools()
 
     def setUpRoot(self):
         # Create a root directory.
@@ -85,11 +103,11 @@ class SwiftFixture(TacTestFixture):
     def connect(self, **kwargs):
         """Return a valid connection to our mock Swift"""
         connection_kwargs = {
-            "authurl": config.librarian_server.os_auth_url,
-            "auth_version": "2.0",
-            "tenant_name": config.librarian_server.os_tenant_name,
-            "user": config.librarian_server.os_username,
-            "key": config.librarian_server.os_password,
+            "authurl": self._getConfig("os_auth_url"),
+            "auth_version": self._getConfig("os_auth_version"),
+            "tenant_name": self._getConfig("os_tenant_name"),
+            "user": self._getConfig("os_username"),
+            "key": self._getConfig("os_password"),
             "retries": 0,
             "insecure": True,
             }

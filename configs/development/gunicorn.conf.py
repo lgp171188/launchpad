@@ -1,6 +1,8 @@
 from fnmatch import fnmatch
 import os
 
+import scandir
+
 
 BASE_DIR = os.path.realpath(
     os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -11,7 +13,7 @@ def find_files(directory, pattern):
     """Find files in `directory` matching `pattern`.
     """
     result = []
-    for root, dirs, files in os.walk(directory):
+    for root, dirs, files in scandir.walk(directory):
         for basename in files:
             matches = fnmatch(basename, pattern)
             if matches:

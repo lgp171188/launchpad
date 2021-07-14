@@ -76,11 +76,7 @@
     <td tal:content="spr/version">
       1.0
     </td>
-    <td
-      tal:attributes="title spr/dateuploaded/fmt:datetime"
-      tal:content="spr/dateuploaded/fmt:approximatedate">
-      2005-10-24
-    </td>
+    <td tal:content="structure spr/dateuploaded/fmt:approximatedatetitle" />
     <td>
       <tal:block condition="spr/needs_building">
           Not yet built

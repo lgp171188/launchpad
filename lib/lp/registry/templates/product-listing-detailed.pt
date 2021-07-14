@@ -13,9 +13,8 @@
     <div>
       Maintained by <a
         tal:replace="structure context/owner/fmt:link">Foo Bar</a>; Registered 
-      <span
-        tal:attributes="title context/datecreated/fmt:datetime"
-        tal:content="context/datecreated/fmt:displaydate">2005-10-12</span>
+      <tal:created
+        replace="structure context/datecreated/fmt:displaydatetitle" />
     </div>
   </div>
 </div>

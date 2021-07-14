@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Code for 'processing' 'uploads'. Also see nascentupload.py.
@@ -56,6 +56,7 @@ from sqlobject import SQLObjectNotFound
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
+from lp.archiveuploader.charmrecipeupload import CharmRecipeUpload
 from lp.archiveuploader.livefsupload import LiveFSUpload
 from lp.archiveuploader.nascentupload import (
     EarlyReturnUploadError,
@@ -70,6 +71,7 @@ from lp.archiveuploader.uploadpolicy import (
 from lp.archiveuploader.utils import UploadError
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
+from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
@@ -658,6 +660,31 @@ class BuildUploadHandler(UploadHandler):
             self.processor.ztm.abort()
             raise
 
+    def processCharmRecipe(self, logger=None):
+        """Process a charm recipe upload."""
+        assert ICharmRecipeBuild.providedBy(self.build)
+        if logger is None:
+            logger = self.processor.log
+        try:
+            logger.info("Processing charm upload %s" % self.upload_path)
+            CharmRecipeUpload(self.upload_path, logger).process(self.build)
+
+            if self.processor.dry_run:
+                logger.info("Dry run, aborting transaction.")
+                self.processor.ztm.abort()
+            else:
+                logger.info(
+                    "Committing the transaction and any mails associated "
+                    "with this upload.")
+                self.processor.ztm.commit()
+            return UploadStatusEnum.ACCEPTED
+        except UploadError as e:
+            logger.error(str(e))
+            return UploadStatusEnum.REJECTED
+        except:
+            self.processor.ztm.abort()
+            raise
+
     def process(self):
         """Process an upload that is the result of a build.
 
@@ -701,6 +728,8 @@ class BuildUploadHandler(UploadHandler):
                 result = self.processSnap(logger)
             elif IOCIRecipeBuild.providedBy(self.build):
                 result = self.processOCIRecipe(logger)
+            elif ICharmRecipeBuild.providedBy(self.build):
+                result = self.processCharmRecipe(logger)
             else:
                 self.processor.log.debug("Build %s found" % self.build.id)
                 [changes_file] = self.locateChangesFiles()

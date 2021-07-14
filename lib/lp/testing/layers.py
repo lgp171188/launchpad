@@ -85,6 +85,7 @@ from six.moves.urllib.parse import (
     urlparse,
     )
 from six.moves.urllib.request import urlopen
+from talisker.context import Context
 import transaction
 from webob.request import environ_from_url as orig_environ_from_url
 import wsgi_intercept
@@ -663,11 +664,12 @@ class RabbitMQLayer(BaseLayer):
     def tearDown(cls):
         if not cls._is_setup:
             return
+        cls.appserver_config_fixture.remove_section(
+            cls.rabbit.config.service_config)
+        cls.config_fixture.remove_section(
+            cls.rabbit.config.service_config)
         cls.rabbit.cleanUp()
         cls._is_setup = False
-        # Can't pop the config above, so bail here and let the test runner
-        # start a sub-process.
-        raise NotImplementedError
 
     @classmethod
     @profiled
@@ -795,8 +797,8 @@ class LibrarianLayer(DatabaseLayer):
 
         # Make sure things using the appserver config know the
         # correct Librarian port numbers.
-        cls.appserver_config_fixture.add_section(
-            cls.librarian_fixture.service_config)
+        cls.appserver_service_config = cls.librarian_fixture.service_config
+        cls.appserver_config_fixture.add_section(cls.appserver_service_config)
 
     @classmethod
     @profiled
@@ -805,6 +807,8 @@ class LibrarianLayer(DatabaseLayer):
         # responsibilities : not desirable though.
         if cls.librarian_fixture is None:
             return
+        cls.appserver_config_fixture.remove_section(
+            cls.appserver_service_config)
         try:
             cls._check_and_reset()
         finally:
@@ -952,6 +956,22 @@ class LaunchpadLayer(LibrarianLayer, MemcachedLayer, RabbitMQLayer):
             "DELETE FROM SessionData")
 
 
+class BasicTaliskerMiddleware:
+    """Middleware to set up a Talisker context.
+
+    The full `talisker.wsgi.TaliskerMiddleware` does a lot of things we
+    don't need in our tests, but it's useful to at least have a context so
+    that we can test logging behaviour.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        Context.new()
+        return self.app(environ, start_response)
+
+
 class TransactionMiddleware:
     """Middleware to commit the current transaction before the test.
 
@@ -1019,6 +1039,7 @@ class _FunctionalBrowserLayer(zope.testbrowser.wsgi.Layer, ZCMLFileLayer):
             RemoteAddrMiddleware,
             SortHeadersMiddleware,
             TransactionMiddleware,
+            BasicTaliskerMiddleware,
             ]
 
     def setUp(self):

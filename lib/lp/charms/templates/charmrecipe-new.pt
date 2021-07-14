@@ -1,0 +1,88 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_side"
+  i18n:domain="launchpad">
+<body>
+
+<div metal:fill-slot="main">
+  <div>
+    <p>
+      A <a href="https://juju.is/docs">charmed operator</a> (packaged as a
+      "charm") encapsulates a single application and all the code and
+      know-how it takes to operate it, such as how to combine and work with
+      other related applications or how to upgrade it.  Launchpad can build
+      charms using <a href="https://juju.is/docs/sdk">charmcraft</a>, from
+      any Git branch on Launchpad that has <tt>metadata.yaml</tt>,
+      <tt>requirements.txt</tt>, and <tt>src/charm.py</tt> files.
+    </p>
+  </div>
+
+  <div metal:use-macro="context/@@launchpad_form/form">
+    <metal:formbody fill-slot="widgets">
+      <table class="form">
+        <tal:widget define="widget nocall:view/widgets/name">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tal:widget define="widget nocall:view/widgets/owner">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+
+        <tal:not-project-context condition="not: view/is_project_context">
+          <tal:widget define="widget nocall:view/widgets/project">
+            <metal:block use-macro="context/@@launchpad_form/widget_row" />
+          </tal:widget>
+        </tal:not-project-context>
+
+        <tal:project-context condition="view/is_project_context">
+          <tal:widget define="widget nocall:view/widgets/git_ref">
+            <metal:block use-macro="context/@@launchpad_form/widget_row" />
+          </tal:widget>
+        </tal:project-context>
+
+        <tal:widget define="widget nocall:view/widgets/auto_build">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tr>
+          <td>
+            <table class="subordinate">
+              <tal:widget define="widget nocall:view/widgets/auto_build_channels">
+                <metal:block use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+            </table>
+          </td>
+        </tr>
+
+        <tal:widget define="widget nocall:view/widgets/store_upload">
+          <metal:block use-macro="context/@@launchpad_form/widget_row" />
+        </tal:widget>
+        <tr>
+          <td>
+            <table class="subordinate">
+              <tal:widget define="widget nocall:view/widgets/store_name">
+                <metal:block use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+              <tal:widget define="widget nocall:view/widgets/store_channels"
+                          condition="widget/has_risks_vocabulary">
+                <metal:block use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </metal:formbody>
+  </div>
+
+  <script type="text/javascript">
+    LPJS.use('lp.charms.charmrecipe.edit', function(Y) {
+      Y.on('domready', function(e) {
+        Y.lp.charms.charmrecipe.edit.setup();
+      }, window);
+    });
+  </script>
+</div>
+
+</body>
+</html>

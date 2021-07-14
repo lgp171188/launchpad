@@ -139,6 +139,7 @@ from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionTargetTraversalMixin,
     )
 from lp.bugs.interfaces.bugtask import RESOLVED_BUGTASK_STATUSES
+from lp.charms.browser.hascharmrecipes import HasCharmRecipesMenuMixin
 from lp.code.browser.branchref import BranchRef
 from lp.code.browser.codeimport import (
     CodeImportNameValidationMixin,
@@ -233,7 +234,6 @@ from lp.services.webapp.vhosts import allvhosts
 from lp.services.worlddata.helpers import browser_languages
 from lp.services.worlddata.interfaces.country import ICountry
 from lp.snappy.browser.hassnaps import HasSnapsMenuMixin
-from lp.snappy.interfaces.snap import ISnapSet
 from lp.translations.browser.customlanguagecode import (
     HasCustomLanguageCodesTraversalMixin,
     )
@@ -559,7 +559,8 @@ class ProductActionNavigationMenu(NavigationMenu, ProductEditLinksMixin):
 
 
 class ProductOverviewMenu(ApplicationMenu, ProductEditLinksMixin,
-                          HasRecipesMenuMixin, HasSnapsMenuMixin):
+                          HasRecipesMenuMixin, HasSnapsMenuMixin,
+                          HasCharmRecipesMenuMixin):
 
     usedfor = IProduct
     facet = 'overview'
@@ -584,8 +585,10 @@ class ProductOverviewMenu(ApplicationMenu, ProductEditLinksMixin,
         'review_license',
         'rdf',
         'branding',
+        'view_charm_recipes',
         'view_recipes',
         'view_snaps',
+        'create_charm_recipe',
         'create_snap',
         ]
 

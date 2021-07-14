@@ -389,13 +389,12 @@ class OCIRegistryClient:
         exceptions = []
         try:
             for push_rule in build.recipe.push_rules:
-                for tag in cls._calculateTags(build.recipe):
-                    try:
-                        cls._upload_to_push_rule(
-                            push_rule, build, manifest, digests,
-                            preloaded_data, tag)
-                    except Exception as e:
-                        exceptions.append(e)
+                try:
+                    cls._upload_to_push_rule(
+                        push_rule, build, manifest, digests,
+                        preloaded_data, tag=None)
+                except Exception as e:
+                    exceptions.append(e)
             if len(exceptions) == 1:
                 raise exceptions[0]
             elif len(exceptions) > 1:

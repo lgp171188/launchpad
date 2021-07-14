@@ -25,8 +25,10 @@ from storm.database import STATE_DISCONNECTED
 from storm.exceptions import (
     DisconnectionError,
     IntegrityError,
+    TimeoutError,
     )
 from storm.zope.interfaces import IZStorm
+from talisker.logs import logging_context
 import transaction
 from zc.zservertracelog.interfaces import ITraceLog
 import zope.app.publication.browser
@@ -241,6 +243,12 @@ class LaunchpadBrowserPublication(
         else:
             return getUtility(self.root_object_interface)
 
+    def initializeLoggingContext(self, request):
+        # Remember the Talisker logging context stack level, so that we can
+        # unwind to it on retry.
+        request._initial_logging_context_level = logging_context.push()
+        logging_context.pop()
+
     # The below overrides to zopepublication (callTraversalHooks,
     # afterTraversal, and _maybePlacefullyAuthenticate) make the
     # assumption that there will never be a ZODB "local"
@@ -265,6 +273,7 @@ class LaunchpadBrowserPublication(
                 request_txt += 'Unable to render traceback!'
         threadrequestfile.write(request_txt.encode('UTF-8'))
         threadrequestfile.close()
+        self.initializeLoggingContext(request)
 
         # Tell our custom database adapter that the request has started.
         da.set_request_started()
@@ -434,6 +443,7 @@ class LaunchpadBrowserPublication(
 
         request.setInWSGIEnvironment(
             'launchpad.userid', request.principal.id)
+        logging_context.push(userid=request.principal.id)
 
         # pageid is calculated at `afterTraversal`, but can be missing
         # if callObject is used directly, so either use the one we've got
@@ -492,10 +502,15 @@ class LaunchpadBrowserPublication(
             publication_thread_duration = None
         request.setInWSGIEnvironment(
             'launchpad.publicationduration', publication_duration)
+        logging_context.push(
+            publication_duration_ms=round(publication_duration * 1000, 3))
         if publication_thread_duration is not None:
             request.setInWSGIEnvironment(
                 'launchpad.publicationthreadduration',
                 publication_thread_duration)
+            logging_context.push(
+                publication_thread_duration_ms=round(
+                    publication_thread_duration * 1000, 3))
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
             'publication_duration', publication_duration * 1000,
@@ -521,6 +536,8 @@ class LaunchpadBrowserPublication(
         if publication_thread_duration is not None:
             tracelog_entry += ' %d' % (publication_thread_duration * 1000)
         tracelog(request, 't', tracelog_entry)
+        logging_context.push(
+            sql_statements=len(sql_statements), sql_ms=sql_milliseconds)
 
         # Annotate the transaction with user data. That was done by
         # zope.app.publication.zopepublication.ZopePublication.
@@ -583,6 +600,7 @@ class LaunchpadBrowserPublication(
             context = removeSecurityProxy(getattr(view, 'context', None))
         pageid = self.constructPageID(view, context)
         request.setInWSGIEnvironment('launchpad.pageid', pageid)
+        logging_context.push(pageid=pageid)
         return pageid
 
     def _prepPageIDForMetrics(self, pageid):
@@ -609,11 +627,16 @@ class LaunchpadBrowserPublication(
         traversal_duration = time.time() - request._traversal_start
         request.setInWSGIEnvironment(
             'launchpad.traversalduration', traversal_duration)
+        logging_context.push(
+            traversal_duration_ms=round(traversal_duration * 1000, 3))
         if request._traversal_thread_start is not None:
             traversal_thread_duration = (
                 _get_thread_time() - request._traversal_thread_start)
             request.setInWSGIEnvironment(
                 'launchpad.traversalthreadduration', traversal_thread_duration)
+            logging_context.push(
+                traversal_thread_duration_ms=round(
+                    traversal_thread_duration * 1000, 3))
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
             'traversal_duration', traversal_duration * 1000,
@@ -648,12 +671,17 @@ class LaunchpadBrowserPublication(
             publication_duration = now - request._publication_start
             request.setInWSGIEnvironment(
                 'launchpad.publicationduration', publication_duration)
+            logging_context.push(
+                publication_duration_ms=round(publication_duration * 1000, 3))
             if thread_now is not None:
                 publication_thread_duration = (
                     thread_now - request._publication_thread_start)
                 request.setInWSGIEnvironment(
                     'launchpad.publicationthreadduration',
                     publication_thread_duration)
+                logging_context.push(
+                    publication_thread_duration_ms=round(
+                        publication_thread_duration * 1000, 3))
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
                 'publication_duration', publication_duration * 1000,
@@ -668,12 +696,17 @@ class LaunchpadBrowserPublication(
             traversal_duration = now - request._traversal_start
             request.setInWSGIEnvironment(
                 'launchpad.traversalduration', traversal_duration)
+            logging_context.push(
+                traversal_duration_ms=round(traversal_duration * 1000, 3))
             if thread_now is not None:
                 traversal_thread_duration = (
                     thread_now - request._traversal_thread_start)
                 request.setInWSGIEnvironment(
                     'launchpad.traversalthreadduration',
                     traversal_thread_duration)
+                logging_context.push(
+                    traversal_thread_duration_ms=round(
+                        traversal_thread_duration * 1000, 3))
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
                 'traversal_duration', traversal_duration * 1000,
@@ -695,6 +728,10 @@ class LaunchpadBrowserPublication(
         # the exception as a Retry.
         if isinstance(exc_info[1], DisconnectionError):
             getUtility(IErrorReportingUtility).raising(exc_info, request)
+
+        if isinstance(exc_info[1], (da.RequestExpired, TimeoutError)):
+            OpStats.stats['timeouts'] += 1
+            getUtility(IStatsdClient).incr('timeouts.hard')
 
         def should_retry(exc_info):
             if not retry_allowed:
@@ -742,6 +779,12 @@ class LaunchpadBrowserPublication(
                 orig_env.pop('launchpad.traversalthreadduration', None)
                 orig_env.pop('launchpad.publicationduration', None)
                 orig_env.pop('launchpad.publicationthreadduration', None)
+                # If we made it as far as beforeTraversal, then unwind the
+                # Talisker logging context to its state on entering that
+                # method.
+                if hasattr(request, '_initial_logging_context_level'):
+                    logging_context.unwind(
+                        request._initial_logging_context_level)
             # Our endRequest needs to know if a retry is pending or not.
             request._wants_retry = True
             # Abort any in-progress transaction and reset any
@@ -806,8 +849,10 @@ class LaunchpadBrowserPublication(
         # Maintain operational statistics.
         if getattr(request, '_wants_retry', False):
             OpStats.stats['retries'] += 1
+            statsd_client.incr('requests.retries')
         else:
             OpStats.stats['requests'] += 1
+            statsd_client.incr('requests.all')
 
             # Increment counters for HTTP status codes we track individually
             # NB. We use IBrowserRequest, as other request types such as
@@ -816,6 +861,7 @@ class LaunchpadBrowserPublication(
             # and XML-RPC requests.
             if IBrowserRequest.providedBy(request):
                 OpStats.stats['http requests'] += 1
+                statsd_client.incr('requests.http')
                 status = request.response.getStatus()
                 if status == 404:  # Not Found
                     OpStats.stats['404s'] += 1
@@ -828,13 +874,14 @@ class LaunchpadBrowserPublication(
                     statsd_client.incr('errors.503')
 
                 # Increment counters for status code groups.
-                status_group = str(status)[0] + 'XXs'
-                OpStats.stats[status_group] += 1
+                status_group = str(status)[0] + 'XX'
+                OpStats.stats[status_group + 's'] += 1
+                statsd_client.incr('errors.%s' % status_group)
 
                 # Increment counter for 5XXs_b.
-                if is_browser(request) and status_group == '5XXs':
+                if is_browser(request) and status_group == '5XX':
                     OpStats.stats['5XXs_b'] += 1
-                    statsd_client.incr('errors.5XX')
+                    statsd_client.incr('errors.5XX.browser')
 
         # Make sure our databases are in a sane state for the next request.
         thread_name = threading.current_thread().name

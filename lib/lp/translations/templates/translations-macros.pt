@@ -75,11 +75,8 @@
         Suggested by
         <a tal:content="submission/person/displayname"
            tal:attributes="href submission/person/fmt:url">Foo Bar</a>
-        <span
-          tal:attributes="title submission/date_created/fmt:datetime"
-          tal:content="submission/date_created/fmt:displaydate">
-          2006-08-05
-        </span>
+        <tal:created
+          replace="structure submission/date_created/fmt:displaydatetitle" />
       </td>
       <td style="overflow: auto;"
           tal:condition="not:submission/is_local_to_pofile">
@@ -93,11 +90,8 @@
           content="submission/pofile/potemplate/displayname" /> by
         <a tal:content="submission/person/displayname"
            tal:attributes="href submission/person/fmt:url">Foo Bar</a>
-        <span
-          tal:attributes="title submission/date_created/fmt:datetime"
-          tal:content="submission/date_created/fmt:displaydate">
-          2006-08-05
-        </span>
+        <tal:created
+          replace="structure submission/date_created/fmt:displaydatetitle" />
       </td>
     </tr>
 

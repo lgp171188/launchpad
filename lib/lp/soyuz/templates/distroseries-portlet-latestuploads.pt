@@ -13,7 +13,7 @@
 
   <ul id="latest-uploads" class="binary package"
     tal:condition="latest_uploads">
-    <li tal:repeat="source context/getLatestUploads">
+    <li tal:repeat="source latest_uploads">
       <a
        tal:attributes="href source/fmt:url"
        tal:content="source/displayname" />
