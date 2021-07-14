@@ -139,8 +139,7 @@ class OCIRegistryClient:
                 post_location,
                 params=query_parsed,
                 data=fileobj,
-                headers={"Content-Length": str(length),
-                         "Content-Type": "application/octet-stream"},
+                headers={"Content-Length": str(length)},
                 method="PUT")
         except HTTPError as http_error:
             put_response = http_error.response
@@ -163,33 +162,12 @@ class OCIRegistryClient:
         :param lfa: The `LibraryFileAlias` for the layer.
         """
         lfa.open()
-        try:
-            with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
-                for tarinfo in un_zipped:
-                    if tarinfo.name.decode('utf8') == 'layer.tar':
-                        fileobj = un_zipped.extractfile(tarinfo)
-                        # XXX Work around requests handling of objects that have
-                        # fileno, but error on access in python3:
-                        # https://github.com/psf/requests/pull/5239
-                        fileobj.len = tarinfo.size
-                        try:
-                            cls._upload(
-                                digest, push_rule, fileobj, tarinfo.size,
-                                http_client)
-                        finally:
-                            fileobj.close()
-                            return tarinfo.size
-                    elif 'tar.gz' in tarinfo.name.decode('utf8'):
-                        size = lfa.content.filesize
-                        wrapper = LibraryFileAliasWrapper(lfa)
-                        cls._upload(
-                            digest, push_rule, wrapper, size,
-                            http_client)
-                        return size
-                    else:
-                        continue
-        finally:
-            lfa.close()
+        size = lfa.content.filesize
+        wrapper = LibraryFileAliasWrapper(lfa)
+        cls._upload(
+            digest, push_rule, wrapper, size,
+            http_client)
+        return size
 
     @classmethod
     def _build_registry_manifest(cls, digests, config, config_json,
@@ -218,15 +196,23 @@ class OCIRegistryClient:
             "layers": []}
 
         # Fill in the layer information
-        for layer in config["rootfs"]["diff_ids"]:
+        # The unzipped_sha is the digest for each unziped layer
+        # that the Docker client has at the top level
+        # for each dict element in the Config.json file.
+        # For uploading the tar.gz for each layer we need
+        # to obtain the digest for the tar.gz from the Config.json
+        # file and build the manifest with the zipped digest - named
+        # here as gziped_layer_digest
+        for unziped_sha in config["rootfs"]["diff_ids"]:
+            gziped_layer_digest = "sha256:{}".format(digests[unziped_sha]["digest"])
             manifest["layers"].append({
                 "mediaType":
                     "application/vnd.docker.image.rootfs.diff.tar.gzip",
                 # This should be the size of the `layer.tar` that we extracted
                 # from the OCI image at build time. It is not the size of the
                 # gzipped version that we have in the librarian.
-                "size": layer_sizes[layer],
-                "digest": layer})
+                "size": layer_sizes[gziped_layer_digest],
+                "digest": gziped_layer_digest})
         return manifest
 
     @classmethod
@@ -305,6 +291,8 @@ class OCIRegistryClient:
         # Specifically the Schema 2 manifest.
         digest = None
         data = json.dumps(registry_manifest).encode("UTF-8")
+        if tag is None:
+            tag = "sha256:{}".format(hashlib.sha256(data).hexdigest())
         size = len(data)
         content_type = registry_manifest.get(
             "mediaType",
@@ -332,7 +320,8 @@ class OCIRegistryClient:
 
     @classmethod
     def _upload_to_push_rule(
-            cls, push_rule, build, manifest, digests, preloaded_data, tag):
+            cls, push_rule, build, manifest, digests, preloaded_data,
+            tag=None):
         http_client = RegistryHTTPClient.getInstance(push_rule)
 
         for section in manifest:
@@ -342,12 +331,13 @@ class OCIRegistryClient:
             #  Upload the layers involved
             layer_sizes = {}
             for diff_id in config["rootfs"]["diff_ids"]:
+                digest = "sha256:{}".format(file_data[diff_id].content.sha256)
                 layer_size = cls._upload_layer(
-                    diff_id,
+                    digest,
                     push_rule,
                     file_data[diff_id],
                     http_client)
-                layer_sizes[diff_id] = layer_size
+                layer_sizes[digest] = layer_size
             # The config file is required in different forms, so we can
             # calculate the sha, work these out and upload
             config_json = json.dumps(config).encode("UTF-8")
