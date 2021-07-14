@@ -44,6 +44,7 @@ from lazr.restful.utils import (
     smartquote,
     )
 import pytz
+from requests import PreparedRequest
 import six
 from sqlobject import (
     BoolCol,
@@ -4084,13 +4085,33 @@ class PersonSet:
             return {"status": "no data held"}
 
         account = email_results.one()[1]
-        # This is only an 'account' in terms of the end user view,
-        # it does not refer to an `IAccount`.
-        return_data = {"status": "account only; no other data"}
+        return_data = {}
         return_data["person"] = canonical_url(account)
         # Get the data behind the overview screen
         overview = self.getUserOverview(account)
         return_data.update(overview)
+
+        # bzr branches
+        branches = account.getBranches()
+        if not branches.is_empty():
+            search_url = canonical_url(
+                account, rootsite='code', view_name='+branches')
+            req = PreparedRequest()
+            req.prepare_url(search_url, {
+                "field.category": "OWNED",
+                "field.category-empty-marker": "1",
+                "field.lifecycle": "ALL",
+                "field.lifecycle-empty-marker": "1",
+                "field.sort_by": "most recently changed first",
+                "field.sort_by-empty-marker": "1"})
+            return_data['branches'] = req.url
+
+        # This is only an 'account' in terms of the end user view,
+        # it does not refer to an `IAccount`.
+        if len(return_data.keys()) > 1:
+            return_data["status"] = "account with data"
+        else:
+            return_data["status"] = "account only; no other data"
         return return_data
 
     def getUserOverview(self, person):
