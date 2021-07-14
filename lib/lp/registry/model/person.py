@@ -304,7 +304,7 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
-from lp.services.searchbuilder import any
+from lp.services.searchbuilder import any as search_any
 from lp.services.statistics.interfaces.statistic import ILaunchpadStatisticSet
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
@@ -1469,7 +1469,7 @@ class Person(
         from lp.bugs.model.bugtask import BugTask
         today = datetime.today().date()
         search_params = BugTaskSearchParams(
-            user, assignee=any(*self.participant_ids),
+            user, assignee=search_any(*self.participant_ids),
             milestone_dateexpected_before=date,
             milestone_dateexpected_after=today)
 
@@ -4103,8 +4103,8 @@ class PersonSet:
 
         # Related packages is a general overview, if we have any of them
         # the related packages exist
-        if any(maintained_packages, uploaded_packages,
-               ppa_packages, synchronised_packages):
+        if any([maintained_packages, uploaded_packages,
+               ppa_packages, synchronised_packages]):
             overview['related-packages'] = canonical_url(
                 person, view_name='+related-packages')
 
