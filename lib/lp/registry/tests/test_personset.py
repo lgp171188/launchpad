@@ -1250,10 +1250,20 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
 
         with admin_logged_in():
             result = self.person_set.getUserOverview(self.user)
-        self.assertIn('related-packages', result)
-        self.assertIn('maintained-packages', result)
-        self.assertIn('uploaded-packages', result)
-        self.assertIn('ppa-packages', result)
-        self.assertIn('synchronised-packages', result)
-        self.assertIn('related-projects', result)
-        self.assertIn('owned-teams', result)
+        self.assertDictEqual({
+            "related-packages": canonical_url(
+                self.user, view_name='+related-packages'),
+            "maintained-packages": canonical_url(
+                self.user, view_name='+maintained-packages'),
+            "uploaded-packages": canonical_url(
+                self.user, view_name='+uploaded-packages'),
+            "ppa-packages": canonical_url(
+                self.user, view_name='+ppa-packages'),
+            "synchronised-packages": canonical_url(
+                self.user, view_name='+synchronised-packages'),
+            "related-projects": canonical_url(
+                self.user, view_name='+related-projects'),
+            "owned-teams": canonical_url(
+                self.user, view_name='+owned-teams')
+            },
+            result)
