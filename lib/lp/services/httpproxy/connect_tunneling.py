@@ -29,7 +29,7 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
     To accomplish that, this endpoint sends an HTTP CONNECT to the proxy.
     """
 
-    _responseMatcher = re.compile(r'HTTP/1\.. 200')
+    _responseMatcher = re.compile(br'HTTP/1\.. 200')
 
     def __init__(self, reactor, host, port, proxyConf, contextFactory,
                  timeout=30, bindAddress=None):
@@ -45,11 +45,11 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
 
     def requestTunnel(self, protocol):
         """Asks the proxy to open a tunnel."""
-        tunnelReq = 'CONNECT %s:%s HTTP/1.1\n' % (self._tunneledHost,
-                                                  self._tunneledPort)
+        tunnelReq = b'CONNECT %s:%d HTTP/1.1\n' % (self._tunneledHost,
+                                                   self._tunneledPort)
         if self._proxyAuthHeader:
-            tunnelReq += 'Proxy-Authorization: %s\n' % self._proxyAuthHeader
-        tunnelReq += '\n'
+            tunnelReq += b'Proxy-Authorization: %s\n' % self._proxyAuthHeader
+        tunnelReq += b'\n'
         protocol.transport.write(tunnelReq)
         self._protocolDataReceived = protocol.dataReceived
         protocol.dataReceived = self.processProxyResponse
