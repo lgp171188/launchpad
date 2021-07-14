@@ -2078,6 +2078,9 @@ class IPersonSetModerate(Interface):
     def getUserData(email):
         """Get GDPR-related data for a user from their email address."""
 
+    def getUserOverview(person):
+        """Get the overview data required for GDPR purposes."""
+
 
 class IPersonSetPublic(Interface):
     """The set of Persons."""

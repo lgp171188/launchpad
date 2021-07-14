@@ -16,6 +16,7 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.code.tests.helpers import remove_all_sample_data_branches
 from lp.registry.errors import (
     InvalidName,
@@ -30,12 +31,14 @@ from lp.registry.interfaces.person import (
     PersonCreationRationale,
     TeamEmailAddressError,
     )
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.ssh import (
     SSHKeyAdditionError,
     SSHKeyType,
     )
 from lp.registry.model.codeofconduct import SignedCodeOfConduct
 from lp.registry.model.person import Person
+from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -59,8 +62,15 @@ from lp.services.identity.interfaces.emailaddress import (
     )
 from lp.services.identity.model.account import Account
 from lp.services.identity.model.emailaddress import EmailAddress
+from lp.services.log.logger import DevNullLogger
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.publisher import canonical_url
+from lp.soyuz.enums import (
+    ArchivePurpose,
+    PackagePublishingStatus,
+    )
+from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
     admin_logged_in,
     ANONYMOUS,
@@ -72,8 +82,11 @@ from lp.testing import (
     TestCase,
     TestCaseWithFactory,
     )
-from lp.services.webapp.publisher import canonical_url
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.dbuser import switch_dbuser
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    )
 from lp.testing.matchers import HasQueryCount
 
 
@@ -1137,11 +1150,39 @@ class TestPersonDeleteSSHKeyFromSSO(TestCaseWithFactory):
 
 class TestGDPRUserRetrieval(TestCaseWithFactory):
 
-    layer = DatabaseFunctionalLayer
+    layer = LaunchpadFunctionalLayer
 
     def setUp(self):
         super(TestGDPRUserRetrieval, self).setUp()
         self.person_set = getUtility(IPersonSet)
+        self.user = self.factory.makePerson()
+        self.factory.makeGPGKey(self.user)
+        self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        self.warty = self.ubuntu.getSeries('warty')
+
+    def publishSources(self, archive, maintainer):
+        publisher = SoyuzTestPublisher()
+        publisher.person = self.user
+        login('foo.bar@canonical.com')
+        spphs = []
+        for count in range(0, 3):
+            source_name = "foo" + str(count)
+            spph = publisher.getPubSource(
+                sourcename=source_name,
+                status=PackagePublishingStatus.PUBLISHED,
+                archive=archive,
+                maintainer=maintainer,
+                creator=self.user,
+                distroseries=self.warty)
+            spphs.append(spph)
+        # Update the releases cache table.
+        switch_dbuser('garbo_frequently')
+        job = PopulateLatestPersonSourcePackageReleaseCache(DevNullLogger())
+        while not job.isDone():
+            job(chunk_size=100)
+        switch_dbuser('launchpad')
+        login(ANONYMOUS)
+        return spphs
 
     def test_no_data(self):
         with admin_logged_in():
@@ -1179,4 +1220,50 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         self.assertDictEqual({
             "status": "account only; no other data",
             "person": canonical_url(person)},
+            result)
+
+    def test_getUserOverview(self):
+        ppa = self.factory.makeArchive(owner=self.user)
+
+        # uploaded-packages
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
+        spr = self.factory.makeSourcePackageRelease(
+            creator=self.user, archive=archive)
+        self.spph = self.factory.makeSourcePackagePublishingHistory(
+            sourcepackagerelease=spr, archive=archive)
+
+        # synchronized packages
+        dest_distroseries = self.factory.makeDistroSeries()
+        self.copied_spph = self.spph.copyTo(
+            dest_distroseries, creator=self.user,
+            pocket=PackagePublishingPocket.UPDATES,
+            archive=dest_distroseries.main_archive)
+
+        # Publish the correct amount of packages to the correct plaches
+        # Maintained packages (non-ppa)
+        self.publishSources(archive, self.user)
+        # PPA packages
+        self.publishSources(ppa, self.user)
+
+        self.factory.makeProject(owner=self.user)
+        self.factory.makeTeam(owner=self.user)
+
+        with admin_logged_in():
+            result = self.person_set.getUserOverview(self.user)
+        self.assertDictEqual({
+            "related-packages": canonical_url(
+                self.user, view_name='+related-packages'),
+            "maintained-packages": canonical_url(
+                self.user, view_name='+maintained-packages'),
+            "uploaded-packages": canonical_url(
+                self.user, view_name='+uploaded-packages'),
+            "ppa-packages": canonical_url(
+                self.user, view_name='+ppa-packages'),
+            "synchronised-packages": canonical_url(
+                self.user, view_name='+synchronised-packages'),
+            "related-projects": canonical_url(
+                self.user, view_name='+related-projects'),
+            "owned-teams": canonical_url(
+                self.user, view_name='+owned-teams')
+            },
             result)
