@@ -7,6 +7,8 @@ __metaclass__ = type
 
 
 from testtools.matchers import (
+    Contains,
+    ContainsDict,
     Equals,
     GreaterThan,
     LessThan,
@@ -1221,6 +1223,18 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
             "status": "account only; no other data",
             "person": canonical_url(person)},
             result)
+
+    def test_account_data_branches(self):
+        person = self.factory.makePerson(email="test@example.com")
+        self.factory.makeBranch(owner=person)
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "branches": Contains(
+                canonical_url(
+                    person, rootsite="code", view_name="+branches"))}))
 
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
