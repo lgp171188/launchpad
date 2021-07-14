@@ -28,6 +28,7 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
     )
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.registry.interfaces.series import SeriesStatus
+from lp.snappy.model.snapbuildbehaviour import SnapProxyMixin
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -35,7 +36,7 @@ from lp.soyuz.adapters.archivedependencies import (
 
 @adapter(ICharmRecipeBuild)
 @implementer(IBuildFarmJobBehaviour)
-class CharmRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
+class CharmRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
     """Dispatches `CharmRecipeBuild` jobs to slaves."""
 
     builder_type = "charm"
@@ -76,6 +77,7 @@ class CharmRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
         build = self.build
         args = yield super(CharmRecipeBuildBehaviour, self).extraBuildArgs(
             logger=logger)
+        yield self.addProxyArgs(args)
         args["name"] = build.recipe.store_name or build.recipe.name
         channels = build.channels or {}
         # We have to remove the security proxy that Zope applies to this
