@@ -144,7 +144,7 @@ from lp.bugs.interfaces.bugtasksearch import (
 from lp.bugs.model.bugtarget import HasBugsBase
 from lp.bugs.model.structuralsubscription import StructuralSubscription
 from lp.code.interfaces.branchcollection import IAllBranches
-from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.model.hasbranches import (
     HasBranchesMixin,
     HasMergeProposalsMixin,
@@ -4127,7 +4127,7 @@ class PersonSet:
 
     def _checkForGitRepositoryData(self, account):
         """Check if git repositories exist for a given person."""
-        repositories = getUtility(IGitRepositorySet).getRepositories(account)
+        repositories = IGitCollection(account).visibleByUser(account)
         if repositories.is_empty():
             return None
         return canonical_url(account, rootsite='code', view_name='+git')

@@ -1256,9 +1256,10 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         self.factory.makeGitRepository(owner=other_person)
         with admin_logged_in():
             result = self.person_set.getUserData(u"test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person))}))
+        self.assertDictEqual({
+            "status": "account only; no other data",
+            "person": canonical_url(person)},
+            result)
 
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
