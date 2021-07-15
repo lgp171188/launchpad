@@ -1241,12 +1241,12 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         self.factory.makeGitRepository(owner=person)
         with admin_logged_in():
             result = self.person_set.getUserData(u"test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "git-repositories": Equals(
-                canonical_url(
-                    person, rootsite="code", view_name="+git"))}))
+        self.assertDictEqual({
+            "status": "account with data",
+            "person": canonical_url(person),
+            "git-repositories": canonical_url(
+                person, rootsite="code", view_name="+git")},
+            result)
 
     def test_account_data_repositories_other_owners(self):
         # Check that we only report on repositories that
