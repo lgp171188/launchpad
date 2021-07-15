@@ -369,17 +369,16 @@ class OCIRegistryClient:
         # we need to distinguish here between the 2 approaches and upload
         # accordingly as we might have old builds in Librarian that have
         # not been requested to be uploaded to registries yet.
-
-        lfa.open()
-        with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
-            for tarinfo in un_zipped:
-                if tarinfo.name.decode('utf8') == 'layer.tar':
-                    un_zipped.close()
-                    lfa.cloce()
-                    return True
-        un_zipped.close()
-        lfa.close()
-        return False
+        try:
+            lfa.open()
+            with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
+                for tarinfo in un_zipped:
+                    if tarinfo.name.decode('utf8') == 'layer.tar':
+                        return True
+            return False
+        finally:
+            un_zipped.close()
+            lfa.close()
 
     @classmethod
     def _upload_to_push_rule(
@@ -400,7 +399,10 @@ class OCIRegistryClient:
             upload_layers_uncompressed = cls.upload_layers_uncompressed(lfa)
 
             for diff_id in config["rootfs"]["diff_ids"]:
-                digest = "sha256:{}".format(file_data[diff_id].content.sha256)
+                if upload_layers_uncompressed:
+                    digest = diff_id
+                else:
+                    digest = "sha256:{}".format(file_data[diff_id].content.sha256)
                 layer_size = cls._upload_layer(
                     digest,
                     push_rule,
