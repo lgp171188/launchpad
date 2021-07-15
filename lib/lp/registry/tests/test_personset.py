@@ -1236,6 +1236,30 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
                 canonical_url(
                     person, rootsite="code", view_name="+branches"))}))
 
+    def test_account_data_repositories(self):
+        person = self.factory.makePerson(email="test@example.com")
+        self.factory.makeGitRepository(owner=person)
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "git-repositories": Equals(
+                canonical_url(
+                    person, rootsite="code", view_name="+git"))}))
+
+    def test_account_data_repositories_other_owners(self):
+        # Check that we only report on repositories that
+        # we care about
+        person = self.factory.makePerson(email="test@example.com")
+        other_person = self.factory.makePerson(email="other@example.com")
+        self.factory.makeGitRepository(owner=other_person)
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person))}))
+
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
 
