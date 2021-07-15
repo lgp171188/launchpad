@@ -1009,7 +1009,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             build_request, [self.build])
 
     @responses.activate
-    def test_upload_layer_put_gziped_blob(self):
+    def test_upload_layer_gziped_blob(self):
         lfa = self.factory.makeLibraryFileAlias(
             content=LaunchpadWriteTarFile.files_to_bytes(
                 {"6d56becb66b184f.tar.gz": b"test gzipped layer"}))

@@ -144,6 +144,7 @@ class OCIRegistryClient:
         except HTTPError as http_error:
             put_response = http_error.response
         if put_response.status_code != 201:
+            log.info("Upload layer failed with: %s", http_error.response.content)
             raise cls._makeRegistryError(
                 BlobUploadFailed,
                 "Upload of {} for {} failed".format(
@@ -151,7 +152,8 @@ class OCIRegistryClient:
                 put_response)
 
     @classmethod
-    def _upload_layer(cls, digest, push_rule, lfa, http_client):
+    def _upload_layer(cls, digest, push_rule, lfa, http_client,
+                      upload_layers_uncompressed):
         """Upload a layer blob to the registry.
 
         Uses _upload, but opens the LFA and extracts the necessary files
@@ -161,17 +163,42 @@ class OCIRegistryClient:
         :param push_rule: `OCIPushRule` to use for the URL and credentials.
         :param lfa: The `LibraryFileAlias` for the layer.
         """
-        lfa.open()
-        size = lfa.content.filesize
-        wrapper = LibraryFileAliasWrapper(lfa)
-        cls._upload(
-            digest, push_rule, wrapper, size,
-            http_client)
-        return size
+
+        try:
+            if upload_layers_uncompressed:
+                lfa.open()
+                with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
+                    for tarinfo in un_zipped:
+                        if tarinfo.name != 'layer.tar':
+                            continue
+                        fileobj = un_zipped.extractfile(tarinfo)
+                        # XXX Work around requests handling of objects that have
+                        # fileno, but error on access in python3:
+                        # https://github.com/psf/requests/pull/5239
+                        fileobj.len = tarinfo.size
+                        try:
+                            cls._upload(
+                                digest, push_rule, fileobj, tarinfo.size,
+                                http_client)
+                        finally:
+                            fileobj.close()
+                        return tarinfo.size
+            else:
+                lfa.open()
+                size = lfa.content.filesize
+                log.info("Upload layer with digest %s and size %s." % (digest, size))
+                wrapper = LibraryFileAliasWrapper(lfa)
+                cls._upload(
+                    digest, push_rule, wrapper, size,
+                    http_client)
+                return size
+        finally:
+            lfa.close()
 
     @classmethod
     def _build_registry_manifest(cls, digests, config, config_json,
-                                 config_sha, preloaded_data, layer_sizes):
+                                 config_sha, preloaded_data, layer_sizes,
+                                 upload_layers_uncompressed):
         """Create an image manifest for the uploading image.
 
         This involves nearly everything as digests and lengths are required.
@@ -196,23 +223,25 @@ class OCIRegistryClient:
             "layers": []}
 
         # Fill in the layer information
-        # The unzipped_sha is the digest for each unziped layer
-        # that the Docker client has at the top level
-        # for each dict element in the Config.json file.
-        # For uploading the tar.gz for each layer we need
+        # For uploading the compressed tar.gz for each layer we need
         # to obtain the digest for the tar.gz from the Config.json
         # file and build the manifest with the zipped digest - named
         # here as gziped_layer_digest
         for unziped_sha in config["rootfs"]["diff_ids"]:
-            gziped_layer_digest = "sha256:{}".format(digests[unziped_sha]["digest"])
+            if upload_layers_uncompressed:
+                digest = unziped_sha
+            else:
+                digest = "sha256:{}".format(digests[unziped_sha]["digest"])
+            log.info("Digest: %s", digest)
             manifest["layers"].append({
                 "mediaType":
                     "application/vnd.docker.image.rootfs.diff.tar.gzip",
                 # This should be the size of the `layer.tar` that we extracted
                 # from the OCI image at build time. It is not the size of the
                 # gzipped version that we have in the librarian.
-                "size": layer_sizes[gziped_layer_digest],
-                "digest": gziped_layer_digest})
+                "size": layer_sizes[digest],
+                "digest": digest})
+        log.info("Manifest: %s", manifest)
         return manifest
 
     @classmethod
@@ -319,6 +348,40 @@ class OCIRegistryClient:
         return {"digest": digest, "size": size}
 
     @classmethod
+    def upload_layers_uncompressed(cls, lfa):
+        # We maintain 2 types of upload in LP:
+
+        # The first (old approach) consists of us extracting the `layer.tar`
+        # from the tar.gz uploaded by the buildd to the librarian
+        # and uploading the contents of the image layer unzipped
+        # The structure we maintained for this is:
+        # directory.tar.gz/layer.tar/layer_contents
+
+        # The second (new approach) consists of uploading the contents
+        # compressed as a tar.gz as we find them in Librarian. The new
+        # structure we maintain here is: layer.tar.gz/layer_contents.
+        # This final gz format has the name of the directory
+        # (directory_name.tar.gz/contents) otherwise we end up
+        # with multiple gzips with the same name "layer.tar.gz"
+
+        # Buildd has been modified to upload to Librarian using the second
+        # approach (compressed tzr.gz layers) but from LP to Registries
+        # we need to distinguish here between the 2 approaches and upload
+        # accordingly as we might have old builds in Librarian that have
+        # not been requested to be uploaded to registries yet.
+
+        lfa.open()
+        with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
+            for tarinfo in un_zipped:
+                if tarinfo.name.decode('utf8') == 'layer.tar':
+                    un_zipped.close()
+                    lfa.cloce()
+                    return True
+        un_zipped.close()
+        lfa.close()
+        return False
+
+    @classmethod
     def _upload_to_push_rule(
             cls, push_rule, build, manifest, digests, preloaded_data,
             tag=None):
@@ -330,13 +393,20 @@ class OCIRegistryClient:
             config = file_data["config_file"]
             #  Upload the layers involved
             layer_sizes = {}
+
+            # determine layer upload type: compressed or uncompressed
+            first_id = config["rootfs"]["diff_ids"][0]
+            lfa = file_data[first_id]
+            upload_layers_uncompressed = cls.upload_layers_uncompressed(lfa)
+
             for diff_id in config["rootfs"]["diff_ids"]:
                 digest = "sha256:{}".format(file_data[diff_id].content.sha256)
                 layer_size = cls._upload_layer(
                     digest,
                     push_rule,
                     file_data[diff_id],
-                    http_client)
+                    http_client,
+                    upload_layers_uncompressed)
                 layer_sizes[digest] = layer_size
             # The config file is required in different forms, so we can
             # calculate the sha, work these out and upload
@@ -354,7 +424,7 @@ class OCIRegistryClient:
             registry_manifest = cls._build_registry_manifest(
                 digests, config, config_json, config_sha,
                 preloaded_data[section["Config"]],
-                layer_sizes)
+                layer_sizes, upload_layers_uncompressed)
 
             # Upload the registry manifest
             manifest = cls._uploadRegistryManifest(
