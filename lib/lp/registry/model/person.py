@@ -144,6 +144,7 @@ from lp.bugs.interfaces.bugtasksearch import (
 from lp.bugs.model.bugtarget import HasBugsBase
 from lp.bugs.model.structuralsubscription import StructuralSubscription
 from lp.code.interfaces.branchcollection import IAllBranches
+from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.model.hasbranches import (
     HasBranchesMixin,
     HasMergeProposalsMixin,
@@ -4095,6 +4096,10 @@ class PersonSet:
         branches_url = self._checkForBranchData(account)
         if branches_url:
             return_data["branches"] = branches_url
+        # Git repositories
+        git_url = self._checkForGitRepositoryData(account)
+        if git_url:
+            return_data["git-repositories"] = git_url
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
@@ -4120,6 +4125,12 @@ class PersonSet:
             "field.sort_by-empty-marker": "1"})
         return req.url
 
+    def _checkForGitRepositoryData(self, account):
+        """Check if git repositories exist for a given person."""
+        repositories = IGitCollection(account).visibleByUser(account)
+        if repositories.is_empty():
+            return None
+        return canonical_url(account, rootsite='code', view_name='+git')
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""
