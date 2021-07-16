@@ -585,6 +585,7 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
             date_created, store_upload_metadata=store_upload_metadata,
             build_request=build_request)
         store.add(snapbuild)
+        store.flush()
         return snapbuild
 
     def getByID(self, build_id):
