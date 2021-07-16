@@ -232,6 +232,8 @@ class SnapBuild(PackageBuildMixin, Storm):
             self.archive.private
         )
 
+    private = is_private
+
     def __repr__(self):
         return "<SnapBuild ~%s/+snap/%s/+build/%d>" % (
             self.snap.owner.name, self.snap.name, self.id)

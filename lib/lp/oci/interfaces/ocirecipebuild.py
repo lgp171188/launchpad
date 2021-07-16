@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for a build record for OCI recipes."""
@@ -47,6 +47,7 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.app.interfaces.launchpad import IPrivacy
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.oci.interfaces.ocirecipe import (
@@ -141,7 +142,7 @@ class OCIRecipeBuildSetRegistryUploadStatus(EnumeratedType):
     """)
 
 
-class IOCIRecipeBuildView(IPackageBuild):
+class IOCIRecipeBuildView(IPackageBuild, IPrivacy):
     """`IOCIRecipeBuild` attributes that require launchpad.View permission."""
 
     build_request = Reference(

@@ -267,9 +267,12 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         # https://code.launchpad.net/
         # ~cjwatson/launchpad/snap-build-record-code/+merge/365356
         return (
+            self.recipe.private or
             self.recipe.owner.private or
             self.recipe.git_repository is None or
             self.recipe.git_repository.private)
+
+    private = is_private
 
     def retry(self):
         """See `IOCIRecipeBuild`."""
