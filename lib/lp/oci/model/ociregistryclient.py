@@ -225,7 +225,7 @@ class OCIRegistryClient:
         # Fill in the layer information
         # For uploading the compressed tar.gz for each layer we need
         # to obtain the digest for the tar.gz from the Config.json
-        # file and build the manifest with the zipped digest - named
+        # and build the manifest with the zipped digest - named
         # here as gziped_layer_digest
         for unziped_sha in config["rootfs"]["diff_ids"]:
             if upload_layers_uncompressed:
@@ -236,9 +236,6 @@ class OCIRegistryClient:
             manifest["layers"].append({
                 "mediaType":
                     "application/vnd.docker.image.rootfs.diff.tar.gzip",
-                # This should be the size of the `layer.tar` that we extracted
-                # from the OCI image at build time. It is not the size of the
-                # gzipped version that we have in the librarian.
                 "size": layer_sizes[digest],
                 "digest": digest})
         log.info("Manifest: %s", manifest)
