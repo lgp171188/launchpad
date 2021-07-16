@@ -1261,6 +1261,19 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
             "person": canonical_url(person)},
             result)
 
+    def test_account_data_bugs(self):
+        person = self.factory.makePerson(email="test@example.com")
+        self.factory.makeBug(owner=person)
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "bugs": Contains(
+                canonical_url(
+                    person, rootsite="bugs"))}))
+        self.assertIn("field.searchtext", result["bugs"])
+
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
 

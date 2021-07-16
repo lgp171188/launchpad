@@ -136,7 +136,10 @@ from lp.blueprints.model.specificationsearch import (
     )
 from lp.blueprints.model.specificationworkitem import SpecificationWorkItem
 from lp.bugs.interfaces.bugtarget import IBugTarget
-from lp.bugs.interfaces.bugtask import IBugTaskSet
+from lp.bugs.interfaces.bugtask import (
+    BugTaskStatus,
+    IBugTaskSet,
+    )
 from lp.bugs.interfaces.bugtasksearch import (
     BugTaskSearchParams,
     get_person_bugtasks_search_params,
@@ -4100,6 +4103,10 @@ class PersonSet:
         git_url = self._checkForGitRepositoryData(account)
         if git_url:
             return_data["git-repositories"] = git_url
+        # bugs
+        bug_url = self._checkForBugs(account)
+        if bug_url:
+            return_data["bugs"] = bug_url
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
@@ -4131,6 +4138,33 @@ class PersonSet:
         if repositories.is_empty():
             return None
         return canonical_url(account, rootsite='code', view_name='+git')
+
+    def _checkForBugs(self, account):
+        """Check if related bug data exists for a given person."""
+        search_params = BugTaskSearchParams(user=account)
+        if account.searchTasks(search_params).is_empty():
+            return None
+        req = PreparedRequest()
+        bugs_url = canonical_url(account, rootsite="bugs")
+        query_arguments = {
+            "field.searchtext": "",
+            "orderby": "-importance",
+            "field.omit_dupes.used": ""
+        }
+        status_list = []
+        for status in BugTaskStatus:
+            if status.token == "INCOMPLETE":
+                # This isn't a UI value anymore, so add the correct variants
+                status_list.append("INCOMPLETE_WITHOUT_RESPONSE")
+                status_list.append("INCOMPLETE_WITH_RESPONSE")
+            elif status.token == "UNKNOWN":
+                # This isn't valid in the UI list
+                continue
+            else:
+                status_list.append(status.token)
+        query_arguments["field.status:list"] = status_list
+        req.prepare_url(bugs_url, query_arguments)
+        return req.url
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""
