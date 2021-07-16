@@ -566,6 +566,7 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             build_farm_job, requester, recipe, distro_arch_series.processor,
             virtualized, date_created, build_request=build_request)
         store.add(ocirecipebuild)
+        store.flush()
         return ocirecipebuild
 
     def preloadBuildsData(self, builds):
