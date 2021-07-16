@@ -144,7 +144,6 @@ class OCIRegistryClient:
         except HTTPError as http_error:
             put_response = http_error.response
         if put_response.status_code != 201:
-            log.info("Upload layer failed with: %s", http_error.response.content)
             raise cls._makeRegistryError(
                 BlobUploadFailed,
                 "Upload of {} for {} failed".format(
@@ -172,8 +171,8 @@ class OCIRegistryClient:
                         if tarinfo.name != 'layer.tar':
                             continue
                         fileobj = un_zipped.extractfile(tarinfo)
-                        # XXX Work around requests handling of objects that have
-                        # fileno, but error on access in python3:
+                        # XXX Work around requests handling of objects that
+                        # have fileno, but error on access in python3:
                         # https://github.com/psf/requests/pull/5239
                         fileobj.len = tarinfo.size
                         try:
@@ -186,7 +185,6 @@ class OCIRegistryClient:
             else:
                 lfa.open()
                 size = lfa.content.filesize
-                log.info("Upload layer with digest %s and size %s." % (digest, size))
                 wrapper = LibraryFileAliasWrapper(lfa)
                 cls._upload(
                     digest, push_rule, wrapper, size,
@@ -399,7 +397,8 @@ class OCIRegistryClient:
                 if upload_layers_uncompressed:
                     digest = diff_id
                 else:
-                    digest = "sha256:{}".format(file_data[diff_id].content.sha256)
+                    digest = "sha256:{}".format(
+                        file_data[diff_id].content.sha256)
                 layer_size = cls._upload_layer(
                     digest,
                     push_rule,
