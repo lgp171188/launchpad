@@ -3895,7 +3895,10 @@ class TestSnapWebservice(TestCaseWithFactory):
             private=True)
         archive_url = api_url(archive)
         snap = self.makeSnap(distroseries=distroseries, processors=[processor])
-        response = self.webservice.named_post(
+        private_webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PRIVATE)
+        private_webservice.default_api_version = "devel"
+        response = private_webservice.named_post(
             snap["self_link"], "requestBuild", archive=archive_url,
             distro_arch_series=distroarchseries_url, pocket="Updates")
         self.assertEqual(201, response.status)

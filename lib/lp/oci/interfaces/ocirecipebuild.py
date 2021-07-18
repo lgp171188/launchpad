@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for a build record for OCI recipes."""
@@ -26,6 +26,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_entry,
     operation_for_version,
+    operation_parameters,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -47,6 +48,7 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.app.interfaces.launchpad import IPrivacy
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.oci.interfaces.ocirecipe import (
@@ -141,7 +143,7 @@ class OCIRecipeBuildSetRegistryUploadStatus(EnumeratedType):
     """)
 
 
-class IOCIRecipeBuildView(IPackageBuild):
+class IOCIRecipeBuildView(IPackageBuild, IPrivacy):
     """`IOCIRecipeBuild` attributes that require launchpad.View permission."""
 
     build_request = Reference(
@@ -295,6 +297,8 @@ class IOCIRecipeBuildEdit(Interface):
         non-scored BuildQueue entry is created for it.
         """
 
+    @export_write_operation()
+    @operation_for_version("devel")
     def cancel():
         """Cancel the build if it is either pending or in progress.
 
@@ -313,6 +317,9 @@ class IOCIRecipeBuildEdit(Interface):
 class IOCIRecipeBuildAdmin(Interface):
     """`IOCIRecipeBuild` attributes that require launchpad.Admin permission."""
 
+    @operation_parameters(score=Int(title=_("Score"), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
     def rescore(score):
         """Change the build's score."""
 

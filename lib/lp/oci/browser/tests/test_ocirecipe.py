@@ -1442,7 +1442,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             information_type=InformationType.PRIVATESECURITY)
         with admin_logged_in():
             build_path = recipe.build_path
-            build = self.makeBuild(
+            self.makeBuild(
                 recipe=recipe, status=BuildStatus.FULLYBUILT,
                 duration=timedelta(minutes=30))
 
@@ -1451,7 +1451,8 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         with person_logged_in(self.person):
             recipe.subscribe(subscriber, self.person)
 
-        main_text = self.getMainText(build.recipe, user=subscriber)
+        with person_logged_in(subscriber):
+            main_text = self.getMainText(recipe, user=subscriber)
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
             recipe-name
             .*

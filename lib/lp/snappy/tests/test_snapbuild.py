@@ -31,7 +31,10 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.interfaces.launchpad import (
+    ILaunchpadCelebrities,
+    IPrivacy,
+    )
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
@@ -112,9 +115,10 @@ class TestSnapBuild(TestCaseWithFactory):
         self.build = self.factory.makeSnapBuild()
 
     def test_implements_interfaces(self):
-        # SnapBuild implements IPackageBuild and ISnapBuild.
+        # SnapBuild implements IPackageBuild, ISnapBuild, and IPrivacy.
         self.assertProvides(self.build, IPackageBuild)
         self.assertProvides(self.build, ISnapBuild)
+        self.assertProvides(self.build, IPrivacy)
 
     def test___repr__(self):
         # SnapBuild has an informative __repr__.
@@ -173,8 +177,9 @@ class TestSnapBuild(TestCaseWithFactory):
         self.assertEqual("main", build.current_component.name)
 
     def test_is_private(self):
-        # A SnapBuild is private iff its Snap and archive are.
+        # A SnapBuild is private iff its Snap or owner or archive are.
         self.assertFalse(self.build.is_private)
+        self.assertFalse(self.build.private)
         private_team = self.factory.makeTeam(
             membership_policy=TeamMembershipPolicy.MODERATED,
             visibility=PersonVisibility.PRIVATE)
@@ -183,10 +188,12 @@ class TestSnapBuild(TestCaseWithFactory):
                 requester=private_team.teamowner, owner=private_team,
                 private=True)
             self.assertTrue(build.is_private)
+            self.assertTrue(build.private)
         private_archive = self.factory.makeArchive(private=True)
         with person_logged_in(private_archive.owner):
             build = self.factory.makeSnapBuild(archive=private_archive)
             self.assertTrue(build.is_private)
+            self.assertTrue(build.private)
 
     def test_can_be_retried(self):
         ok_cases = [

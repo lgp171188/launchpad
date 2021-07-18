@@ -3569,9 +3569,12 @@ class OCIRecipeSubscriptionView(AuthorizationBase):
         return self.obj.recipe.visibleByUser(user.person)
 
 
-class ViewOCIRecipeBuild(AnonymousAuthorization):
-    """Anyone can view an `IOCIRecipe`."""
+class ViewOCIRecipeBuild(DelegatedAuthorization):
+    permission = 'launchpad.View'
     usedfor = IOCIRecipeBuild
+
+    def iter_objects(self):
+        yield self.obj.recipe
 
 
 class EditOCIRecipeBuild(AdminByBuilddAdmin):

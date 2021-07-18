@@ -14,6 +14,7 @@ from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
 import six
+from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -28,6 +29,10 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
+from lp.app.interfaces.launchpad import (
+    ILaunchpadCelebrities,
+    IPrivacy,
+    )
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
@@ -46,6 +51,10 @@ from lp.oci.interfaces.ocirecipebuild import (
 from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.enums import (
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
@@ -57,10 +66,15 @@ from lp.services.macaroons.interfaces import (
     )
 from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
+    ANONYMOUS,
+    api_url,
+    login,
+    logout,
     person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
@@ -68,9 +82,11 @@ from lp.testing import (
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
 from lp.testing.matchers import HasQueryCount
+from lp.testing.pages import webservice_for_person
 from lp.xmlrpc.interfaces import IPrivateApplication
 
 
@@ -113,6 +129,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         with admin_logged_in():
             self.assertProvides(self.build, IOCIRecipeBuild)
             self.assertProvides(self.build, IPackageBuild)
+            self.assertProvides(self.build, IPrivacy)
 
     def test_addFile(self):
         lfa = self.factory.makeLibraryFileAlias()
@@ -258,6 +275,20 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(self.build.virtualized, bq.virtualized)
         self.assertIsNotNone(bq.processor)
         self.assertEqual(bq, self.build.buildqueue_record)
+
+    def test_is_private(self):
+        # An OCIRecipeBuild is private if its recipe or owner is.
+        self.assertFalse(self.build.is_private)
+        self.assertFalse(self.build.private)
+        private_team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
+            visibility=PersonVisibility.PRIVATE)
+        with person_logged_in(private_team.teamowner):
+            build = self.factory.makeOCIRecipeBuild(
+                requester=private_team.teamowner, owner=private_team,
+                information_type=InformationType.USERDATA)
+            self.assertTrue(build.is_private)
+            self.assertTrue(build.private)
 
     def test_updateStatus_triggers_webhooks(self):
         # Updating the status of an OCIRecipeBuild triggers webhooks on the
@@ -671,6 +702,152 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         target = self.factory.makeOCIRecipeBuild(
             recipe=recipe, distro_arch_series=distro_arch_series)
         self.assertFalse(target.virtualized)
+
+
+class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeBuildWebservice, self).setUp()
+        self.setConfig()
+        self.person = self.factory.makePerson()
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PRIVATE)
+        self.webservice.default_api_version = "devel"
+        login(ANONYMOUS)
+
+    def getURL(self, obj):
+        return self.webservice.getAbsoluteUrl(api_url(obj))
+
+    def test_properties(self):
+        # The basic properties of an OCIRecipeBuild are sensible.
+        db_build = self.factory.makeOCIRecipeBuild(requester=self.person)
+        build_url = api_url(db_build)
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        with person_logged_in(self.person):
+            self.assertThat(build, ContainsDict({
+                "requester_link": Equals(self.getURL(self.person)),
+                "recipe_link": Equals(self.getURL(db_build.recipe)),
+                "distro_arch_series_link": Equals(
+                    self.getURL(db_build.distro_arch_series)),
+                "score": Is(None),
+                "can_be_rescored": Is(False),
+                "can_be_cancelled": Is(False),
+                }))
+
+    def test_public(self):
+        # An OCIRecipeBuild with a public recipe and repository is itself
+        # public.
+        db_build = self.factory.makeOCIRecipeBuild()
+        build_url = api_url(db_build)
+        unpriv_webservice = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+        unpriv_webservice.default_api_version = "devel"
+        logout()
+        self.assertEqual(200, self.webservice.get(build_url).status)
+        self.assertEqual(200, unpriv_webservice.get(build_url).status)
+
+    def test_private_recipe(self):
+        # An OCIRecipeBuild with a private recipe is private.
+        db_team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
+            owner=self.person)
+        with person_logged_in(self.person):
+            db_build = self.factory.makeOCIRecipeBuild(
+                requester=self.person, owner=db_team,
+                information_type=InformationType.USERDATA)
+            build_url = api_url(db_build)
+        unpriv_webservice = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+        unpriv_webservice.default_api_version = "devel"
+        logout()
+        response = self.webservice.get(build_url)
+        self.assertEqual(200, response.status)
+        self.assertEqual(401, unpriv_webservice.get(build_url).status)
+
+    def test_private_recipe_owner(self):
+        # An OCIRecipeBuild with a private recipe owner is private.
+        db_team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.MODERATED,
+            owner=self.person, visibility=PersonVisibility.PRIVATE)
+        with person_logged_in(self.person):
+            db_build = self.factory.makeOCIRecipeBuild(
+                requester=self.person, owner=db_team,
+                information_type=InformationType.USERDATA)
+            build_url = api_url(db_build)
+        unpriv_webservice = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+        unpriv_webservice.default_api_version = "devel"
+        logout()
+        response = self.webservice.get(build_url)
+        self.assertEqual(200, response.status)
+        # 404 since we aren't allowed to know that the private team exists.
+        self.assertEqual(404, unpriv_webservice.get(build_url).status)
+
+    def test_cancel(self):
+        # The owner of a build can cancel it.
+        db_build = self.factory.makeOCIRecipeBuild(requester=self.person)
+        db_build.queueBuild()
+        build_url = api_url(db_build)
+        unpriv_webservice = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+        unpriv_webservice.default_api_version = "devel"
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertTrue(build["can_be_cancelled"])
+        response = unpriv_webservice.named_post(build["self_link"], "cancel")
+        self.assertEqual(401, response.status)
+        response = self.webservice.named_post(build["self_link"], "cancel")
+        self.assertEqual(200, response.status)
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertFalse(build["can_be_cancelled"])
+        with person_logged_in(self.person):
+            self.assertEqual(BuildStatus.CANCELLED, db_build.status)
+
+    def test_rescore(self):
+        # Buildd administrators can rescore builds.
+        db_build = self.factory.makeOCIRecipeBuild(requester=self.person)
+        db_build.queueBuild()
+        build_url = api_url(db_build)
+        buildd_admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin])
+        buildd_admin_webservice = webservice_for_person(
+            buildd_admin, permission=OAuthPermission.WRITE_PUBLIC)
+        buildd_admin_webservice.default_api_version = "devel"
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertEqual(2510, build["score"])
+        self.assertTrue(build["can_be_rescored"])
+        response = self.webservice.named_post(
+            build["self_link"], "rescore", score=5000)
+        self.assertEqual(401, response.status)
+        response = buildd_admin_webservice.named_post(
+            build["self_link"], "rescore", score=5000)
+        self.assertEqual(200, response.status)
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertEqual(5000, build["score"])
+
+    def assertCanOpenRedirectedUrl(self, browser, url):
+        browser.open(url)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        urlopen(browser.headers["Location"]).close()
+
+    def test_logs(self):
+        # API clients can fetch the build and upload logs.
+        db_build = self.factory.makeOCIRecipeBuild(requester=self.person)
+        db_build.setLog(self.factory.makeLibraryFileAlias("buildlog.txt.gz"))
+        db_build.storeUploadLog("uploaded")
+        build_url = api_url(db_build)
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
+        self.assertIsNotNone(build["build_log_url"])
+        self.assertCanOpenRedirectedUrl(browser, build["build_log_url"])
+        self.assertIsNotNone(build["upload_log_url"])
+        self.assertCanOpenRedirectedUrl(browser, build["upload_log_url"])
 
 
 class TestOCIRecipeBuildMacaroonIssuer(

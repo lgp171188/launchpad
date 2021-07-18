@@ -50,6 +50,7 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.app.interfaces.launchpad import IPrivacy
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.registry.interfaces.person import IPerson
@@ -130,7 +131,7 @@ class SnapBuildStoreUploadStatus(EnumeratedType):
         """)
 
 
-class ISnapBuildView(IPackageBuild):
+class ISnapBuildView(IPackageBuild, IPrivacy):
     """`ISnapBuild` attributes that require launchpad.View permission."""
 
     build_request = Reference(
