@@ -53,7 +53,6 @@ import datetime
 import errno
 from functools import partial
 import gc
-import logging
 import os
 import select
 import signal
@@ -75,22 +74,17 @@ from fixtures import (
     MonkeyPatch,
     )
 import psycopg2
-import six
 from six.moves.urllib.error import (
     HTTPError,
     URLError,
     )
-from six.moves.urllib.parse import (
-    quote,
-    urlparse,
-    )
+from six.moves.urllib.parse import urlparse
 from six.moves.urllib.request import urlopen
 from talisker.context import Context
 import transaction
 from webob.request import environ_from_url as orig_environ_from_url
 import wsgi_intercept
 from wsgi_intercept import httplib2_intercept
-from zope.app.publication.httpfactory import HTTPPublicationRequestFactory
 from zope.app.wsgi import WSGIPublisherApplication
 from zope.component import (
     getUtility,
@@ -105,7 +99,6 @@ from zope.security.management import (
     endInteraction,
     getSecurityPolicy,
     )
-from zope.server.logger.pythonlogger import PythonLogger
 from zope.testbrowser.browser import HostNotAllowed
 import zope.testbrowser.wsgi
 from zope.testbrowser.wsgi import AuthorizationMiddleware
@@ -150,7 +143,6 @@ from lp.services.timeout import (
 from lp.services.webapp.authorization import LaunchpadPermissiveSecurityPolicy
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.servers import (
-    LaunchpadAccessLogger,
     register_launchpad_request_publication_factories,
     )
 import lp.services.webapp.session
@@ -1566,42 +1558,6 @@ class LaunchpadZopelessLayer(LaunchpadScriptLayer):
         transaction.abort()
 
 
-class MockHTTPTask:
-
-    class MockHTTPRequestParser:
-        headers = None
-        first_line = None
-
-    class MockHTTPServerChannel:
-        # This is not important to us, so we can hardcode it here.
-        addr = ['127.0.0.88', 80]
-
-    request_data = MockHTTPRequestParser()
-    channel = MockHTTPServerChannel()
-
-    def __init__(self, first_line, request, response_status, response_headers):
-        self.request = request
-        # We have no way of knowing when the task started, so we use
-        # the current time here. That shouldn't be a problem since we don't
-        # care about that for our tests anyway.
-        self.start_time = time.time()
-        self.status = response_status
-        # When streaming files (see lib/zope/publisher/httpresults.txt)
-        # the 'Content-Length' header is missing. When it happens we set
-        # 'bytes_written' to an obviously invalid value. This variable is
-        # used for logging purposes, see webapp/servers.py.
-        content_length = response_headers.get('Content-Length')
-        if content_length is not None:
-            self.bytes_written = int(content_length)
-        else:
-            self.bytes_written = -1
-        self.request_data.headers = self.request.headers
-        self.request_data.first_line = first_line
-
-    def getCGIEnvironment(self):
-        return self.request._orig_env
-
-
 class ProfilingMiddleware:
     """Middleware to profile WSGI responses."""
 
@@ -1615,53 +1571,9 @@ class ProfilingMiddleware:
         return self.app(environ, start_response)
 
 
-class AccessLoggingMiddleware:
-    """Middleware to log page hits."""
-
-    def __init__(self, app, access_logger):
-        self.app = app
-        self.access_logger = access_logger
-
-    def __call__(self, environ, start_response):
-        response_status_string = []
-        response_headers_list = []
-
-        def wrap_start_response(status, headers, exc_info=None):
-            response_status_string.append(status)
-            response_headers_list.extend(headers)
-            return start_response(status, headers, exc_info)
-
-        request = HTTPPublicationRequestFactory(None)(
-            environ['wsgi.input'], environ)
-        # Reconstruct the first line of the request.  This isn't completely
-        # accurate, but saving it in such a way that we can get at it from
-        # here is gratuitously annoying.  This is similar to parts of
-        # wsgiref.util.request_uri, but with slightly more lenient quoting.
-        url = quote(
-            six.ensure_str(
-                environ.get('SCRIPT_NAME', '') + environ.get('PATH_INFO', '')),
-            safe='/+')
-        if environ.get('QUERY_STRING'):
-            url += '?' + environ['QUERY_STRING']
-        first_line = '%s %s %s' % (
-            request.method, url, environ['SERVER_PROTOCOL'].rstrip('\n'))
-        entries = []
-        for entry in self.app(environ, wrap_start_response):
-            yield entry
-            entries.append(entry)
-        response_status = int(response_status_string[0].split(' ', 1)[0])
-        # Reversed so that the first of any given header wins.  This isn't
-        # very accurate, but is good enough for test middleware.
-        response_headers = dict(reversed(response_headers_list))
-        self.access_logger.log(MockHTTPTask(
-            first_line, request, response_status, response_headers))
-
-
 class PageTestLayer(LaunchpadFunctionalLayer, BingServiceLayer):
     """Environment for page tests.
     """
-
-    log_location = None
 
     @classmethod
     @profiled
@@ -1670,31 +1582,17 @@ class PageTestLayer(LaunchpadFunctionalLayer, BingServiceLayer):
             PageTestLayer.profiler = Profile()
         else:
             PageTestLayer.profiler = None
-        cls.log_location = tempfile.NamedTemporaryFile().name
-        file_handler = logging.FileHandler(cls.log_location, 'w')
-        file_handler.setFormatter(logging.Formatter())
-        logger = PythonLogger('pagetests-access')
-        logger.logger.addHandler(file_handler)
-        logger.logger.setLevel(logging.INFO)
-        access_logger = LaunchpadAccessLogger(logger)
 
         PageTestLayer._profiling_middleware = partial(
             ProfilingMiddleware, profiler=PageTestLayer.profiler)
-        PageTestLayer._access_logging_middleware = partial(
-            AccessLoggingMiddleware, access_logger=access_logger)
         FunctionalLayer.browser_layer.addMiddlewares(
-            PageTestLayer._profiling_middleware,
-            PageTestLayer._access_logging_middleware)
+            PageTestLayer._profiling_middleware)
 
     @classmethod
     @profiled
     def tearDown(cls):
         FunctionalLayer.browser_layer.removeMiddlewares(
-            PageTestLayer._access_logging_middleware,
             PageTestLayer._profiling_middleware)
-        logger = PythonLogger('pagetests-access')
-        for handler in list(logger.logger.handlers):
-            logger.logger.removeHandler(handler)
         if PageTestLayer.profiler:
             PageTestLayer.profiler.dump_stats(
                 os.environ.get('PROFILE_PAGETESTS_REQUESTS'))
