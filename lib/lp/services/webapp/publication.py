@@ -30,7 +30,6 @@ from storm.exceptions import (
 from storm.zope.interfaces import IZStorm
 from talisker.logs import logging_context
 import transaction
-from zc.zservertracelog.interfaces import ITraceLog
 import zope.app.publication.browser
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import (
@@ -451,8 +450,6 @@ class LaunchpadBrowserPublication(
         pageid = request._orig_env.get('launchpad.pageid')
         if not pageid:
             pageid = self._setPageIDInEnvironment(request, ob)
-        # And spit the pageid out to our tracelog.
-        tracelog(request, 'p', pageid)
 
         # For status URLs, where we really don't want to have any DB access
         # at all, ensure that all flag lookups will stop early.
@@ -526,16 +523,7 @@ class LaunchpadBrowserPublication(
             endtime - starttime
                 for starttime, endtime, id, statement, tb in sql_statements)
 
-        # Log publication duration (in milliseconds), sql statement count,
-        # and sql time (in milliseconds) to the tracelog.  If we have the
-        # publication time spent in this thread, then log that too (in
-        # milliseconds).
-        tracelog_entry = '%d %d %d' % (
-            publication_duration * 1000,
-            len(sql_statements), sql_milliseconds)
-        if publication_thread_duration is not None:
-            tracelog_entry += ' %d' % (publication_thread_duration * 1000)
-        tracelog(request, 't', tracelog_entry)
+        # Log sql statement count and sql time (in milliseconds).
         logging_context.push(
             sql_statements=len(sql_statements), sql_ms=sql_milliseconds)
 
@@ -616,9 +604,6 @@ class LaunchpadBrowserPublication(
         in zopepublication.py because we don't want to call
         _maybePlacefullyAuthenticate.
         """
-        # Log the URL including vhost information to the ZServer tracelog.
-        tracelog(request, 'u', request.getURL())
-
         pageid = self._setPageIDInEnvironment(request, ob)
 
         assert hasattr(request, '_traversal_start'), (
@@ -933,17 +918,3 @@ def is_browser(request):
     return (
         user_agent is not None
         and _browser_re.search(user_agent) is not None)
-
-
-def tracelog(request, prefix, msg):
-    """Emit a message to the ITraceLog, or do nothing if there is none.
-
-    The message will be prefixed by ``prefix`` to make writing parsers
-    easier. ``prefix`` should be unique and contain no spaces, and
-    preferably a single character to save space.
-    """
-    if not config.use_gunicorn:
-        msg = '%s %s' % (prefix, six.ensure_str(msg, 'US-ASCII'))
-        tracelog = ITraceLog(request, None)
-        if tracelog is not None:
-            tracelog.log(msg)

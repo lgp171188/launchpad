@@ -80,20 +80,6 @@ The application root directory is assigned to the root attribute.
     >>> example_path[len(config.root):]
     '/lib/lp/services/...'
 
-The config instance has additional attributes that come from the
-ZConfig.
-
-    >>> config.devmode
-    True
-
-    >>> config.use_gunicorn
-    True
-
-config.servers are only available when using Zope server (deprecated).
-
-    >>> len(config.servers)
-    0
-
 
 Working with test configurations
 --------------------------------
@@ -205,9 +191,6 @@ argument to the constructor.
     >>> dev_config.process_name
     'authserver'
 
-    >>> dev_config.devmode
-    True
-
 # XXX sinzui 2008-03-25 bug=78545: This cannot be tested until the
 # config can be restored when this test is torn down.
 #    >>> true_config = config
@@ -226,17 +209,6 @@ argument to the constructor.
 #    /.../configs/development/launchpad-lazr.conf
 #    >>> config.database.dbname
 #    'launchpad_dev'
-
-#And the staging ZConfig (that is deprecated) is also selected.
-
-#    >>> config.dbname
-#    'launchpad_dev'
-#    >>> config._cache.default
-#    <SectionValue for canonical 'default'>
-#    >>> config._cache.testrunner
-#    Traceback (most recent call last):
-#    ...
-#    AttributeError: 'zope.thread.local' object has no attribute 'testrunner'
 
 #We need to reset the config for the testrunner.
 

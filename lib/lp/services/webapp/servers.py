@@ -26,14 +26,11 @@ from six.moves.urllib.parse import parse_qs
 from talisker.logs import logging_context
 import transaction
 from transaction.interfaces import ISynchronizer
-from zc.zservertracelog.tracelog import Server as ZServerTracelogServer
 from zope.app.publication.httpfactory import HTTPPublicationRequestFactory
 from zope.app.publication.interfaces import IRequestPublicationFactory
 from zope.app.publication.requestpublicationregistry import (
     factoryRegistry as publisher_factory_registry,
     )
-from zope.app.server import wsgi
-from zope.app.wsgi import WSGIPublisherApplication
 from zope.component import getUtility
 from zope.formlib.itemswidgets import MultiDataHelper
 from zope.formlib.widget import SimpleInputWidget
@@ -60,7 +57,6 @@ from zope.security.proxy import (
     removeSecurityProxy,
     )
 from zope.server.http.commonaccesslogger import CommonAccessLogger
-from zope.server.http.wsgihttpserver import PMDBWSGIHTTPServer
 from zope.session.interfaces import ISession
 
 from lp.app import versioninfo
@@ -1137,37 +1133,6 @@ class LaunchpadAccessLogger(CommonAccessLogger):
                 )
            )
 
-# XXX pappacena 2021-01-21: These 4 server definitions can be removed once
-# we are using only gunicorn (and not Zope Server).
-http = wsgi.ServerType(
-    ZServerTracelogServer,  # subclass of WSGIHTTPServer
-    WSGIPublisherApplication,
-    LaunchpadAccessLogger,
-    8080,
-    True)
-
-pmhttp = wsgi.ServerType(
-    PMDBWSGIHTTPServer,
-    WSGIPublisherApplication,
-    LaunchpadAccessLogger,
-    8081,
-    True)
-
-debughttp = wsgi.ServerType(
-    ZServerTracelogServer,  # subclass of WSGIHTTPServer
-    WSGIPublisherApplication,
-    LaunchpadAccessLogger,
-    8082,
-    True,
-    requestFactory=DebugLayerRequestFactory)
-
-privatexmlrpc = wsgi.ServerType(
-    ZServerTracelogServer,  # subclass of WSGIHTTPServer
-    WSGIPublisherApplication,
-    LaunchpadAccessLogger,
-    8080,
-    True)
-
 
 # ---- mainsite
 
@@ -1608,14 +1573,7 @@ def register_launchpad_request_publication_factories():
                               TestOpenIDBrowserPublication))
 
     # We may also have a private XML-RPC server.
-    private_port = None
-    if config.use_gunicorn:
-        private_port = config.vhost.xmlrpc_private.private_port
-    else:
-        for server in config.servers:
-            if server.type == 'PrivateXMLRPC':
-                ip, private_port = server.address
-                break
+    private_port = config.vhost.xmlrpc_private.private_port
 
     if private_port is not None:
         factories.append(XMLRPCRequestPublicationFactory(

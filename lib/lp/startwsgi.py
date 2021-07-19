@@ -8,17 +8,12 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = []
 
-from zope.app.publication.httpfactory import HTTPPublicationRequestFactory
-from zope.app.wsgi import getWSGIApplication
 from zope.event import notify
 import zope.processlifetime
 
-from lp.services.config import config
+from lp.services.webapp.wsgi import get_wsgi_application
 
 
-application = getWSGIApplication(
-    config.zope_config_file,
-    requestFactory=HTTPPublicationRequestFactory
-)
+application = get_wsgi_application()
 
 notify(zope.processlifetime.ProcessStarting())

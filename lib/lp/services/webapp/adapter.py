@@ -441,51 +441,6 @@ def print_queries(queries, file=None):
         file.write("-" * 70 + "\n")
 
 
-# ---- Prevent database access in the main thread of the app server
-
-class StormAccessFromMainThread(Exception):
-    """The main thread must not access the database via Storm.
-
-    Occurs only if the appserver is running. Other code, such as the test
-    suite, can do what it likes.
-    """
-
-_main_thread_id = None
-
-
-def break_main_thread_db_access(*ignored):
-    """Ensure that Storm connections are not made in the main thread.
-
-    When the app server is running, we want ensure we don't use the
-    connection cache from the main thread as this would only be done
-    on process startup and would leave an open connection dangling,
-    wasting resources.
-
-    This method is invoked by an IProcessStartingEvent - it would be
-    easier to do on module load, but the test suite has legitimate uses
-    for using connections from the main thread.
-    """
-    # This check is only applicable to zope.server.  gunicorn uses a
-    # different model with an arbiter parent process.
-    if config.use_gunicorn:
-        return
-
-    # Record the ID of the main thread.
-    global _main_thread_id
-    _main_thread_id = threading.current_thread().ident
-
-    try:
-        getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-    except StormAccessFromMainThread:
-        # LaunchpadDatabase correctly refused to create a connection
-        pass
-    else:
-        # We can't specify the order event handlers are called, so
-        # this means some other code has used storm before this
-        # handler.
-        raise StormAccessFromMainThread()
-
-
 # ---- Storm database classes
 
 isolation_level_map = {
@@ -513,12 +468,6 @@ class LaunchpadDatabase(Postgres):
         return self._dsn_user_re.sub('', self._dsn)
 
     def raw_connect(self):
-        # Prevent database connections from the main thread if
-        # break_main_thread_db_access() has been run.
-        if (_main_thread_id is not None and
-            _main_thread_id == threading.current_thread().ident):
-            raise StormAccessFromMainThread()
-
         try:
             realm, flavor = self._uri.database.split('-')
         except ValueError:

@@ -33,7 +33,11 @@ from zope.component import (
     adapter,
     getGlobalSiteManager,
     )
-from zope.interface import Interface
+from zope.interface import (
+    implementedBy,
+    Interface,
+    )
+from zope.interface.interfaces import ISpecification
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope.security.checker import (
     defineChecker,
@@ -144,16 +148,34 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
 class ZopeAdapterFixture(Fixture):
     """A fixture to register and unregister an adapter."""
 
-    def __init__(self, *args, **kwargs):
-        self._args, self._kwargs = args, kwargs
+    def __init__(self, factory, required=None, provided=None, name=u"",
+                 info=u"", event=True):
+        # We use some private functions from here since we need them to work
+        # out how to query for existing adapters.  We could copy and paste
+        # the code instead, but it doesn't seem worth it.
+        from zope.interface import registry
+
+        self._factory = factory
+        self._required = registry._getAdapterRequired(factory, required)
+        if provided is None:
+            provided = registry._getAdapterProvided(factory)
+        self._provided = provided
+        self._name = name
+        self._info = info
+        self._event = event
 
     def _setUp(self):
         site_manager = getGlobalSiteManager()
+        original = site_manager.adapters.lookup(
+            self._required, self._provided, self._name)
         site_manager.registerAdapter(
-            *self._args, **self._kwargs)
+            self._factory, required=self._required, provided=self._provided,
+            name=self._name, info=self._info, event=self._event)
+        # Equivalent to unregisterAdapter if original is None.
         self.addCleanup(
-            site_manager.unregisterAdapter,
-            *self._args, **self._kwargs)
+            site_manager.registerAdapter,
+            original, required=self._required, provided=self._provided,
+            name=self._name, info=self._info, event=self._event)
 
 
 class ZopeEventHandlerFixture(Fixture):

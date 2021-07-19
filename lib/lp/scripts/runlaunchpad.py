@@ -10,9 +10,7 @@ try:
     from contextlib import ExitStack
 except ImportError:
     from contextlib2 import ExitStack
-from io import StringIO
 import os
-import re
 import signal
 import subprocess
 import sys
@@ -22,7 +20,6 @@ from lazr.config import as_host_port
 from rabbitfixture.server import RabbitServerResources
 from talisker import run_gunicorn
 from testtools.testresult.real import _details_to_str
-from zope.app.server.main import main as zope_main
 
 from lp.services.config import config
 from lp.services.daemons import tachandler
@@ -244,22 +241,11 @@ def process_config_arguments(args):
     """Process the arguments related to the config.
 
     -i  Will set the instance name aka LPCONFIG env.
-
-    If there is no ZConfig file passed, one will add to the argument
-    based on the selected instance.
     """
     if '-i' in args:
         index = args.index('-i')
         config.setInstance(args[index + 1])
         del args[index:index + 2]
-
-    if '-C' not in args:
-        zope_config_file = config.zope_config_file
-        if not os.path.isfile(zope_config_file):
-            raise ValueError(
-                "Cannot find ZConfig file for instance %s: %s" % (
-                    config.instance_name, zope_config_file))
-        args.extend(['-C', zope_config_file])
     return args
 
 
@@ -334,35 +320,7 @@ def start_testapp(argv=list(sys.argv)):
                 pass
 
 
-def gunicornify_zope_config_file():
-    """Creates a new launchpad.config file removing directives related to
-    Zope Server that shouldn't be used when running on gunicorn.
-    """
-    original_filename = config.zope_config_file
-    with open(original_filename) as fd:
-        content = fd.read()
-
-    # Remove unwanted tags.
-    for tag in ['server', 'accesslog', 'logger']:
-        content = re.sub(
-            r"<%s>.*?</%s>" % (tag, tag), "", content, flags=re.S)
-
-    # Remove unwanted contents of required tags.
-    for tag in ['eventlog']:
-        content = re.sub(
-            r"<%s>.*?</%s>" % (tag, tag), "<%s>\n</%s>" % (tag, tag), content,
-            flags=re.S)
-
-    # Remove unwanted single-line directives.
-    for directive in ['interrupt-check-interval']:
-        content = re.sub(r"%s .*" % directive, "", content)
-
-    new_file = StringIO(content)
-    config.zope_config_file = new_file
-
-
 def gunicorn_main():
-    gunicornify_zope_config_file()
     orig_argv = sys.argv
     try:
         sys.argv = [
@@ -397,10 +355,7 @@ def start_launchpad(argv=list(sys.argv), setup=None):
             # Store our process id somewhere
             make_pidfile('launchpad')
             if config.launchpad.launch:
-                if config.use_gunicorn:
-                    gunicorn_main()
-                else:
-                    zope_main(argv)
+                gunicorn_main()
             else:
                 # We just need the foreground process to sit around forever
                 # waiting for the signal to shut everything down.  Normally,

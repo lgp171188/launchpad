@@ -8,7 +8,6 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
-    <include file="servers.zcml" />
     <include file="errorlog.zcml" />
 
     <browser:defaultView name="index.html" />
@@ -354,12 +353,6 @@
         handler="lp.services.webapp.sigdumpmem.setup_sigdumpmem"
         />
 
-    <!-- Confirm that no main thread event handlers use the connection cache -->
-    <subscriber
-        for="zope.processlifetime.IProcessStarting"
-        handler="lp.services.webapp.adapter.break_main_thread_db_access"
-        />
-
     <!-- Set the default timeout function. -->
     <subscriber
         for="zope.processlifetime.IProcessStarting"
@@ -463,4 +456,15 @@
         permission="zope.Public"
         class="lp.services.webapp.haproxy.HAProxyStatusView"
         />
+
+    <!-- Support Talisker's /_status/check URL. -->
+    <browser:page
+        for="lp.services.webapp.interfaces.ILaunchpadRoot"
+        name="_status"
+        permission="zope.Public"
+        class="lp.services.webapp.status.StatusView"
+        />
+    <class class="lp.services.webapp.status.StatusCheckView">
+        <allow attributes="__call__" />
+    </class>
 </configure>

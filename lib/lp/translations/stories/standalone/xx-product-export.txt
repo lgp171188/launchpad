@@ -76,16 +76,16 @@ Only logged-in users get the option to request downloads.
 We can't see its placeholder in non-development mode:
 
     >>> from lp.services.config import config
-    >>> config.devmode
+    >>> config.launchpad.devmode
     True
-    >>> config.devmode = False
+    >>> config.push('devmode_test', '\n[launchpad]\ndevmode: true\n')
     >>> anon_browser.open('http://translations.launchpad.test/evolution/')
     >>> for tag in find_tags_by_class(
     ...     anon_browser.contents, 'menu-link-translationdownload'):
     ...     print(tag.decode_contents())
 
     # Reset global configuration...
-    >>> config.devmode = True
+    >>> _ = config.pop('devmode_test')
 
 Even "hacking the URL" to the download option will fail.
 
