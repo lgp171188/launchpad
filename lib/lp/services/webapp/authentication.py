@@ -150,7 +150,7 @@ class PlacelessAuthUtility:
     def unauthorized(self, id, request):
         """See IAuthentication."""
         a = ILoginPassword(request)
-        # TODO maybe configure the realm from zconfigure.
+        # TODO maybe configure the realm from launchpad-lazr.conf.
         a.needLogin(realm="launchpad")
 
     def getPrincipal(self, id):

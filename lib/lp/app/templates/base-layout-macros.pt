@@ -38,7 +38,7 @@
       revision modules/lp.app.versioninfo/revision | string:unknown;
       icingroot string:/+icing/rev${revision};
       combo_url view/combo_url;
-      devmode modules/lp.services.config/config/devmode;
+      devmode modules/lp.services.config/config/launchpad/devmode;
       yui_version view/yui_version;
       yui_console_debug view/yui_console_debug;"
   >
@@ -109,7 +109,7 @@
 
 <metal:page-javascript define-macro="page-javascript"
   tal:define="
-      devmode modules/lp.services.config/config/devmode;">
+      devmode modules/lp.services.config/config/launchpad/devmode;">
   <tal:comment replace="nothing">
     Load and initialize the common script used by all pages.
   </tal:comment>

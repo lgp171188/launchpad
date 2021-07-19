@@ -189,7 +189,7 @@ class NavigationMenuTabs(LaunchpadView):
         menuapi = MenuAPI(self.context)
         self.links = sorted([
             link for link in menuapi.navigation.values()
-            if (link.enabled or config.devmode)],
+            if (link.enabled or config.launchpad.devmode)],
             key=operator.attrgetter('sort_key'))
         self.title = None
         if len(self.links) > 0:
@@ -227,7 +227,7 @@ class LinkView(LaunchpadView):
 
     def render(self):
         """Render the menu link if it's enabled or we're in dev mode."""
-        if self.context.enabled or config.devmode:
+        if self.context.enabled or config.launchpad.devmode:
             # XXX: Tom Berger 2008-04-16 bug=218706:
             # We strip the result of the template rendering
             # since ZPT seems to always insert a line break

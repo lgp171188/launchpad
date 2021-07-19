@@ -148,7 +148,7 @@ and work with that:
     Cannot upload empty file.
 
 It's possible to limit the maximum size of the attachments by setting
-max_attachment_size in launchpad.conf. The default value for the
+max_attachment_size in launchpad-lazr.conf. The default value for the
 testrunner is 1024, so let's create a file larger than that and try to
 upload it:
 

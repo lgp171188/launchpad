@@ -12,10 +12,6 @@ from doctest import (
     ELLIPSIS,
     NORMALIZE_WHITESPACE,
     )
-try:
-    from importlib import resources
-except ImportError:
-    import importlib_resources as resources
 import os
 import unittest
 
@@ -24,7 +20,6 @@ from lazr.config import ConfigSchema
 from lazr.config.interfaces import ConfigErrors
 import scandir
 import testtools
-import ZConfig
 
 import lp.services.config
 from lp.services.config.fixture import ConfigUseFixture
@@ -33,21 +28,8 @@ from lp.services.config.fixture import ConfigUseFixture
 EXCLUDED_CONFIGS = ['lpnet-template']
 
 # Calculate some landmark paths.
-with resources.path('zope.app.server', 'schema.xml') as schema_file:
-    schema = ZConfig.loadSchema(str(schema_file))
-
 here = os.path.dirname(lp.services.config.__file__)
 lazr_schema_file = os.path.join(here, 'schema-lazr.conf')
-
-
-def make_test(config_file, description):
-    def test_function():
-        root, handlers = ZConfig.loadConfig(schema, config_file)
-    # Hack the config file name into test_function's __name__ so that the test
-    # -vv output is more informative. Unfortunately, FunctionTestCase's
-    # description argument doesn't do what we want.
-    test_function.__name__ = description
-    return unittest.FunctionTestCase(test_function)
 
 
 def make_config_test(config_file, description):
@@ -111,8 +93,6 @@ class TestLaunchpadConfig(testtools.TestCase):
                 [launchpad]
                 config_overlay_dir: ../%s
                 """ % os.path.basename(overlay_dir.path))
-        os.symlink(
-            '../testrunner/launchpad.conf', config_dir.join('launchpad.conf'))
 
         config = lp.services.config.config
 
@@ -160,11 +140,7 @@ def test_suite():
                 del dirnames[:]  # Don't look in subdirectories.
                 continue
             for filename in filenames:
-                if filename == 'launchpad.conf':
-                    config_file = os.path.join(dirpath, filename)
-                    description = os.path.relpath(config_file, config_dir)
-                    suite.addTest(make_test(config_file, description))
-                elif filename.endswith('-lazr.conf'):
+                if filename.endswith('-lazr.conf'):
                     # Test the lazr.config conf files.
                     config_file = os.path.join(dirpath, filename)
                     description = os.path.relpath(config_file, config_dir)

@@ -160,7 +160,7 @@ memory on logging.
 Statement Timeout
 =================
 
-The timeout is set in launchpad.conf file.  By default it is unset,
+The timeout is set in launchpad-lazr.conf.  By default it is unset,
 which corresponds to no timeout:
 
     >>> print(config.database.db_statement_timeout)

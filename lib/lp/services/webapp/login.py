@@ -151,8 +151,8 @@ class BasicLoginPage(BrowserPage):
 
 def register_basiclogin(event):
     # The +basiclogin page should only be enabled for development and tests,
-    # but we can't rely on config.devmode because it's turned off for
-    # AppServerLayer tests, so we (ab)use the config switch for the test
+    # but we can't rely on config.launchpad.devmode because it's turned off
+    # for AppServerLayer tests, so we (ab)use the config switch for the test
     # OpenID provider, which has similar requirements.
     if config.launchpad.enable_test_openid_provider:
         getSiteManager().registerAdapter(

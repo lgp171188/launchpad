@@ -258,7 +258,8 @@ and the objects it is inside of (or in other words, hierarchically below).
     >>> print(canonical_url(town_instance))
     http://launchpad.test/countries/England/+towns/London
 
-We can see that this is the mainsite rooturl as configured in launchpad.conf.
+We can see that this is the mainsite rooturl as configured in
+launchpad-lazr.conf.
 
     >>> from lp.services.webapp.vhosts import allvhosts
     >>> print(allvhosts.configs['mainsite'].rooturl)

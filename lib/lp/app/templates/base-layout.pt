@@ -5,7 +5,7 @@
   tal:define="
     revision modules/lp.app.versioninfo/revision | string:unknown;
     display_revision modules/lp.app.versioninfo/display_revision | string:unknown;
-    devmode modules/lp.services.config/config/devmode;
+    devmode modules/lp.services.config/config/launchpad/devmode;
     rooturl modules/lp.services.webapp.vhosts/allvhosts/configs/mainsite/rooturl;
     is_demo modules/lp.services.config/config/launchpad/is_demo;
     is_lpnet modules/lp.services.config/config/launchpad/is_lpnet;
