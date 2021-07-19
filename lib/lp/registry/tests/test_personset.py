@@ -19,6 +19,7 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.code.tests.helpers import remove_all_sample_data_branches
 from lp.registry.errors import (
     InvalidName,
@@ -1264,6 +1265,21 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
     def test_account_data_bugs(self):
         person = self.factory.makePerson(email="test@example.com")
         self.factory.makeBug(owner=person)
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "bugs": Contains(
+                canonical_url(
+                    person, rootsite="bugs"))}))
+        self.assertIn("field.searchtext", result["bugs"])
+
+    def test_account_data_bugs_fixreleased(self):
+        # Bugs in 'fix released' don't show up in default searches,
+        # ensure that we get them
+        person = self.factory.makePerson(email="test@example.com")
+        self.factory.makeBug(owner=person, status=BugTaskStatus.FIXRELEASED)
         with admin_logged_in():
             result = self.person_set.getUserData(u"test@example.com")
         self.assertThat(result, ContainsDict({

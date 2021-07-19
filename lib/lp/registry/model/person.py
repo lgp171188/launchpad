@@ -29,6 +29,7 @@ __all__ = [
     ]
 
 import base64
+import copy
 from datetime import (
     datetime,
     timedelta,
@@ -137,7 +138,7 @@ from lp.blueprints.model.specificationsearch import (
 from lp.blueprints.model.specificationworkitem import SpecificationWorkItem
 from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.bugs.interfaces.bugtask import (
-    BugTaskStatus,
+    BugTaskStatusSearch,
     IBugTaskSet,
     )
 from lp.bugs.interfaces.bugtasksearch import (
@@ -4141,8 +4142,22 @@ class PersonSet:
 
     def _checkForBugs(self, account):
         """Check if related bug data exists for a given person."""
-        search_params = BugTaskSearchParams(user=account)
-        if account.searchTasks(search_params).is_empty():
+        params = BugTaskSearchParams(user=account)
+
+        # Build related searches, based on BugTaskSearchListingView
+        subscriber_params = copy.copy(params)
+        subscriber_params.subscriber = account
+        assignee_params = copy.copy(params)
+        assignee_params.assignee = account
+        owner_params = copy.copy(params)
+        owner_params.owner = account
+        owner_params.bug_reporter = account
+        commenter_params = copy.copy(params)
+        commenter_params.bug_commenter = account
+
+        results = account.searchTasks(
+            assignee_params, subscriber_params, owner_params, commenter_params)
+        if results.is_empty():
             return None
         req = PreparedRequest()
         bugs_url = canonical_url(account, rootsite="bugs")
@@ -4152,16 +4167,8 @@ class PersonSet:
             "field.omit_dupes.used": ""
         }
         status_list = []
-        for status in BugTaskStatus:
-            if status.token == "INCOMPLETE":
-                # This isn't a UI value anymore, so add the correct variants
-                status_list.append("INCOMPLETE_WITHOUT_RESPONSE")
-                status_list.append("INCOMPLETE_WITH_RESPONSE")
-            elif status.token == "UNKNOWN":
-                # This isn't valid in the UI list
-                continue
-            else:
-                status_list.append(status.token)
+        for status in BugTaskStatusSearch:
+            status_list.append(status.token)
         query_arguments["field.status:list"] = status_list
         req.prepare_url(bugs_url, query_arguments)
         return req.url
