@@ -244,6 +244,7 @@ attempting to process incoming mail.
     ...     pass
     >>> @implementer(IMailHandler)
     ... class OopsHandler:
+    ...     allow_unknown_users = True
     ...     def process(self, mail, to_addr, filealias):
     ...         raise TestOopsException()
     >>> mail_handlers.add('oops.com', OopsHandler())
@@ -291,6 +292,58 @@ to the user, citing the OOPS ID, with the original message attached.
     message/rfc822
     >>> print(original_message.get_payload(0)['From'])
     Foo Bar <foo.bar@canonical.com>
+    >>> print(original_message.get_payload(0)['To'])
+    launchpad@oops.com
+    >>> print(original_message.get_payload(0)['X-Launchpad-Original-To'])
+    launchpad@oops.com
+    >>> print(original_message.get_payload(0)['Subject'])
+    doesn't matter
+
+OOPS notifications work even if the From: address isn't properly MIME-encoded.
+
+    >>> from lp.services.compat import message_from_bytes
+    >>> msg = message_from_bytes(
+    ... u"""From: \u05D1 <bet@canonical.com>
+    ... To: launchpad@oops.com
+    ... X-Launchpad-Original-To: launchpad@oops.com
+    ... Subject: doesn't matter
+    ...
+    ... doesn't matter
+    ... """.encode('UTF-8'))
+    >>> msgid = sendmail(msg, ['edit@malone-domain'])
+    >>> handleMailForTest()
+    ERROR:process-mail:An exception was raised inside the handler:
+    ...
+    TestOopsException
+
+    >>> from email.header import (
+    ...     decode_header,
+    ...     make_header,
+    ...     )
+    >>> from email.utils import parseaddr
+    >>> notification = pop_notifications()[-1]
+    >>> print(notification.get_content_type())
+    multipart/mixed
+    >>> print(pretty(six.ensure_text(decode_header(notification['To'])[0][0])))
+    '\u05d1 <bet@canonical.com>'
+    >>> error_message, original_message = notification.get_payload()
+    >>> print(error_message.get_content_type())
+    text/plain
+    >>> print(error_message.get_payload(decode=True).decode())
+    An error occurred while processing a mail you sent to Launchpad's email
+    interface.
+    ...
+    Sorry, something went wrong when Launchpad tried processing your mail.
+    We've recorded what happened, and we'll fix it as soon as possible.
+    Apologies for the inconvenience.
+    <BLANKLINE>
+    If this is blocking your work, please file a question at
+    https://answers.launchpad.net/launchpad/+addquestion
+    and include the error ID OOPS-... in the descr...
+    >>> print(original_message.get_content_type())
+    message/rfc822
+    >>> print(parseaddr(str(original_message.get_payload(0)['From']))[1])
+    bet@canonical.com
     >>> print(original_message.get_payload(0)['To'])
     launchpad@oops.com
     >>> print(original_message.get_payload(0)['X-Launchpad-Original-To'])

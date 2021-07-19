@@ -12,13 +12,13 @@ __all__ = [
 
 
 from difflib import unified_diff
-from email import message_from_string
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import re
 
 from lp.bugs.mail.bugnotificationbuilder import get_bugmail_error_address
+from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.mail.helpers import get_email_template
 from lp.services.mail.mailwrapper import MailWrapper
@@ -71,10 +71,10 @@ def send_process_error_notification(to_address, subject, error_msg,
     msg['From'] = get_bugmail_error_address()
     msg['Subject'] = subject
     msg.attach(error_part)
-    original_msg_str = str(original_msg)
+    original_msg_str = bytes(original_msg)
     if len(original_msg_str) > max_return_size:
         truncated_msg_str = original_msg_str[:max_return_size]
-        original_msg = message_from_string(truncated_msg_str)
+        original_msg = message_from_bytes(truncated_msg_str)
     msg.attach(MIMEMessage(original_msg))
     sendmail(msg)
 
