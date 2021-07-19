@@ -417,9 +417,6 @@ listens on a particular port.
 
 Find the port the Private XMLRPC service is listening on.
 
-    >>> config.use_gunicorn
-    True
-
     >>> private_port = config.vhost.xmlrpc_private.private_port
     >>> print_request_and_publication(
     ...     'xmlrpc-private.launchpad.test', method='POST',

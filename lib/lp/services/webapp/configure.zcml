@@ -8,7 +8,6 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
-    <include file="servers.zcml" />
     <include file="errorlog.zcml" />
 
     <browser:defaultView name="index.html" />
@@ -352,12 +351,6 @@
     <subscriber
         for="zope.processlifetime.IProcessStarting"
         handler="lp.services.webapp.sigdumpmem.setup_sigdumpmem"
-        />
-
-    <!-- Confirm that no main thread event handlers use the connection cache -->
-    <subscriber
-        for="zope.processlifetime.IProcessStarting"
-        handler="lp.services.webapp.adapter.break_main_thread_db_access"
         />
 
     <!-- Set the default timeout function. -->

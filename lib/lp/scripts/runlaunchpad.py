@@ -20,7 +20,6 @@ from lazr.config import as_host_port
 from rabbitfixture.server import RabbitServerResources
 from talisker import run_gunicorn
 from testtools.testresult.real import _details_to_str
-from zope.app.server.main import main as zope_main
 
 from lp.services.config import config
 from lp.services.daemons import tachandler
@@ -242,22 +241,11 @@ def process_config_arguments(args):
     """Process the arguments related to the config.
 
     -i  Will set the instance name aka LPCONFIG env.
-
-    If there is no ZConfig file passed, one will add to the argument
-    based on the selected instance.
     """
     if '-i' in args:
         index = args.index('-i')
         config.setInstance(args[index + 1])
         del args[index:index + 2]
-
-    if '-C' not in args:
-        zope_config_file = config.zope_config_file
-        if not os.path.isfile(zope_config_file):
-            raise ValueError(
-                "Cannot find ZConfig file for instance %s: %s" % (
-                    config.instance_name, zope_config_file))
-        args.extend(['-C', zope_config_file])
     return args
 
 
@@ -367,10 +355,7 @@ def start_launchpad(argv=list(sys.argv), setup=None):
             # Store our process id somewhere
             make_pidfile('launchpad')
             if config.launchpad.launch:
-                if config.use_gunicorn:
-                    gunicorn_main()
-                else:
-                    zope_main(argv)
+                gunicorn_main()
             else:
                 # We just need the foreground process to sit around forever
                 # waiting for the signal to shut everything down.  Normally,

@@ -14,6 +14,5 @@
     <includeOverrides file="+config-overrides.zcml" />
 
     <include file="summarizerequests.zcml" />
-    <include package="zc.zservertracelog" />
 
 </configure>

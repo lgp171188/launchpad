@@ -2,7 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 '''
-Configuration information pulled from launchpad.conf.
+Configuration information pulled from launchpad-lazr.conf.
 
 The configuration section used is specified using the LPCONFIG
 environment variable, and defaults to 'development'
@@ -14,10 +14,6 @@ __metaclass__ = type
 
 
 import glob
-try:
-    from importlib import resources
-except ImportError:
-    import importlib_resources as resources
 import logging
 import os
 import random
@@ -30,7 +26,6 @@ from six.moves.urllib.parse import (
     urlparse,
     urlunparse,
     )
-import ZConfig
 
 from lp.services.osutils import open_for_writing
 from lp.services.propertycache import (
@@ -158,11 +153,6 @@ class LaunchpadConfig:
         """Return the directory containing this instance configuration."""
         return find_config_dir(self._instance_name)
 
-    @property
-    def use_gunicorn(self):
-        """When running launchpad server, shall we use gunicorn?"""
-        return self.launchpad.use_gunicorn
-
     def setInstance(self, instance_name):
         """Set the instance name where the conf files are stored.
 
@@ -180,8 +170,6 @@ class LaunchpadConfig:
     def _invalidateConfig(self):
         """Invalidate the config, causing the config to be regenerated."""
         self._config = None
-        self._devmode = None
-        self._servers = None
 
     def reloadConfig(self):
         """Reload the config."""
@@ -268,51 +256,13 @@ class LaunchpadConfig:
     def zope_config_file(self, value):
         self._zope_config_file = value
 
-    def _getZConfig(self):
-        """Modify the config, adding automatically generated settings
-
-        XXX pappacena 2021-01-21 This method should probably be deprecated
-        once we move to gunicorn since we read zope's configs here mostly to
-        get "devmode" directive, which is moved to launchpad-lazr.conf when
-        running launchpad server on gunicorn.
-        """
-        with resources.path('zope.app.server', 'schema.xml') as schemafile:
-            schema = ZConfig.loadSchema(str(schemafile))
-        if isinstance(self.zope_config_file, six.string_types):
-            root_options, handlers = ZConfig.loadConfig(
-                schema, self.zope_config_file)
-        else:
-            root_options, handlers = ZConfig.loadConfigFile(
-                schema, self.zope_config_file)
-        self._devmode = root_options.devmode
-        self._servers = root_options.servers
-
     @property
     def devmode(self):
-        """Devmode from the zope.app.server.main config.
+        """Devmode from launchpad-lazr.conf.
 
         Copied here for ease of access.
         """
-        if self.use_gunicorn:
-            return self.launchpad.devmode
-        # XXX pappacena 2021-01-21: Read only from launchpad-lazr.conf file
-        # once we will be running on gunicorn.
-        if self._devmode is None:
-            self._getZConfig()
-        return self._devmode
-
-    @devmode.setter
-    def devmode(self, value):
-        self._devmode = value
-
-    @property
-    def servers(self):
-        """The defined servers."""
-        if self.use_gunicorn:
-            return []
-        if self._servers is None:
-            self._getZConfig()
-        return self._servers
+        return self.launchpad.devmode
 
     def generate_overrides(self):
         """Ensure correct config.zcml overrides will be called.
