@@ -29,6 +29,7 @@ __all__ = [
     ]
 
 import base64
+import copy
 from datetime import (
     datetime,
     timedelta,
@@ -136,7 +137,10 @@ from lp.blueprints.model.specificationsearch import (
     )
 from lp.blueprints.model.specificationworkitem import SpecificationWorkItem
 from lp.bugs.interfaces.bugtarget import IBugTarget
-from lp.bugs.interfaces.bugtask import IBugTaskSet
+from lp.bugs.interfaces.bugtask import (
+    BugTaskStatusSearch,
+    IBugTaskSet,
+    )
 from lp.bugs.interfaces.bugtasksearch import (
     BugTaskSearchParams,
     get_person_bugtasks_search_params,
@@ -4100,6 +4104,10 @@ class PersonSet:
         git_url = self._checkForGitRepositoryData(account)
         if git_url:
             return_data["git-repositories"] = git_url
+        # bugs
+        bug_url = self._checkForBugs(account)
+        if bug_url:
+            return_data["bugs"] = bug_url
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
@@ -4131,6 +4139,37 @@ class PersonSet:
         if repositories.is_empty():
             return None
         return canonical_url(account, rootsite='code', view_name='+git')
+
+    def _checkForBugs(self, account):
+        """Check if related bug data exists for a given person."""
+        params = BugTaskSearchParams(user=account)
+
+        # Build related searches, based on BugTaskSearchListingView
+        subscriber_params = copy.copy(params)
+        subscriber_params.subscriber = account
+        assignee_params = copy.copy(params)
+        assignee_params.assignee = account
+        owner_params = copy.copy(params)
+        owner_params.owner = account
+        owner_params.bug_reporter = account
+        commenter_params = copy.copy(params)
+        commenter_params.bug_commenter = account
+
+        results = account.searchTasks(
+            assignee_params, subscriber_params, owner_params, commenter_params)
+        if results.is_empty():
+            return None
+        req = PreparedRequest()
+        bugs_url = canonical_url(account, rootsite="bugs")
+        query_arguments = {
+            "field.searchtext": "",
+            "orderby": "-importance",
+            "field.omit_dupes.used": ""
+        }
+        status_list = [status.token for status in BugTaskStatusSearch]
+        query_arguments["field.status:list"] = status_list
+        req.prepare_url(bugs_url, query_arguments)
+        return req.url
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""
