@@ -338,18 +338,6 @@
     <!-- Signal handlers -->
     <subscriber
         for="zope.processlifetime.IProcessStarting"
-        handler="lp.services.webapp.sighup.setup_sighup"
-        />
-    <subscriber
-        for="zope.processlifetime.IProcessStarting"
-        handler="lp.services.webapp.sigusr1.setup_sigusr1"
-        />
-    <subscriber
-        for="zope.processlifetime.IProcessStarting"
-        handler="lp.services.webapp.sigusr2.setup_sigusr2"
-        />
-    <subscriber
-        for="zope.processlifetime.IProcessStarting"
         handler="lp.services.webapp.sigdumpmem.setup_sigdumpmem"
         />
 
@@ -357,16 +345,6 @@
     <subscriber
         for="zope.processlifetime.IProcessStarting"
         handler="lp.services.webapp.adapter.set_launchpad_default_timeout"
-        />
-
-    <subscriber
-        for="zope.traversing.interfaces.IBeforeTraverseEvent"
-        handler="lp.services.webapp.sigusr1.before_traverse"
-        />
-
-    <subscriber
-        for="zope.publisher.interfaces.IEndRequestEvent"
-        handler="lp.services.webapp.sigusr1.end_request"
         />
 
     <class class="lp.services.webapp.publication.LoginRoot">
