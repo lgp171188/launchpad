@@ -252,6 +252,7 @@ setup(
         'WSGIProxy2',
         'z3c.ptcompat',
         'zc.zservertracelog',
+        'zope.app.appsetup',
         'zope.app.http',
         'zope.app.publication',
         'zope.app.publisher',

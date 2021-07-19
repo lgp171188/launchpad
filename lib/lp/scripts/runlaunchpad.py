@@ -10,9 +10,7 @@ try:
     from contextlib import ExitStack
 except ImportError:
     from contextlib2 import ExitStack
-from io import StringIO
 import os
-import re
 import signal
 import subprocess
 import sys
@@ -334,35 +332,7 @@ def start_testapp(argv=list(sys.argv)):
                 pass
 
 
-def gunicornify_zope_config_file():
-    """Creates a new launchpad.config file removing directives related to
-    Zope Server that shouldn't be used when running on gunicorn.
-    """
-    original_filename = config.zope_config_file
-    with open(original_filename) as fd:
-        content = fd.read()
-
-    # Remove unwanted tags.
-    for tag in ['server', 'accesslog', 'logger']:
-        content = re.sub(
-            r"<%s>.*?</%s>" % (tag, tag), "", content, flags=re.S)
-
-    # Remove unwanted contents of required tags.
-    for tag in ['eventlog']:
-        content = re.sub(
-            r"<%s>.*?</%s>" % (tag, tag), "<%s>\n</%s>" % (tag, tag), content,
-            flags=re.S)
-
-    # Remove unwanted single-line directives.
-    for directive in ['interrupt-check-interval']:
-        content = re.sub(r"%s .*" % directive, "", content)
-
-    new_file = StringIO(content)
-    config.zope_config_file = new_file
-
-
 def gunicorn_main():
-    gunicornify_zope_config_file()
     orig_argv = sys.argv
     try:
         sys.argv = [
