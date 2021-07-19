@@ -14,7 +14,6 @@ __metaclass__ = type
 
 
 import glob
-import logging
 import os
 import random
 import sys
@@ -22,10 +21,6 @@ import sys
 from lazr.config import ImplicitTypeSchema
 from lazr.config.interfaces import ConfigErrors
 import six
-from six.moves.urllib.parse import (
-    urlparse,
-    urlunparse,
-    )
 
 from lp.services.osutils import open_for_writing
 from lp.services.propertycache import (
@@ -125,12 +120,6 @@ class LaunchpadConfig:
             self._process_name = process_name
         self._instance_name = instance_name
         self.root = TREE_ROOT
-        # Allow overriding Zope's config file.
-        # XXX pappacena 2021-01-21: We allow overriding this at runtime so
-        # we can do a painless transition to gunicorn. Once we are fully
-        # running gunicorn instead of zope server, this shouldn't be
-        # necessary anymore.
-        self._zope_config_file = None
 
     def _make_process_name(self):
         if getattr(sys, 'argv', None) is None:
@@ -245,25 +234,6 @@ class LaunchpadConfig:
                 text = f.read()
             self._config.push(path, text)
 
-    @property
-    def zope_config_file(self):
-        """Return the path to the ZConfig file for this instance."""
-        if self._zope_config_file is not None:
-            return self._zope_config_file
-        return os.path.join(self.config_dir, 'launchpad.conf')
-
-    @zope_config_file.setter
-    def zope_config_file(self, value):
-        self._zope_config_file = value
-
-    @property
-    def devmode(self):
-        """Devmode from launchpad-lazr.conf.
-
-        Copied here for ease of access.
-        """
-        return self.launchpad.devmode
-
     def generate_overrides(self):
         """Ensure correct config.zcml overrides will be called.
 
@@ -321,115 +291,6 @@ class LaunchpadConfig:
 
 
 config = LaunchpadConfig()
-
-
-def url(value):
-    '''ZConfig validator for urls
-
-    We enforce the use of protocol.
-
-    >>> url('http://localhost:8086')
-    'http://localhost:8086'
-    >>> url('im-a-file-but-not-allowed')
-    Traceback (most recent call last):
-        [...]
-    ValueError: No protocol in URL
-    '''
-    bits = urlparse(value)
-    if not bits[0]:
-        raise ValueError('No protocol in URL')
-    value = urlunparse(bits)
-    return value
-
-
-def urlbase(value):
-    """ZConfig validator for url bases
-
-    url bases are valid urls that can be appended to using urlparse.urljoin.
-
-    url bases always end with '/'
-
-    >>> urlbase('http://localhost:8086')
-    'http://localhost:8086/'
-    >>> urlbase('http://localhost:8086/')
-    'http://localhost:8086/'
-
-    URL fragments, queries and parameters are not allowed
-
-    >>> urlbase('http://localhost:8086/#foo')
-    Traceback (most recent call last):
-        [...]
-    ValueError: URL fragments not allowed
-    >>> urlbase('http://localhost:8086/?foo')
-    Traceback (most recent call last):
-        [...]
-    ValueError: URL query not allowed
-    >>> urlbase('http://localhost:8086/;blah=64')
-    Traceback (most recent call last):
-        [...]
-    ValueError: URL parameters not allowed
-
-    We insist on the protocol being specified, to avoid dealing with defaults
-    >>> urlbase('foo')
-    Traceback (most recent call last):
-        [...]
-    ValueError: No protocol in URL
-
-    File URLs specify paths to directories
-
-    >>> urlbase('file://bork/bork/bork')
-    'file://bork/bork/bork/'
-    """
-    value = url(value)
-    scheme, location, path, parameters, query, fragment = urlparse(value)
-    if parameters:
-        raise ValueError('URL parameters not allowed')
-    if query:
-        raise ValueError('URL query not allowed')
-    if fragment:
-        raise ValueError('URL fragments not allowed')
-    if not value.endswith('/'):
-        value = value + '/'
-    return value
-
-
-def commalist(value):
-    """ZConfig validator for a comma separated list"""
-    return [v.strip() for v in value.split(',')]
-
-
-def loglevel(value):
-    """ZConfig validator for log levels.
-
-    Input is a string ('info','debug','warning','error','fatal' etc.
-    as per logging module), and output is the integer value.
-
-    >>> import logging
-    >>> loglevel("info") == logging.INFO
-    True
-    >>> loglevel("FATAL") == logging.FATAL
-    True
-    >>> loglevel("foo")
-    Traceback (most recent call last):
-    ...
-    ValueError: ...
-    """
-    value = value.upper().strip()
-    if value == 'DEBUG':
-        return logging.DEBUG
-    elif value == 'INFO':
-        return logging.INFO
-    elif value == 'WARNING' or value == 'WARN':
-        return logging.WARNING
-    elif value == 'ERROR':
-        return logging.ERROR
-    elif value == 'FATAL':
-        return logging.FATAL
-    else:
-        raise ValueError(
-                "Invalid log level %s. "
-                "Should be DEBUG, CRITICAL, ERROR, FATAL, INFO, WARNING "
-                "as per logging module." % value)
 
 
 class DatabaseConfigOverrides(object):

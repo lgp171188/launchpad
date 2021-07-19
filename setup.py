@@ -255,7 +255,6 @@ setup(
         'zope.app.http',
         'zope.app.publication',
         'zope.app.publisher',
-        'zope.app.server',
         'zope.app.wsgi[testlayer]',
         'zope.authentication',
         'zope.browser',

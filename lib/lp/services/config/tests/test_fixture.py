@@ -35,7 +35,6 @@ class TestConfigFixture(TestCase):
     def test_copies_and_derives(self):
         fixture = ConfigFixture('testtestconfig', 'testrunner')
         to_copy = [
-            'launchpad.conf',
             'test-process-lazr.conf',
             ]
         fixture.setUp()

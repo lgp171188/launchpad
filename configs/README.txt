@@ -23,10 +23,6 @@ make sure you inform the people in charge of those systems. You may wish
 to do this if you are adding a new required config option to
 launchpad-lazr.conf.
 
-The old ZConfig-based launchpad.conf files are still used to define
-servers and log files. These will be replaced when lazr.config is
-bootstrapped into the Zope startup process.
-
 
 == LaunchpadConfig ==
 
