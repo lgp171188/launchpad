@@ -4166,9 +4166,7 @@ class PersonSet:
             "orderby": "-importance",
             "field.omit_dupes.used": ""
         }
-        status_list = []
-        for status in BugTaskStatusSearch:
-            status_list.append(status.token)
+        status_list = [status.token for status in BugTaskStatusSearch]
         query_arguments["field.status:list"] = status_list
         req.prepare_url(bugs_url, query_arguments)
         return req.url
