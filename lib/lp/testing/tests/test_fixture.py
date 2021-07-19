@@ -95,6 +95,33 @@ class TestZopeAdapterFixture(TestCase):
         # The adapter is no longer registered.
         self.assertIs(None, queryAdapter(context, IBar))
 
+    def test_restores_previous_adapter(self):
+        # If there was a previous adapter, ZopeAdapterFixture restores it on
+        # cleanup.
+        @adapter(IFoo)
+        @implementer(IBar)
+        class OriginalFooToBar:
+
+            def __init__(self, foo):
+                self.foo = foo
+
+        sm = getGlobalSiteManager()
+        sm.registerAdapter(OriginalFooToBar, (IFoo,), IBar)
+        try:
+            context = Foo()
+            bar_adapter = queryAdapter(context, IBar)
+            self.assertIsNot(None, bar_adapter)
+            self.assertIsInstance(bar_adapter, OriginalFooToBar)
+            with ZopeAdapterFixture(FooToBar):
+                bar_adapter = queryAdapter(context, IBar)
+                self.assertIsNot(None, bar_adapter)
+                self.assertIsInstance(bar_adapter, FooToBar)
+            bar_adapter = queryAdapter(context, IBar)
+            self.assertIsNot(None, bar_adapter)
+            self.assertIsInstance(bar_adapter, OriginalFooToBar)
+        finally:
+            sm.unregisterAdapter(OriginalFooToBar, (IFoo,), IBar)
+
 
 @implementer(IMailDelivery)
 class DummyMailer(object):
