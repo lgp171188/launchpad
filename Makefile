@@ -91,7 +91,6 @@ PIP_BIN = \
     bin/sprite-util \
     bin/start_librarian \
     bin/test \
-    bin/tracereport \
     bin/twistd \
     bin/watch_jsbuild \
     bin/with-xvfb

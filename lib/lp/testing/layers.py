@@ -1835,9 +1835,7 @@ class LayerProcessController:
     def _runAppServer(cls, run_name):
         """Start the app server using runlaunchpad.py"""
         _config = cls.appserver_config
-        cmd = [
-            os.path.join(_config.root, 'bin', run_name),
-            '-C', 'configs/%s/launchpad.conf' % _config.instance_name]
+        cmd = [os.path.join(_config.root, 'bin', run_name)]
         environ = dict(os.environ)
         environ['LPCONFIG'] = _config.instance_name
         cls.appserver = subprocess.Popen(
