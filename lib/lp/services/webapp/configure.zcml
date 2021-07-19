@@ -463,4 +463,15 @@
         permission="zope.Public"
         class="lp.services.webapp.haproxy.HAProxyStatusView"
         />
+
+    <!-- Support Talisker's /_status/check URL. -->
+    <browser:page
+        for="lp.services.webapp.interfaces.ILaunchpadRoot"
+        name="_status"
+        permission="zope.Public"
+        class="lp.services.webapp.status.StatusView"
+        />
+    <class class="lp.services.webapp.status.StatusCheckView">
+        <allow attributes="__call__" />
+    </class>
 </configure>
