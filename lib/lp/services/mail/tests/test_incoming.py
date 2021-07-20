@@ -8,8 +8,10 @@ from email.header import (
     make_header,
     )
 from email.mime.multipart import MIMEMultipart
+from email.utils import parseaddr
 import logging
 import os
+from textwrap import dedent
 import unittest
 
 import six
@@ -276,6 +278,31 @@ class IncomingTestCase(TestCaseWithFactory):
             u'm\xeda@eg.dom',
             six.text_type(make_header(decode_header(
                 test_handler.handledMails[0]['From']))))
+
+    def test_invalid_from_address_no_mime_encoding(self):
+        # An invalid From: header with non-MIME-encoded non-ASCII characters
+        # is handled.
+        test_handler = FakeHandler()
+        mail_handlers.add('lp.dev', test_handler)
+        raw_message = dedent(u"""\
+            Content-Type: text/plain; charset="UTF-8"
+            MIME-Version: 1.0
+            Message-Id: <message-id>
+            To: test@lp.dev
+            From: \u05D0 <alef@eg.dom>
+            Subject: subject
+
+            body
+            """).encode('UTF-8')
+        TestMailer().send(
+            u'\u05D0 <alef@eg.dom>'.encode('UTF-8'), 'test@lp.dev',
+            raw_message)
+        handleMail()
+        self.assertEqual([], self.oopses)
+        self.assertEqual(1, len(test_handler.handledMails))
+        self.assertEqual(
+            'alef@eg.dom',
+            parseaddr(str(test_handler.handledMails[0]['From']))[1])
 
     def test_invalid_cc_address_unicode(self):
         # Invalid Cc: header such as no "@" is handled.

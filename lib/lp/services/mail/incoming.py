@@ -186,7 +186,7 @@ def _verifyDkimOrigin(signed_message):
     for origin in ['From', 'Sender']:
         if signed_message[origin] is None:
             continue
-        name, addr = parseaddr(signed_message[origin])
+        addr = parseaddr(str(signed_message[origin]))[1]
         try:
             origin_domain = addr.split('@')[1]
         except IndexError:
@@ -265,7 +265,7 @@ def authenticateEmail(mail, signature_timestamp_checker=None):
 
     principal, dkim_trusted_address = _getPrincipalByDkim(mail)
     if dkim_trusted_address is None:
-        from_addr = parseaddr(mail['From'])[1]
+        from_addr = parseaddr(str(mail['From']))[1]
         try:
             principal = authutil.getPrincipalByLogin(from_addr)
         except (TypeError, UnicodeDecodeError):
@@ -310,7 +310,7 @@ def _gpgAuthenticateEmail(mail, principal, person,
     """
     log = logging.getLogger('process-mail')
     signature = mail.signature
-    email_addr = parseaddr(mail['From'])[1]
+    email_addr = parseaddr(str(mail['From']))[1]
     if signature is None:
         # Mark the principal so that application code can check that the
         # user was weakly authenticated.
