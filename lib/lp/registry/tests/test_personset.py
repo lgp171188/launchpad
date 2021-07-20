@@ -1292,7 +1292,7 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
 
     def test_account_data_blueprints(self):
         person = self.factory.makePerson(email="test@example.com")
-        self.factory.makeBlueprint(owner=person)
+        self.factory.makeSpecification(owner=person)
         with admin_logged_in():
             result = self.person_set.getUserData(u"test@example.com")
         self.assertDictEqual({
