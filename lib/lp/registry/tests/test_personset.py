@@ -1290,6 +1290,17 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
                     person, rootsite="bugs"))}))
         self.assertIn("field.searchtext", result["bugs"])
 
+    def test_account_data_blueprints(self):
+        person = self.factory.makePerson(email="test@example.com")
+        self.factory.makeSpecification(owner=person)
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertDictEqual({
+            "status": "account with data",
+            "person": canonical_url(person),
+            "blueprints": canonical_url(person, rootsite="blueprints")
+            }, result)
+
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
 

@@ -170,12 +170,10 @@ WSGIProxy2==0.4.6
 wsgiref==0.1.2
 z3c.pt==3.2.0
 z3c.ptcompat==2.2.0
-zope.app.applicationcontrol==4.0.0
 zope.app.appsetup==4.1.0
 zope.app.http==4.0.1
 zope.app.publication==4.3.1
 zope.app.publisher==4.2.0
-zope.app.server==4.0.0
 zope.app.wsgi==4.3.0
 zope.server==4.0.2
 # lp:~launchpad-committers/zope.session:launchpad

@@ -396,9 +396,9 @@ def sendmail(message, to_addrs=None, bulk=True):
     """
     validate_message(message)
     if to_addrs is None:
-        to_addrs = get_addresses_from_header(message['to'])
+        to_addrs = get_addresses_from_header(str(message['to']))
         if message['cc']:
-            to_addrs = to_addrs + get_addresses_from_header(message['cc'])
+            to_addrs = to_addrs + get_addresses_from_header(str(message['cc']))
 
     do_paranoid_envelope_to_validation(to_addrs)
 

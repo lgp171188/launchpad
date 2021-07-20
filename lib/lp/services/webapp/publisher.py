@@ -402,7 +402,7 @@ class LaunchpadView(UserAttributeCache):
         # We need to import here otherwise sitecustomize can't get imported,
         # likely due to some non-obvious circular import issues.
         from lp.services.config import config
-        return 'true' if config.devmode else 'false'
+        return 'true' if config.launchpad.devmode else 'false'
 
     @property
     def combo_url(self):
@@ -410,7 +410,7 @@ class LaunchpadView(UserAttributeCache):
         # Circular imports, natch.
         from lp.services.config import config
         combo_url = '/+combo'
-        if not config.devmode:
+        if not config.launchpad.devmode:
             combo_url += '/rev%s' % versioninfo.revision
         return combo_url
 
@@ -694,7 +694,7 @@ def canonical_url(
 
     :param request: The web request; if not provided, canonical_url attempts
         to guess at the current request, using the protocol, host, and port
-        taken from the root_url given in launchpad.conf.
+        taken from the root_url given in launchpad-lazr.conf.
     :param path_only_if_possible: If the protocol and hostname can be omitted
         for the current request, return a url containing only the path.
     :param view_name: Provide the canonical url for the specified view,

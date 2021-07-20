@@ -90,12 +90,9 @@ class ConfigTestCase(TestCase):
             self.temp_config_root_dir, instance_name)
         os.mkdir(instance_config_dir)
 
-        # Create empty config files.
+        # Create an empty config file.
         open(
             os.path.join(instance_config_dir, 'launchpad-lazr.conf'),
-            'w').close()
-        open(
-            os.path.join(instance_config_dir, 'launchpad.conf'),
             'w').close()
         return instance_config_dir
 

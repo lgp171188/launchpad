@@ -30,7 +30,7 @@ class VirtualHostConfig:
     def _hostnameStrToList(althostnames):
         """Return list of hostname strings given a string of althostnames.
 
-        This is to parse althostnames from the launchpad.conf file.
+        This is to parse althostnames from the launchpad-lazr.conf file.
 
         Basically, it's a comma separated list, but we're quite flexible
         about what is accepted.  See the examples in the following doctest.
@@ -70,10 +70,10 @@ class AllVirtualHostsConfiguration:
     """
 
     def __init__(self):
-        """Initialize all virtual host settings from launchpad.conf.
+        """Initialize all virtual host settings from launchpad-lazr.conf.
 
         launchpad_conf_vhosts: The virtual_hosts config item from
-        launchpad.conf.
+        launchpad-lazr.conf.
 
         """
         self._has_vhost_data = False

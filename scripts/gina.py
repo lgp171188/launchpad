@@ -36,7 +36,7 @@ class Gina(LaunchpadCronScript):
 
     def add_my_options(self):
         self.parser.add_option("-a", "--all", action="store_true",
-            help="Run all sections defined in launchpad.conf (in order)",
+            help="Run all sections defined in launchpad-lazr.conf (in order)",
             dest="all", default=False)
         self.parser.add_option("-l", "--list-targets", action="store_true",
             help="List configured import targets", dest="list_targets",

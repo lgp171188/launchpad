@@ -660,9 +660,6 @@ class LaunchpadStatementTracer:
             if print_traceback:
                 print_list(stack)
                 sys.stderr.write("." * 70 + "\n")
-        # store the last executed statement as an attribute on the current
-        # thread
-        threading.current_thread().lp_last_sql_statement = statement
         request_starttime = getattr(_local, 'request_start_time', None)
         if request_starttime is None:
             if print_traceback or self._debug_sql or log_sql is not None:

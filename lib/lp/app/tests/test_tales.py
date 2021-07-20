@@ -85,7 +85,7 @@ def test_cookie_scope():
     The 'request/lp:cookie_scope' TALES expression returns a string
     that represents the scope parameters necessary for a cookie to be
     available for the entire Launchpad site.  It takes into account
-    the request URL and the cookie_domains setting in launchpad.conf.
+    the request URL and the cookie_domains setting in launchpad-lazr.conf.
 
         >>> from lp.app.browser.tales import RequestAPI
         >>> def cookie_scope(url):

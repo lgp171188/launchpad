@@ -4108,6 +4108,10 @@ class PersonSet:
         bug_url = self._checkForBugs(account)
         if bug_url:
             return_data["bugs"] = bug_url
+        # blueprints
+        blueprints_url = self._checkForBlueprints(account)
+        if blueprints_url:
+            return_data["blueprints"] = blueprints_url
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
@@ -4170,6 +4174,13 @@ class PersonSet:
         query_arguments["field.status:list"] = status_list
         req.prepare_url(bugs_url, query_arguments)
         return req.url
+
+    def _checkForBlueprints(self, account):
+        """check if related blueprints exist for a given person"""
+        specifications = account.specifications(account)
+        if specifications.is_empty():
+            return None
+        return canonical_url(account, rootsite="blueprints")
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""
