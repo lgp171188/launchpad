@@ -334,6 +334,7 @@ from lp.soyuz.model.archive import (
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.soyuz.model.reporting import LatestPersonSourcePackageReleaseCache
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
+from lp.translations.interfaces.translationsperson import ITranslationsPerson
 from lp.translations.model.hastranslationimports import (
     HasTranslationImportsMixin,
     )
@@ -4112,6 +4113,10 @@ class PersonSet:
         blueprints_url = self._checkForBlueprints(account)
         if blueprints_url:
             return_data["blueprints"] = blueprints_url
+        # translations
+        translations_url = self._checkForTranslations(account)
+        if translations_url:
+            return_data["translations"] = translations_url
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
@@ -4181,6 +4186,16 @@ class PersonSet:
         if specifications.is_empty():
             return None
         return canonical_url(account, rootsite="blueprints")
+
+    def _checkForTranslations(self, account):
+        """Check for translation activity for a given user"""
+        translation_person = ITranslationsPerson(account)
+        # Has performed translations
+        if translation_person.hasTranslated():
+            return canonical_url(
+                account, rootsite="translations",
+                view_name="+activity")
+        return None
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""
