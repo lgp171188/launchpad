@@ -4210,7 +4210,19 @@ class PersonSet:
             status=QuestionStatus.items)
         if questions.is_empty():
             return None
-        return canonical_url(account, rootsite="answers")
+        req = PreparedRequest()
+        answers_url = canonical_url(
+            account, rootsite="answers", view_name="+questions")
+        query_arguments = {
+            "field.search_text": "",
+            "field.sort": "RELEVANCY",
+            "field.sort-empty-marker": "1",
+            "field.actions.search": "Search",
+            "field.status-empty-marker": "1",
+            "field.status": [x.token for x in QuestionStatus]
+        }
+        req.prepare_url(answers_url, query_arguments)
+        return req.url
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""
