@@ -197,7 +197,9 @@ class BrowserTestCase(TestCase):
         self.file.write(incremental_timeout_page)
         self.file.flush()
         browser = Browser()
-        command = browser.load_page(self.file.name, timeout=1000)
+        command = browser.load_page(
+            self.file.name, timeout=30000, initial_timeout=30000,
+            incremental_timeout=1000)
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_FAIL, command.return_code)
         self.assertEqual('shazam', command.content)
