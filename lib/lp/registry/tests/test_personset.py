@@ -13,7 +13,6 @@ from testtools.matchers import (
     GreaterThan,
     LessThan,
     MatchesDict,
-    MatchesListwise,
     )
 import transaction
 from zope.component import getUtility
