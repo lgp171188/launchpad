@@ -1323,11 +1323,12 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         self.factory.makeQuestion(owner=person)
         with admin_logged_in():
             result = self.person_set.getUserData(u"test@example.com")
-        self.assertDictEqual({
-            "status": "account with data",
-            "person": canonical_url(person),
-            "answers": canonical_url(person, rootsite="answers")
-            }, result)
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "answers": Contains(
+                canonical_url(
+                    person, rootsite="answers"))}))
 
     def test_account_data_questions_comments(self):
         person = self.factory.makePerson(email="test@example.com")
@@ -1335,11 +1336,12 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         with admin_logged_in():
             question.addComment(person, "A comment")
             result = self.person_set.getUserData(u"test@example.com")
-        self.assertDictEqual({
-            "status": "account with data",
-            "person": canonical_url(person),
-            "answers": canonical_url(person, rootsite="answers")
-            }, result)
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "answers": Contains(
+                canonical_url(
+                    person, rootsite="answers"))}))
 
     def test_account_data_questions_solved(self):
         person = self.factory.makePerson(email="test@example.com")
@@ -1347,11 +1349,12 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         with admin_logged_in():
             question.setStatus(person, QuestionStatus.SOLVED, "solved!")
             result = self.person_set.getUserData(u"test@example.com")
-        self.assertDictEqual({
-            "status": "account with data",
-            "person": canonical_url(person),
-            "answers": canonical_url(person, rootsite="answers")
-            }, result)
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "answers": Contains(
+                canonical_url(
+                    person, rootsite="answers"))}))
 
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
