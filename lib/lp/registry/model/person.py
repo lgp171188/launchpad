@@ -44,6 +44,7 @@ from lazr.restful.utils import (
     get_current_browser_request,
     smartquote,
     )
+from lp.answers.enums import QuestionStatus
 import pytz
 from requests import PreparedRequest
 import six
@@ -4201,10 +4202,13 @@ class PersonSet:
                 account, rootsite="translations",
                 view_name="+activity")
         return None
+
     def _checkForAnswers(self, account):
         """Check if related questions and answers exist for a given person."""
         question_person = IQuestionsPerson(account)
-        if question_person.searchQuestions().is_empty():
+        questions = question_person.searchQuestions(
+            status=QuestionStatus.items)
+        if questions.is_empty():
             return None
         return canonical_url(account, rootsite="answers")
 

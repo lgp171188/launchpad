@@ -19,6 +19,7 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
+from lp.answers.enums import QuestionStatus
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.code.tests.helpers import remove_all_sample_data_branches
@@ -1333,6 +1334,18 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         question = self.factory.makeQuestion(owner=self.factory.makePerson())
         with admin_logged_in():
             question.addComment(person, "A comment")
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertDictEqual({
+            "status": "account with data",
+            "person": canonical_url(person),
+            "answers": canonical_url(person, rootsite="answers")
+            }, result)
+
+    def test_account_data_questions_solved(self):
+        person = self.factory.makePerson(email="test@example.com")
+        question = self.factory.makeQuestion(owner=person)
+        with admin_logged_in():
+            question.setStatus(person, QuestionStatus.SOLVED, "solved!")
             result = self.person_set.getUserData(u"test@example.com")
         self.assertDictEqual({
             "status": "account with data",
