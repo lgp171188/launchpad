@@ -112,6 +112,8 @@ from zope.security.proxy import (
     )
 
 from lp import _
+from lp.answers.enums import QuestionStatus
+from lp.answers.interfaces.questionsperson import IQuestionsPerson
 from lp.answers.model.questionsperson import QuestionsPersonMixin
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.interfaces.launchpad import (
@@ -334,6 +336,7 @@ from lp.soyuz.model.archive import (
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.soyuz.model.reporting import LatestPersonSourcePackageReleaseCache
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
+from lp.translations.interfaces.translationsperson import ITranslationsPerson
 from lp.translations.model.hastranslationimports import (
     HasTranslationImportsMixin,
     )
@@ -4112,6 +4115,14 @@ class PersonSet:
         blueprints_url = self._checkForBlueprints(account)
         if blueprints_url:
             return_data["blueprints"] = blueprints_url
+        # translations
+        translations_url = self._checkForTranslations(account)
+        if translations_url:
+            return_data["translations"] = translations_url
+        # questions
+        questions_url = self._checkForAnswers(account)
+        if questions_url:
+            return_data["answers"] = questions_url
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
@@ -4176,11 +4187,42 @@ class PersonSet:
         return req.url
 
     def _checkForBlueprints(self, account):
-        """check if related blueprints exist for a given person"""
+        """Check if related blueprints exist for a given person"""
         specifications = account.specifications(account)
         if specifications.is_empty():
             return None
         return canonical_url(account, rootsite="blueprints")
+
+    def _checkForTranslations(self, account):
+        """Check for translation activity for a given user"""
+        translation_person = ITranslationsPerson(account)
+        # Has performed translations
+        if translation_person.hasTranslated():
+            return canonical_url(
+                account, rootsite="translations",
+                view_name="+activity")
+        return None
+
+    def _checkForAnswers(self, account):
+        """Check if related questions and answers exist for a given person."""
+        question_person = IQuestionsPerson(account)
+        questions = question_person.searchQuestions(
+            status=QuestionStatus.items)
+        if questions.is_empty():
+            return None
+        req = PreparedRequest()
+        answers_url = canonical_url(
+            account, rootsite="answers", view_name="+questions")
+        query_arguments = {
+            "field.search_text": "",
+            "field.sort": "RELEVANCY",
+            "field.sort-empty-marker": "1",
+            "field.actions.search": "Search",
+            "field.status-empty-marker": "1",
+            "field.status": [x.token for x in QuestionStatus]
+        }
+        req.prepare_url(answers_url, query_arguments)
+        return req.url
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""
