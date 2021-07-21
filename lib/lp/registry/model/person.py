@@ -44,7 +44,6 @@ from lazr.restful.utils import (
     get_current_browser_request,
     smartquote,
     )
-from lp.answers.enums import QuestionStatus
 import pytz
 from requests import PreparedRequest
 import six
@@ -113,6 +112,7 @@ from zope.security.proxy import (
     )
 
 from lp import _
+from lp.answers.enums import QuestionStatus
 from lp.answers.interfaces.questionsperson import IQuestionsPerson
 from lp.answers.model.questionsperson import QuestionsPersonMixin
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
