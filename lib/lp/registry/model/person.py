@@ -112,6 +112,8 @@ from zope.security.proxy import (
     )
 
 from lp import _
+from lp.answers.enums import QuestionStatus
+from lp.answers.interfaces.questionsperson import IQuestionsPerson
 from lp.answers.model.questionsperson import QuestionsPersonMixin
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.interfaces.launchpad import (
@@ -4117,6 +4119,10 @@ class PersonSet:
         translations_url = self._checkForTranslations(account)
         if translations_url:
             return_data["translations"] = translations_url
+        # questions
+        questions_url = self._checkForAnswers(account)
+        if questions_url:
+            return_data["answers"] = questions_url
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
@@ -4181,7 +4187,7 @@ class PersonSet:
         return req.url
 
     def _checkForBlueprints(self, account):
-        """check if related blueprints exist for a given person"""
+        """Check if related blueprints exist for a given person"""
         specifications = account.specifications(account)
         if specifications.is_empty():
             return None
@@ -4196,6 +4202,15 @@ class PersonSet:
                 account, rootsite="translations",
                 view_name="+activity")
         return None
+
+    def _checkForAnswers(self, account):
+        """Check if related questions and answers exist for a given person."""
+        question_person = IQuestionsPerson(account)
+        questions = question_person.searchQuestions(
+            status=QuestionStatus.items)
+        if questions.is_empty():
+            return None
+        return canonical_url(account, rootsite="answers")
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""
