@@ -92,7 +92,10 @@
             <img class="sprite edit action-icon editable-message-edit-btn"
                  tal:condition="view/can_edit"/>
           </td>
-
+          <td>
+            <img class="sprite remove action-icon editable-message-delete-btn"
+                 tal:condition="view/can_edit"/>
+          </td>
           <td class="bug-comment-index">
           <a itemprop="url"
              tal:attributes="href comment/fmt:url"
