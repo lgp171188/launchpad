@@ -49,15 +49,15 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.buildmaster.tests.builderproxy import (
+    InProcessProxyAuthAPIFixture,
+    ProxyURLMatcher,
+    RevocationEndpointMatcher,
+    )
 from lp.buildmaster.tests.mock_slaves import (
     MockBuilder,
     OkSlave,
     SlaveTestHelpers,
-    )
-from lp.buildmaster.tests.snapbuildproxy import (
-    InProcessProxyAuthAPIFixture,
-    ProxyURLMatcher,
-    RevocationEndpointMatcher,
     )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
@@ -187,8 +187,8 @@ class TestAsyncCharmRecipeBuildBehaviour(
                           "@{host}:{port}".format(
                             username=self.token['username'],
                             password=self.token['secret'],
-                            host=config.snappy.builder_proxy_host,
-                            port=config.snappy.builder_proxy_port))
+                            host=config.builddmaster.builder_proxy_host,
+                            port=config.builddmaster.builder_proxy_port))
         self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
         yield self.proxy_api.start()
         self.now = time.time()
@@ -223,7 +223,8 @@ class TestAsyncCharmRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_requestProxyToken_unconfigured(self):
-        self.pushConfig("snappy", builder_proxy_auth_api_admin_secret=None)
+        self.pushConfig(
+            "builddmaster", builder_proxy_auth_api_admin_secret=None)
         job = self.makeJob()
         expected_exception_msg = (
             "builder_proxy_auth_api_admin_secret is not configured.")
@@ -235,7 +236,8 @@ class TestAsyncCharmRecipeBuildBehaviour(
         job = self.makeJob()
         yield job.extraBuildArgs()
         expected_uri = urlsplit(
-            config.snappy.builder_proxy_auth_api_endpoint).path.encode("UTF-8")
+            config.builddmaster.builder_proxy_auth_api_endpoint
+            ).path.encode("UTF-8")
         self.assertThat(self.proxy_api.tokens.requests, MatchesListwise([
             MatchesDict({
                 "method": Equals(b"POST"),
@@ -422,7 +424,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_prefers_lxd(self):
-        self.pushConfig("snappy", builder_proxy_host=None)
+        self.pushConfig("builddmaster", builder_proxy_host=None)
         job = self.makeJob()
         builder = MockBuilder()
         builder.processor = job.build.processor
@@ -445,7 +447,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_falls_back_to_chroot(self):
-        self.pushConfig("snappy", builder_proxy_host=None)
+        self.pushConfig("builddmaster", builder_proxy_host=None)
         job = self.makeJob()
         builder = MockBuilder()
         builder.processor = job.build.processor
