@@ -1317,6 +1317,29 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
                     rootsite="translations",
                     view_name="+activity"))}))
 
+    def test_account_data_questions(self):
+        person = self.factory.makePerson(email="test@example.com")
+        self.factory.makeQuestion(owner=person)
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertDictEqual({
+            "status": "account with data",
+            "person": canonical_url(person),
+            "answers": canonical_url(person, rootsite="answers")
+            }, result)
+
+    def test_account_data_questions_comments(self):
+        person = self.factory.makePerson(email="test@example.com")
+        question = self.factory.makeQuestion(owner=self.factory.makePerson())
+        with admin_logged_in():
+            question.addComment(person, "A comment")
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertDictEqual({
+            "status": "account with data",
+            "person": canonical_url(person),
+            "answers": canonical_url(person, rootsite="answers")
+            }, result)
+
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
 
