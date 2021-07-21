@@ -12,6 +12,7 @@ from testtools.matchers import (
     Equals,
     GreaterThan,
     LessThan,
+    MatchesDict,
     )
 import transaction
 from zope.component import getUtility
@@ -1300,6 +1301,21 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
             "person": canonical_url(person),
             "blueprints": canonical_url(person, rootsite="blueprints")
             }, result)
+
+    def test_account_data_translations(self):
+        person = self.factory.makePerson(email="test@example.com")
+        self.factory.makeSuggestion(translator=person)
+        self.factory.makeTranslator(person=person)
+        with admin_logged_in():
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertThat(result, MatchesDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "translations": Equals(
+                canonical_url(
+                    person,
+                    rootsite="translations",
+                    view_name="+activity"))}))
 
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
