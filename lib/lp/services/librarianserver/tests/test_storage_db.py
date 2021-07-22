@@ -5,10 +5,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import hashlib
 import os.path
-import time
 
 from fixtures import TempDir
-from swiftclient import client as swiftclient
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction

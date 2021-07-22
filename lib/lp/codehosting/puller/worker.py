@@ -10,7 +10,7 @@ import sys
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
-import lp.codehosting
+import lp.codehosting  # noqa: F401
 
 from breezy import (
     errors,

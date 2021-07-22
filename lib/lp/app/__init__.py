@@ -21,4 +21,4 @@ itemswidgets.EXPLICIT_EMPTY_SELECTION = False
 
 # Load versioninfo.py so that we get errors on start-up rather than waiting
 # for first page load.
-import lp.app.versioninfo
+import lp.app.versioninfo  # noqa: F401

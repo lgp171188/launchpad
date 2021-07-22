@@ -33,7 +33,6 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import (
-    FREE_INFORMATION_TYPES,
     PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
     ServiceUsage,

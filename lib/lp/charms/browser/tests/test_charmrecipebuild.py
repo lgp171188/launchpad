@@ -22,10 +22,7 @@ from zope.testbrowser.browser import LinkNotFoundError
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
-from lp.charms.interfaces.charmrecipe import (
-    CHARM_RECIPE_ALLOW_CREATE,
-    CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
-    )
+from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.testing import (

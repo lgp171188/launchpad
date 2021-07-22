@@ -4,9 +4,10 @@
 # Twisted Application Configuration file.
 # Use with "twistd2.4 -y <file.tac>", e.g. "twistd -noy server.tac"
 
-import os
-
-from twisted.application import service, internet, strports
+from twisted.application import (
+    service,
+    strports,
+    )
 from twisted.web import server
 
 from lp.services.daemons import readyservice
