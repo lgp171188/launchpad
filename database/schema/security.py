@@ -5,7 +5,7 @@
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from collections import defaultdict
 from optparse import OptionParser

@@ -11,7 +11,7 @@ period is configured through config.malone.days_before_expiration.
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from zope.component import getUtility
 

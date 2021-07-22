@@ -18,7 +18,7 @@
 # this is very low because it is infrequently run, and typically only
 # by me, so I get to pick up the pieces.
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import codecs
 from datetime import datetime

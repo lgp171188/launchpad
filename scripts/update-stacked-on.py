@@ -18,7 +18,7 @@ renamed.
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from collections import namedtuple
 import sys

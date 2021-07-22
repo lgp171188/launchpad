@@ -5,7 +5,7 @@
 
 """Cron job to update remote_products using SourceForge project data."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import time
 

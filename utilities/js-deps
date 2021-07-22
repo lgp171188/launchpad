@@ -1,6 +1,6 @@
 #!bin/py
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 from convoy.meta import main
 
 main()

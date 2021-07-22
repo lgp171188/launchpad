@@ -16,7 +16,7 @@ __all__ = [
     ]
 
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import logging
 import sys

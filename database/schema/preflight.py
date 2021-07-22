@@ -11,7 +11,7 @@ __all__ = [
     'streaming_sync',
     ]
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from datetime import timedelta
 from optparse import OptionParser

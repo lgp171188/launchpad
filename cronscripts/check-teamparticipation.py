@@ -16,7 +16,7 @@ Ideally there should be database constraints to prevent this sort of
 situation, but that's not a simple thing and this should do for now.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.teamparticipation import (
     check_teamparticipation_circular,
