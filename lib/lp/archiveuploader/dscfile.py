@@ -536,7 +536,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             try:
                 library_file, file_archive = self._getFileByName(
                     sub_dsc_file.filename)
-            except NotFoundError as error:
+            except NotFoundError:
                 library_file = None
                 file_archive = None
             else:
