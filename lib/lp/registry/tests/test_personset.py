@@ -1356,6 +1356,17 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
                 canonical_url(
                     person, rootsite="answers"))}))
 
+    def test_account_data_sshkeys(self):
+        person = self.factory.makePerson(email="test@example.com")
+        with admin_logged_in():
+            self.factory.makeSSHKey(person)
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertDictEqual({
+            "status": "account with data",
+            "person": canonical_url(person),
+            "sshkeys": canonical_url(person, view_name="+sshkeys")
+            }, result)
+
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
 
