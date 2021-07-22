@@ -4127,9 +4127,9 @@ class PersonSet:
         if not account.sshkeys.is_empty():
             return_data["sshkeys"] = canonical_url(
                 account, view_name="+sshkeys")
-        gpg_keys_url = self._checkForGPGKeys(account)
-        if gpg_keys_url:
-            return_data["openpgp-keys"] = gpg_keys_url
+        gpg_keys_urls = self._checkForGPGKeys(account)
+        if gpg_keys_urls:
+            return_data["openpgp-keys"] = gpg_keys_urls
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
