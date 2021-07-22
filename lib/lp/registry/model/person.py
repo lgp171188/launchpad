@@ -4127,6 +4127,9 @@ class PersonSet:
         if not account.sshkeys.is_empty():
             return_data["sshkeys"] = canonical_url(
                 account, view_name="+sshkeys")
+        gpg_keys_url = self._checkForGPGKeys(account)
+        if gpg_keys_url:
+            return_data["openpgp-keys"] = gpg_keys_url
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
@@ -4227,6 +4230,22 @@ class PersonSet:
         }
         req.prepare_url(answers_url, query_arguments)
         return req.url
+
+    def _checkForGPGKeys(self, account):
+        """Check if we have GPG keys for the given Person."""
+        # We return the keyserver url, not an LP url
+        urls = []
+        keyserver_url = "https://keyserver.ubuntu.com/pks/lookup"
+        keys = account.gpg_keys + account.inactive_gpg_keys
+        for key in keys:
+            req = PreparedRequest()
+            query_arguments = {
+                "fingerprint": "on",
+                "op": "index",
+                "search": "0x{}".format(key.fingerprint)}
+            req.prepare_url(keyserver_url, query_arguments)
+            urls.append(req.url)
+        return urls
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""

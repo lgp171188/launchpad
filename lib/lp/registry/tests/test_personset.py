@@ -13,6 +13,7 @@ from testtools.matchers import (
     GreaterThan,
     LessThan,
     MatchesDict,
+    MatchesListwise,
     )
 import transaction
 from zope.component import getUtility
@@ -1366,6 +1367,29 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
             "person": canonical_url(person),
             "sshkeys": canonical_url(person, view_name="+sshkeys")
             }, result)
+
+    def test_account_data_gpg_keys(self):
+        person = self.factory.makePerson(email="test@example.com")
+        with admin_logged_in():
+            self.factory.makeGPGKey(person)
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "openpgp-keys": MatchesListwise([
+                Contains("https://keyserver.ubuntu.com")])}))
+
+    def test_account_data_gpg_keys_inactive(self):
+        person = self.factory.makePerson(email="test@example.com")
+        with admin_logged_in():
+            key = self.factory.makeGPGKey(person)
+            key.active = False
+            result = self.person_set.getUserData(u"test@example.com")
+        self.assertThat(result, ContainsDict({
+            "status": Equals("account with data"),
+            "person": Equals(canonical_url(person)),
+            "openpgp-keys": MatchesListwise([
+                Contains("https://keyserver.ubuntu.com")])}))
 
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
