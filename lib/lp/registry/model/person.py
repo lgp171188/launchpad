@@ -4123,6 +4123,10 @@ class PersonSet:
         questions_url = self._checkForAnswers(account)
         if questions_url:
             return_data["answers"] = questions_url
+        # ssh keys
+        if not account.sshkeys.is_empty():
+            return_data["sshkeys"] = canonical_url(
+                account, view_name="+sshkeys")
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
