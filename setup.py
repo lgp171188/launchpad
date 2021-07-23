@@ -284,7 +284,6 @@ setup(
         'zope.security',
         'zope.securitypolicy',
         'zope.sendmail',
-        'zope.server',
         'zope.session',
         'zope.tal',
         'zope.tales',

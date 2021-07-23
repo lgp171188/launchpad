@@ -450,8 +450,8 @@ class LaunchpadBrowserResponseHeaderInjection(TestCase):
     """Test that LaunchpadBrowserResponse rejects header injection attempts.
 
     Applications should reject data that they cannot safely serialise, but
-    zope.server and most WSGI containers don't complain when header names or
-    values contain CR or LF. So we reject them before they're added.
+    most WSGI containers don't complain when header names or values contain
+    CR or LF, so we reject them before they're added.
     """
 
     def test_setHeader_good(self):
