@@ -8,7 +8,8 @@
   tal:define="css_classes view/getBoardCommentCSSClass"
   tal:attributes="class string:${css_classes};
                   id string:comment-${context/index};
-                  data-baseurl context/fmt:url">
+                  data-baseurl context/fmt:url;
+                  data-i-can-edit view/can_edit">
   <div class="boardCommentDetails">
     <table>
       <tbody>
@@ -23,6 +24,9 @@
         <script type="text/template">
           <div class='message-revision-item'>
             <div class='message-revision-title'>
+                <a class="sprite remove action-icon message-revision-del-btn">
+                    Remove
+                </a>
                 <a class="js-action">
                     Revision #{revision}, created at {date_created_display}
                 </a>
