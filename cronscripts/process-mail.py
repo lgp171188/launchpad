@@ -5,7 +5,7 @@
 
 """Fetches mail from the mail box and feeds them to the handlers."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from zope.component.interfaces import ComponentLookupError
 

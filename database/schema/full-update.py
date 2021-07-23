@@ -4,7 +4,7 @@
 
 """Full update process."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from datetime import datetime
 from optparse import OptionParser

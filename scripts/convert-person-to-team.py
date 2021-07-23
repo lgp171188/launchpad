@@ -9,7 +9,7 @@ Only people whose account_status is NOACCOUNT can be turned into teams.
 """
 
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from zope.component import getUtility
 

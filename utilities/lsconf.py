@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 __metatype__ = type
 
 # Scripts may have relative imports.
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from operator import attrgetter
 from optparse import OptionParser

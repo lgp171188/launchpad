@@ -6,7 +6,7 @@
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.registry.model.person import Person
 from lp.services.database.interfaces import IMasterStore

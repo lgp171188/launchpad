@@ -5,7 +5,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from launchpad_loggerhead.wsgi import LoggerheadApplication
 

@@ -9,7 +9,7 @@ Given a bunch of context information and a bunch of files, process them as
 an upload to a distro/whatever within the launchpad.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.archiveuploader.scripts.processupload import ProcessUpload
 

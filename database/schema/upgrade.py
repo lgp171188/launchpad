@@ -9,7 +9,7 @@ Apply all outstanding schema patches to an existing launchpad database
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import glob
 from optparse import OptionParser

@@ -5,7 +5,7 @@
 
 """Script to probe distribution mirrors and check how up-to-date they are."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.registry.interfaces.distributionmirror import MirrorContent
 from lp.registry.scripts.distributionmirror_prober import DistroMirrorProber

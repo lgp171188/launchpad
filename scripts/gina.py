@@ -16,7 +16,7 @@ The callstack is essentially:
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import sys
 

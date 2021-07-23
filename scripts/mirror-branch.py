@@ -26,7 +26,7 @@ Where:
 # not intended to be run by itself.
 
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from optparse import OptionParser
 import os

@@ -5,7 +5,7 @@
 
 """Migrate current flag to imported flag on project translations."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.services.scripts.base import LaunchpadScript
 from lp.translations.scripts.migrate_current_flag import (

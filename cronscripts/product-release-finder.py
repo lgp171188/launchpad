@@ -9,7 +9,7 @@ Scan FTP and HTTP sites specified for each ProductSeries in the database
 to identify files and create new ProductRelease records for them.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.productreleasefinder.finder import (
     ProductReleaseFinder,

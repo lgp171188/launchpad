@@ -5,7 +5,7 @@
 
 """Master distro publishing script."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.publish_ftpmaster import PublishFTPMaster
 

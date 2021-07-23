@@ -5,7 +5,7 @@
 
 """Refresh and verify cached POFile translation statistics."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.services.scripts.base import LaunchpadCronScript
 from lp.translations.scripts.verify_pofile_stats import (

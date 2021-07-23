@@ -4,7 +4,7 @@
 
 """Script to inject archive keys into signing service."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.sync_signingkeys import SyncSigningKeysScript
 from lp.services.config import config

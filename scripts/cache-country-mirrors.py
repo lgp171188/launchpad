@@ -10,7 +10,7 @@ named like cc.txt (where cc is the two letter country code),
 containing the archive mirrors for that country.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import os
 import shutil

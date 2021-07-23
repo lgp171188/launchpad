@@ -6,7 +6,7 @@
 """Conveniently generates access token and outputs relevant settings."""
 
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import sys
 

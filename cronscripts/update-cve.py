@@ -8,7 +8,7 @@ that all of the known CVE's are fully registered in Launchpad."""
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.bugs.scripts.cveimport import CVEUpdater
 from lp.services.config import config
