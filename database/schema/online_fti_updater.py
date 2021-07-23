@@ -12,7 +12,7 @@ from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import psycopg
 

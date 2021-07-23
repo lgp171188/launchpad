@@ -4,7 +4,7 @@
 
 """Script to copy signing keys between archives."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.copy_signingkeys import CopySigningKeysScript
 from lp.services.config import config

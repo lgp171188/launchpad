@@ -44,7 +44,7 @@ because our cheat objects don't match the app-encoded business logic.
 
 from __future__ import absolute_import, print_function
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from inspect import getmro
 import os

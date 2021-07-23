@@ -5,7 +5,7 @@
 
 """Remove personal details of a user from the database, leaving a stub."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.closeaccount import CloseAccountScript
 

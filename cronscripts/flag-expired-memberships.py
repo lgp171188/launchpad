@@ -5,7 +5,7 @@
 
 """Flag expired team memberships and warn about impending expiration."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from datetime import (
     datetime,

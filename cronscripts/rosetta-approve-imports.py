@@ -5,7 +5,7 @@
 
 """Perform auto-approvals and auto-blocks on translation import queue"""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.translations.scripts.import_queue_gardener import ImportQueueGardener
 

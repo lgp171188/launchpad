@@ -16,7 +16,7 @@ have been updated.  For the rest, the script talks to the slave store.
 __metaclass__ = type
 __all__ = []
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.translations.scripts.translations_to_branch import (
     ExportTranslationsToBranch,

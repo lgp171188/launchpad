@@ -8,7 +8,7 @@
 This script will be used by IS for the rsync backups.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.codehosting.scripts.modifiedbranches import ModifiedBranchesScript
 

@@ -3,7 +3,7 @@
 
 """Sync branches from production to a staging environment."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.codehosting.scripts.sync_branches import SyncBranchesScript
 

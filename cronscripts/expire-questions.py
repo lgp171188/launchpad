@@ -15,7 +15,7 @@ __metaclass__ = type
 __all__ = ['ExpireQuestions']
 
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.answers.scripts.questionexpiration import QuestionJanitor
 from lp.services.scripts.base import LaunchpadCronScript

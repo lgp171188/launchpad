@@ -12,7 +12,7 @@ lp.codehosting.rewrite.BranchRewriter for the logic of the rewritemap.
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import os
 import sys

@@ -9,7 +9,7 @@ This script will obsolete (schedule for removal) all published packages
 in an obsolete distroseries.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.services.config import config
 from lp.soyuz.scripts.obsolete_distroseries import ObsoleteDistroseries

@@ -9,7 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = []
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from optparse import OptionParser
 from pprint import pprint

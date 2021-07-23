@@ -11,7 +11,7 @@ date_emailed to the current date.
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.personnotification import PersonNotificationManager
 from lp.services.config import config

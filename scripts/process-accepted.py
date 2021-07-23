@@ -10,7 +10,7 @@ distribution and then gets on and deals with any accepted items, preparing
 them for publishing as appropriate.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.processaccepted import ProcessAccepted
 

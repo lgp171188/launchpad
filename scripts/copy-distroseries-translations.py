@@ -10,7 +10,7 @@ provide a new distroseries in a series with its initial translation data.
 Only current translations are copied.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import sys
 

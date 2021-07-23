@@ -7,7 +7,7 @@
 Cron job to run daily to check all of the BugWatches
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.bugs.scripts.checkwatches import CheckWatchesCronScript
 from lp.services.config import config

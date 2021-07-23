@@ -6,7 +6,7 @@
 """Perform simple librarian operations to verify the current configuration.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import sys
 

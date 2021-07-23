@@ -16,7 +16,7 @@ updating the counts of every LFA, in order to get through the backlog.
 
 __metaclass__ = type
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from storm.sqlobject import SQLObjectNotFound
 from zope.component import getUtility
