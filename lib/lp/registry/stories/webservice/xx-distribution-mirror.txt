@@ -1,4 +1,5 @@
-= Distribution Mirrors =
+Distribution Mirrors
+====================
 
 For every mirror of distribution we publish most of its attributes. For archive
 mirrors:
@@ -66,7 +67,8 @@ And CD image mirrors:
     web_link: 'http://launchpad.../ubuntu/+mirror/canonical-releases'
     whiteboard: None
 
-= Security checks =
+Security checks
+===============
 
 People who are not mirror listing admins or the mirrors registrar may not
 change the owner's of mirrors:
@@ -243,7 +245,8 @@ While others can be set with the appropriate authorization:
     web_link: 'http://launchpad.../ubuntu/+mirror/canonical-releases'
     whiteboard: 'This mirror is too shiny to be true'
 
-= Distribution Mirror Custom Operations =
+Distribution Mirror Custom Operations
+=====================================
 
 DistributionMirror has some custom operations.
 

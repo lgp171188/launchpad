@@ -1,7 +1,9 @@
-= Claiming GPG Keys =
+Claiming GPG Keys
+=================
 
 
-== Setup ==
+Setup
+-----
 
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -16,7 +18,8 @@ Set up the stub KeyServer:
     >>> tac.setUp()
 
 
-== Claim an encrypting GPG key ==
+Claim an encrypting GPG key
+---------------------------
 
 This test verifies the basic claim a GPG key workflow.
 
@@ -152,7 +155,8 @@ Verify that the key was imported with the "can encrypt" flag set:
     True
 
 
-== Claim a sign-only GPG key ==
+Claim a sign-only GPG key
+-------------------------
 
 Here, Sample Person wants to claim a GPG key that can only sign
 content. They can't verify their key by decrypting content on demand, but
@@ -344,7 +348,8 @@ revalidation.
 (We won't run through the whole validation process again, as this key isn't
 used in any more tests.)
 
-== Teardown ==
+Teardown
+--------
 
     >>> tac.tearDown()
 

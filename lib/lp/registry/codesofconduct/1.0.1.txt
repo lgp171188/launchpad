@@ -1,4 +1,5 @@
-= Ubuntu Code of Conduct =
+Ubuntu Code of Conduct
+======================
 
 This Code of Conduct covers your behaviour as a member of the Ubuntu
 Community, in any forum, mailing list, wiki, web site, IRC channel,

@@ -1,4 +1,5 @@
-= Launchpad maintenance messages =
+Launchpad maintenance messages
+==============================
 
 A system adminstrator can write an iso format timestamp to the file
 "+maintenancetime.txt" in the launchpad application root directory.
@@ -95,7 +96,8 @@ Remove +maintenancetime.txt to clean up.
     >>> os.remove('+maintenancetime.txt')
 
 
-== Per-page maintenance messages ==
+Per-page maintenance messages
+-----------------------------
 
 Alternatively, a maintenance message can be set in the
 app.maintenance_message feature flag, which can be scoped to particular

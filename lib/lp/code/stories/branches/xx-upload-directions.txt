@@ -1,4 +1,5 @@
-= Directions to upload to branches =
+Directions to upload to branches
+================================
 
 The branch ~name12/gnome-terminal/pushed is an upload branch. Its index page
 shows contextual directions on how to upload to it.
@@ -41,7 +42,8 @@ We will also need a ssh key. Save it now.
     ...     '8nAA7z21wAukvE1Pl6AQyG0e7U1sYS8Pc8dtmzJvdtVZWBl02/gqQJ7f06mFvn'
     ...     'sN45rR1Uyxnrwl6rbFwqabZDlyD5Ac6Icbvz9SG1gBOiI= andrew@trogdor')
 
-== Branch owned by a person ==
+Branch owned by a person
+------------------------
 
 Initially, the user is not logged in, the branch page points to the owner of
 the branch, and suggest logging in for directions.
@@ -79,7 +81,8 @@ URL for the branch.
     bzr push --use-existing-dir lp://dev/~name12/gnome-terminal/pushed
 
 
-== SSH key directions ==
+SSH key directions
+------------------
 
 If the user has the permission to upload to a branch, but does not have an SSH
 key registered, point to the SSH keys form.
@@ -129,7 +132,8 @@ appear.
     None
 
 
-== Branch owned by a team ==
+Branch owned by a team
+----------------------
 
 When the branch is owned by a team, the directions need to be a bit different.
 In particular, they should be adapted to refer to team "members", and should
@@ -187,7 +191,8 @@ owning team's name.
     lp://dev/~landscape-developers/gnome-terminal/pushed
 
 
-== Import branch ==
+Import branch
+-------------
 
 Upload directions should not be displayed for import branches.
 

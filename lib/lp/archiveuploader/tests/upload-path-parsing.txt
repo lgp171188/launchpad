@@ -1,4 +1,5 @@
-= Upload path parsing =
+Upload path parsing
+===================
 
 The upload path is used to decide in which context a uploaded package
 will be processed.
@@ -19,7 +20,8 @@ in several scenarios.
     ...     print('Suite: %s' % suite_name)
 
 
-== Distribution uploads ==
+Distribution uploads
+--------------------
 
 Upload placed on 'root', i.e, no 'relative_path' will be targeted to
 'ubuntu' primary archive.
@@ -74,7 +76,8 @@ is raised.
     lp.archiveuploader.uploadprocessor.UploadPathError: Could not find suite 'imaginary'.
 
 
-== PPA uploads ==
+PPA uploads
+-----------
 
 An upload will be considered targeted to a PPA if the first path term
 starts with '~', then the subsequent text in this term will be looked
@@ -204,7 +207,8 @@ And the upload now found its way to the new named PPA.
     Suite: None
 
 
-== Non-sense upload paths ==
+Non-sense upload paths
+----------------------
 
 Obviously upload paths can be completely bogus and the processing function
 identifies and warns users accordingly.
@@ -259,7 +263,8 @@ An old-style named PPA upload missing '~'.
     lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 
-== Binary uploads from build slaves ==
+Binary uploads from build slaves
+--------------------------------
 
 A relative path for a binary upload from a build slave will have the
 following format: <archive_id>/<distribution_name> where archive_id

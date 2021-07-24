@@ -1,4 +1,5 @@
-= Ubuntu PPAs =
+Ubuntu PPAs
+===========
 
 The Ubuntu page contains a link to get to the Personal Package Archives.
 
@@ -16,7 +17,8 @@ The Ubuntu page contains a link to get to the Personal Package Archives.
     Main heading: Personal Package Archives for Ubuntu
 
 
-== Distribution PPA main page ==
+Distribution PPA main page
+--------------------------
 
 Along with the search form this page also presents statistics about
 the context PPAs (registered, active, number of sources and binaries
@@ -53,7 +55,8 @@ we only have 3 PPAs in sampledata they are all presented.
 Nothing suitable in the sampledata, check the end of this document for
 further tests.
 
-== Other distributions PPAs ==
+Other distributions PPAs
+------------------------
 
 Currently we only support PPAs for a limited number of distros. The
 '+ppas' page isn't linked for other distribution.
@@ -110,7 +113,8 @@ The 'search' form is also suppresed.
     ...
 
 
-== Searching PPAs ==
+Searching PPAs
+--------------
 
 The search results are presented as a table with the columns Owner,
 Description, Sources and Binaries, the latter two being a count.
@@ -234,7 +238,8 @@ specified.
     PPA for Celso Providelo...
 
 
-== Owner's PPA pages ==
+Owner's PPA pages
+-----------------
 
 Let's start by adding an extra package to Celso's archive:
 
@@ -425,7 +430,8 @@ filter.
     http://launchpad.test/~cprov/+archive/ubuntu/ppa/+builds?build_state=building
 
 
-== Filtering an archive ==
+Filtering an archive
+--------------------
 
 The default series filter is '' which means that by default the
 results will include packages from any distro series. A user can
@@ -453,7 +459,8 @@ will contain only the corresponding packages:
     cdrkit              1.0             no signer (2007-07-09)
 
 
-== Empty PPAs ==
+Empty PPAs
+----------
 
 An empty PPA doesn't list any packages and it also doesn't present the
 'apt sources lines ' widget and the repository 'URL' since they would
@@ -505,7 +512,8 @@ Also the repository URL, within the sources.list snippet, is an actual link.
     http://ppa.launchpad.test/no-priv/ppa/ubuntu
 
 
-== Upload hint ==
+Upload hint
+-----------
 
 Users who have upload permissions to the PPA can see an 'upload hint'
 section in the PPA details table.
@@ -540,7 +548,8 @@ upload hint section.
     None
 
 
-== PPA signing key ==
+PPA signing key
+---------------
 
 PPA signing keys are automatically generated and set sometime after
 the PPA creation. While the signing key isn't available nothing is
@@ -598,7 +607,8 @@ And further down, next to the key id, we link to that same pop-up help:
     http://launchpad.test/+help-soyuz/ppa-sources-list.html
 
 
-== Single-publication PPAs ==
+Single-publication PPAs
+-----------------------
 
 Just quickly check if the singular form of this section is handled
 properly.
@@ -623,7 +633,8 @@ And the sources.list entries point to the right distribution release:
     deb-src http://ppa.launchpad.test/mark/ppa/ubuntu breezy-autotest main
 
 
-== Populating 'Most Active' section ==
+Populating 'Most Active' section
+--------------------------------
 
 Since the sampledata publications are not recent enough to appear in
 the 'Most active' section we will create some of them on-the-fly so we
@@ -662,7 +673,8 @@ PPA itself.
     PPA for Celso Providelo : Celso Providelo
 
 
-== Compatibility URL Redirection ==
+Compatibility URL Redirection
+-----------------------------
 
 PPAs are being enhanced to allow multiple named PPAs per owner.  For a
 limited transitional period, specifying a URL without the name in it

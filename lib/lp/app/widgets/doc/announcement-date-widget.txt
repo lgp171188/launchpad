@@ -1,4 +1,5 @@
-= AnnouncementDateWidget =
+AnnouncementDateWidget
+======================
 
 This widget combines radio buttons and a DateTimeWidget. It allows you to
 choose to publish an announcement immediately, at a predetermined date in the

@@ -1,4 +1,5 @@
-= Handling BugTracker handshake tokens =
+Handling BugTracker handshake tokens
+====================================
 
 Launchpad can generate LoginTokens which can then be used to
 authenticate it with remote bug trackers. Generating these tokens is

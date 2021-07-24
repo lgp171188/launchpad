@@ -1,4 +1,5 @@
-== Release series ==
+Release series
+--------------
 
 A product series can have any number of releases associated with it.
 These are created with the createProductRelease() method on

@@ -1,4 +1,5 @@
-== Performance of +translate pages ==
+Performance of +translate pages
+-------------------------------
 
 The +translate pages, where users can do their translations, involves some
 heavy database activity including complex caching and prefetching of
@@ -9,7 +10,8 @@ under control.
   >>> query_counter = RequestTimelineCollector()
   >>> query_counter.register()
 
-=== Anonymous access ===
+Anonymous access
+................
 
 When an unauthenticated (anonymous) visitor requests a translation page, the
 number of queries issued is relatively low.  Mileage may vary, but consider
@@ -26,7 +28,8 @@ this test a tripwire for the number potentially getting out of hand.
     >>> 0 < statement_count < 120
     True
 
-=== Reviewing and translating ===
+Reviewing and translating
+.........................
 
 When an administrator logs in, the page shows not only translations and the
 option to make suggestions, but existing suggestions as well.  It takes more

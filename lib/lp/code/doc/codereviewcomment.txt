@@ -1,4 +1,5 @@
-= Code review comments =
+Code review comments
+====================
 
 When code is proposed to be merged, it's common to perform a review of
 that code, which is often in the form of a conversation.  The reviewer
@@ -13,7 +14,8 @@ It has an IMessage as a member (in a one-to-one relationship), a vote
 about.
 
 
-== Creating CodeReviewComments ==
+Creating CodeReviewComments
+---------------------------
 
 CodeReviewComments are created from their BranchMergeProposals:
 
@@ -101,7 +103,8 @@ Now run the pending job to send the email.
     True
 
 
-== Interfaces ==
+Interfaces
+----------
 
 The CodeReviewComment must implement the ICodeReviewComment interface.
 

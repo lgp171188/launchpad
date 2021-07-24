@@ -1,4 +1,5 @@
-= External Bug Tracker: checkwatches =
+External Bug Tracker: checkwatches
+==================================
 
 Strictly speaking, checkwatches is the name of a cronscript and a
 module in the Launchpad codebase. In the absence of a more complete
@@ -12,7 +13,8 @@ framework.
   -- Gavin Panella, 2007-07-18
 
 
-== get_external_bugtracker ==
+get_external_bugtracker
+-----------------------
 
 get_external_bugtracker is used to get an ExternalBugTracker suitable
 for a particular bugtracker.

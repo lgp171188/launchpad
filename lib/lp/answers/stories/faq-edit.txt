@@ -1,4 +1,5 @@
-= Editing FAQs =
+Editing FAQs
+============
 
 It is possible to modify the title, keywords and content of an existing
 FAQ. To do this, the user goes to the FAQ that they want to modify and

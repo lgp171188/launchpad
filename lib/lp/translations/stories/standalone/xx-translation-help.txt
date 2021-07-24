@@ -1,4 +1,5 @@
-= Translation help =
+Translation help
+================
 
 Links to Translation help on https://help.launchpad.net/ links are
 available on a number of translation pages in Launchpad.

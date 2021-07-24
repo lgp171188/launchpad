@@ -1,7 +1,9 @@
-= Private Teams =
+Private Teams
+=============
 
 
-== Viewing private teams ==
+Viewing private teams
+---------------------
 
 If a team's visibility attribute is set to Private, Launchpad
 admins and members of that team can see the team.
@@ -53,7 +55,8 @@ An anonymous user cannot see the team.
     zope.publisher.interfaces.NotFound: ...
 
 
-== Operations on a private team ==
+Operations on a private team
+----------------------------
 
 The team can take on a restricted set of roles, such as being
 subscribed to a bug, etc.

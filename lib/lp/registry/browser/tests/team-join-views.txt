@@ -1,8 +1,10 @@
-= Joining a Team =
+Joining a Team
+==============
 
 Tests for the team '+join' page's raw view objects.
 
-== Joining and Subscribing to the List ==
+Joining and Subscribing to the List
+-----------------------------------
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> personset = getUtility(IPersonSet)

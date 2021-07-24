@@ -1,4 +1,5 @@
-== Creating a new FAQ ==
+Creating a new FAQ
+------------------
 
 New FAQs can be created for a project by users who have 'moderation'
 privileges. This includes answer contacts and the project's owner.

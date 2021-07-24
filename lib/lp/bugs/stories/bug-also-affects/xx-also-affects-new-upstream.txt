@@ -1,4 +1,5 @@
-= Registering an upstream affected by a given bug =
+Registering an upstream affected by a given bug
+===============================================
 
 The test browser does not support javascript
     >>> user_browser.open(
@@ -93,7 +94,8 @@ the bug as affecting another (unregistered) upstream.
     The Bar Project ...   auto-bugs.foo.org #123
     The Bar Project ...   auto-bugs.foo.org #421
 
-== Error handling ==
+Error handling
+--------------
 
 If the URL of the remote bug is not recognized by Launchpad, we'll tell the
 user and ask them to check if it's correct.

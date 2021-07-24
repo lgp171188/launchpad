@@ -1,6 +1,8 @@
-= Email addresses as bug trackers =
+Email addresses as bug trackers
+===============================
 
-== The EMAILADDRESS BugTrackerType ==
+The EMAILADDRESS BugTrackerType
+-------------------------------
 
 Launchpad allows users to register an email address as an external bug
 tracker. This means that bugs for that bug tracker can be forwarded to
@@ -66,7 +68,8 @@ the local part of an email address (e.g. <local_name>@foobar.com).
     auto-another.bugtracker
 
 
-== Adding a BugWatch to an upstream email address ==
+Adding a BugWatch to an upstream email address
+----------------------------------------------
 
 We can add a bug watch to an upstream email address in the normal
 fashion. For email addresses, we record the message ID of the mail sent

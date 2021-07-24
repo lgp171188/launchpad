@@ -1,4 +1,5 @@
-= Private Builds =
+Private Builds
+==============
 
 A build is considered private if it is a build being done in an IArchive that
 is marked as private.  Private builds will not be apparent anywhere in the
@@ -8,7 +9,8 @@ or not.  A permitted user is one who is the archive's owner, a member of
 its team, a BuilddAdministrator or a Launchpad administrator.
 
 
-== Builder portlet details and builder index page ==
+Builder portlet details and builder index page
+----------------------------------------------
 
 The builder's current status appears on the builder +index page (see
 xx-builder-index.txt). This status information is changed to not reveal
@@ -120,7 +122,8 @@ But it is fine for authorised users:
     http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/...
 
 
-== Builder history page ==
+Builder history page
+--------------------
 
 The builder history page (+builds/<builder>/+history) shows all the builds
 that the builder has done, with filtering on a user-selected build state
@@ -186,7 +189,8 @@ Both admin and the owner of the build, cprov, can see the build in
     ...
 
 
-== Build farm index page ==
+Build farm index page
+---------------------
 
 The build farm index page at /+builds is described in detail at
 xx-buildfarm-index.txt.  However, if a private build is running on
@@ -238,7 +242,8 @@ Anonymous users cannot see the private build:
     ...
 
 
-== Unembargoed builds ==
+Unembargoed builds
+------------------
 
 When private packages are copied to a non-private archive, the build
 becomes unembargoed and is accessible by any user.

@@ -1,4 +1,5 @@
-= Turning a Question into a Bug =
+Turning a Question into a Bug
+=============================
 
 The question page shows a link to make the question into a bug.
 

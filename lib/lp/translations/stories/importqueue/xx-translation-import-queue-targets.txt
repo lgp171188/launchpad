@@ -5,7 +5,8 @@ products, productseries and person.
 Each target has its own page listing their related entries in the
 import queue.
 
-== Import queue for distributions ==
+Import queue for distributions
+------------------------------
 
 The import queue is linked from the translations page for distribution.
 
@@ -25,7 +26,8 @@ There is no content for Ubuntu.
     True
 
 
-== Import queue for distribution series ==
+Import queue for distribution series
+------------------------------------
 
 The import queue is linked from the translations page for distribution series.
 
@@ -46,7 +48,8 @@ Ubuntu distro series has also no content.
     True
 
 
-== Import queue for products ==
+Import queue for products
+-------------------------
 
 The import queue is linked from the translations page for products.
 
@@ -79,7 +82,8 @@ There are two entries in the list.
     Imported
 
 
-== Import queue for product series ==
+Import queue for product series
+-------------------------------
 
 The import queue is linked from the translations page for product series.
 
@@ -113,7 +117,8 @@ Evolution product are for this trunk series.
     Imported
 
 
-== Import queue for person ==
+Import queue for person
+-----------------------
 
 The import queue is linked from the translations page for persons.
 

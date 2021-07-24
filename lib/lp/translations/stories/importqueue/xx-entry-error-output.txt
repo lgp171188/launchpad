@@ -1,4 +1,5 @@
-= Translation import queue entry error output =
+Translation import queue entry error output
+===========================================
 
 The approval form translation import queue entries shows any error
 or warning output that the entry may have incurred.

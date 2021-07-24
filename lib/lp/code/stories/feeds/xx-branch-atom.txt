@@ -1,4 +1,5 @@
-= Atom Feeds For Branches =
+Atom Feeds For Branches
+=======================
 
 Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
 by asking BeautifulSoup to use lxml.
@@ -11,7 +12,8 @@ by asking BeautifulSoup to use lxml.
     >>> from lp.services.feeds.tests.helper import (
     ...     parse_ids, parse_links)
 
-== Create some specific branches to use for this test ==
+Create some specific branches to use for this test
+--------------------------------------------------
 
     >>> login(ANONYMOUS)
     >>> from lp.testing import time_counter
@@ -41,7 +43,8 @@ by asking BeautifulSoup to use lxml.
     >>> logout()
 
 
-== Feed for a person's branches ==
+Feed for a person's branches
+----------------------------
 
 The feed for a person's branches will show the most recent 25 branches
 which will include an entry for each branch.
@@ -134,7 +137,8 @@ branches listed, just an id for the feed.
     <id>tag:launchpad.net,2006-07-11:/code/~landscape-developers</id>
 
 
-== Feed for a product's branches ==
+Feed for a product's branches
+-----------------------------
 
 The feed for a product's branches will show the most recent 25 branches
 which will include an entry for each branch.
@@ -167,7 +171,8 @@ updated field in all of the entries.
     ...     "Feed <update> value is not the same as latest entry.")
 
 
-== Feed for a project group's branches ==
+Feed for a project group's branches
+-----------------------------------
 
 The feed for a project group's branches will show the most recent 25
 branches which will include an entry for each branch.
@@ -203,7 +208,8 @@ updated field in all of the entries.
     ...     "Feed <update> value is not the same as latest entry.")
 
 
-== Feed for a single branch ==
+Feed for a single branch
+------------------------
 
 A single branch can have an Atom feed with each revision being a
 different entry.

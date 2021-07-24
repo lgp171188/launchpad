@@ -1,4 +1,5 @@
-= Retrying a failed import =
+Retrying a failed import
+========================
 
 Imports that have failed more than the configured
 'consecutive_failure_limit' times in a row are no longer attempted.

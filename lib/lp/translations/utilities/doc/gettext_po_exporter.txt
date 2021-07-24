@@ -1,4 +1,5 @@
-= gettext_po_exporter =
+gettext_po_exporter
+===================
 
 To export translation files from Rosetta, the data must be displayed in po
 file fomrat which is a text file format.
@@ -10,7 +11,8 @@ file fomrat which is a text file format.
     >>> from lp.translations.utilities.translation_common_format import (
     ...     TranslationMessageData)
 
-== comments_text_representation ==
+comments_text_representation
+----------------------------
 
 Special comments are created from metadata of each translation message.
 Message flags are represented by the #, comment.
@@ -69,7 +71,8 @@ The order of comments must be kept, so #| are moved to the end.
     #| msgid line2
 
 
-== wrap_text ==
+wrap_text
+---------
 We are not using textwrap module because the .po file format has some
 peculiarities like:
 
@@ -243,7 +246,8 @@ output, too.
     msgstr ""
 
 
-== export_translation_message ==
+export_translation_message
+--------------------------
 Putting it all together to export full translation messages in the correct
 format.
 

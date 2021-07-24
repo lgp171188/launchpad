@@ -1,4 +1,5 @@
-= Comments Imported From a Bug Watch =
+Comments Imported From a Bug Watch
+==================================
 
 Comments can be imported from remote bugtrackers.
 

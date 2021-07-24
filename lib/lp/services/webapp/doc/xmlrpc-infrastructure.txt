@@ -1,4 +1,5 @@
-= XMLRPC infrastructure =
+XMLRPC infrastructure
+=====================
 
 When you write XMLRPC view classes, you should extend the base class
 LaunchpadXMLRPCView.

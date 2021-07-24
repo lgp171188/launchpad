@@ -1,4 +1,5 @@
-= Adding new projects =
+Adding new projects
+===================
 
 Normal users should not be able to do this:
 

@@ -1,4 +1,5 @@
-= Application Server Database Policy =
+Application Server Database Policy
+==================================
 
 The database policy chooses the default Storm store to used. Its goal
 is to distribute load away from the master databases to read only

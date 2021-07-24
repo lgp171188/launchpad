@@ -1,4 +1,5 @@
-= The Publishing Details Portlet =
+The Publishing Details Portlet
+==============================
 
 This portlet conveys information about the latest version of a
 package for each distroseries in which it is published.

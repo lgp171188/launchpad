@@ -1,10 +1,12 @@
-= Introduction =
+Introduction
+============
 
 Many exposed objects in the API provide IBugTarget, including
 projects, distributions, distribution series, and source packages.
 
 
-== bug_reporting_guidelines ==
+bug_reporting_guidelines
+------------------------
 
 All bug targets have a read/write bug_reporting_guidelines property.
 
@@ -38,7 +40,8 @@ Not everyone can modify it however:
     (<Product at ...>, 'bug_reporting_guidelines', 'launchpad.BugSupervisor')
 
 
-== Official Bug Tags ==
+Official Bug Tags
+-----------------
 
 We can access official bug tag targets and add and remove tags. We
 create a new product, owned by ~salgado.
@@ -138,7 +141,8 @@ We can also access official tags as a list.
     ...     dumps({'official_bug_tags': [u'foo', u'bar']})))
     HTTP/1.1 209 Content Returned...
 
-== bug_supervisor ==
+bug_supervisor
+--------------
 
 We can retrieve or set a person or team as the bug supervisor for projects.
 

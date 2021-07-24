@@ -1,4 +1,5 @@
-= Sample Data Assertions =
+Sample Data Assertions
+======================
 
 This set of doctests makes a set of assertions about the sample data we have
 in the Launchpad application. This is designed to prevent people from
@@ -8,7 +9,8 @@ pagetests elsewhere.
 After you add sample data to Launchpad, or modify existing data, you should
 AT LEAST run this test to see that you haven't broken any assumptions.
 
-== User Accounts and Teams ==
+User Accounts and Teams
+-----------------------
 
   >>> from zope.component import getUtility
   >>> from lp.registry.interfaces.person import IPersonSet

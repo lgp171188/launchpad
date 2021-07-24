@@ -1,4 +1,5 @@
-= ExternalBugTracker: Python =
+ExternalBugTracker: Python
+==========================
 
 This covers the implementation of the ExternalBugTracker class for
 Python bugwatches.
@@ -11,7 +12,8 @@ common to Roundup and Python instances, see
 externalbugtracker-roundup.txt
 
 
-== Status Conversion ==
+Status Conversion
+-----------------
 
 The basic Python bug statuses map to Launchpad bug statuses.
 Roundup.convertRemoteStatus() handles the conversion.

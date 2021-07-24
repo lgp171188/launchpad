@@ -1,4 +1,5 @@
-= Source Package Release =
+Source Package Release
+======================
 
 The SourcePackageRelease table represents a particular release of a
 SourcePackageName, but isn't tied to any particular DistroSeries
@@ -10,7 +11,8 @@ uploaded DSC (Debian Source Control) file.
 This model allow us to have more granular control of the fields,
 enabling faster searches, faster readings and model constraints.
 
-== Basic attributes ==
+Basic attributes
+----------------
 
 Let's get one from the database:
 
@@ -189,7 +191,8 @@ Let's get a sample SourcePackageRelease:
    pmount
 
 
-== Package sizes ==
+Package sizes
+-------------
 
 The size of a source package can be obtained via the getPackageSize() method.
 It returns the sum of the size of all files comprising the source package (in
@@ -212,7 +215,8 @@ Verify that empty packages have a size of zero.
     0.0
 
 
-== Accessing SourcePackageReleases ==
+Accessing SourcePackageReleases
+-------------------------------
 
 SourcePackageReleases are accessible according to the archives where
 they are published.

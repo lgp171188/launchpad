@@ -1,4 +1,5 @@
-= PocketChroot =
+PocketChroot
+============
 
 PocketChroot records combine DistroArchSeries and a Chroot.
 

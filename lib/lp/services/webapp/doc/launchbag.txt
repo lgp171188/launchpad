@@ -72,7 +72,8 @@ will be cookie@example.com.
 cookie@example.com
 
 
-== time_zone ==
+time_zone
+---------
 
 The time_zone attribute gives the user's time zone, as an pytz object.
 

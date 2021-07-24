@@ -1,4 +1,5 @@
-= Inline Editing of BugTasks =
+Inline Editing of BugTasks
+==========================
 
 On the bug page, the bugtasks are editable inline. This means that
 basically the same form is included on the page for each bugtask. Even

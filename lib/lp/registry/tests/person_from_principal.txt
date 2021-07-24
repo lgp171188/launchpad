@@ -1,4 +1,5 @@
-= person_from_principal =
+person_from_principal
+=====================
 
 person_from_principal is used to adapt an ILaunchpadPrincipal to an
 IPerson. If some other object is passed in, a ComponentLookupError is

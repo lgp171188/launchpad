@@ -1,4 +1,5 @@
-= Resetting stores at the end of requests =
+Resetting stores at the end of requests
+=======================================
 
 Storm allows objects to be used across transaction boundaries, but that
 doesn't play well with Launchpad because we already have plenty of code

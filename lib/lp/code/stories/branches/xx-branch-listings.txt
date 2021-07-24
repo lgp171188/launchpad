@@ -1,4 +1,5 @@
-= Branch Listing Pages =
+Branch Listing Pages
+====================
 
 Pages that want to display lists of branches use the branch-listing
 page template, and views derived from BranchListingView.
@@ -12,7 +13,8 @@ various kinds and badge decoration.
     >>> reset_all_branch_last_modified()
 
 
-== Branch Batching ==
+Branch Batching
+---------------
 
 Batching is applied to branch listings where there are many items.
 Luckily for us, many is 5 in the tests.
@@ -73,7 +75,8 @@ needed, then the table is sortable and no batching navigation links are shown.
     True
 
 
-== Lifecycle Filtering for Person Branches ==
+Lifecycle Filtering for Person Branches
+---------------------------------------
 
 When the branches for a person is first loaded, only the 'Current' branches
 are shown.  Current branches are those that have a lifecycle status of
@@ -206,7 +209,8 @@ first.
 
 
 
-== Branch Badge Decoration ==
+Branch Badge Decoration
+-----------------------
 
 We display badges for associated bugs.
 
@@ -268,7 +272,8 @@ Now the badge is still shown for Sample Person...
       Linked to a bug
 
 
-== Sorting Branch Listings ==
+Sorting Branch Listings
+-----------------------
 
 Aside from the implicitly sorted listings of recently registered,
 imported and changed branches, all branch listings have a widget that
@@ -361,7 +366,8 @@ Finally, sorting by a particular criterion has the desired effect.
     lp://dev/~name12/gnome-terminal/mirrored        Development             ...
 
 
-== Highlighting the development focus branch ==
+Highlighting the development focus branch
+-----------------------------------------
 
 The branch associated with the development focus series is highlighted
 on the branch listings using the same CSS style that is used to
@@ -415,7 +421,8 @@ The current development focus is shown first though.
     lp://dev/gnome-terminal  Series: trunk, alpha, pre-1.0  ...
 
 
-== Lifecycle Filtering for Product Branches ==
+Lifecycle Filtering for Product Branches
+----------------------------------------
 
 When the branches for a product are first loaded, only the 'Current'
 branches are shown.  Current branches are those that have a
@@ -464,7 +471,8 @@ first.
     lp://dev/gnome-terminal   Series: trunk...    Development  ...
 
 
-== The last commit ==
+The last commit
+---------------
 
 The last commit column shows the revision number, and part of the
 revision log for the last commit that Launchpad knows about.  The

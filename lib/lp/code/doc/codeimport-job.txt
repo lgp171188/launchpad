@@ -1,4 +1,5 @@
-= Code Import Jobs =
+Code Import Jobs
+================
 
 A CodeImportJob is a record of a pending or running code import job.
 
@@ -45,7 +46,8 @@ modified using the CodeImportJobWorkflow utility.
     True
 
 
-== Sample data of interest ==
+Sample data of interest
+-----------------------
 
 There are two CodeImport objects of interest in the sample data.
 
@@ -79,7 +81,8 @@ required to initiate the action.
     >>> nopriv = person_set.getByName('no-priv')
 
 
-== Test helpers ==
+Test helpers
+------------
 
 The NewEvents class helps testing the creation of CodeImportEvent
 objects.
@@ -88,7 +91,8 @@ objects.
     ...     NewEvents)
 
 
-== Testing whether a job is overdue ==
+Testing whether a job is overdue
+--------------------------------
 
 CodeImportJob objects have a date_due attribute that specifies when the
 job should ideally be started. If the date_due is in the past, the job
@@ -129,7 +133,8 @@ current transaction, then the job is overdue.
     True
 
 
-== Creating a new job ==
+Creating a new job
+------------------
 
 CodeImportJob objects are created using the CodeImportJobWorkflow.newJob
 method.
@@ -158,7 +163,8 @@ the date due may be UTC_NOW or a timestamp in the future. This is
 covered in detail in the test_codeimportjob.py file.
 
 
-== Deleting a pending job ==
+Deleting a pending job
+----------------------
 
 In normal use, the only case where a job object is deleted explicitly is
 when the review status of a code import is modified. This case is
@@ -173,7 +179,8 @@ associated job is not running, the job is deleted.
     None
 
 
-== Requesting a job run ==
+Requesting a job run
+--------------------
 
 When a job is pending, users can request that it be run as soon as
 possible.
@@ -213,7 +220,8 @@ another user, present a message explaining that this has happened.
     ~vcs-imports/gnome-terminal/import was already requested by no-priv.
 
 
-== Starting a job ==
+Starting a job
+--------------
 
 When a job is about to performed by a code import worker, the startJob
 workflow method updates the job's fields to indicate that it is now
@@ -235,7 +243,8 @@ The event is also recorded in the CodeImportEvent audit trail.
     START ~vcs-imports/gnome-terminal/import bazaar-importer
 
 
-== Recording progress on a job ==
+Recording progress on a job
+---------------------------
 
 As the code import worker progresses, it calls the updateHeartbeat
 method at least every minute to indicate that it is still progressing.

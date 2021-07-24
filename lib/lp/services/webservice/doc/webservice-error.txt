@@ -1,4 +1,5 @@
-= Web service status codes for Launchpad-specific exceptions =
+Web service status codes for Launchpad-specific exceptions
+==========================================================
 
 Most of the time, if a web service client triggers an exception, the
 response code will be 500. But specific exception classes can override

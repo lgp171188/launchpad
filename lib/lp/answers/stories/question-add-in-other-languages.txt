@@ -1,4 +1,5 @@
-= Asking questions in languages other than English =
+Asking questions in languages other than English
+================================================
 
 It is possible to ask questions in a language other than English. The
 'Ask a question' page has a pop-up where the user can select the language

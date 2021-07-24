@@ -1,4 +1,5 @@
-= LaunchpadFormView =
+LaunchpadFormView
+=================
 
 LaunchpadFormView is a base class for form views in Launchpad.  It is
 intended as a replacement for GeneralFormView.
@@ -39,7 +40,8 @@ There is also a LaunchpadEditFormView class to make it easier to write
 edit views.
 
 
-== The Schema ==
+The Schema
+----------
 
 The schema can be an interface implemented by your content object, or
 an interface specifically tailored for data entry.  Below is an
@@ -77,7 +79,8 @@ A form that handles all fields in the schema needs only set the
   ['name', 'displayname', 'password']
 
 
-== Restricting Displayed Fields ==
+Restricting Displayed Fields
+----------------------------
 
 The list of fields can be restricted with the "field_names" attribute:
 
@@ -93,7 +96,8 @@ The list of fields can be restricted with the "field_names" attribute:
   ['name', 'displayname']
 
 
-== Custom Adapters ==
+Custom Adapters
+---------------
 
 Sometimes a schema is used for a form that is not actually implemented
 by the context widget.  This can be handled by providing some custom
@@ -123,7 +127,8 @@ should in turn have the FormTest instance as a context:
   True
 
 
-== Custom Widgets ==
+Custom Widgets
+--------------
 
 In some cases we will want to use a custom widget for a particular
 field.  These can be installed easily with a "custom_widget_NAME"
@@ -150,7 +155,8 @@ attribute:
   <...TextWidget object at ...>
 
 
-== Using Another Context ==
+Using Another Context
+---------------------
 
 setUpWidgets() uses the view's context by default when setting up the
 widgets, but it's also possible to specify the context explicitly.
@@ -167,7 +173,8 @@ widgets, but it's also possible to specify the context explicitly.
   True
 
 
-== Actions ==
+Actions
+-------
 
 In order for a form to accept submissions, it will need one or more
 submit actions.  These are added to the view class using the "action"
@@ -201,7 +208,8 @@ method.  Instead, it should be performed in the validate() method, or
 in per-field validators.
 
 
-== Form Wide Validation ==
+Form Wide Validation
+--------------------
 
 While constraints on individual fields and schema invariants can catch
 the majority of input errors, in some cases it is necessary to
@@ -319,7 +327,8 @@ The default behaviour is to validate all widgets.
   Password: Required input is missing.
 
 
-== Redirect URL ==
+Redirect URL
+------------
 
 If the form is successfully posted, then LaunchpadFormView will
 redirect the user to another URL.  The URL is specified by the
@@ -348,7 +357,8 @@ redirect the user to another URL.  The URL is specified by the
   http://www.ubuntu.com/
 
 
-== Form Rendering ==
+Form Rendering
+--------------
 
   (Let's define the view for the rendering tests.)
   >>> class RenderFormTest(LaunchpadFormView):
@@ -414,7 +424,8 @@ This is also true of failure handlers:
   Some errors occured.
 
 
-== Initial Focused Widget ==
+Initial Focused Widget
+----------------------
 
 The standard template for LaunchpadFormView can set the initial focus
 on a form element.  This is achieved by some javascript that gets run
@@ -461,7 +472,8 @@ error, the generated script will focus the first widget with an error:
   // -->
 
 
-== Hidden widgets ==
+Hidden widgets
+--------------
 
 Any widget can be hidden in a LaunchpadFormView while still having its
 value POSTed with the values of the other (visible) ones. The widget's
@@ -513,7 +525,8 @@ using its hidden() method, which should return a hidden <input> tag.
   >>> os.remove(filename)
 
 
-== Safe Actions ==
+Safe Actions
+------------
 
 By default, LaunchpadFormView requires that form submissions be done
 via POST requests.  There are a number of reasons for this:
@@ -580,7 +593,8 @@ In contrast, the "search" action can be submitted with a GET request:
 
 
 
-== LaunchpadEditFormView ==
+LaunchpadEditFormView
+---------------------
 
 The LaunchpadEditFormView differs from LaunchpadFormView in the
 following ways:

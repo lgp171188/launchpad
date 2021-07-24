@@ -1,4 +1,5 @@
-= BuildFarm page =
+BuildFarm page
+==============
 
 The BuildFarm page is accessible from the root page, although we don't
 link to it yet because we are not yet sure of the benefits of doing

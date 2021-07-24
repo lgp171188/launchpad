@@ -1,4 +1,5 @@
-= Navigation components =
+Navigation components
+=====================
 
 You use navigation components to specify how objects get traversed and
 what their canonical url looks like, .  These are defined in
@@ -51,7 +52,8 @@ You can also say that a new browser UI layer applies for this object.
   newlayer = BugsLayer
 
 
-== Demonstrating a navigation class ==
+Demonstrating a navigation class
+--------------------------------
 
 In order to demonstrate a navigation class, we need to create an interface
 for the thing being navigated.  Rather than use a standard Launchpad interface,
@@ -183,7 +185,8 @@ To demonstrate the navigation rules, we'll start off with a simple
 navigation class, and gradually add in more complex traversal as we go.
 
 
-== Simple navigation class ==
+Simple navigation class
+-----------------------
 
 The first simple navigation class traverses according to the following
 rules:
@@ -241,7 +244,8 @@ The name begins with a 't', so the thing's value is THINGVIEW.
     <Thing 'THINGVIEW'>
 
 
-== ZCML for browser:navigation ==
+ZCML for browser:navigation
+---------------------------
 
 The zcml processor `browser:navigation` registers navigation classes.
 
@@ -291,7 +295,8 @@ This time, we get the view object for the page that was registered.
     a view on a thingset
 
 
-== stepto traversals ==
+stepto traversals
+-----------------
 
 You can say that there is a traversal to a fixed name that is handled by
 a particular method.  Use the function decorator @stepto('name') for this.
@@ -344,7 +349,8 @@ Let's create a subclass of ThingSetNavigation, and add a 'stepto'.
     zope.publisher.interfaces.NotFound: ...ThingSet..., name: 'neverthere2'
 
 
-== stepthrough traversals ==
+stepthrough traversals
+----------------------
 
 You can say that there is a traversal to particular subobjects that occurs
 through a particular "namespace", such as '+bug' or '+language'.
@@ -403,7 +409,8 @@ Check that the request's state is as it should be.
     ['prince']
 
 
-== redirection ==
+redirection
+-----------
 
 You can register that particular names are to be redirected to other names.
 You do this using the redirection() function in one of two ways:
@@ -492,7 +499,8 @@ Let's make another navigation class to test redirection.
     301
 
 
-== Redirecting subtrees ==
+Redirecting subtrees
+--------------------
 
 There are situations, especially during refactoring, where you want
 to keep old URLs working but have them redirect to the new URL, complete
@@ -531,7 +539,8 @@ Make a clean request.
     >>> request = Request()
 
 
-== Putting it all together ==
+Putting it all together
+-----------------------
 
 One of the advantages of using classes for traversal is that you can define
 a mix-in class that defines traversal and redirection for a particular
@@ -616,7 +625,8 @@ Check those from ThingSetNavigation4:
     /another/place
 
 
-== Testing that multiple inheritance involving decorators works ==
+Testing that multiple inheritance involving decorators works
+------------------------------------------------------------
 
     >>> class A:
     ...
@@ -655,7 +665,8 @@ Check those from ThingSetNavigation4:
     foo2 from C
 
 
-== Showing that the name of the function really doesn't matter ==
+Showing that the name of the function really doesn't matter
+-----------------------------------------------------------
 
     >>> class DupeNames(Navigation):
     ...

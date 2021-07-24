@@ -1,4 +1,5 @@
-= Legacy KDE PO file format =
+Legacy KDE PO file format
+=========================
 
 KDE versions before 4.0 used regular PO files with translatable
 strings and their translations specially formatted to accommodate
@@ -6,7 +7,8 @@ features that were introduced in GNU gettext PO files later.
 
 Such features include plural forms support and context support.
 
-== Helper imports ==
+Helper imports
+--------------
 
     >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -42,7 +44,8 @@ carlos@canonical.com.
     ...     path='po/firefox.pot',
     ...     owner=carlos)
 
-== Non-KDE PO file detection ==
+Non-KDE PO file detection
+-------------------------
 
 Our KDE PO support is built on top of existing gettext support.  As
 such, it has precedence in handling any PO files, but it correctly
@@ -70,9 +73,11 @@ Importing this file works, but the format is set to Gettext PO.
     >>> print(entry.format.title)
     PO format
 
-== Plural forms support ==
+Plural forms support
+--------------------
 
-=== Import ===
+Import
+......
 
 Plural forms are supported by using a specially formatted msgid where
 English singular and plural are split with a newline, and the entire
@@ -232,7 +237,8 @@ plural messages:
     %d translationes
     %d translations
 
-=== Export ===
+Export
+......
 
 Let's define a helper function for the exports.
 
@@ -396,13 +402,15 @@ Exporting a translation is possible in a very similar way.
     "plural entries"
 
 
-== Context support ==
+Context support
+---------------
 
 Message context is supported in legacy KDE PO files using a specially
 formatted msgid: context is preceded with a string '_: ', and split with
 a new line from the rest of the message.
 
-=== Import ===
+Import
+......
 
 We can have a template with a message with context.
 
@@ -493,7 +501,8 @@ other message and its translation:
     ...     print(translation)
     Second translation
 
-=== Export ===
+Export
+......
 
 Exporting a PO template as a KDE PO file joins the context back together:
 

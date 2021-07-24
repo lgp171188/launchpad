@@ -1,4 +1,5 @@
-= TestTracXMLRPCTransport =
+TestTracXMLRPCTransport
+=======================
 
 TestTracXMLRPCTransport is an XML-RPC transport which simulates the LP
 Trac plugin. It can be used to avoid network traffic while testing, and
@@ -26,7 +27,8 @@ some cookie is set.
     >>> trac_transport.setCookie('trac_auth=auth_cookie')
 
 
-== launchpad.bugtracker_version() ==
+launchpad.bugtracker_version()
+------------------------------
 
 bugtracker_version() returns a list of
 [Trac version, plugin version, dupe knowledge]. The version numbers are
@@ -37,7 +39,8 @@ instance knows how to track duplicate bugs.
     ['0.11.0', '1.0', False]
 
 
-== launchpad.time_snapshot() ==
+launchpad.time_snapshot()
+-------------------------
 
 time_snapshot returns information about what the Trac instance thinks
 the current time is. It returns the local time zone, the local time, and
@@ -57,7 +60,8 @@ isn't suitable.
     US/Eastern 1206328061 1206342461
 
 
-== launchpad.bug_info() ==
+launchpad.bug_info()
+--------------------
 
 bug_info() returns, as the name suggests, info about a given bug or set
 of bugs. It takes two parameters: level, an integer indicating how much
@@ -215,7 +219,8 @@ are in the bugs list being returned.
     [{'id': '1'}]
 
 
-== launchpad.get_comments() ==
+launchpad.get_comments()
+------------------------
 
 get_comments() returns a list of comment dicts. The comment dicts
 returned correspond to the comment IDs passed in the comments parameter.
@@ -245,7 +250,8 @@ returned correspond to the comment IDs passed in the comments parameter.
 
 
 
-== launchpad.add_comment() ==
+launchpad.add_comment()
+-----------------------
 
 The Trac XML-RPC API allows us to push comments to remote bug trackers
 via the launchpad.add_comment() method.
@@ -281,7 +287,8 @@ The comment will be included in the remote bug's comments.
     user: launchpad
 
 
-== Getting and setting the Launchpad bug ID ==
+Getting and setting the Launchpad bug ID
+----------------------------------------
 
 The Trac XML-RPC API allows us to tell the remote tracker which
 Launchpad bug links to a particular one of its bugs and also allows us

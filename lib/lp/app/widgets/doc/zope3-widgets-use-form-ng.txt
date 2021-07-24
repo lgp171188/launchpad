@@ -1,4 +1,5 @@
-= Zope Widgets use IBrowserFormNG =
+Zope Widgets use IBrowserFormNG
+===============================
 
 Regular Zope widgets have the problem of failing with low-level
 exceptions (TypeError, AttributeError, ...) when the request contains

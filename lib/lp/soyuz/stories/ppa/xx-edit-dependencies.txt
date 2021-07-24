@@ -1,4 +1,5 @@
-= Editing PPA dependencies =
+Editing PPA dependencies
+========================
 
 The PPA 'Edit dependency' view allows users to remove or add
 dependencies to their PPAs via the web UI.
@@ -87,7 +88,8 @@ When the 'Edit dependencies' page is loaded it will list all dependencies.
     No dependencies recorded for this PPA yet.
 
 
-== Adding dependencies ==
+Adding dependencies
+-------------------
 
 As we can see Celso's PPA contains no dependencies, let's try
 to add some.
@@ -219,7 +221,8 @@ Re-enable Mark's PPA for subsequent tests.
     >>> logout()
 
 
-== Removing dependencies ==
+Removing dependencies
+---------------------
 
 One or more dependencies can be removed via this page, they are
 presented as a vertical array of check-boxes labelled by dependency PPA
@@ -300,7 +303,8 @@ Clear the page.
     >>> print_ppa_dependencies(admin_browser.contents)
     No dependencies recorded for this PPA yet.
 
-== Primary dependencies ==
+Primary dependencies
+--------------------
 
 A user can modify how a PPA depends on its corresponding
 primary archive.
@@ -456,7 +460,8 @@ change it.
     >>> admin_browser.getLink('Edit PPA dependencies').click()
 
 
-== Everything in one click ==
+Everything in one click
+-----------------------
 
 The form can perform multiple actions in a single submit.
 
@@ -533,7 +538,8 @@ processed.
     PPA for Mark Shuttleworth
 
 
-== Primary dependencies in the PPA index page ==
+Primary dependencies in the PPA index page
+------------------------------------------
 
 Primary dependencies are presented with pocket information in the PPA
 index page (see `IArchivedependency.title`).
@@ -548,7 +554,8 @@ index page (see `IArchivedependency.title`).
     Primary Archive for Ubuntu Linux - RELEASE
     (main, restricted, universe, multiverse) (included ... ago)
 
-== Cancelling a form request ==
+Cancelling a form request
+-------------------------
 
 At anytime the form can be cancelled and the user will be taken to the
 PPA context page and the action won't be executed.

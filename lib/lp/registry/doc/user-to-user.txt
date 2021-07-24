@@ -1,4 +1,5 @@
-= Direct user-to-user email =
+Direct user-to-user email
+=========================
 
 Launchpad users can send emails to each other directly, through the Launchpad
 web interface.  Launchpad tracks these both for informational purposes and to
@@ -92,7 +93,8 @@ until tomorrow.
     False
 
 
-== Non-ASCII Subjects ==
+Non-ASCII Subjects
+------------------
 
 Dave wants to contact Elly but since both speak non-ASCII, so the message Dave
 sends has a Subject header encoded by RFC 2047.
@@ -118,7 +120,8 @@ sends has a Subject header encoded by RFC 2047.
     Smörgåsbord
 
 
-== Full names ==
+Full names
+----------
 
 Again, Dave wants to contact Elly, but this time, he's configured his mailer
 to include his full name.  His contact is still recorded correctly.
@@ -144,7 +147,8 @@ to include his full name.  His contact is still recorded correctly.
     <Person at ... elly (Elly)>
 
 
-== Adapters ==
+Adapters
+--------
 
 As noticed above, we can adapt from an IPerson to an IDirectEmailAuthorization.
 

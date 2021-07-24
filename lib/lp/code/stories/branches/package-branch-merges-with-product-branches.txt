@@ -1,4 +1,5 @@
-= Package branch merging with product branches =
+Package branch merging with product branches
+============================================
 
 If the source package is linked to the product, then package branches for that
 source package are allowed to be proposed for merging into product branches

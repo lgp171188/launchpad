@@ -1,4 +1,5 @@
-= Bug heat on bug page =
+Bug heat on bug page
+====================
 
 Bug heat appears on the bug index page:
 

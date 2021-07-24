@@ -1,4 +1,5 @@
-= Searching for bug tags =
+Searching for bug tags
+======================
 
 On the advanced search page it's possible to search for a specific tag.
 
@@ -38,7 +39,8 @@ If an invalid tag name is entered, an error message will be displayed.
     allowed after the first character.
 
 
-== Cross-Site Scripting, or XSS ==
+Cross-Site Scripting, or XSS
+----------------------------
 
 The tags field and its related messages are properly escaped in order
 to prevent XSS.

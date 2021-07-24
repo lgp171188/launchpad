@@ -1,11 +1,13 @@
-= Displaying Information on Bugs and Bug Tasks =
+Displaying Information on Bugs and Bug Tasks
+============================================
 
 This document discusses TALES techniques and IBugTask object
 attributes that may be useful to you, if you're writing some code to
 display bug and bug task information.
 
 
-== Displaying an Icon with image:icon ==
+Displaying an Icon with image:icon
+----------------------------------
 
 image:sprite_css is a TALES adapter that returns the CSS class for
 an icon for a bugtask.
@@ -60,7 +62,8 @@ Let's use a few examples to demonstrate:
   ...   ORIGINAL_IMPORTANCE, getUtility(ILaunchBag).user)
 
 
-== Displaying Logos for Bug Tasks ==
+Displaying Logos for Bug Tasks
+------------------------------
 
 The logo for a bug task display the corresponding logo for its
 target.
@@ -85,7 +88,8 @@ And the logo for a distro bug task shows the source package icon:
   '<img alt="" width="64" height="64" src="/@@/distribution-logo" />'
 
 
-== Displaying Status ==
+Displaying Status
+-----------------
 
 Sometimes it's useful to display the status of an IBugTask as a
 human-readable string. So, instead of displaying something like:
@@ -157,7 +161,8 @@ Lastly, some cleanup:
   >>> test_task.transitionToAssignee(ORIGINAL_ASSIGNEE)
 
 
-== Status Elsewhere ==
+Status Elsewhere
+----------------
 
 It's often useful to present information about the status of a bug in
 other contexts. Again, the listing-view holds a method which provides us

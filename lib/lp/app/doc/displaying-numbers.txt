@@ -1,8 +1,10 @@
-= Displaying Numbers with ZPT =
+Displaying Numbers with ZPT
+===========================
 
     >>> from lp.testing import test_tales
 
-== bytes: Byte contractions ==
+bytes: Byte contractions
+------------------------
 
 The TALES formatter for numbers allows them to be rendered as byte
 contractions as per IEC60027-2:
@@ -37,7 +39,8 @@ that (thank god!)
     >>> test_tales('foo/fmt:bytes', foo=123456789012345678901234567890)
     '102121.1 YiB'
 
-== float: Float formatting ==
+float: Float formatting
+-----------------------
 
 There's a method that allows formatting float values in TAL analogously
 to how the Python "%f" string formatter works:

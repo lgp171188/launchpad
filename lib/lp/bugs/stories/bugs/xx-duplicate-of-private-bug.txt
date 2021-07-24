@@ -1,4 +1,5 @@
-= Showing a duplicate of a private bug =
+Showing a duplicate of a private bug
+====================================
 
 When showing a duplicate of a private bug, the title of the private
 bug is not included in the page if the user does not have permission

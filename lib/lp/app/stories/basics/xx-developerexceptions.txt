@@ -1,4 +1,5 @@
-= Developer exceptions =
+Developer exceptions
+====================
 
 Launchpad developers get tracebacks and a linkified OOPS if an exception
 occurs. Other users get no traceback and only the OOPS ID.
@@ -96,7 +97,8 @@ unregister the adapter.
     >>> error_view_fixture.cleanUp()
 
 
-= http handle_errors =
+http handle_errors
+==================
 
 lp.testing.pages.http accepts the handle_errors parameter in case you
 want to see tracebacks instead of error pages.

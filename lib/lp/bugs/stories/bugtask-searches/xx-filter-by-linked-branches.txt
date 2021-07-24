@@ -1,4 +1,5 @@
-= Searching for bugs with linked branches =
+Searching for bugs with linked branches
+=======================================
 
 Using the "advanced search" form, we can limit a bug task search
 to bugs that are linked to branches or to bugs that are not linked

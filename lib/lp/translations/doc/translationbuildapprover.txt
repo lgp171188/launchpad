@@ -1,4 +1,5 @@
-= TranslationBuildApprover =
+TranslationBuildApprover
+========================
 
 The TranslationBuildApprover is a much simpler approver than the
 TranslationBranchApprover. The latter tries to detect when templates have

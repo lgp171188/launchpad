@@ -1,4 +1,5 @@
-= Set Up =
+Set Up
+======
 
 We will have to check for a BranchJob being created for a branch, so
 let's put this check in a convenient function.
@@ -34,7 +35,8 @@ For these tasks we need to log in.
     >>> login('foo.bar@canonical.com')
 
 
-= ProductSeriesTranslationsSettingsView =
+ProductSeriesTranslationsSettingsView
+=====================================
 
 Special settings for translations of a ProductSeries are set through
 this view.
@@ -88,7 +90,8 @@ created to create the initial database entries from the files in the branch.
     True
 
 
-= ProductSeriesTranslationsBzrImportView =
+ProductSeriesTranslationsBzrImportView
+======================================
 
 When requesting a one-time import of translation files, an Upload job
 is created that has force_translations_upload set to true.

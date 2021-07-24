@@ -1,4 +1,5 @@
-= LaunchpadLoginSource =
+LaunchpadLoginSource
+====================
 
 LaunchpadLoginSource is used to create principals, from login
 information, passing the email address to getPrincipalByLogin. If no

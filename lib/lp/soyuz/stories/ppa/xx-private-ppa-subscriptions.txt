@@ -1,9 +1,11 @@
-= PPA Subscriptions =
+PPA Subscriptions
+=================
 
 Note: This file contains all the pagetests for functionality that is not
 part of the stories in xx-private-ppa-subscription-stories.txt.
 
-== Managing Archive subscriptions ==
+Managing Archive subscriptions
+------------------------------
 
 Public PPAs do not have an option for managing subscriptions:
 
@@ -96,7 +98,8 @@ Once the subscription has been added, it will display in the table:
     Team Joe                        Joes friends are my friends   Edit/Cancel
 
 
-== Managing a persons' Archive subscriptions ==
+Managing a persons' Archive subscriptions
+-----------------------------------------
 
 The title of a persons archive subscriptions is displayed as the main
 heading:
@@ -148,7 +151,8 @@ create tokens.
     zope.publisher.interfaces.NotFound: ...
 
 
-== Confirming a subscription ==
+Confirming a subscription
+-------------------------
 
 When a person clicks on the view button, the subscription is confirmed
 automatically (creating a token for the user) and they are taken to a page
@@ -214,7 +218,8 @@ subscriptions page.
     PPA named p3a for Mark Shuttleworth (ppa:mark/p3a) Mark Shuttleworth View
     PPA named p3a for Celso Providelo (ppa:cprov/p3a)  Celso Providelo   View
 
-== Attempting to browse directly to a subscription ==
+Attempting to browse directly to a subscription
+-----------------------------------------------
 
     >>> joe_browser.open(
     ...     "http://launchpad.test/~joesmith/+archivesubscriptions/foo")

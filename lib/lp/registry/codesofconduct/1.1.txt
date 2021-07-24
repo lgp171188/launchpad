@@ -1,4 +1,5 @@
-= Ubuntu Code of Conduct v1.1 =
+Ubuntu Code of Conduct v1.1
+===========================
 
 This Code of Conduct covers our behaviour as members of the Ubuntu
 Community, in any forum, mailing list, wiki, web site, IRC channel,

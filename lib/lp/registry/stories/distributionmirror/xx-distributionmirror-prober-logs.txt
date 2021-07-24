@@ -1,4 +1,5 @@
-= Distribution mirror prober logs =
+Distribution mirror prober logs
+===============================
 
 Every time we probe a mirror for its contents we keep a log of the probe.
 All these logs can be seen by the mirror owner or the mirror admin of
