@@ -1,4 +1,5 @@
-= Link Tags for Atom Feeds =
+Link Tags for Atom Feeds
+========================
 
 The icon that appears in a browser's address field to indicate the
 presence of an RSS or Atom feed is controlled by adding a <link> tag
@@ -6,7 +7,8 @@ to the <head> of the document. We want appropriate pages in
 launchpad.test to provide links to corresponding Atom feeds.
 
 
-== All Announcements on Launchpad ==
+All Announcements on Launchpad
+------------------------------
 
 The root launchpad.test url will have a link to the Atom feed which
 displays the most recent announcements for all the projects.
@@ -30,7 +32,8 @@ feed.
         rel="alternate" title="All Announcements"
         type="application/atom+xml"/>]
 
-== Single Bug Feed ==
+Single Bug Feed
+---------------
 
 On the page which displays a single bug, there should be a link to the
 atom feed for that one bug.
@@ -71,7 +74,8 @@ the bug status and attempt to subscribe, they are redirected to the bug page:
     >>> print_feedback_messages(auth_browser.contents)
     The requested bug is private. Feeds do not serve private bugs.
 
-== Latest Bugs and Branches for a Person ==
+Latest Bugs and Branches for a Person
+-------------------------------------
 
 On the person page on launchpad.test and bugs.launchpad.test, we should
 show a link to the atom feed for that person's latest bugs and
@@ -101,7 +105,8 @@ not the branches link.
         type="application/atom+xml"/>]
 
 
-== Latest Bugs, Branches, and Announcements for a Product ==
+Latest Bugs, Branches, and Announcements for a Product
+------------------------------------------------------
 
 On the product page on launchpad.test and bugs.launchpad.test, we should
 show a link to the atom feed for that product's latest bugs.
@@ -135,7 +140,8 @@ Only bug feeds should be linked to on bugs.launchpad.test.
         type="application/atom+xml"/>]
 
 
-== Escaping the title ==
+Escaping the title
+------------------
 
 Since the link title attribute contains the displayname of the prodect,
 it must have quotes and html escaped.
@@ -177,7 +183,8 @@ it must have quotes and html escaped.
         title='Latest Revisions for Bad displayname"&gt;&lt;script&gt;alert("h4x0r")&lt;/script&gt;'
         type="application/atom+xml"/>]
 
-== Latest Bugs for a ProjectGroup ==
+Latest Bugs for a ProjectGroup
+------------------------------
 
 On the project group page on launchpad.test and bugs.launchpad.test, we should
 show a link to the atom feed for that project group's latest bugs.
@@ -225,7 +232,8 @@ that the code does not display the atom feed link here inappropriately.
     []
 
 
-== Latest Bugs for a Distro ==
+Latest Bugs for a Distro
+------------------------
 
 On the distro page on launchpad.test and bugs.launchpad.test, we should
 show a link to the atom feed for that distro's latest bugs.
@@ -252,7 +260,8 @@ Only bug feeds should be linked to on bugs.launchpad.test.
         type="application/atom+xml"/>]
 
 
-== Latest Bugs for a Distroseries ==
+Latest Bugs for a Distroseries
+------------------------------
 
 On the distroseries page on bugs.launchpad.test, we should
 show a link to the atom feed for that distroseries' latest bugs.
@@ -266,7 +275,8 @@ show a link to the atom feed for that distroseries' latest bugs.
         type="application/atom+xml"/>]
 
 
-== Latest Bugs for a Product Series ==
+Latest Bugs for a Product Series
+--------------------------------
 
 On the product series page on bugs.launchpad.test, we should
 show a link to the atom feed for that product series' latest bugs.
@@ -279,7 +289,8 @@ show a link to the atom feed for that product series' latest bugs.
         type="application/atom+xml"/>]
 
 
-== Latest Bugs for a Source Package ==
+Latest Bugs for a Source Package
+--------------------------------
 
 On the source package page on bugs.launchpad.test, we should
 show a link to the atom feed for that source package's latest bugs.
@@ -293,7 +304,8 @@ show a link to the atom feed for that source package's latest bugs.
         type="application/atom+xml"/>]
 
 
-== Latest Branches for a ProjectGroup ==
+Latest Branches for a ProjectGroup
+----------------------------------
 
 On the project group code page on code.launchpad.test, we should show a link
 to the atom feed for that project group's latest branches.
@@ -311,7 +323,8 @@ to the atom feed for that project group's latest branches.
         type="application/atom+xml"/>]
 
 
-== Latest Branches for a Product ==
+Latest Branches for a Product
+-----------------------------
 
 On the project code page on code.launchpad.test, we should show a link
 to the atom feed for that product's latest branches.
@@ -328,7 +341,8 @@ to the atom feed for that product's latest branches.
         type="application/atom+xml"/>]
 
 
-== Latest Branches for a Person ==
+Latest Branches for a Person
+----------------------------
 
 On a person's code page on code.launchpad.test, we should show a link
 to the atom feed for that person's latest branches.
@@ -344,7 +358,8 @@ to the atom feed for that person's latest branches.
         type="application/atom+xml"/>]
 
 
-== Latest Revisions on a Branch ==
+Latest Revisions on a Branch
+----------------------------
 
 On a branch page on code.launchpad.test, we should show a link to the
 atom feed for that branch's revisions.

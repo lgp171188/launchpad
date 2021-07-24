@@ -1,4 +1,5 @@
-= Keeping old bookmarks working =
+Keeping old bookmarks working
+=============================
 
 As part of the bug workflow spec various statuses are being changed
 but we need old bookmarks to keep working with the status names.
@@ -70,7 +71,8 @@ the new status names in place of the old.
     field.status:list=Unconfirmed --> field.status:list=New
     field.status:list=Needs Info  --> field.status:list=Incomplete
 
-== Assigned, Reported and Subscribed Bugs ==
+Assigned, Reported and Subscribed Bugs
+--------------------------------------
 
 Bugs searched for in the context of a person or team are redirected
 too.

@@ -1,4 +1,5 @@
-= Bug filing options for bug supervisors =
+Bug filing options for bug supervisors
+======================================
 
 During the bug filing process, normal or advanced, bug supervisors are
 able to set the status and importance of the bug being filed, can
@@ -55,7 +56,8 @@ Users who are bug supervisors can see these options:
     <Control name='field.assignee' type='text'>
 
 
-== Using these extra options ==
+Using these extra options
+-------------------------
 
     >>> from lp.bugs.tests.bug import print_bug_affects_table
 

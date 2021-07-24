@@ -1,4 +1,5 @@
-= Message sharing merge script =
+Message sharing merge script
+============================
 
 The message-sharing-merge.py script turns legacy, pre-message-sharing
 translations into properly sharing ones.

@@ -1,4 +1,5 @@
-= Package copy requests =
+Package copy requests
+=====================
 
 Populating a copy archive from some other source archive is a potentially
 long-lasting operation. Thus the population parameters are specified using

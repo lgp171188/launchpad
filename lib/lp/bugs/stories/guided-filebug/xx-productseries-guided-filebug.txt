@@ -1,4 +1,5 @@
-= Filing a bug from the product series page =
+Filing a bug from the product series page
+=========================================
 
 The product series Bugs frontpage includes a link to report a bug.
 

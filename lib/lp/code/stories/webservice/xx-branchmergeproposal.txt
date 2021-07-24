@@ -1,4 +1,5 @@
-== Create a new merge proposal ==
+Create a new merge proposal
+---------------------------
 
 Branch merge proposals can be created through the API.
 
@@ -111,7 +112,8 @@ Our review request is listed in the votes collection.
     reviewer_link: 'http://api.launchpad.test/devel/~person-name...'
     self_link: 'http://api.launchpad.test/devel/~...'
 
-== Get an existing merge proposal ==
+Get an existing merge proposal
+------------------------------
 
 Branch merge proposals can be fetched through the API.
 
@@ -186,7 +188,8 @@ We use the webservice as an unrelated, unprivileged user.
     web_link: 'http://code.../~source/fooix/fix-it/+merge/...'
 
 
-== Read the comments ==
+Read the comments
+-----------------
 
 The comments on a branch merge proposal are exposed through the API.
 
@@ -237,7 +240,8 @@ The comments on a branch merge proposal are exposed through the API.
     web_link: 'http://code.../~source/fooix/fix-it/+merge/.../comments/...'
 
 
-== Check the votes ==
+Check the votes
+---------------
 
 The votes on a branch merge proposal can be checked through the API.
 
@@ -257,7 +261,8 @@ The votes on a branch merge proposal can be checked through the API.
     self_link: 'http://.../~source/fooix/fix-it/+merge/.../+review/...'
 
 
-== Performing a Review ==
+Performing a Review
+-------------------
 
 A review can be performed through the API.
 
@@ -343,7 +348,8 @@ to "Work In Progress" and not specify the revision_id.
     >>> print(merge_proposal['reviewed_revid'])
     None
 
-== Getting a Project's Pending Merge Proposals ==
+Getting a Project's Pending Merge Proposals
+-------------------------------------------
 
 It is possible to view all of a project's merge proposals or filter the
 proposals by their status.
@@ -410,7 +416,8 @@ the proposal if they have allowed the API to access private bits.
     >>> logout()
 
 
-== Getting a Person's Pending Merge Proposals ==
+Getting a Person's Pending Merge Proposals
+------------------------------------------
 
 It is possible to view all of a person's merge proposals or filter their
 proposals by their status.
@@ -431,7 +438,8 @@ The person's proposals can also be filtered by status.
     http://.../~source/fooix/fix-it/+merge/... - Rejected
 
 
-== Getting a Project Group's Merge Proposals ==
+Getting a Project Group's Merge Proposals
+-----------------------------------------
 
 Getting the merge proposals for a project group will get all the proposals for all
 the projects that are part of the project group.
@@ -458,7 +466,8 @@ The proposals can also be filtered by status.
     ...     status=[BranchMergeProposalStatus.REJECTED.title])
     http://.../~source/fooix/fix-it/+merge/... - Rejected
 
-== Getting Merge Proposals a Person has been Asked To Review ==
+Getting Merge Proposals a Person has been Asked To Review
+---------------------------------------------------------
 
 It's good to be able to find out which proposals you have been asked to
 review.

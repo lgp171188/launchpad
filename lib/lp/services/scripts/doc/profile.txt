@@ -1,4 +1,5 @@
-== Profiling scripts ==
+Profiling scripts
+-----------------
 
 All scripts derived from LaunchpadScript support a --profile option.
 The profile data is saved in the argument when the program exits.

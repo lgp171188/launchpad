@@ -1,4 +1,5 @@
-= Rejecting Questions =
+Rejecting Questions
+===================
 
 Answer contacts and administrators can reject a question.
 This should be done when the question isn't an actual pertinent question
@@ -87,7 +88,8 @@ stating that the question is already rejected:
     ...     print(message.decode_contents())
     The question is already rejected.
 
-= Changing the Question Status =
+Changing the Question Status
+============================
 
 In the previous example, that rejection was clearly a mistake: you
 shouldn't reject a question because it is related to a bug, for these

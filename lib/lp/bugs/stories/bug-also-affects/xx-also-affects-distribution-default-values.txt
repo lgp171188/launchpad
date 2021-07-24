@@ -1,4 +1,5 @@
-= Default values on the +distrotask form =
+Default values on the +distrotask form
+======================================
 
 Source packages often share names across distributions, especially
 Debian and Ubuntu. So when you want to indicate that the bug affects

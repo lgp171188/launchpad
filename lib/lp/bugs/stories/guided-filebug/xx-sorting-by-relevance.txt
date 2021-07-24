@@ -1,4 +1,5 @@
-= Sorting the similar bugs found by relevance =
+Sorting the similar bugs found by relevance
+===========================================
 
 When displaying the similar bugs, we display only a small number, even
 though the search usually returns a huge number of results. For this

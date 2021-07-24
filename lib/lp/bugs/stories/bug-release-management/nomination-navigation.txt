@@ -1,4 +1,5 @@
-= Bug nomination navigation =
+Bug nomination navigation
+=========================
 
 Most people don't see the separate page for approving or declining a
 release nomination for a bug, because it's handled using an expandable

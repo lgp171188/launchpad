@@ -1,4 +1,5 @@
-= Searching Questions in Multiple Languages =
+Searching Questions in Multiple Languages
+=========================================
 
 By default, only questions written in English or one of the user
 preferred languages are listed and searched.
@@ -10,7 +11,8 @@ African IP address, since we'll use that later.
     >>> user_browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
 
 
-== Anonymous searching ==
+Anonymous searching
+-------------------
 
 For example, a user who isn't logged in will only see questions
 written in English, in one of the language configured in their browser,
@@ -154,7 +156,8 @@ then questions with those language will be displayed:
     Installation failed
 
 
-== Authenticated searching ==
+Authenticated searching
+-----------------------
 
 Authenticated users without preferred languages are assumed to have
 the languages determined by what their browser sends in the
@@ -261,7 +264,8 @@ English, and can use it to locate English questions.
     Slow system
 
 
-== Questions by language ==
+Questions by language
+---------------------
 
 When open questions are in languages that no answer contacts
 speak, the project questions page displays links to see those
@@ -308,7 +312,8 @@ the preceding page.
 The page in all other respects behaves like a question search page.
 
 
-== My questions ignores preferred languages ==
+My questions ignores preferred languages
+----------------------------------------
 
 The "My questions" view ignores the user's language preferences, because
 they may change them over time, but they must always see their questions. For

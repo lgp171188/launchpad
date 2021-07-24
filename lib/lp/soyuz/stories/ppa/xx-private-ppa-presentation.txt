@@ -1,9 +1,11 @@
-= Private Personal Package Archives Presentation =
+Private Personal Package Archives Presentation
+==============================================
 
 Private PPAs are presented differently to standard PPAs.  This pagetest
 describes the appearance.
 
-== Standard presentation ==
+Standard presentation
+---------------------
 
 Public PPAs appear like any other launchpad page.
 
@@ -13,7 +15,8 @@ Public PPAs appear like any other launchpad page.
     >>> 'private' in body_el['class']
     False
 
-== Private presentation ==
+Private presentation
+--------------------
 
 Let's create a private PPA for Celso and see what it looks like.
 

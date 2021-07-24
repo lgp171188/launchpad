@@ -1,9 +1,11 @@
-= Serving directories of files =
+Serving directories of files
+============================
 
 LAZR adds special views that can be used to serve all the files under a
 particular directory.
 
-== ExportedFolder ==
+ExportedFolder
+--------------
 
 This is the base implementation. To export a directory, you need to
 subclass that view and provide a folder property returning the path of
@@ -99,7 +101,8 @@ As requesting a non-existent file.
     zope.publisher.interfaces.NotFound: ...
 
 
-== ExportedImageFolder ==
+ExportedImageFolder
+-------------------
 
 For images, it's often convenient not to request the extension. There is
 an ExportedImageFolder subclass, that will accept serving an image file
@@ -140,7 +143,8 @@ If a file without extension exists, that one will be served.
     Image with extension
 
 
-== Exporting trees ==
+Exporting trees
+---------------
 
 By default ExportedFolder doesn't export contained folders, but if the
 export_subdirectories is set to True, it will allow traversing to
@@ -201,7 +205,8 @@ NotFound.
     zope.publisher.interfaces.NotFound: ...
 
 
-== Clean-up ==
+Clean-up
+--------
 
     >>> import shutil
     >>> shutil.rmtree(resource_dir)

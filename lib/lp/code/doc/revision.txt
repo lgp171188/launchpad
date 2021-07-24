@@ -1,10 +1,12 @@
-= Bazaar Revisions =
+Bazaar Revisions
+================
 
 Branches are collection of revisions, and a revision can exist independently
 from any branch. Revisions are created automatically by scanning branches,
 they have no creation interface and Launchpad cannot create or modify them.
 
-== Interfaces ==
+Interfaces
+----------
 
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing import verifyObject
@@ -27,7 +29,8 @@ they have no creation interface and Launchpad cannot create or modify them.
     ...     IStore(BranchRevision).find(BranchRevision).any())
     True
 
-== Creating revisions ==
+Creating revisions
+------------------
 
 The creator of a revision is identified by a RevisionAuthor. A RevisionAuthor
 is not a person because that is only an informational attribute, and even if
@@ -61,7 +64,8 @@ while the date_created is the time when the database record was created.
     ...     revision_author=author, revision_id=revision_id_1,
     ...     revision_date=date)
 
-== Parents ==
+Parents
+-------
 
 Bazaar revisions can have multiple parents, the "leftmost" parent is the
 revision that was used as a base when committing, other parents are used to
@@ -78,7 +82,8 @@ we can represent revisions whose at least one parent is a ghost revision.
     >>> rev2_parent = RevisionParent(sequence=0, revision=revision_2,
     ...                              parent_id=revision_1.revision_id)
 
-== Branch ancestry ==
+Branch ancestry
+---------------
 
 Revisions are associated to branches through the BranchRevision table. A given
 revision may appear in different positions in different branches thanks to
@@ -98,7 +103,8 @@ BranchRevision rows are created using `Branch.createBranchRevision`.
     >>> rev_no_1.branch == rev_no_2.branch == branch
     True
 
-=== Accessing BranchRevision ===
+Accessing BranchRevision
+........................
 
     >>> branch = getUtility(IBranchLookup).getByUniqueName(
     ...     '~name12/+junk/junk.contrib')
@@ -161,7 +167,8 @@ history of the branch.
     foo@localhost-20051031170357-1301ad6d387feb23
 
 
-=== Deleting BranchRevisions ===
+Deleting BranchRevisions
+........................
 
 If a branch gets overwritten or some revisions get uncommitted,
 Launchpad's view of the branch will differ from the actual state of the
@@ -211,7 +218,8 @@ may be referenced by some other branch):
     foo@localhost-20051031170357-1301ad6d387feb23
 
 
-== IRevisionSet.new() ==
+IRevisionSet.new()
+------------------
 
 Revision objects can be created using the IRevisionSet utility.
 Associated RevisionAuthor and RevisionParent objects will be created

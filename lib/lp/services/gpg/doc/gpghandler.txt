@@ -1,4 +1,5 @@
-= GPGHandler =
+GPGHandler
+==========
 
 `IGPGHandler` is a utility designed to handle OpenPGP (GPG) operations.
 
@@ -15,7 +16,8 @@ The following operations are supported:
  * Sanitizing fingerprints.
 
 
-== Importing public OpenPGP keys ==
+Importing public OpenPGP keys
+-----------------------------
 
 The importPublicKey method is exposed by IGPGHandler but it's only used
 internally by the retrieveKey method.  Ideally, we shouldn't need to
@@ -142,7 +144,8 @@ But we get an error if the damage is big:
     lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
 
 
-== Importing secret OpenPGP keys ==
+Importing secret OpenPGP keys
+-----------------------------
 
 Secret keys can be imported using IGPGHandler.importSecretKey() which
 does exactly the same job performed by importPublicKey() but
@@ -183,7 +186,8 @@ Secret keys can be exported in ASCII-armored format.
     <BLANKLINE>
 
 
-== Keyserver uploads ==
+Keyserver uploads
+-----------------
 
 IGPGHandler also allow callsites to upload the public part of a local
 key to the configuration keyserver.
@@ -241,7 +245,8 @@ in a error.
     lp.services.gpg.interfaces.GPGUploadFailure: Could not reach keyserver at http://localhost:11371...Connection refused...
 
 
-== Fingerprint sanitizing ==
+Fingerprint sanitizing
+----------------------
 
 The GPG handler offers a convenience method to sanitize key
 fingerprints:

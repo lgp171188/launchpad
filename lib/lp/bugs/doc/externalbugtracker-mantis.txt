@@ -1,9 +1,11 @@
-= ExternalBugTracker: Mantis =
+ExternalBugTracker: Mantis
+==========================
 
 This covers the implementation of the Mantis bug watch updater.
 
 
-== Basics ==
+Basics
+------
 
 The class that implements ExternalBugTracker for Mantis is called,
 surprisingly, Mantis! It doesn't do any version probing and simply
@@ -45,7 +47,8 @@ If the status can't be converted an UnknownRemoteStatusError is raised.
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: foo: bar
 
 
-== Updating Bug Watches ==
+Updating Bug Watches
+--------------------
 
 Let's set up a BugTracker and some watches for the Example.com Bug
 Tracker:

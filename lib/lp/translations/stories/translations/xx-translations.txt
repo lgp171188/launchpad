@@ -85,7 +85,8 @@ Also, we can see that the message has no active translation yet:
   ...                      'msgset_150_es_translation_1').decode_contents())
   (no translation yet)
 
-= Translations for DistroSeries =
+Translations for DistroSeries
+=============================
 
 First, we need to ensure that we can see the distroseries translations
 page, and that it has all the data we are expecting, in terms of languages.
@@ -176,7 +177,8 @@ With its latest translator.
   >>> six.ensure_str('Edgar Bursic') in browser.contents
   True
 
-== Last translator ==
+Last translator
+---------------
 
 When there's no reviewer and date of review on a last touched PO message
 inside a PO file (for example, when it was uploaded from the package), the
@@ -190,7 +192,8 @@ last translator is displayed.
   ...     find_tag_by_id(browser.contents, "pkgconf-mozilla-person")))
   Helge Kreutzmann
 
-== DummyPOFile ==
+DummyPOFile
+-----------
 
 There are no translations yet for pmount into Portuguese. Carlos has
 decided to start contributing translations to that package.
@@ -226,7 +229,8 @@ Finally, lets also check that translated entries show up as well.
   ...     browser.contents)
   True
 
-== Links to filtered pages ==
+Links to filtered pages
+-----------------------
 
 The DistroSeries per-language overview page shows different statistics:
 a count of untranslated messages, messages with new, unreviewed suggestions,

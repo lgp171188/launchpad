@@ -1,4 +1,5 @@
-= Warning about imported suggestions =
+Warning about imported suggestions
+==================================
 
 When a suggestion is coming from an import, a warning is shown about the
 likely licensing incompatibility.

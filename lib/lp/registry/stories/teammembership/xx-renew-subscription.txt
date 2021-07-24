@@ -1,4 +1,5 @@
-= Renewing a member's subscription =
+Renewing a member's subscription
+================================
 
 Mark decides to renew his subscription to the 'Ubuntu Gnome Team', which
 is expired. He select Never from the expiration options and chooses

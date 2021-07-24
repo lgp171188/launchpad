@@ -1,4 +1,5 @@
-= Poll Pages =
+Poll Pages
+==========
 
 First import some stuff and setup some things we'll use in this test.
 
@@ -12,7 +13,8 @@ First import some stuff and setup some things we'll use in this test.
   >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
 
 
-== Creating new polls ==
+Creating new polls
+------------------
 
 When creating a new poll, its start date must be at least 12h after it is
 created.
@@ -51,7 +53,8 @@ Now we successfully create a poll which starts 12h from now.
   []
 
 
-== Displaying results of condorcet polls ==
+Displaying results of condorcet polls
+-------------------------------------
 
   >>> poll = getUtility(IPollSet).getByTeamAndName(
   ...     ubuntu_team, u'director-2004')
@@ -72,7 +75,8 @@ matrix as a python list, with the necessary headers (the option's names).
   ['C', 1, 1, None, 1]
   ['D', 2, 1, 2, None]
 
-== Voting on closed polls ==
+Voting on closed polls
+----------------------
 
 This is not allowed, and apart from not linking to the +vote page and not
 even displaying its content for a closed poll, we also have some lower

@@ -1,4 +1,5 @@
-= Tests for our PO parser =
+Tests for our PO parser
+=======================
 
 The PO parser handles GNU gettext format human readable files.
 
@@ -9,7 +10,8 @@ The PO parser handles GNU gettext format human readable files.
     ...     POHeader, POParser)
 
 
-== POParser ==
+POParser
+--------
 
 PO files with empty headers are not allowed.
 
@@ -66,7 +68,8 @@ Unclosed strings (missing closing quotes) are caught.
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...String not terminated...
 
 
-== POHeader ==
+POHeader
+--------
 
 A POHeader is the first entry in a .po file, and it is treated specially
 because its translation contains metadata about the .po file.  The msgid of
@@ -110,7 +113,8 @@ And the translation_revision_date is exactly the one in the header string.
     2005-08-18 13:22:00+00:00
 
 
-=== translation_revision_date ===
+translation_revision_date
+.........................
 
 This attribute gives you a datetime object representing the
 PO-Revision-Date field.
@@ -178,7 +182,8 @@ Likewise, if the PO-Revision-Date header is semantically nonsensical
     None
 
 
-=== updateFromTemplateHeader(template_header) ===
+updateFromTemplateHeader(template_header)
+.........................................
 
 This method sets some header fields based on the given template_header.
 
@@ -279,7 +284,8 @@ template.
     Domain: blahdomain
 
 
-== Parsing a PO template ==
+Parsing a PO template
+---------------------
 
 Parsing a PO template:
 
@@ -328,7 +334,8 @@ errors occur:
     lp.translations.interfaces.translationimporter.TranslationFormatInvalidInputError: Line 13: Could not decode input from UTF-8
 
 
-== Evil Big5 Multibyte Sequences ==
+Evil Big5 Multibyte Sequences
+-----------------------------
 
 To parse a PO file, it is necessary to know what encoding it is in,
 which is specified in the PO file header.
@@ -370,7 +377,8 @@ as decoding '\xa6\xa8\xa5\\' as BIG5 encoding.
     \u6210\u529f
 
 
-== Newline Formats ==
+Newline Formats
+---------------
 
 Not everyone is using UNIX systems, so some submitted PO files will
 not use standard UNIX newlines.
@@ -394,7 +402,8 @@ Verify that it still parses:
     \u6210\u529f
 
 
-== Escape Characters in Strings ==
+Escape Characters in Strings
+----------------------------
 
 Message strings in PO files can contain C string escape sequences. Some of
 them have special meaning like 'new line': '\n' or 'tabs' '\t' and others are
@@ -434,7 +443,8 @@ see that we get its Unicode equivalent.
     >>> print(translation_file.messages[1].msgid_singular)
     view «${version_title}»
 
-== Plural forms mapping ==
+Plural forms mapping
+--------------------
 
 We map plural forms formulae in order to correctly import PO files with
 different plural form orders.

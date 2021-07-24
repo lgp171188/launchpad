@@ -1,4 +1,5 @@
-= Searching from the Bugs front page =
+Searching from the Bugs front page
+==================================
 
 It's possible to search bug reports across all of Launchpad from the
 Bugs front page.
@@ -14,7 +15,8 @@ Either all projects, or a specific one can be searched.
     >>> anon_browser.getControl('One project') is not None
     True
 
-== Searching all projects ==
+Searching all projects
+----------------------
 
 When choosing to search all the projects, all open bug reports in
 Launchpad will be searched, and the bug target will be visible in the
@@ -69,7 +71,8 @@ the form at the front page.
     >>> anon_browser.title
     'Search all bug reports'
 
-== Searching one project ==
+Searching one project
+---------------------
 
 If the user chooses to search only one project, they will be forwarded to
 the project's bug listing, and the search will be performed there. If no
@@ -116,7 +119,8 @@ support javascript, so a 'Find' link pointing to /bugs is displayed.
 'Project' in this context means either a product, distribution or a
 project group.
 
-=== Searching a product ===
+Searching a product
+...................
 
     >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('One project').selected = True
@@ -131,7 +135,8 @@ project group.
     7 A test bug Evolution
       Medium New
 
-=== Searching a project ===
+Searching a project
+...................
 
     >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('One project').selected = True
@@ -146,7 +151,8 @@ project group.
     7 A test bug
       Evolution Medium New
 
-=== Searching a distribution ===
+Searching a distribution
+........................
 
     >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('One project').selected = True
@@ -161,7 +167,8 @@ project group.
     10 another test bug
        linux-source-2.6.15 (Ubuntu)  Medium  New
 
-=== Jumping to a bug ===
+Jumping to a bug
+................
 
 Like with all other bug searches, it's possible to jump a bug by
 specifying only the bug id as the search term.

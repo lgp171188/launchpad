@@ -1,4 +1,5 @@
-= LAZR's field marshallers =
+LAZR's field marshallers
+========================
 
 LAZR defines an interface for converting between the values that
 come in on an HTTP request, and the object values appropriate for schema
@@ -24,7 +25,8 @@ application root.
     >>> getUtility(IOpenLaunchBag).add(root)
 
 
-=== Choice of SQLObjectVocabularyBase ===
+Choice of SQLObjectVocabularyBase
+.................................
 
 For vocabularies based on SQLObjectVocabularyBase, the values are
 interpreted as URLs referencing objects on the web service. If the given

@@ -1,4 +1,5 @@
-= Question obfuscation =
+Question obfuscation
+====================
 
 Launchpad obfuscates email addresses when pages are viewed by
 anonymous users to prevent address harvesting by spammers. Logged
@@ -6,7 +7,8 @@ in users can see the email address in Question descriptions.
 See question-message.txt for additional documentation.
 
 
-== Logged in users can see email addresses ==
+Logged in users can see email addresses
+---------------------------------------
 
 No Privileges Person can see the email address in the tooltip of the
 questions in the Latest questions solved portlet on the Answers
@@ -87,7 +89,8 @@ description. They can then see the email address in the tooltip in the
     ...
 
 
-== Anonymous users cannot see email addresses ==
+Anonymous users cannot see email addresses
+------------------------------------------
 
 Anonymous cannot see the email address anywhere on the Answers front
 page.

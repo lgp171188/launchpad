@@ -1,4 +1,5 @@
-= Things a person is working on =
+Things a person is working on
+=============================
 
 Any person page contains the bugs/blueprints a person is working on.
 

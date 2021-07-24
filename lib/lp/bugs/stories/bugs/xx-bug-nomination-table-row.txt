@@ -1,4 +1,5 @@
-= Bug nominations =
+Bug nominations
+===============
 
 Bug nominations are displayed in the table at the top of the bug page,
 using the +bugtasks-and-nominations-table-row view. This view allows

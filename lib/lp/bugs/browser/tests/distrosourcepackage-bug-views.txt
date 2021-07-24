@@ -1,6 +1,8 @@
-= Distro Source Package Bug Views =
+Distro Source Package Bug Views
+===============================
 
-== Searching ==
+Searching
+---------
 
 Simple searching is possible on the distro source package bug view page.
 

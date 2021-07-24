@@ -1,4 +1,5 @@
-= Question messages =
+Question messages
+=================
 
 Question messages are plain text. They are formatted as HTML for web
 pages. Many messages originate from emails where unwanted or
@@ -31,7 +32,8 @@ quoted passage, and a signature with an email address in it.
     >>> user_browser.getControl('Add Information Request').click()
 
 
-== Email addresses are only shown to authenticated users ==
+Email addresses are only shown to authenticated users
+-----------------------------------------------------
 
 Email addresses are visible to authenticated users. Sample Person is
 authenticated already, so they will see 'human@somewhere.org'.
@@ -63,7 +65,8 @@ see the obfuscated email address (<email address hidden>).
     Witty signatures rock!
 
 
-== Signatures and quoted passages are hidden ==
+Signatures and quoted passages are hidden
+-----------------------------------------
 
 The style and script in the user_browser control the display and
 behaviour of content inside tags with the class 'foldable'. The script

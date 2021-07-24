@@ -1,11 +1,13 @@
-= Exporting ProductSeries Translations Through the Web =
+Exporting ProductSeries Translations Through the Web
+====================================================
 
 Launchpad supports export of entire productseries translations in a single
 tarball.  Meant primarily for upstream maintainers, the tarball will contain
 all templates for the product series as well as all their translations.
 
 
-== Where to request ==
+Where to request
+----------------
 
 Any authenticated user can request a tarball export for a productseries.  The
 option is presented in the sidebar as "Download translations" on the
@@ -27,7 +29,8 @@ offer a download link for that series.
     http://translations.launchpad.test/evolution/trunk/+export
 
 
-== Anonymous access ==
+Anonymous access
+----------------
 
 To prevent spambot activity from becoming a problem, the download option is
 not available to anonymous visitors.
@@ -40,7 +43,8 @@ not available to anonymous visitors.
     zope.testbrowser.browser.LinkNotFoundError
 
 
-== Making the request ==
+Making the request
+------------------
 
 The logged-in user sees a page that lets them select an export format, and
 request the download.
@@ -49,7 +53,8 @@ request the download.
     Download : Series trunk : Translations...
 
 
-=== File format ===
+File format
+...........
 
 The request must specify a file format.
 
@@ -82,7 +87,8 @@ An alternative is MO.
     Your request has been received. Expect to receive an email shortly.
 
 
-=== Nothing to export ===
+Nothing to export
+.................
 
 Where there are no translation files to be exported, the user is not offered
 the option to download any.

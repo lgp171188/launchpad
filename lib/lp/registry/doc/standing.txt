@@ -1,4 +1,5 @@
-= Updating personal standing =
+Updating personal standing
+==========================
 
 People have a personal standing which controls whether their postings to
 mailing lists they are not members require moderation or not.  Personal
@@ -150,7 +151,8 @@ approved.  As a result, his personal standing gets updated.
     <DBItem PersonalStanding.GOOD...>
 
 
-== Multiple senders ==
+Multiple senders
+----------------
 
 Along comes Mark who also sends three messages to three different lists.  His
 personal standing gets updated to Good also.
@@ -175,7 +177,8 @@ personal standing gets updated to Good also.
     <DBItem PersonalStanding.GOOD...>
 
 
-== Only transition Unknown standings ==
+Only transition Unknown standings
+---------------------------------
 
 However, Robert's standing will only be updated if it was previously
 Unknown.  A standing of Poor, Good or Excellent will not be changed by
@@ -208,7 +211,8 @@ messages will count toward his good standing again.
     <DBItem PersonalStanding.GOOD...>
 
 
-== Cron script ==
+Cron script
+-----------
 
 Really, standing is updated via the update-standing.py cron script.  This
 script is essentially a wrapper around the above script class, but its

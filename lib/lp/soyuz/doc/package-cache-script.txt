@@ -1,4 +1,5 @@
-= Update-pkgcache script =
+Update-pkgcache script
+======================
 
 Package cache system is better described in package-cache.txt.
 

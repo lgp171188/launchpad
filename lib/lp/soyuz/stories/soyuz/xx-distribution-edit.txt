@@ -1,4 +1,5 @@
-= Editing distributions =
+Editing distributions
+=====================
 
 Change some details of the Ubuntu distribution that were incorrect.
 

@@ -1,4 +1,5 @@
-= Package branch merge proposals =
+Package branch merge proposals
+==============================
 
 Package branches can be used for merge proposals just like normal upstream
 branches.

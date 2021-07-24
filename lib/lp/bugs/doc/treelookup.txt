@@ -1,4 +1,5 @@
-= Doing lookups in a tree =
+Doing lookups in a tree
+=======================
 
   >>> from lp.bugs.adapters.treelookup import (
   ...     LookupBranch, LookupTree)
@@ -35,7 +36,8 @@ tree, because it would not make sense for it to appear in any other
 position.
 
 
-== Creation ==
+Creation
+--------
 
   >>> tree = LookupTree(
   ...     ('Snack', LookupTree(
@@ -92,7 +94,8 @@ instances), `LookupTree._verify` also checks that every branch is a
   TypeError: Not a LookupBranch: ...'Greenland'
 
 
-== Searching ==
+Searching
+---------
 
 Just call `tree.find`.
 
@@ -113,7 +116,8 @@ But an exception is raised if it does not reach a leaf.
   KeyError: ...'Snack'
 
 
-== Development ==
+Development
+-----------
 
 `LookupTree` makes development easy, because `describe` gives a
 complete description of the tree you've created.
@@ -152,7 +156,8 @@ Simple keys are shown without quotes, to aid readability, and default
 branches are shown with '*' as the key.
 
 
-== Pruning ==
+Pruning
+-------
 
 During tree creation, branches which have keys that already appear in
 earlier branches are cloned and have those already seen keys
@@ -180,7 +185,8 @@ branches with keys are candidates for being discarded.
       )
 
 
-== Documentation ==
+Documentation
+-------------
 
 You can discover the minimum and maximum depth of a tree.
 

@@ -1,4 +1,5 @@
-= Announcements =
+Announcements
+=============
 
 Any IProjectGroup, IProduct or IDistribution can make announcements. These are
 listed on the project home page (latest 5) and also in a batched listing of
@@ -28,7 +29,8 @@ after publishing, and they can be deleted, permanently.
     mark
 
 
-== Creation ==
+Creation
+--------
 
 To make an announcement, use the announce() method on the relevant project.
 
@@ -117,7 +119,8 @@ Let's flush these to the database.
     >>> flush_database_updates()
 
 
-== Emergent properties ==
+Emergent properties
+-------------------
 
 Announcements can tell you if they are currently published or not:
 
@@ -139,7 +142,8 @@ future:
     True
 
 
-== Listings ==
+Listings
+--------
 
 Any of the pillars that can make announcements can generate a listing of
 announcements. The listings can either include unpublished items, or just be
@@ -175,7 +179,8 @@ project group announcements, and vice versa.
     The future Tomcat will yawl all night without interruption
 
 
-== Modification ==
+Modification
+------------
 
 You can change the title, summary or URL of an announcement only through the
 modify() method.
@@ -210,7 +215,8 @@ modify() method.
     True
 
 
-== Retraction ==
+Retraction
+----------
 
 Announcements can be retracted at any time. Retracting an announcement
 updates the date_last_modified and sets the announcement.active flag to False
@@ -232,7 +238,8 @@ updates the date_last_modified and sets the announcement.active flag to False
     False
 
 
-== Publishing ==
+Publishing
+----------
 
 Announcements which have been retracted can be published again:
 
@@ -257,7 +264,8 @@ And you can reset the date of publication:
     >>> apache_oss.setPublicationDate(None)
 
 
-== Retargeting ==
+Retargeting
+-----------
 
 You can move an announcement from one pillar to the next:
 
@@ -274,7 +282,8 @@ You can move an announcement from one pillar to the next:
     apache
 
 
-== Deletion ==
+Deletion
+--------
 
 You can ask an announcement to delete itself permanently.
 

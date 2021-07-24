@@ -1,4 +1,5 @@
-= Branch listings for distributions =
+Branch listings for distributions
+=================================
 
 All source package branches are associated with a distribution series, and
 hence a distribution.

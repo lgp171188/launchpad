@@ -62,7 +62,8 @@ bug listing.
     ...<div class="importance importanceUNDECIDED"> Undecided </div>...
     ...<span class="bugnumber">#BUG-ID</span>...
 
-== Checking basic access to the private bug pages ==
+Checking basic access to the private bug pages
+----------------------------------------------
 
 Trying to access the task edit page of a task on a private bug
 fails, because we pretend that inaccessible private bugs do not exist.

@@ -1,4 +1,5 @@
-= Translation Relicensing Agreement =
+Translation Relicensing Agreement
+=================================
 
 Translators who have previously submitted any translations through
 Launchpad can decide whether they want their translations relicensed

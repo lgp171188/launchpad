@@ -1,4 +1,5 @@
-= LowerCaseTextWidget =
+LowerCaseTextWidget
+===================
 
 This custom widget is used to convert strings to lower case.
 

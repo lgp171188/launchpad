@@ -1,10 +1,12 @@
-= DistroArchSeries Pages =
+DistroArchSeries Pages
+======================
 
 DistroArchSeries entity represents a distribution series for a
 specific architecture.
 
 
-== DistroArchSeries Index ==
+DistroArchSeries Index
+----------------------
 
 The distroarchseries is reachable following the distribution ->
 distroseries chain. We encode the DistroArchSeries details in the list
@@ -33,7 +35,8 @@ to allow binary package searching.
     5 binary packages
 
 
-== Searching BinaryPackages ==
+Searching BinaryPackages
+------------------------
 
 Users can find binary packages of interest using the search form on
 the DistroArchSeries index page.
@@ -72,7 +75,8 @@ that was done, and explain that no matches were found.
     No packages matching 'biscoito' are published in Ubuntu Warty i386.
 
 
-== DistroArchseries Actions ==
+DistroArchseries Actions
+------------------------
 
 All users can browse to the builds page from the DistroArchSeries
 page. The builds page is described in 23-builds-page.txt.
@@ -170,7 +174,8 @@ current distroseries architecture list.
     hppa (unofficial)
 
 
-== Creating a new DistroArchSeries ==
+Creating a new DistroArchSeries
+-------------------------------
 
 Users with administrative privileges on a DistroSeries can open new
 architectures in this DistroSeries.

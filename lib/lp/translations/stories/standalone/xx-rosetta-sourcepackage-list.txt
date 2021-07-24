@@ -1,4 +1,5 @@
-= Sourcepackage translations =
+Sourcepackage translations
+==========================
 
 This page shows a list of PO templates contained a specific source package
 in a particular distibution series. In this case, we're asking for the

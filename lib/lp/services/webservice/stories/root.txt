@@ -1,4 +1,5 @@
-= The service root =
+The service root
+================
 
 The service root of the Launchpad resource describes a link to one
 special entry: the user account of the authenticated user. To avoid

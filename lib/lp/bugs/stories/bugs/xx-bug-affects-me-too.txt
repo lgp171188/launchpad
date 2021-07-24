@@ -1,4 +1,5 @@
-= Marking a bug as affecting the user =
+Marking a bug as affecting the user
+===================================
 
 Users can mark bugs as affecting them. Let's create a sample bug to
 try this out.
@@ -66,7 +67,8 @@ Back at the bug page, the text changes once again.
    This bug affects 1 person, but not you
 
 
-== Anonymous users ==
+Anonymous users
+---------------
 
 Anonymous users just see the number of affected users.
 
@@ -87,7 +89,8 @@ appear at all to anonymous users.
    None
 
 
-== Static and dynamic support ==
+Static and dynamic support
+--------------------------
 
 A bug page contains markup to support both static (no Javascript) and
 dynamic (Javascript enabled) scenarios.

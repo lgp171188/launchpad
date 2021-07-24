@@ -1,4 +1,5 @@
-= launchpadlib =
+launchpadlib
+============
 
 Just to show that we're actually talking to the appserver, first check to see
 if a specific user exists...

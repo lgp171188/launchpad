@@ -1,4 +1,5 @@
-= ILaunchpadContainer =
+ILaunchpadContainer
+===================
 
 Some of our content classes may be used as the context of an OAuth
 token so that any application using that token will have access only to
@@ -73,7 +74,8 @@ provide ILaunchpadContainer as well.
     False
 
 
-== Bugs ==
+Bugs
+----
 
 Bugs are associated to our pillars through their bug tasks, so a bug is
 said to be within any of its bugtasks' targets.
@@ -100,7 +102,8 @@ But it's not within anything other than its tasks' targets.
     False
 
 
-== Branches ==
+Branches
+--------
 
 A branch is within its target.
 
@@ -123,7 +126,8 @@ But it's not within anything other than its target.
     False
 
 
-== Git repositories ==
+Git repositories
+----------------
 
 A Git repository is within its target.
 

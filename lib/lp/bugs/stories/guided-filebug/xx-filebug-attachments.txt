@@ -1,11 +1,13 @@
-= Adding attachments when filing a bug =
+Adding attachments when filing a bug
+====================================
 
 It is possible to add attachments when filing a bug. The tests in this
 file will cover this functionality for both the guided and advanced
 filebug forms.
 
 
-== Guided filebug form ==
+Guided filebug form
+-------------------
 
 Adding an attachment to a new bug is part of the second step of the
 guided filebug form.
@@ -50,7 +52,8 @@ No Privileges Person can see the attachment in the attachments portlet.
     'http://bugs.launchpad.test/firefox/+bug/.../+attachment/.../+files/ex...'
 
 
-== Empty Attachment Fields ==
+Empty Attachment Fields
+-----------------------
 
 Sometimes browsers submit values empty fields, leading them to being
 treated as non-empty by the receiving view. The attachment form will

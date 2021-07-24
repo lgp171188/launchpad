@@ -1,4 +1,5 @@
-= Atom Feeds For Revisions =
+Atom Feeds For Revisions
+========================
 
 Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
 by asking BeautifulSoup to use lxml.
@@ -8,7 +9,8 @@ by asking BeautifulSoup to use lxml.
     >>> from lp.services.feeds.tests.helper import (
     ...     parse_ids, parse_links)
 
-== Create some specific branches to use for this test ==
+Create some specific branches to use for this test
+--------------------------------------------------
 
     >>> login(ANONYMOUS)
     >>> from lp.testing import time_counter
@@ -65,7 +67,8 @@ by asking BeautifulSoup to use lxml.
     >>> logout()
 
 
-== Feed for a person's revisions ==
+Feed for a person's revisions
+-----------------------------
 
 The feed for a person's revisions will show the most recent 25 revisions
 that have been committed by that person (or attributed to that person).
@@ -126,7 +129,8 @@ A HEAD request works too.
     <BLANKLINE>
 
 
-== Feed for a product's revisions ==
+Feed for a product's revisions
+------------------------------
 
 The feed for a product's revisions will show the most recent 25 revisions
 that have been committed on branches for the product.
@@ -152,7 +156,8 @@ Ensure the self link points to the feed location and there is only one.
     <link href="http://feeds.launchpad.test/fooix/revisions.atom" rel="self"/>
 
 
-== Feed for a project group's revisions ==
+Feed for a project group's revisions
+------------------------------------
 
 A feed for a project group will show the most recent 25 revisions across any
 branch for any product that is associated with the project group.

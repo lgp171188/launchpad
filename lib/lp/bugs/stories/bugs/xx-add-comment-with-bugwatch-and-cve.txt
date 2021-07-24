@@ -1,4 +1,5 @@
-= links to remote bug reports and CVEs in bug comments =
+links to remote bug reports and CVEs in bug comments
+====================================================
 
 When a comment is added to a bug, links to "remote" bug reports and CVEs are
 added to the bugwatches resp CVEs related to this bug

@@ -1,4 +1,5 @@
-== Display of filesize and mime type of attachments ==
+Display of filesize and mime type of attachments
+------------------------------------------------
 
 File size and mime type are displayed for each attachment
 

@@ -1,4 +1,5 @@
-= LoginToken =
+LoginToken
+==========
 
 This is the mechanism we use whenever we need to confirm a person has
 access to the emails sent to a given email address. The process works as
@@ -132,7 +133,8 @@ The original date_consumed of the first token will not have changed.
     2009-01-01 16:56:59+00:00
 
 
-== Searching for LoginTokens ==
+Searching for LoginTokens
+-------------------------
 
 It's possible to search for a LoginToken by the email address, requester
 and type associated with it.

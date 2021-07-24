@@ -1,4 +1,5 @@
-= TranslationBranchApprover =
+TranslationBranchApprover
+=========================
 
 The TranslationBranchApprover approves simple cases of import of translation
 template files (POT). It is used for the approval of template files uploaded

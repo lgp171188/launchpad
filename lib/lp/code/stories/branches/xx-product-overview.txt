@@ -1,4 +1,5 @@
-== Latest branches ==
+Latest branches
+---------------
 
 On the product overview page there is a portlet to show recently
 registered branches.

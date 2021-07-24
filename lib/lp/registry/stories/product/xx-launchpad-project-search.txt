@@ -1,4 +1,5 @@
-= Searching for projects, project-groups and distributions =
+Searching for projects, project-groups and distributions
+========================================================
 
 Launchpad provides a way for people to search across products, projects and
 distributions.
@@ -79,7 +80,8 @@ some terms and do another search.
     ...Enter one or more words related to the project you want to find.
     <BLANKLINE>
 
-== Searching only for project groups ==
+Searching only for project groups
+---------------------------------
 
 A similar page is available for only searching project groups.
 

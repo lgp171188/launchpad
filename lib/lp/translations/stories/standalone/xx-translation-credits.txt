@@ -1,4 +1,5 @@
-= Translation credits =
+Translation credits
+===================
 
 Translation credit strings are automatically updated with contributors
 through Launchpad.

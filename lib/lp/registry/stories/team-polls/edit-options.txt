@@ -1,4 +1,5 @@
-= Editing poll options =
+Editing poll options
+====================
 
 Changing the poll options detail is not possible if you are not one of the
 team's administrators:

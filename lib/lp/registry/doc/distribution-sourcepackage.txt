@@ -1,4 +1,5 @@
-= Distribution Source Packages =
+Distribution Source Packages
+============================
 
 A distribution source package represents a named source package in a
 distribution, independent of any particular release of that source
@@ -121,7 +122,8 @@ release.
     >>> print(firefox.latest_overall_publication.pocket.name)
     SECURITY
 
-=== Release-related properties ===
+Release-related properties
+..........................
 
 Releases of 'pmount in Ubuntu':
 
@@ -158,7 +160,8 @@ Check if 'currentrelease' works with version containing letters
     >>> print(dsp3.currentrelease.version)
     cr.g7-37
 
-=== Distribution Source Package Branches ===
+Distribution Source Package Branches
+....................................
 
 We can use the getBranches() API from IHasBranches to get the related branches
 for a DSP.
@@ -171,7 +174,8 @@ for a DSP.
     >>> print(branch.unique_name)
     ~fred/ubuntu/hoary/pmount/tip
 
-=== Grabbing DSPRs ===
+Grabbing DSPRs
+..............
 
 To list the current 'pmount in Ubuntu' ISourcePackages, use
 get_distroseries_packages():
@@ -210,7 +214,8 @@ archive (bug #60440):
     ...     print(pub.distroseries.name, pub.status.name, is_removed)
     breezy-autotest DELETED True
 
-== __hash__ ==
+__hash__
+--------
 
 DistributionSourcePackage defines a custom __hash__ method, so that
 different instances, representing the same packages, have the same hash.
@@ -237,7 +242,8 @@ This means that packages can be used as keys in dictionaries.
     >>> mapping[ubuntu.getSourcePackage('mozilla-firefox')] is firefox_marker
     True
 
-== Upstream links ==
+Upstream links
+--------------
 
 DistributionSourcePackages can be linked to upstream Products. You can
 retrieve a DistributionSourcePackage's upstream product using its
@@ -253,7 +259,8 @@ will be None.
     >>> print(pmount.upstream_product)
     None
 
-== Finding archives where this package is published ==
+Finding archives where this package is published
+------------------------------------------------
 
 A distribution source package can also find which archives
 versions of a given source package have been published in.

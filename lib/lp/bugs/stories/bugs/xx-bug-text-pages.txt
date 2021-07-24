@@ -1,4 +1,5 @@
-= Bug Text Pages =
+Bug Text Pages
+==============
 
 Launchpad provides a way for users to view textual descriptions of bug reports,
 as an alternative to the graphical user interface.
@@ -43,7 +44,8 @@ toggle away from Fix Released we must be the target owner):
     >>> flush_database_updates()
 
 
-== Text Pages from a Bug Context ==
+Text Pages from a Bug Context
+-----------------------------
 
 Users can view a textual description of any bug at that bug's text page,
 according to the following URL pattern:
@@ -167,7 +169,8 @@ The comments are represented as a MIME message.
     comment for file with space
 
 
-== Text Pages from a Bug Task Context ==
+Text Pages from a Bug Task Context
+----------------------------------
 
 Users can also view a textual description of a bug from the context of a task
 relating to that bug, according to the following URL pattern:
@@ -234,7 +237,8 @@ The only differences are the download URLs of bug attachments:
     http://bugs.launchpad.test/bugs/1/.../+files/bug-patch.diff text/plain
     http://bugs.launchpad.test/firefox/+bug/.../+files/bug-patch.diff text/plain
 
-== Duplicate Bugs ==
+Duplicate Bugs
+--------------
 
 When one bug duplicates another bug, the textual description includes the
 duplicated bug's ID:
@@ -268,7 +272,8 @@ duplicate bug IDs:
     ...
 
 
-== Bug Lists ==
+Bug Lists
+---------
 
 Users can also see a list of all bug IDs for a given target by viewing that
 product's bugs text page, according to the following URL pattern:
@@ -322,7 +327,8 @@ This page is also available for project groups.
     4
 
 
-== Private bugs ==
+Private bugs
+------------
 
 When a bug is private, the textual description reflects this:
 

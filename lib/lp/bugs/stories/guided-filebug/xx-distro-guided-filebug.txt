@@ -1,4 +1,5 @@
-= Filing bugs on Distributions =
+Filing bugs on Distributions
+============================
 
 Like filing bugs on products, filing bugs on distributions involves
 first finding out if you're bug has already been reported.
@@ -73,7 +74,8 @@ Finally, let's submit the bug.
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...
 
 
-== Filing a bug when there are none similar ==
+Filing a bug when there are none similar
+----------------------------------------
 
 When no similar bugs are found the form works the same but appears
 different in the user agent.

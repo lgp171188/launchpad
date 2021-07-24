@@ -1,4 +1,5 @@
-= Launchpad Bug Statistics =
+Launchpad Bug Statistics
+========================
 
 The Bugs front page shows some statistics:
 

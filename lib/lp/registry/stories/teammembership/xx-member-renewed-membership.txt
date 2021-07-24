@@ -1,4 +1,5 @@
-= Renewing your own memberships =
+Renewing your own memberships
+=============================
 
 Depending on a team's renewal policy, a team member may be allowed to
 renew their own membership. That is allowed for teams which have ONDEMAND

@@ -1,4 +1,5 @@
-= Managing OAuth access tokens =
+Managing OAuth access tokens
+============================
 
 All access tokens and request tokens for a given user can be seen
 and/or revoked from that user's +oauth-tokens page.

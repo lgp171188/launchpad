@@ -1,4 +1,5 @@
-= Field for assigning aliases to pillars =
+Field for assigning aliases to pillars
+======================================
 
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.services.fields import PillarAliases

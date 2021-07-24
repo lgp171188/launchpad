@@ -1,7 +1,9 @@
-= Adding tags =
+Adding tags
+===========
 
 
-== Normal bug filing page ==
+Normal bug filing page
+----------------------
 
 On the normal +filebug page, tags can be added to the bug as the bug
 is being filed.
@@ -25,7 +27,8 @@ is being filed.
     unofficial-tag foo
 
 
-== Pre-populating the tags field ==
+Pre-populating the tags field
+-----------------------------
 
 For people wanting to pre-fill the tags field with certain tags, it's
 possible to do so by supplying a 'field.tags' URL parameter.

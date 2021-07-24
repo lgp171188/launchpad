@@ -1,4 +1,5 @@
-= Links to upstream bug trackers =
+Links to upstream bug trackers
+==============================
 
 Sometimes people will want to mark a bug as being upstream but will
 either not know what the bug's upstream URL is or will know that the bug

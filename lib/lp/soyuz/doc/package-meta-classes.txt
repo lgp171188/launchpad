@@ -41,7 +41,8 @@ Combining Distribution and SourcePackageRelease:
  pmount 0.1-1
 
 
-== Querying builds for DistributionSourcePackageRelease ==
+Querying builds for DistributionSourcePackageRelease
+----------------------------------------------------
 
 DistributionSourcePackageRelease objects have a builds() method which
 returns all the builds for the source package that have been published

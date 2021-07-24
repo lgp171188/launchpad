@@ -1,4 +1,5 @@
-= Tracking changes to a bug =
+Tracking changes to a bug
+=========================
 
 The base class for BugChanges doesn't actually implement anything.
 
@@ -190,9 +191,11 @@ notification you'll get an error.
     AssertionError: notification_data must include a `text` value.
 
 
-== BugChange subclasses ==
+BugChange subclasses
+--------------------
 
-=== Getting the right bug change class ===
+Getting the right bug change class
+..................................
 
 Given that we know what's changing and the name of the field that is
 being changed, we can find a suitable IBugChange implementation to
@@ -221,7 +224,8 @@ get_bug_change_class will also work for BugTasks.
     <class '...BugTaskImportanceChange'>
 
 
-=== AttributeChange ===
+AttributeChange
+...............
 
 The AttributeChange class offers basic functionality for dealing with
 bug attribute changes.
@@ -244,7 +248,8 @@ method.
      'whatchanged': 'title'}
 
 
-=== BugDescriptionChange ===
+BugDescriptionChange
+....................
 
 This describes a change to the description of a
 bug. getBugNotification() returns a formatted description of the
@@ -264,7 +269,8 @@ change.
     + Well, maybe not
 
 
-=== BugTitleChange ===
+BugTitleChange
+..............
 
 This, surprisingly, describes a title change for a bug. Again,
 getBugNotification() returns a specially formatted description of
@@ -291,7 +297,8 @@ within the UI.
     summary
 
 
-=== BugDuplicateChange ===
+BugDuplicateChange
+..................
 
 This describes a change to the duplicate marker for a bug.
 
@@ -316,7 +323,8 @@ returned fields.
      'whatchanged': 'marked as duplicate'}
 
 
-== BugTagsChange ==
+BugTagsChange
+-------------
 
 BugTagsChange is used to represent a change in a Bug's tag list.
 
@@ -345,7 +353,8 @@ Addtions and removals are expressed separately in the notification.
     ** Tags added: zillionth-tag
 
 
-=== CveLinkedToBug / CveUnlinkedFromBug ===
+CveLinkedToBug / CveUnlinkedFromBug
+...................................
 
 These describe the linking or unlinking of a CVE to a bug.
 
@@ -381,7 +390,8 @@ And when a CVE is unlinked from a bug.
     ** CVE removed: https://cve.mitre.org/cgi-bin/cvename.cgi?name=1999-8979
 
 
-== BugAttachmentChange ==
+BugAttachmentChange
+-------------------
 
 BugAttachmentChange is used to handle the addition and removal of
 attachments from a bug.
@@ -426,7 +436,8 @@ Or remove one.
     http://bugs.launchpad.test/bugs/.../+attachment/.../+files/...
 
 
-== BugTaskAttributeChange ==
+BugTaskAttributeChange
+----------------------
 
 BugTaskAttributeChange is a generic BugChange that can be used to
 represent a change in the attributes of one of a Bug's BugTasks. It is
@@ -467,7 +478,8 @@ Several types of attribute change can be handled by
 BugTaskAttributeChange.
 
 
-=== Status changes ===
+Status changes
+..............
 
 Status changes use a BugTaskStatus's `title` attribute to describe to
 the user what has changed.
@@ -490,7 +502,8 @@ the user what has changed.
            Status: New => Fix Released
 
 
-=== Importance changes ===
+Importance changes
+..................
 
 Importance changes use a BugTaskImportance's `title` attribute to
 describe to the user what has changed.
@@ -514,7 +527,8 @@ describe to the user what has changed.
        Importance: Undecided => Critical
 
 
-=== Milestone changes ===
+Milestone changes
+.................
 
 Milestone changes use a Milestone's `name` attribute to describe to
 the user what has changed.
@@ -541,7 +555,8 @@ the user what has changed.
         Milestone: None => example-milestone
 
 
-=== Bugwatch changes ===
+Bugwatch changes
+................
 
 Bugwatch changes use a Bugwatch's `title` attribute to describe to the
 user what has changed.
@@ -570,7 +585,8 @@ user what has changed.
      Remote watch: None => bugs.example.com/ #1245
 
 
-=== Assignee changes ===
+Assignee changes
+................
 
 Assignee changes use the assignee's `unique_displayname` attribute to
 describe to the user what has changed.
@@ -593,7 +609,8 @@ describe to the user what has changed.
          Assignee: (unassigned) => Ford Prefect (ford-prefect)
 
 
-=== Target (Affects) changes ===
+Target (Affects) changes
+........................
 
 Changes to the bug task target (aka affects) use the BugTaskTargetChange
 class to describe the change. It inspects the `bugtargetname`

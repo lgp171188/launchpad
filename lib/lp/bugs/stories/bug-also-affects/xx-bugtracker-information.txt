@@ -1,4 +1,5 @@
-= Bug tracker information =
+Bug tracker information
+=======================
 
 If a product doesn't use Launchpad to track its bugs, there's
 information about the product's bug tracker when adding an upstream

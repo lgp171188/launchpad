@@ -1,4 +1,5 @@
-= Pillar deactivation and reactivation =
+Pillar deactivation and reactivation
+====================================
 
 This test demonstrates what happens when you deactivate and reactivate
 pillars (Projects, Project Groups and Distributions).

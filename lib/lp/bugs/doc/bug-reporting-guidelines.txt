@@ -1,4 +1,5 @@
-= Bug Reporting Guidelines =
+Bug Reporting Guidelines
+========================
 
 Guidelines can be set at the Distribution, DistributionSourcePackage,
 ProjectGroup or Product level to help users file good bug reports, direct

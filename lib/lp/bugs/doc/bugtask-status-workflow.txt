@@ -1,4 +1,5 @@
-= BugTask Status Workflow =
+BugTask Status Workflow
+=======================
 
 BugTasks have a natural status workflow: New => Confirmed => In
 Progress => Fix Committed => Fix Released, etc. Some state transitions
@@ -301,7 +302,8 @@ setting an assignee has "side effects".
     True
 
 
-== date_xxx and the UNKNOWN status ==
+date_xxx and the UNKNOWN status
+-------------------------------
 
 When an IBugTask is set to status UNKNOWN, the date_confirmed,
 date_closed, date_inprogress, date_triaged, date_fixcommitted

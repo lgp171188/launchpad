@@ -1,4 +1,5 @@
-= Add a comment while editing the bugtask =
+Add a comment while editing the bugtask
+=======================================
 
 When editing a bug task it's possible to add a comment as well. It's not
 necessary to actually edit the bug task in order to add the comment,

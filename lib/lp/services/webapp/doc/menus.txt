@@ -1,9 +1,11 @@
-= Facets and menus =
+Facets and menus
+================
 
 An object has a facetmenu if it can be adapted to IFacetMenu.
 
 
-=== Construct an example url hierarchy ===
+Construct an example url hierarchy
+..................................
 
     >>> from lp.services.webapp import canonical_url
     >>> from lp.services.webapp.interfaces import (
@@ -52,7 +54,8 @@ Let's make three objects that together make a url hierarchy:
     http://launchpad.test/sesamestreet
 
 
-== The Link class ==
+The Link class
+--------------
 
 When you define a menu using class based on FacetMenu, you return Link
 objects from its methods.  The Link class is very simple.  You provide
@@ -161,7 +164,8 @@ not shared or reused.
     True
 
 
-== The FacetMenu class ==
+The FacetMenu class
+-------------------
 
     >>> from lp.services.webapp import FacetMenu
 
@@ -250,7 +254,8 @@ they are as we expect.
     url: http://launchpad.test/sesamestreet/+bar
 
 
-== The MenuLink and FacetLink adapter classes ==
+The MenuLink and FacetLink adapter classes
+------------------------------------------
 
 The menus system needs to be able to adapt ILinkData objects to objects
 that provide ILink or IFacetLink.  The menus system needs to be able to
@@ -346,7 +351,8 @@ A menu item can be marked as hidden even though it is enabled.
     <a class="menu-link-None sprite icon hidden" title="summary">text</a>
 
 
-== How do we tell which link from a facetmenu is the selected one? ==
+How do we tell which link from a facetmenu is the selected one?
+---------------------------------------------------------------
 
 A link will be selected if its name is passed to the facet menu's
 iterlinks method, or otherwise, if its name is the defaultlink.
@@ -405,7 +411,8 @@ selected. As there is no such link, nothing will be selected.
     selected: False
 
 
-== Application Menus ==
+Application Menus
+-----------------
 
 Application menus are defined for a context object for a particular
 named Facet menu item.  The name of the facet menu item used is
@@ -477,7 +484,8 @@ they are as we expect.
     url: http://launchpad.test/sesamestreet/number73/+first
 
 
-== Context Menus ==
+Context Menus
+-------------
 
 Context menus are defined for a context object.  Each context object has
 just one context menu, and it is available at all times.
@@ -544,7 +552,8 @@ they are as we expect.
     url: http://launchpad.test/sesamestreet/number73/+firstcontext
 
 
-== Registering menus in ZCML ==
+Registering menus in ZCML
+-------------------------
 
 First, we define a couple of interfaces, and put them in a temporary module.
 
@@ -655,7 +664,8 @@ The browser:menus directive also makes security declarations for the
 adapters.
 
 
-== Using menus in page templates ==
+Using menus in page templates
+-----------------------------
 
 We use menus in page templates by using the `thing/menu:typeofmenu`
 TALES namespace.
@@ -855,7 +865,8 @@ And thus, we don't have a facet to navigate to:
     >>> view.__launchpad_facetname__ = 'bar'
 
 
-== Shortcuts for rendering menu items ==
+Shortcuts for rendering menu items
+----------------------------------
 
 A thing's menu may be rendered directly as HTML using the menu link's
 render() method.
@@ -874,14 +885,16 @@ render() method.
     >>> login(ANONYMOUS)
 
 
-== Cleaning up ==
+Cleaning up
+-----------
 
 We're done testing the zcml, so we can clean up the temporary module.
 
     >>> del sys.modules[module.__name__]
 
 
-== The enabled_with_permission function decorator ==
+The enabled_with_permission function decorator
+----------------------------------------------
 
 If you have a menu item that should be enabled only when the current
 logged-in user has a particular permission, then you can write the link

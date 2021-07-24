@@ -1,4 +1,5 @@
-= Traversing to pillars =
+Traversing to pillars
+=====================
 
 Our pillars can have any number of aliases, and these aliases can be used to
 traverse to that pillar.  As an example we'll add an alias to the firefox

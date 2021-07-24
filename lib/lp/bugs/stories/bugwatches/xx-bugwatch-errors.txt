@@ -1,4 +1,5 @@
-= Displaying Bug Watch Errors to the User =
+Displaying Bug Watch Errors to the User
+=======================================
 
 If an error occurs when importing the remote status of a bug that is
 being watched in Launchpad that error will be displayed to users.

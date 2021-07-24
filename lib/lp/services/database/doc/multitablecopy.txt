@@ -1,4 +1,5 @@
-= Multi-Table Copy =
+Multi-Table Copy
+================
 
 Here we test the facility for coherently copying data inside the database that
 may be interlinked through foreign keys.
@@ -12,7 +13,8 @@ may be interlinked through foreign keys.
     >>> tables_to_clean_up = []
 
 
-== Plain Copy ==
+Plain Copy
+----------
 
 The simplest use case is to copy data from a bunch of unrelated tables.
 
@@ -52,7 +54,8 @@ Note that the copier will not let us create tables with mixed case names.
     AssertionError: Unsupported characters in table name per Bug #179821
 
 
-=== Ordering ===
+Ordering
+........
 
 We're about to start extracting data from these tables.  But we can't do that
 in any old order.  We must follow the list of tables we gave, in that order:
@@ -82,7 +85,8 @@ pouring stage yet:
     AssertionError: Not safe to pour: last table 'textual' was not extracted
 
 
-=== Extraction Phase ===
+Extraction Phase
+................
 
 We must extract the rest of our tables before we can do that.  We copy all of
 the data in the textual table, without restrictions.
@@ -117,7 +121,8 @@ We have the data we're copying in holding tables now.
     True
 
 
-=== Pouring Phase ===
+Pouring Phase
+.............
 
 Now we pour or data in the holding tables back into the source tables.  Each
 row from the holding tables gets a new id, so no errors about duplicates here.
@@ -151,7 +156,8 @@ And the holding tables are gone.
     False
 
 
-== Foreign Keys ==
+Foreign Keys
+------------
 
 Things get more interesting when there is a foreign-key relationship between
 tables that are being copied.
@@ -238,7 +244,8 @@ from numeric that referred to it into a holding table for numeric.
     14  lots
 
 
-== Trivial Extraction ==
+Trivial Extraction
+------------------
 
 We saw earlier that you must extract tables in the same order in which you
 announce them when you create the MultiTableCopy object, and not skip any.
@@ -268,7 +275,8 @@ skipped table, they will not have any rows extracted either.
 
     >>> copier.dropHoldingTables()
 
-== Recovery ==
+Recovery
+--------
 
 We may get interrupted while going through the multi-table copy.  In that case,
 data will be left behind.  If we never get to start the pouring stage, we end
@@ -426,7 +434,8 @@ This time we run to completion without problems.
     14   lots
 
 
-== External Joins ==
+External Joins
+--------------
 
 When extracting from a table, the "where" clause may also refer to tables that
 are not otherwise included in the query.  You can specify that a set of tables
@@ -473,7 +482,8 @@ table names get uncomfortably long.
     >>> copier.dropHoldingTables()
 
 
-== Inert Rows ==
+Inert Rows
+----------
 
 Sometimes it's convenient to have certain rows extracted into their holding
 table, but never poured back into their source table.  We call these "inert"
@@ -577,7 +587,8 @@ whether they point to an inert or a non-inert row in the first table.
     2   2
 
 
-== Pouring Callbacks ==
+Pouring Callbacks
+-----------------
 
 All of the real work in a MultiTableCopy happens during the pour() call.  That
 is not always convenient: sometimes you'll want to be able to run some code of
@@ -645,7 +656,8 @@ The callbacks are called only while pouring, once per batch.
     ...
 
 
-== Cleanup ==
+Cleanup
+-------
 
     >>> #postgresql.drop_tables(cursor(), tables_to_clean_up)
 

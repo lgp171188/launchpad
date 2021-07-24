@@ -1,4 +1,5 @@
-= SourcePackage View Classes =
+SourcePackage View Classes
+==========================
 
   >>> from zope.component import queryMultiAdapter
   >>> from lp.services.webapp.servers import LaunchpadTestRequest
