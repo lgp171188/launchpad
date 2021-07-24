@@ -502,7 +502,7 @@ Now they'll request their key to be reactivated.
 
 Get the token from the body of the email sent.
 
-    >>> import email, re
+    >>> import re
     >>> from lp.services.mail import stub
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
     >>> msg = message_from_bytes(raw_msg)
@@ -549,7 +549,6 @@ And now we can see the key listed as one of Sample Person's active keys.
 This test verifies that we correctly handle keys which are in some way
 special: either invalid, broken, revoked, expired, or already imported.
 
-  >>> import email
   >>> from lp.testing.keyserver import KeyServerTac
   >>> from lp.services.mail import stub
 
@@ -620,7 +619,6 @@ Ensure the CoC was acknowledge by searching in the CoC Admin Console:
 
 Test if the advertisement email was sent:
 
-    >>> import email
     >>> from lp.services.mail import stub
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
     >>> msg = message_from_bytes(raw_msg)

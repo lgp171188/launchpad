@@ -5,7 +5,6 @@ Users can search for Launchpad objects and pages from the search form
 located on all pages. The search is performed and displayed by the
 LaunchpadSearchView.
 
-    >>> import six
     >>> from zope.component import getMultiAdapter, getUtility
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot
     >>> from lp.services.webapp.servers import LaunchpadTestRequest

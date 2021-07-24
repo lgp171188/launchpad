@@ -11,7 +11,7 @@ to edit the details.
     ...     TargetRevisionControlSystems,
     ...     )
     >>> from lp.code.tests.helpers import GitHostingFixture
-    >>> from lp.testing import ANONYMOUS, login, logout
+    >>> from lp.testing import login, logout
     >>> login('test@canonical.com')
 
     >>> svn_import = factory.makeProductCodeImport(
