@@ -48,7 +48,6 @@ This time the upload will fail because the ACLs don't let
 We can grant selective, package set based upload permissions to the user
 in order to facilitate uploads.
 
-    >>> import operator
     >>> def print_permission(result_set):
     ...     for perm in result_set.order_by(
     ...         'person, permission, packageset, explicit'):
