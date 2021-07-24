@@ -6,10 +6,6 @@ lp.services.scripts.base. This, along with the LaunchpadCronScript
 specialization, implement common behaviour for all Launchpad command
 line scripts.
 
-    >>> from lp.services.scripts.base import (
-    ...     LaunchpadScript, LaunchpadCronScript)
-
-
 Scripts report their executution using the standard Python logging
 module, with command line arguments and logging setup provided by
 LaunchpadScript. Unhandled exceptions from scripts are automatically

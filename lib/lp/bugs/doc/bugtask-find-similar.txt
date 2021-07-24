@@ -13,8 +13,6 @@ It doesn't make much sense to find bugs similar to an empty string, so
 no results will be returned.
 
     >>> from lp.bugs.interfaces.bugtask import IBugTaskSet
-    >>> from lp.registry.interfaces.person import IPersonSet
-    >>> from lp.registry.interfaces.product import IProductSet
     >>> test_product = factory.makeProduct()
     >>> test_person = factory.makePerson()
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
@@ -101,7 +99,6 @@ Only bugs that the user has access to view will be searched. If we set
 one of our distro bugs to private, and repeat the search as a user who
 isn't allowed to view it, only the public bugs will show up.
 
-    >>> from lp.bugs.interfaces.bug import IBugSet
     >>> login('test@canonical.com')
     >>> distro_bug_1.setPrivate(True, distro_bug_1.owner)
     True

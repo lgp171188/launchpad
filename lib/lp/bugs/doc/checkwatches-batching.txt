@@ -7,7 +7,6 @@ for batching up operations.
 
     >>> import transaction
     >>> from lp.bugs.scripts.checkwatches import CheckwatchesMaster
-    >>> from pprint import pprint
 
     >>> updater = CheckwatchesMaster(transaction)
     >>> transaction.commit()
