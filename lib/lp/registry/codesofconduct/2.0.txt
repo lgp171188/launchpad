@@ -1,8 +1,6 @@
-Ubuntu Code of Conduct v2.0
-===========================
+= Ubuntu Code of Conduct v2.0 =
 
-Community
----------
+== Community ==
 
 Ubuntu is about showing humanity to one another: the word itself
 captures the spirit of being human.
@@ -87,8 +85,7 @@ We strive to:
   ensure that others can pick up where they left off.
 
 
-Leadership, Authority and Responsibility
-----------------------------------------
+== Leadership, Authority and Responsibility ==
 
 We all lead by example, in debate and in action. We encourage new
 participants to feel empowered to lead, to take action, and to
