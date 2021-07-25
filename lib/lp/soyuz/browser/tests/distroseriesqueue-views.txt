@@ -1,4 +1,5 @@
-= PackageUpload View Classes and Pages =
+PackageUpload View Classes and Pages
+====================================
 
 The QueueItemsView (browser/queue.py) is extended by the default view
 for IDistroSeries context (IDistroSeriesView)
@@ -217,7 +218,8 @@ Privileged user can reject queue items.
   'REJECTED'
 
 
-== Calculation of "new" binaries ==
+Calculation of "new" binaries
+-----------------------------
 
 The queue page will show the user which binaries in a build upload are
 new or not.  Since multiple binary package releases can appear in one

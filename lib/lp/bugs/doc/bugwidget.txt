@@ -1,4 +1,5 @@
-= Widget for entering a bug id =
+Widget for entering a bug id
+============================
 
 The BugWidget converts string bug ids to the corresponding bug object.
 

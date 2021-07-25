@@ -1,4 +1,5 @@
-= Countries =
+Countries
+=========
 
 At the top level we provide the collection of all countries.
 
@@ -33,7 +34,8 @@ Make sure that invalid countries return 404s and not OOPSes.
     ...
     Object: ..., name: 'bogus'
 
-== Country Custom Operations ==
+Country Custom Operations
+-------------------------
 
 "getByName" returns a country for the given name.
 

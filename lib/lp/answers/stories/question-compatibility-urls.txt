@@ -1,16 +1,19 @@
-= Backward Compatible URLs =
+Backward Compatible URLs
+========================
 
 The Answer Tracker was renamed from the old Technical Support Tracker.
 As part of that rename many URLs were changed to reflect the new
 terminology. We provide redirect from the old names to the new ones.
 
-== Answer Contact Page ==
+Answer Contact Page
+-------------------
 
     >>> user_browser.open('http://launchpad.test/firefox/+support-contact')
     >>> print(user_browser.url)
     http://answers.launchpad.test/firefox/+answer-contact
 
-== Add Question Page ==
+Add Question Page
+-----------------
 
     >>> user_browser.open('http://launchpad.test/firefox/+addticket')
     >>> print(user_browser.url)
@@ -20,19 +23,22 @@ terminology. We provide redirect from the old names to the new ones.
     >>> print(user_browser.url)
     http://answers.launchpad.test/mozilla/+addquestion
 
-== My Questions Page ==
+My Questions Page
+-----------------
 
     >>> user_browser.open('http://launchpad.test/firefox/+mytickets')
     >>> print(user_browser.url)
     http://answers.launchpad.test/firefox/+myquestions
 
-== Questions Listing ==
+Questions Listing
+-----------------
 
     >>> browser.open('http://launchpad.test/firefox/+tickets')
     >>> print(browser.url)
     http://answers.launchpad.test/firefox/+questions
 
-== Question Page ==
+Question Page
+-------------
 
     >>> browser.open('http://launchpad.test/firefox/+ticket/1')
     >>> print(browser.url)
@@ -42,7 +48,8 @@ terminology. We provide redirect from the old names to the new ones.
     >>> print(browser.url)
     http://api.launchpad.test/devel/firefox/+question/1
 
-== Person Questions Listing ==
+Person Questions Listing
+------------------------
 
     >>> browser.open('http://launchpad.test/~name12/+tickets')
     >>> print(browser.url)
@@ -73,7 +80,8 @@ terminology. We provide redirect from the old names to the new ones.
     http://answers.launchpad.test/~name12/+subscribedquestions
 
 
-== Unsupported questions ==
+Unsupported questions
+---------------------
 
 The Unsupported View is irrelevant. The question search page provides
 links to the +by-language pages that have unsolved questions.
@@ -83,7 +91,8 @@ links to the +by-language pages that have unsolved questions.
     http://answers.launchpad.test/ubuntu/+questions
 
 
-== Enumeration changes in search URLs ==
+Enumeration changes in search URLs
+----------------------------------
 
 The switch from dbschema to lazr based enums changed the values of
 status and sort from titles to uppercase tokens in the search URLs.

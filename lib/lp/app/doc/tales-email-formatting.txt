@@ -1,4 +1,5 @@
-= TALES email formatting =
+TALES email formatting
+======================
 
 There are many edge-cases when marking up email text for presentation.
 There is subtle differences in how people quote text that must be
@@ -12,7 +13,8 @@ First, let's bring in a small helper function:
 
    >>> from lp.testing import test_tales
 
-== Quoting styles ==
+Quoting styles
+--------------
 
 Paragraphs that mix quoted and reply text fold only the quoted lines.
 
@@ -100,7 +102,8 @@ wrapped in a foldable-quoted span.
     </span></p>
 
 
-== Python interpreter and dpkg handling ==
+Python interpreter and dpkg handling
+------------------------------------
 
 The output from the Python interpreter is not quoted text. Passages
 of text that start with '>>> ' are exempted from the 'foldable-quoted'

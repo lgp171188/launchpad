@@ -1,4 +1,5 @@
-= Hide bug comments =
+Hide bug comments
+=================
 
 Comments that have had their visible attribute set to False
 will not show up when browsing the comment list for a bug.

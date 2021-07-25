@@ -1,4 +1,5 @@
-= Poll options =
+Poll options
+============
 
 A poll can have any number of options, but these must be created
 before the poll has opened.

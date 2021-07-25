@@ -1,4 +1,5 @@
-= ProductSeries =
+ProductSeries
+=============
 
 A Launchpad Product models a single piece of software. However for
 release management purposes, a Product often has to be split in several
@@ -109,7 +110,8 @@ Let's check that the new series is properly associated to its product.
     True
 
 
-= Drivers and release managers =
+Drivers and release managers
+============================
 
 A person appointed to the project or series driver role is a release
 manager and can edit a product series.
@@ -135,7 +137,8 @@ manager and can edit a product series.
     >>> login(ANONYMOUS)
 
 
-== ProductSeries releassefileglob ==
+ProductSeries releassefileglob
+------------------------------
 
 Each ProductSeries may have a releassefileglob that describes the location
 of where release files are uploaded to. The product release finder process
@@ -186,7 +189,8 @@ The URL must contain a glob (*) or , and may contain more than one.
     True
 
 
-== Specification Listings ==
+Specification Listings
+----------------------
 
 We should be able to get lists of specifications in different states
 related to a productseries.
@@ -307,7 +311,8 @@ matches):
     0
 
 
-== Lifecycle Management ==
+Lifecycle Management
+--------------------
 
 In the example above, we use the acceptBy and updateLifecycleStatus methods on
 a specification. These help us keep the full record of who moved the spec
@@ -334,7 +339,8 @@ change the overall state of the spec to "completed".
     False
 
 
-== Drivers ==
+Drivers
+-------
 
 Products, project groups and product series have drivers, who are people
 that have permission to approve bugs and features for specific releases. The

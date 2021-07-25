@@ -1,4 +1,5 @@
-= Requesting an OOPS from Launchpad =
+Requesting an OOPS from Launchpad
+=================================
 
 OOPSes happen from time to time in Launchpad, and they contain lots of
 interesting information for helping debug.  Sometimes though it is useful to

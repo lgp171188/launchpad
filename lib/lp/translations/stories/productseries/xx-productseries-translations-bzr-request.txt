@@ -1,10 +1,12 @@
-= Requesting a one-time import of translation files =
+Requesting a one-time import of translation files
+=================================================
 Product maintainers can request a one-time import of translation files
 from the Bazaar branch that is officially linked to the release series
 of a product. This function complements the general import settings
 found on the "Settings" page.
 
-== Getting there ==
+Getting there
+-------------
 The maintainer of a product sees a menu option called "Reqeust Bazaar
 import" that leads to the page to request such imports.
 
@@ -16,7 +18,8 @@ import" that leads to the page to request such imports.
     >>> print(browser.url)
     http://translations.l...d.test/evolution/trunk/+request-bzr-import
 
-== The request page with a branch ==
+The request page with a branch
+------------------------------
 The product series must have a branch configured in order to be able
 to request an import. The current branch is displayed on the page.
 
@@ -61,7 +64,8 @@ The request is made by clicking on a button labeled
     >>> print_feedback_messages(browser.contents)
     The import has been requested.
 
-== The request page without a branch ==
+The request page without a branch
+---------------------------------
 The official Bazaar branch gets removed from the product series.
 
     >>> browser.open('http://launchpad.test/evolution/trunk/+setbranch')

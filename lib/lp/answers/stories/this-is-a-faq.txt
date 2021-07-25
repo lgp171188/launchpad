@@ -1,4 +1,5 @@
-= Link to a FAQ =
+Link to a FAQ
+=============
 
 Even though similar questions are shown when a user creates a new
 question, common questions still happen for a number of reasons.
@@ -6,7 +7,8 @@ The Answer Tracker can be used to manage common answers
 (a.k.a. Frequently Asked Question - FAQ) which can be used to answer
 a particular question.
 
-== Fix up sample data ==
+Fix up sample data
+------------------
 
 The sample data has question titles which perform poorly with the sample data's
 answers in fulltext searching, using efficient tsearch2 queries; we are going
@@ -23,7 +25,8 @@ permits better matching. See bug 612384.
     >>> logout()
 
 
-== Linking to a FAQ ==
+Linking to a FAQ
+----------------
 
 Any logged in user can use the 'Link to a FAQ' action item to link
 the question to an existing FAQ.
@@ -140,7 +143,8 @@ The answer message was added to the question's discussion:
     FAQ #10: \u201cHow do I install plugins...
 
 
-== Modifying the FAQ ==
+Modifying the FAQ
+-----------------
 
 The link to the FAQ can be changed by using the same 'Link to a FAQ'
 option. Continuing on the previous example, the user went on to read
@@ -193,7 +197,8 @@ The link was also removed from the details portlet:
     Related FAQ: None ...
 
 
-== Creating a new FAQ ==
+Creating a new FAQ
+------------------
 
 When no existing FAQs are relevant, it is possible to create a new FAQ
 from the same 'Link to a FAQ' action. But this option is reserved to
@@ -289,7 +294,8 @@ description:
     Related FAQ: Displaying SVG in Firefox ...
 
 
-== Viewing a FAQ ==
+Viewing a FAQ
+-------------
 
 From a question page which has a related FAQ, the user can click on the
 FAQ title to display the FAQ content.
@@ -328,7 +334,8 @@ the FAQ:
     http://answers.launchpad.test/firefox/+question/2
 
 
-== Distribution and Source Packages ==
+Distribution and Source Packages
+--------------------------------
 
 Questions asked about a distribution or distribution source package
 can also be linked to FAQs.
@@ -351,7 +358,8 @@ can also be linked to FAQs.
     'Is question #8 a FAQ...
 
 
-== Solved questions can be linked to a FAQ ==
+Solved questions can be linked to a FAQ
+---------------------------------------
 
 When linking a solved question to a FAQ the action is treated as a
 comment.
@@ -397,7 +405,8 @@ discussion.
     FAQ #6: ...How can I play MP3/Divx/DVDs/Quicktime/Realmedia files...
 
 
-== FAQs are links ==
+FAQs are links
+--------------
 
 You can respond to a question by pointing people to a FAQ. FAQs are
 linkified as you would expect! You can use the "this is a FAQ" menu

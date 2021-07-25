@@ -1,4 +1,5 @@
-= Browsing and Searching Questions =
+Browsing and Searching Questions
+================================
 
 This story describes some common use cases about using the browsing and
 searching features of the Answer Tracker.
@@ -9,7 +10,8 @@ IP address, since we'll use that later.
     >>> browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
 
 
-== When Nobody Uses the Answer Tracker ==
+When Nobody Uses the Answer Tracker
+-----------------------------------
 
 Average Joe has recently installed Kubuntu. He has a problem with his
 system and goes to the Kubuntu's support page in Launchpad to see if
@@ -46,7 +48,8 @@ For projects that don't have products, the Answers facet is disabled.
      ...
     zope.testbrowser.browser.LinkNotFoundError
 
-== Browsing Questions ==
+Browsing Questions
+------------------
 
 He realises that support for Kubuntu is probably going on in the Ubuntu
 Answers page and goes there to check.
@@ -143,7 +146,8 @@ details of the question are available.
     [<div class="report"><p>I get really poor hard drive performance.</p></div>]
 
 
-== Jumping to Questions ==
+Jumping to Questions
+--------------------
 
 The Answer Tracker main page permits the user to jump to a question by
 submitting the question's id in the text input field with the 'Find
@@ -188,7 +192,8 @@ is shown search results instead of the question.
     There are no questions matching "question 8" with the requested statuses.
 
 
-== Searching Questions ==
+Searching Questions
+-------------------
 
 Browsing is fine when the number of questions is small, but searching
 is more convenient as the number of questions grow larger.
@@ -250,7 +255,8 @@ error is displayed when the user forgets to select a status.
     You must choose at least one status.
 
 
-== Controlling the Sort Order ==
+Controlling the Sort Order
+--------------------------
 
 That question isn't exactly what Average Joe was looking for. Now, he'd
 like to see all the questions that were related to the firefox package.
@@ -289,12 +295,14 @@ selects the 'oldest first' sort order.
     </table>
 
 
-== Common Reports ==
+Common Reports
+--------------
 
 In the actions menu, we find links to some common reports.
 
 
-=== Open Questions ===
+Open Questions
+..............
 
 Nice Guy likes helping others. He uses the 'Open' link to view the most
 recent questions on Mozilla Firefox.
@@ -329,7 +337,8 @@ problems:
     Problem showing the SVG demo on W3C site
 
 
-=== Answered Questions ===
+Answered Questions
+..................
 
 A random user has a problem with firefox in Ubuntu. They use the
 'Answered' link on the 'Answers' facet of the distribution to look for
@@ -363,7 +372,8 @@ they enter 'Evolution' as a keyword and hit the search button.
     ...
 
 
-=== My questions ===
+My questions
+............
 
 Sample Person remembers posting a question on mozilla-firefox. They use
 the 'My questions' link on the distribution source package Answers facet
@@ -435,7 +445,8 @@ informing them of this fact is displayed.
     You didn't ask any questions about gnomebaker.
 
 
-=== Need attention ===
+Need attention
+..............
 
 A user can often forget which questions need their attention. For
 this purpose, there is a 'Need attention' report which displays the
@@ -488,7 +499,8 @@ informing them of this fact is displayed.
     No questions need your attention for gnomebaker.
 
 
-== Person Reports ==
+Person Reports
+--------------
 
 The Answers facet on on person also contains various searchable
 listings.
@@ -553,7 +565,8 @@ The actions menu contains links to listing that contain only a specific
 type of involvement.
 
 
-=== Assigned ===
+Assigned
+........
 
 The assigned report only lists the questions to which the person is
 assigned.
@@ -565,7 +578,8 @@ assigned.
     No questions assigned to Foo Bar found with the requested statuses.
 
 
-=== Answered ===
+Answered
+........
 
 The 'Answered' link displays all the questions where the person is the
 answerer.
@@ -579,7 +593,8 @@ answerer.
     mailto: problem in webpage
 
 
-=== Commented ===
+Commented
+.........
 
 The report available under the 'Commented' link displays all the
 questions commented on by the person.
@@ -597,7 +612,8 @@ questions commented on by the person.
     Newly installed plug-in doesn't seem to be used
 
 
-=== Asked ===
+Asked
+.....
 
 The 'Asked' link displays a listing containing all the questions
 asked by the person.
@@ -612,7 +628,8 @@ asked by the person.
     Firefox loses focus and gets stuck
 
 
-=== Need attention ===
+Need attention
+..............
 
 The 'Need attention' link displays all the questions that need
 the attention of that person.
@@ -627,7 +644,8 @@ the attention of that person.
     Slow system
 
 
-=== Subscribed ===
+Subscribed
+..........
 
 Foo Bar can find all the questions to which they are subscribed by
 visiting the 'Subscribed' link in the 'Answers' facet.
@@ -641,7 +659,8 @@ visiting the 'Subscribed' link in the 'Answers' facet.
     Slow system
 
 
-== Browsing and Searching Questions in a ProjectGroup ==
+Browsing and Searching Questions in a ProjectGroup
+--------------------------------------------------
 
 When going to the Answers facet of a project, a listing of all the
 questions filed against any of the project's products is displayed.
@@ -699,7 +718,8 @@ The same standard reports than on regular QuestionTarget are available:
     Questions needing your attention for The Mozilla Project : Questions : The Mozilla Project
 
 
-== Searching All Questions ==
+Searching All Questions
+-----------------------
 
 It is possible from the Answer Tracker front page to search among all
 questions ever filed on Launchpad.
@@ -754,7 +774,8 @@ display all questions asked in Launchpad with the selected statuses.
     Firefox cannot render Bank Site             Mozilla Firefox
 
 
-== Searching in a Selected Project ==
+Searching in a Selected Project
+-------------------------------
 
 From the Answers front page, the user can select to search questions
 only in a particular project. In this context a "project" means either

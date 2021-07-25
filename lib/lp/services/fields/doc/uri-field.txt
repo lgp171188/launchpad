@@ -1,4 +1,5 @@
-= URIField Field Type =
+URIField Field Type
+===================
 
 Many web applications need to work with and store URIs.  To aide with
 some of the common validation needed for this, Launchpad provides a
@@ -26,7 +27,8 @@ To demonstrate, we'll create a sample interface:
   ...     without_slash = URIField(trailing_slash=False)
 
 
-== Validation ==
+Validation
+----------
 
 In its most basic form, the field validator makes sure the value is a
 valid URI:
@@ -40,7 +42,8 @@ valid URI:
   lp.app.validators.LaunchpadValidationError: &quot;not-a-uri&quot; is not a valid URI
 
 
-=== Scheme Restrictions ===
+Scheme Restrictions
+...................
 
 If the allowed_schemes argument is specified for the field, then only
 URIs matching one of those schemes will be accepted.  Other schemes
@@ -55,7 +58,8 @@ will result in a validation error:
   lp.app.validators.LaunchpadValidationError: The URI scheme &quot;http&quot; is not allowed. Only URIs with the following schemes may be used: sftp
 
 
-=== Disallowing Userinfo ===
+Disallowing Userinfo
+....................
 
 The field can be configured to reject URIs with a userinfo portion.
 This can be useful to catch possible phishing attempts for URIs like a
@@ -75,7 +79,8 @@ product home page, where authentication is not generally required:
   lp.app.validators.LaunchpadValidationError: A username may not be specified in the URI.
 
 
-=== Disallowing Non-default Ports ===
+Disallowing Non-default Ports
+.............................
 
 For some URIs we will want to disallow using non-default ports in
 URIs.  This can be done with the allow_port option:
@@ -93,7 +98,8 @@ known to be the default for that scheme:
   >>> no_port.validate(u'http://launchpad.net:80/')
 
 
-=== Disallowing the Query Component ===
+Disallowing the Query Component
+...............................
 
 For some URIs (such as Bazaar branch URLs), it doesn't make sense to
 include a query component.  The allow_query argument can be used to
@@ -107,7 +113,8 @@ reject those URIs:
   lp.app.validators.LaunchpadValidationError: URIs with query strings are not allowed.
 
 
-=== Disallowing the Fragment Component ===
+Disallowing the Fragment Component
+..................................
 
 The fragment component can also be disallowed:
 
@@ -165,7 +172,8 @@ URIs with an authority but a blank path get canonicalised to a path of
   http://launchpad.net/
 
 
-== Null values ==
+Null values
+-----------
 
 None is an acceptable value for a URI field.
 
@@ -174,7 +182,8 @@ None is an acceptable value for a URI field.
   None
 
 
-== URIWidget ==
+URIWidget
+---------
 
 A special widget is registered for URIFields.  This widget is like the
 standard text widget with the following differences:

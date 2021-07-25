@@ -1,4 +1,5 @@
-= Team navigation menus =
+Team navigation menus
+=====================
 
 The team pages have their own navigation menu.
 

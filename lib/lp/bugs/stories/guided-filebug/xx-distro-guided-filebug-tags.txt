@@ -1,4 +1,5 @@
-= Adding tags when filing bugs =
+Adding tags when filing bugs
+============================
 
 Even though there's no input field for adding tags on the normal
 +filebug page, it's still possible to add tags to filed bugs on that

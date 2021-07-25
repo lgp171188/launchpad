@@ -1,4 +1,5 @@
-= Setting the status of a bug =
+Setting the status of a bug
+===========================
 
 If you have a bug and a target, there's method which makes it easier to
 change the bug's status for that specific target. It expects the user
@@ -67,7 +68,8 @@ bugtask already has the specified status, None is returned.
     >>> print(bug.setStatus(firefox, BugTaskStatus.CONFIRMED, no_priv))
     None
 
-=== Product series ===
+Product series
+..............
 
 If a product series is specified, but the bug is target only to the
 product, not the product series, the product bugtask is edited.
@@ -126,7 +128,8 @@ updated automatically.
     >>> firefox_bugtask.status.name
     'CONFIRMED'
 
-=== Distributions and packages ===
+Distributions and packages
+..........................
 
 Setting the status of a distribution or package bugtask work the same as
 for product tasks.

@@ -1,4 +1,5 @@
-= API Documentation =
+API Documentation
+=================
 
 The Launchpad API documentation portal is available at
 http://launchpad.test/+apidoc. It contains summaries of the different

@@ -1,4 +1,5 @@
-= Caching country mirrors =
+Caching country mirrors
+=======================
 
 The https://launchpad.net/ubuntu/+countrymirrors-archive page serves the
 list of official Ubuntu mirrors for the country where the request was

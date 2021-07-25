@@ -1,4 +1,5 @@
-= Request time out =
+Request time out
+================
 
 Launchpad request shouldn't take more than a fix number of seconds to
 complete. The database adapter issues RequestExpired errors when the
@@ -103,7 +104,8 @@ and a TimeoutError is never raised.
 
     >>> wait_a_little()
 
-= Overriding hard timeouts via FeatureFlags =
+Overriding hard timeouts via FeatureFlags
+=========================================
 
 It's possible to use FeatureFlags to control the hard timeout. This is used to
 deal with pages that suddenly start performing badly, which are being

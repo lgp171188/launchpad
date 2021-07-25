@@ -1,10 +1,12 @@
-= Private Personal Package Archives =
+Private Personal Package Archives
+=================================
 
 Private PPAs prevent anyone other than the PPA owner, its team members
 or an admin from seeing the PPA.  This page test describes how
 this works in practice in the UI.
 
-== Define a helper function ==
+Define a helper function
+------------------------
 
 We'll use this function later to print what PPAs are in the +ppas listing.
 
@@ -14,7 +16,8 @@ We'll use this function later to print what PPAs are in the +ppas listing.
     ...     print("\n".join(ppas))
 
 
-== Set Up a Private PPA ==
+Set Up a Private PPA
+--------------------
 
 First we'll create a private PPA for Celso.
 
@@ -28,7 +31,8 @@ First we'll create a private PPA for Celso.
     ...     owner=cprov, name="p3a", distribution=ubuntu, private=True)
     >>> logout()
 
-== PPA Listing Page ==
+PPA Listing Page
+----------------
 
 The /+ppas page normally shows all PPAs.  However, if they are private
 they are not shown to non-authorised users.
@@ -95,7 +99,8 @@ Administrators will see all private PPAs in the listing:
     PPA for No Privileges Person...
 
 
-== Accessing the Archive Pages ==
+Accessing the Archive Pages
+---------------------------
 
 A non-privileged user cannot access the private PPA pages.
 

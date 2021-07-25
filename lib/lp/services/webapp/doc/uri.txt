@@ -1,4 +1,5 @@
-== Security Proxied URI Objects ==
+Security Proxied URI Objects
+----------------------------
 
 URI objects can be compared for equality even in the presence of Zope
 security proxies.

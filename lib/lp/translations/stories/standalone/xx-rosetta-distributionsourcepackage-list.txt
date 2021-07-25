@@ -1,4 +1,5 @@
-= DistributionSourcePackage translations =
+DistributionSourcePackage translations
+======================================
 
 Make the test browser look like it's coming from an arbitrary South African
 IP address, since we'll use that later.

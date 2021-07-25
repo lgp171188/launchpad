@@ -1,4 +1,5 @@
-= Karma Cache =
+Karma Cache
+===========
 
 To be able to get the total karma of a given person, the karma of a given
 type or the karma in a given context, we use our KarmaCache table. We need
@@ -17,7 +18,8 @@ which runs daily. The script does that by using the IKarmaCacheManager API.
     >>> switch_dbuser('karma')
     >>> karmacachemanager = getUtility(IKarmaCacheManager)
 
-== Creating new KarmaCache entries ==
+Creating new KarmaCache entries
+-------------------------------
 
 This is done using the new() method:
 
@@ -33,7 +35,8 @@ This is done using the new() method:
     ...     value, person.id, bugs.id, product_id=firefox_id)
 
 
-== Updating existing entries ==
+Updating existing entries
+-------------------------
 
 Since our script has only the person ID, category ID and context ID of
 the KarmaCache entry it wants to update, we provide a method

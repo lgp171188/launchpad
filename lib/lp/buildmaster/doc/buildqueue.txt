@@ -1,4 +1,5 @@
-= BuildQueue =
+BuildQueue
+==========
 
 BuildQueue class represents the run-time-records of builds being
 processed.
@@ -90,7 +91,8 @@ set 'manual' attribute atomically. For this we use manualScore:
     (True, 1000)
 
 
-== Dispatching and Reseting jobs ==
+Dispatching and Reseting jobs
+-----------------------------
 
 The sampledata contains an active job, being built by the 'bob'
 builder.
@@ -151,7 +153,8 @@ the specified builder.
     BUILDING
 
 
-== BuildQueueSet utility ==
+BuildQueueSet utility
+---------------------
 
 Now perform the tests for the BuildQueue zope utility, BuildQueueSet.
 Check if the instance returned as utility corresponds to its

@@ -1,4 +1,5 @@
-= Bug Privileged Statuses =
+Bug Privileged Statuses
+=======================
 
 Some statuses, e.g. Won't Fix, are restricted. Only members of the Bug
 Supervisor team may change a bug to that status.
@@ -7,7 +8,8 @@ Supervisor team may change a bug to that status.
     >>> def print_highlighted_bugtask(browser):
     ...     print_bug_affects_table(browser.contents, highlighted_only=True)
 
-== Unprivileged users ==
+Unprivileged users
+------------------
 
     >>> user_browser.open(
     ...     'http://bugs.launchpad.test/ubuntu/+source/'
@@ -50,7 +52,8 @@ those statuses are not shown in the UI:
     ...
     zope.testbrowser.browser.ItemNotFoundError: Triaged
 
-== Bug Supervisor ==
+Bug Supervisor
+--------------
 
 Ubuntu needs a Bug Supervisor first of all:
 

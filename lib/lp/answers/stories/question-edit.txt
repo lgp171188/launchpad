@@ -1,4 +1,5 @@
-= Editing Questions =
+Editing Questions
+=================
 
 To edit the title and description of question, one uses the 'Edit
 Question' menu item. You need to be logged in to see the edit form, and
@@ -61,7 +62,8 @@ You can even modify the title and description of 'Answered' and
     <Link...>
 
 
-== Source Package ==
+Source Package
+--------------
 
 Distribution questions can have a source package associated with them.
 Any logged in user can change the question source package on the
@@ -82,7 +84,8 @@ Product questions ignore sourcepackage information if it is submitted:
     >>> user_browser.getControl('Save Changes').click()
 
 
-== Changing Other Metadata ==
+Changing Other Metadata
+-----------------------
 
 A user with 'launchpad.Admin' privilege (usually the product or
 distribution owner) can also change the question Assignee, and

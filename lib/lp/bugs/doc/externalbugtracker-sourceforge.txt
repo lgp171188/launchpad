@@ -1,10 +1,12 @@
-= ExternalBugTracker: SourceForge =
+ExternalBugTracker: SourceForge
+===============================
 
 This covers the implementation of the ExternalBugTracker class for
 SourceForge bugwatches.
 
 
-== Basics ==
+Basics
+------
 
 The ExternalBugTracker descendant class which implements methods for
 updating bug watches on SourceForge bug trackers is
@@ -20,7 +22,8 @@ externalbugtracker.SourceForge, which implements IExternalBugTracker.
     True
 
 
-== Status Conversion ==
+Status Conversion
+-----------------
 
 The SourceForge bug status/resolution combinations map to Launchpad bug
 statuses. SourceForge.convertRemoteStatus() handles the conversion.
@@ -73,7 +76,8 @@ understand an UnknownRemoteStatusError will be raised.
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: eggs
 
 
-== Initialization ==
+Initialization
+--------------
 
 Calling initializeRemoteBugDB() on our SourceForge instance and passing
 it a set of remote bug IDs will fetch those bug IDs from the server and
@@ -136,7 +140,8 @@ a PrivateRemoteBug error.
     lp.bugs.externalbugtracker.base.PrivateRemoteBug: Bug 99 on http://example.com is private.
 
 
-== Updating Bug Watches ==
+Updating Bug Watches
+--------------------
 
 First, we create some bug watches to test with. Example.com hosts a
 SourceForge instance which has several bugs that we wish to watch:
@@ -260,7 +265,8 @@ statuses:
     Remote bug 1722259: Won't Fix
 
 
-== Getting the remote product for a bug ==
+Getting the remote product for a bug
+------------------------------------
 
 It's possible to get the remote product for a bug by calling
 SourceForge.getRemoteProduct(). In SourceForge's case, what we refer to

@@ -1,4 +1,5 @@
-= MO file format exporter =
+MO file format exporter
+=======================
 
 MO files are binary files compiled from human readable PO files by an
 external program, usually msgfmt(1).  One mnemonic to help you remember
@@ -20,12 +21,14 @@ http://www.gnu.org/software/gettext/manual/html_chapter/gettext_10.html#MO-Files
     >>> from lp.translations.utilities.tests.helpers import (
     ...     is_valid_mofile)
 
-== Interface implementation ==
+Interface implementation
+------------------------
 
     >>> verifyObject(ITranslationFormatExporter, GettextMOExporter())
     True
 
-== exportTranslationFiles() ==
+exportTranslationFiles()
+------------------------
 
 With exportTranslationFiles method, we can get a compiled .po file from a
 TranslationFileData.
@@ -103,7 +106,8 @@ When we export more than one file, we get a tarball.
     | non-empty | sr/LC_MESSAGES/foo.mo
 
 
-== PO compiler helper class ==
+PO compiler helper class
+------------------------
 
 Launchpad gets .po file content and 'compiles' it to get
 the binary form.

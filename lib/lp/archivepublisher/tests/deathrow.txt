@@ -1,4 +1,5 @@
-= Package Death Row =
+Package Death Row
+=================
 
 We start by creating a pair of temporary directories to be used in
 this test.
@@ -29,7 +30,8 @@ The no-operation use case, reflects the sampledata status.
     DEBUG Marking 0 condemned packages as removed.
 
 
-== Removal unreferenced packages ==
+Removal unreferenced packages
+-----------------------------
 
 Setup `SoyuzTestPublisher` for creating publications for Ubuntu/hoary.
 

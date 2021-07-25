@@ -1,4 +1,5 @@
-= The set of branches =
+The set of branches
+===================
 
 The set of branches in Launchpad is represented by the collection found at
 /branches. By default it lists the 50 most recently changed branches.
@@ -8,7 +9,8 @@ The set of branches in Launchpad is represented by the collection found at
     1
 
 
-== Custom operations ==
+Custom operations
+-----------------
 
 The branches collection also offers operations to get a particular branch.
 
@@ -23,7 +25,8 @@ The branches collection also offers operations to get a particular branch.
     >>> logout()
 
 
-=== Getting a branch by URL ===
+Getting a branch by URL
+.......................
 
     >>> found_branch = webservice.get(
     ...     '/branches?ws.op=getByUrl&url=%s' % branch_url).jsonBody()
@@ -31,7 +34,8 @@ The branches collection also offers operations to get a particular branch.
     True
 
 
-=== Getting many branches by URL ===
+Getting many branches by URL
+............................
 
 The branches collection has a helper to get a lot of branches at once. This
 saves roundtrips and provides potential performance improvements.

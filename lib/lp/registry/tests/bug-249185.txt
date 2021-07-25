@@ -1,4 +1,5 @@
-= A test which reproduces bug 249185 =
+A test which reproduces bug 249185
+==================================
 
 Create some teams.
 

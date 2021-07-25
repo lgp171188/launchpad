@@ -1,4 +1,5 @@
-= Package pages navigation =
+Package pages navigation
+========================
 
 Launchpad has pages for distribution source packages, distribution
 source package releases, distribution source package release builds,
@@ -9,7 +10,8 @@ binary package releases. It's important that each of these page types
 have functioning application tabs that go to an obvious place.
 
 
-== Distribution source package ==
+Distribution source package
+---------------------------
 
 A distribution source package has its own Overview, Bugs, and Answers
 pages.
@@ -39,7 +41,8 @@ pages.
     Main heading: (No main heading)
 
 
-== Distribution source package release ==
+Distribution source package release
+-----------------------------------
 
 A distribution source package release does not have Bugs, Translations,
 or Answers of its own, so the release does not belong in the top
@@ -60,7 +63,8 @@ source package.
     Main heading: alsa-utils 1.0.9a-4ubuntu1 source package in Ubuntu
 
 
-== Distribution source package release build ==
+Distribution source package release build
+-----------------------------------------
 
 A distribution source package release build should have almost the same
 navigation as its parent distribution source package release.
@@ -79,7 +83,8 @@ navigation as its parent distribution source package release.
     Main heading: i386 build of alsa-utils 1.0.9a-4ubuntu1 in ubuntu hoary RELEASE
 
 
-== Distribution series source package ==
+Distribution series source package
+----------------------------------
 
 A distribution series source package inherits its distribution source
 package's facets.
@@ -98,7 +103,8 @@ package's facets.
     Main heading: alsa-utils source package in Hoary
 
 
-== Distribution series architecture ==
+Distribution series architecture
+--------------------------------
 
 Distribution series architectures pages inherit facets from the
 distribution.
@@ -116,7 +122,8 @@ distribution.
     Main heading: Ubuntu Hoary for i386
 
 
-== Distribution series architecture binary package ==
+Distribution series architecture binary package
+-----------------------------------------------
 
 The distribution series architecture binary packages page inherits Code,
 Bugs, Blueprints and Translations from the distribution.
@@ -134,7 +141,8 @@ Bugs, Blueprints and Translations from the distribution.
     Main heading: pmount binary package in Ubuntu Hoary i386
 
 
-== Distribution series architecture binary package release ==
+Distribution series architecture binary package release
+-------------------------------------------------------
 
 Distribution series architecture binary package releases pages inherit
 facets from the distribution.

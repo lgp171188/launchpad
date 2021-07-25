@@ -1,4 +1,5 @@
-= Code Import Results =
+Code Import Results
+===================
 
 A CodeImportResult is a record of a completed code import job.  They
 are accessed via a utility registered for the ICodeImportResultSet
@@ -19,7 +20,8 @@ member of the vcs-imports team and can access the objects freely.
 
     >>> login('david.allouche@canonical.com')
 
-== Creating CodeImportResults ==
+Creating CodeImportResults
+--------------------------
 
 Creating CodeImportResult objects is usually done by the finishJob()
 method of the CodeImportWorkflow utility, but here we use the object
@@ -85,7 +87,8 @@ A helper property exists to give the duration of the job run.
     4:00:00
 
 
-== Retrieving CodeImportResults ==
+Retrieving CodeImportResults
+----------------------------
 
 The CodeImportResult objects for a given import can be retrieved in
 reverse chronological order with the results attribute on a code import.

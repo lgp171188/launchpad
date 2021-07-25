@@ -21,7 +21,8 @@ packages within the distroseries in context:
     First &bull; Previous &bull; Next &bull; Last
 
 
-== Latest uploads page ==
+Latest uploads page
+-------------------
 
 This page provides raw list of the last five source packages uploaded
 and published for a given distroseries.

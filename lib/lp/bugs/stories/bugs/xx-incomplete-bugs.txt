@@ -1,4 +1,5 @@
-= Incomplete bugs =
+Incomplete bugs
+===============
 
 Bugs can have their status set to 'Incomplete', to indicate that more
 information is required before they can be confirmed.
@@ -79,7 +80,8 @@ incomplete bugs without response.
     False
 
 
-== Bugs that can expire display a notice ==
+Bugs that can expire display a notice
+-------------------------------------
 
 Projects that use Launchpad to track bugs will expire 'Incomplete'
 bugs after the configured expiration age has passed. The rules
@@ -129,7 +131,8 @@ date. We alter the date_last_updated field of bug 11 to demonstrate this.
     >>> user_browser.getLink('find out why').url
     'https://help.launchpad.net/BugExpiry'
 
-== The expirable bug search ==
+The expirable bug search
+------------------------
 
 Users can view a list of expirable bugs via a link on the project's
 bug page. To see the behaviour of the bug listing, we need another
@@ -213,7 +216,8 @@ Jokosher's bug page.
     12  Copy, Cut and Delete operations should work ...
 
 
-== Incomplete bugs that do not expire ==
+Incomplete bugs that do not expire
+----------------------------------
 
 Debian does not use launchpad to track bugs, so its incomplete bugs
 cannot expire. No Privileges Person sets a Debian bug to Incomplete,
@@ -246,7 +250,8 @@ expirable bugs they read that Debian does not use bug expiration.
     updating the project's details. See Bugs/Expiry.
 
 
-== Default search parameters for incomplete bugs ==
+Default search parameters for incomplete bugs
+---------------------------------------------
 
 Default bug searches look for both Incomplete (with response) and
 Incomplete (without response) bugs.

@@ -1,4 +1,5 @@
-= Creating a PPA =
+Creating a PPA
+==============
 
   >>> from zope.component import getUtility
   >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -34,7 +35,8 @@
   ...
   A PPA cannot have the same name as its distribution.
 
-== Creating private PPAs ==
+Creating private PPAs
+---------------------
 
 Our PPA owner now has a single PPA.
 
@@ -113,7 +115,8 @@ But not for distributions that don't have PPAs enabled.
   Red Hat does not support PPAs.
 
 
-== Defaults ==
+Defaults
+--------
 
 createPPA's distribution and name arguments were added years after the
 method, so they remain optional and default to Ubuntu and "ppa"

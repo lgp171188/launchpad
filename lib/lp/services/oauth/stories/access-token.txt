@@ -1,4 +1,5 @@
-= Exchanging a request token for an access token =
+Exchanging a request token for an access token
+==============================================
 
 Once the user has logged into Launchpad and granted access to the
 consumer, the request token is eligible for being exchanged for an

@@ -1,4 +1,5 @@
-= Deleting bug attachments =
+Deleting bug attachments
+========================
 
 If some attachment gets added which isn't relevant to the bug, it can be
 deleted again from the bug attachment edit page.

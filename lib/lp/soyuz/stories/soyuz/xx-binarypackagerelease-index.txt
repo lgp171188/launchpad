@@ -1,4 +1,5 @@
-= BinaryPackageRelease Pages =
+BinaryPackageRelease Pages
+==========================
 
 The page for a 'successfully built' build provides link(s) to the produced
 binaries independent of their context, the raw IBinaryPackageRelease

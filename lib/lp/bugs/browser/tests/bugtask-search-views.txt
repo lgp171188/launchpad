@@ -1,4 +1,5 @@
-= Distribution Search page =
+Distribution Search page
+========================
 
 In the 'Bugs' facet of a distribution we can find a list of bugs
 reported in that distribution and simple and advanced search forms.
@@ -208,7 +209,8 @@ in each series. In this case, the component search widget is hidden.
     False
 
 
-== Distribution Series search page ==
+Distribution Series search page
+-------------------------------
 
     >>> sarge = debian.getSeries('sarge')
 
@@ -286,7 +288,8 @@ The same is true for a sarge package.
     []
 
 
-== ProjectGroup Search Page ==
+ProjectGroup Search Page
+------------------------
 
     >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
     >>> mozilla = getUtility(IProjectGroupSet).getByName('mozilla')
@@ -353,7 +356,8 @@ Check what milestones are displayed on the advanced search form:
     Mozilla Firefox 1.0 (2056-10-16)
 
 
-== Searching by information type ==
+Searching by information type
+-----------------------------
 
 The advanced form allows us to query for bugs matching specific
 information types.
@@ -390,7 +394,8 @@ Submit the search:
     >>> flush_database_updates()
 
 
-== Constructing search filter urls ==
+Constructing search filter urls
+-------------------------------
 
 There is a helper method, get_buglisting_search_filter_url(), which can
 be used to construct bug search URLs. It takes keyword parameters for

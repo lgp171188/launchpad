@@ -1,4 +1,5 @@
-= The Project Scope Widget =
+The Project Scope Widget
+========================
 
 Many application front pages contain a search form. The search
 can usually be across the whole Launchpad or only in one project.
@@ -74,7 +75,8 @@ By default, the 'All projects' scope is selected:
       One project:
     ...
 
-== Selecting All Projects ==
+Selecting All Projects
+----------------------
 
 When the 'All projects' option is selected, the widget returns None.
 
@@ -88,7 +90,8 @@ When the 'All projects' option is selected, the widget returns None.
     >>> widget.getInputValue() is None
     True
 
-== Selecting One Project ==
+Selecting One Project
+---------------------
 
 If we select a project, the project with that name is returned
 by getInputValue().
@@ -159,7 +162,8 @@ If no project name is given at all, a widget error is also raised:
     >>> print(widget.error())
     Please enter a project name
 
-== setRenderedValue() ==
+setRenderedValue()
+------------------
 
 In order to initialize the widget with a value, setRenderedValue() is
 used. Passing a product to it will select the 'One project' radio
@@ -197,7 +201,8 @@ Setting the scope to None, will default to the 'All projects' option.
              type="radio" value="all" />
     ...
 
-== getScope() and partial queries ==
+getScope() and partial queries
+------------------------------
 
 In some cases, forms with a ProjectScopeWidget are requested by bots
 which incorrectly build the query string without without the `scope`

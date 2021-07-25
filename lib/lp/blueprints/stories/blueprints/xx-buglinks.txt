@@ -1,4 +1,5 @@
-= Linking Specs and Bugs =
+Linking Specs and Bugs
+======================
 
 Specifications can be linked to bugs. Bug reports exposing problems that
 will be solved by the specification are likely candidates for such
@@ -16,7 +17,8 @@ the 'Related Bugs' section.
     Bug #1: Firefox does not support SVG   New
 
 
-== Adding Links ==
+Adding Links
+------------
 
 Linking a bug report to a specification is done by using the
 'Link to a bug report' link.
@@ -46,7 +48,8 @@ link.
     ...Reflow problems with complex page layouts...</div>
 
 
-== Removing Links ==
+Removing Links
+--------------
 
 Oops, that was actually the wrong bug. So lets remove the link. This is
 done by using the 'Remove bug link' link.

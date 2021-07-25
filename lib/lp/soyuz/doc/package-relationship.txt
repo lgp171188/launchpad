@@ -1,4 +1,5 @@
-= Package Relationship Model =
+Package Relationship Model
+==========================
 
 We call "package relationship" the DSC field which describes relation
 between the package in question and others available:

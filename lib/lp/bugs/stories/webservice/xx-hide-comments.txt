@@ -1,4 +1,5 @@
-= Hide bug comments =
+Hide bug comments
+=================
 
 Bug comments can be hidden by setting visible to False.  There is
 a corresponding API method to do this.  Call the method with the

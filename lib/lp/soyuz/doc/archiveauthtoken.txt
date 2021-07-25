@@ -1,4 +1,5 @@
-= ArchiveAuthToken =
+ArchiveAuthToken
+================
 
 This content class represents an authorisation token associated with
 an IPerson and an IArchive.  The tokens are used to permit Launchpad
@@ -15,7 +16,8 @@ First we create a private PPA for Joe.
     ...     owner=joe, private=True, name='ppa')
 
 
-== Creating new tokens ==
+Creating new tokens
+-------------------
 
 New tokens are created using IArchive.newAuthToken() but this is only
 possible if there is already a valid subscription for the user for
@@ -102,7 +104,8 @@ Tokens also contain some date information:
     None
 
 
-== Retrieving existing tokens ==
+Retrieving existing tokens
+--------------------------
 
 The ArchiveAuthTokenSet utility allows you to retrieve tokens by ID and by
 the token text itself.  To access tokens you need launchpad.View privilege
@@ -205,7 +208,8 @@ Tokens for inactive users are not returned.
     ...     AccountStatus.ACTIVE, None, 'Back')
 
 
-== Amending Tokens ==
+Amending Tokens
+---------------
 
 Tokens can only be de-activated after they are created.  The calling user
 also needs launchpad.Edit on the token, which means either someone with

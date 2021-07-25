@@ -1,4 +1,5 @@
-= "Remove Translations By" script =
+"Remove Translations By" script
+===============================
 
 Use scripts/remove-translations-by.py to delete selected
 TranslationMessages from the database.  This is useful for mislicensed
@@ -130,7 +131,8 @@ the same messages as before, minus one Dutch one.
     Und jetzt auf deutsch.
 
 
-== Dry runs ==
+Dry runs
+--------
 
 Deleting messages is scary.  You should not do it lightly.  The script
 has a --dry-run option that stops it from committing its changes to the

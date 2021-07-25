@@ -1,4 +1,5 @@
-= Empty source package branch listings =
+Empty source package branch listings
+====================================
 
 When you look at an empty source package branch listing, you see some nice,
 helpful text.

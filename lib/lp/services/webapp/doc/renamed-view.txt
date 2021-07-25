@@ -1,4 +1,5 @@
-= RenamedView =
+RenamedView
+===========
 
 As Launchpad is reorganized, views are renamed. It is usually advisable
 to leave a permanent redirect from the old name to the new name. This
@@ -50,7 +51,8 @@ new_name can be a relative path.
     http://launchpad.test/+tour/index.html
 
 
-== Handling GET parameters ==
+Handling GET parameters
+-----------------------
 
 If there was any query parameters on the request, they are appended
 to the redirected URL.
@@ -64,7 +66,8 @@ to the redirected URL.
     http://launchpad.test/ubuntu/+questions?field.status=Open
 
 
-== Redirecting to another virtual host ==
+Redirecting to another virtual host
+-----------------------------------
 
 The view also takes an optional 'rootsite' parameter, which will
 change the virtual host used for the redirection.
@@ -78,7 +81,8 @@ change the virtual host used for the redirection.
     http://answers.launchpad.test/ubuntu/+questions
 
 
-== Traversal errors ==
+Traversal errors
+----------------
 
 If an object cannot be found during traversal, RenamedView will raise
 a NotFound error. For example, requesting a non-existent question will
@@ -93,7 +97,8 @@ raise an error. e.g. http://launchpad.test/ubuntu/+tickets/foo
     zope.publisher.interfaces.NotFound: Object: <Distribution 'Ubuntu' (ubuntu)>, name: 'foo'
 
 
-== Registering from ZCML ==
+Registering from ZCML
+---------------------
 
 Finally, it is possible to register RenamedView from ZCML. The
 browser:renamed-page is available for this purpose.

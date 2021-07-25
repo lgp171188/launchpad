@@ -1,10 +1,12 @@
-= ExternalBugTracker: RT =
+ExternalBugTracker: RT
+======================
 
 This covers the implementation of an ExternalBugTracker class for RT
 instances.
 
 
-== Basics ==
+Basics
+------
 
 When importing bugs from remote RT instances, we use an RT-specific
 implementation of ExternalBugTracker, RequestTracker.
@@ -22,7 +24,8 @@ implementation of ExternalBugTracker, RequestTracker.
     True
 
 
-== Authentication Credentials ==
+Authentication Credentials
+--------------------------
 
 RT instances require that we log in to be able to export statuses for
 their tickets. The RequestTracker ExternalBugTracker class has a
@@ -45,7 +48,8 @@ configuration files. rt.example.com is known to Launchpad.
     >>> print(pretty(rt_two.credentials))
     {'pass': 'pangalacticgargleblaster', 'user': 'zaphod'}
 
-== Status Conversion ==
+Status Conversion
+-----------------
 
 The RequestTracker class can convert the default RT ticket statuses into
 Launchpad statuses:
@@ -72,7 +76,8 @@ result in an UnknownRemoteStatusError being raised.
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: spam
 
 
-== Importance Conversion ==
+Importance Conversion
+---------------------
 
 There is no obvious mapping from ticket priorities to importances. They
 are all imported as Unknown. No exception is raised, because they are
@@ -82,7 +87,8 @@ all unknown.
    'Unknown'
 
 
-== Initialization ==
+Initialization
+--------------
 
 Calling initializeRemoteBugDB() on our RequestTracker instance and
 passing it a set of remote bug IDs will fetch those bug IDs from the
@@ -119,7 +125,8 @@ Subsequent requests use this.
     GET http://example.com/REST/1.0/search/ticket/?...
 
 
-== Export Methods ==
+Export Methods
+--------------
 
 There are two means by which we can export RT bug statuses: on a
 bug-by-bug basis and as a batch. When the number of bugs that need
@@ -166,7 +173,8 @@ This can also be demonstrated for importing bugs as a batch:
       ...
     lp.bugs.externalbugtracker.base.BugTrackerConnectError: ...
 
-== Updating Bug Watches ==
+Updating Bug Watches
+--------------------
 
 First, we create some bug watches to test with. Example.com hosts an RT
 instance which has several bugs that we wish to watch:
@@ -252,7 +260,8 @@ statuses:
     Remote bug 1589: Invalid
 
 
-== Getting the remote product for a bug ==
+Getting the remote product for a bug
+------------------------------------
 
 It's possible to get the remote product for a remote RT bug using
 getRemoteProduct(). In the case of RT, what we refer to in Launchpad as

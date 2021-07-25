@@ -1,4 +1,5 @@
-= Blueprint Batching =
+Blueprint Batching
+==================
 
 For projects with large numbers of blueprints, it's important that users are
 able to navigate easily through those blueprints. It's also important for us 

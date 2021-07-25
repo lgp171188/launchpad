@@ -1,4 +1,5 @@
-= Featured Projects =
+Featured Projects
+=================
 
 We show a few key projects on the Launchpad home page. These are
 projects that are either topical, or high profile, or making very good

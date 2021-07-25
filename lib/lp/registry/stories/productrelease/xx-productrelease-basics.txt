@@ -1,4 +1,5 @@
-== Adding a product release ==
+Adding a product release
+------------------------
 
 Adding a release is restricted to the product owner, or the series owner
 or driver. That means that only Sample Person can add releases in the
@@ -83,7 +84,8 @@ the "Keep the milestone <name> active" checkbox.
     >>> print_feedback_messages(browser.contents)
 
 
-== Checking releases with the same version ==
+Checking releases with the same version
+---------------------------------------
 
 Now let's try to create a productrelease on a milestone that already
 has a productrelease.
@@ -103,7 +105,8 @@ has a productrelease.
     A project release already exists for this milestone.
 
 
-== Editing a product release ==
+Editing a product release
+-------------------------
 
 The release owner can edit the release via its +edit form:
 
@@ -118,7 +121,8 @@ The release owner can edit the release via its +edit form:
     1.0 : Series trunk : Mozilla Firefox
 
 
-== Editing permissions extend to product and series owners ==
+Editing permissions extend to product and series owners
+-------------------------------------------------------
 
 If the product or series owner is a team, members can edit a product
 release too.

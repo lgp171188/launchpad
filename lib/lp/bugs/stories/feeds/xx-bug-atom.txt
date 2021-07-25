@@ -1,4 +1,5 @@
-= Atom Feeds =
+Atom Feeds
+==========
 
 Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
 by asking BeautifulSoup to use lxml.
@@ -17,7 +18,8 @@ will arrange the entries in a different sort order based on the update
 time.
 
 
-== Latest bugs for a product ==
+Latest bugs for a product
+-------------------------
 
 This feed gets the latest bugs reported against a product. The feed
 includes summary information about the bugs such as ID, title, author,
@@ -77,7 +79,8 @@ The Atom feed must have the content-type of "application/atom+xml".
     >>> browser.headers['content-type']
     'application/atom+xml;charset=utf-8'
 
-== Latest bugs for a project ==
+Latest bugs for a project
+-------------------------
 
 This feed gets the latest bugs for a project, and has the same type of content
 as the latest bugs feed for a product.
@@ -138,7 +141,8 @@ Ensure the entries are in reverse chronological order by published date.
     >>> assert check_entries_order(entries), (
     ...     "Published dates are not sorted.")
 
-== Latest bugs for a distro ==
+Latest bugs for a distro
+------------------------
 
 This feed gets the latest bugs for a distribution, and has the same type
 of content as the latest bugs feed for a product.
@@ -176,7 +180,8 @@ of content as the latest bugs feed for a product.
     >>> assert check_entries_order(entries), (
     ...     "Published dates are not sorted.")
 
-=== Private teams as assignees ===
+Private teams as assignees
+..........................
 
 Create a private team and assign an ubuntu distro bug to that team.
 
@@ -222,7 +227,8 @@ Private teams should show as '-'.
     -
     -
 
-== Latest bugs for a source package ==
+Latest bugs for a source package
+--------------------------------
 
 This feed gets the latest bugs for a source package, and has the same
 type of content as the latest bugs feed for a product.
@@ -255,7 +261,8 @@ type of content as the latest bugs feed for a product.
     ...     "Published dates are not sorted.")
 
 
-== Latest bugs for a distroseries ==
+Latest bugs for a distroseries
+------------------------------
 
 This feed gets the latest bugs for a distribution series, and has the same
 type of content as the latest bugs feed for a product.
@@ -295,7 +302,8 @@ type of content as the latest bugs feed for a product.
     ...     "Published dates are not sorted.")
 
 
-== Latest bugs for a product series ==
+Latest bugs for a product series
+--------------------------------
 
 This feed gets the latest bugs for a product series, and has the same
 type of content as the latest bugs feed for a product.
@@ -335,7 +343,8 @@ type of content as the latest bugs feed for a product.
     ...     "Published dates are not sorted.")
 
 
-== Latest bugs for a person ==
+Latest bugs for a person
+------------------------
 
 This feed gets the latest bugs for a person.
 
@@ -381,7 +390,8 @@ This feed gets the latest bugs for a person.
     ...     "Published dates are not sorted.")
 
 
-== Latest bugs for a team ==
+Latest bugs for a team
+----------------------
 
 This feed gets the latest bugs for a whole team.
 First, make a team responsible for some bugs.
@@ -438,7 +448,8 @@ some results.
     ...     "Published dates are not sorted.")
 
 
-== Latest bugs for any target ==
+Latest bugs for any target
+--------------------------
 
 This feed gets the latest bugs reported against any target.
 
@@ -476,7 +487,8 @@ This feed gets the latest bugs reported against any target.
     ...     "Published dates are not sorted.")
 
 
-== General bug search ==
+General bug search
+------------------
 
 This feed is the most useful of them all. Any bug search can be turned into
 a feed.
@@ -550,7 +562,8 @@ to True.
     http://bugs.launchpad.test/~name12
 
 
-== Results for a single bug ==
+Results for a single bug
+------------------------
 
 This feed shows the status of a single bug.
 
@@ -570,7 +583,8 @@ This feed shows the status of a single bug.
     ...     print(link)
     <link href="http://feeds.launchpad.test/bugs/1/bug.atom" rel="self"/>
 
-== Feeds Configuration Options ==
+Feeds Configuration Options
+---------------------------
 
 The max_bug_feed_cache_minutes configuration is provided to allow
 overriding the Expires and Cache-Control headers so that the feeds

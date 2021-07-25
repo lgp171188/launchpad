@@ -1,4 +1,5 @@
-= Karma for branch related activity =
+Karma for branch related activity
+=================================
 
 We want people to register their branches on Launchpad, and also to
 link their branches to bugs and specs, so we give them some karma for
@@ -29,7 +30,8 @@ give karma for it.
     >>> karma_helper = KarmaAssignedEventListener(show_person=True)
     >>> karma_helper.register_listener()
 
-== Registering branches ==
+Registering branches
+--------------------
 
 Karma is added for registering a branch.
 
@@ -44,7 +46,8 @@ However, no karma is added for junk branches.
     >>> junk_branch = factory.makePersonalBranch(owner=eric)
 
 
-== Linking bugs and branches ==
+Linking bugs and branches
+-------------------------
 
 You get karma for linking a bug to a branch.
 
@@ -59,7 +62,8 @@ As long as it is not a junk branch.
     >>> branch_link = bug.linkBranch(junk_branch, eric)
 
 
-== Linking blueprints and branches ==
+Linking blueprints and branches
+-------------------------------
 
 You get karma for linking a blueprint to a branch.
 

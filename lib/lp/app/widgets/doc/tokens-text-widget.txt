@@ -1,4 +1,5 @@
-= Tokens TextLine Widget =
+Tokens TextLine Widget
+======================
 
 This custom widget is used to normalise the space between words,
 strip punctuation, and strip leading and trailing whitespace.

@@ -1,10 +1,12 @@
-= ExternalBugTracker: Roundup =
+ExternalBugTracker: Roundup
+===========================
 
 This covers the implementation of the ExternalBugTracker class for Roundup
 bugwatches.
 
 
-== Basics ==
+Basics
+------
 
 The ExternalBugTracker descendant class which implements methods for updating
 bug watches on Roundup bug trackers is externalbugtracker.Roundup, which
@@ -22,7 +24,8 @@ implements IExternalBugTracker.
     True
 
 
-== Status Conversion ==
+Status Conversion
+-----------------
 
 The basic Roundup bug statuses (i.e. those available by default in new
 Roundup instances) map to Launchpad bug statuses.
@@ -70,7 +73,8 @@ understand an UnknownRemoteStatusError will be raised.
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: Unrecognized value for field 1 (status): eggs
 
 
-== Initialization ==
+Initialization
+--------------
 
 Calling initializeRemoteBugDB() on our Roundup instance and passing it a set
 of remote bug IDs will fetch those bug IDs from the server and file them in a
@@ -88,7 +92,8 @@ avoids relying on a working network connection.
     [1]
 
 
-== Export Methods ==
+Export Methods
+--------------
 
 There are two means by which we can export Roundup bug statuses: on a
 bug-by-bug basis and as a batch. When the number of bugs that need updating is
@@ -115,7 +120,8 @@ fetched as a batch:
     GET http://test.roundup/issue?...@startwith=0
 
 
-== Updating Bug Watches ==
+Updating Bug Watches
+--------------------
 
 First, we create some bug watches to test with:
 

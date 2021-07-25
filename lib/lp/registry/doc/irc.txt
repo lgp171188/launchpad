@@ -1,4 +1,5 @@
-= IRC IDs =
+IRC IDs
+=======
 
 IRC IDs are associated with a person and must be created through the
 IIrcIDSet utility.

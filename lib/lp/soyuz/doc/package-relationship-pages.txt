@@ -1,4 +1,5 @@
-= PackageRelationshipSet Pages =
+PackageRelationshipSet Pages
+============================
 
 IPackageReleationshipSet provides a single page, '+render-list', via
 SimpleView class.

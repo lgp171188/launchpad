@@ -1,4 +1,5 @@
-= Build FAILEDTOUPLOAD workflow =
+Build FAILEDTOUPLOAD workflow
+=============================
 
 A FAILEDTOUPLOAD build record represents a build procedure that
 resulted in a binary upload, already gathered in the production
@@ -10,7 +11,8 @@ builders or code failures in upload system.
 In all of these cases we want the 'buildd-admins' to be aware of the
 failure and provide them all the information required to debug the failure.
 
-== FAILEDTOUPLOAD email notification ==
+FAILEDTOUPLOAD email notification
+---------------------------------
 
 Once a build result is recognised as FAILEDTOUPLOAD by the
 buildmaster/slave-scanner code, an build notification will be issued.

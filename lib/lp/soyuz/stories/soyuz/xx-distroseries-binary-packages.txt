@@ -1,4 +1,5 @@
-= Distro series binary package =
+Distro series binary package
+============================
 
 A binary package for a distro-series displays the package's name,
 summary and description:

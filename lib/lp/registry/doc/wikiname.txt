@@ -1,4 +1,5 @@
-= Wikinames =
+Wikinames
+=========
 
 Wikinames are associated with a person and must be created through the
 IWikiNameSet utility.

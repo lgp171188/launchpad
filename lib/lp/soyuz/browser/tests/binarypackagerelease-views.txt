@@ -1,4 +1,5 @@
-= BinaryPackageRelease Pages =
+BinaryPackageRelease Pages
+==========================
 
   >>> from zope.component import getMultiAdapter
   >>> from lp.services.webapp.servers import LaunchpadTestRequest

@@ -1,4 +1,5 @@
-= Builder View Classes and Pages =
+Builder View Classes and Pages
+==============================
 
     >>> from zope.component import getMultiAdapter, getUtility
     >>> from lp.buildmaster.interfaces.builder import IBuilderSet
@@ -28,7 +29,8 @@ mode button.
     Switch to manual-mode
 
 
-== Builder history ==
+Builder history
+---------------
 
 Let's instantiate a view for +history:
 
@@ -49,7 +51,8 @@ mock_form:
     5
 
 
-== Builder edit ==
+Builder edit
+------------
 
 Let's instantiate the view for +edit and check that the correct title,
 fields and actions are displayed:
@@ -118,7 +121,8 @@ After editing a builder, a relevant notification is added to the view.
     The builder &quot;Bob The Builder&quot; was updated successfully.
 
 
-== Builders building private jobs ==
+Builders building private jobs
+------------------------------
 
 In order to restrict access to private PPA details in general, we also
 need to be able to hide the fact that a builder is building a private
@@ -229,7 +233,8 @@ again.
     >>> login(ANONYMOUS)
 
 
-== BuilderSet view ==
+BuilderSet view
+---------------
 
 BuilderSetView offer a way to treat the currently registered builders
 in categories. They are:

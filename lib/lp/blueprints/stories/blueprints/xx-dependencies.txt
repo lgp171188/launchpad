@@ -1,4 +1,5 @@
-= Blueprint dependencies =
+Blueprint dependencies
+======================
 
 Blueprints support the idea of dependencies: one blueprint can require
 another blueprint be complete before its own implementation can
@@ -18,7 +19,8 @@ itself.
   True
 
 
-== Adding a new dependency ==
+Adding a new dependency
+-----------------------
 
 Let's add a new dependency for the "canvas" blueprint. We'll add the
 "extension-manager-upgrades" blueprint as a dependency. First, we
@@ -67,7 +69,8 @@ dependency.
   'http://blueprints.launchpad.test/firefox/+spec/canvas'
 
 
-== Removing a dependency ==
+Removing a dependency
+---------------------
 
 But we don't want to keep that, so we will remove it as a dependency. First
 we make sure we can see the link to remove a dependency. We need to be
@@ -122,9 +125,11 @@ users with launchpad.Edit permission for the blueprint.
   zope.security.interfaces.Unauthorized: ...
 
 
-== Corner cases ==
+Corner cases
+------------
 
-=== Cross-project blueprints ===
+Cross-project blueprints
+........................
 
 Blueprints can only depend on blueprints in the same project. To
 show this, we register a blueprint for a different project.
@@ -152,7 +157,8 @@ blueprint we registered in jokosher.
   True
 
 
-=== Circular dependencies ===
+Circular dependencies
+.....................
 
 In order to prevent circular dependencies, it is impossible to mark a
 blueprint A as depending on blueprint B, if B is already marked as
@@ -170,7 +176,8 @@ We know that "canvas" depends on "e4x". We try to make "e4x" depend on
   True
 
 
-=== Status ===
+Status
+......
 
 It should be possible to indicate any blueprint as a dependency,
 regardless of its status. Let's mark mergewin as Implemented:
@@ -196,7 +203,8 @@ And ensure it works:
   'http://blueprints.launchpad.test/firefox/+spec/canvas'
 
 
-== Project dependency charts ==
+Project dependency charts
+-------------------------
 
 We know that no blueprints depend on "canvas", but "canvas" depends on
 "e4x" and "e4x" depends on "svg-support". So the big picture is that
@@ -256,7 +264,8 @@ is useful for experimenting with the dot layout using production data.
   digraph "deptree" {
   ...
 
-== Distro blueprints ==
+Distro blueprints
+-----------------
 
 Let's look at blueprints targetting a distribution, rather than a product.
 We create two blueprints in `ubuntu`.

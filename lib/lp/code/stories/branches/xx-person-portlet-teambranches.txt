@@ -1,4 +1,5 @@
-= Person Team Branches Portlet =
+Person Team Branches Portlet
+============================
 
 The purpose of this portlet is to indiciate that there are teams
 that this person participates in that has branches.

@@ -1,10 +1,12 @@
-= Launchpad configs =
+Launchpad configs
+=================
 
 This directory defines the configurations used to run Launchpad
 applications in specific environments.
 
 
-== Environments ==
+Environments
+------------
 
 This directory stores configs. The config used is selected on startup
 using the LPCONFIG environment variable.
@@ -24,13 +26,15 @@ to do this if you are adding a new required config option to
 launchpad-lazr.conf.
 
 
-== LaunchpadConfig ==
+LaunchpadConfig
+---------------
 
 Launchpad uses a singleton LaunchpadConfig object to select the config
 to load and manage its state.
 
 
-=== Instance directories and process files ===
+Instance directories and process files
+......................................
 
 The directories in configs/ represent environment's config `instance`.
 Environment and instance are synonymous in this case. The instance is
@@ -60,7 +64,8 @@ All this information is available in the config object.
     '.../configs/development/launchpad-lazr.conf'
 
 
-=== Accessing the LaunchpadConfig in code ===
+Accessing the LaunchpadConfig in code
+.....................................
 
 The LaunchpadConfig singleton is exposed as config in its module.
 
@@ -87,7 +92,8 @@ You can learn more about lp.services.config in the doctest located at
     lib/canonical/launchpad/doc/canonical-config.txt
 
 
-=== Testing with LaunchpadConfig ===
+Testing with LaunchpadConfig
+............................
 
 Configurations are meant to be immutable--applications should never
 alter the config. Nor should tests. Older code and tests assumed
@@ -121,7 +127,8 @@ the config.
     'answers.launchpad.net'
 
 
-== lazr.conf schema and confs ==
+lazr.conf schema and confs
+--------------------------
 
 All Launchpad configs inherit from the Launchpad schema defined
 in ../lib/lp/services/config/schema-lazr.conf (it is symlinked
@@ -166,7 +173,8 @@ You can learn more about lazr.config in the doctest located at
     lib/canonical/lazr/doc/config.txt
 
 
-=== schema template and optional sections ===
+schema template and optional sections
+.....................................
 
 The schema can contain [<category>.template] sections that define a
 common set of keys and default value for category of sections.
@@ -238,7 +246,8 @@ Including just the section ([vhost.xmlrpc_private]) will suffice. In
 this case, the two keys were redefined.
 
 
-=== Implicit typing ===
+Implicit typing
+...............
 
 lazr.config support implicit typing so that the application does not
 need to coerce the config values:
@@ -264,7 +273,8 @@ the callsite must split the host:port compound object and coerce the
 port to an int.
 
 
-=== Config inheritance ===
+Config inheritance
+..................
 
 The lazr configurations in this directory descend from the
 Launchpad schema. This is a general outline of inheritance:
@@ -323,7 +333,8 @@ There are other configuration in this directory that are not
 listed here
 
 
-=== Viewing a configuration with lsconf.py ===
+Viewing a configuration with lsconf.py
+......................................
 
 You can view the complete configuration for an process using the
 lsconf.py utility to assemble the configuration from the lazr

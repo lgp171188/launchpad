@@ -1,6 +1,8 @@
-= Browsing and Searching FAQs =
+Browsing and Searching FAQs
+===========================
 
-== No FAQs ==
+No FAQs
+-------
 
 Miss Piggy decided to give Kubuntu a try based on the recommendations of
 Kermit. She wants to watch the wedding scene of The Muppets Take
@@ -36,7 +38,8 @@ Kubuntu:
     There are no FAQs for Kubuntu.
 
 
-== Browsing FAQs ==
+Browsing FAQs
+-------------
 
 She learns through Fozzie Bear that support for Kubuntu is really
 happening on the Ubuntu project.
@@ -94,7 +97,8 @@ The FAQ page has a link back to the FAQ listing:
     http://answers.launchpad.test/ubuntu/+faqs
 
 
-== Searching FAQs ==
+Searching FAQs
+--------------
 
 All FAQs listing have a search box at the top, where the user can
 enter keywords that be used to filter the displayed FAQs.
@@ -158,7 +162,8 @@ Following the link will show the questions results:
         Flash/Java web pages
 
 
-== Distribution Source Packages and FAQs ==
+Distribution Source Packages and FAQs
+-------------------------------------
 
 Altough distribution source packages aren't directly associated with
 FAQs. The 'All FAQs' link that appears in that context links to the
@@ -173,7 +178,8 @@ distribution FAQs.
     http://answers.launchpad.test/ubuntu/+faqs
 
 
-== Accessing an FAQ directly ==
+Accessing an FAQ directly
+-------------------------
 
 Asking for a non-existent FAQ or an invalid ID will raise a 404 error.
 

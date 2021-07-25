@@ -1,4 +1,5 @@
-= Jabber IDs =
+Jabber IDs
+==========
 
 Jabber IDs are associated with a person and must be created through the
 IJabberIDSet utility.

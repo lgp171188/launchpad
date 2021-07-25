@@ -1,6 +1,8 @@
-= Validation =
+Validation
+==========
 
-== LaunchpadValidationError ==
+LaunchpadValidationError
+------------------------
 
 LaunchpadValidationError is the standard exception used for custom
 validators upon a validation error. Rendering one is done by getting

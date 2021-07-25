@@ -1,4 +1,5 @@
-= Bug listings =
+Bug listings
+============
 
 This test looks at various aspects of bug listings. Here's a very basic
 use case: Sample Person views the bug task listing for the Mozilla
@@ -35,7 +36,8 @@ But you can make it show fixed ones to:
     8 Printing doesn't work mozilla-firefox (Debian) Medium Fix Released
 
 
-== Example listings ==
+Example listings
+----------------
 
 An anonymous user views the bug tasks in upstream Ubuntu.
 
@@ -96,7 +98,8 @@ Do an advanced search with dupes turned on and find the duplicate in the results
      Mozilla Firefox Low New
 
 
-== Critical bugs ==
+Critical bugs
+-------------
 
 A list of critical bugs reported in a given upstream can be viewed by
 clicking the "critical" quick search link. Debian has no open critical bugs:
@@ -113,7 +116,8 @@ But Firefox has a fixed one that Foo Bar can see:
      Mozilla Firefox Critical New
 
 
-== My todo list ==
+My todo list
+------------
 
 The "my todo list" link gives the logged in user the ability to
 quickly see which bugs have been assigned to them.
@@ -130,7 +134,8 @@ This also works for upstream listings:
      Mozilla Firefox Critical New
 
 
-== Looking at unassigned bugs ==
+Looking at unassigned bugs
+--------------------------
 
 View the unassigned bug tasks listing as user Sample Person.
 
@@ -140,7 +145,8 @@ View the unassigned bug tasks listing as user Sample Person.
      Mozilla Firefox Medium New
 
 
-== Search criteria is persistent ==
+Search criteria is persistent
+-----------------------------
 
 The bug listing pages save their search criteria.
 
@@ -167,7 +173,8 @@ The result set is filtered to show only New bugs.
     2 Blackhole Trash folder Ubuntu Medium New
 
 
-== Searching for simple strings ==
+Searching for simple strings
+----------------------------
 
 The bugtask search facility supports searching on a simple text
 string.
@@ -199,7 +206,8 @@ it'll say so.
     ...
 
 
-== Bug Badge Decoration ==
+Bug Badge Decoration
+--------------------
 
 We display bug badges for associated branches, specifications, patches, etc.
 
@@ -265,7 +273,8 @@ Patches also appear as badges in bug listings.
       Badge: haspatch
 
 
-== Bug heat in listings ==
+Bug heat in listings
+--------------------
 
 Bug listings display the bug heat in the last column. Heat is displayed
 as a number.
