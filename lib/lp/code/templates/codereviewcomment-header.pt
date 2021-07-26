@@ -12,6 +12,9 @@
   <script type="text/template">
     <div class='message-revision-item'>
       <div class='message-revision-title'>
+          <a class="sprite remove action-icon message-revision-del-btn">
+              Remove
+          </a>
           <a class="js-action">
               Revision #{revision}, created at {date_created_display}
           </a>
