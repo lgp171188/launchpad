@@ -11,8 +11,6 @@ done using the internal XML-RPC service.
     ...     'http://xmlrpc-private.launchpad.test:8087/bugs',
     ...     transport=XMLRPCTestTransport())
 
-    >>> from zope.component import getUtility
-    >>> from lp.bugs.xmlrpc.bug import ILoginTokenSet
     >>> token_string = bugtracker_api.newBugTrackerToken()
 
 Browsing to the token's +bugtracker-handshake URL will result in an

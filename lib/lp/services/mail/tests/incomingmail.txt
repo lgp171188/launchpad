@@ -316,10 +316,7 @@ OOPS notifications work even if the From: address isn't properly MIME-encoded.
     ...
     TestOopsException
 
-    >>> from email.header import (
-    ...     decode_header,
-    ...     make_header,
-    ...     )
+    >>> from email.header import decode_header
     >>> from email.utils import parseaddr
     >>> notification = pop_notifications()[-1]
     >>> print(notification.get_content_type())

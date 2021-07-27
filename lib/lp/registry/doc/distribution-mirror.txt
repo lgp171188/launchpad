@@ -362,7 +362,6 @@ up on the public mirror listings.
     >>> import transaction
     >>> transaction.commit()
 
-    >>> from operator import itemgetter
     >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> len(stub.test_emails)
