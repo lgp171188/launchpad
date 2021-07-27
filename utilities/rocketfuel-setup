@@ -348,5 +348,10 @@ development environment:
     dependencies, and make sure all source dependencies are properly
     linked in to all the branches you are working on.
 
+Consider installing pre-commit (https://pre-commit.com/) as a git hook to
+take advantage of some extra checks when committing:
+
+ $ pre-commit install
+
 Happy hacking!
 "
