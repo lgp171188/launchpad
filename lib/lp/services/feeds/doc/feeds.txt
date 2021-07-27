@@ -16,9 +16,8 @@ In order to demonstrate a feed class, we need to create an interface
 for the thing comprising the feed.  Rather than use a standard
 Launchpad interface, we'll define one here.
 
-    >>> from zope.interface import Interface, Attribute, implements
     >>> from lp.services.feeds.tests.helper import (
-    ...     IThing, Thing, ThingFeedView)
+    ...     IThing, Thing)
 
 
 ZCML for browser:feeds
