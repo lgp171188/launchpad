@@ -554,43 +554,43 @@ And now we can see the key listed as one of Sample Person's active keys.
 This test verifies that we correctly handle keys which are in some way
 special: either invalid, broken, revoked, expired, or already imported.
 
-  >>> from lp.testing.keyserver import KeyServerTac
-  >>> from lp.services.mail import stub
+    >>> from lp.testing.keyserver import KeyServerTac
+    >>> from lp.services.mail import stub
 
-  >>> tac = KeyServerTac()
-  >>> tac.setUp()
+    >>> tac = KeyServerTac()
+    >>> tac.setUp()
 
-  >>> sign_only   = "447D BF38 C4F9 C4ED 7522  46B7 7D88 9137 17B0 5A8F"
-  >>> preimported = "A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
+    >>> sign_only   = "447D BF38 C4F9 C4ED 7522  46B7 7D88 9137 17B0 5A8F"
+    >>> preimported = "A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
 
 Try to import a key which is already imported:
 
-  >>> del stub.test_emails[:]
-  >>> browser.open('http://launchpad.test/~name12/+editpgpkeys')
-  >>> browser.getControl(name='fingerprint').value = preimported
-  >>> browser.getControl(name='import').click()
-  >>> "A message has been sent" in browser.contents
-  False
-  >>> stub.test_emails
-  []
-  >>> print(browser.contents)
-  <BLANKLINE>
-  ...
-  ...has already been imported...
+    >>> del stub.test_emails[:]
+    >>> browser.open('http://launchpad.test/~name12/+editpgpkeys')
+    >>> browser.getControl(name='fingerprint').value = preimported
+    >>> browser.getControl(name='import').click()
+    >>> "A message has been sent" in browser.contents
+    False
+    >>> stub.test_emails
+    []
+    >>> print(browser.contents)
+    <BLANKLINE>
+    ...
+    ...has already been imported...
 
-  >>> tac.tearDown()
+    >>> tac.tearDown()
 
 
 
 Ensure we are raising 404 error instead of System Error
 
-  >>> print(http(r"""
-  ... POST /codeofconduct/donkey HTTP/1.1
-  ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-  ... Referer: https://launchpad.test/
-  ... """))
-  HTTP/1.1 404 Not Found
-  ...
+    >>> print(http(r"""
+    ... POST /codeofconduct/donkey HTTP/1.1
+    ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
+    ... Referer: https://launchpad.test/
+    ... """))
+    HTTP/1.1 404 Not Found
+    ...
 
 Check to see no CoC signature is registered for Mark:
 
@@ -636,47 +636,47 @@ Test if the advertisement email was sent:
 
   Let's login with an Launchpad Admin
 
-  >>> browser.addHeader(
-  ...   'Authorization', 'Basic guilherme.salgado@canonical.com:test')
+    >>> browser.addHeader(
+    ...   'Authorization', 'Basic guilherme.salgado@canonical.com:test')
 
   Check if we can see the Code of conduct page
 
-  >>> browser.open('http://localhost:9000/codeofconduct')
-  >>> 'Ubuntu Codes of Conduct' in browser.contents
-  True
+    >>> browser.open('http://localhost:9000/codeofconduct')
+    >>> 'Ubuntu Codes of Conduct' in browser.contents
+    True
 
   The link to the Administrator console
 
-  >>> admin_console_link = browser.getLink('Administration console')
-  >>> admin_console_link.url
-  'http://localhost:9000/codeofconduct/console'
+    >>> admin_console_link = browser.getLink('Administration console')
+    >>> admin_console_link.url
+    'http://localhost:9000/codeofconduct/console'
 
   Let's follow the link
 
-  >>> admin_console_link.click()
+    >>> admin_console_link.click()
 
   We are in the Administration page 
 
-  >>> browser.url
-  'http://localhost:9000/codeofconduct/console'
+    >>> browser.url
+    'http://localhost:9000/codeofconduct/console'
 
-  >>> 'Administer code of conduct signatures' in browser.contents
-  True
+    >>> 'Administer code of conduct signatures' in browser.contents
+    True
 
-  >>> browser.getLink("register signatures").url
-  'http://localhost:9000/codeofconduct/console/+new'
+    >>> browser.getLink("register signatures").url
+    'http://localhost:9000/codeofconduct/console/+new'
 
 
   Back to the CoC front page let's see the current version of the CoC
 
-  >>> browser.open('http://localhost:9000/codeofconduct')
-  >>> browser.getLink('current version').click()
+    >>> browser.open('http://localhost:9000/codeofconduct')
+    >>> browser.getLink('current version').click()
 
-  >>> 'Ubuntu Code of Conduct - 2.0' in browser.contents
-  True
+    >>> 'Ubuntu Code of Conduct - 2.0' in browser.contents
+    True
 
-  >>> browser.getLink('Sign it').url
-  'http://localhost:9000/codeofconduct/2.0/+sign'
+    >>> browser.getLink('Sign it').url
+    'http://localhost:9000/codeofconduct/2.0/+sign'
 
-  >>> browser.getLink('Download this version').url
-  'http://localhost:9000/codeofconduct/2.0/+download'
+    >>> browser.getLink('Download this version').url
+    'http://localhost:9000/codeofconduct/2.0/+download'

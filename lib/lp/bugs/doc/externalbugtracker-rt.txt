@@ -83,8 +83,8 @@ There is no obvious mapping from ticket priorities to importances. They
 are all imported as Unknown. No exception is raised, because they are
 all unknown.
 
-   >>> rt.convertRemoteImportance('foo').title
-   'Unknown'
+    >>> rt.convertRemoteImportance('foo').title
+    'Unknown'
 
 
 Initialization
