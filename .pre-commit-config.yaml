@@ -1,0 +1,23 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+    -   id: check-added-large-files
+    -   id: check-ast
+    -   id: check-merge-conflict
+    -   id: check-json
+        exclude: |
+          (?x)^(
+            lib/lp/services/sitesearch/tests/data/bingsearchservice-incomplete-response\.json
+          )$
+    -   id: check-xml
+        exclude: |
+          (?x)^(
+            lib/lp/bugs/tests/testfiles/broken_bug_li_item\.xml|
+            lib/lp/bugs/tests/testfiles/unescaped_control_character.xml
+          )$
+    -   id: check-yaml
+    -   id: no-commit-to-branch
+        args: [--branch, master, --branch, db-devel]
