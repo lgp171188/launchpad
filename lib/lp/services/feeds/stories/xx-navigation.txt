@@ -42,24 +42,24 @@ a predictable pattern. If someone enters a feed URL and it has
 uppercase letters in it, we redirect to the canonical form of the URL
 before serving the page.
 
-   >>> browser.open('http://feeds.launchpad.test/jOkOshEr/latest-bugs.html')
-   >>> browser.url
-   'http://feeds.launchpad.test/jokosher/latest-bugs.html'
+    >>> browser.open('http://feeds.launchpad.test/jOkOshEr/latest-bugs.html')
+    >>> browser.url
+    'http://feeds.launchpad.test/jokosher/latest-bugs.html'
 
 The +index view should redirect to https://help.launchpad.net/Feeds
 
 XXX Edwin Grubbs 2007-12-10 bug=98482: zope.testbrowser does not handle
 redirects to remote sites, but http() can be used instead.
 
-   >>> response = http(r"""
-   ... GET / HTTP/1.0
-   ... Host: feeds.launchpad.test
-   ... """)
-   >>> print(six.text_type(response))
-   HTTP/1.0 301 Moved Permanently
-   ...
-   Location: https://help.launchpad.net/Feeds
-   ...
+    >>> response = http(r"""
+    ... GET / HTTP/1.0
+    ... Host: feeds.launchpad.test
+    ... """)
+    >>> print(six.text_type(response))
+    HTTP/1.0 301 Moved Permanently
+    ...
+    Location: https://help.launchpad.net/Feeds
+    ...
 
 
 Query String Normalization

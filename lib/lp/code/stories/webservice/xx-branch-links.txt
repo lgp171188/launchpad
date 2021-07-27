@@ -1,7 +1,7 @@
 Branch links
 ============
 
-  >>> from lazr.restful.testing.webservice import pprint_entry
+    >>> from lazr.restful.testing.webservice import pprint_entry
 
 
 Set up a branch and a bug to link to.

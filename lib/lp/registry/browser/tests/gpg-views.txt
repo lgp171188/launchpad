@@ -7,9 +7,9 @@ This tests GPG-related pages of an IPerson.
 
 Set up the key server:
 
-  >>> from lp.testing.keyserver import KeyServerTac
-  >>> tac = KeyServerTac()
-  >>> tac.setUp()
+    >>> from lp.testing.keyserver import KeyServerTac
+    >>> tac = KeyServerTac()
+    >>> tac.setUp()
 
 Grab the sample user:
 
