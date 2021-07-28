@@ -50,10 +50,7 @@ from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
-from lp.services.macaroons.interfaces import (
-    BadMacaroonContext,
-    IMacaroonIssuer,
-    )
+from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.interfaces import OAuthPermission

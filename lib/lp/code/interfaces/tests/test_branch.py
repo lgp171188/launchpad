@@ -15,7 +15,7 @@ from lp.code.bzr import (
     ControlFormat,
     RepositoryFormat,
     )
-import lp.codehosting  # For plugins.
+import lp.codehosting  # noqa: F401  # For plugins.
 from lp.testing import TestCase
 
 

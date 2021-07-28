@@ -927,7 +927,7 @@ class Snap(Storm, WebhookTargetMixin):
                         " - %s/%s/%s: Build requested.",
                         self.owner.name, self.name, arch)
                 builds.append(build)
-            except SnapBuildAlreadyPending as e:
+            except SnapBuildAlreadyPending:
                 pass
             except Exception as e:
                 if not allow_failures:

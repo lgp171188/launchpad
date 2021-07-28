@@ -29,7 +29,7 @@ from zope.interface import (
 from zope.schema.interfaces import IVocabularyFactory
 from zope.security.interfaces import Unauthorized
 # This registers the registry.
-import zope.vocabularyregistry.registry
+import zope.vocabularyregistry.registry  # noqa: F401
 
 from lp.app.browser.tales import (
     DateTimeFormatterAPI,

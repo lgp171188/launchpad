@@ -747,7 +747,7 @@ class LaunchpadRootNavigation(Navigation):
             target_url = canonical_url(branch, request=self.request)
             if trailing != '':
                 target_url = urlappend(target_url, trailing)
-        except (NoLinkedBranch) as e:
+        except NoLinkedBranch:
             # A valid ICanHasLinkedBranch target exists but there's no
             # branch or it's not visible.
 

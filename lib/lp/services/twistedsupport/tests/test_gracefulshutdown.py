@@ -196,7 +196,7 @@ class TestOrderedMultiService(TestCase):
         service2.setServiceParent(oms)
         oms.startService()
         del call_log[:]
-        d = oms.stopService()
+        oms.stopService()
         self.assertEqual(
             [('stopService', 'svc two'), ('stopService', 'svc one')],
             call_log)

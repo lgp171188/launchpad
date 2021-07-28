@@ -132,7 +132,6 @@ class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
 
     def test_get_oci_project_series(self):
         with person_logged_in(self.person):
-            person = removeSecurityProxy(self.person)
             project = removeSecurityProxy(self.factory.makeOCIProject(
                 registrant=self.person))
             series = self.factory.makeOCIProjectSeries(
