@@ -103,11 +103,10 @@ http handle_errors
 lp.testing.pages.http accepts the handle_errors parameter in case you
 want to see tracebacks instead of error pages.
 
-  >>> print(http(r"""
-  ... GET /whatever HTTP/1.1
-  ... """, handle_errors=False))
-  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
-  Traceback (most recent call last):
-  ...
-  zope.publisher.interfaces.NotFound: ...
-
+    >>> print(http(r"""
+    ... GET /whatever HTTP/1.1
+    ... """, handle_errors=False))
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    Traceback (most recent call last):
+    ...
+    zope.publisher.interfaces.NotFound: ...

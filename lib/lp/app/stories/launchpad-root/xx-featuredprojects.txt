@@ -5,7 +5,7 @@ Featured Projects
 We maintain a list of featured projects, which are displayed on the home
 page and managed via a special admin-only page.
 
-   >>> MANAGE_LINK = "Manage featured project list"
+    >>> MANAGE_LINK = "Manage featured project list"
 
 
 The home page listing

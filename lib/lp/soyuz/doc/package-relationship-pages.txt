@@ -11,39 +11,41 @@ group. Some example of pages using it are:
 
 Let's fill a IPackageRelationshipSet:
 
-  >>> from lp.soyuz.browser.packagerelationship import PackageRelationshipSet
+    >>> from lp.soyuz.browser.packagerelationship import (
+    ...     PackageRelationshipSet,
+    ...     )
 
-  >>> relationship_set = PackageRelationshipSet()
-  >>> relationship_set.add(
-  ...    name="foobar",
-  ...    operator=">=",
-  ...    version="1.0.2",
-  ...    url="http://whatever/")
+    >>> relationship_set = PackageRelationshipSet()
+    >>> relationship_set.add(
+    ...    name="foobar",
+    ...    operator=">=",
+    ...    version="1.0.2",
+    ...    url="http://whatever/")
 
-  >>> relationship_set.add(
-  ...    name="test",
-  ...    operator="=",
-  ...    version="1.0",
-  ...    url=None)
+    >>> relationship_set.add(
+    ...    name="test",
+    ...    operator="=",
+    ...    version="1.0",
+    ...    url=None)
 
 Note that iterations over PackageRelationshipSet are sorted
 alphabetically according to the relationship 'name':
 
-  >>> for relationship in relationship_set:
-  ...     print(relationship.name)
-  foobar
-  test
+    >>> for relationship in relationship_set:
+    ...     print(relationship.name)
+    foobar
+    test
 
 It will cause all the relationship contents to be rendered in this order.
 
 Let's get the view class:
 
-  >>> from zope.component import queryMultiAdapter
-  >>> from zope.publisher.browser import TestRequest
+    >>> from zope.component import queryMultiAdapter
+    >>> from zope.publisher.browser import TestRequest
 
-  >>> request = TestRequest(form={})
-  >>> pkg_rel_view = queryMultiAdapter(
-  ...     (relationship_set, request), name="+render-list")
+    >>> request = TestRequest(form={})
+    >>> pkg_rel_view = queryMultiAdapter(
+    ...     (relationship_set, request), name="+render-list")
 
 This view has no methods, so just demonstrate that it renders
 correctly like:
@@ -58,11 +60,11 @@ correctly like:
      </li>
   </ul>
 
-  >>> from lp.testing.pages import parse_relationship_section
+    >>> from lp.testing.pages import parse_relationship_section
 
-  >>> parse_relationship_section(pkg_rel_view())
-  LINK: "foobar (>= 1.0.2)" -> http://whatever/
-  TEXT: "test (= 1.0)"
+    >>> parse_relationship_section(pkg_rel_view())
+    LINK: "foobar (>= 1.0.2)" -> http://whatever/
+    TEXT: "test (= 1.0)"
 
 
 Note that no link is rendered for IPackageReleationship where 'url' is

@@ -28,21 +28,21 @@ user/team page.
     ...     auth='Basic celso.providelo@canonical.com:test')
     >>> browser.open("http://launchpad.test/~private-team")
 
-   >>> print_tag_with_id(browser.contents, 'ppas')
-   Personal package archives
-   Create a new PPA
+    >>> print_tag_with_id(browser.contents, 'ppas')
+    Personal package archives
+    Create a new PPA
 
 The form looks almost identical to that for a public team.
 
-   >>> browser.getLink('Create a new PPA').click()
-   >>> print(browser.title)
-   Activate PPA : ...Private Team...
+    >>> browser.getLink('Create a new PPA').click()
+    >>> print(browser.title)
+    Activate PPA : ...Private Team...
 
 There is, however, an extra bit of information indicating the new PPA
 will be private.
 
-   >>> print_tag_with_id(browser.contents, 'ppa-privacy-statement')
-   Since 'Private Team' is a private team this PPA will be private.
+    >>> print_tag_with_id(browser.contents, 'ppa-privacy-statement')
+    Since 'Private Team' is a private team this PPA will be private.
 
 The URL template also shows the private URL.
 
@@ -55,11 +55,12 @@ The URL template also shows the private URL.
     ...
 
 
-   >>> browser.getControl(name='field.displayname').value = "Private Team PPA"
-   >>> browser.getControl(name='field.accepted').value = True
-   >>> browser.getControl("Activate").click()
-   >>> print(browser.title)
-   Private Team PPA : “Private Team” team
+    >>> browser.getControl(name='field.displayname').value = (
+    ...     "Private Team PPA")
+    >>> browser.getControl(name='field.accepted').value = True
+    >>> browser.getControl("Activate").click()
+    >>> print(browser.title)
+    Private Team PPA : “Private Team” team
 
 
 Administrator changes to the PPA
@@ -68,15 +69,15 @@ Administrator changes to the PPA
 An administrator viewing the PPA administration page sees that it is
 marked private.
 
-   >>> admin_browser.open(
-   ...     'http://launchpad.test/~private-team/+archive/ppa/+admin')
-   >>> admin_browser.getControl(name='field.private').value
-   True
+    >>> admin_browser.open(
+    ...     'http://launchpad.test/~private-team/+archive/ppa/+admin')
+    >>> admin_browser.getControl(name='field.private').value
+    True
 
 Attempting to change the PPA to public is thwarted.
 
-   >>> admin_browser.getControl(name='field.private').value = False
-   >>> admin_browser.getControl('Save').click()
-   >>> print_feedback_messages(admin_browser.contents)
-   There is 1 error.
-   Private teams may not have public archives.
+    >>> admin_browser.getControl(name='field.private').value = False
+    >>> admin_browser.getControl('Save').click()
+    >>> print_feedback_messages(admin_browser.contents)
+    There is 1 error.
+    Private teams may not have public archives.

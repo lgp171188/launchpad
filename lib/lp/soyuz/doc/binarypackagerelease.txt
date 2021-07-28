@@ -4,30 +4,30 @@ BinaryPackageRelease
 BinaryPackageRelease stores unique versions of binarypackagenames
 across build records.
 
-   >>> from lp.testing import verifyObject
-   >>> from lp.soyuz.interfaces.binarypackagerelease import (
-   ...     IBinaryPackageRelease,
-   ...     )
-   >>> from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
+    >>> from lp.testing import verifyObject
+    >>> from lp.soyuz.interfaces.binarypackagerelease import (
+    ...     IBinaryPackageRelease,
+    ...     )
+    >>> from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 
-   >>> firefox_bin_release = BinaryPackageRelease.get(12)
-   >>> verifyObject(IBinaryPackageRelease, firefox_bin_release)
-   True
+    >>> firefox_bin_release = BinaryPackageRelease.get(12)
+    >>> verifyObject(IBinaryPackageRelease, firefox_bin_release)
+    True
 
 Useful properties:
 
-   >>> print(firefox_bin_release.name)
-   mozilla-firefox
-   >>> print(firefox_bin_release.version)
-   0.9
+    >>> print(firefox_bin_release.name)
+    mozilla-firefox
+    >>> print(firefox_bin_release.version)
+    0.9
 
-   >>> from lp.registry.interfaces.distroseries import IDistroSeriesSet
-   >>> warty = getUtility(IDistroSeriesSet).get(1)
-   >>> print(warty.name)
-   warty
-   >>> hoary = getUtility(IDistroSeriesSet).get(3)
-   >>> print(hoary.name)
-   hoary
+    >>> from lp.registry.interfaces.distroseries import IDistroSeriesSet
+    >>> warty = getUtility(IDistroSeriesSet).get(1)
+    >>> print(warty.name)
+    warty
+    >>> hoary = getUtility(IDistroSeriesSet).get(3)
+    >>> print(hoary.name)
+    hoary
 
 The IBinaryPackageNameSet.getNotNewByNames() returns all the
 BinaryPackageName records for BinaryPackageReleases that are published
@@ -77,50 +77,50 @@ in ftp-master/queue tool and other scripts.
 
 Display the current firefox component and section:
 
-   >>> print(firefox_bin_release.component.name)
-   main
-   >>> print(firefox_bin_release.section.name)
-   base
+    >>> print(firefox_bin_release.component.name)
+    main
+    >>> print(firefox_bin_release.section.name)
+    base
 
 Fetch brand new component, section and priority:
 
-   >>> from lp.soyuz.enums import PackagePublishingPriority
-   >>> from lp.soyuz.interfaces.component import IComponentSet
-   >>> from lp.soyuz.interfaces.section import ISectionSet
-   >>> new_comp = getUtility(IComponentSet)['universe']
-   >>> new_sec = getUtility(ISectionSet)['mail']
-   >>> new_priority = PackagePublishingPriority.IMPORTANT
+    >>> from lp.soyuz.enums import PackagePublishingPriority
+    >>> from lp.soyuz.interfaces.component import IComponentSet
+    >>> from lp.soyuz.interfaces.section import ISectionSet
+    >>> new_comp = getUtility(IComponentSet)['universe']
+    >>> new_sec = getUtility(ISectionSet)['mail']
+    >>> new_priority = PackagePublishingPriority.IMPORTANT
 
 Override the current firefox with new component/section/priority:
 
-   >>> firefox_bin_release.override(component=new_comp, section=new_sec,
-   ...              priority=new_priority)
+    >>> firefox_bin_release.override(component=new_comp, section=new_sec,
+    ...              priority=new_priority)
 
 Check if it got overridden correctly:
 
-   >>> print(firefox_bin_release.component.name)
-   universe
-   >>> print(firefox_bin_release.section.name)
-   mail
-   >>> print(firefox_bin_release.priority.name)
-   IMPORTANT
+    >>> print(firefox_bin_release.component.name)
+    universe
+    >>> print(firefox_bin_release.section.name)
+    mail
+    >>> print(firefox_bin_release.priority.name)
+    IMPORTANT
 
 Override again; ensure that only the changed item actually changes:
 
-   >>> new_sec = getUtility(ISectionSet)['net']
-   >>> firefox_bin_release.override(section=new_sec)
-   >>> print(firefox_bin_release.component.name)
-   universe
-   >>> print(firefox_bin_release.section.name)
-   net
-   >>> print(firefox_bin_release.priority.name)
-   IMPORTANT
+    >>> new_sec = getUtility(ISectionSet)['net']
+    >>> firefox_bin_release.override(section=new_sec)
+    >>> print(firefox_bin_release.component.name)
+    universe
+    >>> print(firefox_bin_release.section.name)
+    net
+    >>> print(firefox_bin_release.priority.name)
+    IMPORTANT
 
 
 Abort transaction to avoid error propagation of the new attributes:
 
-   >>> import transaction
-   >>> transaction.abort()
+    >>> import transaction
+    >>> transaction.abort()
 
 
 Binary file association

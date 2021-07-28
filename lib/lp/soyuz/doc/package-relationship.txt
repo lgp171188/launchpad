@@ -30,14 +30,14 @@ element follows this format:
 
 For example:
 
-  >>> relationship_line = (
-  ...    'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 ( = 3.4.1-4sarge1)')
+    >>> relationship_line = (
+    ...    'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 ( = 3.4.1-4sarge1)')
 
 Launchpad models package relationship elements via the
 IPackageRelationship instance. We use deb822 to parse the relationship
 lines:
 
-  >>> from debian.deb822 import PkgRelation
+    >>> from debian.deb822 import PkgRelation
 
 PkgRelation.parse_relations returns a 'list of lists of dicts' as:
 
@@ -47,37 +47,39 @@ PkgRelation.parse_relations returns a 'list of lists of dicts' as:
 
 So we need to massage its result into the form we prefer:
 
-  >>> def parse_relations(line):
-  ...     for (rel,) in PkgRelation.parse_relations(relationship_line):
-  ...         if rel['version'] is None:
-  ...             operator, version = '', ''
-  ...         else:
-  ...             operator, version = rel['version']
-  ...         yield rel['name'], version, operator
-  >>> parsed_relationships = list(parse_relations(relationship_line))
-  >>> parsed_relationships
-  [('gcc-3.4-base', '', ''), ('libc6', '2.3.2.ds1-4', '>='), ('gcc-3.4', '3.4.1-4sarge1', '=')]
+    >>> def parse_relations(line):
+    ...     for (rel,) in PkgRelation.parse_relations(relationship_line):
+    ...         if rel['version'] is None:
+    ...             operator, version = '', ''
+    ...         else:
+    ...             operator, version = rel['version']
+    ...         yield rel['name'], version, operator
+    >>> parsed_relationships = list(parse_relations(relationship_line))
+    >>> parsed_relationships
+    [('gcc-3.4-base', '', ''), ('libc6', '2.3.2.ds1-4', '>='), ('gcc-3.4', '3.4.1-4sarge1', '=')]
 
 Now for each parsed element we can build an IPackageRelationship:
 
-  >>> from lp.soyuz.browser.packagerelationship import PackageRelationship
-  >>> from lp.soyuz.interfaces.packagerelationship import IPackageRelationship
-  >>> from lp.testing import verifyObject
+    >>> from lp.soyuz.browser.packagerelationship import PackageRelationship
+    >>> from lp.soyuz.interfaces.packagerelationship import (
+    ...     IPackageRelationship,
+    ...     )
+    >>> from lp.testing import verifyObject
 
-  >>> name, version, operator = parsed_relationships[1]
-  >>> fake_url = 'http://host/path'
+    >>> name, version, operator = parsed_relationships[1]
+    >>> fake_url = 'http://host/path'
 
-  >>> pkg_relationship = PackageRelationship(
-  ...     name, operator, version, url=fake_url)
+    >>> pkg_relationship = PackageRelationship(
+    ...     name, operator, version, url=fake_url)
 
-  >>> verifyObject(IPackageRelationship, pkg_relationship)
-  True
+    >>> verifyObject(IPackageRelationship, pkg_relationship)
+    True
 
-  >>> pkg_relationship.name
-  'libc6'
-  >>> pkg_relationship.operator
-  '>='
-  >>> pkg_relationship.version
-  '2.3.2.ds1-4'
-  >>> pkg_relationship.url == fake_url
-  True
+    >>> pkg_relationship.name
+    'libc6'
+    >>> pkg_relationship.operator
+    '>='
+    >>> pkg_relationship.version
+    '2.3.2.ds1-4'
+    >>> pkg_relationship.url == fake_url
+    True
