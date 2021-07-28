@@ -229,7 +229,8 @@ class TestCodeHandler(TestCaseWithFactory):
         Error message:
 
         The 'review' command expects any of the following arguments:
-        abstain, approve, disapprove, needs-fixing, needs-info, needs-resubmitting
+        abstain, approve, disapprove, needs-fixing, needs-info,
+        needs-resubmitting
 
         For example:
 

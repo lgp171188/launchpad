@@ -120,7 +120,7 @@ class TestWebResources(TestCase):
 ...
 pub  1024D/DFD20543 2005-04-13 Sample Person (revoked) &lt;sample.revoked@canonical.com&gt;
 ...
-''')
+''')  # noqa: E501
 
     def test_content_lookup(self):
         # A key content lookup form via GET.
