@@ -114,9 +114,12 @@ def main(dbname):
             dead_tuple_percent = stat['dead_tuple_percent']
             dead_len = stat['dead_tuple_len'] / (1024*1024)
             return (
-                    '%(name)s (%(dead_len)0.2fMB, '
-                    '%(dead_tuple_percent)0.2f%%)' % vars()
-                    )
+                '%(name)s (%(dead_len)0.2fMB, '
+                '%(dead_tuple_percent)0.2f%%)' % {
+                    'name': name,
+                    'dead_len': dead_len,
+                    'dead_tuple_percent': dead_tuple_percent,
+                    })
         if len(stats) > 0:
             print_row('Needing vacuum', statstr(stats[0]))
             for stat in stats[1:]:

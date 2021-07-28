@@ -114,7 +114,6 @@ def has_page_title(a):
     template = get_template_filename(view)
     if template is None:
         return False
-    name = os.path.splitext(os.path.basename(template))[0].replace('-', '_')
     if (getattr(view, 'page_title', marker) is marker):
         return False
     return has_html_element(template)
