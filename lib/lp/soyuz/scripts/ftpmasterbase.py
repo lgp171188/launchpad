@@ -13,6 +13,8 @@ __all__ = [
     'SoyuzScript',
     ]
 
+from six.moves import input
+
 from lp.services.scripts.base import (
     LaunchpadScript,
     LaunchpadScriptFailure,
@@ -108,7 +110,7 @@ class SoyuzScript(LaunchpadScript):
             help='Specify partner archive')
 
     def _getUserConfirmation(self, full_question=None, valid_answers=None):
-        """Use raw_input to collect user feedback.
+        """Use input to collect user feedback.
 
         Return True if the user typed the first value of the given
         'valid_answers' (defaults to 'yes') or False otherwise.
@@ -124,7 +126,7 @@ class SoyuzScript(LaunchpadScript):
 
         answer = None
         while answer not in valid_answers:
-            answer = raw_input(full_question)
+            answer = input(full_question)
 
         return answer == valid_answers[0]
 
