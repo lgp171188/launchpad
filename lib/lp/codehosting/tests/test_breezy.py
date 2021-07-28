@@ -14,6 +14,6 @@ class TestBreezy(TestCase):
     def test_has_cextensions(self):
         """Ensure Breezy C extensions are being used."""
         try:
-            import breezy.bzr._dirstate_helpers_pyx
+            import breezy.bzr._dirstate_helpers_pyx  # noqa: F401
         except ImportError:
             self.fail("Breezy not built with C extensions.")

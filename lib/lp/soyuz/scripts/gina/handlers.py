@@ -25,10 +25,7 @@ import os
 import re
 
 import six
-from sqlobject import (
-    SQLObjectMoreThanOneResultError,
-    SQLObjectNotFound,
-    )
+from sqlobject import SQLObjectNotFound
 from storm.exceptions import NotOneError
 from storm.expr import (
     Cast,
@@ -873,7 +870,7 @@ class BinaryPackageHandler:
 
         try:
             build = BinaryPackageBuild.selectOne(query, clauseTables)
-        except SQLObjectMoreThanOneResultError:
+        except NotOneError:
             # XXX kiko 2005-10-27: Untested.
             raise MultipleBuildError("More than one build was found "
                 "for package %s (%s)" % (binary.package, binary.version))

@@ -9,9 +9,8 @@ __metaclass__ = type
 import datetime
 
 import six
-from storm.exceptions import NotOneError as SQLObjectMoreThanOneResultError
 from storm.expr import SQL
-from storm.sqlobject import *
+from storm.sqlobject import *  # noqa: F401,F403
 
 # Provide the same interface from these other locations.
 import sys

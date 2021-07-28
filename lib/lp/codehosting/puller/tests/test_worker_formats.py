@@ -19,7 +19,7 @@ from breezy.plugins.weave_fmt.repository import (
 from breezy.tests.per_repository import TestCaseWithRepository
 from breezy.url_policy_open import BranchOpener
 
-import lp.codehosting  # For brz plugins.
+import lp.codehosting  # noqa: F401  # For brz plugins.
 from lp.codehosting.puller.tests import PullerWorkerMixin
 from lp.codehosting.tests.helpers import LoomTestMixin
 
