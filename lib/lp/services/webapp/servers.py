@@ -529,19 +529,20 @@ def get_query_string_params(request):
     if query_string is None:
         query_string = ''
 
-    # PEP-3333 specifies that strings must only contain codepoints
-    # representable in ISO-8859-1.
     kwargs = {}
     if not six.PY2:
-        kwargs['encoding'] = 'ISO-8859-1'
+        kwargs['encoding'] = 'UTF-8'
         kwargs['errors'] = 'replace'
     parsed_qs = parse_qs(query_string, keep_blank_values=True, **kwargs)
-    # Use BrowserRequest._decode() for decoding the received parameters.
-    decoded_qs = {}
-    for key, values in six.iteritems(parsed_qs):
-        decoded_qs[key] = [
-            request._decode(value) for value in values]
-    return decoded_qs
+    if six.PY2:
+        decoded_qs = {}
+        for key, values in six.iteritems(parsed_qs):
+            decoded_qs[key] = [
+                (value.decode('UTF-8', 'replace') if isinstance(value, bytes)
+                 else value)
+                for value in values]
+        parsed_qs = decoded_qs
+    return parsed_qs
 
 
 class LaunchpadBrowserRequestMixin:
