@@ -60,16 +60,16 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.buildmaster.tests.builderproxy import (
+    InProcessProxyAuthAPIFixture,
+    ProxyURLMatcher,
+    RevocationEndpointMatcher,
+    )
 from lp.buildmaster.tests.mock_slaves import (
     MockBuilder,
     OkSlave,
     SlaveTestHelpers,
     WaitingSlave,
-    )
-from lp.buildmaster.tests.snapbuildproxy import (
-    InProcessProxyAuthAPIFixture,
-    ProxyURLMatcher,
-    RevocationEndpointMatcher,
     )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
@@ -177,8 +177,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
                           "@{host}:{port}".format(
                             username=self.token['username'],
                             password=self.token['secret'],
-                            host=config.snappy.builder_proxy_host,
-                            port=config.snappy.builder_proxy_port))
+                            host=config.builddmaster.builder_proxy_host,
+                            port=config.builddmaster.builder_proxy_port))
         self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
         yield self.proxy_api.start()
         self.now = time.time()
@@ -223,7 +223,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_requestProxyToken_unconfigured(self):
-        self.pushConfig("snappy", builder_proxy_auth_api_admin_secret=None)
+        self.pushConfig(
+            "builddmaster", builder_proxy_auth_api_admin_secret=None)
         [ref] = self.factory.makeGitRefs()
         job = self.makeJob(git_ref=ref)
         expected_exception_msg = (
@@ -237,7 +238,8 @@ class TestAsyncOCIRecipeBuildBehaviour(
         job = self.makeJob(git_ref=ref)
         yield job.extraBuildArgs()
         expected_uri = urlsplit(
-            config.snappy.builder_proxy_auth_api_endpoint).path.encode("UTF-8")
+            config.builddmaster.builder_proxy_auth_api_endpoint
+            ).path.encode("UTF-8")
         self.assertThat(self.proxy_api.tokens.requests, MatchesListwise([
             MatchesDict({
                 "method": Equals(b"POST"),
@@ -588,7 +590,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_prefers_lxd(self):
-        self.pushConfig("snappy", builder_proxy_host=None)
+        self.pushConfig("builddmaster", builder_proxy_host=None)
         [ref] = self.factory.makeGitRefs()
         job = self.makeJob(git_ref=ref, allow_internet=False)
         builder = MockBuilder()
@@ -613,7 +615,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_falls_back_to_chroot(self):
-        self.pushConfig("snappy", builder_proxy_host=None)
+        self.pushConfig("builddmaster", builder_proxy_host=None)
         [ref] = self.factory.makeGitRefs()
         job = self.makeJob(git_ref=ref, allow_internet=False)
         builder = MockBuilder()
@@ -629,7 +631,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_oci_feature_flag_enabled(self):
-        self.pushConfig("snappy", builder_proxy_host=None)
+        self.pushConfig("builddmaster", builder_proxy_host=None)
         [ref] = self.factory.makeGitRefs()
 
         distribution = self.factory.makeDistribution()

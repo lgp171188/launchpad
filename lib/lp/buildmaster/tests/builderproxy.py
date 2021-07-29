@@ -1,7 +1,7 @@
 # Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Fixtures for dealing with the build time 'snap' HTTP proxy."""
+"""Fixtures for dealing with the build time HTTP proxy."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -88,7 +88,7 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
         port = yield endpoint.listen(site)
         self.addCleanup(port.stopListening)
         config.push("in-process-proxy-auth-api-fixture", dedent("""
-            [snappy]
+            [builddmaster]
             builder_proxy_auth_api_admin_secret: admin-secret
             builder_proxy_auth_api_endpoint: http://%s:%s/tokens
             """) %
@@ -97,7 +97,7 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
 
 
 class ProxyURLMatcher(MatchesStructure):
-    """Check that a string is a valid url for a snap build proxy."""
+    """Check that a string is a valid url for a builder proxy."""
 
     def __init__(self, job, now):
         super(ProxyURLMatcher, self).__init__(
@@ -105,8 +105,8 @@ class ProxyURLMatcher(MatchesStructure):
             username=Equals("{}-{}".format(
                 job.build.build_cookie, int(now))),
             password=HasLength(32),
-            hostname=Equals(config.snappy.builder_proxy_host),
-            port=Equals(config.snappy.builder_proxy_port),
+            hostname=Equals(config.builddmaster.builder_proxy_host),
+            port=Equals(config.builddmaster.builder_proxy_port),
             path=Equals(""))
 
     def match(self, matchee):
@@ -119,5 +119,5 @@ class RevocationEndpointMatcher(Equals):
     def __init__(self, job, now):
         super(RevocationEndpointMatcher, self).__init__(
             "{}/{}-{}".format(
-                config.snappy.builder_proxy_auth_api_endpoint,
+                config.builddmaster.builder_proxy_auth_api_endpoint,
                 job.build.build_cookie, int(now)))

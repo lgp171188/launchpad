@@ -18,6 +18,7 @@ from zope.component import adapter
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.builderproxy import BuilderProxyMixin
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
@@ -28,7 +29,6 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
     )
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.registry.interfaces.series import SeriesStatus
-from lp.snappy.model.snapbuildbehaviour import SnapProxyMixin
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -36,7 +36,7 @@ from lp.soyuz.adapters.archivedependencies import (
 
 @adapter(ICharmRecipeBuild)
 @implementer(IBuildFarmJobBehaviour)
-class CharmRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
+class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
     """Dispatches `CharmRecipeBuild` jobs to slaves."""
 
     builder_type = "charm"

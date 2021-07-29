@@ -24,6 +24,7 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.builderproxy import BuilderProxyMixin
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonError,
@@ -41,14 +42,13 @@ from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
 from lp.services.twistedsupport import cancel_on_timeout
 from lp.services.webapp import canonical_url
-from lp.snappy.model.snapbuildbehaviour import SnapProxyMixin
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
 
 
 @implementer(IBuildFarmJobBehaviour)
-class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
+class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
 
     builder_type = "oci"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
