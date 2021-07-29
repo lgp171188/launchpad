@@ -336,7 +336,7 @@ class BugTaskBugWatchWidget(RadioWidget):
                 raise WidgetInputError(
                     self.context.__name__, self.label,
                     'Remote Bug: %s' % error.doc())
-            except (NoBugTrackerFound, UnrecognizedBugTrackerURL) as error:
+            except (NoBugTrackerFound, UnrecognizedBugTrackerURL):
                 raise WidgetInputError(
                     self.context.__name__, self.label,
                     'Invalid bug tracker URL.')

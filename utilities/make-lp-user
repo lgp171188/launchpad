@@ -31,7 +31,7 @@ production environments.
 
 from __future__ import absolute_import, print_function
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from optparse import OptionParser
 import os
@@ -49,7 +49,6 @@ from lp.registry.interfaces.ssh import ISSHKeySet
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.services.gpg.interfaces import (
     get_gpg_path,
-    GPGKeyAlgorithm,
     IGPGHandler,
     )
 from lp.services.scripts import execute_zcml_for_scripts

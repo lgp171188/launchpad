@@ -1,4 +1,5 @@
-= Populated source package branch listings =
+Populated source package branch listings
+========================================
 
 Going to a source package branch page shows a list of branches.
 

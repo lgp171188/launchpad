@@ -112,6 +112,8 @@ from zope.security.proxy import (
     )
 
 from lp import _
+from lp.answers.enums import QuestionStatus
+from lp.answers.interfaces.questionsperson import IQuestionsPerson
 from lp.answers.model.questionsperson import QuestionsPersonMixin
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.interfaces.launchpad import (
@@ -4117,6 +4119,17 @@ class PersonSet:
         translations_url = self._checkForTranslations(account)
         if translations_url:
             return_data["translations"] = translations_url
+        # questions
+        questions_url = self._checkForAnswers(account)
+        if questions_url:
+            return_data["answers"] = questions_url
+        # ssh keys
+        if not account.sshkeys.is_empty():
+            return_data["sshkeys"] = canonical_url(
+                account, view_name="+sshkeys")
+        gpg_keys_urls = self._checkForGPGKeys(account)
+        if gpg_keys_urls:
+            return_data["openpgp-keys"] = gpg_keys_urls
         # This is only an 'account' in terms of the end user view,
         # it does not refer to an `IAccount`.
         if len(return_data.keys()) > 1:
@@ -4181,7 +4194,7 @@ class PersonSet:
         return req.url
 
     def _checkForBlueprints(self, account):
-        """check if related blueprints exist for a given person"""
+        """Check if related blueprints exist for a given person"""
         specifications = account.specifications(account)
         if specifications.is_empty():
             return None
@@ -4196,6 +4209,43 @@ class PersonSet:
                 account, rootsite="translations",
                 view_name="+activity")
         return None
+
+    def _checkForAnswers(self, account):
+        """Check if related questions and answers exist for a given person."""
+        question_person = IQuestionsPerson(account)
+        questions = question_person.searchQuestions(
+            status=QuestionStatus.items)
+        if questions.is_empty():
+            return None
+        req = PreparedRequest()
+        answers_url = canonical_url(
+            account, rootsite="answers", view_name="+questions")
+        query_arguments = {
+            "field.search_text": "",
+            "field.sort": "RELEVANCY",
+            "field.sort-empty-marker": "1",
+            "field.actions.search": "Search",
+            "field.status-empty-marker": "1",
+            "field.status": [x.token for x in QuestionStatus]
+        }
+        req.prepare_url(answers_url, query_arguments)
+        return req.url
+
+    def _checkForGPGKeys(self, account):
+        """Check if we have GPG keys for the given Person."""
+        # We return the keyserver url, not an LP url
+        urls = []
+        keyserver_url = "https://keyserver.ubuntu.com/pks/lookup"
+        keys = account.gpg_keys + account.inactive_gpg_keys
+        for key in keys:
+            req = PreparedRequest()
+            query_arguments = {
+                "fingerprint": "on",
+                "op": "index",
+                "search": "0x{}".format(key.fingerprint)}
+            req.prepare_url(keyserver_url, query_arguments)
+            urls.append(req.url)
+        return urls
 
     def getUserOverview(self, person):
         """See `IPersonSet`."""

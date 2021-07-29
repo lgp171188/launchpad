@@ -1,11 +1,13 @@
-= Feeds Navigation =
+Feeds Navigation
+================
 
 Feeds are served over HTTP, and are heavily cached. Pages which are not
 registered on the Feeds layer should not be served from the feeds.lp.net
 subdomain.
 
 
-== Index of a product ==
+Index of a product
+------------------
 
 Trying to view a page which is not registered on the Feeds layer
 returns a 404.
@@ -32,34 +34,36 @@ returns a 404.
     zope.publisher.interfaces.NotFound: ...
 
 
-== Redirection ==
+Redirection
+-----------
 
 We expect that people may manually enter feed URLs, since they follow
 a predictable pattern. If someone enters a feed URL and it has
 uppercase letters in it, we redirect to the canonical form of the URL
 before serving the page.
 
-   >>> browser.open('http://feeds.launchpad.test/jOkOshEr/latest-bugs.html')
-   >>> browser.url
-   'http://feeds.launchpad.test/jokosher/latest-bugs.html'
+    >>> browser.open('http://feeds.launchpad.test/jOkOshEr/latest-bugs.html')
+    >>> browser.url
+    'http://feeds.launchpad.test/jokosher/latest-bugs.html'
 
 The +index view should redirect to https://help.launchpad.net/Feeds
 
 XXX Edwin Grubbs 2007-12-10 bug=98482: zope.testbrowser does not handle
 redirects to remote sites, but http() can be used instead.
 
-   >>> response = http(r"""
-   ... GET / HTTP/1.0
-   ... Host: feeds.launchpad.test
-   ... """)
-   >>> print(six.text_type(response))
-   HTTP/1.0 301 Moved Permanently
-   ...
-   Location: https://help.launchpad.net/Feeds
-   ...
+    >>> response = http(r"""
+    ... GET / HTTP/1.0
+    ... Host: feeds.launchpad.test
+    ... """)
+    >>> print(six.text_type(response))
+    HTTP/1.0 301 Moved Permanently
+    ...
+    Location: https://help.launchpad.net/Feeds
+    ...
 
 
-== Query String Normalization ==
+Query String Normalization
+--------------------------
 
 If multiple urls contain the same query string with the same arguments
 in a different order, we want to redirect the user to the url with
@@ -80,7 +84,8 @@ query strings.
     '...+bugs.atom?aaa=foo&field.scope=all&search=Search+Bug+Reports'
 
 
-== Feeds only available on feeds.launchpad.net ==
+Feeds only available on feeds.launchpad.net
+-------------------------------------------
 
 It should not be possible to get any feeds through http://launchpad.net,
 http://bugs.launchpad.net, etc.
@@ -138,7 +143,8 @@ Revert configuration change after tests are finished.
     >>> config_data = config.pop('bug_search_feed_data')
 
 
-== Favicon ==
+Favicon
+-------
 
 feeds.launchpad.test has a favicon.
 

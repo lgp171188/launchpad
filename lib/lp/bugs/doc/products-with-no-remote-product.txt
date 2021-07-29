@@ -1,4 +1,5 @@
-= Products with no remote_product =
+Products with no remote_product
+===============================
 
 Product.remote_product is used to keep track of which remote product in
 an upstream bug tracker, a Product registered in Launchpad corresponds

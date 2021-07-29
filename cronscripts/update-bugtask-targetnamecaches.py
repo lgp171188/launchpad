@@ -5,7 +5,7 @@
 
 # This script updates the cached stats in the system
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.bugs.scripts.bugtasktargetnamecaches import (
     BugTaskTargetNameCacheUpdater,

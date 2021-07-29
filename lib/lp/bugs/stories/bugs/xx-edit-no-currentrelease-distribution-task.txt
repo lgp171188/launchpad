@@ -1,4 +1,5 @@
-= Editing a Distribution task with no current release =
+Editing a Distribution task with no current release
+===================================================
 
 If a distribution doesn't have a current release, like Gentoo, it's
 still possible to edit its tasks from the bug page. There are no Gentoo

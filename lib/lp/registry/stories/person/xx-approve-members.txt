@@ -1,4 +1,5 @@
-= Reviewing proposed members =
+Reviewing proposed members
+==========================
 
 We have one page in which a team admin can review (approve/decline/hold) all
 proposed members at once.

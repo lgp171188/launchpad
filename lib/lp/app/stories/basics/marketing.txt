@@ -1,4 +1,5 @@
-= Launchpad tour =
+Launchpad tour
+==============
 
 From Launchpad's front page, you can access the tour.
 
@@ -50,7 +51,8 @@ But the source directory isn't available:
     zope.publisher.interfaces.NotFound: ...
 
 
-== +about compatibility ==
++about compatibility
+--------------------
 
 Each application used to have an introduction living at +about, this is
 now redirected to the relevant tour page.
@@ -80,7 +82,8 @@ now redirected to the relevant tour page.
     http://launchpad.test/+tour/community-support
 
 
-== +tour compatibility ==
++tour compatibility
+-------------------
 
 Similarly, each application has their +tour redirecting to their proper
 tour page.
@@ -110,7 +113,8 @@ tour page.
     http://launchpad.test/+tour/community-support
 
 
-== +faq compatibility ==
++faq compatibility
+------------------
 
 Each application also had a +faq link, that link is also redirected to
 the appropriate tour page.
@@ -136,13 +140,15 @@ the appropriate tour page.
     http://launchpad.test/+tour/community-support
 
 
-== Links to tour on application main page ==
+Links to tour on application main page
+--------------------------------------
 
 Each application home page features a 'Take a tour' button that brings
 the user to the appropriate tour page.
 
 
-=== Code ===
+Code
+....
 
     >>> browser.open('http://code.launchpad.test')
     >>> tour_link = browser.getLink('Take a tour')
@@ -151,7 +157,8 @@ the user to the appropriate tour page.
     >>> tour_link.click()
 
 
-=== Bugs ===
+Bugs
+....
 
     >>> browser.open('http://bugs.launchpad.test')
     >>> tour_link = browser.getLink('take a tour')
@@ -160,7 +167,8 @@ the user to the appropriate tour page.
     >>> tour_link.click()
 
 
-=== Blueprints ===
+Blueprints
+..........
 
     >>> browser.open('http://blueprints.launchpad.test')
     >>> tour_link = browser.getLink('Take a tour')
@@ -169,7 +177,8 @@ the user to the appropriate tour page.
     >>> tour_link.click()
 
 
-=== Translations ===
+Translations
+............
 
     >>> browser.open('http://translations.launchpad.test')
     >>> tour_link = browser.getLink('Take a tour')
@@ -178,7 +187,8 @@ the user to the appropriate tour page.
     >>> tour_link.click()
 
 
-=== Answers ===
+Answers
+.......
 
     >>> browser.open('http://answers.launchpad.test')
     >>> tour_link = browser.getLink('Take a tour')

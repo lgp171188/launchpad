@@ -203,7 +203,8 @@ that the key has been removed.
     >>> assert payload.startswith('The SSH Key')
 
 
-== Keys containing non-ASCII comments ==
+Keys containing non-ASCII comments
+----------------------------------
 
 These keys can be imported just like the others which have ASCII
 comments.

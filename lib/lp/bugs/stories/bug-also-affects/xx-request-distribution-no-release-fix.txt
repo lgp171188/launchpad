@@ -1,10 +1,12 @@
-= Requesting a fix for a distribution with no current release =
+Requesting a fix for a distribution with no current release
+===========================================================
 
 Sometimes a distribution might not have any releases, thus it won't have
 a current release either. In this case it will still be possible to
 request a fix for these releases.
 
-== A distribution using Launchpad ==
+A distribution using Launchpad
+------------------------------
 
 Gentoo is currently using Launchpad.
 
@@ -22,7 +24,8 @@ Any user can request a fix for it.
     >>> user_browser.url
     'http://bugs.launchpad.test/gentoo/+bug/4'
 
-== A distribution not using Launchpad ==
+A distribution not using Launchpad
+----------------------------------
 
 If we change Gentoo not to use Launchpad, any user can still add a task and
 link to a external bug for it.

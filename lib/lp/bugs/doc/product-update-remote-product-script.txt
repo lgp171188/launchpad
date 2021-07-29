@@ -1,4 +1,5 @@
-== update-remote-product.py ==
+update-remote-product.py
+------------------------
 
 The script that uses RemoteProductUpdater is update-remote-product.py.
 

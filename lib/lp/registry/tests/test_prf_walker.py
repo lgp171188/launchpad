@@ -282,7 +282,7 @@ class HTTPWalker_ListDir(TestCase):
 
 <address>Apache/2.2.3 (Unix) Server at <a href="mailto:ftp-adm@acc.umu.se">ftp.acc.umu.se</a> Port 80</address>
 </body></html>
-        '''
+        '''  # noqa: E501
         listing_url = 'http://ftp.gnome.org/pub/GNOME/sources/gnome-gpg/0.5/'
         responses.add('GET', listing_url, body=content)
         expected_filenames = [
@@ -323,7 +323,7 @@ FTP Directory: <A HREF="/">ftp://ftp.gnome.org</A>/<A HREF="/pub/">pub</A>/<A HR
 <ADDRESS>
 Generated Wed, 06 Sep 2006 11:04:02 GMT by squid (squid/2.5.STABLE12)
 </ADDRESS></BODY></HTML>
-        '''
+        '''  # noqa: E501
         listing_url = 'ftp://ftp.gnome.org/pub/GNOME/sources/gnome-gpg/0.5/'
         responses.add('GET', listing_url, body=content)
         walker = HTTPWalker(listing_url, logging.getLogger())

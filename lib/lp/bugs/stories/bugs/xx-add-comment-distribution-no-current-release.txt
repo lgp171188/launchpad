@@ -1,4 +1,5 @@
-= Add a comment on a bug on a distribution with no current release =
+Add a comment on a bug on a distribution with no current release
+================================================================
 
 If a bug is reported distribution with no current release, like Gentoo,
 it's still possible to add comments to the bug.

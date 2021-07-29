@@ -1,4 +1,5 @@
-= Bug message visibility =
+Bug message visibility
+======================
 
 Bug messages have a visible field, which provides a means
 for hiding messages rather than having to delete them.

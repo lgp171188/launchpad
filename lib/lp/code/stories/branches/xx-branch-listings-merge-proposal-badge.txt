@@ -1,4 +1,5 @@
-= Check if the merge proposal badge is shown =
+Check if the merge proposal badge is shown
+==========================================
 
     >>> def branchSummary(browser):
     ...     table = find_tag_by_id(browser.contents, 'branchtable')

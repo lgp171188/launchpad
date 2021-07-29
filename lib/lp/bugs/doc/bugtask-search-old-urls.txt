@@ -1,4 +1,5 @@
-= Searching bugtasks with old statuses =
+Searching bugtasks with old statuses
+====================================
 
 The BugWorkflow spec renames several bug statuses, but we need
 bookmarks, etc., to keep working using the old status names. Instead

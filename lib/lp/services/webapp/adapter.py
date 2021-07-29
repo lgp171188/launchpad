@@ -263,15 +263,9 @@ def get_timeline_actions():
     return timeline.actions[:IN_PAGE_TIMELINE_CAP]
 
 
-def store_sql_statements_and_request_duration(event):
+def store_sql_statements(event):
     actions = get_request_timeline(get_current_browser_request()).actions
-    event.request.setInWSGIEnvironment(
-        'launchpad.nonpythonactions', len(actions))
     logging_context.push(nonpython_actions=len(actions))
-    event.request.setInWSGIEnvironment(
-        'launchpad.requestduration', get_request_duration())
-    # Talisker already tracks the request duration itself, so there's no
-    # need to push that onto the logging context here.
 
 
 def get_request_statements():

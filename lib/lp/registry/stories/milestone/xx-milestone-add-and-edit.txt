@@ -1,4 +1,5 @@
-= Adding and editing milestones =
+Adding and editing milestones
+=============================
 
 We have a "milestones" portlet which shows active milestones for a
 structural object (product, project, distroseries, productseries). This
@@ -10,7 +11,8 @@ utility function will print out the milestones in that portlet:
     ...         return 'NO MILESTONE PORTLET'
     ...     return extract_text(portlet.find('table'))
 
-== Adding a milestone ==
+Adding a milestone
+------------------
 
 Let's make Sample Person the owner of Ubuntu and alsa-utils for this
 story.
@@ -67,7 +69,8 @@ create a new milestone.
     'http://launchpad.test/ubuntu/hoary/+addmilestone'
 
 
-== Milestone bug subscriptions ==
+Milestone bug subscriptions
+---------------------------
 
 To receive email notifications about bugs pretaining to a milestone, we
 can create structural bug subscriptions.
@@ -89,7 +92,8 @@ But we can't subscribe to project milestones, since they are not real objects.
     zope.testbrowser.browser.LinkNotFoundError
 
 
-== Deleting milestones ==
+Deleting milestones
+-------------------
 
 The series page lists all the active and releases milestones targeted to
 the series.

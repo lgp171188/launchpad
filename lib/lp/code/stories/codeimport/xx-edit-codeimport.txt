@@ -1,4 +1,5 @@
-= Editing code import details =
+Editing code import details
+===========================
 
 Not everyone can edit code import details, these stories show what it's like
 to edit a code import if you are the owner of the code import branch.
@@ -28,7 +29,8 @@ can see a link to edit the details.
     >>> logout()
 
 
-== Import details on the branch page ==
+Import details on the branch page
+---------------------------------
 
 Imported branches have a section with the title "Import details".
 In this section the review state of the import is shown, along with
@@ -58,7 +60,8 @@ Because it's an svn:// URL, it doesn't get linkified:
     zope.testbrowser.browser.LinkNotFoundError
 
 
-== Not authorized versus 404 ==
+Not authorized versus 404
+-------------------------
 
 If the user attempts to hack the URL to edit the import details,
 they will get a not authorised page if the branch has a code import,
@@ -75,14 +78,16 @@ and a 404 if the branch doesn't have an import.
     lp.app.errors.NotFoundError
 
 
-== Editing details ==
+Editing details
+---------------
 
     >>> import_browser.open(svn_import_location)
     >>> import_browser.getLink('Edit import source or review import')
     <Link text='Edit import source or review import' url='.../+edit-import'>
 
 
-== Import details for a import that has been imported successfully ==
+Import details for a import that has been imported successfully
+---------------------------------------------------------------
 
 If a branch has been successfully imported in the past, then the date
 that it was last successful is shown, as well as when the next import
@@ -114,7 +119,8 @@ imports.
     ...
 
 
-== Requesting an import ==
+Requesting an import
+--------------------
 
 If an import is waiting for its next update, any logged in user can
 click a button to request an immediate import.
@@ -151,7 +157,8 @@ displayed.
     ...
 
 
-== Deleting an import ==
+Deleting an import
+------------------
 
 If you own the branch that has the code import, you can delete the branch.
 

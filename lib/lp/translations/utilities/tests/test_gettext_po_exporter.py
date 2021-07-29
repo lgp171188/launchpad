@@ -133,7 +133,7 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
 
             #~ msgid "zot"
             #~ msgstr "zat"
-            ''').encode('UTF-8')
+            ''').encode('UTF-8')  # noqa: E501
         cy_translation_file = self.parser.parse(pofile_cy)
         cy_translation_file.is_template = False
         cy_translation_file.language_code = 'cy'

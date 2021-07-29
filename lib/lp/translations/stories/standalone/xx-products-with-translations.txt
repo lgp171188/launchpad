@@ -1,4 +1,5 @@
-= Products with translations =
+Products with translations
+==========================
 
 We have to do a little set up.
 

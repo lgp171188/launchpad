@@ -1,4 +1,5 @@
-= Distribution Source Package Bugs =
+Distribution Source Package Bugs
+================================
 
 This page is like most bug listing pages, but it also has a portlet
 "portlet-publishing-details" giving information about the latest published

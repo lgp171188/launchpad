@@ -1,4 +1,5 @@
-= Translation credits =
+Translation credits
+===================
 
 Translation credit strings are automatically updated with contributors
 through Launchpad.
@@ -26,9 +27,9 @@ This has no translation yet:
 
 And there is no input field allowing changing this message.
 
-   >>> print(find_tag_by_id(browser.contents,
-   ...                      'msgset_199_sr_translation_0_new'))
-   None
+    >>> print(find_tag_by_id(browser.contents,
+    ...                      'msgset_199_sr_translation_0_new'))
+    None
 
 KDE-style translation credits are split into two messages, with emails
 in one, and names in other.

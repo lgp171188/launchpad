@@ -1,125 +1,126 @@
-= PackageUpload View Classes and Pages =
+PackageUpload View Classes and Pages
+====================================
 
 The QueueItemsView (browser/queue.py) is extended by the default view
 for IDistroSeries context (IDistroSeriesView)
 
 Let's instantiate the view for +queue for anonymous access:
 
-  >>> from zope.component import queryMultiAdapter
-  >>> from lp.services.librarian.model import LibraryFileAlias
-  >>> from lp.services.webapp.servers import LaunchpadTestRequest
-  >>> from lp.registry.interfaces.distribution import IDistributionSet
-  >>> fake_chroot = LibraryFileAlias.get(1)
+    >>> from zope.component import queryMultiAdapter
+    >>> from lp.services.librarian.model import LibraryFileAlias
+    >>> from lp.services.webapp.servers import LaunchpadTestRequest
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+    >>> fake_chroot = LibraryFileAlias.get(1)
 
-  >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-  >>> breezy_autotest = ubuntu['breezy-autotest']
-  >>> breezy_autotest_i386 = breezy_autotest['i386']
-  >>> unused = breezy_autotest_i386.addOrUpdateChroot(fake_chroot)
+    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
+    >>> breezy_autotest = ubuntu['breezy-autotest']
+    >>> breezy_autotest_i386 = breezy_autotest['i386']
+    >>> unused = breezy_autotest_i386.addOrUpdateChroot(fake_chroot)
 
-  >>> request = LaunchpadTestRequest()
-  >>> queue_view = queryMultiAdapter(
-  ...     (breezy_autotest, request), name="+queue")
+    >>> request = LaunchpadTestRequest()
+    >>> queue_view = queryMultiAdapter(
+    ...     (breezy_autotest, request), name="+queue")
 
 View parameters need to be set properly before start:
 
-  >>> queue_view.setupQueueList()
+    >>> queue_view.setupQueueList()
 
 After setup we have a 'batched' list:
 
-  >>> from lp.services.webapp.interfaces import IBatchNavigator
-  >>> from lp.testing import verifyObject
-  >>> verifyObject(IBatchNavigator, queue_view.batchnav)
-  True
+    >>> from lp.services.webapp.interfaces import IBatchNavigator
+    >>> from lp.testing import verifyObject
+    >>> verifyObject(IBatchNavigator, queue_view.batchnav)
+    True
 
-  >>> len(queue_view.batchnav.currentBatch())
-  6
+    >>> len(queue_view.batchnav.currentBatch())
+    6
 
 The local state (PackageUploadStatus, dbschema)
 
-  >>> queue_view.state.name
-  'NEW'
+    >>> queue_view.state.name
+    'NEW'
 
 A list of available actions in this queue:
 
-  >>> queue_view.availableActions()
-  []
+    >>> queue_view.availableActions()
+    []
 
 Let's instantiate the view for a specific queue:
 
-  >>> from lp.soyuz.enums import PackageUploadStatus
-  >>> request = LaunchpadTestRequest(
-  ...     form={'queue_state': PackageUploadStatus.DONE.value})
-  >>> warty = ubuntu['warty']
-  >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
-  >>> queue_view.setupQueueList()
-  >>> queue_view.state.name
-  'DONE'
-  >>> len(queue_view.batchnav.currentBatch())
-  1
+    >>> from lp.soyuz.enums import PackageUploadStatus
+    >>> request = LaunchpadTestRequest(
+    ...     form={'queue_state': PackageUploadStatus.DONE.value})
+    >>> warty = ubuntu['warty']
+    >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
+    >>> queue_view.setupQueueList()
+    >>> queue_view.state.name
+    'DONE'
+    >>> len(queue_view.batchnav.currentBatch())
+    1
 
 Unexpected values for queue_state results in a proper error, anything
 that can't be can't fit as an integer is automatically assume as the
 default value (NEW queue).
 
-  >>> request = LaunchpadTestRequest(
-  ...     form={'queue_state': 'foo'})
-  >>> warty = ubuntu['warty']
-  >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
-  >>> queue_view.setupQueueList()
-  >>> queue_view.state.name
-  'NEW'
-  >>> len(queue_view.batchnav.currentBatch())
-  0
+    >>> request = LaunchpadTestRequest(
+    ...     form={'queue_state': 'foo'})
+    >>> warty = ubuntu['warty']
+    >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
+    >>> queue_view.setupQueueList()
+    >>> queue_view.state.name
+    'NEW'
+    >>> len(queue_view.batchnav.currentBatch())
+    0
 
 If a invalid integer is posted it raises.
 
-  >>> request = LaunchpadTestRequest(
-  ...     form={'queue_state': '10'})
-  >>> warty = ubuntu['warty']
-  >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
-  >>> queue_view.setupQueueList()
-  ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
-  Traceback (most recent call last):
-  ...
-  lp.app.errors.UnexpectedFormData: No suitable status found for value "10"
+    >>> request = LaunchpadTestRequest(
+    ...     form={'queue_state': '10'})
+    >>> warty = ubuntu['warty']
+    >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
+    >>> queue_view.setupQueueList()
+    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    Traceback (most recent call last):
+    ...
+    lp.app.errors.UnexpectedFormData: No suitable status found for value "10"
 
 Anonymous users also have access to all queues, including UNAPPROVED
 but they are not allowed to perform any action.
 
-  >>> request = LaunchpadTestRequest(
-  ...     form={'queue_state': PackageUploadStatus.UNAPPROVED.value})
-  >>> queue_view = queryMultiAdapter(
-  ...     (breezy_autotest, request), name="+queue")
-  >>> queue_view.setupQueueList()
-  >>> queue_view.state.name
-  'UNAPPROVED'
-  >>> len(queue_view.batchnav.currentBatch())
-  5
+    >>> request = LaunchpadTestRequest(
+    ...     form={'queue_state': PackageUploadStatus.UNAPPROVED.value})
+    >>> queue_view = queryMultiAdapter(
+    ...     (breezy_autotest, request), name="+queue")
+    >>> queue_view.setupQueueList()
+    >>> queue_view.state.name
+    'UNAPPROVED'
+    >>> len(queue_view.batchnav.currentBatch())
+    5
 
-  >>> queue_view.availableActions()
-  []
+    >>> queue_view.availableActions()
+    []
 
 Now, let's instantiate the view for +queue as a privileged user:
 
-  >>> login('foo.bar@canonical.com')
+    >>> login('foo.bar@canonical.com')
 
-  >>> queue_view = queryMultiAdapter(
-  ...     (breezy_autotest, request), name="+queue")
-  >>> queue_view.setupQueueList()
-  >>> queue_view.availableActions()
-  ['Accept', 'Reject']
+    >>> queue_view = queryMultiAdapter(
+    ...     (breezy_autotest, request), name="+queue")
+    >>> queue_view.setupQueueList()
+    >>> queue_view.availableActions()
+    ['Accept', 'Reject']
 
 Attempt to view and act on UNAPPROVED queue works for administrators.
 
-  >>> request = LaunchpadTestRequest(
-  ...     form={'queue_state': PackageUploadStatus.UNAPPROVED.value})
-  >>> queue_view = queryMultiAdapter(
-  ...     (breezy_autotest, request), name="+queue")
-  >>> queue_view.setupQueueList()
-  >>> queue_view.state.name
-  'UNAPPROVED'
-  >>> queue_view.availableActions()
-  ['Accept', 'Reject']
+    >>> request = LaunchpadTestRequest(
+    ...     form={'queue_state': PackageUploadStatus.UNAPPROVED.value})
+    >>> queue_view = queryMultiAdapter(
+    ...     (breezy_autotest, request), name="+queue")
+    >>> queue_view.setupQueueList()
+    >>> queue_view.state.name
+    'UNAPPROVED'
+    >>> queue_view.availableActions()
+    ['Accept', 'Reject']
 
 Action on presented queue are controlled and performed by the
 'performAction' method, which return a HTML-formatted report text
@@ -129,95 +130,96 @@ It accepts the 'Accept'/'Reject' and 'QUEUE_ID' arguments via POST.
 
 Accepting an item from NEW queue.
 
-  >>> from lp.soyuz.interfaces.queue import IPackageUploadSet
-  >>> getUtility(IPackageUploadSet).get(1).status.name
-  'NEW'
-  >>> getUtility(IPackageUploadSet).get(3).status.name
-  'NEW'
+    >>> from lp.soyuz.interfaces.queue import IPackageUploadSet
+    >>> getUtility(IPackageUploadSet).get(1).status.name
+    'NEW'
+    >>> getUtility(IPackageUploadSet).get(3).status.name
+    'NEW'
 
-  >>> request = LaunchpadTestRequest(
-  ...     form={'queue_state': PackageUploadStatus.NEW.value,
-  ...           'Accept': 'Accept',
-  ...           'QUEUE_ID': ['1', '3']})
-  >>> request.method = 'POST'
+    >>> request = LaunchpadTestRequest(
+    ...     form={'queue_state': PackageUploadStatus.NEW.value,
+    ...           'Accept': 'Accept',
+    ...           'QUEUE_ID': ['1', '3']})
+    >>> request.method = 'POST'
 
 Add fake librarian files so that email notifications work:
 
-  >>> from lp.archiveuploader.tests import (
-  ...     insertFakeChangesFileForAllPackageUploads)
-  >>> insertFakeChangesFileForAllPackageUploads()
+    >>> from lp.archiveuploader.tests import (
+    ...     insertFakeChangesFileForAllPackageUploads)
+    >>> insertFakeChangesFileForAllPackageUploads()
 
 Anonymous attempts to accept queue items are ignored and an error
 message is presented.
 
-  >>> login(ANONYMOUS)
-  >>> queue_view = queryMultiAdapter(
-  ...     (breezy_autotest, request), name="+queue")
-  >>> queue_view.setupQueueList()
-  >>> queue_view.performQueueAction()
-  >>> print(queue_view.error)
-  You do not have permission to act on queue items.
+    >>> login(ANONYMOUS)
+    >>> queue_view = queryMultiAdapter(
+    ...     (breezy_autotest, request), name="+queue")
+    >>> queue_view.setupQueueList()
+    >>> queue_view.performQueueAction()
+    >>> print(queue_view.error)
+    You do not have permission to act on queue items.
 
-  >>> getUtility(IPackageUploadSet).get(1).status.name
-  'NEW'
-  >>> getUtility(IPackageUploadSet).get(3).status.name
-  'NEW'
+    >>> getUtility(IPackageUploadSet).get(1).status.name
+    'NEW'
+    >>> getUtility(IPackageUploadSet).get(3).status.name
+    'NEW'
 
 Privileged user can accept queue items.
 
-  >>> login('foo.bar@canonical.com')
-  >>> queue_view = queryMultiAdapter(
-  ...     (breezy_autotest, request), name="+queue")
-  >>> queue_view.setupQueueList()
+    >>> login('foo.bar@canonical.com')
+    >>> queue_view = queryMultiAdapter(
+    ...     (breezy_autotest, request), name="+queue")
+    >>> queue_view.setupQueueList()
 
-  >>> queue_view.performQueueAction()
+    >>> queue_view.performQueueAction()
 
-  >>> getUtility(IPackageUploadSet).get(1).status.name
-  'ACCEPTED'
-  >>> getUtility(IPackageUploadSet).get(3).status.name
-  'DONE'
+    >>> getUtility(IPackageUploadSet).get(1).status.name
+    'ACCEPTED'
+    >>> getUtility(IPackageUploadSet).get(3).status.name
+    'DONE'
 
 Rejection an item from NEW queue:
 
-  >>> target = getUtility(IPackageUploadSet).get(2)
-  >>> target.status.name
-  'NEW'
+    >>> target = getUtility(IPackageUploadSet).get(2)
+    >>> target.status.name
+    'NEW'
 
-  >>> request = LaunchpadTestRequest(
-  ...     form={'queue_state': PackageUploadStatus.NEW.value,
-  ...           'rejection_comment': 'Foo',
-  ...           'Reject': 'Reject',
-  ...           'QUEUE_ID': '2'})
-  >>> request.method = 'POST'
+    >>> request = LaunchpadTestRequest(
+    ...     form={'queue_state': PackageUploadStatus.NEW.value,
+    ...           'rejection_comment': 'Foo',
+    ...           'Reject': 'Reject',
+    ...           'QUEUE_ID': '2'})
+    >>> request.method = 'POST'
 
 Anonymous attempts to reject queue items are ignored and an error
 message is presented.
 
-  >>> login(ANONYMOUS)
-  >>> queue_view = queryMultiAdapter(
-  ...     (breezy_autotest, request), name="+queue")
-  >>> queue_view.setupQueueList()
-  >>> queue_view.performQueueAction()
-  >>> print(queue_view.error)
-  You do not have permission to act on queue items.
+    >>> login(ANONYMOUS)
+    >>> queue_view = queryMultiAdapter(
+    ...     (breezy_autotest, request), name="+queue")
+    >>> queue_view.setupQueueList()
+    >>> queue_view.performQueueAction()
+    >>> print(queue_view.error)
+    You do not have permission to act on queue items.
 
-  >>> target.status.name
-  'NEW'
+    >>> target.status.name
+    'NEW'
 
 Privileged user can reject queue items.
 
-  >>> login('foo.bar@canonical.com')
-  >>> queue_view = queryMultiAdapter(
-  ...     (breezy_autotest, request), name="+queue")
-  >>> queue_view.setupQueueList()
+    >>> login('foo.bar@canonical.com')
+    >>> queue_view = queryMultiAdapter(
+    ...     (breezy_autotest, request), name="+queue")
+    >>> queue_view.setupQueueList()
 
-  >>> queue_view.performQueueAction()
+    >>> queue_view.performQueueAction()
 
-  >>> target.status.name
-  'REJECTED'
+    >>> target.status.name
+    'REJECTED'
 
 
-== Calculation of "new" binaries ==
+Calculation of "new" binaries
+-----------------------------
 
 The queue page will show the user which binaries in a build upload are
 new or not.  Since multiple binary package releases can appear in one
@@ -298,5 +300,5 @@ is_new() method requires to work.
 
 We created librarian files that need cleaning up before leaving the test.
 
-  >>> from lp.testing.layers import LibrarianLayer
-  >>> LibrarianLayer.librarian_fixture.clear()
+    >>> from lp.testing.layers import LibrarianLayer
+    >>> LibrarianLayer.librarian_fixture.clear()

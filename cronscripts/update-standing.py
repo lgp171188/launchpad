@@ -9,7 +9,7 @@ __metaclass__ = type
 __all__ = []
 
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.standing import UpdatePersonalStanding
 from lp.services.config import config

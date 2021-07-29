@@ -1,4 +1,5 @@
-= Language pack administration =
+Language pack administration
+============================
 
 Each distribution has an associated person/team that is responsible for
 administering language packs, right now, they are only able to request a full

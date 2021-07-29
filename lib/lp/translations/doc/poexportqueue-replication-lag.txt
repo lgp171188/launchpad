@@ -1,4 +1,5 @@
-= Replication Lag and the Export Queue =
+Replication Lag and the Export Queue
+====================================
 
 Due to replication lag it's possible for the export queue to see a
 request on the slave store that it actually just removed from the master

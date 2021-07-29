@@ -1,13 +1,16 @@
-= ZCML Directives =
+ZCML Directives
+===============
 
 We have a bunch of custom zcml directives in Launchpad.
 
-== Canonical URLs ==
+Canonical URLs
+--------------
 
 See canonical_url.txt for information and tests of the browser:url directive.
 
 
-== A zcml context for zcml directive unittests ==
+A zcml context for zcml directive unittests
+-------------------------------------------
 
 This is a context that collects actions and has a __repr__ for use in
 tests that shows a pretty-printed representation of the actions.
@@ -33,7 +36,8 @@ The code to this is actually repeated all through the Zope 3 unit tests for
 zcml directives. :-(
 
 
-== Setting up some interfaces and objects to test with ==
+Setting up some interfaces and objects to test with
+---------------------------------------------------
 
 We'll put an interface in lp.testing.IFoo, and set the
 default view for the IFooLayer layer.
@@ -63,7 +67,8 @@ default view for the IFooLayer layer.
     >>> lp.testing.FooView = FooView
 
 
-== Overriding the browser:page directive ==
+Overriding the browser:page directive
+-------------------------------------
 
 We override browser:page to allow us to specify the facet that the
 page is associated with.
@@ -148,7 +153,8 @@ Next, a functional/integration test of the overridden directive.
     another-mister-lizard
 
 
-== Overriding the browser:pages directive ==
+Overriding the browser:pages directive
+--------------------------------------
 
 We override browser:pages to allow us to specify the facet that each
 page is associated with.
@@ -231,7 +237,8 @@ Next, a functional/integration test of the overridden directive.
     outerspace
 
 
-== Overriding zope:configure to add a facet attribute ==
+Overriding zope:configure to add a facet attribute
+--------------------------------------------------
 
 We override the grouping directive zope:configure to add a 'facet' attribute
 that can be inherited by all of the directives it contains.
@@ -279,7 +286,8 @@ Next, a functional/integration test of the overridden directive.
     whole-facet
 
 
-== Overriding zope:permission ==
+Overriding zope:permission
+--------------------------
 
 The permissions used in Launchpad must also specify the level of access
 they require ('read' or 'write'), so our zope:permission directive will
@@ -302,7 +310,8 @@ an IPermission.
     read
 
 
-== Cleaning up the interfaces and objects to test with ==
+Cleaning up the interfaces and objects to test with
+---------------------------------------------------
 
 Clean up the interfaces we created for testing with.
 

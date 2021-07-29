@@ -1,4 +1,5 @@
-= Structural Subscriptions =
+Structural Subscriptions
+========================
 
 Structural subscriptions can be obtained from any target: a project,
 project series, project group, distribution, distribution series or

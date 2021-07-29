@@ -1,4 +1,5 @@
-= Team contact address =
+Team contact address
+====================
 
 Team admins are allowed to set the contact method used by Launchpad to
 send notifications to that team.  The possible contact methods are:
@@ -38,7 +39,8 @@ As we can see, the landscape-developers team has no contact address.
     ['Each member individually']
 
 
-== External address ==
+External address
+----------------
 
 Changing the contact address to an external address will require the
 user to go through the email address confirmation process.

@@ -1,4 +1,5 @@
-= Branch listings for distroseries =
+Branch listings for distroseries
+================================
 
 All source package branches are associated with a distribution series and a
 source package name.

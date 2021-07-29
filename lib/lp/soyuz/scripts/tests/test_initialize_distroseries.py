@@ -1090,8 +1090,6 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         packages = ('udev', 'chromium', 'libc6')
         for pkg in packages:
             test1.addSources(pkg)
-        packageset1 = getUtility(IPackagesetSet).getByName(
-            self.parent, u'test1')
         child = self._fullInitialize(
             [self.parent], packagesets=[])
         self.assertRaises(
@@ -1118,10 +1116,6 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             test1.addSources(pkg)
         for pkg in packages_test2:
             test2.addSources(pkg)
-        packageset1 = getUtility(IPackagesetSet).getByName(
-            self.parent, u'test1')
-        packageset2 = getUtility(IPackagesetSet).getByName(
-            self.parent, u'test2')
         child = self._fullInitialize(
             [self.parent], packagesets=None)
         child_test1 = getUtility(IPackagesetSet).getByName(child, u'test1')

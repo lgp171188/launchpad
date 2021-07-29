@@ -1,4 +1,5 @@
-= Pushing comments to external bugtrackers =
+Pushing comments to external bugtrackers
+========================================
 
 Some ExternalBugTrackers support the pushing of comments from Launchpad
 to the remote bug tracker.
@@ -268,7 +269,8 @@ invalid remote comment ID, an error will be raised:
     AssertionError: A remote_comment_id must be specified.
 
 
-== Formatting pushed comments ==
+Formatting pushed comments
+--------------------------
 
 The comments that have been pushed to the remote bugtracker have been
 formatted to include data about the comment in Launchpad.

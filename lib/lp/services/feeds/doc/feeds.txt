@@ -1,4 +1,5 @@
-= Feeds components =
+Feeds components
+================
 
 `feeds` is a ZCML directive for handling feeds requests.  The
 directive requires minimal ZCML configuration and relies on
@@ -8,18 +9,19 @@ variables.
 Feeds are defined on the `FeedsLayer` layer.
 
 
-== Demonstrating a feeds class ==
+Demonstrating a feeds class
+---------------------------
 
 In order to demonstrate a feed class, we need to create an interface
 for the thing comprising the feed.  Rather than use a standard
 Launchpad interface, we'll define one here.
 
-    >>> from zope.interface import Interface, Attribute, implements
     >>> from lp.services.feeds.tests.helper import (
-    ...     IThing, Thing, ThingFeedView)
+    ...     IThing, Thing)
 
 
-== ZCML for browser:feeds ==
+ZCML for browser:feeds
+----------------------
 
 The zcml `browser:feeds` directive describes a feed view.
 
@@ -104,7 +106,8 @@ found, indicated by the absence of a ComponentLookupError.
     a feed view on an IThing
     a feed view on an IThing
 
-== Feeds Configuration Options ==
+Feeds Configuration Options
+---------------------------
 
 The max_feed_cache_minutes and the max_bug_feed_cache_minutes
 configurations are provided to allow overriding the Expires
@@ -129,7 +132,8 @@ by browsers and the reverse-proxy in front of the feeds servers.
     True
 
 
-== FeedTypedData class ==
+FeedTypedData class
+-------------------
 
 The FeedTypedData class performs the appropriate escaping for data
 with a type of "text", "html", or "xhtml". The template is responsible

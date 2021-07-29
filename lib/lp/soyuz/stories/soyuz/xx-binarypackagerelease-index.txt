@@ -1,4 +1,5 @@
-= BinaryPackageRelease Pages =
+BinaryPackageRelease Pages
+==========================
 
 The page for a 'successfully built' build provides link(s) to the produced
 binaries independent of their context, the raw IBinaryPackageRelease
@@ -6,62 +7,62 @@ content class/page.
 
 Let's find a build that produced some binaries:
 
-  >>> browser.open("http://launchpad.test/ubuntu/+builds")
-  >>> browser.getControl(name="build_state").value = ['built']
-  >>> browser.getControl("Filter").click()
-  >>> browser.getLink("Next").click()
-  >>> build_link = browser.getLink(
-  ...     'i386 build of mozilla-firefox 0.9 in ubuntu '
-  ...     'warty RELEASE')
-  >>> build_link.url
-  'http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9/+build/2'
+    >>> browser.open("http://launchpad.test/ubuntu/+builds")
+    >>> browser.getControl(name="build_state").value = ['built']
+    >>> browser.getControl("Filter").click()
+    >>> browser.getLink("Next").click()
+    >>> build_link = browser.getLink(
+    ...     'i386 build of mozilla-firefox 0.9 in ubuntu '
+    ...     'warty RELEASE')
+    >>> build_link.url
+    'http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9/+build/2'
 
 Next, we'll manually create a suitable package upload record for our
 build:
 XXX: noodles 2009-01-16 bug 317863: move this into the STP.
 
-  >>> from lp.soyuz.model.queue import PackageUploadBuild
-  >>> from lp.soyuz.interfaces.binarypackagebuild import (
-  ...     IBinaryPackageBuildSet)
-  >>> from lp.registry.interfaces.pocket import (
-  ...     PackagePublishingPocket)
-  >>> from zope.component import getUtility
+    >>> from lp.soyuz.model.queue import PackageUploadBuild
+    >>> from lp.soyuz.interfaces.binarypackagebuild import (
+    ...     IBinaryPackageBuildSet)
+    >>> from lp.registry.interfaces.pocket import (
+    ...     PackagePublishingPocket)
+    >>> from zope.component import getUtility
 
-  >>> login('foo.bar@canonical.com')
-  >>> build = getUtility(IBinaryPackageBuildSet).getByID(2)
+    >>> login('foo.bar@canonical.com')
+    >>> build = getUtility(IBinaryPackageBuildSet).getByID(2)
 
 The sample data doesn't have any Built-Using references.  For now, just
 manually insert one so that we can check how it's rendered.
 
-  >>> from lp.soyuz.enums import BinarySourceReferenceType
-  >>> from lp.soyuz.interfaces.binarysourcereference import (
-  ...     IBinarySourceReferenceSet,
-  ...     )
-  >>> bpr = build.getBinaryPackageRelease('mozilla-firefox')
-  >>> _ = getUtility(IBinarySourceReferenceSet).createFromRelationship(
-  ...     bpr, 'iceweasel (= 1.0)', BinarySourceReferenceType.BUILT_USING)
+    >>> from lp.soyuz.enums import BinarySourceReferenceType
+    >>> from lp.soyuz.interfaces.binarysourcereference import (
+    ...     IBinarySourceReferenceSet,
+    ...     )
+    >>> bpr = build.getBinaryPackageRelease('mozilla-firefox')
+    >>> _ = getUtility(IBinarySourceReferenceSet).createFromRelationship(
+    ...     bpr, 'iceweasel (= 1.0)', BinarySourceReferenceType.BUILT_USING)
 
-  >>> package_upload = build.distro_series.createQueueEntry(
-  ...     PackagePublishingPocket.UPDATES, build.archive,
-  ...    'changes.txt', b'my changes')
-  >>> package_upload_build = PackageUploadBuild(
-  ...     packageupload =package_upload,
-  ...     build=build)
-  >>> package_upload.setDone()
-  >>> logout()
+    >>> package_upload = build.distro_series.createQueueEntry(
+    ...     PackagePublishingPocket.UPDATES, build.archive,
+    ...    'changes.txt', b'my changes')
+    >>> package_upload_build = PackageUploadBuild(
+    ...     packageupload =package_upload,
+    ...     build=build)
+    >>> package_upload.setDone()
+    >>> logout()
 
-  >>> build_link.click()
-  >>> browser.url
-  'http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9/+build/2'
+    >>> build_link.click()
+    >>> browser.url
+    'http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9/+build/2'
 
 This build produced one BinaryPackage, called 'mozilla-firefox 0.9',
 which is presented in the right portlet, called 'Resulting Binaries'.
 Let's just check if the page is presented without errors (see bug
 #76163):
 
-  >>> browser.getLink('mozilla-firefox 0.9').click()
-  >>> browser.url
-  'http://launchpad.test/ubuntu/warty/i386/mozilla-firefox/0.9'
+    >>> browser.getLink('mozilla-firefox 0.9').click()
+    >>> browser.url
+    'http://launchpad.test/ubuntu/warty/i386/mozilla-firefox/0.9'
 
 When rendering package relationships only existent packages contain
 links to within LP application, not found packages are rendered as
@@ -70,68 +71,67 @@ simple text.
 'Provides', 'Pre-Depends', 'Enhances' and 'Breaks' sections contain
 links to a binary in the context in question.
 
-  >>> def print_relation(id):
-  ...     section = find_tag_by_id(browser.contents, id)
-  ...     parse_relationship_section(str(section))
+    >>> def print_relation(id):
+    ...     section = find_tag_by_id(browser.contents, id)
+    ...     parse_relationship_section(str(section))
 
-  >>> print_relation('provides')
-  LINK: "mozilla-firefox" -> http://launchpad.test/ubuntu/warty/i386/mozilla-firefox
+    >>> print_relation('provides')
+    LINK: "mozilla-firefox" -> http://launchpad.test/ubuntu/warty/i386/mozilla-firefox
 
-  >>> print_relation('predepends')
-  TEXT: "foo"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
+    >>> print_relation('predepends')
+    TEXT: "foo"
+    LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
-  >>> print_relation('enhances')
-  TEXT: "bar"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
+    >>> print_relation('enhances')
+    TEXT: "bar"
+    LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
-  >>> print_relation('breaks')
-  TEXT: "baz"
-  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
+    >>> print_relation('breaks')
+    TEXT: "baz"
+    LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
 The 'Built-Using' section contains a link to a source in the context in
 question.
 
-  >>> print_relation('builtusing')
-  LINK: "iceweasel (= 1.0)" ->
-  http://launchpad.test/ubuntu/warty/+source/iceweasel
+    >>> print_relation('builtusing')
+    LINK: "iceweasel (= 1.0)" ->
+    http://launchpad.test/ubuntu/warty/+source/iceweasel
 
 
 'Depends', 'Conflicts', 'Replaces', 'Suggests' and 'Recommends'
 sections contain only unsatisfied dependencies, which are rendered as
 text:
 
-  >>> print_relation('depends')
-  TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
-  TEXT: "gcc-3.4 (<< 3.4.2)"
-  TEXT: "gcc-3.4-base"
-  TEXT: "libc6 (>= 2.3.2.ds1-4)"
-  TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
+    >>> print_relation('depends')
+    TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
+    TEXT: "gcc-3.4 (<< 3.4.2)"
+    TEXT: "gcc-3.4-base"
+    TEXT: "libc6 (>= 2.3.2.ds1-4)"
+    TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
 
-  >>> print_relation('conflicts')
-  TEXT: "firefox"
-  TEXT: "mozilla-web-browser"
+    >>> print_relation('conflicts')
+    TEXT: "firefox"
+    TEXT: "mozilla-web-browser"
 
-  >>> print_relation('suggests')
-  TEXT: "firefox-gnome-support (= 1.0.7-0ubuntu20)"
-  TEXT: "latex-xft-fonts"
-  TEXT: "xprint"
+    >>> print_relation('suggests')
+    TEXT: "firefox-gnome-support (= 1.0.7-0ubuntu20)"
+    TEXT: "latex-xft-fonts"
+    TEXT: "xprint"
 
-  >>> print_relation('replaces')
-  TEXT: "gnome-mozilla-browser"
+    >>> print_relation('replaces')
+    TEXT: "gnome-mozilla-browser"
 
-  >>> print_relation('recommends')
-  TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
-  TEXT: "gcc-3.4 (<< 3.4.2)"
-  TEXT: "gcc-3.4-base"
-  TEXT: "libc6 (>= 2.3.2.ds1-4)"
-  TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
+    >>> print_relation('recommends')
+    TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
+    TEXT: "gcc-3.4 (<< 3.4.2)"
+    TEXT: "gcc-3.4-base"
+    TEXT: "libc6 (>= 2.3.2.ds1-4)"
+    TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
 
 Even when there is no information to present and the package control
 files don't contain the field, we still present the  corresponding
 relationship section.
 
-  >>> browser.open('http://launchpad.test/ubuntu/warty/i386/pmount/0.1-1')
-  >>> print_relation('predepends')
-  EMPTY SECTION
-
+    >>> browser.open('http://launchpad.test/ubuntu/warty/i386/pmount/0.1-1')
+    >>> print_relation('predepends')
+    EMPTY SECTION

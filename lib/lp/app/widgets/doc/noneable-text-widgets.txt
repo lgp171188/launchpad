@@ -1,10 +1,12 @@
-= Noneable widgets =
+Noneable widgets
+================
 
 In the spirit of Postel's Law, the Noneable widgets permits users to enter
 just whitespace, while ensuring that the schema's field value is None.
 
 
-== Noneable TextLine widget ==
+Noneable TextLine widget
+------------------------
 
 This custom widget is used to normalise the value of meaning less
 text value to None.
@@ -36,7 +38,8 @@ Excess whitespace and newlines are stripped.
     flower
 
 
-== Noneable Description widget ==
+Noneable Description widget
+---------------------------
 
 This custom widget is used to normalise the value of meaning less
 text value to None.

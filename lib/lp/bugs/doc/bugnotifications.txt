@@ -1,15 +1,18 @@
 
-= Bug notifications =
+Bug notifications
+=================
 
 
-== What is a bug notification? ==
+What is a bug notification?
+---------------------------
 
 A bug notification gets added when something interesting happens to the
 bug. It's stored in a a table, and later on a cronscript constructs an
 email and sends the notification to the bug's subscribers.
 
 
-== When do bug notifications get added? ==
+When do bug notifications get added?
+------------------------------------
 
 Not *every* change on a bug causes a notification to be added. This
 section will give a rundown of the things that do cause notifications to
@@ -21,7 +24,8 @@ Here are the things that cause bug notifications to be added and what
 those notifications look like.
 
 
-=== Reporting a new bug ===
+Reporting a new bug
+...................
 
     >>> from zope.event import notify
     >>> from lazr.lifecycle.event import ObjectCreatedEvent
@@ -63,7 +67,8 @@ bugactivity.txt, but for now here is a small demo.
     Sample Person
 
 
-=== Editing a bug report ===
+Editing a bug report
+....................
 
     >>> from lp.services.webapp.snapshot import notify_modified
 
@@ -88,7 +93,8 @@ bugactivity.txt, but for now here is a small demo.
     a new description
 
 
-=== Filing a new task on an existing bug ===
+Filing a new task on an existing bug
+....................................
 
 There are three kinds of tasks that can be added to an existing
 bug. Let's take a look at each type.
@@ -201,7 +207,8 @@ bug. Let's take a look at each type.
     ...
 
 
-=== Commenting on a bug report ===
+Commenting on a bug report
+..........................
 
     >>> from lp.bugs.interfaces.bugmessage import IBugMessageSet
 
@@ -223,7 +230,8 @@ bug. Let's take a look at each type.
     just a test comment
 
 
-=== Editing a task ===
+Editing a task
+..............
 
 Let's demonstrate a notification email where Sample Person marks a
 task Fixed, and assigns themselves to it.
@@ -265,7 +273,8 @@ task Fixed, and assigns themselves to it.
     ...
 
 
-=== Adding and editing a CVE reference ===
+Adding and editing a CVE reference
+..................................
 
 Adding a CVE reference to a bug also causes a notification email to go
 out to the bug notification recipient list. Let's create a CVE ref and
@@ -290,7 +299,8 @@ this document:
     ** CVE added: https://cve.mitre.org/cgi-bin/cvename.cgi?name=2004-0276
 
 
-=== Expiring notifications ===
+Expiring notifications
+......................
 
 During bulk imports or changes of bugs, we often want to suppress
 email notifications.  Due to the previous operation, there is a

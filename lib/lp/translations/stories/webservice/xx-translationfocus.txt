@@ -1,4 +1,5 @@
-= Translation focus =
+Translation focus
+=================
 
 The translation focus of a project is the series chosen as the preferred
 one to be translated. It's optional. When not set, Launchpad suggests

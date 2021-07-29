@@ -1,4 +1,5 @@
-= Launchpad's WADL caching =
+Launchpad's WADL caching
+========================
 
 Because Launchpad's main WADL files are so big, we cache them
 internally: one WADL file for every version of the web service.

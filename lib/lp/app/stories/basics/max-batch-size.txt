@@ -1,4 +1,5 @@
-= Invalid batch size =
+Invalid batch size
+==================
 
 To prevent users from exhausting server resources, pages that use
 batching have a maximum on the batch size. For example, requesting 1000

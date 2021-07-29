@@ -1,4 +1,5 @@
-= LoginToken pages =
+LoginToken pages
+================
 
 Users interact with login tokens for operations that require the user to prove
 they have access to a resource that is external to Launchpad. For example,
@@ -6,7 +7,8 @@ claiming an email address or a OpenPGP key require the user to use the login
 token sent to them in an email.
 
 
-== Validating GPG keys ==
+Validating GPG keys
+-------------------
 
 In order to add a GPG key to Launchpad we require that the person
 registering it decrypt an email and follow the instructions in it.

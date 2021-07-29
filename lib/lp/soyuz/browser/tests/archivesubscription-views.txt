@@ -169,7 +169,8 @@ So we try again with an expiry date in the future:
     Launchpad Developers
     Andrew Bennetts
 
-== ArchiveSubscriptionEditView ==
+ArchiveSubscriptionEditView
+---------------------------
 
 The ArchiveSubsriptionEditView includes a view label for the views main
 title.
@@ -312,7 +313,8 @@ Just deactivate the new token again for the remaining tests.
     >>> new_token.deactivate()
 
 
-== PersonArchiveSubscription View ==
+PersonArchiveSubscription View
+------------------------------
 
 This view displays a single subscription of a person, as well as the
 corresponding token information.

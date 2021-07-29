@@ -44,7 +44,7 @@ because our cheat objects don't match the app-encoded business logic.
 
 from __future__ import absolute_import, print_function
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from inspect import getmro
 import os
@@ -114,7 +114,6 @@ def has_page_title(a):
     template = get_template_filename(view)
     if template is None:
         return False
-    name = os.path.splitext(os.path.basename(template))[0].replace('-', '_')
     if (getattr(view, 'page_title', marker) is marker):
         return False
     return has_html_element(template)

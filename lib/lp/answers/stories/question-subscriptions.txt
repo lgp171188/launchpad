@@ -1,10 +1,12 @@
-= Question Subscriptions =
+Question Subscriptions
+======================
 
 Users can subscribe to specific questions. When they are subscribed they
 will receive notifications for any changes to the question.
 
 
-== Subscribing ==
+Subscribing
+-----------
 
 To subscribe, users use the 'Subscribe' link and then confirm that
 they want to subscribe by clicking on the 'Subscribe' button. The user
@@ -27,7 +29,8 @@ A message confirming that they were subscribed is displayed:
     You have subscribed to this question.
 
 
-== Unsubscribing ==
+Unsubscribing
+-------------
 
 When the user is subscribed to the question, the 'Subscribe' link
 becomes an 'Unsubscribe' link. To unsubscribe, the user follows that
@@ -49,7 +52,8 @@ A confirmation is displayed:
     You have unsubscribed from this question.
 
 
-== Subscribing While Posting A Message ==
+Subscribing While Posting A Message
+-----------------------------------
 
 It is also possible to subscribe at the same time than posting a message
 on an existing question. The user can simply check the 'Email me future

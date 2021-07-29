@@ -1,13 +1,15 @@
 
-= Featured Projects =
+Featured Projects
+=================
 
 We maintain a list of featured projects, which are displayed on the home
 page and managed via a special admin-only page.
 
-   >>> MANAGE_LINK = "Manage featured project list"
+    >>> MANAGE_LINK = "Manage featured project list"
 
 
-== The home page listing ==
+The home page listing
+---------------------
 
 Featured projects are visible to everyone on the home page. One poject is
 featured as "project of the day" depending on the current day. As we do not
@@ -44,7 +46,8 @@ projects' pages in Launchpad. The "project of the day" is listed separately.
     Mozilla Thunderbird
     Ubuntu
 
-== Adding a featured project ==
+Adding a featured project
+-------------------------
 
 Anonymous users cannot see the link to administer featured projects:
 
@@ -112,7 +115,8 @@ is now at index '4' and is therefore displayed as the top project:
     Mozilla Thunderbird
     Ubuntu
 
-== Removing a project ==
+Removing a project
+------------------
 
     >>> admin_browser.getLink(MANAGE_LINK).click()
     >>> admin_browser.getControl('Apache').click()

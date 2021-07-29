@@ -1,4 +1,5 @@
-= DecoratedResultSet =
+DecoratedResultSet
+==================
 
 Within Launchpad we often want to return related data for a ResultSet
 but not have every call site know how that data is structured - they
@@ -22,7 +23,8 @@ First, we'll create the un-decorated result set of all distributions:
     >>> from lp.registry.model.distribution import Distribution
     >>> result_set = store.find(Distribution)
 
-== Creating the decorator function ==
+Creating the decorator function
+-------------------------------
 
 We create a decorator function that we want to be applied to any
 results obtained from our undecorated result set. For instance,
@@ -31,7 +33,8 @@ we can turn a model object into a string:
     >>> def result_decorator(distribution):
     ...     return "Dist name is: %s" % distribution.name
 
-== Creating the DecoratedResultSet ==
+Creating the DecoratedResultSet
+-------------------------------
 
 The original result set and the decorator function are then used to
 create the decorated result set:
@@ -42,7 +45,8 @@ create the decorated result set:
     ...     result_decorator)
 
 
-== Using the DecoratedResultSet ==
+Using the DecoratedResultSet
+----------------------------
 
 The DecoratedResultSet implements the normal ResultSet interface (by
 definition), so all the normal methods can be used. Iterating over the
@@ -96,7 +100,8 @@ just work like normally:
     >>> decorated_result_set.max(Distribution.id)
     8
 
-== The patched count() method ==
+The patched count() method
+--------------------------
 
 There was a bug in the Storm API whereby calling count (or other aggregates)
 on a storm ResultSet does not respect the distinct
@@ -125,7 +130,8 @@ But this bug appears to be fixed, so we no longer override count():
     14
 
 
-== Bulk operations ==
+Bulk operations
+---------------
 
 Views or API calls often need to perform operations that are expensive
 when performed separately on each record. DecoratedResultSet's
@@ -184,7 +190,8 @@ ignored in favour of the original results.
      decorated result: 8
 
 
-== Calculating row numbers ==
+Calculating row numbers
+-----------------------
 
 DecoratedResultSet can inform its hooks about slice data if slice_info=True is
 passed.

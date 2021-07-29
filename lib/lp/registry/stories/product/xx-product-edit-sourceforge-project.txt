@@ -1,4 +1,5 @@
-== Editing the SourceForge project ==
+Editing the SourceForge project
+-------------------------------
 
 The setting of the SourceForge project is constrained.
 

@@ -680,8 +680,8 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             oci_project=oci_project, registrant=owner)
 
         self.assertRaises(
-            OCIProjectRecipeInvalid, another_oci_project.setOfficialRecipeStatus,
-            recipe, True)
+            OCIProjectRecipeInvalid,
+            another_oci_project.setOfficialRecipeStatus, recipe, True)
 
     def test_permission_check_on_setOfficialRecipe(self):
         distro = self.factory.makeDistribution()

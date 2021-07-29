@@ -1,4 +1,5 @@
-= Editing a poll =
+Editing a poll
+==============
 
 All attributes of a poll can be changed as long as the poll has not opened
 yet.

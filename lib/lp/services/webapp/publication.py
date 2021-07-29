@@ -429,19 +429,17 @@ class LaunchpadBrowserPublication(
     def callObject(self, request, ob):
         """See `zope.publisher.interfaces.IPublication`.
 
-        Our implementation make sure that no result is returned on
+        Our implementation makes sure that no result is returned on
         redirect.
 
-        It also sets the launchpad.userid and launchpad.pageid WSGI
-        environment variables.
+        It also sets the launchpad.pageid WSGI environment variable, and
+        ensures that the userid and pageid are logged.
         """
         request._publication_start = time.time()
         request._publication_thread_start = _get_thread_time()
         if request.response.getStatus() in [301, 302, 303, 307]:
             return ''
 
-        request.setInWSGIEnvironment(
-            'launchpad.userid', request.principal.id)
         logging_context.push(userid=request.principal.id)
 
         # pageid is calculated at `afterTraversal`, but can be missing
@@ -497,14 +495,9 @@ class LaunchpadBrowserPublication(
                 _get_thread_time() - request._publication_thread_start)
         else:
             publication_thread_duration = None
-        request.setInWSGIEnvironment(
-            'launchpad.publicationduration', publication_duration)
         logging_context.push(
             publication_duration_ms=round(publication_duration * 1000, 3))
         if publication_thread_duration is not None:
-            request.setInWSGIEnvironment(
-                'launchpad.publicationthreadduration',
-                publication_thread_duration)
             logging_context.push(
                 publication_thread_duration_ms=round(
                     publication_thread_duration * 1000, 3))
@@ -610,15 +603,11 @@ class LaunchpadBrowserPublication(
             'request._traversal_start, which should have been set by '
             'beforeTraversal(), was not found.')
         traversal_duration = time.time() - request._traversal_start
-        request.setInWSGIEnvironment(
-            'launchpad.traversalduration', traversal_duration)
         logging_context.push(
             traversal_duration_ms=round(traversal_duration * 1000, 3))
         if request._traversal_thread_start is not None:
             traversal_thread_duration = (
                 _get_thread_time() - request._traversal_thread_start)
-            request.setInWSGIEnvironment(
-                'launchpad.traversalthreadduration', traversal_thread_duration)
             logging_context.push(
                 traversal_thread_duration_ms=round(
                     traversal_thread_duration * 1000, 3))
@@ -648,22 +637,17 @@ class LaunchpadBrowserPublication(
         now = time.time()
         thread_now = _get_thread_time()
         if (hasattr(request, '_publication_start') and
-            ('launchpad.publicationduration' not in orig_env)):
+                'publication_duration_ms' not in logging_context.flat):
             # The traversal process has been started but hasn't completed.
-            assert 'launchpad.traversalduration' in orig_env, (
+            assert 'traversal_duration_ms' in logging_context.flat, (
                 'We reached the publication process so we must have finished '
                 'the traversal.')
             publication_duration = now - request._publication_start
-            request.setInWSGIEnvironment(
-                'launchpad.publicationduration', publication_duration)
             logging_context.push(
                 publication_duration_ms=round(publication_duration * 1000, 3))
             if thread_now is not None:
                 publication_thread_duration = (
                     thread_now - request._publication_thread_start)
-                request.setInWSGIEnvironment(
-                    'launchpad.publicationthreadduration',
-                    publication_thread_duration)
                 logging_context.push(
                     publication_thread_duration_ms=round(
                         publication_thread_duration * 1000, 3))
@@ -676,19 +660,14 @@ class LaunchpadBrowserPublication(
                         request._orig_env.get('launchpad.pageid')),
                     })
         elif (hasattr(request, '_traversal_start') and
-              ('launchpad.traversalduration' not in orig_env)):
+              'traversal_duration_ms' not in logging_context.flat):
             # The traversal process has been started but hasn't completed.
             traversal_duration = now - request._traversal_start
-            request.setInWSGIEnvironment(
-                'launchpad.traversalduration', traversal_duration)
             logging_context.push(
                 traversal_duration_ms=round(traversal_duration * 1000, 3))
             if thread_now is not None:
                 traversal_thread_duration = (
                     thread_now - request._traversal_thread_start)
-                request.setInWSGIEnvironment(
-                    'launchpad.traversalthreadduration',
-                    traversal_thread_duration)
                 logging_context.push(
                     traversal_thread_duration_ms=round(
                         traversal_thread_duration * 1000, 3))
@@ -758,12 +737,6 @@ class LaunchpadBrowserPublication(
         # is a normal part of operation.
         if should_retry(exc_info):
             if request.supportsRetry():
-                # Remove variables used for counting publication/traversal
-                # durations as this request is going to be retried.
-                orig_env.pop('launchpad.traversalduration', None)
-                orig_env.pop('launchpad.traversalthreadduration', None)
-                orig_env.pop('launchpad.publicationduration', None)
-                orig_env.pop('launchpad.publicationthreadduration', None)
                 # If we made it as far as beforeTraversal, then unwind the
                 # Talisker logging context to its state on entering that
                 # method.

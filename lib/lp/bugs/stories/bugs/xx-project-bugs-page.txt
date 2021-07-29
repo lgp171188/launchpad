@@ -1,4 +1,5 @@
-= The ProjectGroup Bugs Page =
+The ProjectGroup Bugs Page
+==========================
 
 The default page for a ProjectGroup on the bugs domain shows the bug listing
 for the ProjectGroup.

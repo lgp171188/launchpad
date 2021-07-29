@@ -1,4 +1,5 @@
-= A person's +editlanguages page =
+A person's +editlanguages page
+==============================
 
 Carlos is a translator who translates things into Spanish with Rosetta.
 He comes to the main Translations page and wants to change his preferred
@@ -141,7 +142,8 @@ page.
     'http://launchpad.test/~name12/+editlanguages'
 
 
-== Adding languages to teams ==
+Adding languages to teams
+-------------------------
 
 Team admins may set their team's preferred languages to select the
 which languages they support in the Answer Tracker. Sample Person
@@ -165,7 +167,8 @@ preferred languages.
     Added Spanish to Landscape Developers's preferred languages.
 
 
-== Admins may set a Person's languages ==
+Admins may set a Person's languages
+-----------------------------------
 
 Admins can change a user's language settings if needed. Foo Bar, a
 Launchpad Admin has a question from No Privileges Person claiming that

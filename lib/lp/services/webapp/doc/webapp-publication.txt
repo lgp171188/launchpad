@@ -638,8 +638,8 @@ Durations
 ---------
 
 Similarly to our page IDs, our publication implementation will store the
-durations for the traversal and object publication processes in WSGI
-variables which aren't set originally.
+durations for the traversal and object publication processes in the Talisker
+logging context.
 
     >>> import time
     >>> _ = Context.new()
@@ -649,28 +649,17 @@ variables which aren't set originally.
 
 For traversal we start counting the duration during the beforeTraversal()
 hook and stop the count in afterTraversal().  The duration is then available
-as launchpad.traversalduration in the WSGI environment.  On Python >= 3.3,
-there is also launchpad.traversalthreadduration with the time spent in the
+as traversal_duration_ms in the Talisker logging context.  On Python >= 3.3,
+there is also traversal_thread_duration_ms with the time spent in the
 current thread.
 
-    >>> 'launchpad.traversalduration' in request._orig_env
-    False
     >>> 'traversal_duration_ms' in logging_context.flat
-    False
-    >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
     >>> 'traversal_thread_duration_ms' in logging_context.flat
     False
     >>> publication.beforeTraversal(request)
     >>> publication.afterTraversal(request, None)
-    >>> 'launchpad.traversalduration' in request._orig_env
-    True
     >>> 'traversal_duration_ms' in logging_context.flat
-    True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'launchpad.traversalthreadduration' in request._orig_env
-    ... else:
-    ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'traversal_thread_duration_ms' in logging_context.flat
@@ -680,15 +669,11 @@ current thread.
 
 For publication we start counting the duration during the callObject()
 hook and stop the count in afterCall().  The duration is then available as
-launchpad.publicationduration in the WSGI environment.  On Python >= 3.3,
-there is also launchpad.publicationthreadduration with the time spent in the
+publication_duration_ms in the Talisker logging context.  On Python >= 3.3,
+there is also publication_thread_duration_ms with the time spent in the
 current thread.
 
-    >>> 'launchpad.publicationduration' in request._orig_env
-    False
     >>> 'publication_duration_ms' in logging_context.flat
-    False
-    >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
     >>> 'publication_thread_duration_ms' in logging_context.flat
     False
@@ -696,14 +681,7 @@ current thread.
     ...     request, TestView(TestContext(), request)))
     Result
     >>> publication.afterCall(request, None)
-    >>> 'launchpad.publicationduration' in request._orig_env
-    True
     >>> 'publication_duration_ms' in logging_context.flat
-    True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'launchpad.publicationthreadduration' in request._orig_env
-    ... else:
-    ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'publication_thread_duration_ms' in logging_context.flat
@@ -733,19 +711,11 @@ there's nothing to store.
     >>> set_request_started()
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=False)
-    >>> 'launchpad.traversalduration' in request._orig_env
-    False
     >>> 'traversal_duration_ms' in logging_context.flat
-    False
-    >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
     >>> 'traversal_thread_duration_ms' in logging_context.flat
     False
-    >>> 'launchpad.publicationduration' in request._orig_env
-    False
     >>> 'publication_duration_ms' in logging_context.flat
-    False
-    >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
     >>> 'publication_thread_duration_ms' in logging_context.flat
     False
@@ -757,25 +727,14 @@ the duration for the traversal and not for the publication.
     >>> publication.beforeTraversal(request)
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=False)
-    >>> 'launchpad.traversalduration' in request._orig_env
-    True
     >>> 'traversal_duration_ms' in logging_context.flat
-    True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'launchpad.traversalthreadduration' in request._orig_env
-    ... else:
-    ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'traversal_thread_duration_ms' in logging_context.flat
     ... else:
     ...     True
     True
-    >>> 'launchpad.publicationduration' in request._orig_env
-    False
     >>> 'publication_duration_ms' in logging_context.flat
-    False
-    >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
     >>> 'publication_thread_duration_ms' in logging_context.flat
     False
@@ -792,28 +751,14 @@ the publication, up to the point where it was forcefully stopped.
     >>> set_request_started()
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=False)
-    >>> 'launchpad.traversalduration' in request._orig_env
-    True
     >>> 'traversal_duration_ms' in logging_context.flat
-    True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'launchpad.traversalthreadduration' in request._orig_env
-    ... else:
-    ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'traversal_thread_duration_ms' in logging_context.flat
     ... else:
     ...     True
     True
-    >>> 'launchpad.publicationduration' in request._orig_env
-    True
     >>> 'publication_duration_ms' in logging_context.flat
-    True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'launchpad.publicationthreadduration' in request._orig_env
-    ... else:
-    ...     True
     True
     >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
     ...     'publication_thread_duration_ms' in logging_context.flat
@@ -833,10 +778,6 @@ the Talisker logging context.
     >>> request, publication = get_request_and_publication()
     >>> publication.initializeLoggingContext(request)
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
-    >>> request._orig_env['launchpad.traversalduration'] = 0.5
-    >>> request._orig_env['launchpad.traversalthreadduration'] = 0.4
-    >>> request._orig_env['launchpad.publicationduration'] = 0.5
-    >>> request._orig_env['launchpad.publicationthreadduration'] = 0.4
     >>> _ = logging_context.push(
     ...     traversal_duration_ms=500, traversal_thread_duration_ms=400,
     ...     publication_duration_ms=500, publication_thread_duration_ms=400)
@@ -854,19 +795,11 @@ the Talisker logging context.
     ...
     zope.publisher.interfaces.Retry: foo
 
-    >>> 'launchpad.publicationduration' in request._orig_env
-    False
     >>> 'publication_duration_ms' in logging_context.flat
-    False
-    >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
     >>> 'publication_thread_duration_ms' in logging_context.flat
     False
-    >>> 'launchpad.traversalduration' in request._orig_env
-    False
     >>> 'traversal_duration_ms' in logging_context.flat
-    False
-    >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
     >>> 'traversal_thread_duration_ms' in logging_context.flat
     False
@@ -875,10 +808,6 @@ the Talisker logging context.
     >>> request, publication = get_request_and_publication()
     >>> publication.initializeLoggingContext(request)
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
-    >>> request._orig_env['launchpad.traversalduration'] = 0.5
-    >>> request._orig_env['launchpad.traversalthreadduration'] = 0.4
-    >>> request._orig_env['launchpad.publicationduration'] = 0.5
-    >>> request._orig_env['launchpad.publicationthreadduration'] = 0.4
     >>> _ = logging_context.push(
     ...     traversal_duration_ms=500, traversal_thread_duration_ms=400,
     ...     publication_duration_ms=500, publication_thread_duration_ms=400)
@@ -896,19 +825,11 @@ the Talisker logging context.
     ...
     zope.publisher.interfaces.Retry: foo DisconnectionError
 
-    >>> 'launchpad.publicationduration' in request._orig_env
-    False
     >>> 'publication_duration_ms' in logging_context.flat
     False
     >>> 'publication_thread_duration_ms' in logging_context.flat
     False
-    >>> 'launchpad.publicationthreadduration' in request._orig_env
-    False
-    >>> 'launchpad.traversalduration' in request._orig_env
-    False
     >>> 'traversal_duration_ms' in logging_context.flat
-    False
-    >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
     >>> 'traversal_thread_duration_ms' in logging_context.flat
     False
@@ -921,10 +842,6 @@ WSGI env.
     >>> request, publication = get_request_and_publication()
     >>> publication.initializeLoggingContext(request)
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
-    >>> request._orig_env['launchpad.traversalduration'] = 0.5
-    >>> request._orig_env['launchpad.traversalthreadduration'] = 0.4
-    >>> request._orig_env['launchpad.publicationduration'] = 0.5
-    >>> request._orig_env['launchpad.publicationthreadduration'] = 0.4
     >>> _ = logging_context.push(
     ...     traversal_duration_ms=500, traversal_thread_duration_ms=400,
     ...     publication_duration_ms=500, publication_thread_duration_ms=400)
@@ -942,20 +859,12 @@ WSGI env.
     ...
     zope.publisher.interfaces.Retry: foo
 
-    >>> request._orig_env['launchpad.publicationduration']
-    0.5
     >>> logging_context.flat['publication_duration_ms']
     500
-    >>> request._orig_env['launchpad.publicationthreadduration']
-    0.4
     >>> logging_context.flat['publication_thread_duration_ms']
     400
-    >>> request._orig_env['launchpad.traversalduration']
-    0.5
     >>> logging_context.flat['traversal_duration_ms']
     500
-    >>> request._orig_env['launchpad.traversalthreadduration']
-    0.4
     >>> logging_context.flat['traversal_thread_duration_ms']
     400
 

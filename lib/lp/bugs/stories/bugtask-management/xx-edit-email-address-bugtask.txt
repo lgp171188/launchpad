@@ -1,4 +1,5 @@
-= Editing Email Address bugtasks =
+Editing Email Address bugtasks
+==============================
 
     >>> import transaction
     >>> from zope.component import getUtility
@@ -34,7 +35,8 @@
     ...     print('Status: %s\nImportance: %s' % (status, importance))
 
 
-== "Normal" (not Email Address) bugtasks ==
+"Normal" (not Email Address) bugtasks
+-------------------------------------
 
 Normally, it's not possible to edit the status or importance of a
 bugtask associated with a bugwatch that is linked to an external bug
@@ -95,7 +97,8 @@ And the bug supervisor can't see the widgets either.
     Importance: False
 
 
-== Email Address bugtasks ==
+Email Address bugtasks
+----------------------
 
 The status and importance of a bugtask with an email address bugwatch
 will be editable.

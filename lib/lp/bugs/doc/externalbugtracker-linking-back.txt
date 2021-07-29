@@ -1,4 +1,5 @@
-= Remote bugs linking back to Launchpad =
+Remote bugs linking back to Launchpad
+=====================================
 
 Some bug trackers support linking back to bugs in Launchpad. This way we
 can tell external bug trackers that we're watching the bug, and make it
@@ -69,7 +70,8 @@ be related to a bug task, not just a bug.
     ...     external_bugtracker, [bug_watch_without_bugtask])
 
 
-== BugWatchUpdater.linkLaunchpadBug() ==
+BugWatchUpdater.linkLaunchpadBug()
+----------------------------------
 
 The BugWatchUpdater method that does the work of setting the Launchpad
 bug link is linkLaunchpadBug(). This method first retrieves the

@@ -1,4 +1,5 @@
-= HTML Feeds =
+HTML Feeds
+==========
 
 HTML feeds produce snippets of html for inclusion in user's own web pages.
 The content of an HTML feed is very similar to an Atom feed, but is formatted
@@ -40,7 +41,8 @@ And two for printing the results:
     ...     return bug_numbers
 
 
-== Latest bugs for a product ==
+Latest bugs for a product
+-------------------------
 
 This feed gets the latest bugs reported against a product. The feed includes
 summary information about the bugs such as ID, title, author, and a link to
@@ -67,7 +69,8 @@ the bug itself.
     >>> get_bug_numbers(entries)
     [12, 11]
 
-== Latest bugs for a project ==
+Latest bugs for a project
+-------------------------
 
 This feed gets the latest bugs for a project, and has the same type of content
 as the latest bugs feed for a product.
@@ -93,7 +96,8 @@ as the latest bugs feed for a product.
     >>> get_bug_numbers(entries)
     [15, 15, 9, 9, 5, 5, 5, 4, 1, 1, 1]
 
-=== Private teams as assignees ===
+Private teams as assignees
+..........................
 
 Create a private team and assign a mozilla bug to that team.
 
@@ -121,7 +125,8 @@ Get the mozilla/latest-bugs feed. The previous bug should be included.
     >>> get_bug_numbers(entries)
     [15, 15, 9, 9, 5, 5, 5, 4, 1, 1, 1]
 
-== Latest bugs for a person ==
+Latest bugs for a person
+------------------------
 
 This feed gets the latest bugs for a person.
 
@@ -147,7 +152,8 @@ This feed gets the latest bugs for a person.
     [15, 15, 12, 11, 10, 9, 9, 7, 7, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1]
 
 
-== Latest bugs for any target ==
+Latest bugs for any target
+--------------------------
 
 This feed gets the latest bugs reported against any target.
 
@@ -174,7 +180,8 @@ This feed gets the latest bugs reported against any target.
      2, 1, 1, 1]
 
 
-== General bug search ==
+General bug search
+------------------
 
 This feed is the most useful of them all. Any bug search can be turned into
 a feed.
@@ -186,7 +193,6 @@ a feed.
 The bug search feed is not enabled by default since it may represent a
 performance problem in production.
 
-    >>> from zope.security.interfaces import Unauthorized
     >>> from lp.services.config import config
     >>> config.launchpad.is_bug_search_feed_active
     True

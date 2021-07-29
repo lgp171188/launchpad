@@ -9,7 +9,7 @@ This script sets the remote_product string value on Launchpad Products
 by looking it up from one of the product's bug watches.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import time
 

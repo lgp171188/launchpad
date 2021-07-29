@@ -5,7 +5,7 @@
 
 """Simple tool to upload arbitrary files into Librarian."""
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 import logging
 import os

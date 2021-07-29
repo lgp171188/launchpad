@@ -23,9 +23,9 @@ import sys
 import webbrowser
 
 from pytz import utc
-from storm.expr import *
+from storm.expr import *  # noqa: F401,F403
 # Bring in useful bits of Storm.
-from storm.locals import *
+from storm.locals import *  # noqa: F401,F403
 import transaction
 from zope.component import getUtility
 from zope.interface.verify import verifyObject

@@ -263,7 +263,8 @@ class DistributionSourcePackage(BugTargetBase,
                 self.distribution.all_distro_archive_ids),
             SourcePackagePublishingHistory.sourcepackagerelease ==
                 SourcePackageRelease.id,
-            SourcePackagePublishingHistory.sourcepackagename == self.sourcepackagename,
+            SourcePackagePublishingHistory.sourcepackagename ==
+                self.sourcepackagename,
             SourcePackageRelease.sourcepackagename == self.sourcepackagename,
             Cast(SourcePackageRelease.version, "text") ==
                 six.ensure_text(version),

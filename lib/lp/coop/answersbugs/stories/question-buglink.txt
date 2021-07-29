@@ -1,9 +1,11 @@
-= Bug Links =
+Bug Links
+=========
 
 Questions can be linked to bugs. A user should do that when the problem
 exposed in the question is related to a bug report.
 
-== Adding Links ==
+Adding Links
+------------
 
 Question #2 in firefox is about a user which has trouble displaying the
 SVG demo on the W3C site. There is an existing Launchpad bug report (#1)
@@ -63,7 +65,8 @@ A notification is also displayed.
     Added link to bug #1: ...Firefox does not support SVG...
 
 
-== Removing Links ==
+Removing Links
+--------------
 
 To remove bug links, the user uses the 'Remove Bug Link' action.
 
@@ -90,7 +93,8 @@ message is displayed:
     Related bugs
 
 
-== Link to Private Bugs ==
+Link to Private Bugs
+--------------------
 
     # Let's mark bug #6 as private and only accessible by an
     # administrator.

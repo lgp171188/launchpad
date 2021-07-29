@@ -1,4 +1,5 @@
-= Build files =
+Build files
+===========
 
 Create a test build.
 

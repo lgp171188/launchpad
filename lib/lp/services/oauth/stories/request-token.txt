@@ -1,4 +1,5 @@
-= Asking for a request token =
+Asking for a request token
+==========================
 
 Our sample consumer (whose key is 'foobar123451432') asks Launchpad for
 a request token which may later be exchanged for an access token.

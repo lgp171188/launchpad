@@ -30,7 +30,7 @@ from launchpad_loggerhead.app import (
     )
 from launchpad_loggerhead.revision import RevisionHeaderHandler
 from launchpad_loggerhead.session import SessionHandler
-import lp.codehosting
+import lp.codehosting  # noqa: F401
 from lp.services.config import config
 from lp.services.pidfile import (
     pidfile_path,

@@ -1,10 +1,12 @@
-= Editing Bug Tasks =
+Editing Bug Tasks
+=================
 
 A bugtask's status, assignee, package name, milestone, etc., can be
 modified on its +editstatus page.
 
 
-== Edit the Status ==
+Edit the Status
+---------------
 
 Let's start simple and edit the status of a bug task logged in as Sample
 Person:
@@ -33,7 +35,8 @@ Person:
     'In Progress'
 
 
-== Edit the Package ==
+Edit the Package
+----------------
 
 When editing the package of a distribution task, the user may enter
 either a binary or a source package name. We only deal with bugs on
@@ -91,7 +94,8 @@ exist in Launchpad. we'll get an error message.
 An error is reported to the user when a bug is retargeted and there is
 an existing task for the same target.
 
-== Edit the Product ==
+Edit the Product
+----------------
 
 +editstatus allows a bug to be retargeted to another product.
 
@@ -141,7 +145,8 @@ If no product name is given, an error message is displayed.
     ('product', 'Project', RequiredMissing('product'))
 
 
-== Bug Watch Linkage ==
+Bug Watch Linkage
+-----------------
 
 Let's edit a bugtask which is linked to a remote bug. The most
 important thing to edit is the bug watch, since it controls the status
@@ -204,7 +209,8 @@ set to their default values:
     True
 
 
-== Milestone Editing Permissions ==
+Milestone Editing Permissions
+-----------------------------
 
 A milestone can be edited only by a user with launchpad.Edit permissions
 on the distribution or product context. When the user has this

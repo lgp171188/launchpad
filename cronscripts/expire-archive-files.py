@@ -7,7 +7,7 @@
 # are older than 30 days.  It's done with pure SQL rather than Python
 # for speed reasons.
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.services.config import config
 from lp.soyuz.scripts.expire_archive_files import ArchiveExpirer

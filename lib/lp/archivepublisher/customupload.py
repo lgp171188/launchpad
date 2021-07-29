@@ -27,7 +27,9 @@ from lp.archivepublisher.debversion import (
     Version as make_version,
     VersionError,
     )
-from lp.archivepublisher.interfaces.archivegpgsigningkey import ISignableArchive
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    ISignableArchive,
+    )
 from lp.services.librarian.utils import copy_and_close
 from lp.soyuz.interfaces.queue import (
     CustomUploadError,

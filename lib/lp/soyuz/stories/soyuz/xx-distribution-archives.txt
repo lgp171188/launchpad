@@ -1,4 +1,5 @@
-= Ubuntu (copy) archives =
+Ubuntu (copy) archives
+======================
 
 First create a copy archive for us to see:
 

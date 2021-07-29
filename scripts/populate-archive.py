@@ -9,7 +9,7 @@
     the script will abort with an error.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.services.config import config
 from lp.soyuz.scripts.populate_archive import ArchivePopulator

@@ -1,4 +1,5 @@
-= Voting on polls =
+Voting on polls
+===============
 
 Foo Bar (a member of the ubuntu-team) wants to vote on the 'never-closes'
 poll, which is a poll with secret votes, which means they'll get a token
@@ -99,7 +100,8 @@ yet.
     ...
 
 
-== No permission to vote ==
+No permission to vote
+---------------------
 
 Only members of a given team can vote on that team's polls. Other users can't,
 even if they guess the URL for the voting page.
@@ -114,7 +116,8 @@ even if they guess the URL for the voting page.
     You can’t vote in this poll because you’re not a member of Ubuntu Team.
 
 
-== Closed polls ==
+Closed polls
+------------
 
 It's not possible to vote on closed polls, even if we manually craft the URL.
 

@@ -1,4 +1,5 @@
-= Propose/add your teams as member of another one =
+Propose/add your teams as member of another one
+===============================================
 
 Any team administrator is allowed to propose/add (depending on the
 membership policy) their teams as members of another team.

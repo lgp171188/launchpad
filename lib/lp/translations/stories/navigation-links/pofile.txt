@@ -1,4 +1,5 @@
-= Pofile menus =
+Pofile menus
+============
 
 IPOFile objects have IProductSeries or ISourcePackage as its direct
 structural object.

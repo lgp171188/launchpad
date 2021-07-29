@@ -1,4 +1,5 @@
-= Translation Access Display =
+Translation Access Display
+==========================
 
 Ed Minh, an administrator, visits a translation page for Evolution.  The
 page tells him what translation team is responsible for maintaining that
@@ -31,7 +32,8 @@ and reviewer working mode.
     >>> switch_working_mode is not None
     True
 
-== Displaying translation groups and reviewers ==
+Displaying translation groups and reviewers
+-------------------------------------------
 
 Evolution is part of the Gnome project group, and when Gnome sets a
 translation group of its own, that too is shown here.
@@ -93,7 +95,8 @@ If no translation group is assigned, the page also mentions that.
     >>> evolution.translationgroup = original_translation_group
 
 
-== Displaying access privileges ==
+Displaying access privileges
+----------------------------
 
 Ann Ominous is not logged in.  She visits the same translation and sees
 the same information, except she's not allowed to enter anything.

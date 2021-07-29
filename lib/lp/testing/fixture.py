@@ -33,11 +33,7 @@ from zope.component import (
     adapter,
     getGlobalSiteManager,
     )
-from zope.interface import (
-    implementedBy,
-    Interface,
-    )
-from zope.interface.interfaces import ISpecification
+from zope.interface import Interface
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope.security.checker import (
     defineChecker,

@@ -1,4 +1,5 @@
-= Notification Text Escaping =
+Notification Text Escaping
+==========================
 
 There are a number of user actions that may generate on-screen
 notifications, such as moving a bug or deleting a branch.  Some of

@@ -1,4 +1,5 @@
-= PersonRoles =
+PersonRoles
+===========
 
 To make it more convenient to check which roles a person has,
 the IPersonRoles adapter is provided. It's main use is to easily check if a
@@ -17,7 +18,8 @@ PersonRoles is most prominent in AuthenticationBase in security.py. The user
 parameter to checkAuthenticated is a PersonRoles object (was a Person object).
 
 
-== The person object and the adapter ==
+The person object and the adapter
+---------------------------------
 
 PersonRoles is registered as an unnamed adapter for IPersonRoles.
 
@@ -33,7 +35,8 @@ The original Person object can be reached through the person attribute.
     True
 
 
-== Celebrity persons ==
+Celebrity persons
+-----------------
 
 There are a number of celebrity persons defined in ILaunchpadCelebrities.
 PersonRoles has a corresponding attribute of the same name prefixed with
@@ -73,7 +76,8 @@ attribute names in IPersonRoles.
     True
 
 
-== inTeam ==
+inTeam
+------
 
 The Person.inTeam method is available directly through PersonRoles. This can
 be used to check for any non-celebrity team.
@@ -88,7 +92,8 @@ be used to check for any non-celebrity team.
     True
 
 
-== isOwner, isDriver ==
+isOwner, isDriver
+-----------------
 
 We can easily check for ownership and drivership. If an object
 provides IHasDrivers, its ancestors' drivers will be checked too.
@@ -109,7 +114,8 @@ provides IHasDrivers, its ancestors' drivers will be checked too.
     True
 
 
-== isOneOf ==
+isOneOf
+-------
 
 Finally, sometimes a person may be one of multiple roles for an object. The
 method isOneOf makes checking all of these a breeze.

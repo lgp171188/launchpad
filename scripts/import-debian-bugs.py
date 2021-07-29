@@ -11,7 +11,7 @@ Launchpad, with the real Debian bug linked as a bug watch.
 An Ubuntu task will be created for each imported bug.
 """
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.bugs.scripts.importdebianbugs import import_debian_bugs
 from lp.services.config import config

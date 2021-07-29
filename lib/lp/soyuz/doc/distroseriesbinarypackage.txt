@@ -1,4 +1,5 @@
-= Distro Series Binary Packages =
+Distro Series Binary Packages
+=============================
 
 A DistroSeriesBinaryPackage is really a BinaryPackageName for a particular
 DistroSeries. That is, it doesn't represent a particular package release or

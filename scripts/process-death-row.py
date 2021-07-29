@@ -21,7 +21,7 @@ the archive tree.
 There is also a 'dry-run' mode that can be used to operate on the real
 archive tree without removing the files.
 """
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.processdeathrow import DeathRowProcessor
 

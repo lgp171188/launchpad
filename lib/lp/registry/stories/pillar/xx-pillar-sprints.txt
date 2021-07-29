@@ -1,4 +1,5 @@
-= Sprints relevant for pillars =
+Sprints relevant for pillars
+============================
 
 For Products, ProjectGroups and Distributions, we have a +sprints page which lists
 all events relevant to that pillar.

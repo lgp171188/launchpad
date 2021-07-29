@@ -16,7 +16,7 @@ Don't run this on any production systems.
 __metaclass__ = type
 __all__ = []
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from optparse import OptionParser
 import sys

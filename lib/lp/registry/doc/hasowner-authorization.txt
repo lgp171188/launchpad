@@ -1,4 +1,5 @@
-= IHasOwner =
+IHasOwner
+=========
 
 Objects which provide that interface can only be changed by the owner
 itself or a Launchpad admin.

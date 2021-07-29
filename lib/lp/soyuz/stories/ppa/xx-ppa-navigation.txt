@@ -1,4 +1,5 @@
-== Navigating a PPA ==
+Navigating a PPA
+----------------
 
 If a user has lp.Edit or lp.View on any PPAs, they are accessible from the
 user's page in a section titled "Personal package archives".  If not, then

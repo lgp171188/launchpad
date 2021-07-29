@@ -1,4 +1,5 @@
-== Package Diff ==
+Package Diff
+------------
 
 'Available diffs' page section is only presented when there is, at
 least, one `PackageDiff` recorded in the database for a context
@@ -24,7 +25,8 @@ See further information about `PackageDiff` documentation in
 doc/package-diff.txt.
 
 
-== Testable diff setup ==
+Testable diff setup
+-------------------
 
 We will create a set of `PackageDiff` so we can precisely test how
 they show up in the UI.
@@ -109,7 +111,8 @@ are done here.
     >>> logout()
 
 
-== Ubuntu sources ==
+Ubuntu sources
+--------------
 
 All diffs are visible in the 'biscuit source in ubuntu' change log page, right
 below the text for each uploaded version.
@@ -179,7 +182,8 @@ The same page section is presented in the corresponding
     http://.../biscuit_1.0-2_1.0-3.diff.gz
 
 
-== PPA diffs ==
+PPA diffs
+---------
 
 PPA `PackageDiff` are exposed exactly in the same way ubuntu ones
 are. They are presented in the expandable area right below the

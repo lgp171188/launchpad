@@ -1,8 +1,10 @@
-= OAuth pages =
+OAuth pages
+===========
 
 The pages used in our implementation of the OAuth protocol.
 
-== +authorize-token ==
++authorize-token
+----------------
 
 This is the page where a user reviews (approving or declining) a
 consumer's request to access Launchpad on their behalf.

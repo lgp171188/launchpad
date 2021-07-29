@@ -56,7 +56,6 @@ from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
     )
-from zope.server.http.commonaccesslogger import CommonAccessLogger
 from zope.session.interfaces import ISession
 
 from lp.app import versioninfo
@@ -530,19 +529,20 @@ def get_query_string_params(request):
     if query_string is None:
         query_string = ''
 
-    # PEP-3333 specifies that strings must only contain codepoints
-    # representable in ISO-8859-1.
     kwargs = {}
     if not six.PY2:
-        kwargs['encoding'] = 'ISO-8859-1'
+        kwargs['encoding'] = 'UTF-8'
         kwargs['errors'] = 'replace'
     parsed_qs = parse_qs(query_string, keep_blank_values=True, **kwargs)
-    # Use BrowserRequest._decode() for decoding the received parameters.
-    decoded_qs = {}
-    for key, values in six.iteritems(parsed_qs):
-        decoded_qs[key] = [
-            request._decode(value) for value in values]
-    return decoded_qs
+    if six.PY2:
+        decoded_qs = {}
+        for key, values in six.iteritems(parsed_qs):
+            decoded_qs[key] = [
+                (value.decode('UTF-8', 'replace') if isinstance(value, bytes)
+                 else value)
+                for value in values]
+        parsed_qs = decoded_qs
+    return parsed_qs
 
 
 class LaunchpadBrowserRequestMixin:
@@ -1069,69 +1069,6 @@ class DebugLayerRequestFactory(HTTPPublicationRequestFactory):
         lp.layers.setFirstLayer(
             request, lp.layers.DebugLayer)
         return request
-
-
-class LaunchpadAccessLogger(CommonAccessLogger):
-
-    def log(self, task):
-        """Receives a completed task and logs it in launchpad log format.
-
-        task IP address
-        X_FORWARDED_FOR
-        HOST
-        datetime task started
-        request string  (1st line of request)
-        response status
-        response bytes written
-        number of nonpython statements (sql, email, memcache, rabbit etc)
-        request duration
-        traversal duration
-        publication duration
-        launchpad user id
-        launchpad page id
-        REFERER
-        USER_AGENT
-
-        """
-        request_headers = task.request_data.headers
-        cgi_env = task.getCGIEnvironment()
-
-        x_forwarded_for = request_headers.get('X_FORWARDED_FOR', '')
-        host = request_headers.get('HOST', '')
-        start_time = self.log_date_string(task.start_time)
-        first_line = task.request_data.first_line
-        status = task.status
-        bytes_written = task.bytes_written
-        userid = cgi_env.get('launchpad.userid', '')
-        pageid = cgi_env.get('launchpad.pageid', '')
-        nonpython_actions = cgi_env.get('launchpad.nonpythonactions', 0)
-        request_duration = cgi_env.get('launchpad.requestduration', 0)
-        traversal_duration = cgi_env.get('launchpad.traversalduration', 0)
-        publication_duration = cgi_env.get('launchpad.publicationduration', 0)
-        referer = request_headers.get('REFERER', '')
-        user_agent = request_headers.get('USER_AGENT', '')
-
-        log_template = (' - "%s" "%s" [%s] "%s" %s %d %d %s %s '
-                        '%s "%s" "%s" "%s" "%s"\n')
-        self.output.logRequest(
-            task.channel.addr[0],
-            log_template % (
-                x_forwarded_for,
-                host,
-                start_time,
-                first_line,
-                status,
-                bytes_written,
-                nonpython_actions,
-                request_duration,
-                traversal_duration,
-                publication_duration,
-                userid,
-                pageid,
-                referer,
-                user_agent,
-                )
-           )
 
 
 # ---- mainsite

@@ -1,4 +1,5 @@
-== Leaving the team ==
+Leaving the team
+----------------
 
 Foo Bar decided to leave the 'ubuntu-team'. They visit the home page
 and chooses the "Leave" link. They confirm that they want to leave the team
@@ -24,7 +25,8 @@ Foo Bar is redirected to the team page after they leave.
     'http://launchpad.test/~ubuntu-team/+join'
 
 
-== Leaving a private team ==
+Leaving a private team
+----------------------
 
 When someone leaves a private team, they are no longer able to see the team so
 are redirected to their personal Launchpad homepage with a suitable message.
@@ -49,7 +51,8 @@ User is redirect to their homepage page after leaving.
     ...     first_tag_by_class(browser.contents, 'informational message')))
     You are no longer a member of private team...
 
-== Team overview page quick-links ==
+Team overview page quick-links
+------------------------------
 
 A member of a team can quickly leave a team by using the links on the
 team's overview page.

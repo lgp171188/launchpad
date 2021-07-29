@@ -5,7 +5,7 @@
 
 # This script generates .htaccess files for private PPAs.
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.generate_ppa_htaccess import (
     HtaccessTokenGenerator,

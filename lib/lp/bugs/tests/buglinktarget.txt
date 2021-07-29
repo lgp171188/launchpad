@@ -1,4 +1,5 @@
-= IBugLinkTarget Interface =
+IBugLinkTarget Interface
+========================
 
 Launchpad includes Malone, the powerful bug tracker. One of the best
 features of Malone is the ability to track a bug in multiple products
@@ -22,7 +23,8 @@ shouldn't have any bugs linked to it at the start of the test.)
     >>> verifyObject(IBugLinkTarget, target)
     True
 
-== linkBug() ==
+linkBug()
+---------
 
     >>> bugset = getUtility(IBugSet)
     >>> bug1 = bugset.get(1)
@@ -100,7 +102,8 @@ if they are an administrator:
     >>> target.linkBug(private_bug, admin)
     True
 
-== bugs ==
+bugs
+----
 
 The list of bugs linked to the target should be available in the bugs
 attributes:
@@ -108,7 +111,8 @@ attributes:
     >>> [bug.id for bug in target.bugs]
     [1, 2, 6]
 
-== unlinkBug() ==
+unlinkBug()
+-----------
 
 The unlinkBug() method is used to remove a link between a bug and
 the target.
@@ -169,7 +173,8 @@ the bug or if they are an administrator.
     >>> target.unlinkBug(private_bug, admin)
     True
 
-== Cleanup ==
+Cleanup
+-------
 
     # Unregister event listeners.
     >>> linked_event_listener.cleanUp()

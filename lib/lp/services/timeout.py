@@ -225,7 +225,7 @@ class with_timeout:
             t.start()
             try:
                 t.join(timeout)
-            except Exception as e:
+            except Exception:
                 # This will commonly be SoftTimeLimitExceeded from celery,
                 # since celery's timeout often happens before the job's due
                 # to job setup time.

@@ -1,4 +1,5 @@
-= Translation Export Request Queue =
+Translation Export Request Queue
+================================
 
 The queue of export requests is served by a cron script. Let's check if it can
 serve those requests properly.
@@ -21,7 +22,8 @@ Here's somebody to make a request.
     ...     name='downloader',
     ...     displayname='Happy Downloader')
 
-== Requesting PO files ==
+Requesting PO files
+-------------------
 
 Our user requests the Catalan and Czech translations of a template.
 
@@ -97,7 +99,8 @@ Let's download it and make sure the contents look ok.
     pmount/pmount-cs.po
 
 
-== Duplicate requests ==
+Duplicate requests
+------------------
 
 On another occasion, the user requests just Catalan translation.  The
 queue is initially empty.
@@ -166,7 +169,8 @@ Only the Spanish request is new, and that goes into the queue.
     ...     request.destroySelf()
 
 
-== Requesting MO files ==
+Requesting MO files
+-------------------
 
 Let's try requesting an export in MO format:
 
@@ -213,7 +217,8 @@ Check whether we generated a good .mo file.
     True
 
 
-== Cron script ==
+Cron script
+-----------
 
 Finally, the code should work when executed from the script. This is a good
 way that the user used by the script has the needed rights to use the

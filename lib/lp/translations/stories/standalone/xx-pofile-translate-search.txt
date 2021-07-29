@@ -1,4 +1,5 @@
-= Searching through PO files =
+Searching through PO files
+==========================
 
 While doing translations, one can also search for messages containing
 a certain substring (whether in original English string or in

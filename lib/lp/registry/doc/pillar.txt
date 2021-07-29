@@ -1,4 +1,5 @@
-== Launchpad pillars ==
+Launchpad pillars
+-----------------
 
 A few of the PillarsOfLaunchpad (tm) share a namespace to allow their name
 to unambiguously refer to it. This allows us to make email interfaces
@@ -78,7 +79,8 @@ It also works if you use Unicode strings.
     True
 
 
-== Pillar aliases ==
+Pillar aliases
+--------------
 
 A pillar can have an arbitrary number of aliases, so that it can be found
 under different names.
@@ -188,7 +190,8 @@ And the same is true for Colin Watson on the Guadalinex distribution.
     >>> login('mark@example.com')
 
 
-== Searching for Pillars ==
+Searching for Pillars
+---------------------
 
 We can also use PillarNameSet to do a search across some of our pillars.
 Right now this search is done across Products, ProjectGroups and
@@ -252,7 +255,8 @@ be included in the results.
     >>> login('mark@example.com')
 
 
-== PillarName objects ==
+PillarName objects
+------------------
 
 PillarName objects have a pillar attribute that returns the object referenced
 by that pillar name

@@ -7,7 +7,7 @@
 # We use this for fast source package searching (as opposed to joining
 # through gazillions of publishing tables).
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from zope.component import getUtility
 

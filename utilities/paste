@@ -5,9 +5,8 @@
 
 from __future__ import absolute_import, print_function
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
-import base64
 from optparse import OptionParser
 import os
 import pwd
@@ -15,10 +14,7 @@ import sys
 import webbrowser
 
 from fixtures import MonkeyPatch
-from six.moves.http_cookiejar import (
-    Cookie,
-    CookieJar,
-    )
+from six.moves.http_cookiejar import Cookie
 from six.moves.urllib.parse import urljoin
 from zope.testbrowser.browser import Browser
 
@@ -39,7 +35,7 @@ look something like this:
 
 
 def parse_arguments():
-    parser = OptionParser(usage='%prog [options] [title] < stdin')
+    parser = OptionParser(usage='%prog [options] < stdin')
     parser.add_option('-b', '--browser',
                       default=False, action='store_true',
                       help='Open web browser to the pastebin.')
@@ -53,11 +49,7 @@ def parse_arguments():
                       type='string',
                       help='File to pastebin instead of stdin.')
     options, arguments = parser.parse_args()
-    if len(arguments) == 0:
-        parser.title = None
-    elif len(arguments) == 1:
-        parser.title = arguments[0]
-    else:
+    if arguments:
         parser.error('Too many arguments')
         # Does not return
     parser.options = options
@@ -97,11 +89,6 @@ def main():
         poster = os.environ['USER']
     except KeyError:
         poster = pwd.getpwuid(os.getuid()).pw_name
-
-    if parser.title is None:
-        title = "The loser %s didn't even add a title" % poster
-    else:
-        title = parser.title
 
     if parser.options.file:
         f = open(parser.options.file)

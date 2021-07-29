@@ -1,4 +1,5 @@
-= Bug Reported Acknowledgement Message =
+Bug Reported Acknowledgement Message
+====================================
 
 A message of acknowledgement to be displayed to bug reporters after they've
 reported a bug can be set at the Distribution, DistributionSourcePackage,

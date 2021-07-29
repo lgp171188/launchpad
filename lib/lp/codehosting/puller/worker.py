@@ -10,7 +10,7 @@ import sys
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
-import lp.codehosting
+import lp.codehosting  # noqa: F401
 
 from breezy import (
     errors,
@@ -406,7 +406,7 @@ class PullerWorker:
             msg = 'A socket error occurred: %s' % str(e)
             self._mirrorFailed(msg)
 
-        except errors.UnsupportedFormatError as e:
+        except errors.UnsupportedFormatError:
             msg = ("Launchpad does not support branches from before "
                    "bzr 0.7. Please upgrade the branch using bzr upgrade.")
             self._mirrorFailed(msg)
@@ -414,7 +414,7 @@ class PullerWorker:
         except errors.UnknownFormatError as e:
             self._mirrorFailed(e)
 
-        except (errors.ParamikoNotPresent, BadUrlSsh) as e:
+        except (errors.ParamikoNotPresent, BadUrlSsh):
             msg = ("Launchpad cannot mirror branches from SFTP and SSH URLs."
                    " Please register a HTTP location for this branch.")
             self._mirrorFailed(msg)
@@ -437,12 +437,12 @@ class PullerWorker:
             msg = message_by_type.get(self.branch_type, str(e))
             self._mirrorFailed(msg)
 
-        except BranchReferenceForbidden as e:
+        except BranchReferenceForbidden:
             msg = ("Branch references are not allowed for branches of type "
                    "%s." % (self.branch_type.title,))
             self._mirrorFailed(msg)
 
-        except BranchLoopError as e:
+        except BranchLoopError:
             msg = "Circular branch reference."
             self._mirrorFailed(msg)
 

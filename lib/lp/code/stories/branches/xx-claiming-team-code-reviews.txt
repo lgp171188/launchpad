@@ -1,4 +1,5 @@
-= Claiming Team Code Reviews =
+Claiming Team Code Reviews
+==========================
 
 When a team has been requested to review a merge proposal, any member of that
 team can claim that review.  This can be done by clicking on the "[Review]"

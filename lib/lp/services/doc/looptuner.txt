@@ -1,4 +1,5 @@
-= Tunable Loops =
+Tunable Loops
+=============
 
 Some large jobs have to be done in smaller chunks, e.g. because you want to
 report progress to a user, or you're holding locks that others may be waiting
@@ -37,7 +38,8 @@ ITunableLoop interface.
     AssertionError
 
 
-== Chunk Size Convergence ==
+Chunk Size Convergence
+----------------------
 
 Here's a very simple ITunableLoop.  It receives a list of timings to simulate
 for its iterations (it finishes when the list runs out), and for every
@@ -93,7 +95,8 @@ subclass the LoopTuner.
     ...         return float(self.operation.clock)
 
 
-=== Trivial Case ===
+Trivial Case
+............
 
 If there's nothing to do, nothing happens.
 
@@ -103,7 +106,8 @@ If there's nothing to do, nothing happens.
     done
 
 
-=== Ideal Case ===
+Ideal Case
+..........
 
 A typical run using the ITunableLoop follows this pattern: the LoopTuner very
 conservatively starts out with the minimum chunk size, finds that its first
@@ -130,7 +134,8 @@ variations, it keeps oscillating a bit.
     done
 
 
-=== Slow Run ===
+Slow Run
+........
 
 If our iterations consistently exceed their time goal, we stay stuck at the
 minimum chunk size.
@@ -150,7 +155,8 @@ minimum chunk size.
     done
 
 
-=== Typical Run ===
+Typical Run
+...........
 
 What happens usually is that performance is relatively stable, so chunk size
 converges to a steady state, but there are occasional spikes.  When one chunk
@@ -174,7 +180,8 @@ in performance was a fluke, the next chunk falls well short of its time goal.
     done
 
 
-== Cost Functions ==
+Cost Functions
+--------------
 
 It's up to the ITunableLoop to define what "chunk size" really means.  It's an
 arbitrary unit of work.  The only requirement for LoopTuner to do useful work
@@ -222,7 +229,8 @@ This variant of the LoopTuner simulates an overridable cost function:
 Below we'll see how the loop tuner adapts to various cost functions.
 
 
-=== Constant Cost ===
+Constant Cost
+.............
 
 We've already seen a constant-time loop body where every iteration took too
 much time, and we got stuck on the minimum chunk size.  Now we look at the
@@ -255,7 +263,8 @@ should turn out to vary inversely with chunk size.
     done
 
 
-=== Linear Cost ===
+Linear Cost
+...........
 
 The model behind LoopTuner assumes that the cost of an iteration will tend to
 increase as a linear function of chunk size.  Constant cost is a degenerate
@@ -309,7 +318,8 @@ But once again it does get pretty close:
     True
 
 
-=== Exponential Cost ===
+Exponential Cost
+................
 
 What if the relationship between chunk size and iteration time is much more
 radical?
@@ -369,7 +379,8 @@ Most practical algorithms will be closer to the linear cost function than they
 are to the exponential one.
 
 
-== Loop cooldown ==
+Loop cooldown
+-------------
 
 LoopTuner allows inserting a delay between two consecutive operation runs.
 
@@ -418,7 +429,8 @@ Aim for a low goal_seconds (to reduce test runtime), and only 3 iterations.
     Cooldown for 0.1 seconds.
     done
 
-=== Cooldown bedtime ===
+Cooldown bedtime
+................
 
 A private _coolDown method on LoopTuner sleeps for cooldown_time, and
 returns time after sleep is done.
@@ -439,7 +451,8 @@ time is returned.
     >>> print(new_time == old_time)
     True
 
-== Abort Timeout ==
+Abort Timeout
+-------------
 
 LoopTuner allows a timeout to be specified. If the loop runs for longer
 than this timeout, it is aborted and a INFO logged.
@@ -458,7 +471,8 @@ than this timeout, it is aborted and a INFO logged.
     INFO Task aborted after 20 seconds.
 
 
-== Cleanup ==
+Cleanup
+-------
 
 Loops can define a clean up hook to clean up opened resources. We need this
 because loops can be aborted mid run, so we cannot rely on clean up code in

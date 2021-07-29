@@ -1,4 +1,5 @@
-= Redirection of Mixed Case paths =
+Redirection of Mixed Case paths
+===============================
 
 When someone visits a page such as http://launchpad.net/jOkOshEr
 launchpad does a permanent redirect to the lowercase path:

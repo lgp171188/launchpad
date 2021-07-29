@@ -1,11 +1,13 @@
-= Translation context =
+Translation context
+===================
 
 GNU gettext 0.15 introduced a 'msgctxt' keyword, which allows defining
 a string to be used as 'context disambiguator' when two messages have
 identical msgids, but different meanings (are used in different "contexts"),
 and they are usually translated differently.
 
-== Helper imports ==
+Helper imports
+--------------
 
     >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -21,7 +23,8 @@ printing out the import status after import is done.
     >>> from lp.translations.utilities.tests.helpers import (
     ...     import_pofile_or_potemplate)
 
-== Import PO templates ==
+Import PO templates
+-------------------
 
 Login as an admin to be able to do changes to the import queue.
 
@@ -159,7 +162,8 @@ Importing this file fails because of conflicting messages.
     >>> print(entry.status.name)
     FAILED
 
-== Importing PO files ==
+Importing PO files
+------------------
 
 We can also import POFile with context messages.
 
@@ -246,7 +250,8 @@ And for messages with plural forms, it gets all the translations.
     >>> print(pretty(current.translations))
     ['%d translation', '%d translationes', '%d translations']
 
-== Export ==
+Export
+------
 
 Make sure exported files are correct.  Exporting a POT file returns exactly
 the same contents, except that header is marked fuzzy.
@@ -331,9 +336,11 @@ It's different from the imported file only in a few headers.
     msgstr[1] "%d translationes"
     msgstr[2] "%d translations"
 
-== Edge cases ==
+Edge cases
+----------
 
-=== Messages with empty context ===
+Messages with empty context
+...........................
 
 Messages without msgctxt keyword and with empty value for msgctxt are
 not same.

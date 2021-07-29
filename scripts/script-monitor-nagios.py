@@ -23,7 +23,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = ['check_script']
 
-import _pythonpath
+import _pythonpath  # noqa: F401
 
 from datetime import (
     datetime,

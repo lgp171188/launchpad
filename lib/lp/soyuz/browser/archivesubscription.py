@@ -129,7 +129,8 @@ class ArchiveSubscribersView(LaunchpadFormView):
 
     schema = IArchiveSubscriberUI
     field_names = ['subscriber', 'date_expires', 'description']
-    custom_widget_description = CustomWidgetFactory(TextWidget, displayWidth=40)
+    custom_widget_description = CustomWidgetFactory(
+        TextWidget, displayWidth=40)
     custom_widget_date_expires = DateWidget
     custom_widget_subscriber = CustomWidgetFactory(
         PersonPickerWidget, header="Select the subscriber")

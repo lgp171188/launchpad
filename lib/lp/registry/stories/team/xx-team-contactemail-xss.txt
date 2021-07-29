@@ -1,4 +1,5 @@
-= Cross-Site Scripting, or XSS, when changing contact address =
+Cross-Site Scripting, or XSS, when changing contact address
+===========================================================
 
 The contact address field and its related messages are properly
 escaped in order to prevent XSS.
