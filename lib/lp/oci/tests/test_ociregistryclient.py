@@ -438,7 +438,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             json.dumps(self.config),
             "config-sha",
             preloaded_data["config_file_1.json"],
-            {"diff_id_1": 999, "diff_id_2": 9001})
+            {"diff_id_1": 999, "diff_id_2": 9001},
+            True)
         self.assertThat(manifest, MatchesDict({
             "layers": MatchesListwise([
                 MatchesDict({
@@ -452,6 +453,41 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                     "digest": Equals("diff_id_2"),
                     "size": Equals(9001)})
             ]),
+            "schemaVersion": Equals(2),
+            "config": MatchesDict({
+                "mediaType": Equals(
+                    "application/vnd.docker.container.image.v1+json"),
+                "digest": Equals("sha256:config-sha"),
+                "size": Equals(52)
+            }),
+            "mediaType": Equals(
+                "application/vnd.docker.distribution.manifest.v2+json")
+        }))
+
+    def test_build_registry_manifest_compressed_layers(self):
+        self._makeFiles()
+        preloaded_data = self.client._preloadFiles(
+            self.build, self.manifest, self.digests[0])
+        manifest = self.client._build_registry_manifest(
+            self.digests[0],
+            self.config,
+            json.dumps(self.config),
+            "config-sha",
+            preloaded_data["config_file_1.json"],
+            {"sha256:digest_1": 999, "sha256:digest_2": 9001},
+            False)
+        self.assertThat(manifest, MatchesDict({
+            "layers": MatchesListwise([
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("sha256:digest_1"),
+                    "size": Equals(999)}),
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("sha256:digest_2"),
+                    "size": Equals(9001)})]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({
                 "mediaType": Equals(
@@ -684,7 +720,9 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         responses.add("HEAD", blobs_url, status=404)
         responses.add("POST", uploads_url, headers={"Location": upload_url})
         responses.add("PUT", upload_url, status=201)
-        self.client._upload_layer("test-digest", push_rule, lfa, http_client)
+        self.assertTrue(self.client.should_upload_layers_uncompressed(lfa))
+        self.client._upload_layer(
+            "test-digest", push_rule, lfa, http_client, True)
         self.assertThat(responses.calls[2].request, MatchesStructure(
             method=Equals("PUT"),
             headers=ContainsDict({
@@ -1007,6 +1045,34 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         self.assertRaises(
             HTTPError, self.client.uploadManifestList,
             build_request, [self.build])
+
+    @responses.activate
+    def test_upload_layer_gzipped_blob(self):
+        lfa = self.factory.makeLibraryFileAlias(
+            content=LaunchpadWriteTarFile.files_to_bytes(
+                {"6d56becb66b184f.tar.gz": b"test gzipped layer"}))
+        transaction.commit()
+        push_rule = self.build.recipe.push_rules[0]
+        http_client = RegistryHTTPClient(push_rule)
+        blobs_url = "{}/blobs/{}".format(
+            http_client.api_url, "test-digest")
+        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        upload_url = "{}/blobs/uploads/{}".format(
+            http_client.api_url, uuid.uuid4())
+        responses.add("HEAD", blobs_url, status=404)
+        responses.add("POST", uploads_url, headers={"Location": upload_url})
+        responses.add("PUT", upload_url, status=201)
+
+        self.assertFalse(self.client.should_upload_layers_uncompressed(lfa))
+
+        self.client._upload_layer(
+            "test-digest", push_rule, lfa, http_client, False)
+        self.assertThat(responses.calls[2].request, MatchesStructure(
+            method=Equals("PUT"),
+            headers=ContainsDict({
+                "Content-Length": Equals(str(lfa.content.filesize)),
+                }),
+            ))
 
     @responses.activate
     def test_multi_arch_manifest_with_existing_architectures(self):
