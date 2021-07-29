@@ -11,18 +11,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'SnapBuildBehaviour',
-    'SnapProxyMixin',
     ]
-
-import base64
-import time
 
 from twisted.internet import defer
 from zope.component import adapter
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.downloader import RequestProxyTokenCommand
+from lp.buildmaster.builderproxy import BuilderProxyMixin
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
@@ -57,55 +53,9 @@ def format_as_rfc3339(timestamp):
     return timestamp.replace(microsecond=0, tzinfo=None).isoformat() + 'Z'
 
 
-class SnapProxyMixin:
-    """Methods for handling builds with the Snap Build Proxy enabled."""
-
-    @defer.inlineCallbacks
-    def addProxyArgs(self, args, allow_internet=True):
-        if config.snappy.builder_proxy_host and allow_internet:
-            token = yield self._requestProxyToken()
-            args["proxy_url"] = (
-                "http://{username}:{password}@{host}:{port}".format(
-                    username=token['username'],
-                    password=token['secret'],
-                    host=config.snappy.builder_proxy_host,
-                    port=config.snappy.builder_proxy_port))
-            args["revocation_endpoint"] = (
-                "{endpoint}/{token}".format(
-                    endpoint=config.snappy.builder_proxy_auth_api_endpoint,
-                    token=token['username']))
-
-    @defer.inlineCallbacks
-    def _requestProxyToken(self):
-        admin_username = config.snappy.builder_proxy_auth_api_admin_username
-        if not admin_username:
-            raise CannotBuild(
-                "builder_proxy_auth_api_admin_username is not configured.")
-        secret = config.snappy.builder_proxy_auth_api_admin_secret
-        if not secret:
-            raise CannotBuild(
-                "builder_proxy_auth_api_admin_secret is not configured.")
-        url = config.snappy.builder_proxy_auth_api_endpoint
-        if not secret:
-            raise CannotBuild(
-                "builder_proxy_auth_api_endpoint is not configured.")
-        timestamp = int(time.time())
-        proxy_username = '{build_id}-{timestamp}'.format(
-            build_id=self.build.build_cookie,
-            timestamp=timestamp)
-        auth_string = '{}:{}'.format(admin_username, secret).strip()
-        auth_header = b'Basic ' + base64.b64encode(auth_string.encode('ASCII'))
-
-        token = yield self._slave.process_pool.doWork(
-            RequestProxyTokenCommand,
-            url=url, auth_header=auth_header,
-            proxy_username=proxy_username)
-        defer.returnValue(token)
-
-
 @adapter(ISnapBuild)
 @implementer(IBuildFarmJobBehaviour)
-class SnapBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
+class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
     """Dispatches `SnapBuild` jobs to slaves."""
 
     builder_type = "snap"
