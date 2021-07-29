@@ -487,8 +487,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("sha256:digest_2"),
-                    "size": Equals(9001)})
-            ]),
+                    "size": Equals(9001)})]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({
                 "mediaType": Equals(
@@ -721,8 +720,9 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         responses.add("HEAD", blobs_url, status=404)
         responses.add("POST", uploads_url, headers={"Location": upload_url})
         responses.add("PUT", upload_url, status=201)
-        self.assertTrue(self.client.upload_layers_uncompressed(lfa))
-        self.client._upload_layer("test-digest", push_rule, lfa, http_client, True)
+        self.assertTrue(self.client.should_upload_layers_uncompressed(lfa))
+        self.client._upload_layer(
+            "test-digest", push_rule, lfa, http_client, True)
         self.assertThat(responses.calls[2].request, MatchesStructure(
             method=Equals("PUT"),
             headers=ContainsDict({
@@ -1047,7 +1047,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             build_request, [self.build])
 
     @responses.activate
-    def test_upload_layer_gziped_blob(self):
+    def test_upload_layer_gzipped_blob(self):
         lfa = self.factory.makeLibraryFileAlias(
             content=LaunchpadWriteTarFile.files_to_bytes(
                 {"6d56becb66b184f.tar.gz": b"test gzipped layer"}))
@@ -1063,9 +1063,10 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         responses.add("POST", uploads_url, headers={"Location": upload_url})
         responses.add("PUT", upload_url, status=201)
 
-        self.assertFalse(self.client.upload_layers_uncompressed(lfa))
+        self.assertFalse(self.client.should_upload_layers_uncompressed(lfa))
 
-        self.client._upload_layer("test-digest", push_rule, lfa, http_client, False)
+        self.client._upload_layer(
+            "test-digest", push_rule, lfa, http_client, False)
         self.assertThat(responses.calls[2].request, MatchesStructure(
             method=Equals("PUT"),
             headers=ContainsDict({

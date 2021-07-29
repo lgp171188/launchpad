@@ -72,6 +72,33 @@ def is_aws_bearer_token_domain(domain):
     return any(domain.endswith(i) for i in domains.split())
 
 
+class LibraryFileAliasWrapper:
+
+    """A `LibraryFileAlias` wrapper used to read an LFA.
+
+    The LFA is uploaded by Buildd to Librarian as tar.gz
+    after building the OCI image. Each LFA is essentially
+    a docker image layer and it is read in chunks when
+    uploading the layer to Dockerhub Registry."""
+
+    def __init__(self, lfa):
+        self.lfa = lfa
+        self.position = 0
+
+    def __len__(self):
+        return self.lfa.content.filesize - self.position
+
+    """ Reads from the LFA in chunks. See ILibraryFileAlias."""
+    def read(self, length=-1):
+        chunksize = None if length == -1 else length
+        data = self.lfa.read(chunksize=chunksize)
+        if chunksize is None:
+            self.position = self.lfa.content.filesize
+        else:
+            self.position += length
+        return data
+
+
 @implementer(IOCIRegistryClient)
 class OCIRegistryClient:
 
@@ -162,10 +189,9 @@ class OCIRegistryClient:
         :param push_rule: `OCIPushRule` to use for the URL and credentials.
         :param lfa: The `LibraryFileAlias` for the layer.
         """
-
+        lfa.open()
         try:
             if upload_layers_uncompressed:
-                lfa.open()
                 with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
                     for tarinfo in un_zipped:
                         if tarinfo.name != 'layer.tar':
@@ -183,7 +209,6 @@ class OCIRegistryClient:
                             fileobj.close()
                         return tarinfo.size
             else:
-                lfa.open()
                 size = lfa.content.filesize
                 wrapper = LibraryFileAliasWrapper(lfa)
                 cls._upload(
@@ -223,20 +248,20 @@ class OCIRegistryClient:
         # Fill in the layer information
         # For uploading the compressed tar.gz for each layer we need
         # to obtain the digest for the tar.gz from the Config.json
-        # and build the manifest with the zipped digest - named
-        # here as gziped_layer_digest
-        for unziped_sha in config["rootfs"]["diff_ids"]:
+        # and build the manifest with the zipped digest.
+        for unzipped_sha in config["rootfs"]["diff_ids"]:
             if upload_layers_uncompressed:
-                digest = unziped_sha
+                digest = unzipped_sha
             else:
-                digest = "sha256:{}".format(digests[unziped_sha]["digest"])
-            log.info("Digest: %s", digest)
+                digest = "sha256:{}".format(digests[unzipped_sha]["digest"])
+            log.info("Adding digest: %s for layer %s to manifest file." %
+                     (digest, digests[unzipped_sha]["layer_id"]))
             manifest["layers"].append({
                 "mediaType":
                     "application/vnd.docker.image.rootfs.diff.tar.gzip",
                 "size": layer_sizes[digest],
                 "digest": digest})
-        log.info("Manifest: %s", manifest)
+        log.info("LP constructed the following manifest: %s", manifest)
         return manifest
 
     @classmethod
@@ -343,12 +368,12 @@ class OCIRegistryClient:
         return {"digest": digest, "size": size}
 
     @classmethod
-    def upload_layers_uncompressed(cls, lfa):
+    def should_upload_layers_uncompressed(cls, lfa):
         # We maintain 2 types of upload in LP:
 
         # The first (old approach) consists of us extracting the `layer.tar`
         # from the tar.gz uploaded by the buildd to the librarian
-        # and uploading the contents of the image layer unzipped
+        # and uploading `layer.tar` directly, not the contents of it.
         # The structure we maintained for this is:
         # directory.tar.gz/layer.tar/layer_contents
 
@@ -356,11 +381,10 @@ class OCIRegistryClient:
         # compressed as a tar.gz as we find them in Librarian. The new
         # structure we maintain here is: layer.tar.gz/layer_contents.
         # This final gz format has the name of the directory
-        # (directory_name.tar.gz/contents) otherwise we end up
-        # with multiple gzips with the same name "layer.tar.gz"
+        # (directory.tar.gz/contents).
 
         # Buildd has been modified to upload to Librarian using the second
-        # approach (compressed tzr.gz layers) but from LP to Registries
+        # approach (compressed tar.gz layers) but from LP to Registries
         # we need to distinguish here between the 2 approaches and upload
         # accordingly as we might have old builds in Librarian that have
         # not been requested to be uploaded to registries yet.
@@ -368,11 +392,10 @@ class OCIRegistryClient:
             lfa.open()
             with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
                 for tarinfo in un_zipped:
-                    if tarinfo.name.decode('utf8') == 'layer.tar':
+                    if tarinfo.name == 'layer.tar':
                         return True
             return False
         finally:
-            un_zipped.close()
             lfa.close()
 
     @classmethod
@@ -391,7 +414,8 @@ class OCIRegistryClient:
             # determine layer upload type: compressed or uncompressed
             first_id = config["rootfs"]["diff_ids"][0]
             lfa = file_data[first_id]
-            upload_layers_uncompressed = cls.upload_layers_uncompressed(lfa)
+            upload_layers_uncompressed = cls.should_upload_layers_uncompressed(
+                lfa)
 
             for diff_id in config["rootfs"]["diff_ids"]:
                 if upload_layers_uncompressed:
@@ -752,25 +776,6 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
                     url, auth_retry=False, headers=headers,
                     *args, **request_kwargs)
             raise
-
-
-class LibraryFileAliasWrapper:
-
-    def __init__(self, lfa):
-        self.lfa = lfa
-        self.position = 0
-
-    def __len__(self):
-        return self.lfa.content.filesize - self.position
-
-    def read(self, length=-1):
-        chunksize = None if length == -1 else length
-        data = self.lfa.read(chunksize=chunksize)
-        if chunksize is None:
-            self.position = self.lfa.content.filesize
-        else:
-            self.position += length
-        return data
 
 
 class AWSAuthenticatorMixin:
