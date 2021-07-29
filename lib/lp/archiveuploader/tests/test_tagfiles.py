@@ -119,9 +119,9 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
         Note: in the past, our parse_tagfile function left the leading
         '\n' in the parsed value, whereas it should not have.
 
-        For an example,
-        see http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Files
-        """
+        For an example, see
+        https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-files
+        """  # noqa: E501
 
         expected_bytes = (
             b'f26bb9b29b1108e53139da3584a4dc92 1511 test75874_0.1.tar.gz\n '
@@ -142,8 +142,8 @@ class TestTagFileDebianPolicyCompat(unittest.TestCase):
         """Apt-pkg preserves the blank-line indicator and does not strip
         leading spaces.
 
-        See http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Description
-        """
+        See https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-description
+        """  # noqa: E501
         expected_bytes = (
             b"Here's the single-line synopsis.\n"
             b" Then there is the extended description which can\n"

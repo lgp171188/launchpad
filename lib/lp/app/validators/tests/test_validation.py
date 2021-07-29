@@ -38,4 +38,5 @@ class TestOCIBranchValidator(TestCase):
         self.assertTrue(validate_oci_branch_name('refs/tags/v2-1.0-20.04'))
 
     def test_validate_oci_branch_name_heads_and_tags(self):
-        self.assertFalse(validate_oci_branch_name("refs/heads/refs/tags/v1.0-20.04"))
+        self.assertFalse(validate_oci_branch_name(
+            "refs/heads/refs/tags/v1.0-20.04"))

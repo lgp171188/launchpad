@@ -85,6 +85,7 @@ class DateTimeWidget(TextWidget):
       >>> widget.from_date = datetime(2006, 5, 23,
       ...                             tzinfo=pytz.timezone('UTC'))
       >>> print(widget.getInputValue())
+      ... # noqa
       ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
       ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
       Traceback (most recent call last):
@@ -103,6 +104,7 @@ class DateTimeWidget(TextWidget):
       >>> widget.to_date = datetime(2008, 1, 26,
       ...                           tzinfo=pytz.timezone('UTC'))
       >>> print(widget.getInputValue())
+      ... # noqa
       ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
       ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
       Traceback (most recent call last):

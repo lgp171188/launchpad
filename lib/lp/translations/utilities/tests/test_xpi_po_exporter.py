@@ -80,7 +80,7 @@ test_xpi_header = dedent(u'''\
         </em:targetApplication>
       </Description>
     </RDF>
-''')
+''')  # noqa: E501
 test_xpi_messages = [
     (u'foozilla.menu.title', u'main/subdir/test2.dtd',
      u'jar:chrome/en-US.jar!/subdir/test2.dtd', u'MENU',
@@ -385,7 +385,7 @@ class XPIPOExporterTestCase(TestCase):
             msgctxt "main/test1.properties"
             msgid "Дан=Day"
             msgstr ""
-            ''').strip()
+            ''').strip()  # noqa: E501
 
         output = storage.export().read().decode("utf-8")
         self._compareExpectedAndExported(expected_template, output)

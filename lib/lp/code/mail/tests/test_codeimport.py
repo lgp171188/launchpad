@@ -150,7 +150,8 @@ class TestNewCodeImports(TestCaseWithFactory):
         self.assertEqual(
             'A new git code import has been requested '
             'by Eric:\n'
-            '    http://code.launchpad.test/~eric/foobuntu/manic/fooix/master\n'
+            '    http://code.launchpad.test/'
+            '~eric/foobuntu/manic/fooix/master\n'
             'from\n'
             '    git://git.example.com/fooix.git\n'
             '\n'

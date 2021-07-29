@@ -3273,8 +3273,8 @@ class TestGetBzrBranch(TestCaseWithFactory):
         self.useBzrBranches(direct_database=True)
 
     def test_simple(self):
-        # open_only_scheme returns the underlying bzr branch of a database branch in
-        # the simple, unstacked, case.
+        # open_only_scheme returns the underlying bzr branch of a database
+        # branch in the simple, unstacked, case.
         db_branch, tree = self.create_branch_and_tree()
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
@@ -3335,7 +3335,8 @@ class TestBranchGetBlob(TestCaseWithFactory):
             [((branch.id, 'some-file-id'), {'rev': 'scanned-id'})],
             hosting_fixture.getBlob.calls)
         key = (
-            'bazaar.launchpad.test:bzr-file-list:%s:scanned-id:src' % branch.id)
+            'bazaar.launchpad.test:bzr-file-list:%s:scanned-id:src' %
+            branch.id)
         self.assertEqual(
             json.dumps({'README.txt': 'some-file-id'}),
             getUtility(IMemcacheClient).get(key.encode('UTF-8')))

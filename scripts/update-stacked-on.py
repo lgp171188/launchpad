@@ -6,7 +6,8 @@
 """Update stacked_on_location for all Bazaar branches.
 
 Expects standard input of:
-    '<id> <branch_type> <unique_name> <stacked_on_id> <stacked_on_unique_name>\n'.
+    '<id> <branch_type> <unique_name> <stacked_on_id>
+     <stacked_on_unique_name>\n'.
 
 Such input can be provided using "get-stacked-on-branches.py".
 
