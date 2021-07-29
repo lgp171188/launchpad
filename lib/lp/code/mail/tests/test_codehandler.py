@@ -219,7 +219,7 @@ class TestCodeHandler(TestCaseWithFactory):
         # The returned message is a multipart message, the first part is
         # the message, and the second is the original message.
         message, original = notification.get_payload()
-        self.assertEqual(dedent("""\
+        expected_payload = dedent("""\
         An error occurred while processing a mail you sent to Launchpad's email
         interface.
 
@@ -229,8 +229,7 @@ class TestCodeHandler(TestCaseWithFactory):
         Error message:
 
         The 'review' command expects any of the following arguments:
-        abstain, approve, disapprove, needs-fixing, needs-info,
-        needs-resubmitting
+        abstain, approve, disapprove, needs-fixing, needs-info, needs-resubmitting
 
         For example:
 
@@ -240,8 +239,9 @@ class TestCodeHandler(TestCaseWithFactory):
         --\x20
         For more information about using Launchpad by email, see
         https://help.launchpad.net/EmailInterface
-        or send an email to help@launchpad.net""").encode("UTF-8"),
-                                message.get_payload(decode=True))
+        or send an email to help@launchpad.net""")  # noqa: E501
+        self.assertEqual(
+            expected_payload.encode("UTF-8"), message.get_payload(decode=True))
         self.assertEqual(mail['From'], notification['To'])
 
     def test_getReplyAddress(self):
