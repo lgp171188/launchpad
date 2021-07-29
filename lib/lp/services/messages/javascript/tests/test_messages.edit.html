@@ -54,7 +54,7 @@ GNU Affero General Public License version 3 (see the file LICENSE).
 
         <!-- First editable message -->
         <div class="editable-message" id="first-message"
-             data-baseurl="/message/1">
+             data-baseurl="/message/1" data-i-can-edit="True">
             <!-- Revision list container and its template -->
             <div class="message-revision-container">
               <!-- The revision list pop-up header, with the image that closes
@@ -74,6 +74,9 @@ GNU Affero General Public License version 3 (see the file LICENSE).
                   <!-- The description of the revision, that will expand the
                    revision content once clicked. -->
                   <div class='message-revision-title'>
+                      <a class="sprite remove action-icon message-revision-del-btn">
+                          Remove
+                      </a>
                       <a class="js-action">Revision #{revision}, created at {date_created_display}</a>
                   </div>
                   <!-- The revision content itself -->
@@ -109,7 +112,7 @@ GNU Affero General Public License version 3 (see the file LICENSE).
 
         <!-- Second editable message -->
         <div class="editable-message" id="second-message"
-             data-baseurl="/message/2">
+             data-baseurl="/message/2" data-i-can-edit="True">
             <!-- Revision list container and its template -->
             <div class="message-revision-container">
               <div class="message-revision-container-header">
@@ -120,6 +123,9 @@ GNU Affero General Public License version 3 (see the file LICENSE).
               <script type="text/template">
                 <div class='message-revision-item'>
                   <div class='message-revision-title'>
+                      <a class="sprite remove action-icon message-revision-del-btn">
+                          Remove
+                      </a>
                       <a class="js-action">Revision #{revision}, created at {date_created_display}</a>
                   </div>
                   <div class='message-revision-body'>{content}</div>
