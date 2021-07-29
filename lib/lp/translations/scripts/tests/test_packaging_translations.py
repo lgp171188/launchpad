@@ -39,7 +39,7 @@ class TestMergeTranslations(TestCaseWithFactory):
             INFO    Merging template 1/2.
             INFO    Merging template 2/2.
             INFO    Ran 1 TranslationMergeJob jobs.
-            """))
+            """))  # noqa: E501
         self.assertThat(stderr, matcher)
         self.assertEqual('', stdout)
 
@@ -57,6 +57,6 @@ class TestMergeTranslations(TestCaseWithFactory):
             INFO    Splitting .* and .* in Ubuntu Distroseries.*
             INFO    1 entries split.
             INFO    Ran 1 TranslationSplitJob jobs.
-            """))
+            """))  # noqa: E501
         self.assertThat(stderr, matcher)
         self.assertEqual('', stdout)

@@ -179,7 +179,8 @@ def run_test_process():
         # bzr. -- mbp 20100924
         while True:
             try:
-                rlist, wlist, xlist = select.select(open_readers, [], [], TIMEOUT)
+                rlist, wlist, xlist = select.select(
+                    open_readers, [], [], TIMEOUT)
                 break
             except select.error as e:
                 # nb: select.error doesn't expose a named 'errno' attribute,

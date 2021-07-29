@@ -625,6 +625,13 @@ body {
                 padding-left: 20px;
                 padding-bottom: 10px;
             }
+
+            // If the content was deleted, we show a default message with
+            // this CSS class.
+            .deleted-content {
+                padding: 5px;
+                opacity: 50%;
+            }
         }
 
         .active {

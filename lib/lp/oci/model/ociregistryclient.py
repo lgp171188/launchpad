@@ -72,6 +72,33 @@ def is_aws_bearer_token_domain(domain):
     return any(domain.endswith(i) for i in domains.split())
 
 
+class LibraryFileAliasWrapper:
+
+    """A `LibraryFileAlias` wrapper used to read an LFA.
+
+    The LFA is uploaded by Buildd to Librarian as tar.gz
+    after building the OCI image. Each LFA is essentially
+    a docker image layer and it is read in chunks when
+    uploading the layer to Dockerhub Registry."""
+
+    def __init__(self, lfa):
+        self.lfa = lfa
+        self.position = 0
+
+    def __len__(self):
+        return self.lfa.content.filesize - self.position
+
+    """ Reads from the LFA in chunks. See ILibraryFileAlias."""
+    def read(self, length=-1):
+        chunksize = None if length == -1 else length
+        data = self.lfa.read(chunksize=chunksize)
+        if chunksize is None:
+            self.position = self.lfa.content.filesize
+        else:
+            self.position += length
+        return data
+
+
 @implementer(IOCIRegistryClient)
 class OCIRegistryClient:
 
@@ -151,7 +178,8 @@ class OCIRegistryClient:
                 put_response)
 
     @classmethod
-    def _upload_layer(cls, digest, push_rule, lfa, http_client):
+    def _upload_layer(cls, digest, push_rule, lfa, http_client,
+                      upload_layers_uncompressed):
         """Upload a layer blob to the registry.
 
         Uses _upload, but opens the LFA and extracts the necessary files
@@ -163,28 +191,37 @@ class OCIRegistryClient:
         """
         lfa.open()
         try:
-            with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
-                for tarinfo in un_zipped:
-                    if tarinfo.name != 'layer.tar':
-                        continue
-                    fileobj = un_zipped.extractfile(tarinfo)
-                    # XXX Work around requests handling of objects that have
-                    # fileno, but error on access in python3:
-                    # https://github.com/psf/requests/pull/5239
-                    fileobj.len = tarinfo.size
-                    try:
-                        cls._upload(
-                            digest, push_rule, fileobj, tarinfo.size,
-                            http_client)
-                    finally:
-                        fileobj.close()
-                    return tarinfo.size
+            if upload_layers_uncompressed:
+                with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
+                    for tarinfo in un_zipped:
+                        if tarinfo.name != 'layer.tar':
+                            continue
+                        fileobj = un_zipped.extractfile(tarinfo)
+                        # XXX Work around requests handling of objects that
+                        # have fileno, but error on access in python3:
+                        # https://github.com/psf/requests/pull/5239
+                        fileobj.len = tarinfo.size
+                        try:
+                            cls._upload(
+                                digest, push_rule, fileobj, tarinfo.size,
+                                http_client)
+                        finally:
+                            fileobj.close()
+                        return tarinfo.size
+            else:
+                size = lfa.content.filesize
+                wrapper = LibraryFileAliasWrapper(lfa)
+                cls._upload(
+                    digest, push_rule, wrapper, size,
+                    http_client)
+                return size
         finally:
             lfa.close()
 
     @classmethod
     def _build_registry_manifest(cls, digests, config, config_json,
-                                 config_sha, preloaded_data, layer_sizes):
+                                 config_sha, preloaded_data, layer_sizes,
+                                 upload_layers_uncompressed):
         """Create an image manifest for the uploading image.
 
         This involves nearly everything as digests and lengths are required.
@@ -209,15 +246,22 @@ class OCIRegistryClient:
             "layers": []}
 
         # Fill in the layer information
-        for layer in config["rootfs"]["diff_ids"]:
+        # For uploading the compressed tar.gz for each layer we need
+        # to obtain the digest for the tar.gz from the Config.json
+        # and build the manifest with the zipped digest.
+        for unzipped_sha in config["rootfs"]["diff_ids"]:
+            if upload_layers_uncompressed:
+                digest = unzipped_sha
+            else:
+                digest = "sha256:{}".format(digests[unzipped_sha]["digest"])
+            log.info("Adding digest: %s for layer %s to manifest file." %
+                     (digest, digests[unzipped_sha]["layer_id"]))
             manifest["layers"].append({
                 "mediaType":
                     "application/vnd.docker.image.rootfs.diff.tar.gzip",
-                # This should be the size of the `layer.tar` that we extracted
-                # from the OCI image at build time. It is not the size of the
-                # gzipped version that we have in the librarian.
-                "size": layer_sizes[layer],
-                "digest": layer})
+                "size": layer_sizes[digest],
+                "digest": digest})
+        log.info("LP constructed the following manifest: %s", manifest)
         return manifest
 
     @classmethod
@@ -324,6 +368,37 @@ class OCIRegistryClient:
         return {"digest": digest, "size": size}
 
     @classmethod
+    def should_upload_layers_uncompressed(cls, lfa):
+        # We maintain 2 types of upload in LP:
+
+        # The first (old approach) consists of us extracting the `layer.tar`
+        # from the tar.gz uploaded by the buildd to the librarian
+        # and uploading `layer.tar` directly, not the contents of it.
+        # The structure we maintained for this is:
+        # directory.tar.gz/layer.tar/layer_contents
+
+        # The second (new approach) consists of uploading the contents
+        # compressed as a tar.gz as we find them in Librarian. The new
+        # structure we maintain here is: layer.tar.gz/layer_contents.
+        # This final gz format has the name of the directory
+        # (directory.tar.gz/contents).
+
+        # Buildd has been modified to upload to Librarian using the second
+        # approach (compressed tar.gz layers) but from LP to Registries
+        # we need to distinguish here between the 2 approaches and upload
+        # accordingly as we might have old builds in Librarian that have
+        # not been requested to be uploaded to registries yet.
+        try:
+            lfa.open()
+            with tarfile.open(fileobj=lfa, mode='r|gz') as un_zipped:
+                for tarinfo in un_zipped:
+                    if tarinfo.name == 'layer.tar':
+                        return True
+            return False
+        finally:
+            lfa.close()
+
+    @classmethod
     def _upload_to_push_rule(
             cls, push_rule, build, manifest, digests, preloaded_data,
             tag=None):
@@ -335,13 +410,26 @@ class OCIRegistryClient:
             config = file_data["config_file"]
             #  Upload the layers involved
             layer_sizes = {}
+
+            # determine layer upload type: compressed or uncompressed
+            first_id = config["rootfs"]["diff_ids"][0]
+            lfa = file_data[first_id]
+            upload_layers_uncompressed = cls.should_upload_layers_uncompressed(
+                lfa)
+
             for diff_id in config["rootfs"]["diff_ids"]:
+                if upload_layers_uncompressed:
+                    digest = diff_id
+                else:
+                    digest = "sha256:{}".format(
+                        file_data[diff_id].content.sha256)
                 layer_size = cls._upload_layer(
-                    diff_id,
+                    digest,
                     push_rule,
                     file_data[diff_id],
-                    http_client)
-                layer_sizes[diff_id] = layer_size
+                    http_client,
+                    upload_layers_uncompressed)
+                layer_sizes[digest] = layer_size
             # The config file is required in different forms, so we can
             # calculate the sha, work these out and upload
             config_json = json.dumps(config).encode("UTF-8")
@@ -358,7 +446,7 @@ class OCIRegistryClient:
             registry_manifest = cls._build_registry_manifest(
                 digests, config, config_json, config_sha,
                 preloaded_data[section["Config"]],
-                layer_sizes)
+                layer_sizes, upload_layers_uncompressed)
 
             # Upload the registry manifest
             manifest = cls._uploadRegistryManifest(

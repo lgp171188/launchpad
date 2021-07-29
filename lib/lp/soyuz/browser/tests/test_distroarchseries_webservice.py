@@ -198,7 +198,8 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         sha1_1 = hashlib.sha1(b'abcxyz').hexdigest()
         ws_das.setChroot(data=b'abcxyz', sha1sum=sha1_1)
         sha1_2 = hashlib.sha1(b'123456').hexdigest()
-        ws_das.setChroot(data=b'123456', sha1sum=sha1_2, image_type='LXD image')
+        ws_das.setChroot(
+            data=b'123456', sha1sum=sha1_2, image_type='LXD image')
         chroot_image = das.getChroot(image_type=BuildBaseImageType.CHROOT)
         self.assertEqual(sha1_1, chroot_image.content.sha1)
         lxd_image = das.getChroot(image_type=BuildBaseImageType.LXD)

@@ -801,7 +801,7 @@ class POParser(object):
           Traceback (most recent call last):
             ...
           lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: Extra content found after string: (x)
-        """
+        """  # noqa: E501
         if self._escaped_line_break:
             # Continuing a line after an escaped newline.  Strip indentation.
             string = string.lstrip()

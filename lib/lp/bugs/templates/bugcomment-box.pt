@@ -11,8 +11,8 @@
               python: comment.show_for_admin and 'adminHiddenComment' or ''"
   tal:attributes="class string:boardComment editable-message
                  ${remote_bug_comment_class} ${admin_comment_hidden_class};
-                 data-baseurl comment/fmt:url">
-
+                  data-baseurl comment/fmt:url;
+                  data-i-can-edit view/can_edit">
   <div class="boardCommentDetails">
     <div class="message-revision-container">
       <div class="message-revision-container-header">
@@ -23,6 +23,9 @@
       <script type="text/template">
         <div class='message-revision-item'>
           <div class='message-revision-title'>
+              <a class="sprite remove action-icon message-revision-del-btn">
+                  Remove
+              </a>
               <a class="js-action">
                   Revision #{revision}, created at {date_created_display}
               </a>
@@ -92,7 +95,10 @@
             <img class="sprite edit action-icon editable-message-edit-btn"
                  tal:condition="view/can_edit"/>
           </td>
-
+          <td>
+            <img class="sprite remove action-icon editable-message-delete-btn"
+                 tal:condition="view/can_edit"/>
+          </td>
           <td class="bug-comment-index">
           <a itemprop="url"
              tal:attributes="href comment/fmt:url"

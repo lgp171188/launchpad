@@ -161,20 +161,29 @@ class LibrarianServerFixture(TacTestSetup):
             return
         chunks = self.getLogChunks()
         # A typical startup: upload, download, restricted up, restricted down.
-        #2017-12-09 06:33:13+0530 [-] Loading /home/ubuntu/launchpad/lp-branches/devel/daemons/librarian.tac...
-        #2017-12-09 06:33:19+0530 [-] Loaded.
-        #2017-12-09 06:33:19+0530 [-] twistd 16.5.0 (/home/ubuntu/launchpad/lp-branches/devel/env/bin/python2.7 2.7.12) starting up.
-        #2017-12-09 06:33:19+0530 [-] reactor class: twisted.internet.epollreactor.EPollReactor.
-        #2017-12-09 06:33:19+0530 [-] FileUploadFactory starting on 39851
-        #2017-12-09 06:33:19+0530 [-] Starting factory <lp.services.librarianserver.libraryprotocol.FileUploadFactory instance at 0xf0ef80ac>
-        #2017-12-09 06:33:19+0530 [-] Site starting on 45355
-        #2017-12-09 06:33:19+0530 [-] Starting factory <twisted.web.server.Site instance at 0xf0ef848c>
-        #2017-12-09 06:33:19+0530 [-] FileUploadFactory starting on 42150
-        #2017-12-09 06:33:19+0530 [-] Starting factory <lp.services.librarianserver.libraryprotocol.FileUploadFactory instance at 0xf0ef856c>
-        #2017-12-09 06:33:19+0530 [-] Site starting on 37341
-        #2017-12-09 06:33:19+0530 [-] Starting factory <twisted.web.server.Site instance at 0xf0ef85ec>
-        #2017-12-09 06:33:19+0530 [-] Not using upstream librarian
-        #2017-12-09 06:33:19+0530 [-] daemon ready!
+        # (Line-wrapped to pacify flake8.)
+        # 2017-12-09 06:33:13+0530 [-] Loading .../daemons/librarian.tac...
+        # 2017-12-09 06:33:19+0530 [-] Loaded.
+        # 2017-12-09 06:33:19+0530 [-] twistd 16.5.0
+        #   (.../env/bin/python2.7 2.7.12) starting up.
+        # 2017-12-09 06:33:19+0530 [-] reactor class:
+        #   twisted.internet.epollreactor.EPollReactor.
+        # 2017-12-09 06:33:19+0530 [-] FileUploadFactory starting on 39851
+        # 2017-12-09 06:33:19+0530 [-] Starting factory
+        #   <lp.services.librarianserver.libraryprotocol.FileUploadFactory
+        #   instance at 0xf0ef80ac>
+        # 2017-12-09 06:33:19+0530 [-] Site starting on 45355
+        # 2017-12-09 06:33:19+0530 [-] Starting factory
+        #   <twisted.web.server.Site instance at 0xf0ef848c>
+        # 2017-12-09 06:33:19+0530 [-] FileUploadFactory starting on 42150
+        # 2017-12-09 06:33:19+0530 [-] Starting factory
+        #   <lp.services.librarianserver.libraryprotocol.FileUploadFactory
+        #   instance at 0xf0ef856c>
+        # 2017-12-09 06:33:19+0530 [-] Site starting on 37341
+        # 2017-12-09 06:33:19+0530 [-] Starting factory
+        #   <twisted.web.server.Site instance at 0xf0ef85ec>
+        # 2017-12-09 06:33:19+0530 [-] Not using upstream librarian
+        # 2017-12-09 06:33:19+0530 [-] daemon ready!
         self.upload_port = int(chunks[4].split()[-1])
         self.download_port = int(chunks[6].split()[-1])
         self.restricted_upload_port = int(chunks[8].split()[-1])

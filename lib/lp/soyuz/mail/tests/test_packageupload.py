@@ -243,7 +243,7 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
             %s
             http://launchpad.test/~archiver/+archive/ubuntu/ppa
             You are receiving this email because you made this upload.
-            """ % "-- ")
+            """ % "-- ")  # noqa: E501
         self.assertEqual(expected_body, body)
 
 

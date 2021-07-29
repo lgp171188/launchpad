@@ -14,7 +14,7 @@ from lazr.sshserver.auth import (
 from lazr.sshserver.service import Factory
 from twisted.conch.ssh.common import NS
 from twisted.conch.ssh.keys import Key
-from twisted.test.proto_helpers import StringTransport
+from twisted.internet.testing import StringTransport
 
 from lp.codehosting.sshserver.daemon import (
     get_key_path,
