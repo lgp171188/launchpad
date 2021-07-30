@@ -15,6 +15,7 @@ import os
 
 import pytz
 import scandir
+import six
 from storm.locals import (
     Bool,
     DateTime,
@@ -346,7 +347,7 @@ class SignedCodeOfConductSet:
     def affirmAndStore(self, user, codetext):
         """See `ISignedCodeOfConductSet`."""
         try:
-            encoded_codetext = codetext.decode('utf-8')
+            encoded_codetext = six.ensure_text(codetext)
         except UnicodeDecodeError:
             raise TypeError('Signed Code Could not be decoded as UTF-8')
 
@@ -354,7 +355,7 @@ class SignedCodeOfConductSet:
         coc = CodeOfConduct(getUtility(ICodeOfConductConf).currentrelease)
         current = coc.content
 
-        if encoded_codetext.split() != current.decode('UTF-8').split():
+        if encoded_codetext.split() != six.ensure_text(current).split():
             return ('The affirmed text does not match the current '
                     'Code of Conduct.')
 
