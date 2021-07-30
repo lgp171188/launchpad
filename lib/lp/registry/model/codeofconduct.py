@@ -200,7 +200,7 @@ class SignedCodeOfConduct(StormBase):
 
     active = Bool(name='active', allow_none=False, default=False)
 
-    affirmed = Bool(name='affirmed', allow_none=False, default=False)
+    affirmed = Bool(name='affirmed', allow_none=True, default=False,)
 
     def __init__(self, owner, signedcode=None, signing_key_fingerprint=None,
             recipient=None, active=False, affirmed=False):
