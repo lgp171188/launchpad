@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -S
+#!/usr/bin/python3 -S
 
 __metaclass__ = type
 

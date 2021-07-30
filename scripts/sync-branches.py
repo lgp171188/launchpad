@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -S
+#!/usr/bin/python3 -S
 # Copyright 2021 Canonical Ltd.  All rights reserved.
 
 """Sync branches from production to a staging environment."""
