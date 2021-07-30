@@ -191,3 +191,44 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
                     'fingerprint': gpgkey.fingerprint,
                     },
             notification.get_payload(decode=True).decode("UTF-8"))
+
+    def test_affirmAndStore_good(self):
+        user = self.factory.makePerson()
+        current = getUtility(ICodeOfConductSet).current_code_of_conduct
+        self.assertIsNone(
+            getUtility(ISignedCodeOfConductSet).affirmAndStore(
+                user, current.content))
+        [notification] = self.assertEmailQueueLength(1)
+        self.assertThat(dict(notification), ContainsDict({
+            "From": Equals(format_address(
+                "Launchpad Code Of Conduct System",
+                config.canonical.noreply_from_address)),
+            "To": Equals(user.preferredemail.email),
+            "Subject": Equals(
+                "You have affirmed the Code of Conduct."),
+            }))
+        self.assertEqual(
+            dedent("""\
+
+                Hello
+
+                Your Code of Conduct Signature was modified.
+
+                User: '%(user)s'
+                Version affirmed %(version)s
+
+
+                Thanks,
+
+                The Launchpad Team
+                """) % {
+                    'user': user.display_name,
+                    'version': current.version,
+                    },
+            notification.get_payload(decode=True).decode("UTF-8"))
+
+    def test_affirmAndStore_incorrect_text(self):
+        user = self.factory.makePerson()
+        self.assertEqual(
+            u"The affirmed text does not match the current Code of Conduct.",
+            getUtility(ISignedCodeOfConductSet).affirmAndStore(user, "foo"))

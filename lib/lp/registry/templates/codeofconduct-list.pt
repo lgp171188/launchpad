@@ -24,10 +24,10 @@
 
       <div tal:condition="not: is_ubuntu_coc_signer">
 
-        <h2>Sign the Ubuntu Code of Conduct</h2>
+        <h2>Sign the Ubuntu Code of Conduct using GPG</h2>
 
         Ubuntu community members may commit to observing the Ubuntu Code of
-        Conduct by signing it online:
+        Conduct by signing it using GPG online:
 
         <ol style="margin-left: 4em">
             <li>
@@ -63,6 +63,16 @@
                 string:${context/current_code_of_conduct/fmt:url}/+sign">
                 Sign it!</a></li>
         </ol>
+
+        <h2>Affirm the Ubuntu Code of Conduct on Launchpad</h2>
+
+          Ubuntu community members can affirm the Code of Conduct
+          on Launchpad via a simple web form.
+
+          <p>
+            <a tal:attributes="href
+                string:${context/current_code_of_conduct/fmt:url}/+affirm">Affirm the Code of Conduct</a>
+          </p>
       </div>
 
       <p tal:condition="is_ubuntu_coc_signer">

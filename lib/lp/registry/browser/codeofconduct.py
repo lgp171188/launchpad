@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 __all__ = [
+    'AffirmCodeofConductView',
     'SignedCodeOfConductSetNavigation',
     'CodeOfConductSetNavigation',
     'CodeOfConductOverviewMenu',
@@ -158,6 +159,27 @@ class CodeOfConductSetView(LaunchpadView):
     """Simple view class for CoCSet page."""
 
     page_title = 'Ubuntu Codes of Conduct'
+
+
+class AffirmCodeofConductView(LaunchpadFormView):
+    """Add a new `SignedCodeOfConduct` via affirmation."""
+    schema = ISignedCodeOfConduct
+    field_names = ['affirmed']
+
+    @property
+    def page_title(self):
+        return "Affirm %s" % self.context.title
+
+    @property
+    def code_of_conduct(self):
+        return self.context.content
+
+    @action('Continue', name='affirm')
+    def affirm_action(self, action, data):
+        if data.get('affirmed'):
+            signedcocset = getUtility(ISignedCodeOfConductSet)
+            signedcocset.affirmAndStore(self.user, self.context.content)
+        self.next_url = canonical_url(self.user) + '/+codesofconduct'
 
 
 class SignedCodeOfConductAddView(LaunchpadFormView):

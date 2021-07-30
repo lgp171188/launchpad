@@ -200,14 +200,17 @@ class SignedCodeOfConduct(StormBase):
 
     active = Bool(name='active', allow_none=False, default=False)
 
+    affirmed = Bool(name='affirmed', allow_none=False, default=False)
+
     def __init__(self, owner, signedcode=None, signing_key_fingerprint=None,
-            recipient=None, active=False):
+            recipient=None, active=False, affirmed=False):
         super(SignedCodeOfConduct, self).__init__()
         self.owner = owner
         self.signedcode = signedcode
         self.signing_key_fingerprint = signing_key_fingerprint
         self.recipient = recipient
         self.active = active
+        self.affirmed = affirmed
 
     @cachedproperty
     def signingkey(self):
@@ -224,6 +227,9 @@ class SignedCodeOfConduct(StormBase):
             displayname += (': digitally signed by %s (%s)'
                             % (self.owner.displayname,
                                self.signingkey.displayname))
+        elif self.affirmed:
+            displayname += (': affirmed by %s'
+                            % self.owner.displayname)
         else:
             displayname += (': paper submission accepted by %s'
                             % self.recipient.displayname)
@@ -336,6 +342,33 @@ class SignedCodeOfConductSet:
         subject = 'Your Code of Conduct signature has been acknowledged'
         content = ('Digitally Signed by %s\n' % sig.fingerprint)
         signed.sendAdvertisementEmail(subject, content)
+
+    def affirmAndStore(self, user, codetext):
+        """See `ISignedCodeOfConductSet`."""
+        try:
+            encoded_codetext = codetext.decode('utf-8')
+        except UnicodeDecodeError:
+            raise TypeError('Signed Code Could not be decoded as UTF-8')
+
+        # recover the current CoC release
+        coc = CodeOfConduct(getUtility(ICodeOfConductConf).currentrelease)
+        current = coc.content
+
+        if encoded_codetext.split() != current.decode('UTF-8').split():
+            return ('The affirmed text does not match the current '
+                    'Code of Conduct.')
+
+        # The text of the CoC isn't GPG signed at this point,
+        # but save which version was affirmed
+        affirmation_text = u"Code of Conduct version {}".format(
+            coc.version)
+        affirmed = SignedCodeOfConduct(
+            owner=user, signedcode=affirmation_text, affirmed=True,
+            active=True)
+        # Send Advertisement Email
+        subject = 'You have affirmed the Code of Conduct.'
+        content = ('Version affirmed %s\n' % coc.version)
+        affirmed.sendAdvertisementEmail(subject, content)
 
     def searchByDisplayname(self, displayname, searchfor=None):
         """See ISignedCodeOfConductSet."""
