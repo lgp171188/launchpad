@@ -8,6 +8,8 @@ ALTER TABLE signedcodeofconduct
 ALTER TABLE signedcodeofconduct
     ADD COLUMN version text;
 
+ALTER TABLE signedcodeofconduct ADD CONSTRAINT affirmed_or_signed_is_not_null CHECK (NOT affirmed OR signing_key_fingerprint IS NULL);
+
 COMMENT ON COLUMN signedcodeofconduct.affirmed IS 'Code of conduct was affirmed via website interaction.';
 COMMENT ON COLUMN signedcodeofconduct.version IS 'Version of the Code of Conduct that was signed.'
 
