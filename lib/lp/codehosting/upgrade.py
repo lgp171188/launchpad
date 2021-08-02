@@ -10,8 +10,6 @@ Repositories that have no tree references are always upgraded to the standard
 actually have tree references are converted to RepositoryFormat2aSubtree.
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 __all__ = ['Upgrader']

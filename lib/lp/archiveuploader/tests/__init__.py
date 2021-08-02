@@ -3,11 +3,6 @@
 
 """Tests for the archive uploader."""
 
-# XXX cjwatson 2018-05-03: We should use unicode_literals too, but this
-# requires a version of zope.configuration that includes
-# https://github.com/zopefoundation/zope.configuration/pull/19.
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 __all__ = [

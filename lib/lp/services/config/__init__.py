@@ -8,8 +8,6 @@ The configuration section used is specified using the LPCONFIG
 environment variable, and defaults to 'development'
 '''
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 

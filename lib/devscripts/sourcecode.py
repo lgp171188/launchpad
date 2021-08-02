@@ -3,8 +3,6 @@
 
 """Tools for maintaining the Launchpad source code."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = [
     'interpret_config',

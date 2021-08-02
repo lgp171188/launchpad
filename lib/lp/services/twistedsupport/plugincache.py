@@ -10,8 +10,6 @@ fail if any part of the process of importing the plugin installs a default
 reactor.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from twisted.plugin import (

@@ -3,8 +3,6 @@
 
 """Interfaces to allow bug filing on multiple versions of an OCI Project."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = [
     'IOCIProjectSeries',

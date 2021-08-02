@@ -8,8 +8,6 @@ Rebuild the full text indexes in a more friendly fashion, enabling this to
 be done without downtime.
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import _pythonpath  # noqa: F401

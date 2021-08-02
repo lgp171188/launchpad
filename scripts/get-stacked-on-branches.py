@@ -21,8 +21,6 @@ format:
 This script is intended to be used in conjunction with "update-stacked-on.py".
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 import _pythonpath  # noqa: F401

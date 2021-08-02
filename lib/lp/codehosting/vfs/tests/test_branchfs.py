@@ -3,8 +3,6 @@
 
 """Tests for the branch filesystem."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import os

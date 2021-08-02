@@ -3,8 +3,6 @@
 
 """Tests for lp.code.bzr."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from breezy.errors import NoSuchRevision

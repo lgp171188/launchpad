@@ -3,8 +3,6 @@
 
 """Test Packageset features."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 

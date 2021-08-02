@@ -3,8 +3,6 @@
 
 """Tests for branch contexts."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from zope.security.proxy import removeSecurityProxy

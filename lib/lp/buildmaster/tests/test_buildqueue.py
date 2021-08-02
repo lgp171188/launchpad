@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Test BuildQueue features."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from datetime import timedelta
 
 from zope.component import getUtility

@@ -3,8 +3,6 @@
 
 """Helpers for testing out publication related code."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = [
     'get_request_and_publication',

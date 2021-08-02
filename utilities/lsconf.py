@@ -5,8 +5,6 @@
 
 """List an environment's lazr configuration."""
 
-from __future__ import absolute_import, print_function
-
 __metatype__ = type
 
 # Scripts may have relative imports.

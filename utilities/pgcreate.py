@@ -8,8 +8,6 @@
 Like createdb, except will retry on failure.
 ."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import sys

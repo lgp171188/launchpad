@@ -3,8 +3,6 @@
 
 """Tests for jobs to close bugs for accepted package uploads."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import io
 from itertools import product
 from textwrap import dedent

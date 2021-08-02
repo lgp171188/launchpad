@@ -10,8 +10,6 @@ notice to reflect the current year. Looks for the notice in the first three
 lines of the file and leaves the file unchanged if it finds none.
 """
 
-from __future__ import absolute_import, print_function
-
 from datetime import date
 import os
 import re

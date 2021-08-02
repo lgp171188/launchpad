@@ -8,8 +8,6 @@ extracting useful information out of them.  It was extracted from cscvs, and
 cut down to only what Launchpad's product release finder needs.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import re
 import stat

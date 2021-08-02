@@ -3,8 +3,6 @@
 
 """Tests for the GitSubscription model object."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from lp.app.enums import InformationType

@@ -3,8 +3,6 @@
 
 """Test the script that does a smoke-test of the librarian."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from functools import partial

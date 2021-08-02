@@ -5,8 +5,6 @@
 
 """Link system-installed Python modules into Launchpad's virtualenv."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from argparse import ArgumentParser
 from distutils.sysconfig import get_python_lib
 import importlib

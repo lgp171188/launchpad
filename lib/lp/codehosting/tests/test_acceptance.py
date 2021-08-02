@@ -3,8 +3,6 @@
 
 """Acceptance tests for the codehosting server."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import os

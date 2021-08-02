@@ -7,8 +7,6 @@ See also lp.archivepublisher.tests.test_debian_installer for detailed tests
 of debian-installer custom upload extraction.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from itertools import chain
 import os
 

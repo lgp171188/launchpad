@@ -3,8 +3,6 @@
 
 """Interfaces for a build record for OCI recipes."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = [
     'CannotScheduleRegistryUpload',

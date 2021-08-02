@@ -3,8 +3,6 @@
 
 """Tests for OCI registry push rules."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from storm.store import Store
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility

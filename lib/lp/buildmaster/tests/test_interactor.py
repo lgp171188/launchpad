@@ -3,8 +3,6 @@
 
 """Test BuilderInteractor features."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __all__ = [
     'FakeBuildQueue',
     'MockBuilderFactory',

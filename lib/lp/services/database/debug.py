@@ -5,8 +5,6 @@
 Replace the psycopg connect method with one that returns a wrapped connection.
 '''
 
-from __future__ import absolute_import, print_function
-
 import logging
 import textwrap
 import traceback

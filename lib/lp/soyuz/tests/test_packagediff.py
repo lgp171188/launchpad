@@ -3,8 +3,6 @@
 
 """Test source package diffs."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from datetime import datetime

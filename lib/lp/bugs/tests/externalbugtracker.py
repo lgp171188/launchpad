@@ -3,8 +3,6 @@
 
 """Helper classes for testing ExternalSystem."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 from contextlib import contextmanager

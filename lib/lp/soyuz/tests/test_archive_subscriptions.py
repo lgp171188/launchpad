@@ -3,8 +3,6 @@
 
 """Test Archive features."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from fixtures import FakeLogger
 from storm.store import Store
 from testtools.matchers import Equals

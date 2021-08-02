@@ -3,8 +3,6 @@
 
 """A virtual filesystem for hosting Bazaar branches."""
 
-from __future__ import absolute_import, print_function
-
 __all__ = [
     'AsyncLaunchpadTransport',
     'branch_id_to_path',

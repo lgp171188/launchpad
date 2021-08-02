@@ -3,8 +3,6 @@
 
 """Helpers for Code Import page tests."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = [
     'get_import_for_branch_name',

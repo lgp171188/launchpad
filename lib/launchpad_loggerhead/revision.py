@@ -3,8 +3,6 @@
 
 """WSGI Middleware to add Launchpad revision headers to loggerhead."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = ['RevisionHeaderHandler']
 

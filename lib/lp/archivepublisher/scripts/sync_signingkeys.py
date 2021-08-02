@@ -3,8 +3,6 @@
 
 """Script to inject archive keys into signing service."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 

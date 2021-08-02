@@ -5,8 +5,6 @@
 
 """Feed stdin to stdout, blocking if there are too many unshipped WAL files."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = []
 

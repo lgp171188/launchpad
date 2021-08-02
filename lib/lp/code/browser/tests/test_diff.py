@@ -3,8 +3,6 @@
 
 """Unit tests for DiffView."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from lp.code.browser.diff import PreviewDiffFormatterAPI
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadFunctionalLayer

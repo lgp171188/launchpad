@@ -3,8 +3,6 @@
 
 """Fixtures for dealing with the build time HTTP proxy."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from datetime import datetime

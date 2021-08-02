@@ -5,8 +5,6 @@
 extract details of known CVE entries, and ensure that all of the known
 CVE's are fully registered in Launchpad."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 import gzip

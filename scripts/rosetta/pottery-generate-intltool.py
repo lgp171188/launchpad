@@ -5,8 +5,6 @@
 
 """Print a list of directories that contain a valid intltool structure."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import _pythonpath  # noqa: F401
 
 import os.path

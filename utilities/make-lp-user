@@ -29,8 +29,6 @@ Please note that this script is for testing purposes only. Do NOT use it in
 production environments.
 """
 
-from __future__ import absolute_import, print_function
-
 import _pythonpath  # noqa: F401
 
 from optparse import OptionParser

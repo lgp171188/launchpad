@@ -13,8 +13,6 @@ Cut off access, slaughter connections and burn the database to the ground
 (but do nothing that could put the system into recovery mode).
 """
 
-from __future__ import absolute_import, print_function
-
 import _pythonpath  # noqa: F401
 
 from optparse import OptionParser

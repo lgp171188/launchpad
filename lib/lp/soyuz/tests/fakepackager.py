@@ -7,8 +7,6 @@ It builds small and fully functional packages to be used in launchpad test
 suite.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = ['FakePackager']
 

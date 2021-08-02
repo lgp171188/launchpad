@@ -3,8 +3,6 @@
 
 """Test archive dependencies."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 import os.path
