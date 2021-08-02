@@ -5,6 +5,8 @@ SET client_min_messages=ERROR;
 
 ALTER TABLE signedcodeofconduct
     ADD COLUMN affirmed boolean;
+ALTER TABLE signedcodeofconduct
+    ADD COLUMN version text;
 
 COMMENT ON COLUMN signedcodeofconduct.affirmed IS 'Code of conduct was affirmed via website interaction.';
 
