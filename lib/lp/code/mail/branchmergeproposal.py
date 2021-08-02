@@ -8,9 +8,9 @@ __metaclass__ = type
 
 from lp.code.enums import CodeReviewNotificationLevel
 from lp.code.mail.branch import BranchMailer
-from lp.services.config import config
 from lp.services.mail.basemailer import BaseMailer
 from lp.services.mail.sendmail import (
+    format_address,
     format_address_for_person,
     get_msgid,
     )
@@ -52,14 +52,13 @@ class BMPMailer(BranchMailer):
         recipients = merge_proposal.getNotificationRecipients(
             CodeReviewNotificationLevel.STATUS)
 
-        # assert from_user.preferredemail is not None, (
-        #     'The sender must have an email address.')
-        # from_address = format_address_for_person(from_user)
+        from_address = format_address(
+            from_user.display_name, merge_proposal.address)
 
         return cls(
             '%(proposal_title)s',
             'branch-merge-proposal-created.txt', recipients, merge_proposal,
-            merge_proposal.address, message_id=get_msgid(),
+            from_address, message_id=get_msgid(),
             requested_reviews=merge_proposal.votes,
             preview_diff=merge_proposal.preview_diff)
 
@@ -73,27 +72,27 @@ class BMPMailer(BranchMailer):
         """
         recipients = merge_proposal.getNotificationRecipients(
             CodeReviewNotificationLevel.STATUS)
-        # if from_user is not None:
-        #     assert from_user.preferredemail is not None, (
-        #         'The sender must have an email address.')
-        #     from_address = format_address_for_person(from_user)
-        # else:
-        #     from_address = config.canonical.noreply_from_address
+        if from_user is not None:
+            from_address = format_address(
+                from_user.display_name, merge_proposal.address)
+        else:
+            from_address = merge_proposal.address
         return cls(
             '%(proposal_title)s',
             'branch-merge-proposal-updated.txt', recipients,
-            merge_proposal, merge_proposal.address, delta=delta_text,
+            merge_proposal, from_address, delta=delta_text,
             message_id=get_msgid())
 
     @classmethod
     def forReviewRequest(cls, reason, merge_proposal, from_user):
         """Return a mailer for a request to review a BranchMergeProposal."""
-        from_address = format_address_for_person(from_user)
+        from_address = format_address(
+            from_user.display_name, merge_proposal.address)
         recipients = {reason.subscriber: reason}
         return cls(
             '%(proposal_title)s',
             'review-requested.txt', recipients,
-            merge_proposal, merge_proposal.address, message_id=get_msgid(),
+            merge_proposal, from_address, message_id=get_msgid(),
             preview_diff=merge_proposal.preview_diff, direct_email=True)
 
     def _getReplyToAddress(self, email, recipient):
