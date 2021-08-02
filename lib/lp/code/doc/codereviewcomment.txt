@@ -86,7 +86,7 @@ Now run the pending job to send the email.
     >>> notifications = [email for email in notifications if
     ...                  email['X-Launchpad-Message-Rationale'] == 'Owner']
     >>> print_emails(include_reply_to=True, notifications=notifications)
-    From: Sender Person <sender@example.com>
+    From: Sender Person <mp+...@code.launchpad.test>
     To: ...
     Reply-To: mp+...@code.launchpad.test
     Subject: Please merge

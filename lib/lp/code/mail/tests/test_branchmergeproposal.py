@@ -143,7 +143,9 @@ class TestMergeProposalMailing(TestCaseWithFactory):
              'Reply-To': bmp.address,
              'Message-Id': '<foobar-example-com>'},
             ctrl.headers)
-        self.assertEqual('Baz Qux <baz.qux@example.com>', ctrl.from_addr)
+        self.assertEqual(
+            'Baz Qux <mp+%d@%s>' % (bmp.id, config.launchpad.code_domain),
+            ctrl.from_addr)
         reviewer_id = format_address_for_person(reviewer)
         self.assertEqual(set([reviewer_id, bmp.address]), set(ctrl.to_addrs))
         mailer.sendAll()
@@ -337,7 +339,9 @@ class TestMergeProposalMailing(TestCaseWithFactory):
         mailer.message_id = '<foobar-example-com>'
         ctrl = mailer.generateEmail('baz.quxx@example.com', subscriber)
         self.assertEqual('<foobar-example-com>', ctrl.headers['Message-Id'])
-        self.assertEqual('Baz Qux <baz.qux@example.com>', ctrl.from_addr)
+        self.assertEqual(
+            'Baz Qux <mp+%d@%s>' % (bmp.id, config.launchpad.code_domain),
+            ctrl.from_addr)
         bmp.root_message_id = None
         pop_notifications()
         mailer.sendAll()
@@ -576,7 +580,9 @@ class TestMergeProposalMailing(TestCaseWithFactory):
         mailer = BMPMailer.forReviewRequest(
             request, request.merge_proposal, requester)
         self.assertEqual(
-            'Requester <requester@example.com>', mailer.from_address)
+            'Requester <mp+%d@%s>' % (
+                request.merge_proposal.id, config.launchpad.code_domain),
+            mailer.from_address)
         self.assertEqual(
             request.merge_proposal.preview_diff,
             mailer.preview_diff)

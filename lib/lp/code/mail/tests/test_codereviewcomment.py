@@ -99,8 +99,9 @@ class TestCodeReviewComment(TestCaseWithFactory):
         self.assertEqual(
             comment.branch_merge_proposal, mailer.merge_proposal)
         sender = comment.message.owner
-        sender_address = format_address(sender.displayname,
-                                        sender.preferredemail.email)
+        sender_address = format_address(
+            sender.displayname,
+            "mp+%d@%s" % (bmp.id, config.launchpad.code_domain))
         self.assertEqual(sender_address, mailer.from_address)
         self.assertEqual(comment, mailer.code_review_comment)
 

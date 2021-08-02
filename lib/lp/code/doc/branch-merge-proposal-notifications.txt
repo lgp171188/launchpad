@@ -129,7 +129,7 @@ An email is sent to subscribers of either branch and the default reviewer.
 
     >>> notification = notifications[0]
     >>> print(notification['From'])
-    Eric <eric@example.com>
+    Eric <mp+...@code.launchpad.test>
     >>> print(notification['Subject'])
     [Merge] lp://dev/~person-name... into lp://dev/~person-name...
     >>> print(notification['X-Launchpad-Project'])
