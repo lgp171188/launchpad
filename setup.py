@@ -66,7 +66,8 @@ class lp_develop(develop):
     def _get_orig_sitecustomize(self):
         env_top = os.path.join(os.path.dirname(__file__), "env")
         system_paths = [
-            path for path in sys.path if not path.startswith(env_top)]
+            path for path in sys.path
+            if not path.startswith(env_top) and "pip-build-env-" not in path]
         try:
             fp, orig_sitecustomize_path, _ = (
                 imp.find_module("sitecustomize", system_paths))
