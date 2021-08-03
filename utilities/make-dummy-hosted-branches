@@ -15,8 +15,6 @@ sample data on the filesystem is consistent with the sample data in the
 database.
 """
 
-from __future__ import absolute_import, print_function
-
 import _pythonpath  # noqa: F401
 
 import os

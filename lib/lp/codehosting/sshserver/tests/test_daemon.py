@@ -3,8 +3,6 @@
 
 """Tests for the codehosting SSH server glue."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 from lazr.sshserver.auth import (

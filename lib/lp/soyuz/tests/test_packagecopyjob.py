@@ -3,8 +3,6 @@
 
 """Tests for sync package jobs."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import operator
 import os
 import signal

@@ -10,8 +10,6 @@ Usage hint:
 % utilities/audit-security.py
 """
 
-from __future__ import absolute_import, print_function
-
 __metatype__ = type
 
 import _pythonpath  # noqa: F401

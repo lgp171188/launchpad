@@ -3,8 +3,6 @@
 
 """Tests for SSH session support on the codehosting SSH server."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 from twisted.conch.interfaces import ISession

@@ -9,8 +9,6 @@ There is a declaration in ZCML somewhere that looks like:
 which tells `lazr.restful` that it should look for webservice exports here.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __all__ = [
     'ISnap',
     'ISnapBase',

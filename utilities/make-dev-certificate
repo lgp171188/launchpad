@@ -10,8 +10,6 @@ configs/development/launchpad.key and configs/development/launchpad.crt, and
 these changes should be committed.
 """
 
-from __future__ import print_function
-
 import atexit
 import os.path
 import shutil

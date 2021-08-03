@@ -59,7 +59,6 @@ def shhh(cmd):
 
     >>> cmd = [
     ...     python, "-c",
-    ...     "from __future__ import print_function; "
     ...     "import sys; "
     ...     "print(666); print(667, file=sys.stderr); sys.exit(42)",
     ...     ]

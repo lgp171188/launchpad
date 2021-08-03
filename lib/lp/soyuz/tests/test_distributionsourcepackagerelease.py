@@ -3,8 +3,6 @@
 
 """Tests of DistributionSourcePackageRelease."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from storm.store import Store
 from testtools.matchers import (
     Equals,

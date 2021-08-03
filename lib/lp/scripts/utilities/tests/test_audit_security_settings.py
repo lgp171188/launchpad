@@ -3,8 +3,6 @@
 
 """Tests the security.cfg auditor."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from lp.scripts.utilities.settingsauditor import SettingsAuditor

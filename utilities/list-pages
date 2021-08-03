@@ -42,8 +42,6 @@ because our cheat objects don't match the app-encoded business logic.
 # - bang the adapter nut against the hardest rock we can find until it cracks
 # - print the nourishing nutty goodness to stdout
 
-from __future__ import absolute_import, print_function
-
 import _pythonpath  # noqa: F401
 
 from inspect import getmro

@@ -3,8 +3,6 @@
 
 """Tests for debversion."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 # These tests came from sourcerer.

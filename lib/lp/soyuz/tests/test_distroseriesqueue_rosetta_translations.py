@@ -7,8 +7,6 @@ See also lp.archivepublisher.tests.test_rosetta_translations for detailed
 tests of rosetta-translations handling.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from os.path import relpath
 from tarfile import TarFile
 

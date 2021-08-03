@@ -3,8 +3,6 @@
 
 """Librarian disk to Swift storage tests."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 import hashlib

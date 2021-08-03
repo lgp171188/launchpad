@@ -10,8 +10,6 @@ documentation of the very simple 'protocol' Apache uses to talk to us, and
 lp.codehosting.rewrite.BranchRewriter for the logic of the rewritemap.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import _pythonpath  # noqa: F401
 
 import os

@@ -3,8 +3,6 @@
 
 """Definition of the internet servers that Launchpad uses."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import threading

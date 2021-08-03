@@ -10,8 +10,6 @@ provides a simple and fast alternative to the full Librarian in unit
 tests.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = [
     'FakeLibrarian',

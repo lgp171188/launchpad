@@ -6,8 +6,6 @@
 Used by test_logger.txt.
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = []
 

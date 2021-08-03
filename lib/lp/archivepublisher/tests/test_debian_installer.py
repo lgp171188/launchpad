@@ -7,8 +7,6 @@ See also lp.soyuz.tests.test_distroseriesqueue_debian_installer for
 high-level tests of debian-installer upload and queue manipulation.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 from textwrap import dedent
 

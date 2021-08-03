@@ -3,8 +3,6 @@
 
 """Implementation of the lp: htmlform: fmt: namespaces in TALES."""
 
-from __future__ import division
-
 __metaclass__ = type
 
 from bisect import bisect

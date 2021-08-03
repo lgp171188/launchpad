@@ -8,8 +8,6 @@ in Launchpad configuration files.  The private key should only be stored in
 secret overlays on systems that need it.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = ['main']
 

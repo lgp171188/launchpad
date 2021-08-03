@@ -3,8 +3,6 @@
 
 """Test native archive index generation for Soyuz."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import tempfile
 import unittest

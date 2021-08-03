@@ -5,8 +5,6 @@
 
 """Tests that get run automatically on a merge."""
 
-from __future__ import absolute_import, print_function
-
 import _pythonpath  # noqa: F401
 
 import errno

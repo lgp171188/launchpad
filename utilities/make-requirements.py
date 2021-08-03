@@ -5,8 +5,6 @@
 
 """Build a pip constraints file from inputs."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from argparse import ArgumentParser
 from collections import defaultdict
 try:

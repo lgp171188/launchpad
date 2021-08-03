@@ -7,8 +7,6 @@ This library provides functions for the script sort_sql.py, which resides in
 database/schema/.
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import re

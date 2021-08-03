@@ -8,8 +8,6 @@ Generate some statistics about a PostgreSQL database suitable for
 emailing via cron
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import sys

@@ -3,8 +3,6 @@
 
 """Tests for the branch listing query optimiser."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from storm.store import Store

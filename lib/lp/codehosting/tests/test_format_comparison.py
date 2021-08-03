@@ -3,8 +3,6 @@
 
 """Unit tests for comparing Bazaar formats."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import unittest

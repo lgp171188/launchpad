@@ -3,8 +3,6 @@
 
 """Test native publication workflow for Soyuz. """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import datetime
 import io
 import operator

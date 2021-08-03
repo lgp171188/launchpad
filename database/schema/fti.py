@@ -8,8 +8,6 @@
 Add full text indexes to the launchpad database
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import _pythonpath  # noqa: F401

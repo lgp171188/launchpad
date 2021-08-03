@@ -17,8 +17,6 @@ This script creates a user "ppa-user" (email ppa-user@example.com,
 password test) who is able to create PPAs.
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import _pythonpath  # noqa: F401

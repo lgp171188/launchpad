@@ -18,8 +18,6 @@ of one, forcing us to attempt to make some sort of layer tree.
 -- StuartBishop 20060619
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = [
     'AppServerLayer',

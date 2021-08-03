@@ -3,8 +3,6 @@
 
 """Browser views for distributions."""
 
-from __future__ import division
-
 __metaclass__ = type
 
 __all__ = [

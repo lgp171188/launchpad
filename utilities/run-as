@@ -10,8 +10,6 @@ inside "lxc exec".  (sudo in xenial breaks without a tty, so cannot be used
 here.)
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import pwd
 import resource

@@ -1,8 +1,6 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from doctest import (
     DocTestSuite,
     ELLIPSIS,
@@ -40,13 +38,7 @@ class TestWSGINativeString(TestCase):
 
 
 def test_suite():
-    globs = {
-        'absolute_import': absolute_import,
-        'print_function': print_function,
-        'unicode_literals': unicode_literals,
-        }
     return unittest.TestSuite((
         unittest.TestLoader().loadTestsFromName(__name__),
-        DocTestSuite(
-            lp.services.encoding, extraglobs=globs, optionflags=ELLIPSIS),
+        DocTestSuite(lp.services.encoding, optionflags=ELLIPSIS),
         ))

@@ -3,8 +3,6 @@
 
 """TALES formatter for strings."""
 
-from __future__ import division
-
 __metaclass__ = type
 __all__ = [
     'add_word_breaks',

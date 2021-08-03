@@ -3,8 +3,6 @@
 
 """Run the doctests and pagetests."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 
 from lp.services.testing import build_test_suite

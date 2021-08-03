@@ -6,8 +6,6 @@
 """Generate a preamble for slonik(1) scripts based on the current LPCONFIG.
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = []
 

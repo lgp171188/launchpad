@@ -3,8 +3,6 @@
 
 """Tests for creating BugBranch items based on Breezy revisions."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 from breezy.revision import Revision

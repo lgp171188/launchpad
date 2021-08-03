@@ -3,8 +3,6 @@
 
 """Helper methods for branch tests and pagetest."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = [
     'reset_all_branch_last_modified',

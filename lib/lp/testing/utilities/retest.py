@@ -22,8 +22,6 @@ report (or a part of) can be piped in, for example by pasting it:
 
 """
 
-from __future__ import print_function
-
 from collections import OrderedDict
 import fileinput
 from itertools import takewhile

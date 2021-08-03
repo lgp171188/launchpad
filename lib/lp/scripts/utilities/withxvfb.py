@@ -10,8 +10,6 @@ Follows sinzui's advice to the launchpad-dev list:
   https://lists.launchpad.net/launchpad-dev/msg07879.html
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import sys
 

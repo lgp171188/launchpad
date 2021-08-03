@@ -3,8 +3,6 @@
 
 """SSH session implementations for the codehosting SSH server."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = [
     'launch_smart_server',

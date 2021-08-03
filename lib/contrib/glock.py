@@ -21,8 +21,6 @@ Unix.
 @see: class L{GlobalLock} for more details.
 '''
 
-from __future__ import absolute_import, print_function
-
 __version__ = '0.2.' + '$Revision: #5 $'[12:-2]
 __author__ = 'Richard Gruet', 'rjgruet@yahoo.com'
 __date__    = '$Date: 2005/06/19 $'[7:-2], '$Author: rgruet $'[9:-2]

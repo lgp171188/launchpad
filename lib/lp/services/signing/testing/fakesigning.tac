@@ -3,8 +3,6 @@
 
 """Twisted application configuration file for a fake signing service."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 import os

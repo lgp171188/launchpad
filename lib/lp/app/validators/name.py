@@ -3,8 +3,6 @@
 
 """Validators for the .name attribute (defined in various schemas.)"""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import re

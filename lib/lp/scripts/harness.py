@@ -9,8 +9,6 @@ launchpad_dev or the database specified on the command line.
 One uses Python, the other iPython.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = ['python', 'ipython']
 

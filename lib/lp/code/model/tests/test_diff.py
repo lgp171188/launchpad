@@ -3,8 +3,6 @@
 
 """Tests for Diff, etc."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from difflib import unified_diff
