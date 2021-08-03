@@ -97,6 +97,11 @@ class ISignedCodeOfConduct(Interface):
         containing arbitrary content and subject.
         """
 
+    def sendAffirmationEmail(subject, content):
+        """Send confirmation of affirmation email to signature owner preferred
+        address containing arbitrary content and subject.
+        """
+
 
 # Interfaces for containers
 class ICodeOfConductSet(Interface):

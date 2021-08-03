@@ -255,6 +255,21 @@ class SignedCodeOfConduct(StormBase):
             fromaddress, str(self.owner.preferredemail.email),
             subject, message)
 
+    def sendAffirmationEmail(self, subject, content):
+        """See ISignedCodeOfConduct."""
+        assert self.owner.preferredemail
+        template = get_email_template(
+            'signedcoc-affirmed.txt', app='registry')
+        fromaddress = format_address(
+            "Launchpad Code Of Conduct System",
+            config.canonical.noreply_from_address)
+        replacements = {'user': self.owner.displayname,
+                        'content': content}
+        message = template % replacements
+        simple_sendmail(
+            fromaddress, str(self.owner.preferredemail.email),
+            subject, message)
+
 
 @implementer(ISignedCodeOfConductSet)
 class SignedCodeOfConductSet:
@@ -367,8 +382,8 @@ class SignedCodeOfConductSet:
             active=True)
         # Send Advertisement Email
         subject = 'You have affirmed the Code of Conduct'
-        content = ('Version affirmed: %s\n' % coc.version)
-        affirmed.sendAdvertisementEmail(subject, content)
+        content = ('Version affirmed: %s\n\n%s' % (coc.version, coc.content))
+        affirmed.sendAffirmationEmail(subject, content)
 
     def searchByDisplayname(self, displayname, searchfor=None):
         """See ISignedCodeOfConductSet."""

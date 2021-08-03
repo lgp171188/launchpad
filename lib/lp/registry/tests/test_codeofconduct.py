@@ -205,18 +205,19 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
                 config.canonical.noreply_from_address)),
             "To": Equals(user.preferredemail.email),
             "Subject": Equals(
-                "You have affirmed the Code of Conduct."),
+                "You have affirmed the Code of Conduct"),
             }))
         self.assertEqual(
             dedent("""\
 
                 Hello
 
-                Your Code of Conduct Signature was modified.
+                You have affirmed the Code of Conduct.
 
                 User: '%(user)s'
-                Version affirmed %(version)s
+                Version affirmed: %(version)s
 
+                %(content)s
 
                 Thanks,
 
@@ -224,6 +225,7 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
                 """) % {
                     'user': user.display_name,
                     'version': current.version,
+                    'content': current.content,
                     },
             notification.get_payload(decode=True).decode("UTF-8"))
 
