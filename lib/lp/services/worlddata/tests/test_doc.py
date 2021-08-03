@@ -9,7 +9,6 @@ import os
 
 from lp.services.testing import build_test_suite
 from lp.testing.layers import LaunchpadZopelessLayer
-from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setUp,
@@ -22,11 +21,9 @@ special = {
     'language.txt': LayeredDocFileSuite(
         '../doc/language.txt',
         layer=LaunchpadZopelessLayer,
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown),
+        setUp=setUp, tearDown=tearDown),
     }
 
 
 def test_suite():
-    return build_test_suite(
-        here, special, setUp=lambda test: setUp(test, future=True),
-        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))
+    return build_test_suite(here, special)

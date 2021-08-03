@@ -20,7 +20,6 @@ from lp.testing import (
     login,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setUp,
@@ -33,7 +32,7 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 def productSetUp(test):
     """Test environment for product."""
-    setUp(test, future=True)
+    setUp(test)
     thunderbird = getUtility(IProductSet).getByName('thunderbird')
     test.globs['target'] = thunderbird
     test.globs['collection'] = thunderbird
@@ -44,7 +43,7 @@ def productSetUp(test):
 
 def distributionSetUp(test):
     """Test environment for distribution."""
-    setUp(test, future=True)
+    setUp(test)
     kubuntu = getUtility(IDistributionSet).getByName('kubuntu')
     test.globs['target'] = kubuntu
     test.globs['collection'] = kubuntu
@@ -55,7 +54,7 @@ def distributionSetUp(test):
 
 def projectSetUp(test):
     """Test environment for project."""
-    setUp(test, future=True)
+    setUp(test)
     gnome_project = getUtility(IProjectGroupSet).getByName('gnome')
     products_queue = list(gnome_project.products)
 
@@ -72,7 +71,7 @@ def projectSetUp(test):
 
 
 def distributionsourcepackageSetUp(test):
-    setUp(test, future=True)
+    setUp(test)
     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     test.globs['target'] = ubuntu.getSourcePackage('evolution')
 
@@ -115,13 +114,11 @@ special = {
          ]),
     'emailinterface.txt': LayeredDocFileSuite(
         'emailinterface.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=ProcessMailLayer,
         stdout_logging=False)
     }
 
 
 def test_suite():
-    return build_test_suite(
-        here, special, setUp=lambda test: setUp(test, future=True),
-        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))
+    return build_test_suite(here, special)

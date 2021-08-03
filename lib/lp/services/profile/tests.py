@@ -798,7 +798,7 @@ def test_suite():
 
     doctest = LayeredDocFileSuite(
         './profiling.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer, stdout_logging_level=logging.WARNING)
     suite.addTest(doctest)
     suite.addTest(unittest.TestLoader().loadTestsFromName(__name__))

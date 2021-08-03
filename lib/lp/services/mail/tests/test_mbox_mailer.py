@@ -17,7 +17,7 @@ from lp.testing.systemdocs import (
 
 def setup(testobj):
     """Set up for doc test"""
-    setGlobs(testobj, future=True)
+    setGlobs(testobj)
     fd, mbox_filename = tempfile.mkstemp()
     os.close(fd)
     testobj.globs['mbox_filename'] = mbox_filename

@@ -15,11 +15,9 @@ from lp.testing.layers import (
     AppServerLayer,
     LaunchpadFunctionalLayer,
     )
-from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setGlobs,
-    setUp,
     )
 
 
@@ -34,8 +32,7 @@ def layerlessTearDown(test):
 special = {
     'webservice-configuration.txt': LayeredDocFileSuite(
         '../doc/webservice-configuration.txt',
-        setUp=lambda test: setGlobs(test, future=True),
-        tearDown=layerlessTearDown,
+        setUp=setGlobs, tearDown=layerlessTearDown,
         layer=None),
     # This test is actually run twice to prove that the AppServerLayer
     # properly isolates the database between tests.
@@ -50,7 +47,4 @@ special = {
 
 
 def test_suite():
-    return build_test_suite(
-        here, special, setUp=lambda test: setUp(test, future=True),
-        pageTestsSetUp=lambda test: setUpGlobs(test, future=True),
-        layer=LaunchpadFunctionalLayer)
+    return build_test_suite(here, special, layer=LaunchpadFunctionalLayer)

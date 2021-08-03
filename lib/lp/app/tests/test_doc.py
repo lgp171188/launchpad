@@ -27,7 +27,7 @@ bing_flag = FeatureFixture({'sitesearch.engine.name': 'bing'})
 
 
 def setUp_bing(test):
-    setUpGlobs(test, future=True)
+    setUpGlobs(test)
     bing_flag.setUp()
 
 
@@ -39,12 +39,12 @@ def tearDown_bing(test):
 special = {
     'tales.txt': LayeredDocFileSuite(
         '../doc/tales.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
     'menus.txt': LayeredDocFileSuite(
         '../doc/menus.txt',
-        setUp=lambda test: setGlobs(test, future=True), layer=None,
+        setUp=setGlobs, layer=None,
         ),
     'stories/launchpad-search(Bing)': PageTestSuite(
         '../stories/launchpad-search/',
@@ -54,11 +54,10 @@ special = {
     # Run these doctests again with the default search engine.
     '../stories/launchpad-search': PageTestSuite(
         '../stories/launchpad-search/',
-        setUp=lambda test: setUpGlobs(test, future=True), tearDown=tearDown,
+        setUp=setUpGlobs, tearDown=tearDown,
         ),
     }
 
 
 def test_suite():
-    return build_test_suite(
-        here, special, setUp=lambda test: setUp(test, future=True))
+    return build_test_suite(here, special)

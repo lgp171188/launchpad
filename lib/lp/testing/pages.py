@@ -833,10 +833,7 @@ def permissive_security_policy(dbuser_name=None):
         setSecurityPolicy(old_policy)
 
 
-# XXX cjwatson 2018-05-13: Once all doctests are made safe for the standard
-# __future__ imports, the `future=True` behaviour should become
-# unconditional.
-def setUpGlobs(test, future=False):
+def setUpGlobs(test):
     test.globs['transaction'] = transaction
     test.globs['http'] = http
     test.globs['webservice'] = LaunchpadWebServiceCaller(
@@ -895,12 +892,6 @@ def setUpGlobs(test, future=False):
     test.globs['stop'] = stop
     test.globs['six'] = six
     test.globs['backslashreplace'] = backslashreplace
-
-    if future:
-        import __future__
-        for future_item in (
-                'absolute_import', 'print_function', 'unicode_literals'):
-            test.globs[future_item] = getattr(__future__, future_item)
 
 
 # This function name doesn't follow our standard naming conventions,

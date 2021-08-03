@@ -139,12 +139,12 @@ here = os.path.dirname(os.path.realpath(__file__))
 special = {
     'librarian-report.txt': LayeredDocFileSuite(
             '../doc/librarian-report.txt',
-            setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+            setUp=setUp, tearDown=tearDown,
             layer=LaunchpadZopelessLayer
             ),
     'upload.txt': LayeredDocFileSuite(
             '../doc/upload.txt',
-            setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+            setUp=setUp, tearDown=tearDown,
             layer=LaunchpadZopelessLayer,
             globs={'upload_request': upload_request},
             ),
@@ -152,5 +152,4 @@ special = {
 
 
 def test_suite():
-    return build_test_suite(
-        here, special, setUp=lambda test: setUp(future=True))
+    return build_test_suite(here, special)

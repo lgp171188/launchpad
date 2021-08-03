@@ -10,7 +10,6 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
-from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setUp,
@@ -24,17 +23,14 @@ here = os.path.dirname(os.path.realpath(__file__))
 special = {
     'builder.txt': LayeredDocFileSuite(
         '../doc/builder.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer),
     'buildqueue.txt': LayeredDocFileSuite(
         '../doc/buildqueue.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer),
     }
 
 
 def test_suite():
-    return build_test_suite(
-        here, special, layer=LaunchpadZopelessLayer,
-        setUp=lambda test: setUp(test, future=True),
-        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))
+    return build_test_suite(here, special, layer=LaunchpadZopelessLayer)

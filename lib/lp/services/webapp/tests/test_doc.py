@@ -29,7 +29,7 @@ here = os.path.dirname(os.path.realpath(__file__))
 special = {
     'canonical_url.txt': LayeredDocFileSuite(
         '../doc/canonical_url.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=FunctionalLayer,),
     'notification-text-escape.txt': LayeredDocFileSuite(
         '../doc/notification-text-escape.txt',
@@ -38,27 +38,24 @@ special = {
         stdout_logging=False, layer=None),
     'test_adapter.txt': LayeredDocFileSuite(
         '../doc/test_adapter.txt',
-        setUp=lambda test: setGlobs(test, future=True),
+        setUp=setGlobs,
         layer=LaunchpadFunctionalLayer),
 # XXX Julian 2009-05-13, bug=376171
 # Temporarily disabled because of intermittent failures.
 #    'test_adapter_timeout.txt': LayeredDocFileSuite(
 #        '../doc/test_adapter_timeout.txt',
-#        setUp=lambda test: setUp(test, future=True),
-#        tearDown=tearDown,
+#        setUp=setUp, tearDown=tearDown,
 #        layer=LaunchpadFunctionalLayer),
     'test_adapter_permissions.txt': LayeredDocFileSuite(
         '../doc/test_adapter_permissions.txt',
-        setUp=lambda test: setGlobs(test, future=True),
+        setUp=setGlobs,
         layer=LaunchpadFunctionalLayer),
     'uri.txt': LayeredDocFileSuite(
         '../doc/uri.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=FunctionalLayer),
     }
 
 
 def test_suite():
-    return build_test_suite(
-        here, special, setUp=lambda test: setUp(test, future=True),
-        layer=LaunchpadFunctionalLayer)
+    return build_test_suite(here, special, layer=LaunchpadFunctionalLayer)

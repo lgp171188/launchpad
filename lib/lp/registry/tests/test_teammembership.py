@@ -1342,6 +1342,6 @@ def test_suite():
     bug_249185 = LayeredDocFileSuite(
         'bug-249185.txt', optionflags=default_optionflags,
         layer=DatabaseFunctionalLayer,
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown)
+        setUp=setUp, tearDown=tearDown)
     suite.addTest(bug_249185)
     return suite
