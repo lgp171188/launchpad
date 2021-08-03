@@ -377,6 +377,12 @@ class SignedCodeOfConductSet:
             return ('The affirmed text does not match the current '
                     'Code of Conduct.')
 
+        existing = not self.searchByUser(user).find(
+            SignedCodeOfConduct.version == six.ensure_text(coc.version)
+            ).is_empty()
+        if existing:
+            return 'You have already affirmed the current Code of Conduct.'
+
         affirmed = SignedCodeOfConduct(
             owner=user, affirmed=True, version=six.ensure_text(coc.version),
             active=True)

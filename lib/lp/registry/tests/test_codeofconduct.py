@@ -234,3 +234,15 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
         self.assertEqual(
             u"The affirmed text does not match the current Code of Conduct.",
             getUtility(ISignedCodeOfConductSet).affirmAndStore(user, "foo"))
+
+    def test_affirmAndStore_existing(self):
+        user = self.factory.makePerson()
+        current = getUtility(ICodeOfConductSet).current_code_of_conduct
+        self.assertIsNone(
+            getUtility(ISignedCodeOfConductSet).affirmAndStore(
+                user, current.content))
+
+        self.assertEqual(
+            u"You have already affirmed the current Code of Conduct.",
+            getUtility(ISignedCodeOfConductSet).affirmAndStore(
+                user, current.content))
