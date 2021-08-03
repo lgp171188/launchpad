@@ -26,6 +26,7 @@ __all__ = [
 
 from zope.component import getUtility
 
+from lp import _
 from lp.app.browser.launchpadform import (
     action,
     LaunchpadFormView,
@@ -174,11 +175,21 @@ class AffirmCodeofConductView(LaunchpadFormView):
     def code_of_conduct(self):
         return self.context.content
 
-    @action('Continue', name='affirm')
+    def setUpFields(self):
+        super(AffirmCodeofConductView, self).setUpFields()
+        affirmed_field = self.form_fields['affirmed']
+        affirmed_field.field.title = _(u"I agree to this Code of Conduct")
+        affirmed_field.field.description = u""
+
+    @action('Affirm', name='affirm')
     def affirm_action(self, action, data):
         if data.get('affirmed'):
             signedcocset = getUtility(ISignedCodeOfConductSet)
-            signedcocset.affirmAndStore(self.user, self.context.content)
+            error_message = signedcocset.affirmAndStore(
+                self.user, self.context.content)
+            if error_message:
+                self.addError(error_message)
+                return
         self.next_url = canonical_url(self.user) + '/+codesofconduct'
 
 

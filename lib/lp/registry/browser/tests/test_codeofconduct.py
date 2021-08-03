@@ -189,8 +189,8 @@ class TestCodeOfConductAffirmView(BrowserTestCase):
         content = coc.content
         browser = self.getViewBrowser(coc, "+affirm", user=user)
         self.assertIn(content, browser.contents)
-        browser.getControl('Affirmed').click()
-        browser.getControl('Continue').click()
+        browser.getControl(' I agree to this Code of Conduct').click()
+        browser.getControl('Affirm').click()
         self.assertEqual(
             "http://launchpad.test/~{}/+codesofconduct".format(name),
             browser.url)
