@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Tests for constructing bug notification emails for sending."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from datetime import (

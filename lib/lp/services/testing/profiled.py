@@ -3,8 +3,6 @@
 
 """Profile the test layers."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = ['profiled', 'setup_profiling']
 

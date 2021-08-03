@@ -3,8 +3,6 @@
 
 """Tests for the Launchpad statsd client"""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from statsd import StatsClient

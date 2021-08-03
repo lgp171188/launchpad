@@ -7,8 +7,6 @@ See also lp.soyuz.tests.test_distroseriesqueue_dist_upgrader for high-level
 tests of dist-upgrader upload and queue manipulation.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 from textwrap import dedent
 

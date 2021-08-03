@@ -7,8 +7,6 @@
 
 """Tests for Git repositories."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from datetime import (
@@ -2924,8 +2922,7 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         self.assertIn(
             "Work in progress => Merged",
             notifications[0].get_payload(decode=True).decode("UTF-8"))
-        self.assertEqual(
-            config.canonical.noreply_from_address, notifications[0]["From"])
+        self.assertEqual(proposal.address, notifications[0]["From"])
         recipients = set(msg["x-envelope-to"] for msg in notifications)
         expected = set(
             [proposal.source_git_repository.registrant.preferredemail.email,

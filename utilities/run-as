@@ -1,4 +1,4 @@
-#! /usr/bin/python2
+#! /usr/bin/python3
 #
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -9,8 +9,6 @@ This can only be run as root, and makes it easier to run Launchpad code
 inside "lxc exec".  (sudo in xenial breaks without a tty, so cannot be used
 here.)
 """
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import pwd

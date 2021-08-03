@@ -1,11 +1,9 @@
-#! /usr/bin/python2
+#! /usr/bin/python3
 
 # Copyright 2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Link system-installed Python modules into Launchpad's virtualenv."""
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 from argparse import ArgumentParser
 from distutils.sysconfig import get_python_lib

@@ -7,8 +7,6 @@ See also lp.soyuz.tests.test_distroseriesqueue_ddtp_tarball for high-level
 tests of ddtp-tarball upload and queue manipulation.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 
 import six

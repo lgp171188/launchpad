@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # Copyright 2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -7,8 +7,6 @@
 This script runs a simple HTTP server. The server returns JSON files
 when given certain user-configurable URLs.
 """
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 

@@ -5,8 +5,6 @@
 settings work. Note we need to use a non-default isolation level to
 confirm that the changes are actually being made by the API calls."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = []
 

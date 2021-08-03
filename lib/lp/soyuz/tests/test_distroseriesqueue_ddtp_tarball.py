@@ -14,8 +14,6 @@ See also lp.archivepublisher.tests.test_ddtp_tarball for detailed tests of
 ddtp-tarball extraction.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 
 import transaction

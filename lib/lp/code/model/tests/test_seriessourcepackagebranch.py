@@ -3,8 +3,6 @@
 
 """Model tests for distro series source package branch links."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from lp.code.model.seriessourcepackagebranch import (

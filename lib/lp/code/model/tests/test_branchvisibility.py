@@ -10,8 +10,6 @@ Some branches are also considered "private".  These are branches that
 are only visible to the owner of the branch, and the subscribers.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from zope.component import (

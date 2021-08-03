@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -S
+#!/usr/bin/python3 -S
 #
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -12,8 +12,6 @@ dropdb only more so.
 Cut off access, slaughter connections and burn the database to the ground
 (but do nothing that could put the system into recovery mode).
 """
-
-from __future__ import absolute_import, print_function
 
 import _pythonpath  # noqa: F401
 

@@ -1,4 +1,4 @@
-#! /usr/bin/python2 -S
+#! /usr/bin/python3 -S
 
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -9,8 +9,6 @@ Usage hint:
 
 % utilities/audit-security.py
 """
-
-from __future__ import absolute_import, print_function
 
 __metatype__ = type
 

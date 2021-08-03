@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Test BuildQueue start time estimation."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from datetime import (
     datetime,
     timedelta,

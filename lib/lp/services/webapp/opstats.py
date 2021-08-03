@@ -3,8 +3,6 @@
 
 """XML-RPC interface for extracting real time stats from the appserver."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = ["OpStats"]
 

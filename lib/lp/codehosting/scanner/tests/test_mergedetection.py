@@ -3,8 +3,6 @@
 
 """Tests for the scanner's merge detection."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import logging
@@ -302,8 +300,7 @@ class TestBranchMergeDetectionHandler(TestCaseWithFactory):
         self.assertIn(
             'Work in progress => Merged',
             six.ensure_text(notifications[0].get_payload(decode=True)))
-        self.assertEqual(
-            config.canonical.noreply_from_address, notifications[0]['From'])
+        self.assertEqual(proposal.address, notifications[0]['From'])
         recipients = set(msg['x-envelope-to'] for msg in notifications)
         expected = set(
             [proposal.source_branch.registrant.preferredemail.email,

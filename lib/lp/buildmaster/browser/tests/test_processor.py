@@ -3,8 +3,6 @@
 
 """Tests for process navigation."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from lp.services.webapp.publisher import canonical_url

@@ -3,8 +3,6 @@
 
 """Unit tests for methods of CodeImport and CodeImportSet."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from datetime import (
     datetime,
     timedelta,

@@ -1,4 +1,4 @@
-#! /usr/bin/python2
+#! /usr/bin/python3
 #
 # Copyright 2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -9,8 +9,6 @@ This is a very occasional maintenance utility.  It writes new versions of
 configs/development/launchpad.key and configs/development/launchpad.crt, and
 these changes should be committed.
 """
-
-from __future__ import print_function
 
 import atexit
 import os.path

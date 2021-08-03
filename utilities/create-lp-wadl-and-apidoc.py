@@ -1,4 +1,4 @@
-#! /usr/bin/python2 -S
+#! /usr/bin/python3 -S
 #
 # Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -10,8 +10,6 @@ Example:
     % LPCONFIG=development bin/py utilities/create-lp-wadl-and-apidoc.py \\
       "lib/canonical/launchpad/apidoc/wadl-development-%(version)s.xml"
 """
-
-from __future__ import absolute_import, print_function
 
 import _pythonpath  # noqa: F401
 

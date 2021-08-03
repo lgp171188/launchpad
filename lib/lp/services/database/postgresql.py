@@ -6,8 +6,6 @@ PostgreSQL specific helper functions, such as database introspection
 and table manipulation
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 import re

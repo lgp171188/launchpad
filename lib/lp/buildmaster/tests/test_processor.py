@@ -3,8 +3,6 @@
 
 """Test Processor features."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from zope.component import getUtility
 
 from lp.buildmaster.interfaces.processor import (

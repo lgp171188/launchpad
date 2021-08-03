@@ -3,8 +3,6 @@
 
 """Test Builder features."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy

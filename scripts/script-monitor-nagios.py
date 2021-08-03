@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -S
+#!/usr/bin/python3 -S
 #
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -17,8 +17,6 @@ return codes as plugin statuses. These are:
 As such, it was felt more appropriate to separate out the scripts,
 even though there is some code duplication.
 """
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = ['check_script']

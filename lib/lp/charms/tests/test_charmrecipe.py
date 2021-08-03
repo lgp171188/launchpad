@@ -3,8 +3,6 @@
 
 """Test charm recipes."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from textwrap import dedent

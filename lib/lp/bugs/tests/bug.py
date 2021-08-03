@@ -3,8 +3,6 @@
 
 """Helper functions for bug-related doctests and pagetests."""
 
-from __future__ import absolute_import, print_function
-
 from datetime import (
     datetime,
     timedelta,

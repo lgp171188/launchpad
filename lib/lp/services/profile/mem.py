@@ -16,8 +16,6 @@ and improve APIs as needed.
 
 """
 
-from __future__ import absolute_import, print_function
-
 __metatype__ = type
 __all__ = [
     'classesWithMostRefs',

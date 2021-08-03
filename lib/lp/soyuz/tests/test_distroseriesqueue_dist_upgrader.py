@@ -7,8 +7,6 @@ See also lp.archivepublisher.tests.test_dist_upgrader for detailed tests of
 dist-upgrader tarball extraction.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import shutil
 

@@ -3,8 +3,6 @@
 
 """Test the health check view for Talisker."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from fixtures import FakeLogger

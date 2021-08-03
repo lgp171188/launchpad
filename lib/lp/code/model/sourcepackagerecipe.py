@@ -3,8 +3,6 @@
 
 """Implementation of the `SourcePackageRecipe` content type."""
 
-from __future__ import division
-
 __metaclass__ = type
 __all__ = [
     'SourcePackageRecipe',

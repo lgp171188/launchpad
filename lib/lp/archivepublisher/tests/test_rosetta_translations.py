@@ -7,8 +7,6 @@ See also lp.soyuz.tests.test_distroseriesqueue_rosetta_translations for
 high-level tests of rosetta-translations upload and queue manipulation.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from storm.expr import Desc
 import transaction
 from zope.component import getUtility

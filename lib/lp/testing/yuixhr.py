@@ -3,8 +3,6 @@
 
 """Fixture code for YUITest + XHR integration testing."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = [
     'login_as_person',

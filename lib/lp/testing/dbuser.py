@@ -3,8 +3,6 @@
 
 """Provides a context manager to run parts of a test as a different dbuser."""
 
-from __future__ import absolute_import
-
 __metaclass__ = type
 __all__ = [
     'dbuser',

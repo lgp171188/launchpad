@@ -1,12 +1,10 @@
-#!/usr/bin/python2 -S
+#!/usr/bin/python3 -S
 #
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Generate a preamble for slonik(1) scripts based on the current LPCONFIG.
 """
-
-from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 __all__ = []

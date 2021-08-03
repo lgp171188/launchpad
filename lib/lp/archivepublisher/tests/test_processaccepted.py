@@ -3,8 +3,6 @@
 
 """Test process-accepted.py"""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from optparse import OptionValueError
 
 from testtools.matchers import LessThan

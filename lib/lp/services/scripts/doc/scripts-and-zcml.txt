@@ -13,8 +13,6 @@ to demonstrate this:
     >>> from textwrap import dedent
     >>> script_file = tempfile.NamedTemporaryFile(mode='w')
     >>> _ = script_file.write(dedent("""\
-    ...     from __future__ import absolute_import, print_function
-    ...
     ...     from lp.services.scripts import execute_zcml_for_scripts
     ...     from lp.registry.interfaces.person import IPersonSet
     ...     from zope.component import getUtility

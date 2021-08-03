@@ -3,8 +3,6 @@
 
 """Simple memoization decorator for functions and methods"""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = [
     'memoize',

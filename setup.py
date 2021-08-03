@@ -3,8 +3,6 @@
 # Copyright 2009, 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
 from distutils.sysconfig import get_python_lib
 import imp
 import os.path
@@ -66,7 +64,8 @@ class lp_develop(develop):
     def _get_orig_sitecustomize(self):
         env_top = os.path.join(os.path.dirname(__file__), "env")
         system_paths = [
-            path for path in sys.path if not path.startswith(env_top)]
+            path for path in sys.path
+            if not path.startswith(env_top) and "pip-build-env-" not in path]
         try:
             fp, orig_sitecustomize_path, _ = (
                 imp.find_module("sitecustomize", system_paths))
@@ -127,7 +126,7 @@ class lp_develop(develop):
                 print(os.environ["LPCONFIG"], file=instance_name_file)
 
             # Write out the build-time Python major/minor version so that
-            # scripts run with /usr/bin/python2 know whether they need to
+            # scripts run with /usr/bin/python3 know whether they need to
             # re-exec.
             python_version_path = os.path.join(env_top, "python_version")
             with open(python_version_path, "w") as python_version_file:

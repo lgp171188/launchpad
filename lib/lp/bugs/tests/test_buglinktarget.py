@@ -7,8 +7,6 @@ This module will run the interface test against the CVE, Specification,
 Question, and BranchMergeProposal implementations of that interface.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 __all__ = []

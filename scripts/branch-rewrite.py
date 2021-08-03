@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -uS
+#!/usr/bin/python3 -uS
 #
 # Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -9,8 +9,6 @@ See http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html#rewritemap for the
 documentation of the very simple 'protocol' Apache uses to talk to us, and
 lp.codehosting.rewrite.BranchRewriter for the logic of the rewritemap.
 """
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import _pythonpath  # noqa: F401
 

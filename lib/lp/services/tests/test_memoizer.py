@@ -3,8 +3,6 @@
 
 """Tests memoizer decorators"""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from lp.services.compat import mock
 from lp.services.memoizer import memoize
 from lp.testing import TestCase

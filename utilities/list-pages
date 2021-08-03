@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -S
+#!/usr/bin/python3 -S
 #
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -41,8 +41,6 @@ because our cheat objects don't match the app-encoded business logic.
 #   be for pages.
 # - bang the adapter nut against the hardest rock we can find until it cracks
 # - print the nourishing nutty goodness to stdout
-
-from __future__ import absolute_import, print_function
 
 import _pythonpath  # noqa: F401
 

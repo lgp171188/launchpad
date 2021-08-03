@@ -3,8 +3,6 @@
 
 """Kill all the test services that may persist between test runs."""
 
-from __future__ import print_function
-
 import sys
 
 from lp.services.config import config

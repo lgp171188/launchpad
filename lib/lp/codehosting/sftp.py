@@ -12,8 +12,6 @@ The Bazaar Transport is special in two ways:
 We call such a transport a "Twisted Transport".
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = [
     'avatar_to_sftp_server',

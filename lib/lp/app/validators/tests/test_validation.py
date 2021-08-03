@@ -3,8 +3,6 @@
 
 """Unit tests for field validators"""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 from lp.app.validators.validation import validate_oci_branch_name

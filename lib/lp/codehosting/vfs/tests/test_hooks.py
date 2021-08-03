@@ -3,8 +3,6 @@
 
 """Tests for the hooks in lp.codehosting.vfs.hooks."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 from lp.codehosting.vfs.hooks import SetProcTitleHook

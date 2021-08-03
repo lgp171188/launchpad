@@ -3,8 +3,6 @@
 
 """Unit tests for translation import queue views."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from datetime import datetime
 
 from pytz import timezone

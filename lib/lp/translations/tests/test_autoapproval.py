@@ -8,8 +8,6 @@ Documentation-style tests go in there, ones that go systematically
 through the possibilities should go here.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from contextlib import contextmanager
 from datetime import (
     datetime,

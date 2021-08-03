@@ -3,8 +3,6 @@
 
 """Utility mixins for testing statsd handling"""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = ['StatsMixin']
 

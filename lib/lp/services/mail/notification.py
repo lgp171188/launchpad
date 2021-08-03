@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Event handlers that send email notifications."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = [
     'send_process_error_notification',

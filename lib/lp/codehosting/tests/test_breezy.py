@@ -3,8 +3,6 @@
 
 """Launchpad-specific tests of Breezy behaviour."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 from lp.testing import TestCase

@@ -3,8 +3,6 @@
 
 """Test Archive privacy features."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from zope.security.interfaces import Unauthorized
 
 from lp.soyuz.interfaces.archive import CannotSwitchPrivacy

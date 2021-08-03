@@ -3,8 +3,6 @@
 
 """A container for data encrypted at rest using configured keys."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 __all__ = [
     'NaClEncryptedContainerBase',

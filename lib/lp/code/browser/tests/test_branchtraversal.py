@@ -3,8 +3,6 @@
 
 """Tests for branch traversal."""
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.proxy import removeSecurityProxy

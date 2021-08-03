@@ -3,8 +3,6 @@
 
 """Email code for the branch scanner."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = [
     'send_removed_revision_emails',

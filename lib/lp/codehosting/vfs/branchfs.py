@@ -40,8 +40,6 @@ hooks into operations like `mkdir` and ask the `LaunchpadServer` to make a
 branch if appropriate.
 """
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 __all__ = [
     'AsyncLaunchpadTransport',

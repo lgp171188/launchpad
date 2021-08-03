@@ -3,8 +3,6 @@
 
 """Tests for the puller's support for various Bazaar formats."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 from breezy.branch import Branch

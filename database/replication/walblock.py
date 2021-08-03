@@ -1,11 +1,9 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # Copyright 2014 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Feed stdin to stdout, blocking if there are too many unshipped WAL files."""
-
-from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 __all__ = []

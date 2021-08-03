@@ -1,11 +1,9 @@
-#!/usr/bin/python2 -S
+#!/usr/bin/python3 -S
 #
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Print a list of directories that contain a valid intltool structure."""
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import _pythonpath  # noqa: F401
 

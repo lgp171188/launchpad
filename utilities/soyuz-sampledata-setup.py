@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -S
+#!/usr/bin/python3 -S
 
 # Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -16,8 +16,6 @@ Ubuntu-related data.
 This script creates a user "ppa-user" (email ppa-user@example.com,
 password test) who is able to create PPAs.
 """
-
-from __future__ import absolute_import, print_function
 
 __metaclass__ = type
 

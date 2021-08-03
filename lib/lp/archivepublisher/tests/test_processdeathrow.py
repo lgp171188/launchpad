@@ -8,8 +8,6 @@ of the module functionality; here we just aim to test that the script
 processes its arguments and handles dry-run correctly.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 __metaclass__ = type
 
 import datetime

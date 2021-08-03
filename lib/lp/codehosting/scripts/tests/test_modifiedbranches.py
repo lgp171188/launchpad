@@ -3,8 +3,6 @@
 
 """Test the modified branches script."""
 
-from __future__ import absolute_import, print_function
-
 __metaclass__ = type
 
 from datetime import datetime
