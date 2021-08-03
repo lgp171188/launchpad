@@ -203,8 +203,10 @@ class SignedCodeOfConduct(StormBase):
 
     affirmed = Bool(name='affirmed', allow_none=True, default=False,)
 
+    version = Unicode(name='version', allow_none=True, default=None)
+
     def __init__(self, owner, signedcode=None, signing_key_fingerprint=None,
-            recipient=None, active=False, affirmed=False):
+                 recipient=None, active=False, affirmed=False, version=None):
         super(SignedCodeOfConduct, self).__init__()
         self.owner = owner
         self.signedcode = signedcode
@@ -212,6 +214,7 @@ class SignedCodeOfConduct(StormBase):
         self.recipient = recipient
         self.active = active
         self.affirmed = affirmed
+        self.version = version
 
     @cachedproperty
     def signingkey(self):
@@ -359,12 +362,8 @@ class SignedCodeOfConductSet:
             return ('The affirmed text does not match the current '
                     'Code of Conduct.')
 
-        # The text of the CoC isn't GPG signed at this point,
-        # but save which version was affirmed
-        affirmation_text = u"Code of Conduct version {}".format(
-            coc.version)
         affirmed = SignedCodeOfConduct(
-            owner=user, signedcode=affirmation_text, affirmed=True,
+            owner=user, affirmed=True, version=six.ensure_text(coc.version),
             active=True)
         # Send Advertisement Email
         subject = 'You have affirmed the Code of Conduct.'

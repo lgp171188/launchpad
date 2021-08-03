@@ -85,6 +85,8 @@ class ISignedCodeOfConduct(Interface):
                                 "is considered active.")
                   )
 
+    version = Text(title=_("Version"))
+
     displayname = Attribute("Fancy Title for CoC.")
 
     affirmed = Bool(title=_("Affirmed"),
