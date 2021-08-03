@@ -66,8 +66,8 @@
 
         <h2>Affirm the Ubuntu Code of Conduct on Launchpad</h2>
 
-          Ubuntu community members can affirm the Code of Conduct
-          on Launchpad via a simple web form.
+          Ubuntu community members may affirm the Code of Conduct
+          directly on Launchpad.
 
           <p>
             <a tal:attributes="href

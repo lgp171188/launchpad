@@ -366,8 +366,8 @@ class SignedCodeOfConductSet:
             owner=user, affirmed=True, version=six.ensure_text(coc.version),
             active=True)
         # Send Advertisement Email
-        subject = 'You have affirmed the Code of Conduct.'
-        content = ('Version affirmed %s\n' % coc.version)
+        subject = 'You have affirmed the Code of Conduct'
+        content = ('Version affirmed: %s\n' % coc.version)
         affirmed.sendAdvertisementEmail(subject, content)
 
     def searchByDisplayname(self, displayname, searchfor=None):

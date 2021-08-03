@@ -12,12 +12,9 @@
       tal:define="user view/user;
                  is_ubuntu_coc_signer user/is_ubuntu_coc_signer|nothing;"
     >
-      <pre tal:content="structure view/code_of_conduct"></pre>
+      <pre tal:content="view/code_of_conduct"></pre>
 
       <div metal:use-macro="context/@@launchpad_form/form" />
     </div>
-
-    
-
   </body>
 </html>
