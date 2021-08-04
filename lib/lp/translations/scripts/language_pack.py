@@ -264,8 +264,8 @@ def export_language_pack(distribution_name, series_name, logger,
             logger.error('Uploading to the Librarian failed: %s', e)
             return None
         except Exception:
-            # Generic exception statements are used in order to prevent premature
-            # termination of the script.
+            # Generic exception statements are used in order to prevent
+            # premature termination of the script.
             logger.exception(
                 'Uncaught exception while uploading to the Librarian')
             return None
