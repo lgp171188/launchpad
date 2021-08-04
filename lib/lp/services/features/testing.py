@@ -67,12 +67,13 @@ class FeatureFixtureMixin:
 
         original_controller = get_relevant_feature_controller()
 
-        def scope_lookup(scope_name):
-            request = get_current_browser_request()
-            return ScopesFromRequest(request).lookup(scope_name)
-
         if self.override_scope_lookup:
             scope_lookup = self.override_scope_lookup
+        else:
+            def scope_lookup(scope_name):
+                request = get_current_browser_request()
+                return ScopesFromRequest(request).lookup(scope_name)
+
         install_feature_controller(
             FeatureController(scope_lookup, rule_source))
         self.addCleanup(install_feature_controller, original_controller)
