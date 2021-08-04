@@ -9,6 +9,13 @@ Used by test_logger.txt.
 __metaclass__ = type
 __all__ = []
 
+from optparse import OptionParser
+
+from lp.services.scripts.logger import (
+    logger,
+    logger_options,
+    )
+
 # Monkey patch time.gmtime to make our tests easier to read.
 import time
 
@@ -17,13 +24,6 @@ def fake_gmtime(ignored_seconds):
     # 1985-12-21 13:45:55
     return (1985, 12, 21, 13, 45, 55, 5, 355, 0)
 time.gmtime = fake_gmtime
-
-from optparse import OptionParser
-
-from lp.services.scripts.logger import (
-    logger,
-    logger_options,
-    )
 
 parser = OptionParser()
 logger_options(parser)

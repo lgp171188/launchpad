@@ -1029,7 +1029,7 @@ patch_collection_property(ICve, 'bugs', IBug)
 # In order to avoid circular dependencies, we only import
 # IBugSubscription (which itself imports IBug) here, and assign it as
 # the value type for the `subscriptions` collection.
-from lp.bugs.interfaces.bugsubscription import IBugSubscription
+from lp.bugs.interfaces.bugsubscription import IBugSubscription # noqa: E402
 patch_collection_property(IBug, 'subscriptions', IBugSubscription)
 
 

@@ -6,23 +6,6 @@
 Because celery sets up configuration at import time, code that is not designed
 to use Celery may break if this is used.
 """
-
-__metaclass__ = type
-
-__all__ = [
-    'celery_app',
-    'celery_run_job',
-    'celery_run_job_ignore_result',
-    'find_missing_ready',
-    'run_missing_ready',
-    ]
-
-from logging import info
-import os
-from uuid import uuid4
-
-
-os.environ.setdefault('CELERY_CONFIG_MODULE', 'lp.services.job.celeryconfig')
 from celery import (
     Celery,
     Task,
@@ -46,9 +29,24 @@ from lp.services.job.runner import (
     )
 from lp.services import scripts
 
+__metaclass__ = type
+
+__all__ = [
+    'celery_app',
+    'celery_run_job',
+    'celery_run_job_ignore_result',
+    'find_missing_ready',
+    'run_missing_ready',
+    ]
+
+from logging import info
+import os
+from uuid import uuid4
+
+
+os.environ.setdefault('CELERY_CONFIG_MODULE', 'lp.services.job.celeryconfig')
 
 celery_app = Celery()
-
 
 class CeleryRunJob(RunJob):
     """The Celery Task that runs a job."""

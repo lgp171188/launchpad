@@ -20,6 +20,7 @@ from breezy import ui as brz_ui
 from breezy.branch import Branch
 from breezy.library_state import BzrLibraryState as BrzLibraryState
 from breezy.plugin import load_plugins as brz_load_plugins
+import breezy.plugins.loom.branch
 # This import is needed so that brz's logger gets registered.
 import breezy.trace
 from zope.security import checker
@@ -82,6 +83,5 @@ def dont_wrap_class_and_subclasses(cls):
 
 # Don't wrap Branch or its subclasses in Zope security proxies.  Make sure
 # the various LoomBranch classes are present first.
-import breezy.plugins.loom.branch
 breezy.plugins.loom.branch
 dont_wrap_class_and_subclasses(Branch)

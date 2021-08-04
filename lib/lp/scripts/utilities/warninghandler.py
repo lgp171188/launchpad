@@ -6,10 +6,24 @@
 __metaclass__ = type
 
 import inspect
+import six
 import sys
 import warnings
 
-import six
+# ViewPageTemplateFile has .filename.
+from zope.browserpage import ViewPageTemplateFile
+
+# PythonExpr has .text, the text of the expression.
+from zope.tales.pythonexpr import PythonExpr
+
+# TrustedZopeContext has self.contexts, a dict with template, view, context,
+# request, etc.
+from zope.pagetemplate.engine import TrustedZopeContext
+
+# TALInterpreter has self.sourceFile, a filename of a page template.
+from zope.tal.talinterpreter import TALInterpreter
+
+from zope.browserpage.simpleviewclass import simple
 
 
 class WarningReport:
@@ -57,21 +71,6 @@ class ImportantInfo:
         if self.requesturl:
             L.append('request url: %s' % self.requesturl)
         return '\n'.join(L)
-
-# ViewPageTemplateFile has .filename.
-from zope.browserpage import ViewPageTemplateFile
-
-# PythonExpr has .text, the text of the expression.
-from zope.tales.pythonexpr import PythonExpr
-
-# TrustedZopeContext has self.contexts, a dict with template, view, context,
-# request, etc.
-from zope.pagetemplate.engine import TrustedZopeContext
-
-# TALInterpreter has self.sourceFile, a filename of a page template.
-from zope.tal.talinterpreter import TALInterpreter
-
-from zope.browserpage.simpleviewclass import simple
 
 
 def find_important_info():

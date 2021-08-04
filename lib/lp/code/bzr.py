@@ -21,9 +21,6 @@ __all__ = [
 # line below this comment.
 import lp.codehosting
 
-# Silence lint warning.
-lp.codehosting
-
 from breezy.branch import UnstackableBranchFormat
 from breezy.bzr.branch import (
     BranchReferenceFormat,
@@ -77,6 +74,8 @@ from lazr.enum import (
     )
 import six
 
+# Silence lint warning.
+lp.codehosting
 
 def _format_enum(num, format, format_string=None, description=None):
     instance = format()
