@@ -1451,12 +1451,11 @@ class TestBugChanges(TestCaseWithFactory):
         self.assertFalse(nomination.isApproved())
         self.saveOldChanges()
         nomination.approve(product.owner)
-
+        new_value = series.bugtargetname
         expected_activity = {
             'person': product.owner,
-            'newvalue': series.bugtargetname,
+            'newvalue': new_value,
             'whatchanged': 'bug task added',
-            'newvalue': series.bugtargetname,
             }
 
         task_added_notification = {
@@ -1465,7 +1464,7 @@ class TestBugChanges(TestCaseWithFactory):
                 '** Also affects: %s\n'
                 '   Importance: Undecided\n'
                 '       Status: New' % (
-                    series.bugtargetname)),
+                    new_value)),
             'recipients': self.bug.getBugNotificationRecipients(
                 level=BugNotificationLevel.LIFECYCLE),
             }
