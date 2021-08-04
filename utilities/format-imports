@@ -167,7 +167,7 @@ module_docstring_regex = re.compile(
 # comments which are followed by an import line. Sometimes we even find
 # lines that contain a single ")"... :-(
 imports_section_regex = re.compile(
-    "(^#.+\n)*^(import|(from ((?!__future__)\S+) import)).*\n"
+    "(^#.+\n)*^(import|(from ((?!__future__)\\S+) import)).*\n"
     "(^import .+\n|^from .+\n|^[\t ]+.+\n|(^#.+\n)+((^import|^from) "
     ".+\n)|^\n|^[)]\n)*",
     re.M)
