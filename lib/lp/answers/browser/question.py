@@ -957,8 +957,8 @@ class QuestionWorkflowView(LaunchpadFormView, LinkFAQMixin):
 
     def hasActions(self):
         """Return True if some actions are possible for this user."""
-        for action in self.actions:
-            if action.available():
+        for operation in self.actions:
+            if operation.available():
                 return True
         return False
 
