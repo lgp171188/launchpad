@@ -21,3 +21,8 @@ repos:
     -   id: check-yaml
     -   id: no-commit-to-branch
         args: [--branch, master, --branch, db-devel]
+-   repo: https://github.com/PyCQA/flake8
+    rev: 3.9.2
+    hooks:
+    -   id: flake8
+        exclude: ^lib/contrib/
