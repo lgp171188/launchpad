@@ -921,8 +921,8 @@ class WorkItemsText(Text):
 
         if milestone is None:
             raise LaunchpadValidationError("The milestone '%s' is not valid "
-                                           "for the target '%s'." % \
-                                               (milestone_name, target.name))
+                                           "for the target '%s'." %
+                                           (milestone_name, target.name))
         return milestone
 
 
