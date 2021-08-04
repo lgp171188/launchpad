@@ -17,4 +17,3 @@ from lp.services.config import config
 if __name__ == '__main__':
     script = CVEUpdater("updatecve", config.cveupdater.dbuser)
     script.lock_and_run()
-

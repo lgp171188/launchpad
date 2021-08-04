@@ -534,7 +534,7 @@ class UnreferencedContentPruner:
 
     def remove_content(self, content_id):
         removed = []
-    
+
         # Remove the file from disk, if it hasn't already been.
         path = get_file_path(content_id)
         try:
@@ -543,7 +543,7 @@ class UnreferencedContentPruner:
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
-    
+
         # Remove the file from Swift, if it hasn't already been.
         if self.swift_enabled:
             container, name = swift.swift_location(content_id)
@@ -557,11 +557,11 @@ class UnreferencedContentPruner:
                     except swiftclient.ClientException as x:
                         if x.http_status != 404:
                             raise
-    
+
         if removed:
             log.debug3(
                 "Deleted %s from %s", content_id, ' & '.join(removed))
-    
+
         elif config.librarian_server.upstream_host is None:
             # It is normal to have files in the database that
             # are not on disk if the Librarian has an upstream

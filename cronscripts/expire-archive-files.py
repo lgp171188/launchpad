@@ -17,4 +17,3 @@ if __name__ == '__main__':
     script = ArchiveExpirer(
         'expire-archive-files', dbuser=config.binaryfile_expire.dbuser)
     script.lock_and_run()
-
