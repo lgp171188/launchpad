@@ -163,7 +163,7 @@ class WorkingBase:
         check_no_transaction()
         try:
             yield self._transaction_manager
-        except:
+        except Exception:
             self._transaction_manager.abort()
             # Let the exception propagate.
             raise

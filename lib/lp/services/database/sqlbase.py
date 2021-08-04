@@ -42,6 +42,7 @@ from sqlobject.sqlbuilder import sqlrepr
 import storm
 from storm.databases.postgres import compile as postgres_compile
 from storm.expr import (
+    Except,
     compile as storm_compile,
     State,
     )
@@ -205,7 +206,7 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         store.add(self)
         try:
             self._create(None, **kwargs)
-        except:
+        except Exception:
             store.remove(self)
             raise
 

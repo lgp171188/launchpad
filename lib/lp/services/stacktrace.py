@@ -29,7 +29,7 @@ def _try_except(callable, *args, **kwargs):
         return callable(*args, **kwargs)
     except EXPLOSIVE_ERRORS:
         raise
-    except:
+    except Exception:
         if DEBUG_EXCEPTION_FORMATTER:
             traceback.print_exc(file=sys.stderr)
     # return None
@@ -100,7 +100,7 @@ def format_list(extracted_list):
                 item.append(_fmt(info))
         except EXPLOSIVE_ERRORS:
             raise
-        except:
+        except Exception:
             # The values above may not stringify properly, or who knows what
             # else.  Be defensive.
             if DEBUG_EXCEPTION_FORMATTER:
@@ -170,7 +170,7 @@ def _get_frame_data(f, lineno):
                         warnings.append(warning)
             except EXPLOSIVE_ERRORS:
                 raise
-            except:
+            except Exception:
                 if DEBUG_EXCEPTION_FORMATTER:
                     traceback.print_exc(file=sys.stderr)
             supplement_dict = dict(warnings=warnings, extra=extra)

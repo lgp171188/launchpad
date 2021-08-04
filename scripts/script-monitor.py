@@ -99,7 +99,7 @@ def main():
                 msg.as_string())
             smtp.close()
             return 2
-    except:
+    except Exception:
         log.exception("Unhandled exception")
         return 1
 

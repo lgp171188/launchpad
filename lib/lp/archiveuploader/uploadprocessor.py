@@ -53,6 +53,7 @@ import sys
 
 import scandir
 from sqlobject import SQLObjectNotFound
+from storm.expr import Except
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -432,7 +433,7 @@ class UploadHandler:
                     "Committing the transaction and any mails associated "
                     "with this upload.")
                 self.processor.ztm.commit()
-        except:
+        except Exception:
             self.processor.ztm.abort()
             raise
 
@@ -605,7 +606,7 @@ class BuildUploadHandler(UploadHandler):
                     "with this upload.")
                 self.processor.ztm.commit()
             return UploadStatusEnum.ACCEPTED
-        except:
+        except Exception:
             self.processor.ztm.abort()
             raise
 
@@ -630,7 +631,7 @@ class BuildUploadHandler(UploadHandler):
         except UploadError as e:
             logger.error(str(e))
             return UploadStatusEnum.REJECTED
-        except:
+        except Exception:
             self.processor.ztm.abort()
             raise
 
@@ -681,7 +682,7 @@ class BuildUploadHandler(UploadHandler):
         except UploadError as e:
             logger.error(str(e))
             return UploadStatusEnum.REJECTED
-        except:
+        except Exception:
             self.processor.ztm.abort()
             raise
 

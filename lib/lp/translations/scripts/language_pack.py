@@ -143,7 +143,7 @@ def export(distroseries, component, update, force_utf8, logger):
 
             # Store it in the tarball.
             archive.add_file(path, contents)
-        except:
+        except Exception:
             logger.exception(
                 "Uncaught exception while exporting PO file %d" % pofile.id)
 
@@ -217,8 +217,8 @@ def export_language_pack(distribution_name, series_name, logger,
     try:
         filehandle, size = export(
             distroseries, component, update, force_utf8, logger)
-    except:
-        # Bare except statements are used in order to prevent premature
+    except Exception:
+        # Base exception statements are used in order to prevent premature
         # termination of the script.
         logger.exception('Uncaught exception while exporting')
         return None
@@ -263,8 +263,8 @@ def export_language_pack(distribution_name, series_name, logger,
         except UploadFailed as e:
             logger.error('Uploading to the Librarian failed: %s', e)
             return None
-        except:
-            # Bare except statements are used in order to prevent premature
+        except Exception:
+            # Base exception statements are used in order to prevent premature
             # termination of the script.
             logger.exception(
                 'Uncaught exception while uploading to the Librarian')

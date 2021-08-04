@@ -86,7 +86,7 @@ class TestRunMissingJobs(TestCaseWithFactory):
         missing_ready = find_missing_ready_obj.find_missing_ready()
         try:
             self.assertEqual([], missing_ready)
-        except:
+        except Exception:
             # XXX AaronBentley: 2012-08-01 bug=1031018: Extra diagnostic info
             # to help diagnose this hard-to-reproduce failure.
             self.addTextDetail('queued_job_ids',

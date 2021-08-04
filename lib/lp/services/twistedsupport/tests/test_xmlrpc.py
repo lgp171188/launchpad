@@ -52,7 +52,7 @@ class TestTrapFault(TestCase):
         """Make a `Failure` from the given exception factory."""
         try:
             raise exception_factory(*args, **kwargs)
-        except:
+        except Exception:
             return Failure()
 
     def assertRaisesFailure(self, failure, function, *args, **kwargs):

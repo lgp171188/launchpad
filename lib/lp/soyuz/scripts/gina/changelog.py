@@ -70,7 +70,7 @@ def parse_changelog(changelines):
             try:
                 (source, version, urgency) = parse_first_line(line.strip())
                 Version(six.ensure_text(version))
-            except:
+            except Exception:
                 stanza.append(line)
                 #print "state0 Exception skip"
                 continue
