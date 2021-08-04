@@ -145,10 +145,7 @@ def countsByType(objects, n=30):
     """
     d = {}
     for obj in objects:
-        if type(obj) is types.InstanceType:
-            cls = obj.__class__
-        else:
-            cls = type(obj)
+        cls = type(obj)
         d[cls] = d.get(cls, 0) + 1
     counts = [(x[1], x[0]) for x in d.items()]
     counts.sort()
