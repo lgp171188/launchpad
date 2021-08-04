@@ -144,7 +144,7 @@ def getSourcePackageDescriptions(
 
     descriptions = {}
     for binarypackagename, sourcepackagename in cur.fetchall():
-        if not sourcepackagename in descriptions:
+        if sourcepackagename not in descriptions:
             descriptions[sourcepackagename] = (
                 "Source of: %s" % binarypackagename)
         else:

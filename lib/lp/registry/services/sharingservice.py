@@ -568,7 +568,7 @@ class SharingService:
                 ]
 
         if (pillar.branch_sharing_policy and
-            not pillar.branch_sharing_policy in allowed_policies):
+            pillar.branch_sharing_policy not in allowed_policies):
             allowed_policies.append(pillar.branch_sharing_policy)
 
         return self._makeEnumData(allowed_policies)
@@ -596,7 +596,7 @@ class SharingService:
                 ]
 
         if (pillar.bug_sharing_policy and
-            not pillar.bug_sharing_policy in allowed_policies):
+            pillar.bug_sharing_policy not in allowed_policies):
             allowed_policies.append(pillar.bug_sharing_policy)
 
         return self._makeEnumData(allowed_policies)
@@ -624,7 +624,7 @@ class SharingService:
                 ]
 
         if (pillar.specification_sharing_policy and
-            not pillar.specification_sharing_policy in allowed_policies):
+            pillar.specification_sharing_policy not in allowed_policies):
             allowed_policies.append(pillar.specification_sharing_policy)
 
         return self._makeEnumData(allowed_policies)

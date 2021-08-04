@@ -612,7 +612,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         pillars = []
         # For private personal repositories, we calculate the wanted grants.
         if (not self.project and not self.distribution and
-            not self.information_type in PUBLIC_INFORMATION_TYPES):
+            self.information_type not in PUBLIC_INFORMATION_TYPES):
             aasource = getUtility(IAccessArtifactSource)
             [abstract_artifact] = aasource.ensure([self])
             wanted_links = set(

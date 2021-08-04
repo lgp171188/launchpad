@@ -248,7 +248,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         # For private +junk branches, we calculate the wanted grants.
         if (not self.product and
             not self.sourcepackagename and
-            not self.information_type in PUBLIC_INFORMATION_TYPES):
+            self.information_type not in PUBLIC_INFORMATION_TYPES):
             aasource = getUtility(IAccessArtifactSource)
             [abstract_artifact] = aasource.ensure([self])
             wanted_links = set(

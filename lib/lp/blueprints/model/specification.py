@@ -412,7 +412,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     def _list_to_dict_of_frequency(self, list):
         dictionary = {}
         for item in list:
-            if not item in dictionary:
+            if item not in dictionary:
                 dictionary[item] = 1
             else:
                 dictionary[item] += 1

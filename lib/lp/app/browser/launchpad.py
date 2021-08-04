@@ -1174,7 +1174,7 @@ def get_launchpad_views(cookies):
                 # The cookie is malformed, possibly hacked.
                 continue
             key, value = parts
-            if not key in views:
+            if key not in views:
                 # The cookie may be hacked.
                 continue
             # 'false' is the value that the browser script sets to disable a

@@ -354,7 +354,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
 
     @property
     def information_types(self):
-        if not 'information_types' in self.metadata:
+        if 'information_types' not in self.metadata:
             return []
         return [
             InformationType.items[value]
