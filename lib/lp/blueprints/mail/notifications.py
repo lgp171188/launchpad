@@ -84,7 +84,7 @@ def notify_specification_modified(spec, event):
         if info_lines:
             info_lines.append('')
         workitems_delta = spec_delta.workitems_text
-        if workitems_delta['old'] is '':
+        if workitems_delta['old'] == '':
             info_lines.append('Work items set to:')
             info_lines.append(mail_wrapper.format(workitems_delta['new']))
         else:

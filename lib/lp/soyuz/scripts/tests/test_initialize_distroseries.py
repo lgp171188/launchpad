@@ -115,7 +115,7 @@ class InitializationHelperTestCase(TestCaseWithFactory):
                 distroseries=parent,
                 pocket=pocket, status=PackagePublishingStatus.PUBLISHED)
             status = BuildStatus.FULLYBUILT
-            if package is 'chromium':
+            if package == 'chromium':
                 status = BuildStatus.FAILEDTOBUILD
             bpn = self.factory.getOrMakeBinaryPackageName(package)
             build = self.factory.makeBinaryPackageBuild(
@@ -125,7 +125,7 @@ class InitializationHelperTestCase(TestCaseWithFactory):
             bpr = self.factory.makeBinaryPackageRelease(
                 binarypackagename=bpn, build=build,
                 version=packages[package])
-            if package is not 'chromium':
+            if package != 'chromium':
                 self.factory.makeBinaryPackagePublishingHistory(
                     binarypackagerelease=bpr,
                     distroarchseries=parent_das,
