@@ -287,7 +287,7 @@ class TestGetUploadMethodsMixin:
 
     def makeBuild(self):
         """Allow classes to override the build with which the test runs."""
-        raise NotImplemented
+        raise NotImplementedError
 
     def setUp(self):
         super(TestGetUploadMethodsMixin, self).setUp()

@@ -229,11 +229,11 @@ class TargetPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
 
     def getDescription(self, target):
         """Gets the description data for target picker entries."""
-        raise NotImplemented
+        raise NotImplementedError
 
     def getMaintainer(self, target):
         """Gets the maintainer information for the target picker entry."""
-        raise NotImplemented
+        raise NotImplementedError
 
     def getCommercialSubscription(self, target):
         """Gets the commercial subscription details for the target."""
