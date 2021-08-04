@@ -271,8 +271,6 @@ class Database:
         return bug
 
 if __name__ == '__main__':
-    import sys
-
     for bug in Database('/srv/debzilla.no-name-yet.com/debbugs'):
         try:
             print(bug, bug.subject)

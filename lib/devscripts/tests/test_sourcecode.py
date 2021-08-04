@@ -112,7 +112,7 @@ class TestInterpretConfiguration(unittest.TestCase):
         config = interpret_config([['key', 'value;revno=45']], False)
         self.assertEqual({'key': ('value', '45', False)}, config)
 
-    def test_key_value_revision(self):
+    def test_key_value_revision_with_multiple_revnos_raises_error(self):
         # A (key, value) pair without a third optional value when the
         # value has multiple suffixes of ``;revno=[REVISION]`` raises an
         # error.
