@@ -24,9 +24,9 @@ class UpdateBugTaskTargetNameCaches(LaunchpadCronScript):
         updater = BugTaskTargetNameCacheUpdater(self.txn, self.logger)
         updater.run()
 
+
 if __name__ == '__main__':
     script = UpdateBugTaskTargetNameCaches(
         'launchpad-targetnamecacheupdater',
         dbuser=config.targetnamecacheupdater.dbuser)
     script.lock_and_run()
-

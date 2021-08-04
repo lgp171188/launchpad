@@ -23,8 +23,8 @@ class ReleaseFinderScript(LaunchpadCronScript):
         prf = ProductReleaseFinder(self.txn, self.logger)
         prf.findReleases()
 
+
 if __name__ == "__main__":
     script = ReleaseFinderScript('productreleasefinder',
         dbuser=config.productreleasefinder.dbuser)
     script.lock_and_run()
-

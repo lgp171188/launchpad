@@ -267,4 +267,3 @@ class TestCeleryLaneFallback(TestCaseWithFactory):
         self.assertEqual(
             'launchpad_job_slow',
             message_drain.call_args[0][1].delivery_info['routing_key'])
-

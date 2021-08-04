@@ -238,7 +238,7 @@ class TestQuoteTextAsEmail(TestCase):
         expected = dedent("""\
             > This is the first line.
             > 
-            > This is the second line.""")
+            > This is the second line.""")  # noqa: W291
         self.assertEqual(expected, quote_text_as_email(value))
 
     def test_trailing_whitespace(self):

@@ -17,4 +17,3 @@ if __name__ == '__main__':
     script = PPAKeyGenerator(
         "ppa-generate-keys", config.archivepublisher.dbuser)
     script.lock_and_run()
-
