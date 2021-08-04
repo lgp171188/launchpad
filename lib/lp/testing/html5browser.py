@@ -31,15 +31,14 @@ __all__ = [
 
 import gi
 
-from gi.repository import (
+gi.require_version('Gtk', '3.0')
+gi.require_version('WebKit', '3.0')
+
+from gi.repository import ( # noqa: E402
     GLib,
     Gtk,
     WebKit,
     )
-
-
-gi.require_version('Gtk', '3.0')
-gi.require_version('WebKit', '3.0')
 
 
 class Command:

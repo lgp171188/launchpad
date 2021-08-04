@@ -19,7 +19,7 @@ __all__ = [
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
-import lp.codehosting
+import lp.codehosting # noqa: F401
 
 from breezy.branch import UnstackableBranchFormat
 from breezy.bzr.branch import (
@@ -74,8 +74,6 @@ from lazr.enum import (
     )
 import six
 
-# Silence lint warning.
-lp.codehosting
 
 def _format_enum(num, format, format_string=None, description=None):
     instance = format()

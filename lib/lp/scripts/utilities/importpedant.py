@@ -5,12 +5,12 @@ import atexit
 import itertools
 from operator import attrgetter
 import types
+import warnings
 
 import six
 from six.moves import builtins
 
 # Silence bogus warnings from Hardy's python-pkg-resources package.
-import warnings
 warnings.filterwarnings('ignore', category=UserWarning, append=True,
                         message=r'Module .*? is being added to sys.path')
 

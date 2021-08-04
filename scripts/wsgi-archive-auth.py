@@ -32,7 +32,7 @@ top = os.path.dirname(scripts_dir)
 sys.modules.pop("site", None)
 sys.modules.pop("sitecustomize", None)
 
-import _pythonpath  # noqa: F401 E402
+import _pythonpath  # noqa: F401,E402
 
 from lp.soyuz.wsgi.archiveauth import check_password # noqa: E402
 
