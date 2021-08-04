@@ -12,10 +12,9 @@ import logging
 
 import twisted.web.server
 from twisted.application import internet, service
+from lp.testing.swift.fakeswift import Root
 
 logging.basicConfig()
-
-from lp.testing.swift.fakeswift import Root
 
 storedir = os.environ['SWIFT_ROOT']
 assert os.path.exists(storedir)

@@ -10,13 +10,12 @@ import datetime
 import pytz
 from twisted.internet import defer
 
+from lp.codehosting.puller.scheduler import LockError
 
 def get_lock_id_for_branch_id(branch_id):
     """Return the lock id that should be used for a branch with the passed id.
     """
     return 'worker-for-branch-%s@supermirror' % (branch_id,)
-
-from lp.codehosting.puller.scheduler import LockError
 
 UTC = pytz.timezone('UTC')
 

@@ -1184,7 +1184,7 @@ class InvalidProductName(LaunchpadValidationError):
 
 
 # Fix circular imports.
-from lp.registry.interfaces.distributionsourcepackage import (
+from lp.registry.interfaces.distributionsourcepackage import ( # noqa: E402
     IDistributionSourcePackage)
 patch_reference_property(
     IDistributionSourcePackage, 'upstream_product', IProduct)

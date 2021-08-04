@@ -75,6 +75,7 @@ from zope.component import getUtility
 from zope.contenttype import guess_content_type
 from zope.event import notify
 from zope.interface import implementer
+from zope.security import checker
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import (
     ProxyFactory,
@@ -2385,7 +2386,6 @@ class StructuralSubscriptionSet(FrozenSetBasedSet):
 # writing ZCML tedious, so I've opted for registering custom checkers (see
 # lp_sitecustomize for some other jiggery pokery in the same vein) while I
 # seek a better solution.
-from zope.security import checker
 checker_for_frozen_set = checker.getCheckerForInstancesOf(frozenset)
 checker_for_subscriber_set = checker.NamesChecker(["sorted"])
 checker_for_subscription_set = checker.NamesChecker(["sorted", "subscribers"])

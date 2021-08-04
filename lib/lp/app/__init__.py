@@ -15,10 +15,8 @@ __all__ = []
 # values, but they kindly left this global variable for you to monkey patch if
 # you want the old behaviour, just like we do.
 from zope.formlib import itemswidgets
-
-
-itemswidgets.EXPLICIT_EMPTY_SELECTION = False
-
 # Load versioninfo.py so that we get errors on start-up rather than waiting
 # for first page load.
 import lp.app.versioninfo  # noqa: F401
+
+itemswidgets.EXPLICIT_EMPTY_SELECTION = False

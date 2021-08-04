@@ -86,5 +86,5 @@ class IBugSubscription(Interface):
 # In order to avoid circular dependencies, we only import
 # IBug (which itself imports IBugSubscription) here, and assign it as
 # the value type for the `bug` reference.
-from lp.bugs.interfaces.bug import IBug
+from lp.bugs.interfaces.bug import IBug # noqa: E402
 patch_reference_property(IBugSubscription, 'bug', IBug)

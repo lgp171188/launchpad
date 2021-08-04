@@ -21,8 +21,6 @@ from logging import info
 import os
 from uuid import uuid4
 
-
-os.environ.setdefault('CELERY_CONFIG_MODULE', 'lp.services.job.celeryconfig')
 from celery import (
     Celery,
     Task,
@@ -46,6 +44,7 @@ from lp.services.job.runner import (
     )
 from lp.services import scripts
 
+os.environ.setdefault('CELERY_CONFIG_MODULE', 'lp.services.job.celeryconfig')
 
 celery_app = Celery()
 

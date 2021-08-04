@@ -19,10 +19,7 @@ __all__ = [
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
-import lp.codehosting
-
-# Silence lint warning.
-lp.codehosting
+import lp.codehosting # noqa: F401
 
 from breezy.branch import UnstackableBranchFormat
 from breezy.bzr.branch import (
