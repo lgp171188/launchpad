@@ -27,6 +27,7 @@ from itertools import (
     groupby,
     )
 import logging
+import lzma
 from operator import attrgetter
 import os
 import shutil
@@ -69,7 +70,6 @@ from lp.registry.interfaces.pocket import (
     )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distroseries import DistroSeries
-from lp.services.compat import lzma
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.features import getFeatureFlag

@@ -19,6 +19,7 @@ from functools import partial
 import gzip
 import hashlib
 from itertools import product
+import lzma
 from operator import attrgetter
 import os
 import shutil
@@ -82,10 +83,7 @@ from lp.registry.interfaces.pocket import (
     pocketsuffix,
     )
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.compat import (
-    lzma,
-    mock,
-    )
+from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.sqlbase import flush_database_caches

@@ -165,6 +165,7 @@ python_standard_libs = [
     'linecache',
     'locale',
     'logging',
+    'lzma',
     'macerrors',
     'MacOS',
     'macostools',

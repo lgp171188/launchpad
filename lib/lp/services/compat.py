@@ -9,7 +9,6 @@ Use this for things that six doesn't provide.
 __metaclass__ = type
 __all__ = [
     'escape',
-    'lzma',
     'message_as_bytes',
     'message_from_bytes',
     'mock',
@@ -32,11 +31,6 @@ except ImportError:
     from cgi import escape
 
 import io
-
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
 
 try:
     import mock
