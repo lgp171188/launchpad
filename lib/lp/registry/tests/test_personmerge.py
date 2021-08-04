@@ -628,7 +628,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         duplicate, mergee = self._do_merge(duplicate, mergee)
         livefses = getUtility(ILiveFSSet).getByPerson(mergee)
         self.assertEqual(2, livefses.count())
-        project_names = [l.metadata['project'] for l in livefses]
+        project_names = [livefs.metadata['project'] for livefs in livefses]
         self.assertEqual(['TO', 'FROM'], project_names)
         self.assertEqual(u'foo-1', livefses[1].name)
 

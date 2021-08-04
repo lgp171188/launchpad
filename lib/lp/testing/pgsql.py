@@ -257,7 +257,7 @@ rw_main_slave:  dbname=%s
         debug = False
         if debug:
             sys.stderr.write('%0.2f starting %s\n' % (start, pid,))
-        l = None
+        lock = None
         lockname = '/tmp/lp.createdb.%s' % (self.template,)
         # Wait for the external lock.  Most LP tests use the
         # DatabaseLayer which does a double-indirect: it clones the
@@ -273,7 +273,7 @@ rw_main_slave:  dbname=%s
             try:
                 if debug:
                     sys.stderr.write('taking %s\n' % (pid,))
-                l = WriteLock(lockname)
+                lock = WriteLock(lockname)
                 if debug:
                     sys.stderr.write('%0.2f taken %s\n' % (time.time(), pid,))
                 break
@@ -281,7 +281,7 @@ rw_main_slave:  dbname=%s
                 if debug:
                     sys.stderr.write('blocked %s\n' % (pid,))
             time.sleep(random.random())
-        if l is None:
+        if lock is None:
             raise LockContention(lockname)
         try:
             # The clone may be delayed if gc has not disconnected other
@@ -337,7 +337,7 @@ rw_main_slave:  dbname=%s
                     '%0.2f (%0.2f) completed (%d retries) %s %s\n'
                     % (end, end - start, counter, pid, self.template))
         finally:
-            l.unlock()
+            lock.unlock()
             if debug:
                 sys.stderr.write('released %s\n' % (pid,))
 
