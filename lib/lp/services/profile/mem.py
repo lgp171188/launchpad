@@ -230,9 +230,9 @@ if __name__ == "__main__":
     gc.set_debug(gc.DEBUG_LEAK)
 
     # make a leak
-    l = []
-    l.append(l)
-    del l
+    lst = []
+    lst.append(lst)
+    del lst
 
     # show the dirt ;-)
     dump_garbage()

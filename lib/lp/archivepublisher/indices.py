@@ -79,8 +79,8 @@ class IndexStanzaFields:
         return '\n'.join(output_lines)
 
 
-def format_file_list(l):
-    return ''.join('\n %s %s %s' % ((h,) + f) for (h, f) in l)
+def format_file_list(lst):
+    return ''.join('\n %s %s %s' % ((h,) + f) for (h, f) in lst)
 
 
 def format_description(summary, description):

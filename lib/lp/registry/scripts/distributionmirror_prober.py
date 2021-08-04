@@ -249,8 +249,7 @@ class RedirectAwareProberProtocol(ProberProtocol):
 
     def handleHeader(self, key, value):
         key = key.lower()
-        l = self.headers.setdefault(key, [])
-        l.append(value)
+        self.headers.setdefault(key, []).append(value)
 
     def handleStatus(self, version, status, message):
         if int(status) in self.handled_redirect_statuses:
