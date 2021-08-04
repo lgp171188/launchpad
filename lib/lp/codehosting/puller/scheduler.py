@@ -151,7 +151,7 @@ class PullerWireProtocol(NetstringReceiver):
             try:
                 try:
                     method(*self._current_args)
-                except:
+                except Exception:
                     self.puller_protocol.unexpectedError(failure.Failure())
             finally:
                 self._resetState()

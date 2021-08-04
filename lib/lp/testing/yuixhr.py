@@ -335,7 +335,7 @@ class YUITestFixtureControllerView(LaunchpadView):
                         suite = suite_factory()
                     except EXPLOSIVE_ERRORS:
                         raise
-                    except:
+                    except Exception:
                         warning = 'test_suite raises errors'
                     else:
                         case = None
@@ -400,7 +400,7 @@ class YUITestFixtureControllerView(LaunchpadView):
                 fixtures[fixture_name](self.request, data)
         except EXPLOSIVE_ERRORS:
             raise
-        except:
+        except Exception:
             self.request.response.setStatus(500)
             result = ''.join(format_exception(*sys.exc_info()))
         else:
@@ -421,7 +421,7 @@ class YUITestFixtureControllerView(LaunchpadView):
                 fixtures[fixture_name].teardown(self.request, data)
         except EXPLOSIVE_ERRORS:
             raise
-        except:
+        except Exception:
             self.request.response.setStatus(500)
             result = ''.join(format_exception(*sys.exc_info()))
         else:

@@ -543,7 +543,7 @@ class PublishFTPMaster(LaunchpadCronScript):
             # Swizzle the now-updated backup dists and the current dists
             # around.
             self.installDists(distribution)
-        except:
+        except BaseException:
             # If we failed here, there's a chance that we left a
             # working dists directory in its temporary location.  If so,
             # recover it.  The next script run would do that anyway, but

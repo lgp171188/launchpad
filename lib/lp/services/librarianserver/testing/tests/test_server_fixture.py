@@ -83,7 +83,7 @@ class TestLibrarianServerFixture(TestCase):
                         fixture.restricted_download_port,
                         )
                 self.assertEqual(expected_config, fixture.service_config)
-            except:
+            except Exception:
                 self.attachLibrarianLog(fixture)
                 raise
 

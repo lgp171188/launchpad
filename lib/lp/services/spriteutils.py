@@ -195,7 +195,7 @@ class SpriteUtil:
                     for x_position in range(width, max_sprite_width, width):
                         position[0] = x_position
                         combined_image.paste(sprite_image, tuple(position))
-            except:
+            except Exception:
                 print(
                     "Error with image file %s" % sprite['filename'],
                     file=sys.stderr)

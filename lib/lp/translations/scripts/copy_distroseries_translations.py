@@ -131,7 +131,7 @@ def copy_distroseries_translations(source, target, txn, logger,
         copy_active_translations(
             source, target, txn, logger, sourcepackagenames=spns,
             skip_duplicates=skip_duplicates)
-    except:
+    except BaseException:
         copy_failed = True
         # Give us a fresh transaction for proper cleanup.
         txn.abort()
@@ -142,7 +142,7 @@ def copy_distroseries_translations(source, target, txn, logger,
             statekeeper.restore()
         except Warning as message:
             logger.warning(message)
-        except:
+        except BaseException:
             logger.warning(
                 "Failed to restore hide_all_translations and "
                 "defer_translation_imports flags on %s after translations "

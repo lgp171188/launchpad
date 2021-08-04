@@ -517,7 +517,7 @@ class Bugzilla(ExternalBugTracker):
             if bug_id not in self.remote_bug_importance:
                 return "Bug %s is not in remote_bug_importance" % bug_id
             return self.remote_bug_importance[bug_id]
-        except:
+        except Exception:
             return UNKNOWN_REMOTE_IMPORTANCE
 
     def getRemoteStatus(self, bug_id):

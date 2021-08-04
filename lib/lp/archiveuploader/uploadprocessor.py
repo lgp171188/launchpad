@@ -432,7 +432,7 @@ class UploadHandler:
                     "Committing the transaction and any mails associated "
                     "with this upload.")
                 self.processor.ztm.commit()
-        except:
+        except BaseException:
             self.processor.ztm.abort()
             raise
 
@@ -605,7 +605,7 @@ class BuildUploadHandler(UploadHandler):
                     "with this upload.")
                 self.processor.ztm.commit()
             return UploadStatusEnum.ACCEPTED
-        except:
+        except BaseException:
             self.processor.ztm.abort()
             raise
 
@@ -630,7 +630,7 @@ class BuildUploadHandler(UploadHandler):
         except UploadError as e:
             logger.error(str(e))
             return UploadStatusEnum.REJECTED
-        except:
+        except BaseException:
             self.processor.ztm.abort()
             raise
 
@@ -681,7 +681,7 @@ class BuildUploadHandler(UploadHandler):
         except UploadError as e:
             logger.error(str(e))
             return UploadStatusEnum.REJECTED
-        except:
+        except BaseException:
             self.processor.ztm.abort()
             raise
 

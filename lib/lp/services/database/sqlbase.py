@@ -205,7 +205,7 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         store.add(self)
         try:
             self._create(None, **kwargs)
-        except:
+        except Exception:
             store.remove(self)
             raise
 

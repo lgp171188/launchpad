@@ -268,7 +268,7 @@ class LaunchpadBrowserPublication(
             request_txt = 'Exception converting request to string\n\n'
             try:
                 request_txt += traceback.format_exc()
-            except:
+            except Exception:
                 request_txt += 'Unable to render traceback!'
         threadrequestfile.write(request_txt.encode('UTF-8'))
         threadrequestfile.close()

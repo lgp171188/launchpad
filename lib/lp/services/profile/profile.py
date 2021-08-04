@@ -89,7 +89,7 @@ class Profiler:
         self.profiler_lock.acquire(True)  # Blocks.
         try:
             self.enable()
-        except:
+        except Exception:
             self.profiler_lock.release()
             self.started = False
             raise
