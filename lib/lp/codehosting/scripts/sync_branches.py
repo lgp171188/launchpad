@@ -7,10 +7,7 @@ __metaclass__ = type
 __all__ = ['SyncBranchesScript']
 
 import os.path
-try:
-    from shlex import quote as shell_quote
-except ImportError:
-    from pipes import quote as shell_quote
+from shlex import quote as shell_quote
 import subprocess
 
 from zope.component import getUtility
