@@ -42,7 +42,6 @@ from sqlobject.sqlbuilder import sqlrepr
 import storm
 from storm.databases.postgres import compile as postgres_compile
 from storm.expr import (
-    Except,
     compile as storm_compile,
     State,
     )

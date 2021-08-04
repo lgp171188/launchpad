@@ -677,9 +677,9 @@ class TwistedJobRunner(BaseJobRunner):
                 if job is None:
                     self.logger.info('No jobs to run.')
                 self.terminated()
-            except Exception:
+            except BaseException:
                 self.failed(failure.Failure())
-        except Exception:
+        except BaseException:
             self.terminated()
             raise
 

@@ -118,7 +118,7 @@ class DirectBranchCommit:
                         db_branch, get_branch_info(self.bzrbranch))
 
             self.is_open = True
-        except Exception:
+        except BaseException:
             self.unlock()
             raise
 

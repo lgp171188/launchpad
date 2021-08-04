@@ -52,7 +52,7 @@ from bzrlib.osutils import format_date
 
 try:
     from editmoin import editshortcut
-except Exception:
+except ImportError:
     sys.stderr.write("""ERROR: Unable to import from 'editmoin'. How to solve:
 Get editmoin.py from launchpadlib's "contrib/" directory:
 

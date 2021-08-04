@@ -218,7 +218,7 @@ def export_language_pack(distribution_name, series_name, logger,
         filehandle, size = export(
             distroseries, component, update, force_utf8, logger)
     except Exception:
-        # Base exception statements are used in order to prevent premature
+        # Generic exception statements are used in order to prevent premature
         # termination of the script.
         logger.exception('Uncaught exception while exporting')
         return None
@@ -264,7 +264,7 @@ def export_language_pack(distribution_name, series_name, logger,
             logger.error('Uploading to the Librarian failed: %s', e)
             return None
         except Exception:
-            # Base exception statements are used in order to prevent premature
+            # Generic exception statements are used in order to prevent premature
             # termination of the script.
             logger.exception(
                 'Uncaught exception while uploading to the Librarian')
