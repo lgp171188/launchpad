@@ -16,6 +16,7 @@ __all__ = [
     'ZopeViewReplacementFixture',
     ]
 
+from configparser import ConfigParser
 import os.path
 import socket
 import time
@@ -42,7 +43,6 @@ from zope.security.checker import (
     )
 
 from lp.services import webapp
-from lp.services.compat import SafeConfigParser
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileAlias
@@ -82,7 +82,7 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
         # Known users, pulled from security.cfg
         security_cfg_path = os.path.join(
             config.root, 'database', 'schema', 'security.cfg')
-        security_cfg_config = SafeConfigParser({})
+        security_cfg_config = ConfigParser({})
         security_cfg_config.read([security_cfg_path])
         for section_name in security_cfg_config.sections():
             self.users[section_name] = 'trusted'

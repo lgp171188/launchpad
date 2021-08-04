@@ -7,12 +7,7 @@
 
 from argparse import ArgumentParser
 from collections import defaultdict
-try:
-    # Python 3
-    from configparser import ConfigParser
-except ImportError:
-    # Python 2
-    from ConfigParser import SafeConfigParser as ConfigParser
+from configparser import ConfigParser
 import logging
 
 from pkg_resources import parse_requirements

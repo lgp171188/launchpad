@@ -13,13 +13,7 @@ __all__ = [
     'message_as_bytes',
     'message_from_bytes',
     'mock',
-    'SafeConfigParser',
     ]
-
-try:
-    from configparser import ConfigParser as SafeConfigParser
-except ImportError:
-    from ConfigParser import SafeConfigParser
 
 try:
     from email import message_from_bytes
