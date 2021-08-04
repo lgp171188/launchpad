@@ -250,7 +250,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             InitializationError,
             ("Series series has no previous series and the "
              "distribution already has initialised series"
-             ".").format(child=child),
+             ".").format(child),
             ids.check)
 
     def test_failure_with_pending_builds(self):
