@@ -83,7 +83,7 @@ class PackageRelationshipSet:
 
     def has_items(self):
         """See IPackageRelationshipSet."""
-        return len(self.contents) is not 0
+        return len(self.contents) != 0
 
     def __iter__(self):
         return iter(sorted(
