@@ -96,7 +96,7 @@ def validate_oci_branch_name(branch_name):
     app_version = split[0:-1]
     ubuntu_version = split[-1]
     # 20.04 format
-    ubuntu_match = re.match("\d{2}\.\d{2}", ubuntu_version)
+    ubuntu_match = re.match(r"\d{2}\.\d{2}", ubuntu_version)
     if not ubuntu_match:
         return False
     # disallow risks in app version number
