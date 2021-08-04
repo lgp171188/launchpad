@@ -1456,7 +1456,6 @@ class TestBugChanges(TestCaseWithFactory):
             'person': product.owner,
             'newvalue': new_value,
             'whatchanged': 'bug task added',
-            'newvalue': new_value,
             }
 
         task_added_notification = {
