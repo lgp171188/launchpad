@@ -5,18 +5,19 @@ import atexit
 import itertools
 from operator import attrgetter
 import types
-import warnings
 
 import six
 from six.moves import builtins
 
-# Silence bogus warnings from Hardy's python-pkg-resources package.
-warnings.filterwarnings('ignore', category=UserWarning, append=True,
-                        message=r'Module .*? is being added to sys.path')
-
 
 original_import = builtins.__import__
 naughty_imports = set()
+
+# Silence bogus warnings from Hardy's python-pkg-resources package.
+import warnings # noqa: E402
+warnings.filterwarnings('ignore', category=UserWarning, append=True,
+                        message=r'Module .*? is being added to sys.path')
+
 
 # Sometimes, third-party modules don't export all of their public APIs through
 # __all__. The following dict maps from such modules to a list of attributes
