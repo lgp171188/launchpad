@@ -124,20 +124,20 @@ class FakeKeystone(resource.Resource):
         # XXX cjwatson 2020-06-15: Python 3.5 doesn't allow this to be a
         # binary file; 3.6 does.
         credentials = json.loads(request.content.read().decode("UTF-8"))
-        if not "auth" in credentials:
+        if "auth" not in credentials:
             request.setResponseCode(http.FORBIDDEN)
             return b""
-        if ((not "tenantName" in credentials["auth"] or
-             not "passwordCredentials" in credentials["auth"])):
+        if (("tenantName" not in credentials["auth"] or
+            "passwordCredentials" not in credentials["auth"])):
             request.setResponseCode(http.FORBIDDEN)
             return b""
         tenant_name = credentials["auth"]["tenantName"]
         pw_creds = credentials["auth"]["passwordCredentials"]
         username, password = pw_creds.get("username"), pw_creds.get("password")
-        if not tenant_name in self.root.tenants:
+        if tenant_name not in self.root.tenants:
             request.setResponseCode(http.FORBIDDEN)
             return b""
-        if not username in self.users:
+        if username not in self.users:
             request.setResponseCode(http.FORBIDDEN)
             return b""
         if password != DEFAULT_PASSWORD:

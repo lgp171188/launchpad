@@ -2862,7 +2862,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         emailset = set(self.context.unvalidatedemails)
         emailset = emailset.union(
             [guessed for guessed in self.context.guessedemails
-             if not guessed.email in emailset])
+             if guessed.email not in emailset])
         return emailset
 
     def validate_action_remove_validated(self, action, data):
