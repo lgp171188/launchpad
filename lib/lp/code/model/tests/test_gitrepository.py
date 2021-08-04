@@ -4142,9 +4142,9 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertEqual(0, response.jsonBody())
         with person_logged_in(person):
-            for _ in range(5):
+            for item in range(5):
                 self.factory.makeGitRepository()
-            for _ in range(3):
+            for item in range(3):
                 repo = self.factory.makeGitRepository()
                 removeSecurityProxy(repo).loose_object_count = 7000
                 removeSecurityProxy(repo).pack_count = 43

@@ -952,13 +952,13 @@ class BranchDeletionView(LaunchpadFormView):
     def display_deletion_requirements(self):
         """Normal deletion requirements, indication of permissions.
 
-        :return: A list of tuples of (item, action, reason, allowed)
+        :return: A list of tuples of (item, operation, reason, allowed)
         """
         reqs = []
-        for item, (action, reason) in six.iteritems(
+        for item, (operation, reason) in six.iteritems(
                 self.context.deletionRequirements(eager_load=True)):
             allowed = check_permission('launchpad.Edit', item)
-            reqs.append((item, action, reason, allowed))
+            reqs.append((item, operation, reason, allowed))
         return reqs
 
     @cachedproperty
@@ -1008,19 +1008,19 @@ class BranchDeletionView(LaunchpadFormView):
         'item', 'reason' and 'allowed'.
         """
         row_dict = {'delete': [], 'alter': [], 'break_link': []}
-        for item, action, reason, allowed in (
+        for item, operation, reason, allowed in (
             self.display_deletion_requirements):
             if IBugBranch.providedBy(item):
-                action = 'break_link'
+                operation = 'break_link'
             elif ISpecificationBranch.providedBy(item):
-                action = 'break_link'
+                operation = 'break_link'
             elif IProductSeries.providedBy(item):
-                action = 'break_link'
+                operation = 'break_link'
             row = {'item': item,
                    'reason': reason,
                    'allowed': allowed,
                   }
-            row_dict[action].append(row)
+            row_dict[operation].append(row)
         return row_dict
 
     @property

@@ -238,11 +238,11 @@ class StepView(LaunchpadFormView):
         # This is a hack to make it possible to change the label of our main
         # action in subclasses.
         actions = []
-        for action in self.actions:
+        for operation in self.actions:
             # Only change the label of our 'continue' action.
-            if action.__name__ == 'field.actions.continue':
-                action.label = self.main_action_label
-            actions.append(action)
+            if operation.__name__ == 'field.actions.continue':
+                operation.label = self.main_action_label
+            actions.append(operation)
         self.actions = actions
         return super(StepView, self).render()
 

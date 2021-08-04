@@ -1364,13 +1364,13 @@ class GitRepositoryDeletionView(LaunchpadFormView):
     def display_deletion_requirements(self):
         """Normal deletion requirements, indication of permissions.
 
-        :return: A list of tuples of (item, action, reason, allowed)
+        :return: A list of tuples of (item, operation, reason, allowed)
         """
         reqs = []
-        for item, (action, reason) in six.iteritems(
+        for item, (operation, reason) in six.iteritems(
                 self.context.getDeletionRequirements(eager_load=True)):
             allowed = check_permission("launchpad.Edit", item)
-            reqs.append((item, action, reason, allowed))
+            reqs.append((item, operation, reason, allowed))
         return reqs
 
     def all_permitted(self):
@@ -1405,13 +1405,13 @@ class GitRepositoryDeletionView(LaunchpadFormView):
         "item", "reason" and "allowed".
         """
         row_dict = {"delete": [], "alter": []}
-        for item, action, reason, allowed in (
+        for item, operation, reason, allowed in (
             self.display_deletion_requirements):
             row = {"item": item,
                    "reason": reason,
                    "allowed": allowed,
                   }
-            row_dict[action].append(row)
+            row_dict[operation].append(row)
         return row_dict
 
     @property
