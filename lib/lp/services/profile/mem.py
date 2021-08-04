@@ -145,7 +145,7 @@ def countsByType(objects, n=30):
     """
     d = {}
     for obj in objects:
-        if type(obj) is types.InstanceType:
+        if isinstance(obj, types.InstanceType):
             cls = obj.__class__
         else:
             cls = type(obj)
