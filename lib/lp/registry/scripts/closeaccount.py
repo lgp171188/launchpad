@@ -162,6 +162,7 @@ def close_account(username, log):
         ('specification', 'last_changed_by'),
         ('specification', 'owner'),
         ('specification', 'starter'),
+        ('specificationbranch', 'registrant'),
         ('structuralsubscription', 'subscribed_by'),
         ('teammembership', 'acknowledged_by'),
         ('teammembership', 'last_changed_by'),
@@ -184,8 +185,6 @@ def close_account(username, log):
         # deal with due to the size and complexity of references to it.  We
         # can hopefully provide a garbo job for this eventually.
         ('revisionauthor', 'person'),
-
-        ('specificationbranch', 'registrant'),
         }
 
     # If all the teams that the user owns
