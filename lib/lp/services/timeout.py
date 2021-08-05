@@ -341,7 +341,7 @@ class URLFetcher:
 
     @with_timeout(cleanup='cleanup')
     def fetch(self, url, use_proxy=False, allow_ftp=False, allow_file=False,
-              output_file=None, **request_kwargs):
+              output_file=None, check_status=True, **request_kwargs):
         """Fetch the URL using a custom HTTP handler supporting timeout.
 
         :param url: The URL to fetch.
@@ -351,6 +351,8 @@ class URLFetcher:
             pass this if the URL is trusted.)
         :param output_file: If not None, download the response content to
             this file object or path.
+        :param check_status: If True (the default), raise `HTTPError` if the
+            HTTP response status is 4xx or 5xx.
         :param request_kwargs: Additional keyword arguments passed on to
             `Session.request`.
         """
@@ -383,7 +385,8 @@ class URLFetcher:
         if response.status_code is None:
             raise HTTPError(
                 "HTTP request returned no status code", response=response)
-        raise_for_status_redacted(response)
+        if check_status:
+            raise_for_status_redacted(response)
         if output_file is None:
             # Make sure the content has been consumed before returning.
             response.content
