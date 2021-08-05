@@ -591,6 +591,88 @@ class IArchiveSubscriberView(Interface):
         """
 
 
+    @call_with(eager_load=True)
+    @rename_parameters_as(
+        name="binary_name", distroarchseries="distro_arch_series")
+    @operation_parameters(
+        name=TextLine(title=_("Binary Package Name"), required=False),
+        version=TextLine(title=_("Version"), required=False),
+        status=Choice(
+            title=_("Package Publishing Status"),
+            description=_("The status of this publishing record"),
+            vocabulary=PackagePublishingStatus,
+            required=False),
+        distroarchseries=Reference(
+            # Really IDistroArchSeries, circular import fixed below.
+            Interface,
+            title=_("Distro Arch Series"), required=False),
+        pocket=Choice(
+            title=_("Pocket"),
+            description=_("The pocket into which this entry is published"),
+            vocabulary=PackagePublishingPocket,
+            required=False, readonly=True),
+        exact_match=Bool(
+            description=_("Whether or not to filter binary names by exact "
+                          "matching."),
+            required=False),
+        created_since_date=Datetime(
+            title=_("Created Since Date"),
+            description=_("Return entries whose `date_created` is greater "
+                          "than or equal to this date."),
+            required=False),
+        ordered=Bool(
+            title=_("Ordered"),
+            description=_("Return ordered results by default, but specifying "
+                          "False will return results more quickly."),
+            required=False, readonly=True),
+        order_by_date=Bool(
+            title=_("Order by creation date"),
+            description=_("Return newest results first. This is recommended "
+                          "for applications that need to catch up with "
+                          "publications since their last run."),
+            required=False),
+        )
+
+    # Really returns IBinaryPackagePublishingHistory, see below for
+    # patch to avoid circular import.
+    @operation_returns_collection_of(Interface)
+    @export_operation_as("getPublishedBinaries")
+    @export_read_operation()
+    def getAllPublishedBinaries(name=None, version=None, status=None,
+                                distroarchseries=None, pocket=None,
+                                exact_match=False, created_since_date=None,
+                                ordered=True, order_by_date=False,
+                                include_removed=True, only_unpublished=False,
+                                eager_load=False):
+        """All `IBinaryPackagePublishingHistory` target to this archive.
+
+        :param name: binary name filter (exact match or SQL LIKE controlled
+                      by 'exact_match' argument).
+        :param version: binary version filter (always exact match).
+        :param status: `PackagePublishingStatus` filter, can be a list.
+        :param distroarchseries: `IDistroArchSeries` filter, can be a list.
+        :param pocket: `PackagePublishingPocket` filter.
+        :param exact_match: either or not filter source names by exact
+                             matching.
+        :param created_since_date: Only return publications created on or
+            after this date.
+        :param ordered: Normally publications are ordered by binary package
+            name and then ID order (creation order).  If this parameter is
+            False then the results will be unordered.  This will make the
+            operation much quicker to return results if you don't care about
+            ordering.
+        :param order_by_date: Order publications by descending creation date
+            and then by descending ID.  This is suitable for applications
+            that need to catch up with publications since their last run.
+        :param include_removed: If True, include publications that have been
+            removed from disk as well as those that have not.
+        :param only_unpublished: If True, only include publications that
+            have never been published to disk.
+
+        :return: A collection containing `BinaryPackagePublishingHistory`.
+        """
+
+
 class IArchiveView(IHasBuildRecords):
     """Archive interface for operations restricted by view privilege."""
 
@@ -1190,86 +1272,6 @@ class IArchiveView(IHasBuildRecords):
 
     def getOverridePolicy(distroseries, pocket, phased_update_percentage=None):
         """Returns an instantiated `IOverridePolicy` for the archive."""
-
-    @call_with(eager_load=True)
-    @rename_parameters_as(
-        name="binary_name", distroarchseries="distro_arch_series")
-    @operation_parameters(
-        name=TextLine(title=_("Binary Package Name"), required=False),
-        version=TextLine(title=_("Version"), required=False),
-        status=Choice(
-            title=_("Package Publishing Status"),
-            description=_("The status of this publishing record"),
-            vocabulary=PackagePublishingStatus,
-            required=False),
-        distroarchseries=Reference(
-            # Really IDistroArchSeries, circular import fixed below.
-            Interface,
-            title=_("Distro Arch Series"), required=False),
-        pocket=Choice(
-            title=_("Pocket"),
-            description=_("The pocket into which this entry is published"),
-            vocabulary=PackagePublishingPocket,
-            required=False, readonly=True),
-        exact_match=Bool(
-            description=_("Whether or not to filter binary names by exact "
-                          "matching."),
-            required=False),
-        created_since_date=Datetime(
-            title=_("Created Since Date"),
-            description=_("Return entries whose `date_created` is greater "
-                          "than or equal to this date."),
-            required=False),
-        ordered=Bool(
-            title=_("Ordered"),
-            description=_("Return ordered results by default, but specifying "
-                          "False will return results more quickly."),
-            required=False, readonly=True),
-        order_by_date=Bool(
-            title=_("Order by creation date"),
-            description=_("Return newest results first. This is recommended "
-                          "for applications that need to catch up with "
-                          "publications since their last run."),
-            required=False),
-        )
-    # Really returns IBinaryPackagePublishingHistory, see below for
-    # patch to avoid circular import.
-    @operation_returns_collection_of(Interface)
-    @export_operation_as("getPublishedBinaries")
-    @export_read_operation()
-    def getAllPublishedBinaries(name=None, version=None, status=None,
-                                distroarchseries=None, pocket=None,
-                                exact_match=False, created_since_date=None,
-                                ordered=True, order_by_date=False,
-                                include_removed=True, only_unpublished=False,
-                                eager_load=False):
-        """All `IBinaryPackagePublishingHistory` target to this archive.
-
-        :param name: binary name filter (exact match or SQL LIKE controlled
-                      by 'exact_match' argument).
-        :param version: binary version filter (always exact match).
-        :param status: `PackagePublishingStatus` filter, can be a list.
-        :param distroarchseries: `IDistroArchSeries` filter, can be a list.
-        :param pocket: `PackagePublishingPocket` filter.
-        :param exact_match: either or not filter source names by exact
-                             matching.
-        :param created_since_date: Only return publications created on or
-            after this date.
-        :param ordered: Normally publications are ordered by binary package
-            name and then ID order (creation order).  If this parameter is
-            False then the results will be unordered.  This will make the
-            operation much quicker to return results if you don't care about
-            ordering.
-        :param order_by_date: Order publications by descending creation date
-            and then by descending ID.  This is suitable for applications
-            that need to catch up with publications since their last run.
-        :param include_removed: If True, include publications that have been
-            removed from disk as well as those that have not.
-        :param only_unpublished: If True, only include publications that
-            have never been published to disk.
-
-        :return: A collection containing `BinaryPackagePublishingHistory`.
-        """
 
     @operation_parameters(
         include_needsbuild=Bool(
