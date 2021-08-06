@@ -552,16 +552,10 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 'Basic dXNlcjpwYXNzd29yZA==',
                 call.request.headers['Authorization'])
 
-    def test_upload_retries_exception(self):
-        # Use a separate counting mechanism so we're not entirely relying
-        # on tenacity to tell us that it has retried.
-        def count_retries(*args, **kwargs):
-            self.retry_count += 1
-            raise ConnectionError
-
+    def _check_retry_type(self, counting_method, retry_type):
         self.useFixture(MockPatch(
             'lp.oci.model.ociregistryclient.proxy_urlfetch',
-            side_effect=count_retries
+            side_effect=counting_method
         ))
         # Patch sleep so we don't need to change our arguments and the
         # test is instant
@@ -572,7 +566,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             self.client._upload(
                 "test-digest", push_rule,
                 None, 0, RegistryHTTPClient(push_rule))
-        except ConnectionError:
+        except retry_type:
             # Check that tenacity and our counting agree
             self.assertEqual(
                 5, self.client._upload.retry.statistics["attempt_number"])
@@ -580,6 +574,15 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
         except Exception:
             # We should see the original exception, not a RetryError
             raise
+
+    def test_upload_retries_exception(self):
+        # Use a separate counting mechanism so we're not entirely relying
+        # on tenacity to tell us that it has retried.
+        def count_retries(*args, **kwargs):
+            self.retry_count += 1
+            raise ConnectionError
+
+        self._check_retry_type(count_retries, ConnectionError)
 
     def test_upload_retries_incomplete_read(self):
         # Use a separate counting mechanism so we're not entirely relying
@@ -588,27 +591,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
             self.retry_count += 1
             raise IncompleteRead(b'', 20)
 
-        self.useFixture(MockPatch(
-            'lp.oci.model.ociregistryclient.proxy_urlfetch',
-            side_effect=count_retries
-        ))
-        # Patch sleep so we don't need to change our arguments and the
-        # test is instant
-        self.client._upload.retry.sleep = lambda x: None
-
-        try:
-            push_rule = self.build.recipe.push_rules[0]
-            self.client._upload(
-                "test-digest", push_rule,
-                None, 0, RegistryHTTPClient(push_rule))
-        except IncompleteRead:
-            # Check that tenacity and our counting agree
-            self.assertEqual(
-                5, self.client._upload.retry.statistics["attempt_number"])
-            self.assertEqual(5, self.retry_count)
-        except Exception:
-            # We should see the original exception, not a RetryError
-            raise
+        self._check_retry_type(count_retries, IncompleteRead)
 
     @responses.activate
     def test_upload_put_blob_raises_error(self):
