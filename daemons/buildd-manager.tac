@@ -9,16 +9,17 @@ import resource
 from twisted.application import service
 from twisted.scripts.twistd import ServerOptions
 
+from lp.buildmaster.manager import BuilddManager
 from lp.services.config import (
     config,
     dbconfig,
     )
 from lp.services.daemons import readyservice
-from lp.services.scripts import execute_zcml_for_scripts
-from lp.buildmaster.manager import BuilddManager
 from lp.services.mail.sendmail import set_immediate_mail_delivery
+from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.twistedsupport.features import setup_feature_controller
 from lp.services.twistedsupport.loggingsupport import RotatableFileLogObserver
+
 
 execute_zcml_for_scripts()
 dbconfig.override(dbuser='buildd_manager', isolation_level='read_committed')

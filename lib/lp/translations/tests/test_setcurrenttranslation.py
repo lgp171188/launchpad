@@ -16,6 +16,7 @@ from lp.translations.tests.helpers import (
     summarize_current_translations,
     )
 
+
 # This test is based on the matrix described on:
 #  https://dev.launchpad.net/Translations/Specs
 #     /UpstreamImportIntoUbuntu/FixingIsImported

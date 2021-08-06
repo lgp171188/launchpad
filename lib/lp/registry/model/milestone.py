@@ -167,7 +167,8 @@ class MilestoneData:
             get_specification_privacy_filter,
             )
         from lp.blueprints.model.specificationworkitem import (
-            SpecificationWorkItem)
+            SpecificationWorkItem,
+            )
         from lp.registry.model.person import Person
         origin = [Specification]
         product_origin, clauses = get_specification_active_product_filter(
@@ -335,7 +336,10 @@ class Milestone(SQLBase, MilestoneData, StructuralSubscriptionTargetMixin,
     def setTags(self, tags, user):
         """See IMilestone."""
         # Circular reference prevention.
-        from lp.registry.model.milestonetag import MilestoneTag, validate_tags
+        from lp.registry.model.milestonetag import (
+            MilestoneTag,
+            validate_tags,
+            )
         store = Store.of(self)
         if tags:
             if not validate_tags(tags):

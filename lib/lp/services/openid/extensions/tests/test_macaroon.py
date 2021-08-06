@@ -9,11 +9,11 @@ from openid.server.server import Server
 from zope.component import getUtility
 
 from lp.services.openid.extensions.macaroon import (
+    get_macaroon_ns,
     MACAROON_NS,
     MacaroonNamespaceError,
     MacaroonRequest,
     MacaroonResponse,
-    get_macaroon_ns,
     )
 from lp.services.openid.interfaces.openidconsumer import IOpenIDConsumerStore
 from lp.testing import (

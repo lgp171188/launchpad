@@ -26,6 +26,7 @@ except ImportError:
 
 import io
 
+
 try:
     import mock
 except ImportError:

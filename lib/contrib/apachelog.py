@@ -97,6 +97,7 @@ __contributors__ = [
     
 import re
 
+
 class ApacheLogParserError(Exception):
     pass
 

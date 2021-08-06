@@ -24,6 +24,7 @@ from lp.services.scripts import (
     logger_options,
     )
 
+
 # The 'read' group does not get given select permission on the following
 # tables. This is to stop the ro user being given access to secrurity
 # sensitive information that interactive sessions don't need.

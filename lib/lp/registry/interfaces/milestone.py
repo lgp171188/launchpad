@@ -84,9 +84,8 @@ class MilestoneNameField(ContentNameField):
         """Return the named milestone from the context."""
         # IProductSeries and IDistroSeries are imported here to
         # avoid an import loop.
-        from lp.registry.interfaces.productseries import (
-            IProductSeries)
         from lp.registry.interfaces.distroseries import IDistroSeries
+        from lp.registry.interfaces.productseries import IProductSeries
         if IMilestone.providedBy(self.context):
             milestone = self.context.target.getMilestone(name)
         elif IProductSeries.providedBy(self.context):

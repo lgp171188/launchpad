@@ -43,6 +43,7 @@ from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.webapp import canonical_url
 from lp.testing.factory import LaunchpadObjectFactory
 
+
 # Silence unused name warnings
 (utc, transaction, verifyObject, removeSecurityProxy, canonical_url,
  getUtility, rlcompleter)

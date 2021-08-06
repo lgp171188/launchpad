@@ -284,7 +284,9 @@ class BuildFarmJobSet:
         """See `IBuildFarmJobSet`."""
         # Imported here to avoid circular imports.
         from lp.soyuz.model.archive import (
-            Archive, get_archive_privacy_filter)
+            Archive,
+            get_archive_privacy_filter,
+            )
 
         clauses = [
             BuildFarmJob.builder == builder_id,

@@ -912,7 +912,7 @@ class BugSecrecyEditView(LaunchpadFormView, BugSubscriptionPortletDetails):
             from lp.bugs.browser.bugtask import (
                 can_add_package_task_to_bug,
                 can_add_project_task_to_bug,
-            )
+                )
             if changed:
                 result_data = self._getSubscriptionDetails()
                 result_data['can_add_project_task'] = (
@@ -1150,7 +1150,9 @@ class BugTextView(LaunchpadView):
             return message
 
         from lp.bugs.browser.bugtask import (
-            get_visible_comments, get_comments_for_bugtask)
+            get_comments_for_bugtask,
+            get_visible_comments,
+            )
 
         # XXX: kiko 2007-10-31: for some reason, get_comments_for_bugtask
         # takes a task, not a bug. For now live with it.

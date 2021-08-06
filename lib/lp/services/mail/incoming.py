@@ -65,6 +65,7 @@ from lp.services.webapp.interfaces import (
     IPlacelessAuthUtility,
     )
 
+
 # Match '\n' and '\r' line endings. That is, all '\r' that are not
 # followed by a '\n', and all '\n' that are not preceded by a '\r'.
 non_canonicalised_line_endings = re.compile(br'((?<!\r)\n)|(\r(?!\n))')

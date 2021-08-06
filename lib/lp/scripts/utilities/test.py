@@ -148,6 +148,7 @@ class LaunchpadWarnings(Feature):
 
 def install_fake_pgsql_connect():
     from lp.testing import pgsql
+
     # If this is removed, make sure lp.testing.pgsql is updated
     # because the test harness there relies on the Connection wrapper being
     # installed.
@@ -205,11 +206,11 @@ def main():
     # The imports at the top of this file must avoid anything that reads
     # from Launchpad config. Now that we've set the correct config instance,
     # we can safely import the rest.
+    from lp.services.testing import profiled
     from lp.services.testing.customresult import (
         filter_tests,
         patch_find_tests,
         )
-    from lp.services.testing import profiled
 
     # Extract arguments so we can see them too. We need to strip
     # --resume-layer and --default stuff if found as get_options can't

@@ -77,6 +77,7 @@ from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.menu import NavigationMenu
 
+
 # A set of bug tracker types for which there can only ever be one bug
 # tracker.
 SINGLE_INSTANCE_TRACKERS = (

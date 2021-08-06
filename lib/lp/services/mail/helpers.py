@@ -280,6 +280,7 @@ def get_contact_email_addresses(person):
     # Need to remove the security proxy of the email address because the
     # logged in user may not have permission to see it.
     from zope.security.proxy import removeSecurityProxy
+
     # Circular imports force this import.
     from lp.registry.model.person import get_recipients
     return set(

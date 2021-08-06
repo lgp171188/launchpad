@@ -9,6 +9,7 @@ import _pythonpath  # noqa: F401
 
 from lp.translations.utilities.translationmerger import MessageSharingMerge
 
+
 # This script merges POTMsgSets for sharing POTemplates.  This involves
 # deleting records that we'd never delete otherwise.  So before running,
 # make sure rosettaadmin has the privileges to delete POTMsgSets and

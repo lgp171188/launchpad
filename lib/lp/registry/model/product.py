@@ -1117,7 +1117,8 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     @cachedproperty
     def distrosourcepackages(self):
         from lp.registry.model.distributionsourcepackage import (
-            DistributionSourcePackage)
+            DistributionSourcePackage,
+            )
         dsp_info = get_distro_sourcepackages([self])
         return [
             DistributionSourcePackage(

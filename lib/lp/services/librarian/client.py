@@ -17,8 +17,8 @@ import hashlib
 import select
 import socket
 from socket import (
-    SOCK_STREAM,
     AF_INET,
+    SOCK_STREAM,
     )
 import threading
 import time
@@ -172,8 +172,10 @@ class FileUploadClient:
         name = six.ensure_binary(name)
 
         # Import in this method to avoid a circular import
-        from lp.services.librarian.model import LibraryFileContent
-        from lp.services.librarian.model import LibraryFileAlias
+        from lp.services.librarian.model import (
+            LibraryFileAlias,
+            LibraryFileContent,
+            )
 
         self._connect()
         try:

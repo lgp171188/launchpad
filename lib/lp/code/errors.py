@@ -77,6 +77,7 @@ from lp.app.errors import (
     NotFoundError,
     )
 
+
 # Annotate the RecipeParseError's with a 400 webservice status.
 error_status(http_client.BAD_REQUEST)(RecipeParseError)
 
@@ -247,6 +248,7 @@ class BranchMergeProposalExists(InvalidBranchMergeProposal):
     def __init__(self, existing_proposal):
         # Circular import.
         from lp.code.interfaces.branch import IBranch
+
         # display_name is the newer style, but IBranch uses the older style.
         if IBranch.providedBy(existing_proposal.merge_source):
             display_name = "displayname"

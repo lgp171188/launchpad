@@ -50,8 +50,14 @@ import os
 import six
 from zope.app.wsgi.testlayer import BrowserLayer
 from zope.browserpage.simpleviewclass import simple
-from zope.component import adapter, getGlobalSiteManager
-from zope.interface import directlyProvides, implementer
+from zope.component import (
+    adapter,
+    getGlobalSiteManager,
+    )
+from zope.interface import (
+    directlyProvides,
+    implementer,
+    )
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 
 from lp.services.config import config

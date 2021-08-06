@@ -99,6 +99,7 @@ from lp.soyuz.model.publishing import (
     )
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
+
 # Days before a package will be removed from disk.
 STAY_OF_EXECUTION = 1
 

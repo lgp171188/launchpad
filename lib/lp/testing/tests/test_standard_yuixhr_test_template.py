@@ -15,6 +15,7 @@ from lp.testing.yuixhr import (
     setup,
     )
 
+
 # This is one half of a YUI app test.  The other half is a .js test of
 # exactly the same name as your Python file, just with different file
 # extensions.

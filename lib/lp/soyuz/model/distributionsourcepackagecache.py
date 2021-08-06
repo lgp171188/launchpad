@@ -60,7 +60,8 @@ class DistributionSourcePackageCache(SQLBase):
 
         # import here to avoid circular imports
         from lp.registry.model.distributionsourcepackage import (
-            DistributionSourcePackage)
+            DistributionSourcePackage,
+            )
 
         return DistributionSourcePackage(self.distribution,
             self.sourcepackagename)

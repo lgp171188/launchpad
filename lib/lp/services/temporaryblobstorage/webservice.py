@@ -23,6 +23,7 @@ from lp.services.webservice.apihelpers import (
     patch_operations_explicit_version,
     )
 
+
 # ITemporaryBlobStorage
 patch_operations_explicit_version(
     ITemporaryBlobStorage, 'beta', "getProcessedData", "hasBeenProcessed")

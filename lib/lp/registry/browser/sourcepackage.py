@@ -157,7 +157,8 @@ class SourcePackageNavigation(Navigation, BugTargetTraversalMixin):
         # source package.
         # If not, raise TranslationUnavailable.
         from lp.translations.browser.distroseries import (
-            check_distroseries_translations_viewable)
+            check_distroseries_translations_viewable,
+            )
         check_distroseries_translations_viewable(self.context.distroseries)
 
         return sourcepackage_pots

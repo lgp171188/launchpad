@@ -1035,7 +1035,9 @@ class Archive(SQLBase):
             DistributionSourcePackageCache,
             )
         from lp.soyuz.model.distroseriespackagecache import (
-            DistroSeriesPackageCache)
+            DistroSeriesPackageCache,
+            )
+
         # Compiled regexp to remove puntication.
         clean_text = re.compile(r'(,|;|:|\.|\?|!)')
 
@@ -2380,9 +2382,7 @@ class Archive(SQLBase):
 
     def _getExistingOverrideSequence(self, archive, distroseries, pocket,
                                      phased_update_percentage):
-        from lp.soyuz.adapters.overrides import (
-            FromExistingOverridePolicy,
-            )
+        from lp.soyuz.adapters.overrides import FromExistingOverridePolicy
         return [
             FromExistingOverridePolicy(
                 archive, distroseries, None,
@@ -2788,6 +2788,7 @@ class ArchiveSet:
     def getPPAsForUser(self, user):
         """See `IArchiveSet`."""
         from lp.registry.model.person import Person
+
         # If there's no user logged in, then there are no archives.
         if user is None:
             return EmptyResultSet()
@@ -2803,6 +2804,7 @@ class ArchiveSet:
     def getPPADistributionsForUser(self, user):
         """See `IArchiveSet`."""
         from lp.registry.model.distribution import Distribution
+
         # If there's no user logged in, then there are no archives.
         if user is None:
             return EmptyResultSet()

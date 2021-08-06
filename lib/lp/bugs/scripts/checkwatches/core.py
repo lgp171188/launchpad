@@ -67,6 +67,7 @@ from lp.services.database.sqlbase import flush_database_updates
 from lp.services.scripts.base import LaunchpadCronScript
 from lp.services.scripts.logger import log as default_log
 
+
 # The login of the user to run as.
 LOGIN = 'bugwatch@bugs.launchpad.net'
 

@@ -122,6 +122,7 @@ from lp.translations.browser.distroseries import (
     check_distroseries_translations_viewable,
     )
 
+
 # DistroSeries statuses that benefit from mass package upgrade support.
 UPGRADABLE_SERIES_STATUSES = [
     SeriesStatus.FUTURE,

@@ -25,8 +25,8 @@ from tempfile import NamedTemporaryFile
 
 from lp.testing import TestCase
 from lp.testing.html5browser import (
-    Command,
     Browser,
+    Command,
     )
 
 

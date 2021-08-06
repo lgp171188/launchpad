@@ -10,8 +10,8 @@ from six.moves.urllib_parse import (
 import soupmatchers
 from testtools.content import Content
 from testtools.content_type import UTF8_TEXT
-from zope.testbrowser.wsgi import Browser
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.wsgi import Browser
 
 from launchpad_loggerhead.app import RootApp
 from launchpad_loggerhead.session import SessionHandler

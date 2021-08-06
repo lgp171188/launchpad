@@ -17,6 +17,7 @@ from lp.services.database.sqlbase import (
     )
 from lp.services.scripts import execute_zcml_for_scripts
 
+
 execute_zcml_for_scripts()
 
 

@@ -16,7 +16,8 @@ def get_lock_id_for_branch_id(branch_id):
     """
     return 'worker-for-branch-%s@supermirror' % (branch_id,)
 
-from lp.codehosting.puller.scheduler import LockError # noqa: E402
+from lp.codehosting.puller.scheduler import LockError  # noqa: E402
+
 
 UTC = pytz.timezone('UTC')
 

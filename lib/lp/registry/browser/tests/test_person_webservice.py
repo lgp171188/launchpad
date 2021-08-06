@@ -29,6 +29,7 @@ from lp.services.identity.interfaces.account import (
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
 from lp.services.webapp import snapshot
 from lp.services.webapp.interfaces import OAuthPermission
+from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
     admin_logged_in,
     api_url,
@@ -38,7 +39,6 @@ from lp.testing import (
     record_two_runs,
     TestCaseWithFactory,
     )
-from lp.services.webapp.publisher import canonical_url
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (

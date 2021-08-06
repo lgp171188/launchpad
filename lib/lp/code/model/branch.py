@@ -1265,7 +1265,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         there is work queued, for example when deciding whether to display
         in-progress UI indicators.
         """
-        from lp.code.model.branchjob import BranchJob, BranchJobType
+        from lp.code.model.branchjob import (
+            BranchJob,
+            BranchJobType,
+            )
         jobs = Store.of(self).find(
             BranchJob,
             BranchJob.branch == self,
@@ -1320,7 +1323,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         self.unscan(rescan=True)
 
     def getLatestScanJob(self):
-        from lp.code.model.branchjob import BranchJob, BranchScanJob
+        from lp.code.model.branchjob import (
+            BranchJob,
+            BranchScanJob,
+            )
         latest_job = IStore(BranchJob).find(
             BranchJob,
             BranchJob.branch == self,
@@ -1501,7 +1507,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
     @property
     def upgrade_pending(self):
         """See `IBranch`."""
-        from lp.code.model.branchjob import BranchJob, BranchJobType
+        from lp.code.model.branchjob import (
+            BranchJob,
+            BranchJobType,
+            )
         store = Store.of(self)
         jobs = store.find(
             BranchJob,

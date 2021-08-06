@@ -35,6 +35,7 @@ from lp.services.webapp.errorlog import (
 from lp.services.webapp.interaction import setupInteraction
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
 
+
 # For OOPS reporting keep up to this number of SQL statements.
 MAX_SQL_STATEMENTS_LOGGED = 10000
 

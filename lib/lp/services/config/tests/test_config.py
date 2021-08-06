@@ -24,6 +24,7 @@ import testtools
 import lp.services.config
 from lp.services.config.fixture import ConfigUseFixture
 
+
 # Configs that shouldn't be tested.
 EXCLUDED_CONFIGS = ['lpnet-template']
 

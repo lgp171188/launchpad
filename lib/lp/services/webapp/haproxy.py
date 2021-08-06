@@ -13,6 +13,7 @@ __all__ = [
 
 from lp.services.config import config
 
+
 # This is the global flag, when this is True, the HAProxy view
 # will return 500, it returns 200 otherwise.
 going_down_flag = False

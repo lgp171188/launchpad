@@ -13,11 +13,11 @@ from io import BytesIO
 import logging
 from operator import attrgetter
 import os.path
+import posixpath
 import re
 import tarfile
 from textwrap import dedent
 
-import posixpath
 import pytz
 import six
 from storm.expr import (
@@ -862,7 +862,10 @@ def list_product_request_targets(user, status_condition):
     :return: A list of `Product`, distinct and ordered by name.
     """
     # Avoid circular imports.
-    from lp.registry.model.product import Product, ProductSet
+    from lp.registry.model.product import (
+        Product,
+        ProductSet,
+        )
     from lp.registry.model.productseries import ProductSeries
 
     privacy_filter = ProductSet.getProductPrivacyFilter(user)

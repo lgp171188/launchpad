@@ -13,8 +13,12 @@ updated from time to time.
 
 # Run this to generate a new module list.
 if __name__ == '__main__':
+    from sys import (
+        stdout,
+        version_info,
+        )
+
     from lxml import html
-    from sys import version_info, stdout
     modindex_url = (
         "http://docs.python.org/release/"
         "{0}.{1}.{2}/modindex.html").format(*version_info)

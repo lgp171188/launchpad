@@ -28,6 +28,7 @@ from lp.services.features.model import (
     )
 from lp.services.webapp import adapter
 
+
 # A convenient mapping for a feature flag rule in the database.
 Rule = namedtuple("Rule", "flag scope priority value")
 

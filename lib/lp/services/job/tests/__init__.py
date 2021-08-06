@@ -29,6 +29,7 @@ def celery_worker(queue, cwd=None):
     currently-configured BROKER_URL, and able to run CeleryRunJob tasks.
     """
     from lp.services.job.celeryjob import celery_app
+
     # convert config params to a URL, so they can be passed as --broker.
     with celery_app.broker_connection() as connection:
         broker_uri = connection.as_uri(include_password=True)
@@ -89,6 +90,7 @@ def block_on_job(test_case=None):
 
 def drain_celery_queues():
     from lazr.jobrunner.celerytask import drain_queues
+
     from lp.services.job.celeryjob import celery_app
     drain_queues(celery_app, celery_app.conf.CELERY_QUEUES.keys())
 

@@ -38,6 +38,7 @@ from lp.services.webapp.interfaces import (
     OAuthPermission,
     )
 
+
 # The challenge included in responses with a 401 status.
 OAUTH_REALM = 'https://api.launchpad.net'
 OAUTH_CHALLENGE = 'OAuth realm="%s"' % OAUTH_REALM

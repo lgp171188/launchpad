@@ -62,6 +62,7 @@ from lp.services.timeout import urlfetch
 from lp.services.webapp import canonical_url
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
+
 # The requests/timeouts ratio has to be at least 3 for us to keep issuing
 # requests on a given host. (This ratio is per run, rather than held long
 # term)

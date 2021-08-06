@@ -16,6 +16,7 @@ from six.moves.http_cookiejar import Cookie
 from six.moves.urllib.parse import urljoin
 from zope.testbrowser.browser import Browser
 
+
 # Should we be able to override any of these?
 AUTH_FILE = '~/.lp_auth_cookie'
 PRIVATE_PASTE_HOST = 'pastebin.canonical.com'

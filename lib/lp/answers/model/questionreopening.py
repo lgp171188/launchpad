@@ -8,8 +8,8 @@ __metaclass__ = type
 __all__ = ['QuestionReopening',
            'create_questionreopening']
 
-import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
+import pytz
 from storm.locals import (
     DateTime,
     Int,

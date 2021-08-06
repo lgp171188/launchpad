@@ -17,5 +17,6 @@ __all__ = [
 from lp.services.identity.interfaces.emailaddress import IEmailAddress
 from lp.services.webservice.apihelpers import patch_entry_explicit_version
 
+
 # IEmailAddress
 patch_entry_explicit_version(IEmailAddress, 'beta')

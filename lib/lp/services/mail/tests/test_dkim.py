@@ -24,6 +24,7 @@ from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
+
 # sample private key made with 'openssl genrsa' and public key using 'openssl
 # rsa -pubout'.  Not really the key for canonical.com ;-)
 sample_privkey = b"""\

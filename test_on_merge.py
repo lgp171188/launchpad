@@ -28,6 +28,7 @@ import psycopg2
 
 from lp.services.database import activity_cols
 
+
 # The TIMEOUT setting (expressed in seconds) affects how long a test will run
 # before it is deemed to be hung, and then appropriately terminated.
 # It's principal use is preventing a PQM job from hanging indefinitely and

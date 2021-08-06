@@ -899,7 +899,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     def getLatestScanJob(self):
         """See `IGitRepository`."""
-        from lp.code.model.gitjob import GitJob, GitRefScanJob
+        from lp.code.model.gitjob import (
+            GitJob,
+            GitRefScanJob,
+            )
         latest_job = IStore(GitJob).find(
             GitJob,
             GitJob.repository == self,

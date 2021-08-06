@@ -113,7 +113,10 @@ class cmd_launchpad_server(Command):
     def run(self, user_id, port=None, branch_directory=None,
             codehosting_endpoint_url=None, inet=False, protocol=None):
         from lp.codehosting.bzrutils import install_oops_handler
-        from lp.codehosting.vfs import get_lp_server, hooks
+        from lp.codehosting.vfs import (
+            get_lp_server,
+            hooks,
+            )
         install_oops_handler(user_id)
         four_gig = int(4e9)
         resource.setrlimit(resource.RLIMIT_AS, (four_gig, four_gig))

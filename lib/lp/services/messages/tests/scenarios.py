@@ -8,9 +8,7 @@ from zope.security.proxy import ProxyFactory
 
 from lp.bugs.model.bugmessage import BugMessage
 from lp.services.database.interfaces import IStore
-from lp.testing import (
-    login_person,
-    )
+from lp.testing import login_person
 
 
 class MessageTypeScenariosMixin(WithScenarios):

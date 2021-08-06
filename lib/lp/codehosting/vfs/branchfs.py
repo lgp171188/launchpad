@@ -112,6 +112,7 @@ from lp.services.twistedsupport.xmlrpc import (
 from lp.services.webapp import errorlog
 from lp.xmlrpc import faults
 
+
 # The directories allowed directly beneath a branch directory. These are the
 # directories that Bazaar creates as part of regular operation. We support
 # only two numbered backups to avoid indefinite space usage.

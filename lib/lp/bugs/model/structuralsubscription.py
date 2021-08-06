@@ -158,7 +158,8 @@ class StructuralSubscription(Storm):
             if self.sourcepackagename is not None:
                 # Circular imports.
                 from lp.registry.model.distributionsourcepackage import (
-                    DistributionSourcePackage)
+                    DistributionSourcePackage,
+                    )
                 return DistributionSourcePackage(
                     self.distribution, self.sourcepackagename)
             else:
@@ -707,6 +708,7 @@ def _get_structural_subscription_filter_id_query(
     """
     # Circular. :-(
     from lp.bugs.model.bugtasksearch import get_bug_bulk_privacy_filter_terms
+
     # We get the ids because we need to use group by in order to
     # look at the filters' tags in aggregate.  Once we have the ids,
     # we can get the full set of what we need in subsuming or

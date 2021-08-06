@@ -95,6 +95,7 @@ from lp.services.webapp.interfaces import (
 from lp.services.webapp.url import urlappend
 from lp.services.webapp.vhosts import allvhosts
 
+
 # Monkeypatch NotFound to always avoid generating OOPS
 # from NotFound in web service calls.
 error_status(http_client.NOT_FOUND)(NotFound)
@@ -727,9 +728,9 @@ def canonical_url(
         if current_request is not None:
             if WebServiceLayer.providedBy(current_request):
                 from lp.services.webapp.publication import (
-                    LaunchpadBrowserPublication)
-                from lp.services.webapp.servers import (
-                    LaunchpadBrowserRequest)
+                    LaunchpadBrowserPublication,
+                    )
+                from lp.services.webapp.servers import LaunchpadBrowserRequest
                 current_request = LaunchpadBrowserRequest(
                     current_request.bodyStream.getCacheStream(),
                     dict(current_request.environment))

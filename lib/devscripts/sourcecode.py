@@ -3,7 +3,11 @@
 
 """Tools for maintaining the Launchpad source code."""
 
-from __future__ import absolute_import, print_function
+from __future__ import (
+    absolute_import,
+    print_function,
+    )
+
 
 __metaclass__ = type
 __all__ = [
@@ -18,6 +22,7 @@ import optparse
 import os
 import shutil
 import sys
+
 
 try:
     from breezy import ui

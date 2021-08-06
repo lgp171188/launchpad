@@ -32,6 +32,7 @@ from lp.app.validators.name import valid_name
 from lp.services.config import config
 from lp.services.webapp.interfaces import ILaunchpadApplication
 
+
 # When LAUNCHPAD_SERVICES is provided as a login ID to XML-RPC methods, they
 # bypass the normal security checks and give read-only access to all branches.
 # This allows Launchpad services like the puller and branch scanner to access

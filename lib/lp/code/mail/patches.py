@@ -18,13 +18,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
+import re
+
 from breezy.patches import (
     binary_files_re,
     hunk_from_header,
     parse_patch,
     )
-
-import re
 
 
 def iter_file_patch(iter_lines, allow_dirty=False, keep_dirty=False):

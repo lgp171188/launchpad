@@ -164,9 +164,12 @@ class PillarNameSet:
         :returns: Storm ResultSet object
         """
         # These classes are imported in this method to prevent an import loop.
-        from lp.registry.model.product import Product, ProductSet
-        from lp.registry.model.projectgroup import ProjectGroup
         from lp.registry.model.distribution import Distribution
+        from lp.registry.model.product import (
+            Product,
+            ProductSet,
+            )
+        from lp.registry.model.projectgroup import ProjectGroup
         OtherPillarName = ClassAlias(PillarName)
         origin = [
             PillarName,
