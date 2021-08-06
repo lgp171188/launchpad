@@ -27,10 +27,6 @@ valid_imports_not_in_all = {
     'importlib': set(['resources']),
     'openid.fetchers': set(['Urllib2Fetcher']),
     'openid.message': set(['NamespaceAliasRegistrationError']),
-    # Exported as shlex.quote in Python 3.
-    'pipes': set(['quote']),
-    # Exported in Python 3, but missing and so not exported in Python 2.
-    'shlex': set(['quote']),
     'six.moves.http_cookiejar': set(['domain_match']),
     'storm.database': set(['STATE_DISCONNECTED']),
     'talisker': set(['run_gunicorn']),
