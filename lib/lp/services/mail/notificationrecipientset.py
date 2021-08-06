@@ -14,7 +14,10 @@ from operator import attrgetter
 
 import six
 from zope.interface import implementer
-from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import (
+    isinstance as zope_isinstance,
+    removeSecurityProxy,
+    )
 
 from lp.registry.interfaces.person import IPerson
 from lp.services.mail.interfaces import (
@@ -107,8 +110,8 @@ class NotificationRecipientSet:
 
     def add(self, persons, reason, header):
         """See `INotificationRecipientSet`."""
-        from zope.security.proxy import removeSecurityProxy
         from lp.registry.model.person import get_recipients
+
         if (IPerson.providedBy(persons) or
                 zope_isinstance(persons, StubPerson)):
             persons = [persons]
@@ -143,8 +146,8 @@ class NotificationRecipientSet:
 
     def remove(self, persons):
         """See `INotificationRecipientSet`."""
-        from zope.security.proxy import removeSecurityProxy
         from lp.registry.model.person import get_recipients
+
         if IPerson.providedBy(persons):
             persons = [persons]
         for person in persons:

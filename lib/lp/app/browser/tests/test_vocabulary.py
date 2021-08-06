@@ -328,9 +328,7 @@ class TestProductPickerEntrySourceAdapter(TestCaseWithFactory):
     def test_provides_commercial_subscription_expired(self):
         product = self.factory.makeProduct(name='fnord')
         self.factory.makeCommercialSubscription(product)
-        import datetime
-        import pytz
-        then = datetime.datetime(2005, 6, 15, 0, 0, 0, 0, pytz.UTC)
+        then = datetime(2005, 6, 15, 0, 0, 0, 0, pytz.UTC)
         with celebrity_logged_in('admin'):
             product.commercial_subscription.date_expires = then
         self.assertEqual(

@@ -3,24 +3,24 @@
 
 """Tests for lp.registry.scripts.productreleasefinder.filter."""
 
+import logging
 import unittest
+
+from lp.registry.scripts.productreleasefinder.filter import (
+    Filter,
+    FilterPattern,
+    )
 
 
 class Filter_Logging(unittest.TestCase):
     def testCreatesDefaultLogger(self):
         """Filter creates a default logger."""
-        from lp.registry.scripts.productreleasefinder.filter import (
-            Filter)
-        from logging import Logger
         f = Filter()
-        self.assertTrue(isinstance(f.log, Logger))
+        self.assertTrue(isinstance(f.log, logging.Logger))
 
     def testCreatesChildLogger(self):
         """Filter creates a child logger if given a parent."""
-        from lp.registry.scripts.productreleasefinder.filter import (
-            Filter)
-        from logging import getLogger
-        parent = getLogger("foo")
+        parent = logging.getLogger("foo")
         f = Filter(log_parent=parent)
         self.assertEqual(f.log.parent, parent)
 
@@ -28,15 +28,11 @@ class Filter_Logging(unittest.TestCase):
 class Filter_Init(unittest.TestCase):
     def testDefaultFiltersProperty(self):
         """Filter constructor initializes filters property to empty dict."""
-        from lp.registry.scripts.productreleasefinder.filter import (
-            Filter)
         f = Filter()
         self.assertEqual(f.filters, [])
 
     def testFiltersPropertyGiven(self):
         """Filter constructor accepts argument to set filters property."""
-        from lp.registry.scripts.productreleasefinder.filter import (
-            Filter)
         f = Filter(["wibble"])
         self.assertEqual(len(f.filters), 1)
         self.assertEqual(f.filters[0], "wibble")
@@ -45,14 +41,10 @@ class Filter_Init(unittest.TestCase):
 class Filter_CheckUrl(unittest.TestCase):
     def testNoFilters(self):
         """Filter.check returns None if there are no filters."""
-        from lp.registry.scripts.productreleasefinder.filter import (
-            Filter)
         f = Filter()
         self.assertEqual(f.check("file:///subdir/file"), None)
 
     def makeFilter(self, key, urlglob):
-        from lp.registry.scripts.productreleasefinder.filter import (
-            Filter, FilterPattern)
         pattern = FilterPattern(key, urlglob)
         return Filter([pattern])
 
@@ -85,8 +77,6 @@ class Filter_CheckUrl(unittest.TestCase):
 class Filter_IsPossibleParentUrl(unittest.TestCase):
 
     def makeFilter(self, key, urlglob):
-        from lp.registry.scripts.productreleasefinder.filter import (
-            Filter, FilterPattern)
         pattern = FilterPattern(key, urlglob)
         return Filter([pattern])
 

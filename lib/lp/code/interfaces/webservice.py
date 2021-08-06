@@ -35,6 +35,9 @@ __all__ = [
     'ISourcePackageRecipeBuild',
     ]
 
+# XXX: JonathanLange 2010-11-09 bug=673083: Legacy work-around for circular
+# import bugs.  Break this up into a per-package thing.
+from lp import _schema_circular_imports  # noqa: F401
 # The exceptions are imported so that they can produce the special
 # status code defined by error_status when they are raised.
 from lp.code.errors import (
@@ -70,9 +73,3 @@ from lp.code.interfaces.sourcepackagerecipe import ISourcePackageRecipe
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
-
-
-# XXX: JonathanLange 2010-11-09 bug=673083: Legacy work-around for circular
-# import bugs.  Break this up into a per-package thing.
-from lp import _schema_circular_imports
-_schema_circular_imports

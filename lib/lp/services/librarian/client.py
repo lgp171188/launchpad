@@ -37,6 +37,7 @@ from six.moves.urllib.parse import (
     urlunparse,
     )
 from six.moves.urllib.request import urlopen
+from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from zope.interface import implementer
 
@@ -385,7 +386,7 @@ class FileDownloadClient:
             inaccessible.
         """
         from lp.services.librarian.model import LibraryFileAlias
-        from sqlobject import SQLObjectNotFound
+
         try:
             lfa = LibraryFileAlias.get(aliasID)
         except SQLObjectNotFound:
