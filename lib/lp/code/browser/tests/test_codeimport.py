@@ -94,48 +94,48 @@ class TestImportDetails(TestCaseWithFactory):
 
     def test_other_users_are_forbidden_to_change_codeimport(self):
         # Unauthorized users are forbidden to edit an import.
-        cimport = self.factory.makeCodeImport()
+        code_import = self.factory.makeCodeImport()
         another_person = self.factory.makePerson()
         with person_logged_in(another_person):
             self.assertRaises(
-                Unauthorized, create_initialized_view, cimport.branch,
+                Unauthorized, create_initialized_view, code_import.branch,
                 '+edit-import')
 
     def test_branch_owner_of_import_can_edit_it(self):
         # Owners are allowed to edit code import.
-        cimport = self.factory.makeCodeImport()
-        with person_logged_in(cimport.branch.owner):
+        code_import = self.factory.makeCodeImport()
+        with person_logged_in(code_import.branch.owner):
             view = create_initialized_view(
-                cimport.branch, '+edit-import', form={
+                code_import.branch, '+edit-import', form={
                     "field.actions.update": "update",
                     "field.url": "http://foo.test"
                 })
             self.assertEqual([], view.errors)
-            self.assertEqual('http://foo.test', cimport.url)
+            self.assertEqual('http://foo.test', code_import.url)
 
     def test_branch_owner_of_import_cannot_change_status(self):
         # Owners are allowed to edit code import.
-        cimport = self.factory.makeCodeImport()
-        original_url = cimport.url
-        with person_logged_in(cimport.branch.owner):
+        code_import = self.factory.makeCodeImport()
+        original_url = code_import.url
+        with person_logged_in(code_import.branch.owner):
             view = create_initialized_view(
-                cimport.branch, '+edit-import', form={
+                code_import.branch, '+edit-import', form={
                     "field.actions.suspend": "Suspend",
                     "field.url": "http://foo.test"
                 })
             self.assertEqual([], view.errors)
-            self.assertEqual(original_url, cimport.url)
+            self.assertEqual(original_url, code_import.url)
 
     def test_admin_can_change_code_import_status(self):
         # Owners are allowed to edit code import.
-        cimport = self.factory.makeCodeImport()
+        code_import = self.factory.makeCodeImport()
         with admin_logged_in():
             view = create_initialized_view(
-                cimport.branch, '+edit-import', form={
+                code_import.branch, '+edit-import', form={
                     "field.actions.suspend": "Suspend",
                     "field.url": "http://foo.test"
                 })
             self.assertEqual([], view.errors)
-            self.assertEqual("http://foo.test", cimport.url)
+            self.assertEqual("http://foo.test", code_import.url)
             self.assertEqual(
-                CodeImportReviewStatus.SUSPENDED, cimport.review_status)
+                CodeImportReviewStatus.SUSPENDED, code_import.review_status)

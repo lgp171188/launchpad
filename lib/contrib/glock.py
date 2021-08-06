@@ -29,7 +29,6 @@ __doc__ += '\n@author: %s (U{%s})\n@version: %s' % (__author__[0],
                                             __author__[1], __version__)
 __all__ = ['GlobalLock', 'GlobalLockError', 'LockAlreadyAcquired', 'NotOwner']
 
-# Imports:
 import sys, string, os, errno, re
 
 # System-dependent imports for locking implementation:

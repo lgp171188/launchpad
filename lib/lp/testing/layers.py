@@ -78,6 +78,7 @@ from six.moves.urllib.error import (
     )
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.request import urlopen
+from storm.uri import URI
 from talisker.context import Context
 import transaction
 from webob.request import environ_from_url as orig_environ_from_url
@@ -935,9 +936,7 @@ class LaunchpadLayer(LibrarianLayer, MemcachedLayer, RabbitMQLayer):
         in the testSetUp().
         """
         if LaunchpadLayer._raw_sessiondb_connection is None:
-            from storm.uri import URI
-            from lp.services.webapp.adapter import (
-                LaunchpadSessionDatabase)
+            from lp.services.webapp.adapter import LaunchpadSessionDatabase
             launchpad_session_database = LaunchpadSessionDatabase(
                 URI('launchpad-session:'))
             LaunchpadLayer._raw_sessiondb_connection = (

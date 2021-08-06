@@ -50,6 +50,7 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from lazr.restful.interface import copy_field
+from lazr.uri import URI
 from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
@@ -157,7 +158,6 @@ class BranchURIField(URIField):
     def _validate(self, value):
         # import here to avoid circular import
         from lp.services.webapp import canonical_url
-        from lazr.uri import URI
 
         # Can't use super-- this derives from an old-style class
         URIField._validate(self, value)
