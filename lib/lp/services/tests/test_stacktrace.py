@@ -17,7 +17,7 @@ from lp.testing.layers import BaseLayer
 
 # This constant must always be equal to the line number on which it lives for
 # the tests to pass.
-MY_LINE_NUMBER = 19
+MY_LINE_NUMBER = 20
 
 MY_FILE_NAME = __file__[:__file__.rindex('.py')] + '.py'
 
