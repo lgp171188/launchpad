@@ -13,11 +13,11 @@ __all__ = [
 
 import bz2
 import gzip
+import lzma
 import os
 import stat
 import tempfile
 
-from lp.services.compat import lzma
 from lp.soyuz.enums import (
     ArchivePurpose,
     IndexCompressionType,
