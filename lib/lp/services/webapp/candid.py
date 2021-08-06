@@ -8,6 +8,7 @@ __all__ = [
     "CandidCallbackView",
     "CandidFailure",
     "CandidUnconfiguredError",
+    "extract_candid_caveat",
     "request_candid_discharge",
     ]
 
