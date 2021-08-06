@@ -8,6 +8,7 @@ __metaclass__ = type
 import _pythonpath  # noqa: F401
 
 from collections import defaultdict
+from configparser import ConfigParser
 from optparse import OptionParser
 import os
 import re
@@ -16,7 +17,6 @@ import sys
 import six
 
 from fti import quote_identifier
-from lp.services.compat import SafeConfigParser
 from lp.services.database.sqlbase import connect
 from lp.services.scripts import (
     db_options,
@@ -252,7 +252,7 @@ CONFIG_DEFAULTS = {
 
 def main(options, master_con=None):
     # Load the config file
-    config = SafeConfigParser(CONFIG_DEFAULTS)
+    config = ConfigParser(CONFIG_DEFAULTS)
     configfile_name = os.path.join(os.path.dirname(__file__), 'security.cfg')
     config.read([configfile_name])
 

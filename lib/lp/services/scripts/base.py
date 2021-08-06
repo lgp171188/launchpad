@@ -11,6 +11,7 @@ __all__ = [
     'SilentLaunchpadScriptFailure',
     ]
 
+from configparser import ConfigParser
 from contextlib import contextmanager
 from cProfile import Profile
 import datetime
@@ -34,7 +35,6 @@ import transaction
 from zope.component import getUtility
 
 from lp.services import scripts
-from lp.services.compat import SafeConfigParser
 from lp.services.config import (
     config,
     dbconfig,
@@ -462,7 +462,7 @@ def cronscript_enabled(control_url, name, log):
         log.exception("Error loading %s" % control_url)
         return True
 
-    cron_config = SafeConfigParser({'enabled': str(True)})
+    cron_config = ConfigParser({'enabled': str(True)})
 
     # Try reading the config file. If it fails, we log the
     # traceback and continue on using the defaults.

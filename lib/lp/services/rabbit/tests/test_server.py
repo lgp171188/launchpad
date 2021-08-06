@@ -5,12 +5,11 @@
 
 __metaclass__ = type
 
+from configparser import ConfigParser
 import io
-import sys
 
 from fixtures import EnvironmentVariableFixture
 
-from lp.services.compat import SafeConfigParser
 from lp.services.rabbit.server import RabbitServer
 from lp.testing import TestCase
 from lp.testing.layers import BaseLayer
@@ -28,12 +27,8 @@ class TestRabbitServer(TestCase):
 
         # RabbitServer pokes some .ini configuration into its config.
         fixture = self.useFixture(RabbitServer())
-        service_config = SafeConfigParser()
-        if sys.version_info[:2] >= (3, 2):
-            read_file = service_config.read_file
-        else:
-            read_file = service_config.readfp
-        read_file(io.StringIO(fixture.config.service_config))
+        service_config = ConfigParser()
+        service_config.read_file(io.StringIO(fixture.config.service_config))
         self.assertEqual(["rabbitmq"], service_config.sections())
         expected = {
             "host": "localhost:%d" % fixture.config.port,

@@ -11,6 +11,7 @@ __all__ = [
     'ConfigUseFixture',
     ]
 
+from configparser import RawConfigParser
 import os.path
 import shutil
 from textwrap import dedent
@@ -18,7 +19,6 @@ from textwrap import dedent
 from fixtures import Fixture
 import scandir
 import six
-from six.moves.configparser import RawConfigParser
 
 from lp.services.config import config
 
