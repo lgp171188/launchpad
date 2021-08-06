@@ -92,12 +92,14 @@ class TestRequestCandidDischarge(TestCaseWithFactory):
         macaroon_raw = Macaroon(version=2).serialize(JsonSerializer())
         self.assertRaises(
             CandidUnconfiguredError, request_candid_discharge,
-            request, macaroon_raw)
+            request, macaroon_raw, "http://launchpad.test/after-candid",
+            "field.discharge_macaroon")
         self.pushConfig(
             "launchpad", candid_service_root="https://candid.test/")
         self.assertRaises(
             CandidUnconfiguredError, request_candid_discharge,
-            request, macaroon_raw)
+            request, macaroon_raw, "http://launchpad.test/after-candid",
+            "field.discharge_macaroon")
 
     @responses.activate
     def test_initial_discharge_unexpected_success(self):
@@ -112,13 +114,13 @@ class TestRequestCandidDischarge(TestCaseWithFactory):
         macaroon = Macaroon(version=2)
         macaroon.add_third_party_caveat("https://candid.test/", "", "identity")
         macaroon_raw = macaroon.serialize(JsonSerializer())
-        request = LaunchpadTestRequest(
-            SERVER_URL="http://launchpad.test/after-candid")
+        request = LaunchpadTestRequest()
         self.assertRaisesWithContent(
             CandidFailure,
             "Initial discharge request unexpectedly succeeded without "
             "authorization",
-            request_candid_discharge, request, macaroon_raw)
+            request_candid_discharge, request, macaroon_raw,
+            "http://launchpad.test/after-candid", "field.discharge_macaroon")
 
     @responses.activate
     def test_initial_discharge_failure(self):
@@ -133,11 +135,11 @@ class TestRequestCandidDischarge(TestCaseWithFactory):
         macaroon = Macaroon(version=2)
         macaroon.add_third_party_caveat("https://candid.test/", "", "identity")
         macaroon_raw = macaroon.serialize(JsonSerializer())
-        request = LaunchpadTestRequest(
-            SERVER_URL="http://launchpad.test/after-candid")
+        request = LaunchpadTestRequest()
         self.assertRaisesWithContent(
             CandidFailure, "500 Server Error: Internal Server Error",
-            request_candid_discharge, request, macaroon_raw)
+            request_candid_discharge, request, macaroon_raw,
+            "http://launchpad.test/after-candid", "field.discharge_macaroon")
 
     @responses.activate
     def test_initial_discharge_missing_fields(self):
@@ -154,12 +156,12 @@ class TestRequestCandidDischarge(TestCaseWithFactory):
         macaroon = Macaroon(version=2)
         macaroon.add_third_party_caveat("https://candid.test/", "", "identity")
         macaroon_raw = macaroon.serialize(JsonSerializer())
-        request = LaunchpadTestRequest(
-            SERVER_URL="http://launchpad.test/after-candid")
+        request = LaunchpadTestRequest()
         self.assertRaisesWithContent(
             CandidFailure,
             "Initial discharge request did not contain expected fields",
-            request_candid_discharge, request, macaroon_raw)
+            request_candid_discharge, request, macaroon_raw,
+            "http://launchpad.test/after-candid", "field.discharge_macaroon")
 
     @responses.activate
     def test_requests_discharge(self):
@@ -192,14 +194,12 @@ class TestRequestCandidDischarge(TestCaseWithFactory):
         macaroon.add_third_party_caveat("https://candid.test/", "", "identity")
         caveat = macaroon.caveats[0]
         macaroon_raw = macaroon.serialize(JsonSerializer())
-        form = {
-            "discharge_macaroon_action": "field.actions.complete",
-            "discharge_macaroon_field": "field.discharge_macaroon",
-            "extra_key": "extra value",
-            }
-        request = LaunchpadTestRequest(
-            form=form, SERVER_URL="http://launchpad.test/after-candid")
-        request_candid_discharge(request, macaroon_raw)
+        request = LaunchpadTestRequest()
+        request_candid_discharge(
+            request, macaroon_raw,
+            "http://launchpad.test/after-candid?extra_key=extra+value",
+            "field.discharge_macaroon",
+            discharge_macaroon_action="field.actions.complete")
 
         # State was saved in the session.
         session_data = ISession(request)["launchpad.candid"]

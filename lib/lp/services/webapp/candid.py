@@ -118,7 +118,9 @@ def _get_candid_login_url_for_discharge(request, macaroon, state,
             response=response)
 
 
-def request_candid_discharge(request, macaroon_raw):
+def request_candid_discharge(request, macaroon_raw, starting_url,
+                             discharge_macaroon_field,
+                             discharge_macaroon_action=None):
     """Redirect to Candid to request a discharge for a given macaroon."""
     if (not config.launchpad.candid_service_root or
             not config.launchpad.csrf_secret):
@@ -133,26 +135,18 @@ def request_candid_discharge(request, macaroon_raw):
     session_data["macaroon"] = macaroon_raw
     session_data["csrf-token"] = csrf_token
 
-    starting_url = request.getURL()
-    form_args = [
-        (key, value) for key, value in request.form.items()
-        if key not in (
-            "discharge_macaroon_action", "discharge_macaroon_field")]
-    query_string = urlencode(form_args, doseq=True)
-    if query_string:
-        starting_url += "?%s" % query_string
-
     # Once the user authenticates with Candid, they will be redirected to
     # the /+candid-callback page, which must send them back to the URL they
     # were when they started the authorization process.  To help with that,
     # we encode that URL and some additional data as query parameters in the
     # return_to URL passed to Candid.
-    starting_data = [("starting_url", starting_url)]
-    for passthrough_name in (
-            "discharge_macaroon_action", "discharge_macaroon_field"):
-        passthrough_field = request.form.get(passthrough_name, None)
-        if passthrough_field is not None:
-            starting_data.append((passthrough_name, passthrough_field))
+    starting_data = [
+        ("starting_url", starting_url),
+        ("discharge_macaroon_field", discharge_macaroon_field),
+        ]
+    if discharge_macaroon_action is not None:
+        starting_data.append(
+            ("discharge_macaroon_action", discharge_macaroon_action))
     return_to = "%s?%s" % (
         urlappend(allvhosts.configs["mainsite"].rooturl, "+candid-callback"),
         urlencode(starting_data))
