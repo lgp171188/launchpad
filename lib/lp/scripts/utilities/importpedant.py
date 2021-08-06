@@ -10,6 +10,7 @@ import warnings
 import six
 from six.moves import builtins
 
+
 # Silence bogus warnings from Hardy's python-pkg-resources package.
 warnings.filterwarnings('ignore', category=UserWarning, append=True,
                         message=r'Module .*? is being added to sys.path')

@@ -58,9 +58,9 @@ class MessageRevision(StormBase):
 
     @property
     def message_implementation(self):
+        from lp.answers.model.questionmessage import QuestionMessage
         from lp.bugs.model.bugmessage import BugMessage
         from lp.code.model.codereviewcomment import CodeReviewComment
-        from lp.answers.model.questionmessage import QuestionMessage
 
         store = IStore(self)
         (identifier, ) = store.execute("""

@@ -13,6 +13,7 @@ from lp.services.webapp.interfaces import ILaunchpadApplication
 from lp.testing.layers import FunctionalLayer
 from lp.testing.systemdocs import create_view
 
+
 # The root of the tree
 ROOT = os.path.realpath(
         os.path.join(

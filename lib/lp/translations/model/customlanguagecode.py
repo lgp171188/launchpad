@@ -72,7 +72,8 @@ class CustomLanguageCode(StormBase):
         """See `ICustomLanguageCode`."""
         # Avoid circular imports
         from lp.registry.model.distributionsourcepackage import (
-            DistributionSourcePackage)
+            DistributionSourcePackage,
+            )
         if self.product:
             return self.product
         else:

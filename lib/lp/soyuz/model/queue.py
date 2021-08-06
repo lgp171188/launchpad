@@ -270,7 +270,8 @@ class PackageUpload(SQLBase):
     def getSourceBuild(self):
         #avoid circular import
         from lp.code.model.sourcepackagerecipebuild import (
-            SourcePackageRecipeBuild)
+            SourcePackageRecipeBuild,
+            )
         from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
         return Store.of(self).find(
             SourcePackageRecipeBuild,

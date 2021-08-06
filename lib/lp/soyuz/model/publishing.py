@@ -674,7 +674,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         """See `IBinaryPackagePublishingHistory`."""
         # Import here to avoid circular import.
         from lp.soyuz.model.distroarchseriesbinarypackagerelease import (
-            DistroArchSeriesBinaryPackageRelease)
+            DistroArchSeriesBinaryPackageRelease,
+            )
 
         return DistroArchSeriesBinaryPackageRelease(
             self.distroarchseries,
@@ -1516,7 +1517,10 @@ class PublishingSet:
     def getChangesFilesForSources(self, one_or_more_source_publications):
         """See `IPublishingSet`."""
         # Avoid circular imports.
-        from lp.soyuz.model.queue import PackageUpload, PackageUploadSource
+        from lp.soyuz.model.queue import (
+            PackageUpload,
+            PackageUploadSource,
+            )
 
         source_publication_ids = self._extractIDs(
             one_or_more_source_publications)
@@ -1544,7 +1548,10 @@ class PublishingSet:
     def getChangesFileLFA(self, spr):
         """See `IPublishingSet`."""
         # Avoid circular imports.
-        from lp.soyuz.model.queue import PackageUpload, PackageUploadSource
+        from lp.soyuz.model.queue import (
+            PackageUpload,
+            PackageUploadSource,
+            )
 
         return IStore(SourcePackagePublishingHistory).find(
             LibraryFileAlias,

@@ -448,6 +448,7 @@ class SourcePackageRecipeData(Storm):
         # Circular imports.
         from lp.code.model.branchcollection import GenericBranchCollection
         from lp.code.model.gitcollection import GenericGitCollection
+
         # Load the related Branch, _SourcePackageRecipeDataInstruction.
         base_branches = load_related(
             Branch, sourcepackagerecipedatas, ['base_branch_id'])

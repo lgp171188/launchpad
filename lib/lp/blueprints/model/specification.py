@@ -114,7 +114,8 @@ from lp.services.xref.interfaces import IXRefSet
 
 def recursive_blocked_query(user):
     from lp.blueprints.model.specificationsearch import (
-        get_specification_privacy_filter)
+        get_specification_privacy_filter,
+        )
     return """
         RECURSIVE blocked(id) AS (
             SELECT ?
@@ -129,7 +130,8 @@ def recursive_blocked_query(user):
 
 def recursive_dependent_query(user):
     from lp.blueprints.model.specificationsearch import (
-        get_specification_privacy_filter)
+        get_specification_privacy_filter,
+        )
     return """
         RECURSIVE dependencies(id) AS (
             SELECT ?
@@ -265,7 +267,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
 
     def _fetch_children_or_parents(self, join_cond, cond, user):
         from lp.blueprints.model.specificationsearch import (
-            get_specification_privacy_filter)
+            get_specification_privacy_filter,
+            )
         return list(Store.of(self).using(
             Specification,
             Join(SpecificationDependency, join_cond == self.id)).find(
@@ -820,7 +823,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     def linkSprint(self, sprint, user):
         """See ISpecification."""
         from lp.blueprints.model.sprintspecification import (
-            SprintSpecification)
+            SprintSpecification,
+            )
         for sprint_link in self.sprint_links:
             # sprints have unique names
             if sprint_link.sprint.name == sprint.name:
@@ -953,7 +957,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         """See `ISpecification`."""
         # Avoid circular imports.
         from lp.blueprints.model.specificationsearch import (
-            get_specification_privacy_filter)
+            get_specification_privacy_filter,
+            )
         if self.information_type in PUBLIC_INFORMATION_TYPES:
             return True
         if user is None:
@@ -1043,7 +1048,8 @@ class SpecificationSet(HasSpecificationsMixin):
                        need_people=True, need_branches=True,
                        need_workitems=False):
         from lp.blueprints.model.specificationsearch import (
-            search_specifications)
+            search_specifications,
+            )
         return search_specifications(
             self, [], user, sort, quantity, filter, need_people=need_people,
             need_branches=need_branches, need_workitems=need_workitems)

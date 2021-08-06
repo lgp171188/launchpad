@@ -32,6 +32,7 @@ from lp.soyuz.model.publishing import (
     SourcePackagePublishingHistory,
     )
 
+
 # PPA owners or particular PPAs that we never want to expire.
 NEVER_EXPIRE_PPAS = """
 bzr

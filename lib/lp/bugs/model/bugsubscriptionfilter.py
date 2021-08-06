@@ -228,7 +228,9 @@ class BugSubscriptionFilter(StormBase):
 
     @classmethod
     def deleteMultiple(cls, ids):
-        from lp.bugs.model.structuralsubscription import StructuralSubscription
+        from lp.bugs.model.structuralsubscription import (
+            StructuralSubscription,
+            )
         store = IStore(BugSubscriptionFilter)
         structsub_ids = list(
             store.find(

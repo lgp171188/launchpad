@@ -36,6 +36,7 @@ from lp.services.scripts import (
 from replication.helpers import Node
 import upgrade
 
+
 # Ignore connections by these users.
 SYSTEM_USERS = set(['postgres', 'slony', 'nagios', 'lagmon'])
 

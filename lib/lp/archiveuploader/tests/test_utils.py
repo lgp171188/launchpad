@@ -230,9 +230,7 @@ class TestUtilities(TestCase):
         """lp.archiveuploader.utils.parse_maintainer should raise on incorrect
            values
         """
-        from lp.archiveuploader.utils import (
-            parse_maintainer_bytes,
-            )
+        from lp.archiveuploader.utils import parse_maintainer_bytes
 
         cases = (
             ("James Troup",

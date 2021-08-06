@@ -28,6 +28,7 @@ from lp.services.webservice.apihelpers import (
     patch_reference_property,
     )
 
+
 # IOCIProject
 patch_collection_property(IOCIProject, 'series', IOCIProjectSeries)
 patch_entry_return_type(IOCIProject, 'newRecipe', IOCIRecipe)

@@ -8,9 +8,9 @@ __all__ = [
     'HasOCIRecipesMenuMixin',
     ]
 
-from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from zope.component import getUtility
 
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.services.webapp import Link
 
 

@@ -26,3 +26,7 @@ repos:
     hooks:
     -   id: flake8
         exclude: ^lib/contrib/
+-   repo: https://github.com/PyCQA/isort
+    rev: 5.9.2
+    hooks:
+    -   id: isort

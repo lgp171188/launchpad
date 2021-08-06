@@ -64,6 +64,7 @@ from lp.registry.interfaces.product import IProduct
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.publisher import canonical_url
 
+
 # These are used lp.bugs.model.bugactivity.BugActivity.attribute to normalize
 # the output from these change objects into the attribute that actually
 # changed.  It is fragile, but a reasonable incremental step.

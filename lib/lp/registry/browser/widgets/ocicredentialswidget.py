@@ -30,14 +30,12 @@ from zope.schema import (
 from lp.app.errors import UnexpectedFormData
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.url import validate_url
-from lp.registry.interfaces.distribution import IDistribution
-from lp.services.webapp.interfaces import (
-    ISingleLineWidgetLayout,
-    )
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
     IOCIRegistryCredentialsSet,
     )
+from lp.registry.interfaces.distribution import IDistribution
+from lp.services.webapp.interfaces import ISingleLineWidgetLayout
 
 
 @implementer(ISingleLineWidgetLayout, IInputWidget)

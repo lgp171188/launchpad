@@ -16,6 +16,7 @@ import re
 
 from debian import changelog
 
+
 # Regular expressions make validating things easy
 valid_epoch = re.compile(r'^[0-9]+$')
 valid_upstream = re.compile(r'^[0-9][A-Za-z0-9+:.~-]*$')

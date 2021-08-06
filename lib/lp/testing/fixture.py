@@ -118,8 +118,8 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
         connections.
         """
         from lp.testing.layers import (
-            reconnect_stores,
             is_ca_available,
+            reconnect_stores,
             )
         if is_ca_available():
             reconnect_stores()

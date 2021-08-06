@@ -27,6 +27,7 @@ from lp.services.worlddata.interfaces.timezone import ITimezoneNameVocabulary
 from lp.services.worlddata.model.country import Country
 from lp.services.worlddata.model.language import Language
 
+
 # create a sorted list of the common time zone names, with UTC at the start
 _values = sorted(six.ensure_text(tz) for tz in pytz.common_timezones)
 _values.remove('UTC')

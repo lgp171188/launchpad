@@ -61,6 +61,7 @@ from lp.services.encoding import is_ascii_only
 from lp.services.mail.stub import TestMailer
 from lp.services.timeline.requesttimeline import get_request_timeline
 
+
 # email package by default ends up encoding UTF-8 messages using base64,
 # which sucks as they look like spam to stupid spam filters. We define
 # our own custom charset definition to force quoted printable.
@@ -329,6 +330,7 @@ def simple_sendmail_from_person(
     From header is properly encoded.
     """
     from zope.security.proxy import removeSecurityProxy
+
     # Bypass zope's security because IEmailAddress.email is not public.
     naked_email = removeSecurityProxy(person.preferredemail)
     from_addr = format_address(person.displayname, naked_email.email)

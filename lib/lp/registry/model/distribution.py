@@ -89,7 +89,9 @@ from lp.bugs.model.structuralsubscription import (
 from lp.code.interfaces.seriessourcepackagebranch import (
     IFindOfficialBranchLinks,
     )
-from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -693,9 +695,12 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     def getBranchTips(self, user=None, since=None):
         """See `IDistribution`."""
         from lp.code.model.branch import (
-            Branch, get_branch_privacy_filter)
+            Branch,
+            get_branch_privacy_filter,
+            )
         from lp.code.model.seriessourcepackagebranch import (
-            SeriesSourcePackageBranch)
+            SeriesSourcePackageBranch,
+            )
 
         # This method returns thousands of branch unique names in a
         # single call, so the query is perilous and awkwardly tuned to
@@ -1044,6 +1049,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         from lp.soyuz.model.distributionsourcepackagecache import (
             DistributionSourcePackageCache,
             )
+
         # The query below tries exact matching on the source package
         # name as well; this is because source package names are
         # notoriously bad for fti matching -- they can contain dots, or

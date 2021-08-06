@@ -11,8 +11,8 @@ __all__ = [
 
 import datetime
 from operator import attrgetter
-
 import posixpath
+
 import pytz
 import six
 from storm.exceptions import TimeoutError

@@ -22,6 +22,7 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import six
 from storm.expr import Func
+from storm.info import ClassAlias
 from storm.locals import (
     And,
     DateTime,
@@ -32,7 +33,6 @@ from storm.locals import (
     Select,
     Unicode,
     )
-from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import (
     getUtility,
@@ -724,6 +724,7 @@ class MailingListSet:
         """See `IMailingListSet`."""
         # Circular import.
         from lp.registry.model.person import Person
+
         # This is really an operation on EmailAddress rows, but it's so
         # specific to mailing lists that it seems better to keep it here.
         old_suffix = u"@" + old_hostname

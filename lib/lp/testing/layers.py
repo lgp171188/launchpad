@@ -1285,8 +1285,12 @@ class TwistedLayer(BaseLayer):
     @profiled
     def testSetUp(cls):
         TwistedLayer._save_signals()
-        from twisted.internet import interfaces, reactor
+        from twisted.internet import (
+            interfaces,
+            reactor,
+            )
         from twisted.python import threadpool
+
         # zope.exception demands more of frame objects than
         # twisted.python.failure provides in its fake frames.  This is enough
         # to make it work with them as of 2009-09-16.  See
@@ -1309,7 +1313,10 @@ class TwistedLayer(BaseLayer):
     def testTearDown(cls):
         # Shutdown and obliterate the Twisted threadpool, to plug up leaking
         # threads.
-        from twisted.internet import interfaces, reactor
+        from twisted.internet import (
+            interfaces,
+            reactor,
+            )
         if interfaces.IReactorThreads.providedBy(reactor):
             reactor.suggestThreadPoolSize(0)
             pool = getattr(reactor, 'threadpool', None)

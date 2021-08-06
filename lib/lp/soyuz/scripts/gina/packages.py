@@ -50,6 +50,7 @@ from lp.soyuz.scripts.gina import (
     )
 from lp.soyuz.scripts.gina.changelog import parse_changelog
 
+
 #
 # Data setup
 #

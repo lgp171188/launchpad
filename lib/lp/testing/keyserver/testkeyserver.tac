@@ -15,6 +15,7 @@ from lp.services.daemons import readyservice
 from lp.services.scripts import execute_zcml_for_scripts
 from lp.testing.keyserver.web import KeyServerResource
 
+
 # Needed for using IGPGHandler for processing key submit.
 execute_zcml_for_scripts()
 

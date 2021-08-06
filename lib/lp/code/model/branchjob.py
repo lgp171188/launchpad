@@ -133,6 +133,7 @@ from lp.translations.interfaces.translations import (
 from lp.translations.model.approver import TranslationBranchApprover
 from lp.translations.utilities.translation_import import TranslationImporter
 
+
 # Use at most the first 100 characters of the commit message for the subject
 # the mail describing the revision.
 SUBJECT_COMMIT_MESSAGE_LENGTH = 100

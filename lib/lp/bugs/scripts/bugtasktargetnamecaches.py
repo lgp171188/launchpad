@@ -30,6 +30,7 @@ from lp.services.looptuner import (
     LoopTuner,
     )
 
+
 # These two tuples must be in the same order. They specify the ID
 # columns to get from BugTask, and the classes that they correspond to.
 target_columns = (

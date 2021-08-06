@@ -826,6 +826,7 @@ class Person(
         from lp.blueprints.model.specificationsubscription import (
             SpecificationSubscription,
             )
+
         # Make a new copy of the filter, so that we do not mutate what we
         # were passed as a filter.
         if filter is None:
@@ -884,10 +885,10 @@ class Person(
     def getBugSubscriberPackages(self):
         """See `IPerson`."""
         # Avoid circular imports.
+        from lp.registry.model.distribution import Distribution
         from lp.registry.model.distributionsourcepackage import (
             DistributionSourcePackage,
             )
-        from lp.registry.model.distribution import Distribution
         origin = (
             StructuralSubscription,
             Join(
@@ -1006,11 +1007,11 @@ class Person(
         # We want this person's total karma on a given context (that is,
         # across all different categories) here; that's why we use a
         # "KarmaCache.category IS NULL" clause here.
+        from lp.registry.model.distribution import Distribution
         from lp.registry.model.product import (
             Product,
             ProductSet,
-        )
-        from lp.registry.model.distribution import Distribution
+            )
         tableset = Store.of(self).using(
             KarmaCache, LeftJoin(Product, Product.id == KarmaCache.productID),
             LeftJoin(Distribution, Distribution.id ==
@@ -1401,9 +1402,9 @@ class Person(
 
     def getAssignedSpecificationWorkItemsDueBefore(self, date, user):
         """See `IPerson`."""
+        from lp.registry.model.distribution import Distribution
         from lp.registry.model.person import Person
         from lp.registry.model.product import Product
-        from lp.registry.model.distribution import Distribution
         store = Store.of(self)
 
         # Since a workitem's assignee defaults to its specification's
@@ -1816,6 +1817,7 @@ class Person(
         from lp.bugs.model.bug import Bug
         from lp.bugs.model.bugsubscription import BugSubscription
         from lp.bugs.model.bugtask import BugTask
+
         # The team cannot be open if it is subscribed to or assigned to
         # private bugs.
         private_bugs_involved = IStore(Bug).execute(Union(

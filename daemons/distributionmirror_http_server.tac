@@ -10,9 +10,10 @@ from twisted.application import (
     )
 from twisted.web import server
 
-from lp.services.daemons import readyservice
 from lp.registry.tests.distributionmirror_http_server import (
-    DistributionMirrorTestHTTPServer)
+    DistributionMirrorTestHTTPServer,
+    )
+from lp.services.daemons import readyservice
 
 
 application = service.Application('DistributionMirrorTestHTTPServer')

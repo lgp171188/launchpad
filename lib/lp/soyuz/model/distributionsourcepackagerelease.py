@@ -140,7 +140,8 @@ class DistributionSourcePackageRelease:
         from lp.registry.model.distroseries import DistroSeries
         from lp.soyuz.model.distroarchseries import DistroArchSeries
         from lp.soyuz.model.distroseriespackagecache import (
-            DistroSeriesPackageCache)
+            DistroSeriesPackageCache,
+            )
         archive_ids = list(self.distribution.all_distro_archive_ids)
         result_row = (
             SQL('DISTINCT ON(BinaryPackageName.name) 0 AS ignore'),

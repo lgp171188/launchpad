@@ -382,9 +382,9 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
     @property
     def distributionsourcepackagerelease(self):
         """See `IBuild`."""
-        from lp.soyuz.model.distributionsourcepackagerelease \
-             import (
-            DistributionSourcePackageRelease)
+        from lp.soyuz.model.distributionsourcepackagerelease import (
+            DistributionSourcePackageRelease,
+            )
 
         return DistributionSourcePackageRelease(
             distribution=self.distribution,
@@ -468,7 +468,8 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         """See `IBuild`."""
         # Avoid circular import by importing locally.
         from lp.soyuz.model.distroarchseriesbinarypackagerelease import (
-            DistroArchSeriesBinaryPackageRelease)
+            DistroArchSeriesBinaryPackageRelease,
+            )
         return [DistroArchSeriesBinaryPackageRelease(
             self.distro_arch_series, bp)
             for bp in self.binarypackages]
@@ -866,11 +867,11 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def preloadBuildsData(self, builds):
         # Circular imports.
-        from lp.soyuz.model.distroarchseries import DistroArchSeries
-        from lp.registry.model.distroseries import DistroSeries
         from lp.registry.model.distribution import Distribution
-        from lp.soyuz.model.archive import Archive
+        from lp.registry.model.distroseries import DistroSeries
         from lp.registry.model.person import Person
+        from lp.soyuz.model.archive import Archive
+        from lp.soyuz.model.distroarchseries import DistroArchSeries
         self._prefetchBuildData(builds)
         das = load_related(DistroArchSeries, builds, ['distro_arch_series_id'])
         archives = load_related(Archive, builds, ['archive_id'])
@@ -959,7 +960,9 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         """See `IBinaryPackageBuildSet`."""
         # Circular. :(
         from lp.soyuz.model.archive import (
-            Archive, get_archive_privacy_filter)
+            Archive,
+            get_archive_privacy_filter,
+            )
 
         clauses = [
             BinaryPackageBuild.archive_id == Archive.id,
@@ -1188,10 +1191,8 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         LibraryFileContent respectively) as well as builders related to the
         Builds at hand.
         """
-        from lp.registry.model.sourcepackagename import (
-            SourcePackageName)
-        from lp.soyuz.model.sourcepackagerelease import (
-            SourcePackageRelease)
+        from lp.registry.model.sourcepackagename import SourcePackageName
+        from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
         # Prefetching is not needed if the original result set is empty.
         if len(results) == 0:

@@ -18,6 +18,7 @@ __all__ = [
 
 from zope.interface import Interface
 
+
 # This is a text string which indicates that the remote status is
 # unknown for some reason.
 # XXX: Bjorn Tillenius 2006-04-06:

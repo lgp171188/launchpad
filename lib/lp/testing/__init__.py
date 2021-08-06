@@ -177,6 +177,7 @@ from lp.testing.fixture import (
 from lp.testing.karma import KarmaRecorder
 from lp.testing.mail_helpers import pop_notifications
 
+
 # The following names have been imported for the purpose of being
 # exported. They are referred to here to silence lint warnings.
 admin_logged_in
@@ -231,8 +232,8 @@ def reset_logging():
     logging._handlers.clear()
 
     # Reset the setup
-    from zope.testrunner.runner import Runner
     from zope.testrunner.logsupport import Logging
+    from zope.testrunner.runner import Runner
     Logging(Runner()).global_setup()
     lp_sitecustomize.customize_logger()
 

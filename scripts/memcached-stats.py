@@ -20,6 +20,7 @@ from zope.component import getUtility
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.scripts import execute_zcml_for_scripts
 
+
 # The interesting bits we pull from the memcached stats.
 INTERESTING_KEYS = [
     'cmd_set', # Number of sets.

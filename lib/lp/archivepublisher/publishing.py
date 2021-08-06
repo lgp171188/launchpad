@@ -98,6 +98,7 @@ from lp.soyuz.model.publishing import (
     SourcePackagePublishingHistory,
     )
 
+
 # Use this as the lock file name for all scripts that may manipulate
 # archives in the filesystem.  In a Launchpad(Cron)Script, set
 # lockfilename to this value to make it use the shared lock.

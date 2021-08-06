@@ -785,8 +785,8 @@ class QuestionSet:
     def getMostActiveProjects(self, limit=5):
         """See `IQuestionSet`."""
 
-        from lp.registry.model.product import Product
         from lp.registry.model.distribution import Distribution
+        from lp.registry.model.product import Product
 
         time_cutoff = datetime.now(pytz.UTC) - timedelta(days=60)
         question_count = Alias(Count())
@@ -1406,7 +1406,9 @@ class QuestionTargetMixin:
         them.
         """
         from lp.registry.model.person import (
-            Person, PersonLanguage)
+            Person,
+            PersonLanguage,
+            )
         origin = [
             AnswerContact,
             LeftJoin(Person, AnswerContact.person == Person.id),
@@ -1459,7 +1461,10 @@ class QuestionTargetMixin:
 
     def getAnswerContactsForLanguage(self, language):
         """See `IQuestionTarget`."""
-        from lp.registry.model.person import PersonLanguage, Person
+        from lp.registry.model.person import (
+            Person,
+            PersonLanguage,
+            )
         assert language is not None, (
             "The language cannot be None when selecting answer contacts.")
         query = []

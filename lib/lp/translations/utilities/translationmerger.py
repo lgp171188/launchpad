@@ -62,7 +62,8 @@ def merge_pofiletranslators(from_template, to_template):
     """
     # Import here to avoid circular import.
     from lp.translations.interfaces.pofiletranslator import (
-        IPOFileTranslatorSet)
+        IPOFileTranslatorSet,
+        )
 
     pofiletranslatorset = getUtility(IPOFileTranslatorSet)
     affected_rows = pofiletranslatorset.getForTemplate(from_template)

@@ -45,6 +45,7 @@ from zope.schema import (
 
 from lp import _
 
+
 # One week before a membership expires we send a notification to the member,
 # either inviting them to renew their own membership or asking them to get a
 # team admin to do so, depending on the team's renewal policy.

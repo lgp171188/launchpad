@@ -133,8 +133,10 @@ import re
 import sys
 from textwrap import dedent
 
+
 sys.path[0:0] = [os.path.dirname(__file__)]
-from python_standard_libs import python_standard_libs # noqa: E402
+from python_standard_libs import python_standard_libs  # noqa: E402
+
 
 # python_standard_libs is only used for membership tests.
 python_standard_libs = frozenset(python_standard_libs)

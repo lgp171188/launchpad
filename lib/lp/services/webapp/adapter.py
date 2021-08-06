@@ -241,8 +241,7 @@ def summarize_requests():
     secs = get_request_duration()
     request = get_current_browser_request()
     timeline = get_request_timeline(request)
-    from lp.services.webapp.errorlog import (
-        maybe_record_user_requested_oops)
+    from lp.services.webapp.errorlog import maybe_record_user_requested_oops
     maybe_record_user_requested_oops()
     if request.oopsid is None:
         oops_str = ""

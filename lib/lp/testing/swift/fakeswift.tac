@@ -7,12 +7,17 @@
 __metaclass__ = type
 __all__ = []
 
-import os.path
 import logging
+import os.path
 
+from twisted.application import (
+    internet,
+    service,
+    )
 import twisted.web.server
-from twisted.application import internet, service
+
 from lp.testing.swift.fakeswift import Root
+
 
 logging.basicConfig()
 

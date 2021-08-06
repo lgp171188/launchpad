@@ -60,6 +60,7 @@ from lp.services.webapp.errorlog import (
     ScriptRequest,
     )
 
+
 # Exception classes which are not converted into OOPSes
 NOT_OOPS_EXCEPTIONS = (
     AppendRevisionsOnlyViolation, ConnectionTimeout,

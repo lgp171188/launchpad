@@ -35,6 +35,7 @@ from lp.codehosting import sftp
 from lp.codehosting.sshserver.session import launch_smart_server
 from lp.services.config import config
 
+
 # The names of the key files of the server itself. The directory itself is
 # given in config.codehosting.host_key_pair_path.
 PRIVATE_KEY_FILE = 'ssh_host_key_rsa'

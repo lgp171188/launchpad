@@ -14,6 +14,7 @@ from lp.services import stacktrace
 from lp.testing import TestCase
 from lp.testing.layers import BaseLayer
 
+
 # This constant must always be equal to the line number on which it lives for
 # the tests to pass.
 MY_LINE_NUMBER = 19

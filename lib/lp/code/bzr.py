@@ -45,8 +45,8 @@ from breezy.bzr.knitrepo import (
     RepositoryFormatKnit4,
     )
 from breezy.errors import (
-    NotStacked,
     NoSuchRevision,
+    NotStacked,
     )
 from breezy.plugins.loom.branch import (
     BzrBranchLoomFormat1,

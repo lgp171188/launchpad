@@ -611,6 +611,7 @@ class StormRangeFactory:
     def rough_length(self):
         """See `IRangeFactory."""
         from lp.services.librarian.model import LibraryFileAlias
+
         # get_select_expr() requires at least one column as a parameter.
         # getorderBy() already knows about columns that can appear
         # in the result set, so let's use them. Moreover, for SELECT

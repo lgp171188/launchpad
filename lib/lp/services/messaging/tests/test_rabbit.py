@@ -47,6 +47,7 @@ from lp.testing.layers import (
     )
 from lp.testing.matchers import Provides
 
+
 # RabbitMQ is not (yet) torn down or reset between tests, so here are sources
 # of distinct names.
 queue_names = ("queue.%d" % num for num in count(1))
