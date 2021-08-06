@@ -40,7 +40,7 @@ superseded_body = u"""\
  * Build Log: 
  * Upload Log: 
  * Builder: 
-     """  # noqa: W291
+"""  # noqa: W291
 
 
 class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
