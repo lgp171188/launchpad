@@ -61,7 +61,8 @@ class DistroSeriesBinaryPackage:
     def cache(self):
         """See IDistroSeriesBinaryPackage."""
         from lp.soyuz.model.distroseriespackagecache import (
-            DistroSeriesPackageCache)
+            DistroSeriesPackageCache,
+            )
         store = Store.of(self.distroseries)
         archive_ids = (
             self.distroseries.distribution.all_distro_archive_ids)
@@ -98,8 +99,7 @@ class DistroSeriesBinaryPackage:
     @property
     def _current_publishings(self):
         # Import here so as to avoid circular import.
-        from lp.soyuz.model.distroarchseries import (
-            DistroArchSeries)
+        from lp.soyuz.model.distroarchseries import DistroArchSeries
         return Store.of(self.distroseries).find(
             BinaryPackagePublishingHistory,
             BinaryPackagePublishingHistory.distroarchseries ==

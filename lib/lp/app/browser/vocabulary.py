@@ -54,6 +54,7 @@ from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.vocabulary import IHugeVocabulary
 from lp.soyuz.interfaces.archive import IArchive
 
+
 # XXX: EdwinGrubbs 2009-07-27 bug=405476
 # This limits the output to one line of text, since the sprite class
 # cannot clip the background image effectively for vocabulary items
@@ -229,11 +230,11 @@ class TargetPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
 
     def getDescription(self, target):
         """Gets the description data for target picker entries."""
-        raise NotImplemented
+        raise NotImplementedError
 
     def getMaintainer(self, target):
         """Gets the maintainer information for the target picker entry."""
-        raise NotImplemented
+        raise NotImplementedError
 
     def getCommercialSubscription(self, target):
         """Gets the commercial subscription details for the target."""

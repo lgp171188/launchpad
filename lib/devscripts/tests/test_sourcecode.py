@@ -3,7 +3,11 @@
 
 """Module docstring goes here."""
 
-from __future__ import absolute_import, print_function
+from __future__ import (
+    absolute_import,
+    print_function,
+    )
+
 
 __metaclass__ = type
 
@@ -11,6 +15,7 @@ import os
 import shutil
 import tempfile
 import unittest
+
 
 try:
     from breezy.bzr.bzrdir import BzrDir
@@ -20,6 +25,7 @@ except ImportError:
     from bzrlib.bzrdir import BzrDir
     from bzrlib.tests import TestCase
     from bzrlib.transport import get_transport
+
 import six
 
 from devscripts import get_launchpad_root
@@ -112,7 +118,7 @@ class TestInterpretConfiguration(unittest.TestCase):
         config = interpret_config([['key', 'value;revno=45']], False)
         self.assertEqual({'key': ('value', '45', False)}, config)
 
-    def test_key_value_revision(self):
+    def test_key_value_revision_with_multiple_revnos_raises_error(self):
         # A (key, value) pair without a third optional value when the
         # value has multiple suffixes of ``;revno=[REVISION]`` raises an
         # error.

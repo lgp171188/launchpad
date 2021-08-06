@@ -8,13 +8,14 @@ __all__ = [
     'pop_notifications'
     ]
 
+from celery.task import task
+
 # Force the correct celeryconfig to be used.
 import lp.services.job.celeryjob
 
+
 # Quiet lint unused import warning.
 lp.services.job.celeryjob
-
-from celery.task import task
 
 
 @task

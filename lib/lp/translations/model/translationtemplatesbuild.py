@@ -222,6 +222,7 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
     def preloadBuildsData(cls, builds):
         # Circular imports.
         from lp.services.librarian.model import LibraryFileAlias
+
         # Load the related branches.
         branches = load_related(
             Branch, builds, ['branch_id'])

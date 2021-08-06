@@ -21,8 +21,6 @@ from logging import info
 import os
 from uuid import uuid4
 
-
-os.environ.setdefault('CELERY_CONFIG_MODULE', 'lp.services.job.celeryconfig')
 from celery import (
     Celery,
     Task,
@@ -32,20 +30,22 @@ import transaction
 
 from lp.code.model.branchjob import BranchScanJob
 from lp.scripts.helpers import TransactionFreeOperation
+from lp.services import scripts
 from lp.services.config import dbconfig
 from lp.services.database.sqlbase import disconnect_stores
 from lp.services.features import (
     install_feature_controller,
     make_script_feature_controller,
     )
-from lp.services.mail.sendmail import set_immediate_mail_delivery
 from lp.services.job.model.job import UniversalJobSource
 from lp.services.job.runner import (
     BaseJobRunner,
     celery_enabled,
     )
-from lp.services import scripts
+from lp.services.mail.sendmail import set_immediate_mail_delivery
 
+
+os.environ.setdefault('CELERY_CONFIG_MODULE', 'lp.services.job.celeryconfig')
 
 celery_app = Celery()
 

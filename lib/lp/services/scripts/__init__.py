@@ -57,7 +57,10 @@ def execute_zcml_for_scripts(use_web_security=False):
     # the conditional block.
     if 'lp.testing.layers' in sys.modules:
         from lp.testing.layers import (
-                FunctionalLayer, BaseLayer, ZopelessLayer)
+            BaseLayer,
+            FunctionalLayer,
+            ZopelessLayer,
+            )
         assert not FunctionalLayer.isSetUp, \
                 'Setting up Zopeless CA when Zopefull CA is already running'
         assert not BaseLayer.isSetUp or ZopelessLayer.isSetUp, """

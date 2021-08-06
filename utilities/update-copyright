@@ -19,6 +19,7 @@ from subprocess import (
     )
 import sys
 
+
 # This script lives in the 'utilites' directory.
 UTILITIES_DIR = os.path.dirname(__file__)
 CURRENT_YEAR = date.today().year
@@ -86,4 +87,3 @@ if __name__ == "__main__":
         find_and_update()
     else:
         update_files(sys.argv[1:])
-

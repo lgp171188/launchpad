@@ -461,8 +461,7 @@ class RevisionSet:
         # Here to stop circular imports.
         from lp.code.model.branch import Branch
         from lp.code.model.branchrevision import BranchRevision
-        from lp.registry.model.teammembership import (
-            TeamParticipation)
+        from lp.registry.model.teammembership import TeamParticipation
 
         store = Store.of(person)
 
@@ -495,8 +494,8 @@ class RevisionSet:
         """Helper method for Products and ProjectGroups."""
         # Here to stop circular imports.
         from lp.code.model.branch import Branch
-        from lp.registry.model.product import Product
         from lp.code.model.branchrevision import BranchRevision
+        from lp.registry.model.product import Product
 
         origin = [
             Revision,

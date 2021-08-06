@@ -10,9 +10,8 @@ __all__ = [
     ]
 
 
-from six.moves.xmlrpc_client import Fault
-
 from breezy import urlutils
+from six.moves.xmlrpc_client import Fault
 from zope.component import getUtility
 from zope.interface import (
     implementer,

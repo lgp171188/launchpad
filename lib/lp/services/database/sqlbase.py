@@ -69,6 +69,7 @@ from lp.services.database.interfaces import (
     )
 from lp.services.propertycache import clear_property_cache
 
+
 # Default we want for scripts, and the PostgreSQL default. Note psycopg1 will
 # use SERIALIZABLE unless we override, but psycopg2 will not.
 ISOLATION_LEVEL_DEFAULT = ISOLATION_LEVEL_READ_COMMITTED
@@ -205,7 +206,7 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         store.add(self)
         try:
             self._create(None, **kwargs)
-        except:
+        except Exception:
             store.remove(self)
             raise
 

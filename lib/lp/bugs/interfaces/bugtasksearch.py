@@ -248,8 +248,7 @@ class BugTaskSearchParams:
     def setSourcePackage(self, sourcepackage):
         """Set the sourcepackage context on which to filter the search."""
         # Import this here to avoid circular dependencies
-        from lp.registry.interfaces.sourcepackage import (
-            ISourcePackage)
+        from lp.registry.interfaces.sourcepackage import ISourcePackage
         if isinstance(sourcepackage, any):
             # Unwrap the source package.
             self.sourcepackagename = any(*[
@@ -300,15 +299,16 @@ class BugTaskSearchParams:
         """
         # Yay circular deps.
         from lp.registry.interfaces.distribution import IDistribution
+        from lp.registry.interfaces.distributionsourcepackage import (
+            IDistributionSourcePackage,
+            )
         from lp.registry.interfaces.distroseries import IDistroSeries
+        from lp.registry.interfaces.milestone import IMilestone
+        from lp.registry.interfaces.ociproject import IOCIProject
         from lp.registry.interfaces.product import IProduct
         from lp.registry.interfaces.productseries import IProductSeries
-        from lp.registry.interfaces.milestone import IMilestone
         from lp.registry.interfaces.projectgroup import IProjectGroup
         from lp.registry.interfaces.sourcepackage import ISourcePackage
-        from lp.registry.interfaces.distributionsourcepackage import \
-            IDistributionSourcePackage
-        from lp.registry.interfaces.ociproject import IOCIProject
         if isinstance(target, (any, all)):
             assert len(target.query_values), \
                 'cannot determine target with no targets'
@@ -389,8 +389,7 @@ class BugTaskSearchParams:
         search_params.ociproject = ociproject
         if has_patch:
             # Import this here to avoid circular imports
-            from lp.bugs.interfaces.bugattachment import (
-                BugAttachmentType)
+            from lp.bugs.interfaces.bugattachment import BugAttachmentType
             search_params.attachmenttype = BugAttachmentType.PATCH
         search_params.has_cve = has_cve
         if zope_isinstance(tags, (list, tuple)):

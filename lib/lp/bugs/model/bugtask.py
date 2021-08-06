@@ -1395,7 +1395,10 @@ class BugTaskSet:
     def getBugTaskTags(self, bugtasks):
         """See `IBugTaskSet`"""
         # Import locally to avoid circular imports.
-        from lp.bugs.model.bug import Bug, BugTag
+        from lp.bugs.model.bug import (
+            Bug,
+            BugTag,
+            )
         bugtask_ids = set(bugtask.id for bugtask in bugtasks)
         bug_ids = set(bugtask.bug_id for bugtask in bugtasks)
         tags = IStore(BugTag).find(
@@ -1511,12 +1514,12 @@ class BugTaskSet:
             claim they were inefficient and unwanted.
         """
         # Prevent circular import problems.
+        from lp.bugs.model.bug import Bug
+        from lp.bugs.model.bugtasksearch import search_bugs
         from lp.registry.model.distribution import Distribution
         from lp.registry.model.distroseries import DistroSeries
         from lp.registry.model.product import Product
         from lp.registry.model.productseries import ProductSeries
-        from lp.bugs.model.bug import Bug
-        from lp.bugs.model.bugtasksearch import search_bugs
         _noprejoins = kwargs.get('_noprejoins', False)
         if _noprejoins:
             eager_load = None

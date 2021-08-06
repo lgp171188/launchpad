@@ -11,12 +11,12 @@ __metaclass__ = type
 from twisted.application import service
 from zope.component import getUtility
 
+from lp.services.daemons import readyservice
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
     IStoreSelector,
     MAIN_STORE,
     )
-from lp.services.daemons import readyservice
 from lp.services.scripts import execute_zcml_for_scripts
 
 

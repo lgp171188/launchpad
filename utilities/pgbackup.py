@@ -52,7 +52,7 @@ def main(options, databases):
         if os.path.exists(dest):
             log.fatal("%s already exists." % dest)
             return 1
- 
+
     for database in databases:
         dest =  os.path.join(backup_dir, '%s.%s.dump' % (database, today))
 

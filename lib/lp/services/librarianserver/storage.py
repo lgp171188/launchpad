@@ -271,7 +271,7 @@ class LibraryFileUpload(object):
                 aliasID = None
                 self.debugLog.append('received contentID: %r' % (contentID, ))
 
-        except:
+        except Exception:
             # Abort transaction and re-raise
             self.debugLog.append('failed to get contentID/aliasID, aborting')
             raise
@@ -279,7 +279,7 @@ class LibraryFileUpload(object):
         # Move file to final location
         try:
             self._move(contentID)
-        except:
+        except Exception:
             # Abort DB transaction
             self.debugLog.append('failed to move file, aborting')
 

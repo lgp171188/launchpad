@@ -34,6 +34,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.soyuz.enums import ArchivePurpose
 
+
 # Number of seconds in an hour (used later)
 HOURS = 3600
 

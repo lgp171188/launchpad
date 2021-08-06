@@ -268,9 +268,9 @@ class OCIProject(BugTargetBase, StructuralSubscriptionTargetMixin, StormBase):
     def getRecipes(self, visible_by_user=None):
         """See `IOCIProject`."""
         from lp.oci.model.ocirecipe import (
-            OCIRecipe,
             get_ocirecipe_privacy_filter,
-        )
+            OCIRecipe,
+            )
         rs = IStore(OCIRecipe).find(
             OCIRecipe,
             OCIRecipe.owner_id == Person.id,
@@ -417,8 +417,8 @@ class OCIProjectSet:
 
     def getByPillarAndName(self, pillar, name):
         """See `IOCIProjectSet`."""
-        from lp.registry.model.product import Product
         from lp.registry.model.distribution import Distribution
+        from lp.registry.model.product import Product
 
         # If pillar is not an string, we expect it to be either an
         # IDistribution or IProduct.

@@ -68,8 +68,7 @@ class EmailAddress(SQLBase, HasOwnerMixin):
         """See `IEmailAddress`."""
         # Import this here to avoid circular references.
         from lp.registry.interfaces.mailinglist import MailingListStatus
-        from lp.registry.model.mailinglist import (
-            MailingListSubscription)
+        from lp.registry.model.mailinglist import MailingListSubscription
 
         if self.status == EmailAddressStatus.PREFERRED:
             raise UndeletableEmailAddress(

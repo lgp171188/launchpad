@@ -13,12 +13,12 @@ from lazr.restfulclient.errors import (
     BadRequest,
     Unauthorized,
     )
+from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     Equals,
     MatchesListwise,
     MatchesStructure,
     )
-from six.moves.urllib.request import urlopen
 import transaction
 from zope.component import (
     getUtility,

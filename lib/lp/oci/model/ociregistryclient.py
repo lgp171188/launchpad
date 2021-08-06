@@ -11,6 +11,7 @@ __all__ = [
 import base64
 from functools import partial
 import hashlib
+from http.client import IncompleteRead
 from io import BytesIO
 import json
 import logging
@@ -128,7 +129,8 @@ class OCIRegistryClient:
         wait=wait_fixed(3),
         before=before_log(log, logging.INFO),
         reraise=True,
-        retry=retry_if_exception_type(ConnectionError),
+        retry=(retry_if_exception_type(ConnectionError) |
+               retry_if_exception_type(IncompleteRead)),
         stop=stop_after_attempt(5))
     def _upload(cls, digest, push_rule, fileobj, length, http_client):
         """Upload a blob to the registry, using a given digest.

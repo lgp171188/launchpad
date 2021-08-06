@@ -82,6 +82,8 @@ def dont_wrap_class_and_subclasses(cls):
 
 # Don't wrap Branch or its subclasses in Zope security proxies.  Make sure
 # the various LoomBranch classes are present first.
-import breezy.plugins.loom.branch
+import breezy.plugins.loom.branch  # noqa: E402
+
+
 breezy.plugins.loom.branch
 dont_wrap_class_and_subclasses(Branch)

@@ -22,6 +22,7 @@ __all__ = [
 import os.path
 import sys
 
+
 scripts_dir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
@@ -32,9 +33,9 @@ top = os.path.dirname(scripts_dir)
 sys.modules.pop("site", None)
 sys.modules.pop("sitecustomize", None)
 
-import _pythonpath  # noqa: F401
+import _pythonpath  # noqa: F401,E402
 
-from lp.soyuz.wsgi.archiveauth import check_password
+from lp.soyuz.wsgi.archiveauth import check_password  # noqa: E402
 
 
 def main():

@@ -90,7 +90,7 @@ def unpack_source(dsc_filepath):
     unpacked_dir = tempfile.mkdtemp()
     try:
         extract_dpkg_source(dsc_filepath, unpacked_dir)
-    except:
+    except Exception:
         shutil.rmtree(unpacked_dir)
         raise
 

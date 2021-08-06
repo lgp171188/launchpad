@@ -35,7 +35,7 @@ def makeFailure(exception_factory, *args, **kwargs):
     """
     try:
         raise exception_factory(*args, **kwargs)
-    except:
+    except Exception:
         return failure.Failure()
 
 

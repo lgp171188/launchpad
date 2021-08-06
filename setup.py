@@ -150,7 +150,6 @@ setup(
     # used in zcml.
     install_requires=[
         'ampoule',
-        'backports.lzma; python_version < "3.3"',
         'beautifulsoup4[lxml]',
         'boto3',
         'breezy',

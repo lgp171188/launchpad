@@ -640,7 +640,8 @@ def _mergeLiveFS(cur, from_person, to_person):
     # This shouldn't use removeSecurityProxy.
     livefses = getUtility(ILiveFSSet).getByPerson(from_person)
     existing_names = [
-        l.name for l in getUtility(ILiveFSSet).getByPerson(to_person)]
+        livefs.name
+        for livefs in getUtility(ILiveFSSet).getByPerson(to_person)]
     for livefs in livefses:
         new_name = livefs.name
         count = 1

@@ -67,6 +67,7 @@ from lp.soyuz.interfaces.binarypackagerelease import (
     IBinaryPackageReleaseDownloadCount,
     )
 
+
 #
 # Exceptions
 #

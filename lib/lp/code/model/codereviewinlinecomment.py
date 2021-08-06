@@ -14,8 +14,8 @@ import six
 from storm.expr import LeftJoin
 from storm.locals import (
     Int,
-    Reference,
     JSON,
+    Reference,
     )
 from zope.component import getUtility
 from zope.interface import implementer

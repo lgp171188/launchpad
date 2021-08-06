@@ -62,4 +62,3 @@ class CacheCountryMirrors(LaunchpadScript):
 
 if __name__ == '__main__':
     CacheCountryMirrors('cache-country-mirrors').lock_and_run()
-

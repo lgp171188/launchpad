@@ -16,8 +16,8 @@ import logging
 def get_logger(name, parent=None):
     """Create a logging instance underneath the given parent."""
     if parent is None or parent == parent.root:
-        l = logging.getLogger(name)
+        logger = logging.getLogger(name)
     else:
-        l = logging.getLogger("%s.%s" % (parent.name, name))
+        logger = logging.getLogger("%s.%s" % (parent.name, name))
 
-    return l
+    return logger

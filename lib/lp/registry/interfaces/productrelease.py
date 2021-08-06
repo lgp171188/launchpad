@@ -156,8 +156,7 @@ class ProductReleaseVersionField(ContentNameField):
         `ContentFieldName`.
         """
         # Import locally to avoid circular imports.
-        from lp.registry.interfaces.productseries import (
-            IProductSeries)
+        from lp.registry.interfaces.productseries import IProductSeries
         if IProductSeries.providedBy(self.context):
             productseries = self.context
         else:

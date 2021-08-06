@@ -298,7 +298,8 @@ class DistroArchSeries(SQLBase):
 
         # import here to avoid circular import problems
         from lp.soyuz.model.distroarchseriesbinarypackagerelease import (
-            DistroArchSeriesBinaryPackageRelease)
+            DistroArchSeriesBinaryPackageRelease,
+            )
 
         # Create a function that will decorate the results, converting
         # them from the find_spec above into DASBPRs.

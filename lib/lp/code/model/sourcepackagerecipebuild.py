@@ -257,7 +257,7 @@ class SourcePackageRecipeBuild(SpecificBuildFarmJobSourceMixin,
                         ' - cannot build against %s.' % series_name)
                 except ProgrammingError:
                     raise
-                except:
+                except Exception:
                     logger.exception(' - problem with %s', series_name)
                 else:
                     logger.debug(' - build requested for %s', series_name)

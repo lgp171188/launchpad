@@ -31,7 +31,10 @@ def add_custom_loglevels():
     # override. BLATHER is between INFO and DEBUG, so we can leave it.
     # TRACE conflicts with DEBUG6, and since we are not using ZEO, we
     # just overwrite the level string by calling addLevelName.
-    from ZODB.loglevels import BLATHER, TRACE
+    from ZODB.loglevels import (
+        BLATHER,
+        TRACE,
+        )
 
     # Confirm our above assumptions, and silence lint at the same time.
     assert BLATHER == 15

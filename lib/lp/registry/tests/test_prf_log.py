@@ -7,38 +7,32 @@
 
 __author__ = "Scott James Remnant <scott@canonical.com>"
 
+import logging
 import unittest
+
+from lp.registry.scripts.productreleasefinder.log import get_logger
 
 
 class GetLogger(unittest.TestCase):
     def testLogger(self):
         """get_logger returns a Logger instance."""
-        from lp.registry.scripts.productreleasefinder.log import get_logger
-        from logging import Logger
-        self.assertTrue(isinstance(get_logger("test"), Logger))
+        self.assertTrue(isinstance(get_logger("test"), logging.Logger))
 
     def testNoParent(self):
         """get_logger works if no parent is given."""
-        from lp.registry.scripts.productreleasefinder.log import get_logger
         self.assertEqual(get_logger("test").name, "test")
 
     def testRootParent(self):
         """get_logger works if root logger is given."""
-        from lp.registry.scripts.productreleasefinder.log import get_logger
-        from logging import root
-        self.assertEqual(get_logger("test", root).name, "test")
+        self.assertEqual(get_logger("test", logging.root).name, "test")
 
     def testNormalParent(self):
         """get_logger works if non-root logger is given."""
-        from lp.registry.scripts.productreleasefinder.log import get_logger
-        from logging import getLogger
-        parent = getLogger("foo")
+        parent = logging.getLogger("foo")
         self.assertEqual(get_logger("test", parent).name, "foo.test")
 
     def testDeepParent(self):
         """get_logger works if deep-level logger is given."""
-        from lp.registry.scripts.productreleasefinder.log import get_logger
-        from logging import getLogger
-        getLogger("foo")
-        parent2 = getLogger("foo.bar")
+        logging.getLogger("foo")
+        parent2 = logging.getLogger("foo.bar")
         self.assertEqual(get_logger("test", parent2).name, "foo.bar.test")

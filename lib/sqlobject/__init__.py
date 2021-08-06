@@ -7,13 +7,14 @@ __metaclass__ = type
 
 # SKIP this file when reformatting, due to the sys mangling.
 import datetime
+import sys
 
 import six
 from storm.expr import SQL
 from storm.sqlobject import *  # noqa: F401,F403
 
+
 # Provide the same interface from these other locations.
-import sys
 sys.modules['sqlobject.joins'] = sys.modules['sqlobject']
 sys.modules['sqlobject.sqlbuilder'] = sys.modules['sqlobject']
 del sys

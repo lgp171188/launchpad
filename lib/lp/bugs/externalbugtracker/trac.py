@@ -50,6 +50,7 @@ from lp.services.timeout import (
     )
 from lp.services.webapp.url import urlappend
 
+
 # Symbolic constants used for the Trac LP plugin.
 LP_PLUGIN_BUG_IDS_ONLY = 0
 LP_PLUGIN_METADATA_ONLY = 1

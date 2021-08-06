@@ -174,7 +174,7 @@ class Upgrader:
             bzrdir = BzrDir.create(upgrade_dir, self.get_target_format())
             repository = bzrdir.create_repository()
             repository.fetch(self.bzr_branch.repository)
-        except:
+        except Exception:
             rmtree(upgrade_dir)
             raise
         else:

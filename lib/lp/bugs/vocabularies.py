@@ -407,7 +407,7 @@ class BugTaskMilestoneVocabulary:
         """See `IVocabularyTokenized`."""
         try:
             return self.toTerm(self.milestones[str(token)])
-        except:
+        except Exception:
             raise LookupError(token)
 
     def __len__(self):

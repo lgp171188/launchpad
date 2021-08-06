@@ -35,6 +35,7 @@ from lp.services.webapp.errorlog import (
 from lp.services.webapp.interaction import setupInteraction
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
 
+
 # For OOPS reporting keep up to this number of SQL statements.
 MAX_SQL_STATEMENTS_LOGGED = 10000
 
@@ -163,7 +164,7 @@ class WorkingBase:
         check_no_transaction()
         try:
             yield self._transaction_manager
-        except:
+        except BaseException:
             self._transaction_manager.abort()
             # Let the exception propagate.
             raise

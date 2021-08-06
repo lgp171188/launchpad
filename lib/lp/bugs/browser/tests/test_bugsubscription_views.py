@@ -629,7 +629,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
                 'can_edit': False,
                 'web_link': canonical_url(subscriber),
                 'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by': \
+                'display_subscribed_by':
                     'Subscribed by Team Owner (team-owner)',
                 },
             'subscription_level': "Lifecycle",
@@ -682,7 +682,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
                     'web_link': canonical_url(naked_subscriber,
                         rootsite='mainsite'),
                     'self_link': absoluteURL(naked_subscriber, api_request),
-                    'display_subscribed_by': \
+                    'display_subscribed_by':
                         'Subscribed by Team Owner (team-owner)',
                     },
                 'subscription_level': "Lifecycle",
@@ -734,7 +734,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
                 'can_edit': True,
                 'web_link': canonical_url(subscriber),
                 'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by': \
+                'display_subscribed_by':
                     'Subscribed by Team Owner (team-owner)',
                 },
             'subscription_level': "Lifecycle",
@@ -768,7 +768,7 @@ class BugPortletSubscribersWithDetailsTests(TestCaseWithFactory):
                 'can_edit': True,
                 'web_link': canonical_url(subscriber),
                 'self_link': absoluteURL(subscriber, api_request),
-                'display_subscribed_by': \
+                'display_subscribed_by':
                     'Subscribed by Team Owner (team-owner)',
                 },
             'subscription_level': "Lifecycle",

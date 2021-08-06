@@ -254,9 +254,9 @@ def get_comments_for_bugtask(bugtask, truncate=False, for_display=False,
     comments = sorted(comments.values(), key=attrgetter("index"))
     current_title = bugtask.bug.title
     for comment in comments:
-        if not ((unique_title(comment.title) == \
-                 unique_title(current_title)) or \
-                (unique_title(comment.title) == \
+        if not ((unique_title(comment.title) ==
+                 unique_title(current_title)) or
+                (unique_title(comment.title) ==
                  unique_title(bugtask.bug.title))):
             # this comment has a new title, so make that the rolling focus
             current_title = comment.title

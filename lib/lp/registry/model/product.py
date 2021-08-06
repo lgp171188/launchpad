@@ -1117,7 +1117,8 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     @cachedproperty
     def distrosourcepackages(self):
         from lp.registry.model.distributionsourcepackage import (
-            DistributionSourcePackage)
+            DistributionSourcePackage,
+            )
         dsp_info = get_distro_sourcepackages([self])
         return [
             DistributionSourcePackage(
@@ -1600,7 +1601,7 @@ def get_precached_products(products, need_licences=False,
             ProductLicense,
             ProductLicense.productID.is_in(product_ids)):
             cache = caches[license.productID]
-            if not license.license in cache._cached_licenses:
+            if license.license not in cache._cached_licenses:
                 cache._cached_licenses.append(license.license)
     if need_projectgroups:
         bulk.load_related(

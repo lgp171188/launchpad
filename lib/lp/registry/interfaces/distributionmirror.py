@@ -65,6 +65,7 @@ from lp.services.webapp.escaping import (
     )
 from lp.services.worlddata.interfaces.country import ICountry
 
+
 # The number of hours before we bother probing a mirror again
 PROBE_INTERVAL = 23
 
@@ -272,8 +273,9 @@ class DistroMirrorURIField(URIField):
 
     def _validate(self, value):
         # import here to avoid circular import
-        from lp.services.webapp import canonical_url
         from lazr.uri import URI
+
+        from lp.services.webapp import canonical_url
 
         super(DistroMirrorURIField, self)._validate(value)
         uri = URI(self.normalize(value))

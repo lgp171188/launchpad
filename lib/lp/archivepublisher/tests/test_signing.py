@@ -2139,7 +2139,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         self.assertIn(
             "INFO Skipping injection for key type UEFI: "
-            "not in %s" % ['SIPL', 'OPAL'],
+            "not in ['SIPL', 'OPAL']",
             log_content)
 
     def test_fallback_skips_key_injection_for_existing_keys(self):

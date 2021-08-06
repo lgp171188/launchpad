@@ -647,7 +647,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
                 pass
         except (SuspendJobException, AdvisoryLockHeld):
             raise
-        except:
+        except Exception:
             # Abort work done so far, but make sure that we commit the
             # rejection to the PackageUpload.
             transaction.abort()

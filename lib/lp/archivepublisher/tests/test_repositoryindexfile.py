@@ -7,6 +7,7 @@ __metaclass__ = type
 
 import bz2
 import gzip
+import lzma
 import os
 import shutil
 import stat
@@ -14,7 +15,6 @@ import tempfile
 import unittest
 
 from lp.archivepublisher.utils import RepositoryIndexFile
-from lp.services.compat import lzma
 from lp.soyuz.enums import IndexCompressionType
 
 

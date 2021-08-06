@@ -9,17 +9,10 @@ Use this for things that six doesn't provide.
 __metaclass__ = type
 __all__ = [
     'escape',
-    'lzma',
     'message_as_bytes',
     'message_from_bytes',
     'mock',
-    'SafeConfigParser',
     ]
-
-try:
-    from configparser import ConfigParser as SafeConfigParser
-except ImportError:
-    from ConfigParser import SafeConfigParser
 
 try:
     from email import message_from_bytes
@@ -33,10 +26,6 @@ except ImportError:
 
 import io
 
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
 
 try:
     import mock

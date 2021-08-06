@@ -152,6 +152,7 @@ from lp.translations.interfaces.hastranslationimports import (
     )
 from lp.translations.interfaces.translationpolicy import ITranslationPolicy
 
+
 # This is based on the definition of <label> in RFC 1035, section
 # 2.3.1, which is what SourceForge project names are based on.
 re_valid_rfc1035_label = re.compile(
@@ -1184,8 +1185,11 @@ class InvalidProductName(LaunchpadValidationError):
 
 
 # Fix circular imports.
-from lp.registry.interfaces.distributionsourcepackage import (
-    IDistributionSourcePackage)
+from lp.registry.interfaces.distributionsourcepackage import (  # noqa: E402
+    IDistributionSourcePackage,
+    )
+
+
 patch_reference_property(
     IDistributionSourcePackage, 'upstream_product', IProduct)
 

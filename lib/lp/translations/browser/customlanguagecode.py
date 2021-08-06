@@ -36,6 +36,7 @@ from lp.translations.interfaces.customlanguagecode import (
     IHasCustomLanguageCodes,
     )
 
+
 # Regex for allowable custom language codes.
 CODE_PATTERN = "[a-zA-Z0-9_-]+$"
 

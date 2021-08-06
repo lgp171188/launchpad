@@ -39,6 +39,7 @@ from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.xmlrpc import faults
 
+
 # These constants must match those defined in Mailman.MemberAdaptor.
 ENABLED = 0
 BYUSER = 2

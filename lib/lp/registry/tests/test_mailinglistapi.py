@@ -9,12 +9,12 @@ __all__ = []
 from email import message_from_string
 from textwrap import dedent
 
+from six.moves import xmlrpc_client
 from testtools.matchers import (
     Equals,
     MatchesDict,
     MatchesSetwise,
     )
-from six.moves import xmlrpc_client
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy

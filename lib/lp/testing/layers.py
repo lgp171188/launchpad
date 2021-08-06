@@ -78,6 +78,7 @@ from six.moves.urllib.error import (
     )
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.request import urlopen
+from storm.uri import URI
 from talisker.context import Context
 import transaction
 from webob.request import environ_from_url as orig_environ_from_url
@@ -935,9 +936,7 @@ class LaunchpadLayer(LibrarianLayer, MemcachedLayer, RabbitMQLayer):
         in the testSetUp().
         """
         if LaunchpadLayer._raw_sessiondb_connection is None:
-            from storm.uri import URI
-            from lp.services.webapp.adapter import (
-                LaunchpadSessionDatabase)
+            from lp.services.webapp.adapter import LaunchpadSessionDatabase
             launchpad_session_database = LaunchpadSessionDatabase(
                 URI('launchpad-session:'))
             LaunchpadLayer._raw_sessiondb_connection = (
@@ -1286,8 +1285,12 @@ class TwistedLayer(BaseLayer):
     @profiled
     def testSetUp(cls):
         TwistedLayer._save_signals()
-        from twisted.internet import interfaces, reactor
+        from twisted.internet import (
+            interfaces,
+            reactor,
+            )
         from twisted.python import threadpool
+
         # zope.exception demands more of frame objects than
         # twisted.python.failure provides in its fake frames.  This is enough
         # to make it work with them as of 2009-09-16.  See
@@ -1310,7 +1313,10 @@ class TwistedLayer(BaseLayer):
     def testTearDown(cls):
         # Shutdown and obliterate the Twisted threadpool, to plug up leaking
         # threads.
-        from twisted.internet import interfaces, reactor
+        from twisted.internet import (
+            interfaces,
+            reactor,
+            )
         if interfaces.IReactorThreads.providedBy(reactor):
             reactor.suggestThreadPoolSize(0)
             pool = getattr(reactor, 'threadpool', None)

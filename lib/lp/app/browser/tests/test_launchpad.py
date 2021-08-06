@@ -45,8 +45,8 @@ from lp.testing import (
     admin_logged_in,
     ANONYMOUS,
     celebrity_logged_in,
-    login_person,
     login,
+    login_person,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -56,6 +56,7 @@ from lp.testing.layers import (
     )
 from lp.testing.publication import test_traverse
 from lp.testing.views import create_view
+
 
 # We set the request header HTTP_REFERER  when we want to simulate navigation
 # from a valid page. This is used in the assertDisplaysNotification check.

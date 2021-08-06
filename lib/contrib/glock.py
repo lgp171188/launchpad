@@ -29,15 +29,21 @@ __doc__ += '\n@author: %s (U{%s})\n@version: %s' % (__author__[0],
                                             __author__[1], __version__)
 __all__ = ['GlobalLock', 'GlobalLockError', 'LockAlreadyAcquired', 'NotOwner']
 
-# Imports:
-import sys, string, os, errno, re
+import errno
+import os
+import re
+import string
+import sys
+
 
 # System-dependent imports for locking implementation:
 _windows = (sys.platform == 'win32')
 
 if _windows:
     try:
-        import win32event, win32api, pywintypes
+        import pywintypes
+        import win32api
+        import win32event
     except ImportError:
         sys.stderr.write('The win32 extensions need to be installed!')
     try:
@@ -277,7 +283,8 @@ def test():
     else: raise Exception('should have raised a NotOwner exception')
 
     # Check that <> threads of same process do block:
-    import threading, time
+    import threading
+    import time
     thread = threading.Thread(target=threadMain, args=(l,))
     print('main: locking...', end='')
     l.acquire()

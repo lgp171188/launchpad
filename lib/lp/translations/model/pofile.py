@@ -1503,9 +1503,9 @@ class POFileSet:
     def getPOFilesTouchedSince(self, date):
         """See `IPOFileSet`."""
         # Avoid circular imports.
-        from lp.translations.model.potemplate import POTemplate
         from lp.registry.model.distroseries import DistroSeries
         from lp.registry.model.productseries import ProductSeries
+        from lp.translations.model.potemplate import POTemplate
 
         store = IMasterStore(POTemplate)
 

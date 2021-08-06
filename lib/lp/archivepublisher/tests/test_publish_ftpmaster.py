@@ -1100,7 +1100,7 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         script.runPublishDistro = FakeMethod(failure=Boom("Sorry!"))
         try:
             script.createIndexes(series.distribution, [get_a_suite(series)])
-        except:
+        except Exception:
             pass
         self.assertEqual([], script.markIndexCreationComplete.calls)
 

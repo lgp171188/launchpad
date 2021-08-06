@@ -17,8 +17,8 @@ from fixtures import FakeLogger
 import pytz
 import soupmatchers
 from soupmatchers import (
-    Tag,
     HTMLContains,
+    Tag,
     )
 from storm.store import Store
 from testtools.matchers import (

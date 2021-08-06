@@ -14,10 +14,10 @@ from datetime import (
     datetime,
     timedelta,
     )
+import ipaddress
 import re
 import socket
 
-import ipaddress
 import iso8601
 from lazr.delegates import delegate_to
 from lazr.enum import (

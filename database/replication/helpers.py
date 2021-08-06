@@ -29,6 +29,7 @@ from lp.services.scripts.logger import (
     log,
     )
 
+
 # The Slony-I clustername we use with Launchpad. Hardcoded because there
 # is no point changing this, ever.
 CLUSTERNAME = 'sl'

@@ -268,7 +268,7 @@ class LaunchpadBrowserPublication(
             request_txt = 'Exception converting request to string\n\n'
             try:
                 request_txt += traceback.format_exc()
-            except:
+            except Exception:
                 request_txt += 'Unable to render traceback!'
         threadrequestfile.write(request_txt.encode('UTF-8'))
         threadrequestfile.close()
@@ -657,7 +657,7 @@ class LaunchpadBrowserPublication(
                 labels={
                     'success': False,
                     'pageid': self._prepPageIDForMetrics(
-                        request._orig_env.get('launchpad.pageid')),
+                        orig_env.get('launchpad.pageid')),
                     })
         elif (hasattr(request, '_traversal_start') and
               'traversal_duration_ms' not in logging_context.flat):
@@ -677,7 +677,7 @@ class LaunchpadBrowserPublication(
                 labels={
                     'success': False,
                     'pageid': self._prepPageIDForMetrics(
-                        request._orig_env.get('launchpad.pageid')),
+                        orig_env.get('launchpad.pageid')),
                     })
         else:
             # The exception wasn't raised in the middle of the traversal nor

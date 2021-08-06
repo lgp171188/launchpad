@@ -77,7 +77,7 @@ def write_transaction(func):
         transaction.begin()
         try:
             ret = func(*args, **kwargs)
-        except:
+        except BaseException:
             transaction.abort()
             raise
         transaction.commit()

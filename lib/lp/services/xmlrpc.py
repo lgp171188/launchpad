@@ -14,6 +14,7 @@ import socket
 from defusedxml.xmlrpc import monkey_patch
 from six.moves import xmlrpc_client
 
+
 # Protect against various XML parsing vulnerabilities.
 monkey_patch()
 

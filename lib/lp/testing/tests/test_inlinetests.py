@@ -5,8 +5,8 @@
 
 import doctest
 from doctest import (
-    NORMALIZE_WHITESPACE,
     ELLIPSIS,
+    NORMALIZE_WHITESPACE,
     )
 
 from lp import testing

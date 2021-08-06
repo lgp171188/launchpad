@@ -87,6 +87,7 @@ from lp.translations.model.translationtemplateitem import (
     )
 from lp.translations.utilities.validate import validate_translation
 
+
 # Msgids that indicate translation credit messages, and their
 # contexts and type.
 credits_message_info = {

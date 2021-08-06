@@ -50,7 +50,7 @@ class Process(object):
 
 class Watcher(object):
     _line_re = re.compile(r"""
-        ^\d{4}-\d\d-\d\d \s \d\d:\d\d:\d\d \s 
+        ^\d{4}-\d\d-\d\d \s \d\d:\d\d:\d\d \s
         \[(?P<pid>\d+)\] \s (?P<type>LOG|ERROR|DETAIL): \s+ (?P<rest>.*)$
         """, re.X)
 
@@ -108,13 +108,13 @@ class Watcher(object):
 
         pid = int(match.group('pid'))
         rest = match.group('rest')
-        
+
         process = self.processes.get(pid, None)
         if process is None:
             process = Process(pid)
             self.processes[pid] = process
         self.previous_process = process
-        
+
         match = self._statement_re.search(rest)
         if match is not None:
             statement = match.group('statement')
@@ -161,6 +161,7 @@ class Watcher(object):
             print('[%5d] %s' % (process.pid, process.statement))
             print('        Duration: %0.3f' % (process.duration,))
 
+
 if __name__ == '__main__':
     options = get_options()
 
@@ -169,4 +170,3 @@ if __name__ == '__main__':
         watcher.run()
     except KeyboardInterrupt:
         pass
-

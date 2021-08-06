@@ -74,7 +74,8 @@ class DistroArchSeriesBinaryPackage:
     def cache(self):
         """See IDistroArchSeriesBinaryPackage."""
         from lp.soyuz.model.distroseriespackagecache import (
-            DistroSeriesPackageCache)
+            DistroSeriesPackageCache,
+            )
         query = """
             distroseries = %s AND
             archive IN %s AND

@@ -303,6 +303,18 @@ class TestCloseAccount(TestCaseWithFactory):
             self.assertEqual(question_status, question.status)
             self.assertIsNone(question.whiteboard)
 
+    def test_skips_specification_branch_registrant(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+        spec = self.factory.makeSpecification()
+        branch = self.factory.makeAnyBranch()
+        spec.linkBranch(branch, person)
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+
     def test_handles_packaging_references(self):
         person = self.factory.makePerson()
         person_id = person.id

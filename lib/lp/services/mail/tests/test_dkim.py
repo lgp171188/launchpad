@@ -24,6 +24,7 @@ from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
+
 # sample private key made with 'openssl genrsa' and public key using 'openssl
 # rsa -pubout'.  Not really the key for canonical.com ;-)
 sample_privkey = b"""\
@@ -139,9 +140,9 @@ class TestDKIM(TestCaseWithFactory):
                 + six.ensure_text(signed_message, errors='replace'))
 
     def assertDkimLogContains(self, substring):
-        l = self.get_dkim_log()
-        if l.find(substring) == -1:
-            self.fail("didn't find %r in log: %s" % (substring, l))
+        log = self.get_dkim_log()
+        if log.find(substring) == -1:
+            self.fail("didn't find %r in log: %s" % (substring, log))
 
     def makeMessageBytes(self, sender=None, from_address=None):
         if from_address is None:

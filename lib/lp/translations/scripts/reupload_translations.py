@@ -94,7 +94,8 @@ class ReuploadPackageTranslations(LaunchpadScript):
         """Get translations for `package` re-uploaded."""
         # Avoid circular imports.
         from lp.soyuz.model.packagetranslationsuploadjob import (
-            _filter_ubuntu_translation_file)
+            _filter_ubuntu_translation_file,
+            )
 
         self.logger.info("Processing %s" % package.displayname)
         tarball_aliases = package.getLatestTranslationsUploads()

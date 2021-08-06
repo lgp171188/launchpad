@@ -11,9 +11,9 @@ from lp.code.vocabularies.gitrepository import (
     GitRepositoryRestrictedOnProductVocabulary,
     GitRepositoryVocabulary,
     )
+from lp.registry.interfaces.product import IProductSet
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.registry.interfaces.product import IProductSet
 
 
 class TestGitRepositoryVocabulary(TestCaseWithFactory):

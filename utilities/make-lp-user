@@ -119,7 +119,7 @@ def add_ssh_public_keys(person):
 
 def parse_fingerprints(gpg_output):
     """Find key fingerprints in "gpg --fingerprint <email>" output."""
-    line_prefix = re.compile('\s*Key fingerprint\s*=\s*')
+    line_prefix = re.compile(r'\s*Key fingerprint\s*=\s*')
     return [
         ''.join(re.sub(line_prefix, '', line).split())
         for line in gpg_output.splitlines()

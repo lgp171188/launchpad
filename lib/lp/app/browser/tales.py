@@ -151,7 +151,7 @@ class MenuLinksDict(dict):
             self._all_link_names.extend(extras)
 
     def __getitem__(self, link_name):
-        if not link_name in self._all_link_names:
+        if link_name not in self._all_link_names:
             raise KeyError(link_name)
 
         link = dict.get(self, link_name, None)
@@ -161,7 +161,7 @@ class MenuLinksDict(dict):
             else:
                 link = self._menu.initLink(link_name, self._request_url)
 
-        if not link_name in self._extra_link_names:
+        if link_name not in self._extra_link_names:
             self._menu.updateLink(link, self._request_url)
 
         self[link_name] = link

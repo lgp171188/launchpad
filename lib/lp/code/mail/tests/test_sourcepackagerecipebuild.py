@@ -29,7 +29,7 @@ expected_body = u"""\
  * Build Log: %s
  * Upload Log: 
  * Builder: http://launchpad.test/builders/bob
-"""
+"""  # noqa: W291
 
 superseded_body = u"""\
  * State: Build for superseded Source
@@ -40,7 +40,7 @@ superseded_body = u"""\
  * Build Log: 
  * Upload Log: 
  * Builder: 
-"""
+"""  # noqa: W291
 
 
 class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):

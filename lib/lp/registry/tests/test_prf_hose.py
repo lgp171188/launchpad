@@ -3,11 +3,17 @@
 
 """Tests for lp.registry.scripts.productreleasefinder.hose."""
 
+import logging
 import os
 import shutil
 import tempfile
 import unittest
 
+from lp.registry.scripts.productreleasefinder.filter import (
+    Filter,
+    FilterPattern,
+    )
+from lp.registry.scripts.productreleasefinder.hose import Hose
 from lp.testing import reset_logging
 
 
@@ -68,16 +74,12 @@ class InstrumentedMethodObserver:
 class Hose_Logging(unittest.TestCase):
     def testCreatesDefaultLogger(self):
         """Hose creates a default logger."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
-        from logging import Logger
         h = Hose()
-        self.assertTrue(isinstance(h.log, Logger))
+        self.assertTrue(isinstance(h.log, logging.Logger))
 
     def testCreatesChildLogger(self):
         """Hose creates a child logger if given a parent."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
-        from logging import getLogger
-        parent = getLogger("foo")
+        parent = logging.getLogger("foo")
         h = Hose(log_parent=parent)
         self.assertEqual(h.log.parent, parent)
 
@@ -85,23 +87,16 @@ class Hose_Logging(unittest.TestCase):
 class Hose_Filter(unittest.TestCase):
     def testCreatesFilterObject(self):
         """Hose creates a Filter object."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
-        from lp.registry.scripts.productreleasefinder.filter import (
-            Filter)
         h = Hose()
         self.assertTrue(isinstance(h.filter, Filter))
 
     def testDefaultsFiltersToEmptyDict(self):
         """Hose creates Filter object with empty dictionary."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
         h = Hose()
         self.assertEqual(h.filter.filters, [])
 
     def testCreatesFiltersWithGiven(self):
         """Hose creates Filter object with dictionary given."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
-        from lp.registry.scripts.productreleasefinder.filter import (
-            FilterPattern)
         pattern = FilterPattern("foo", "http:e*")
         h = Hose([pattern])
         self.assertEqual(len(h.filter.filters), 1)
@@ -111,7 +106,6 @@ class Hose_Filter(unittest.TestCase):
 class Hose_Urls(unittest.TestCase):
     def testCallsReduceWork(self):
         """Hose constructor calls reduceWork function."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
         h = Hose.__new__(Hose)
 
         class Observer(InstrumentedMethodObserver):
@@ -128,9 +122,6 @@ class Hose_Urls(unittest.TestCase):
 
     def testPassesUrlList(self):
         """Hose constructor passes url list to reduceWork."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
-        from lp.registry.scripts.productreleasefinder.filter import (
-            FilterPattern)
         pattern = FilterPattern("foo", "http://archive.ubuntu.com/e*")
         h = Hose.__new__(Hose)
 
@@ -148,8 +139,6 @@ class Hose_Urls(unittest.TestCase):
 
     def testSetsUrlProperty(self):
         """Hose constructor sets urls property to reduceWork return value."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
-
         class TestHose(Hose):
             def reduceWork(self, url_list):
                 return "wibble"
@@ -161,20 +150,17 @@ class Hose_Urls(unittest.TestCase):
 class Hose_ReduceWork(unittest.TestCase):
     def testEmptyList(self):
         """Hose.reduceWork returns empty list when given one."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
         h = Hose()
         self.assertEqual(h.reduceWork([]), [])
 
     def testReducedList(self):
         """Hose.reduceWork returns same list when nothing to do."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
         h = Hose()
         self.assertEqual(h.reduceWork(["http://localhost/", "file:///usr/"]),
                          ["http://localhost/", "file:///usr/"])
 
     def testReducesList(self):
         """Hose.reduceWork removes children elements from list."""
-        from lp.registry.scripts.productreleasefinder.hose import Hose
         h = Hose()
         self.assertEqual(h.reduceWork(["http://localhost/",
                                        "http://localhost/foo/bar/",
@@ -219,9 +205,6 @@ class Hose_LimitWalk(unittest.TestCase):
             fp.close()
 
         # Run the hose over the test data
-        from lp.registry.scripts.productreleasefinder.hose import Hose
-        from lp.registry.scripts.productreleasefinder.filter import (
-            FilterPattern)
         pattern = FilterPattern("key", self.release_url +
                                 "/foo/1.*/source/foo-1.*.tar.gz")
         hose = Hose([pattern])

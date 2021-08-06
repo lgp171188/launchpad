@@ -24,6 +24,7 @@ from lp.code.interfaces.branch import (
     )
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 
+
 # XXX: thumper 2006-12-20: This needs to be extended
 # to cover bugs and specs linked and unlinked, as
 # well as landing target when it is added to the UI

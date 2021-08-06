@@ -52,6 +52,7 @@ from lp.services.webapp.interfaces import (
     OAuthPermission,
     )
 
+
 # How many hours should a request token be valid for?
 REQUEST_TOKEN_VALIDITY = 2
 

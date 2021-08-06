@@ -62,6 +62,7 @@ from lp.services.timeout import urlfetch
 from lp.services.webapp import canonical_url
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
+
 # The requests/timeouts ratio has to be at least 3 for us to keep issuing
 # requests on a given host. (This ratio is per run, rather than held long
 # term)
@@ -249,8 +250,7 @@ class RedirectAwareProberProtocol(ProberProtocol):
 
     def handleHeader(self, key, value):
         key = key.lower()
-        l = self.headers.setdefault(key, [])
-        l.append(value)
+        self.headers.setdefault(key, []).append(value)
 
     def handleStatus(self, version, status, message):
         if int(status) in self.handled_redirect_statuses:

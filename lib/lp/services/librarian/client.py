@@ -17,8 +17,8 @@ import hashlib
 import select
 import socket
 from socket import (
-    SOCK_STREAM,
     AF_INET,
+    SOCK_STREAM,
     )
 import threading
 import time
@@ -37,6 +37,7 @@ from six.moves.urllib.parse import (
     urlunparse,
     )
 from six.moves.urllib.request import urlopen
+from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from zope.interface import implementer
 
@@ -171,8 +172,10 @@ class FileUploadClient:
         name = six.ensure_binary(name)
 
         # Import in this method to avoid a circular import
-        from lp.services.librarian.model import LibraryFileContent
-        from lp.services.librarian.model import LibraryFileAlias
+        from lp.services.librarian.model import (
+            LibraryFileAlias,
+            LibraryFileContent,
+            )
 
         self._connect()
         try:
@@ -385,7 +388,7 @@ class FileDownloadClient:
             inaccessible.
         """
         from lp.services.librarian.model import LibraryFileAlias
-        from sqlobject import SQLObjectNotFound
+
         try:
             lfa = LibraryFileAlias.get(aliasID)
         except SQLObjectNotFound:

@@ -22,8 +22,8 @@ import sys
 import threading
 
 from breezy import lsprof
-import six
 import oops_datedir_repo.serializer_rfc822
+import six
 from zope.component import (
     adapter,
     getUtility,
@@ -89,7 +89,7 @@ class Profiler:
         self.profiler_lock.acquire(True)  # Blocks.
         try:
             self.enable()
-        except:
+        except Exception:
             self.profiler_lock.release()
             self.started = False
             raise

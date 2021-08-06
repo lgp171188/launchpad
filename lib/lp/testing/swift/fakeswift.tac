@@ -7,15 +7,19 @@
 __metaclass__ = type
 __all__ = []
 
-import os.path
 import logging
+import os.path
 
+from twisted.application import (
+    internet,
+    service,
+    )
 import twisted.web.server
-from twisted.application import internet, service
-
-logging.basicConfig()
 
 from lp.testing.swift.fakeswift import Root
+
+
+logging.basicConfig()
 
 storedir = os.environ['SWIFT_ROOT']
 assert os.path.exists(storedir)

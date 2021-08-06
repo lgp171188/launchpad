@@ -5,19 +5,19 @@ import atexit
 import itertools
 from operator import attrgetter
 import types
+import warnings
 
 import six
 from six.moves import builtins
 
 
-original_import = builtins.__import__
-naughty_imports = set()
-
 # Silence bogus warnings from Hardy's python-pkg-resources package.
-import warnings
 warnings.filterwarnings('ignore', category=UserWarning, append=True,
                         message=r'Module .*? is being added to sys.path')
 
+
+original_import = builtins.__import__
+naughty_imports = set()
 
 # Sometimes, third-party modules don't export all of their public APIs through
 # __all__. The following dict maps from such modules to a list of attributes
@@ -28,10 +28,6 @@ valid_imports_not_in_all = {
     'importlib': set(['resources']),
     'openid.fetchers': set(['Urllib2Fetcher']),
     'openid.message': set(['NamespaceAliasRegistrationError']),
-    # Exported as shlex.quote in Python 3.
-    'pipes': set(['quote']),
-    # Exported in Python 3, but missing and so not exported in Python 2.
-    'shlex': set(['quote']),
     'six.moves.http_cookiejar': set(['domain_match']),
     'storm.database': set(['STATE_DISCONNECTED']),
     'talisker': set(['run_gunicorn']),

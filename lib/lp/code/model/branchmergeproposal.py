@@ -349,7 +349,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         from lp.code.model.branchmergeproposaljob import (
             BranchMergeProposalJob,
             BranchMergeProposalJobType,
-        )
+            )
         jobs = Store.of(self).find(
             BranchMergeProposalJob,
             BranchMergeProposalJob.branch_merge_proposal == self,
@@ -472,6 +472,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
     def _fetchRelatedBugIDsFromSource(self):
         """Fetch related bug IDs from the source branch."""
         from lp.bugs.model.bug import Bug
+
         # Only currently used for Git.
         assert self.source_git_ref is not None
         # XXX cjwatson 2016-06-11: This may return too many bugs in the case
@@ -499,6 +500,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
     def updateRelatedBugsFromSource(self):
         """See `IBranchMergeProposal`."""
         from lp.bugs.model.bug import Bug
+
         # Only currently used for Git.
         assert self.source_git_ref is not None
         current_bug_ids_from_source = {
@@ -966,7 +968,9 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             comment.destroySelf()
         # Delete all jobs referring to the BranchMergeProposal, whether
         # or not they have completed.
-        from lp.code.model.branchmergeproposaljob import BranchMergeProposalJob
+        from lp.code.model.branchmergeproposaljob import (
+            BranchMergeProposalJob,
+            )
         for job in BranchMergeProposalJob.selectBy(
             branch_merge_proposal=self.id):
             job.destroySelf()

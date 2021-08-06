@@ -119,8 +119,8 @@ class AccessArtifact(StormBase):
         from lp.bugs.interfaces.bug import IBug
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
-        from lp.snappy.interfaces.snap import ISnap
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
+        from lp.snappy.interfaces.snap import ISnap
         if IBug.providedBy(concrete_artifact):
             col = cls.bug
         elif IBranch.providedBy(concrete_artifact):
@@ -154,8 +154,8 @@ class AccessArtifact(StormBase):
         from lp.bugs.interfaces.bug import IBug
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
-        from lp.snappy.interfaces.snap import ISnap
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
+        from lp.snappy.interfaces.snap import ISnap
 
         existing = list(cls.find(concrete_artifacts))
         if len(existing) == len(concrete_artifacts):

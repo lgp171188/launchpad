@@ -162,6 +162,7 @@ def close_account(username, log):
         ('specification', 'last_changed_by'),
         ('specification', 'owner'),
         ('specification', 'starter'),
+        ('specificationbranch', 'registrant'),
         ('structuralsubscription', 'subscribed_by'),
         ('teammembership', 'acknowledged_by'),
         ('teammembership', 'last_changed_by'),

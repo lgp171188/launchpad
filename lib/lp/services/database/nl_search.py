@@ -28,6 +28,7 @@ from lp.services.database.interfaces import (
     )
 from lp.services.database.stormexpr import fti_search
 
+
 # Regular expression to extract terms from the printout of a ts_query
 TS_QUERY_TERM_RE = re.compile(r"'([^']+)'")
 

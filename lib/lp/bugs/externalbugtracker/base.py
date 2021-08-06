@@ -45,10 +45,11 @@ from lp.bugs.interfaces.externalbugtracker import (
 from lp.services.config import config
 from lp.services.database.isolation import ensure_no_transaction
 from lp.services.timeout import (
-    raise_for_status_redacted,
     override_timeout,
+    raise_for_status_redacted,
     urlfetch,
     )
+
 
 # The user agent we send in our requests
 LP_USER_AGENT = "Launchpad Bugscraper/0.2 (https://bugs.launchpad.net/)"

@@ -11,10 +11,7 @@ __all__ = [
     ]
 
 import os
-try:
-    from shlex import quote as shell_quote
-except ImportError:
-    from pipes import quote as shell_quote
+from shlex import quote as shell_quote
 import subprocess
 
 from lp.services.config import config

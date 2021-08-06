@@ -7,6 +7,7 @@
 import os
 import signal
 
+
 # Turn off the http_proxy environment variable if it is set. We
 # don't need it, but we do need to contact Keystone & Swift directly.
 # We could use no_proxy, but this requires keeping it in sync with
@@ -42,8 +43,9 @@ from lp.services.librarianserver import (
     )
 from lp.services.librarianserver.libraryprotocol import FileUploadFactory
 from lp.services.scripts import execute_zcml_for_scripts
-from lp.services.twistedsupport.loggingsupport import set_up_oops_reporting
 from lp.services.twistedsupport.features import setup_feature_controller
+from lp.services.twistedsupport.loggingsupport import set_up_oops_reporting
+
 
 # Connect to database
 dbconfig.override(

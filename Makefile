@@ -482,6 +482,9 @@ copy-certificates:
 	cp configs/$(LPCONFIG)/launchpad.key /etc/apache2/ssl/
 
 copy-apache-config: codehosting-dir
+	# Byte-compile scripts/_pythonpath.py first, otherwise Apache may do
+	# so as root and cause permission problems.
+	$(PY) -m py_compile scripts/_pythonpath.py
 	# We insert the absolute path to the branch-rewrite script
 	# into the Apache config as we copy the file into position.
 	set -e; \

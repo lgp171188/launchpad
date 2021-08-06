@@ -8,6 +8,7 @@ import imp
 import os.path
 import sys
 
+
 # Get path to this file.
 if __name__ == '__main__':
     filename = __file__
