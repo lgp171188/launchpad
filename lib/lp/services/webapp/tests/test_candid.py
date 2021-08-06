@@ -195,7 +195,7 @@ class TestRequestCandidDischarge(TestCaseWithFactory):
         caveat = macaroon.caveats[0]
         macaroon_raw = macaroon.serialize(JsonSerializer())
         request = LaunchpadTestRequest()
-        request_candid_discharge(
+        login_url = request_candid_discharge(
             request, macaroon_raw,
             "http://launchpad.test/after-candid?extra_key=extra+value",
             "field.discharge_macaroon",
@@ -224,10 +224,9 @@ class TestRequestCandidDischarge(TestCaseWithFactory):
                         })))),
             ]))
 
-        # We redirect to the correct URL.
-        self.assertEqual(307, request.response.getStatus())
+        # We return the correct URL.
         self.assertThat(
-            urlsplit(request.response.getHeader("Location")),
+            urlsplit(login_url),
             MatchesStructure(
                 scheme=Equals("https"),
                 netloc=Equals("candid.test"),

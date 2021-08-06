@@ -121,7 +121,11 @@ def _get_candid_login_url_for_discharge(request, macaroon, state,
 def request_candid_discharge(request, macaroon_raw, starting_url,
                              discharge_macaroon_field,
                              discharge_macaroon_action=None):
-    """Redirect to Candid to request a discharge for a given macaroon."""
+    """Request a discharge for a given macaroon from Candid.
+
+    Returns a Candid URL.  The caller should redirect to it by whatever
+    means is appropriate in context.
+    """
     if (not config.launchpad.candid_service_root or
             not config.launchpad.csrf_secret):
         raise CandidUnconfiguredError("The Candid service is not configured.")
@@ -151,10 +155,8 @@ def request_candid_discharge(request, macaroon_raw, starting_url,
         urlappend(allvhosts.configs["mainsite"].rooturl, "+candid-callback"),
         urlencode(starting_data))
 
-    login_url = _get_candid_login_url_for_discharge(
+    return _get_candid_login_url_for_discharge(
         request, macaroon, csrf_token, return_to)
-
-    request.response.redirect(login_url, temporary_if_possible=True)
 
 
 class CandidErrorView(LaunchpadView):
