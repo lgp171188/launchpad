@@ -82,22 +82,26 @@ def _deserialize_json_macaroon(macaroon_raw):
     return Macaroon.deserialize(macaroon_raw, JsonSerializer())
 
 
-def _extract_third_party_caveat(macaroon):
+def extract_candid_caveat(macaroon):
     """Extract the Candid third-party caveat from a macaroon."""
-    try:
-        return next(
-            caveat for caveat in macaroon.caveats
-            if caveat.location == config.launchpad.candid_service_root)
-    except StopIteration:
+    caveats = [
+        caveat for caveat in macaroon.caveats
+        if caveat.location == config.launchpad.candid_service_root]
+    if not caveats:
         raise BadCandidMacaroon(
-            "Missing Candid caveat: {}".format(
+            "Macaroon has no Candid caveat ({})".format(
                 config.launchpad.candid_service_root))
+    elif len(caveats) > 1:
+        raise BadCandidMacaroon(
+            "Macaroon has multiple Candid caveats ({})".format(
+                config.launchpad.candid_service_root))
+    return caveats[0]
 
 
 def _get_candid_login_url_for_discharge(request, macaroon, state,
                                         callback_url):
     """Get the login URL to web-discharge a third-party caveat."""
-    caveat = _extract_third_party_caveat(macaroon)
+    caveat = extract_candid_caveat(macaroon)
     response = _make_candid_request(
         request, "discharge",
         data={"id64": b64encode(caveat.caveat_id_bytes)}, expect_401=True)
@@ -183,7 +187,7 @@ class CandidCallbackView(LaunchpadView):
 
     def _get_serialized_discharge(self, request, macaroon, code):
         """Get the discharge macaroon generated after a Candid web login."""
-        caveat = _extract_third_party_caveat(macaroon)
+        caveat = extract_candid_caveat(macaroon)
         response = _make_candid_request(
             request, "discharge-token", json={"code": code})
         token = response.json()["token"]

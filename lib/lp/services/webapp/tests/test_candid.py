@@ -29,20 +29,58 @@ from zope.session.interfaces import ISession
 
 from lp.services.config import config
 from lp.services.webapp.candid import (
+    BadCandidMacaroon,
     CandidFailure,
     CandidUnconfiguredError,
+    extract_candid_caveat,
     request_candid_discharge,
     )
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     login_person,
+    TestCase,
     TestCaseWithFactory,
     )
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.layers import (
+    BaseLayer,
+    DatabaseFunctionalLayer,
+    )
 from lp.testing.pages import (
     extract_text,
     find_tags_by_class,
     )
+
+
+class TestExtractCandidCaveat(TestCase):
+
+    layer = BaseLayer
+
+    def setUp(self):
+        super().setUp()
+        self.pushConfig(
+            "launchpad", candid_service_root="https://candid.test/")
+
+    def test_no_candid_caveat(self):
+        macaroon = Macaroon(version=2)
+        self.assertRaisesWithContent(
+            BadCandidMacaroon,
+            "Macaroon has no Candid caveat (https://candid.test/)",
+            extract_candid_caveat, macaroon)
+
+    def test_one_candid_caveat(self):
+        macaroon = Macaroon(version=2)
+        macaroon.add_third_party_caveat("https://example.test/", "", "example")
+        macaroon.add_third_party_caveat("https://candid.test/", "", "identity")
+        self.assertEqual(macaroon.caveats[1], extract_candid_caveat(macaroon))
+
+    def test_multiple_candid_caveats(self):
+        macaroon = Macaroon(version=2)
+        macaroon.add_third_party_caveat("https://candid.test/", "", "one")
+        macaroon.add_third_party_caveat("https://candid.test/", "", "two")
+        self.assertRaisesWithContent(
+            BadCandidMacaroon,
+            "Macaroon has multiple Candid caveats (https://candid.test/)",
+            extract_candid_caveat, macaroon)
 
 
 class TestRequestCandidDischarge(TestCaseWithFactory):
