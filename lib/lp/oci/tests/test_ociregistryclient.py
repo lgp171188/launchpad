@@ -8,6 +8,7 @@ __metaclass__ = type
 import base64
 from datetime import timedelta
 from functools import partial
+from http.client import IncompleteRead
 import io
 import json
 import os
@@ -572,6 +573,35 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 "test-digest", push_rule,
                 None, 0, RegistryHTTPClient(push_rule))
         except ConnectionError:
+            # Check that tenacity and our counting agree
+            self.assertEqual(
+                5, self.client._upload.retry.statistics["attempt_number"])
+            self.assertEqual(5, self.retry_count)
+        except Exception:
+            # We should see the original exception, not a RetryError
+            raise
+
+    def test_upload_retries_incomplete_read(self):
+        # Use a separate counting mechanism so we're not entirely relying
+        # on tenacity to tell us that it has retried.
+        def count_retries(*args, **kwargs):
+            self.retry_count += 1
+            raise IncompleteRead(b'', 20)
+
+        self.useFixture(MockPatch(
+            'lp.oci.model.ociregistryclient.proxy_urlfetch',
+            side_effect=count_retries
+        ))
+        # Patch sleep so we don't need to change our arguments and the
+        # test is instant
+        self.client._upload.retry.sleep = lambda x: None
+
+        try:
+            push_rule = self.build.recipe.push_rules[0]
+            self.client._upload(
+                "test-digest", push_rule,
+                None, 0, RegistryHTTPClient(push_rule))
+        except IncompleteRead:
             # Check that tenacity and our counting agree
             self.assertEqual(
                 5, self.client._upload.retry.statistics["attempt_number"])
