@@ -48,6 +48,14 @@
             interface="lp.charms.interfaces.charmrecipe.ICharmRecipeBuildRequest" />
     </class>
 
+    <!-- CharmhubSecretsEncryptedContainer -->
+    <securedutility
+        class="lp.charms.model.charmrecipe.CharmhubSecretsEncryptedContainer"
+        provides="lp.services.crypto.interfaces.IEncryptedContainer"
+        name="charmhub-secrets">
+        <allow interface="lp.services.crypto.interfaces.IEncryptedContainer" />
+    </securedutility>
+
     <!-- CharmRecipeBuild -->
     <class class="lp.charms.model.charmrecipebuild.CharmRecipeBuild">
         <require
@@ -85,6 +93,13 @@
         provides="lp.buildmaster.interfaces.buildfarmjobbehaviour.IBuildFarmJobBehaviour"
         factory="lp.charms.model.charmrecipebuildbehaviour.CharmRecipeBuildBehaviour"
         permission="zope.Public" />
+
+    <!-- Charmhub interaction -->
+    <securedutility
+        class="lp.charms.model.charmhubclient.CharmhubClient"
+        provides="lp.charms.interfaces.charmhubclient.ICharmhubClient">
+        <allow interface="lp.charms.interfaces.charmhubclient.ICharmhubClient" />
+    </securedutility>
 
     <!-- Charm-related jobs -->
     <class class="lp.charms.model.charmrecipejob.CharmRecipeJob">

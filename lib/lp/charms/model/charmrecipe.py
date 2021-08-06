@@ -9,12 +9,15 @@ __all__ = [
     "get_charm_recipe_privacy_filter",
     ]
 
+import base64
 from operator import (
     attrgetter,
     itemgetter,
     )
 
 from lazr.lifecycle.event import ObjectCreatedEvent
+from pymacaroons import Macaroon
+from pymacaroons.serializers import JsonSerializer
 import pytz
 from storm.databases.postgres import JSON
 from storm.locals import (
@@ -49,8 +52,10 @@ from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.charms.adapters.buildarch import determine_instances_to_build
+from lp.charms.interfaces.charmhubclient import ICharmhubClient
 from lp.charms.interfaces.charmrecipe import (
     BadCharmRecipeSearchContext,
+    CannotAuthorizeCharmhubUploads,
     CannotFetchCharmcraftYaml,
     CannotParseCharmcraftYaml,
     CHARM_RECIPE_ALLOW_CREATE,
@@ -102,6 +107,9 @@ from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.product import Product
 from lp.registry.model.series import ACTIVE_STATUSES
+from lp.services.config import config
+from lp.services.crypto.interfaces import IEncryptedContainer
+from lp.services.crypto.model import NaClEncryptedContainerBase
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
@@ -126,6 +134,7 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
+from lp.services.webapp.candid import extract_candid_caveat
 from lp.soyuz.model.distroarchseries import (
     DistroArchSeries,
     PocketChroot,
@@ -647,6 +656,42 @@ class CharmRecipe(StormBase):
         order_by = Desc(CharmRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    def beginAuthorization(self):
+        """See `ICharmRecipe`."""
+        if self.store_name is None:
+            raise CannotAuthorizeCharmhubUploads(
+                "Cannot authorize uploads of a charm recipe with no store "
+                "name.")
+        charmhub_client = getUtility(ICharmhubClient)
+        root_macaroon_raw = charmhub_client.requestPackageUploadPermission(
+            self.store_name)
+        # Check that the macaroon has exactly one Candid caveat.
+        extract_candid_caveat(
+            Macaroon.deserialize(root_macaroon_raw, JsonSerializer()))
+        self.store_secrets = {"root": root_macaroon_raw}
+        return root_macaroon_raw
+
+    def completeAuthorization(self, unbound_discharge_macaroon_raw):
+        """See `ICharmRecipe`."""
+        if self.store_secrets is None or "root" not in self.store_secrets:
+            raise CannotAuthorizeCharmhubUploads(
+                "beginAuthorization must be called before "
+                "completeAuthorization.")
+        try:
+            Macaroon.deserialize(
+                unbound_discharge_macaroon_raw, JsonSerializer())
+        except Exception:
+            raise CannotAuthorizeCharmhubUploads(
+                "discharge_macaroon_raw is invalid.")
+        charmhub_client = getUtility(ICharmhubClient)
+        exchanged_macaroon_raw = charmhub_client.exchangeMacaroons(
+            self.store_secrets["root"], unbound_discharge_macaroon_raw)
+        container = getUtility(IEncryptedContainer, "charmhub-secrets")
+        assert container.can_encrypt
+        self.store_secrets["exchanged_encrypted"] = removeSecurityProxy(
+            container.encrypt(exchanged_macaroon_raw.encode()))
+        self.store_secrets.pop("root", None)
+
     def destroySelf(self):
         """See `ICharmRecipe`."""
         store = IStore(self)
@@ -920,6 +965,26 @@ class CharmRecipeSet:
             get_property_cache(recipe)._git_ref = None
         recipes.set(
             git_repository_id=None, git_path=None, date_last_modified=UTC_NOW)
+
+
+@implementer(IEncryptedContainer)
+class CharmhubSecretsEncryptedContainer(NaClEncryptedContainerBase):
+
+    @property
+    def public_key_bytes(self):
+        if config.charms.charmhub_secrets_public_key is not None:
+            return base64.b64decode(
+                config.charms.charmhub_secrets_public_key.encode())
+        else:
+            return None
+
+    @property
+    def private_key_bytes(self):
+        if config.charms.charmhub_secrets_private_key is not None:
+            return base64.b64decode(
+                config.charms.charmhub_secrets_private_key.encode())
+        else:
+            return None
 
 
 def get_charm_recipe_privacy_filter(user):
