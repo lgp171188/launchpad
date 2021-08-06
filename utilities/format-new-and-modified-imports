@@ -1,8 +1,0 @@
-#! /bin/sh
-#
-# Reformat imports in new and modified files.
-
-"$(dirname "$0")/find-changed-files.sh" | \
-    xargs -n1 | \
-    grep '\.py$' | \
-    xargs -r "$(dirname "$0")/format-imports"
