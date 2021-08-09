@@ -8,7 +8,6 @@ __all__ = [
     ]
 
 import base64
-import sys
 
 
 try:
@@ -26,12 +25,6 @@ from lp.services.librarian.browser import ProxiedLibraryFileAlias
 
 
 BUGS_XMLNS = 'https://launchpad.net/xmlns/2006/bugs'
-
-
-if sys.version_info[0] >= 3:
-    encodebytes = base64.encodebytes
-else:
-    encodebytes = base64.encodestring
 
 
 def addnode(parent, elementname, content, **attrs):
@@ -104,7 +97,8 @@ def serialise_bugtask(bugtask):
                     attachment.libraryfile.mimetype)
             # Attach the attachment file contents, base 64 encoded.
             addnode(attachment_node, 'contents',
-                    encodebytes(attachment.libraryfile.read()).decode('ASCII'))
+                    base64.encodebytes(
+                        attachment.libraryfile.read()).decode('ASCII'))
 
     return bug_node
 

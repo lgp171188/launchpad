@@ -13,7 +13,6 @@ __all__ = [
 
 from email.utils import parseaddr
 import re
-import string
 import xml.parsers.expat
 
 from defusedxml import minidom
@@ -190,8 +189,7 @@ class Bugzilla(ExternalBugTracker):
         bad_chars = b''.join(six.int2byte(i) for i in range(0, 32))
         for char in b'\n', b'\r', b'\t':
             bad_chars = bad_chars.replace(char, b'')
-        maketrans = bytes.maketrans if six.PY3 else string.maketrans
-        trans_map = maketrans(bad_chars, b' ' * len(bad_chars))
+        trans_map = bytes.maketrans(bad_chars, b' ' * len(bad_chars))
         contents = contents.translate(trans_map)
         # Don't use forbid_dtd=True here; Bugzilla XML responses seem to
         # include DOCTYPE declarations.

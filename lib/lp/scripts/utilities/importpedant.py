@@ -7,7 +7,6 @@ from operator import attrgetter
 import types
 import warnings
 
-import six
 from six.moves import builtins
 
 
@@ -174,8 +173,7 @@ class NotFoundPolicyViolation(PedantDisagreesError):
 # The names of the arguments form part of the interface of __import__(...),
 # and must not be changed, as code may choose to invoke __import__ using
 # keyword arguments - e.g. the encodings module in Python 2.6.
-def import_pedant(name, globals={}, locals={}, fromlist=[],
-                  level=(0 if six.PY3 else -1)):
+def import_pedant(name, globals={}, locals={}, fromlist=[], level=0):
     global naughty_imports
 
     module = original_import(name, globals, locals, fromlist, level)

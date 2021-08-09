@@ -228,7 +228,7 @@ def wsgi_native_string(s):
     Python 2, we enforce this here.
     """
     result = six.ensure_str(s, encoding='ISO-8859-1')
-    if six.PY3 and isinstance(s, six.text_type):
+    if isinstance(s, six.text_type):
         # Ensure we're limited to ISO-8859-1.
         result.encode('ISO-8859-1')
     return result

@@ -232,19 +232,16 @@ class PrettyPrinter(pprint.PrettyPrinter, object):
                 return '"%s"' % obj, True, False
             else:
                 return "'%s'" % obj.replace("'", "\\'"), True, False
-        elif sys.version_info[0] < 3 and isinstance(obj, long):
-            return repr(int(obj)), True, False
         else:
             return super(PrettyPrinter, self).format(
                 obj, contexts, maxlevels, level)
 
     # Disable wrapping of long strings on Python >= 3.5, which is unhelpful
     # in doctests.  There seems to be no reasonable public API for this.
-    if sys.version_info[:2] >= (3, 5):
-        _dispatch = dict(pprint.PrettyPrinter._dispatch)
-        del _dispatch[six.text_type.__repr__]
-        del _dispatch[bytes.__repr__]
-        del _dispatch[bytearray.__repr__]
+    _dispatch = dict(pprint.PrettyPrinter._dispatch)
+    del _dispatch[six.text_type.__repr__]
+    del _dispatch[bytes.__repr__]
+    del _dispatch[bytearray.__repr__]
 
 
 # XXX cjwatson 2018-05-13: Once all doctests are made safe for the standard

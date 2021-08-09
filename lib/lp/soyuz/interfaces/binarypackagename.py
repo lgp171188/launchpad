@@ -11,7 +11,6 @@ __all__ = [
     'IBinaryPackageNameSet',
     ]
 
-import six
 from zope.interface import Interface
 from zope.schema import (
     Int,
@@ -30,10 +29,6 @@ class IBinaryPackageName(Interface):
 
     def __str__():
         """Return the name"""
-
-    if six.PY2:
-        def __unicode__():
-            """Return the name"""
 
 
 class IBinaryPackageNameSet(Interface):

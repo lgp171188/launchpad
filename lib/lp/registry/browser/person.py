@@ -4296,9 +4296,6 @@ class ContactViaWebNotificationRecipientSet:
         """See `INotificationRecipientSet`."""
         return len(self) > 0
 
-    if six.PY2:
-        __nonzero__ = __bool__
-
     def getReason(self, person_or_email):
         """See `INotificationRecipientSet`."""
         if person_or_email not in self:

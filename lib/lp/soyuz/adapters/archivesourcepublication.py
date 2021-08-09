@@ -17,7 +17,6 @@ __all__ = [
 from collections import defaultdict
 
 from lazr.delegates import delegate_to
-import six
 from zope.component import getUtility
 
 from lp.registry.model.distroseries import DistroSeries
@@ -103,9 +102,6 @@ class ArchiveSourcePublications:
     def __bool__(self):
         """Are there any sources to iterate?"""
         return self.has_sources
-
-    if six.PY2:
-        __nonzero__ = __bool__
 
     def __iter__(self):
         """`ArchiveSourcePublication` iterator."""

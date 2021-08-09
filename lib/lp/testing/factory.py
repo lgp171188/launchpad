@@ -38,7 +38,6 @@ from itertools import count
 import os
 import sys
 from textwrap import dedent
-import types
 import uuid
 import warnings
 
@@ -5210,7 +5209,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by
 # other Python libraries.
-unwrapped_types = {
+unwrapped_types = frozenset({
     BaseRecipeBranch,
     DSCFile,
     Message,
@@ -5218,10 +5217,7 @@ unwrapped_types = {
     int,
     str,
     six.text_type,
-    }
-if sys.version_info[0] < 3:
-    unwrapped_types.add(types.InstanceType)
-unwrapped_types = frozenset(unwrapped_types)
+    })
 
 
 def is_security_proxied_or_harmless(obj):

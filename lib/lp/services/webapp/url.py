@@ -6,7 +6,6 @@
 __metaclass__ = type
 __all__ = ['urlappend', 'urlparse', 'urlsplit']
 
-import six
 import six.moves.urllib.parse as urlparse_module
 from six.moves.urllib.parse import (
     urljoin,
@@ -81,9 +80,7 @@ def urlappend(baseurl, path):
 
 def _ensure_ascii_str(url):
     """Ensure that `url` only contains ASCII, and convert it to a `str`."""
-    if six.PY2:
-        url = url.encode('ascii')
-    elif isinstance(url, bytes):
+    if isinstance(url, bytes):
         url = url.decode('ascii')
     else:
         # Ignore the result; just check that `url` is pure ASCII.

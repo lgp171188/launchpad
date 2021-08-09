@@ -10,8 +10,6 @@ __all__ = [
     'trap_fault',
     ]
 
-import sys
-
 from twisted.internet import defer
 from twisted.web import xmlrpc
 
@@ -68,7 +66,4 @@ def trap_fault(failure, *fault_classes):
     fault = failure.value
     if fault.faultCode in [cls.error_code for cls in fault_classes]:
         return fault
-    if sys.version_info >= (3, 0):
-        failure.raiseException()
-    else:
-        raise failure
+    failure.raiseException()

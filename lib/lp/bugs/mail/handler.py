@@ -13,7 +13,6 @@ import os
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.interfaces import IObjectCreatedEvent
-import six
 import transaction
 from zope.component import getUtility
 from zope.event import notify
@@ -69,9 +68,6 @@ class BugTaskCommandGroup:
     def __bool__(self):
         return len(self._commands) > 0
 
-    if six.PY2:
-        __nonzero__ = __bool__
-
     def __str__(self):
         text_commands = [str(cmd) for cmd in self.commands]
         return '\n'.join(text_commands).strip()
@@ -97,9 +93,6 @@ class BugCommandGroup(BugTaskCommandGroup):
             return True
         else:
             return super(BugCommandGroup, self).__bool__()
-
-    if six.PY2:
-        __nonzero__ = __bool__
 
     def __str__(self):
         text_commands = [super(BugCommandGroup, self).__str__()]

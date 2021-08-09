@@ -3,8 +3,6 @@
 
 __metaclass__ = type
 
-import sys
-
 from testtools.content import text_content
 from testtools.matchers import MatchesRegex
 import transaction
@@ -153,12 +151,10 @@ class TestBugSummaryRebuild(TestCaseWithFactory):
             rebuild_bugsummary_for_target(product, log)
         self.assertEqual(1, get_bugsummary_rows(product).count())
         self.assertEqual(0, get_bugsummaryjournal_rows(product).count())
-        long_type = int if sys.version_info[0] >= 3 else long
         self.assertThat(
             log.getLogBufferAndClear(),
             MatchesRegex(
-                'DEBUG Rebuilding %s\nDEBUG Added {.*: %r}' %
-                (product.name, long_type(1))))
+                'DEBUG Rebuilding %s\nDEBUG Added {.*: 1}' % product.name))
 
     def test_script(self):
         product = self.factory.makeProduct()

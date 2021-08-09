@@ -13,9 +13,11 @@ from datetime import (
     datetime,
     timedelta,
     )
-from difflib import unified_diff
+from difflib import (
+    diff_bytes,
+    unified_diff,
+    )
 import doctest
-from functools import partial
 import hashlib
 import re
 
@@ -142,14 +144,6 @@ from lp.testing.views import (
     create_initialized_view,
     create_view,
     )
-
-
-if six.PY3:
-    from difflib import diff_bytes
-
-    unified_diff_bytes = partial(diff_bytes, unified_diff)
-else:
-    unified_diff_bytes = unified_diff
 
 
 class GitHostingClientMixin:
@@ -1427,22 +1421,21 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
     def test_preview_diff_utf8(self):
         """A preview_diff in utf-8 should be decoded as utf-8."""
         text = ''.join(six.unichr(x) for x in range(255))
-        diff_bytes = ''.join(unified_diff([''], [text])).encode('utf-8')
-        self.setPreviewDiff(diff_bytes)
+        diff = ''.join(unified_diff([''], [text])).encode('utf-8')
+        self.setPreviewDiff(diff)
         transaction.commit()
         view = create_initialized_view(self.bmp, '+index')
-        self.assertEqual(diff_bytes.decode('utf-8'),
-                         view.preview_diff_text)
+        self.assertEqual(diff.decode('utf-8'), view.preview_diff_text)
         self.assertTrue(view.diff_available)
 
     def test_preview_diff_all_chars(self):
         """preview_diff should work on diffs containing all possible bytes."""
         text = b''.join(six.int2byte(x) for x in range(255))
-        diff_bytes = b''.join(unified_diff_bytes([b''], [text]))
-        self.setPreviewDiff(diff_bytes)
+        diff = b''.join(diff_bytes(unified_diff, [b''], [text]))
+        self.setPreviewDiff(diff)
         transaction.commit()
         view = create_initialized_view(self.bmp, '+index')
-        self.assertEqual(diff_bytes.decode('windows-1252', 'replace'),
+        self.assertEqual(diff.decode('windows-1252', 'replace'),
                          view.preview_diff_text)
         self.assertTrue(view.diff_available)
 
@@ -1450,8 +1443,8 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # The preview_diff will recover from a timeout set to get the
         # librarian content.
         text = b''.join(six.int2byte(x) for x in range(255))
-        diff_bytes = b''.join(unified_diff_bytes([b''], [text]))
-        preview_diff = self.setPreviewDiff(diff_bytes)
+        diff = b''.join(diff_bytes(unified_diff, [b''], [text]))
+        preview_diff = self.setPreviewDiff(diff)
         transaction.commit()
 
         def fake_open(*args):
@@ -1470,8 +1463,8 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # librarian content.  (This can happen e.g. on staging replicas of
         # the production database.)
         text = b''.join(six.int2byte(x) for x in range(255))
-        diff_bytes = b''.join(unified_diff_bytes([b''], [text]))
-        preview_diff = self.setPreviewDiff(diff_bytes)
+        diff = b''.join(diff_bytes(unified_diff, [b''], [text]))
+        preview_diff = self.setPreviewDiff(diff)
         transaction.commit()
 
         def fake_open(*args):
