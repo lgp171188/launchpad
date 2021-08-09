@@ -5,12 +5,6 @@
 
 __metaclass__ = type
 
-import sys
-
-from testtools.matchers import (
-    LessThan,
-    Not,
-    )
 from twisted.python.failure import Failure
 
 from lp.services.twistedsupport import extract_result
@@ -58,11 +52,7 @@ class TestTrapFault(TestCase):
     def assertRaisesFailure(self, failure, function, *args, **kwargs):
         try:
             function(*args, **kwargs)
-        except Failure as raised_failure:
-            self.assertThat(sys.version_info, LessThan((3, 0)))
-            self.assertEqual(failure, raised_failure)
         except Exception as raised_exception:
-            self.assertThat(sys.version_info, Not(LessThan((3, 0))))
             self.assertEqual(failure.value, raised_exception)
 
     def test_raises_non_faults(self):

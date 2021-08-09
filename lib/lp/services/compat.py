@@ -32,19 +32,13 @@ try:
 except ImportError:
     from unittest import mock
 
-import six
 
+def message_as_bytes(message):
+    from email.generator import BytesGenerator
+    from email.policy import compat32
 
-if six.PY3:
-    def message_as_bytes(message):
-        from email.generator import BytesGenerator
-        from email.policy import compat32
-
-        fp = io.BytesIO()
-        g = BytesGenerator(
-            fp, mangle_from_=False, maxheaderlen=0, policy=compat32)
-        g.flatten(message)
-        return fp.getvalue()
-else:
-    def message_as_bytes(message):
-        return message.as_string()
+    fp = io.BytesIO()
+    g = BytesGenerator(
+        fp, mangle_from_=False, maxheaderlen=0, policy=compat32)
+    g.flatten(message)
+    return fp.getvalue()

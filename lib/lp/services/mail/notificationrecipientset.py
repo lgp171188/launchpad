@@ -88,9 +88,6 @@ class NotificationRecipientSet:
         """See `INotificationRecipientSet`."""
         return bool(self._personToRationale)
 
-    if six.PY2:
-        __nonzero__ = __bool__
-
     def getReason(self, person_or_email):
         """See `INotificationRecipientSet`."""
         if zope_isinstance(person_or_email, six.string_types):
