@@ -154,7 +154,6 @@ setup(
         'boto3',
         'breezy',
         'celery',
-        'contextlib2; python_version < "3.3"',
         'cssselect',
         'cssutils',
         'defusedxml',

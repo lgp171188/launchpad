@@ -4,10 +4,7 @@
 __metaclass__ = type
 __all__ = ['start_launchpad']
 
-try:
-    from contextlib import ExitStack
-except ImportError:
-    from contextlib2 import ExitStack
+from contextlib import ExitStack
 import os
 import signal
 import subprocess
