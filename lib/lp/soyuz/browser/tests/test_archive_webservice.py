@@ -697,6 +697,32 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertEqual(1, response.jsonBody()["total_size"])
 
+    def test_getPublishedBinaries_private_subscriber(self):
+        # Subscribers can see published binaries for private archives.
+        private_archive = self.factory.makeArchive(private=True)
+        with admin_logged_in():
+            self.factory.makeBinaryPackagePublishingHistory(
+                archive=private_archive)
+        subscriber = self.factory.makePerson()
+        with person_logged_in(private_archive.owner):
+            private_archive.newSubscription(subscriber, private_archive.owner)
+        archive_url = api_url(private_archive)
+        ws = webservice_for_person(
+            subscriber, permission=OAuthPermission.READ_PRIVATE,
+            default_api_version="devel")
+        response = ws.named_get(archive_url, "getPublishedBinaries")
+        self.assertEqual(200, response.status)
+        self.assertEqual(1, response.jsonBody()["total_size"])
+
+    def test_getPublishedBinaries_private_non_subscriber(self):
+        private_archive = self.factory.makeArchive(private=True)
+        archive_url = api_url(private_archive)
+        ws = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.READ_PRIVATE,
+            default_api_version="devel")
+        response = ws.named_get(archive_url, "getPublishedBinaries")
+        self.assertEqual(401, response.status)
+
     def test_getPublishedBinaries_created_since_date(self):
         datecreated = self.factory.getUniqueDate()
         later_date = datecreated + timedelta(minutes=1)
