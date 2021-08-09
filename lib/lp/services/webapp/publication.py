@@ -98,8 +98,10 @@ from lp.services.webapp.vhosts import allvhosts
 
 METHOD_WRAPPER_TYPE = type({}.__setitem__)
 
-OFFSITE_POST_WHITELIST = ('/+storeblob', '/+request-token', '/+access-token',
-    '/+openid')
+OFFSITE_POST_WHITELIST = (
+    '/+storeblob', '/+request-token', '/+access-token',
+    '/+openid', '/+candid-callback',
+    )
 
 
 def maybe_block_offsite_form_post(request):
