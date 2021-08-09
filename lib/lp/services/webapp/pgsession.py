@@ -32,33 +32,30 @@ HOURS = 60 * MINUTES
 DAYS = 24 * HOURS
 
 
-if six.PY3:
-    class Python2FriendlyUnpickler(pickle._Unpickler):
-        """An unpickler that handles Python 2 datetime objects.
+class Python2FriendlyUnpickler(pickle._Unpickler):
+    """An unpickler that handles Python 2 datetime objects.
 
-        Python 3 versions before 3.6 fail to unpickle Python 2 datetime
-        objects (https://bugs.python.org/issue22005); even in Python >= 3.6
-        they require passing a different encoding to pickle.loads, which may
-        have undesirable effects on other objects being unpickled.  Work
-        around this by instead patching in a different encoding just for the
-        argument to datetime.datetime.
-        """
+    Python 3 versions before 3.6 fail to unpickle Python 2 datetime objects
+    (https://bugs.python.org/issue22005); even in Python >= 3.6 they require
+    passing a different encoding to pickle.loads, which may have undesirable
+    effects on other objects being unpickled.  Work around this by instead
+    patching in a different encoding just for the argument to
+    datetime.datetime.
+    """
 
-        def find_class(self, module, name):
-            if module == 'datetime' and name == 'datetime':
-                original_encoding = self.encoding
-                self.encoding = 'bytes'
+    def find_class(self, module, name):
+        if module == 'datetime' and name == 'datetime':
+            original_encoding = self.encoding
+            self.encoding = 'bytes'
 
-                def datetime_factory(pickle_data):
-                    self.encoding = original_encoding
-                    return datetime(pickle_data)
+            def datetime_factory(pickle_data):
+                self.encoding = original_encoding
+                return datetime(pickle_data)
 
-                return datetime_factory
-            else:
-                return super(Python2FriendlyUnpickler, self).find_class(
-                    module, name)
-else:
-    Python2FriendlyUnpickler = pickle.Unpickler
+            return datetime_factory
+        else:
+            return super(Python2FriendlyUnpickler, self).find_class(
+                module, name)
 
 
 class PGSessionBase:

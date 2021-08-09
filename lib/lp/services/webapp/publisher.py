@@ -632,11 +632,6 @@ class CanonicalAbsoluteURL:
         self.context = context
         self.request = request
 
-    if six.PY2:
-        def __unicode__(self):
-            """Returns the URL as a unicode string."""
-            raise NotImplementedError()
-
     def __str__(self):
         """Returns an ASCII string with all unicode characters url quoted."""
         return canonical_url(self.context, self.request)

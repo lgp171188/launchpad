@@ -211,9 +211,6 @@ class StepsToGo(six.Iterator):
     def __bool__(self):
         return bool(self._stack)
 
-    if six.PY2:
-        __nonzero__ = __bool__
-
 
 class ApplicationServerSettingRequestFactory:
     """Create a request and call its setApplicationServer method.
@@ -527,20 +524,9 @@ def get_query_string_params(request):
     if query_string is None:
         query_string = ''
 
-    kwargs = {}
-    if not six.PY2:
-        kwargs['encoding'] = 'UTF-8'
-        kwargs['errors'] = 'replace'
-    parsed_qs = parse_qs(query_string, keep_blank_values=True, **kwargs)
-    if six.PY2:
-        decoded_qs = {}
-        for key, values in six.iteritems(parsed_qs):
-            decoded_qs[key] = [
-                (value.decode('UTF-8', 'replace') if isinstance(value, bytes)
-                 else value)
-                for value in values]
-        parsed_qs = decoded_qs
-    return parsed_qs
+    return parse_qs(
+        query_string, keep_blank_values=True,
+        encoding='UTF-8', errors='replace')
 
 
 class LaunchpadBrowserRequestMixin:

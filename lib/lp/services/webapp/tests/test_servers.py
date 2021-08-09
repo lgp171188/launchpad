@@ -21,7 +21,6 @@ from lazr.restful.testing.webservice import (
     IGenericEntry,
     WebServiceTestCase,
     )
-import six
 from talisker.context import Context
 from talisker.logs import logging_context
 from zope.component import (
@@ -441,15 +440,12 @@ class TestBasicLaunchpadRequest(TestCase):
     def test_request_with_invalid_query_string_recovers(self):
         # When the query string has invalid utf-8, it is decoded with
         # replacement.
-        if six.PY2:
-            env = {'QUERY_STRING': 'field.title=subproc\xe9s '}
-        else:
-            # PEP 3333 requires environment variables to be native strings,
-            # so we can't actually get a bytes object in here on Python 3
-            # (both because the WSGI runner will never put it there, and
-            # because parse_qs would crash if we did).  Test the next best
-            # thing, namely percent-encoded invalid UTF-8.
-            env = {'QUERY_STRING': 'field.title=subproc%E9s '}
+        # PEP 3333 requires environment variables to be native strings, so
+        # we can't actually get a bytes object in here on Python 3 (both
+        # because the WSGI runner will never put it there, and because
+        # parse_qs would crash if we did).  Test the next best thing, namely
+        # percent-encoded invalid UTF-8.
+        env = {'QUERY_STRING': 'field.title=subproc%E9s '}
         request = LaunchpadBrowserRequest(io.BytesIO(b''), env)
         self.assertEqual(
             [u'subproc\ufffds '], request.query_string_params['field.title'])

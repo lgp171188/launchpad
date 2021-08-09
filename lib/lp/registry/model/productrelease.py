@@ -14,7 +14,6 @@ from io import (
     BytesIO,
     )
 import os
-import sys
 
 from sqlobject import (
     ForeignKey,
@@ -137,10 +136,7 @@ class ProductRelease(SQLBase):
             file_size = len(file_or_data)
             file_obj = BytesIO(file_or_data)
         else:
-            file_types = [BufferedIOBase]
-            if sys.version_info[0] < 3:
-                file_types.append(file)
-            assert isinstance(file_or_data, tuple(file_types)), (
+            assert isinstance(file_or_data, BufferedIOBase), (
                 "file_or_data is not an expected type")
             file_obj = file_or_data
             start = file_obj.tell()

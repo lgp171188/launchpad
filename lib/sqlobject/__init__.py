@@ -51,8 +51,6 @@ def sqlrepr(value, dbname=None):
             return "'f'"
     elif isinstance(value, int):
         return repr(int(value))
-    elif six.PY2 and isinstance(value, long):
-        return str(value)
     elif isinstance(value, float):
         return repr(value)
     elif value is None:

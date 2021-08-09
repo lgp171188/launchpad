@@ -31,10 +31,8 @@ class ProcessMail(LaunchpadScript):
         # with handling a mailbox, which we're avoiding here.
         if len(self.args) >= 1:
             from_file = open(self.args[0], 'rb')
-        elif sys.version_info[0] >= 3:
-            from_file = sys.stdin.buffer
         else:
-            from_file = sys.stdin
+            from_file = sys.stdin.buffer
         self.logger.debug("reading message from %r" % (from_file,))
         raw_mail = from_file.read()
         if from_file != sys.stdin:
