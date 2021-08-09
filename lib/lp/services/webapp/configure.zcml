@@ -445,4 +445,12 @@
     <class class="lp.services.webapp.status.StatusCheckView">
         <allow attributes="__call__" />
     </class>
+
+    <!-- Candid interaction. -->
+    <browser:page
+        for="lp.services.webapp.interfaces.ILaunchpadApplication"
+        class="lp.services.webapp.candid.CandidCallbackView"
+        permission="launchpad.AnyPerson"
+        name="+candid-callback"
+        />
 </configure>

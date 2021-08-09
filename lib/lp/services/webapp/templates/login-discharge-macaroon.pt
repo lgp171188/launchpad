@@ -24,7 +24,7 @@
 
   <body>
     <div class="top-portlet" metal:fill-slot="main">
-      <h1>OpenID transaction in progress</h1>
+      <h1>Authorization in progress</h1>
 
       <form tal:attributes="action view/params/starting_url"
             id="discharge-form"
