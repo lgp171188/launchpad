@@ -590,7 +590,6 @@ class IArchiveSubscriberView(Interface):
         :return: A new IArchiveAuthToken
         """
 
-
     @call_with(eager_load=True)
     @rename_parameters_as(
         name="binary_name", distroarchseries="distro_arch_series")
@@ -632,7 +631,6 @@ class IArchiveSubscriberView(Interface):
                           "publications since their last run."),
             required=False),
         )
-
     # Really returns IBinaryPackagePublishingHistory, see below for
     # patch to avoid circular import.
     @operation_returns_collection_of(Interface)
