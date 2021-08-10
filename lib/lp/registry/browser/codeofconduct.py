@@ -6,7 +6,7 @@
 __metaclass__ = type
 
 __all__ = [
-    'AffirmCodeofConductView',
+    'AffirmCodeOfConductView',
     'SignedCodeOfConductSetNavigation',
     'CodeOfConductSetNavigation',
     'CodeOfConductOverviewMenu',
@@ -162,7 +162,7 @@ class CodeOfConductSetView(LaunchpadView):
     page_title = 'Ubuntu Codes of Conduct'
 
 
-class AffirmCodeofConductView(LaunchpadFormView):
+class AffirmCodeOfConductView(LaunchpadFormView):
     """Add a new `SignedCodeOfConduct` via affirmation."""
     schema = ISignedCodeOfConduct
     field_names = ['affirmed']
@@ -176,7 +176,7 @@ class AffirmCodeofConductView(LaunchpadFormView):
         return self.context.content
 
     def setUpFields(self):
-        super(AffirmCodeofConductView, self).setUpFields()
+        super(AffirmCodeOfConductView, self).setUpFields()
         affirmed_field = self.form_fields['affirmed']
         affirmed_field.field.title = _(u"I agree to this Code of Conduct")
         affirmed_field.field.description = u""
