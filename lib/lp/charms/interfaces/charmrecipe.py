@@ -7,6 +7,7 @@ __metaclass__ = type
 __all__ = [
     "BadCharmRecipeSource",
     "BadCharmRecipeSearchContext",
+    "CannotAuthorizeCharmhubUploads",
     "CannotFetchCharmcraftYaml",
     "CannotParseCharmcraftYaml",
     "CHARM_RECIPE_ALLOW_CREATE",
@@ -143,6 +144,11 @@ class CharmRecipePrivacyMismatch(Exception):
 
 class BadCharmRecipeSearchContext(Exception):
     """The context is not valid for a charm recipe search."""
+
+
+@error_status(http_client.BAD_REQUEST)
+class CannotAuthorizeCharmhubUploads(Exception):
+    """Cannot authorize uploads of a charm to Charmhub."""
 
 
 class MissingCharmcraftYaml(Exception):
@@ -371,6 +377,30 @@ class ICharmRecipeView(Interface):
 
 class ICharmRecipeEdit(Interface):
     """`ICharmRecipe` methods that require launchpad.Edit permission."""
+
+    def beginAuthorization():
+        """Begin authorizing uploads of this charm recipe to Charmhub.
+
+        :raises CannotAuthorizeCharmhubUploads: if the charm recipe is not
+            properly configured for Charmhub uploads.
+        :raises BadRequestPackageUploadResponse: if Charmhub returns an
+            error or a response without a macaroon when asked to issue a
+            macaroon.
+        :raises BadCandidMacaroon: if the macaroon returned by Charmhub has
+            unsuitable Candid caveats.
+        :return: The serialized macaroon returned by the store.  The caller
+            should acquire a discharge macaroon for this caveat from Candid
+            and then call `completeAuthorization`.
+        """
+
+    def completeAuthorization(unbound_discharge_macaroon_raw):
+        """Complete authorizing uploads of this charm recipe to Charmhub.
+
+        :param unbound_discharge_macaroon_raw: The serialized unbound
+            discharge macaroon returned by Candid.
+        :raises CannotAuthorizeCharmhubUploads: if the charm recipe is not
+            properly configured for Charmhub uploads.
+        """
 
     def destroySelf():
         """Delete this charm recipe, provided that it has no builds."""
