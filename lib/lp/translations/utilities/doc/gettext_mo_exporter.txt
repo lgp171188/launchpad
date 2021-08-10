@@ -8,7 +8,7 @@ friendly.
 
 You can read more about MO file format on:
 
-http://www.gnu.org/software/gettext/manual/html_chapter/gettext_10.html#MO-Files
+https://www.gnu.org/software/gettext/manual/html_node/MO-Files.html
 
     >>> from zope.interface.verify import verifyObject
     >>> from lp.services.helpers import bytes_to_tarfile
