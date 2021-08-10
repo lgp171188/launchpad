@@ -24,7 +24,9 @@ __all__ = [
     'SignedCodeOfConductDeactiveView',
     ]
 
+from lazr.restful.interface import copy_field
 from zope.component import getUtility
+from zope.interface import Interface
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -164,7 +166,14 @@ class CodeOfConductSetView(LaunchpadView):
 
 class AffirmCodeOfConductView(LaunchpadFormView):
     """Add a new `SignedCodeOfConduct` via affirmation."""
-    schema = ISignedCodeOfConduct
+
+    class schema(Interface):
+        """Schema for affirming a code of conduct."""
+
+        affirmed = copy_field(
+            ISignedCodeOfConduct["affirmed"],
+            title=_("I agree to this Code of Conduct"), description=u"")
+
     field_names = ['affirmed']
 
     @property
@@ -174,12 +183,6 @@ class AffirmCodeOfConductView(LaunchpadFormView):
     @property
     def code_of_conduct(self):
         return self.context.content
-
-    def setUpFields(self):
-        super(AffirmCodeOfConductView, self).setUpFields()
-        affirmed_field = self.form_fields['affirmed']
-        affirmed_field.field.title = _(u"I agree to this Code of Conduct")
-        affirmed_field.field.description = u""
 
     @action('Affirm', name='affirm')
     def affirm_action(self, action, data):
