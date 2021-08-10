@@ -15,6 +15,7 @@ import os
 
 import pytz
 import scandir
+import six
 from storm.locals import (
     Bool,
     DateTime,
@@ -200,14 +201,20 @@ class SignedCodeOfConduct(StormBase):
 
     active = Bool(name='active', allow_none=False, default=False)
 
+    affirmed = Bool(name='affirmed', allow_none=True, default=False,)
+
+    version = Unicode(name='version', allow_none=True, default=None)
+
     def __init__(self, owner, signedcode=None, signing_key_fingerprint=None,
-            recipient=None, active=False):
+                 recipient=None, active=False, affirmed=False, version=None):
         super(SignedCodeOfConduct, self).__init__()
         self.owner = owner
         self.signedcode = signedcode
         self.signing_key_fingerprint = signing_key_fingerprint
         self.recipient = recipient
         self.active = active
+        self.affirmed = affirmed
+        self.version = version
 
     @cachedproperty
     def signingkey(self):
@@ -224,6 +231,9 @@ class SignedCodeOfConduct(StormBase):
             displayname += (': digitally signed by %s (%s)'
                             % (self.owner.displayname,
                                self.signingkey.displayname))
+        elif self.affirmed:
+            displayname += (': affirmed by %s'
+                            % self.owner.displayname)
         else:
             displayname += (': paper submission accepted by %s'
                             % self.recipient.displayname)
@@ -235,6 +245,21 @@ class SignedCodeOfConduct(StormBase):
         assert self.owner.preferredemail
         template = get_email_template(
             'signedcoc-acknowledge.txt', app='registry')
+        fromaddress = format_address(
+            "Launchpad Code Of Conduct System",
+            config.canonical.noreply_from_address)
+        replacements = {'user': self.owner.displayname,
+                        'content': content}
+        message = template % replacements
+        simple_sendmail(
+            fromaddress, str(self.owner.preferredemail.email),
+            subject, message)
+
+    def sendAffirmationEmail(self, subject, content):
+        """See ISignedCodeOfConduct."""
+        assert self.owner.preferredemail
+        template = get_email_template(
+            'signedcoc-affirmed.txt', app='registry')
         fromaddress = format_address(
             "Launchpad Code Of Conduct System",
             config.canonical.noreply_from_address)
@@ -336,6 +361,35 @@ class SignedCodeOfConductSet:
         subject = 'Your Code of Conduct signature has been acknowledged'
         content = ('Digitally Signed by %s\n' % sig.fingerprint)
         signed.sendAdvertisementEmail(subject, content)
+
+    def affirmAndStore(self, user, codetext):
+        """See `ISignedCodeOfConductSet`."""
+        try:
+            encoded_codetext = six.ensure_text(codetext)
+        except UnicodeDecodeError:
+            raise TypeError('Signed Code Could not be decoded as UTF-8')
+
+        # recover the current CoC release
+        coc = CodeOfConduct(getUtility(ICodeOfConductConf).currentrelease)
+        current = coc.content
+
+        if encoded_codetext.split() != six.ensure_text(current).split():
+            return ('The affirmed text does not match the current '
+                    'Code of Conduct.')
+
+        existing = not self.searchByUser(user).find(
+            SignedCodeOfConduct.version == six.ensure_text(coc.version)
+            ).is_empty()
+        if existing:
+            return 'You have already affirmed the current Code of Conduct.'
+
+        affirmed = SignedCodeOfConduct(
+            owner=user, affirmed=True, version=six.ensure_text(coc.version),
+            active=True)
+        # Send Advertisement Email
+        subject = 'You have affirmed the Code of Conduct'
+        content = ('Version affirmed: %s\n\n%s' % (coc.version, coc.content))
+        affirmed.sendAffirmationEmail(subject, content)
 
     def searchByDisplayname(self, displayname, searchfor=None):
         """See ISignedCodeOfConductSet."""

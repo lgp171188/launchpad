@@ -282,6 +282,13 @@
         attribute="__call__"
         />
     <browser:page
+        name="+affirm"
+        for="lp.registry.interfaces.codeofconduct.ICodeOfConduct"
+        class="lp.registry.browser.codeofconduct.AffirmCodeOfConductView"
+        permission="launchpad.AnyPerson"
+        template="../templates/signedcodeofconduct-affirm.pt"
+        />
+    <browser:page
         name="+sign"
         for="lp.registry.interfaces.codeofconduct.ICodeOfConduct"
         class="lp.registry.browser.codeofconduct.SignedCodeOfConductAddView"

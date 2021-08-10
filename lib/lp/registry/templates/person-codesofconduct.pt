@@ -42,8 +42,13 @@
                 </div>
                 <pre
                   class="lesser"
-                  tal:content="sig/signedcode"
+                  tal:content="sig/signedcode" tal:condition="sig/signedcode"
                 >SIGNATURE</pre>
+                <span
+                  class="lesser"
+                  tal:condition="sig/version">
+                  Version: <span tal:content="sig/version" />
+                  </span>
               </td>
             </tr>
           </tbody>
