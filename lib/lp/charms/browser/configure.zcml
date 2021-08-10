@@ -42,6 +42,12 @@
             template="../templates/charmrecipe-edit.pt" />
         <browser:page
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
+            class="lp.charms.browser.charmrecipe.CharmRecipeAuthorizeView"
+            permission="launchpad.Edit"
+            name="+authorize"
+            template="../templates/charmrecipe-authorize.pt" />
+        <browser:page
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
             class="lp.charms.browser.charmrecipe.CharmRecipeDeleteView"
             permission="launchpad.Edit"
             name="+delete"

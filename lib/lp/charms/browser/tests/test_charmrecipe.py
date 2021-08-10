@@ -5,19 +5,31 @@
 
 __metaclass__ = type
 
+import base64
 from datetime import (
     datetime,
     timedelta,
     )
+import json
 import re
+from urllib.parse import (
+    parse_qs,
+    urlsplit,
+    )
 
 from fixtures import FakeLogger
+from nacl.public import PrivateKey
+from pymacaroons import Macaroon
+from pymacaroons.serializers import JsonSerializer
 import pytz
+import responses
 import soupmatchers
 from testtools.matchers import (
     AfterPreprocessing,
+    ContainsDict,
     Equals,
     Is,
+    MatchesDict,
     MatchesListwise,
     MatchesStructure,
     )
@@ -40,14 +52,17 @@ from lp.charms.browser.charmrecipe import (
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CharmRecipeBuildRequestStatus,
+    ICharmRecipeSet,
     )
 from lp.registry.enums import PersonVisibility
+from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
+from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.testing import (
     BrowserTestCase,
     login,
@@ -57,6 +72,8 @@ from lp.testing import (
     TestCaseWithFactory,
     time_counter,
     )
+from lp.testing.fakemethod import FakeMethod
+from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -70,6 +87,7 @@ from lp.testing.pages import (
     find_main_content,
     find_tag_by_id,
     find_tags_by_class,
+    get_feedback_messages,
     )
 from lp.testing.publication import test_traverse
 from lp.testing.views import (
@@ -111,6 +129,13 @@ class BaseTestCharmRecipeView(BrowserTestCase):
         super(BaseTestCharmRecipeView, self).setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         self.useFixture(FakeLogger())
+        self.snap_store_client = FakeMethod()
+        self.snap_store_client.listChannels = FakeMethod(result=[
+            {"name": "stable", "display_name": "Stable"},
+            {"name": "edge", "display_name": "Edge"},
+            ])
+        self.useFixture(
+            ZopeUtilityFixture(self.snap_store_client, ISnapStoreClient))
         self.person = self.factory.makePerson(
             name="test-person", displayname="Test Person")
 
@@ -262,6 +287,115 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
             "charmcraft\nedge\ncore\nstable\ncore18\nbeta\n"
             "core20\nedge/feature\n",
             MatchesTagText(content, "auto_build_channels"))
+
+    @responses.activate
+    def test_create_new_recipe_store_upload(self):
+        # Creating a new recipe and asking for it to be automatically
+        # uploaded to Charmhub sets all the appropriate fields and redirects
+        # to Candid for authorization.
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        self.pushConfig(
+            "launchpad",
+            candid_service_root="https://candid.test/",
+            csrf_secret="test secret")
+        project = self.factory.makeProduct(
+            name="test-project", displayname="Test Project")
+        [git_ref] = self.factory.makeGitRefs()
+        view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
+        browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
+        browser.getControl(name="field.name").value = "charm-name"
+        browser.getControl(name="field.project").value = "test-project"
+        browser.getControl("Automatically upload to store").selected = True
+        browser.getControl("Registered store name").value = "charmhub-name"
+        self.assertFalse(browser.getControl("Stable").selected)
+        browser.getControl(name="field.store_channels.track").value = "track"
+        browser.getControl("Edge").selected = True
+        root_macaroon = Macaroon(version=2)
+        root_macaroon.add_third_party_caveat(
+            "https://candid.test/", "", "identity")
+        caveat = root_macaroon.caveats[0]
+        root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
+        responses.add(
+            "POST", "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw})
+        responses.add(
+            "POST", "https://candid.test/discharge", status=401,
+            json={
+                "Code": "interaction required",
+                "Message": (
+                    "macaroon discharge required: authentication required"),
+                "Info": {
+                    "InteractionMethods": {
+                        "browser-redirect": {
+                            "LoginURL": "https://candid.test/login-redirect",
+                            },
+                        },
+                    },
+                })
+        browser.getControl("Create charm recipe").click()
+        login_person(self.person)
+        recipe = getUtility(ICharmRecipeSet).getByName(
+            self.person, project, "charm-name")
+        self.assertThat(recipe, MatchesStructure.byEquality(
+            owner=self.person, project=project, name="charm-name",
+            source=git_ref, store_upload=True, store_name="charmhub-name",
+            store_secrets={"root": root_macaroon_raw},
+            store_channels=["track/edge"]))
+        self.assertThat(responses.calls, MatchesListwise([
+            MatchesStructure(
+                request=MatchesStructure(
+                    url=Equals("http://charmhub.example/v1/tokens"),
+                    method=Equals("POST"),
+                    body=AfterPreprocessing(
+                        lambda b: json.loads(b.decode()),
+                        Equals({
+                            "description": "charmhub-name for launchpad.test",
+                            "packages": [
+                                {"type": "charm", "name": "charmhub-name"},
+                                ],
+                            "permissions": [
+                                "package-manage-releases",
+                                "package-manage-revisions",
+                                ],
+                            })))),
+            MatchesStructure(
+                request=MatchesStructure(
+                    url=Equals("https://candid.test/discharge"),
+                    headers=ContainsDict({
+                        "Content-Type": Equals(
+                            "application/x-www-form-urlencoded"),
+                        }),
+                    body=AfterPreprocessing(parse_qs, MatchesDict({
+                        "id64": Equals(
+                            [base64.b64encode(
+                                caveat.caveat_id_bytes).decode()]),
+                        })))),
+            ]))
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertThat(
+            urlsplit(browser.headers["Location"]),
+            MatchesStructure(
+                scheme=Equals("https"),
+                netloc=Equals("candid.test"),
+                path=Equals("/login-redirect"),
+                query=AfterPreprocessing(parse_qs, ContainsDict({
+                    "return_to": MatchesListwise([
+                        AfterPreprocessing(urlsplit, MatchesStructure(
+                            scheme=Equals("http"),
+                            netloc=Equals("launchpad.test"),
+                            path=Equals("/+candid-callback"),
+                            query=AfterPreprocessing(parse_qs, MatchesDict({
+                                "starting_url": Equals(
+                                    [canonical_url(recipe) + "/+authorize"]),
+                                "discharge_macaroon_action": Equals(
+                                    ["field.actions.complete"]),
+                                "discharge_macaroon_field": Equals(
+                                    ["field.discharge_macaroon"]),
+                                })),
+                            fragment=Equals(""))),
+                        ]),
+                    })),
+                fragment=Equals("")))
 
 
 class TestCharmRecipeAdminView(BaseTestCharmRecipeView):
@@ -420,6 +554,209 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         self.assertEqual(
             "A public charm recipe cannot have a private repository.",
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
+
+
+class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
+
+    def setUp(self):
+        super().setUp()
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        self.pushConfig(
+            "launchpad",
+            candid_service_root="https://candid.test/",
+            csrf_secret="test secret")
+        self.recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, owner=self.person, store_upload=True,
+            store_name=self.factory.getUniqueUnicode())
+
+    def test_unauthorized(self):
+        # A user without edit access cannot authorize charm recipe uploads.
+        other_person = self.factory.makePerson()
+        self.assertRaises(
+            Unauthorized, self.getUserBrowser,
+            canonical_url(self.recipe) + "/+authorize", user=other_person)
+
+    @responses.activate
+    def test_begin_authorization(self):
+        # With no special form actions, we return a form inviting the user
+        # to begin authorization.  This allows (re-)authorizing uploads of
+        # an existing charm recipe without having to edit it.
+        recipe_url = canonical_url(self.recipe)
+        owner = self.recipe.owner
+        browser = self.getNonRedirectingBrowser(
+            url=recipe_url + "/+authorize", user=self.recipe.owner)
+        root_macaroon = Macaroon(version=2)
+        root_macaroon.add_third_party_caveat(
+            "https://candid.test/", "", "identity")
+        caveat = root_macaroon.caveats[0]
+        root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
+        responses.add(
+            "POST", "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw})
+        responses.add(
+            "POST", "https://candid.test/discharge", status=401,
+            json={
+                "Code": "interaction required",
+                "Message": (
+                    "macaroon discharge required: authentication required"),
+                "Info": {
+                    "InteractionMethods": {
+                        "browser-redirect": {
+                            "LoginURL": "https://candid.test/login-redirect",
+                            },
+                        },
+                    },
+                })
+        browser.getControl("Begin authorization").click()
+        with person_logged_in(owner):
+            self.assertThat(responses.calls, MatchesListwise([
+                MatchesStructure(
+                    request=MatchesStructure(
+                        url=Equals("http://charmhub.example/v1/tokens"),
+                        method=Equals("POST"),
+                        body=AfterPreprocessing(
+                            lambda b: json.loads(b.decode()),
+                            Equals({
+                                "description": (
+                                    "{} for launchpad.test".format(
+                                        self.recipe.store_name)),
+                                "packages": [
+                                    {"type": "charm",
+                                     "name": self.recipe.store_name},
+                                    ],
+                                "permissions": [
+                                    "package-manage-releases",
+                                    "package-manage-revisions",
+                                    ],
+                                })))),
+                MatchesStructure(
+                    request=MatchesStructure(
+                        url=Equals("https://candid.test/discharge"),
+                        headers=ContainsDict({
+                            "Content-Type": Equals(
+                                "application/x-www-form-urlencoded"),
+                            }),
+                        body=AfterPreprocessing(parse_qs, MatchesDict({
+                            "id64": Equals(
+                                [base64.b64encode(
+                                    caveat.caveat_id_bytes).decode()]),
+                            })))),
+                ]))
+            self.assertEqual(
+                {"root": root_macaroon_raw}, self.recipe.store_secrets)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertThat(
+            urlsplit(browser.headers["Location"]),
+            MatchesStructure(
+                scheme=Equals("https"),
+                netloc=Equals("candid.test"),
+                path=Equals("/login-redirect"),
+                query=AfterPreprocessing(parse_qs, ContainsDict({
+                    "return_to": MatchesListwise([
+                        AfterPreprocessing(urlsplit, MatchesStructure(
+                            scheme=Equals("http"),
+                            netloc=Equals("launchpad.test"),
+                            path=Equals("/+candid-callback"),
+                            query=AfterPreprocessing(parse_qs, MatchesDict({
+                                "starting_url": Equals(
+                                    [recipe_url + "/+authorize"]),
+                                "discharge_macaroon_action": Equals(
+                                    ["field.actions.complete"]),
+                                "discharge_macaroon_field": Equals(
+                                    ["field.discharge_macaroon"]),
+                                })),
+                            fragment=Equals(""))),
+                        ]),
+                    })),
+                fragment=Equals("")))
+
+    def test_complete_authorization_missing_discharge_macaroon(self):
+        # If the form does not include a discharge macaroon, the "complete"
+        # action fails.
+        with person_logged_in(self.recipe.owner):
+            self.recipe.store_secrets = {
+                "root": Macaroon(version=2).serialize(JsonSerializer()),
+                }
+            transaction.commit()
+            form = {"field.actions.complete": "1"}
+            view = create_initialized_view(
+                self.recipe, "+authorize", form=form, method="POST",
+                principal=self.recipe.owner)
+            html = view()
+            self.assertEqual(
+                "Uploads of %s to Charmhub were not authorized." %
+                self.recipe.name,
+                get_feedback_messages(html)[1])
+            self.assertNotIn("exchanged_encrypted", self.recipe.store_secrets)
+
+    @responses.activate
+    def test_complete_authorization(self):
+        # If the form includes a discharge macaroon, the "complete" action
+        # exchanges the root and discharge pair with Charmhub for a single
+        # macaroon, then succeeds and records the new secrets.
+        private_key = PrivateKey.generate()
+        self.pushConfig(
+            "charms",
+            charmhub_secrets_public_key=base64.b64encode(
+                bytes(private_key.public_key)).decode())
+        root_macaroon = Macaroon(version=2)
+        root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
+        unbound_discharge_macaroon = Macaroon(version=2)
+        unbound_discharge_macaroon_raw = unbound_discharge_macaroon.serialize(
+            JsonSerializer())
+        discharge_macaroon_raw = root_macaroon.prepare_for_request(
+            unbound_discharge_macaroon).serialize(JsonSerializer())
+        exchanged_macaroon = Macaroon(version=2)
+        exchanged_macaroon_raw = exchanged_macaroon.serialize(JsonSerializer())
+        responses.add(
+            "POST", "http://charmhub.example/v1/tokens/exchange",
+            json={"macaroon": exchanged_macaroon_raw})
+        with person_logged_in(self.recipe.owner):
+            self.recipe.store_secrets = {"root": root_macaroon_raw}
+            transaction.commit()
+            form = {
+                "field.actions.complete": "1",
+                "field.discharge_macaroon": unbound_discharge_macaroon_raw,
+                }
+            view = create_initialized_view(
+                self.recipe, "+authorize", form=form, method="POST",
+                principal=self.recipe.owner)
+            self.assertEqual(302, view.request.response.getStatus())
+            self.assertEqual(
+                canonical_url(self.recipe),
+                view.request.response.getHeader("Location"))
+            self.assertEqual(
+                "Uploads of %s to Charmhub are now authorized." %
+                self.recipe.name,
+                view.request.response.notifications[0].message)
+            self.pushConfig(
+                "charms",
+                charmhub_secrets_private_key=base64.b64encode(
+                    bytes(private_key)).decode())
+            container = getUtility(IEncryptedContainer, "charmhub-secrets")
+            self.assertThat(self.recipe.store_secrets, MatchesDict({
+                "exchanged_encrypted": AfterPreprocessing(
+                    lambda data: container.decrypt(data).decode(),
+                    Equals(exchanged_macaroon_raw)),
+                }))
+        self.assertThat(responses.calls, MatchesListwise([
+            MatchesStructure(
+                request=MatchesStructure(
+                    url=Equals("http://charmhub.example/v1/tokens/exchange"),
+                    method=Equals("POST"),
+                    headers=ContainsDict({
+                        "Macaroons": AfterPreprocessing(
+                            lambda v: json.loads(
+                                base64.b64decode(v.encode()).decode()),
+                            Equals([
+                                json.loads(m) for m in (
+                                    root_macaroon_raw,
+                                    discharge_macaroon_raw)])),
+                        }),
+                    body=AfterPreprocessing(
+                        lambda b: json.loads(b.decode()),
+                        Equals({})))),
+            ]))
 
 
 class TestCharmRecipeDeleteView(BaseTestCharmRecipeView):

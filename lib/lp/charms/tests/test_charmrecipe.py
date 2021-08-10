@@ -5,18 +5,28 @@
 
 __metaclass__ = type
 
+import base64
+import json
 from textwrap import dedent
 
+from nacl.public import PrivateKey
+from pymacaroons import Macaroon
+from pymacaroons.serializers import JsonSerializer
+import responses
 from storm.locals import Store
 from testtools.matchers import (
+    AfterPreprocessing,
+    ContainsDict,
     Equals,
     Is,
     MatchesDict,
+    MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
     )
 import transaction
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -35,6 +45,7 @@ from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.charms.interfaces.charmrecipe import (
     BadCharmRecipeSearchContext,
+    CannotAuthorizeCharmhubUploads,
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_BUILD_DISTRIBUTION,
     CharmRecipeBuildAlreadyPending,
@@ -59,6 +70,7 @@ from lp.code.errors import GitRepositoryBlobNotFound
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
+from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
@@ -553,6 +565,149 @@ class TestCharmRecipe(TestCaseWithFactory):
             recipe.destroySelf()
         self.assertFalse(
             getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
+
+
+class TestCharmRecipeAuthorization(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        self.pushConfig(
+            "launchpad", candid_service_root="https://candid.test/")
+
+    @responses.activate
+    def assertBeginsAuthorization(self, recipe, **kwargs):
+        root_macaroon = Macaroon(version=2)
+        root_macaroon.add_third_party_caveat(
+            "https://candid.test/", "", "identity")
+        root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
+        responses.add(
+            "POST", "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw})
+        self.assertEqual(root_macaroon_raw, recipe.beginAuthorization())
+        self.assertThat(responses.calls, MatchesListwise([
+            MatchesStructure(
+                request=MatchesStructure(
+                    url=Equals("http://charmhub.example/v1/tokens"),
+                    method=Equals("POST"),
+                    body=AfterPreprocessing(
+                        lambda b: json.loads(b.decode()),
+                        Equals({
+                            "description": (
+                                "{} for launchpad.test".format(
+                                    recipe.store_name)),
+                            "packages": [
+                                {"type": "charm", "name": recipe.store_name},
+                                ],
+                            "permissions": [
+                                "package-manage-releases",
+                                "package-manage-revisions",
+                                ],
+                            })))),
+            ]))
+        self.assertEqual({"root": root_macaroon_raw}, recipe.store_secrets)
+
+    def test_beginAuthorization(self):
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True, store_name=self.factory.getUniqueUnicode())
+        with person_logged_in(recipe.registrant):
+            self.assertBeginsAuthorization(recipe)
+
+    def test_beginAuthorization_unauthorized(self):
+        # A user without edit access cannot authorize charm recipe uploads.
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True, store_name=self.factory.getUniqueUnicode())
+        with person_logged_in(self.factory.makePerson()):
+            self.assertRaises(
+                Unauthorized, getattr, recipe, "beginAuthorization")
+
+    @responses.activate
+    def test_completeAuthorization(self):
+        private_key = PrivateKey.generate()
+        self.pushConfig(
+            "charms",
+            charmhub_secrets_public_key=base64.b64encode(
+                bytes(private_key.public_key)).decode())
+        root_macaroon = Macaroon(version=2)
+        root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
+        unbound_discharge_macaroon = Macaroon(version=2)
+        unbound_discharge_macaroon_raw = unbound_discharge_macaroon.serialize(
+            JsonSerializer())
+        discharge_macaroon_raw = root_macaroon.prepare_for_request(
+            unbound_discharge_macaroon).serialize(JsonSerializer())
+        exchanged_macaroon = Macaroon(version=2)
+        exchanged_macaroon_raw = exchanged_macaroon.serialize(JsonSerializer())
+        responses.add(
+            "POST", "http://charmhub.example/v1/tokens/exchange",
+            json={"macaroon": exchanged_macaroon_raw})
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True, store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": root_macaroon_raw})
+        with person_logged_in(recipe.registrant):
+            recipe.completeAuthorization(unbound_discharge_macaroon_raw)
+            self.pushConfig(
+                "charms",
+                charmhub_secrets_private_key=base64.b64encode(
+                    bytes(private_key)).decode())
+            container = getUtility(IEncryptedContainer, "charmhub-secrets")
+            self.assertThat(recipe.store_secrets, MatchesDict({
+                "exchanged_encrypted": AfterPreprocessing(
+                    lambda data: container.decrypt(data).decode(),
+                    Equals(exchanged_macaroon_raw)),
+                }))
+        self.assertThat(responses.calls, MatchesListwise([
+            MatchesStructure(
+                request=MatchesStructure(
+                    url=Equals("http://charmhub.example/v1/tokens/exchange"),
+                    method=Equals("POST"),
+                    headers=ContainsDict({
+                        "Macaroons": AfterPreprocessing(
+                            lambda v: json.loads(
+                                base64.b64decode(v.encode()).decode()),
+                            Equals([
+                                json.loads(m) for m in (
+                                    root_macaroon_raw,
+                                    discharge_macaroon_raw)])),
+                        }),
+                    body=AfterPreprocessing(
+                        lambda b: json.loads(b.decode()),
+                        Equals({})))),
+            ]))
+
+    def test_completeAuthorization_without_beginAuthorization(self):
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True, store_name=self.factory.getUniqueUnicode())
+        discharge_macaroon = Macaroon(version=2)
+        with person_logged_in(recipe.registrant):
+            self.assertRaisesWithContent(
+                CannotAuthorizeCharmhubUploads,
+                "beginAuthorization must be called before "
+                "completeAuthorization.",
+                recipe.completeAuthorization,
+                discharge_macaroon.serialize(JsonSerializer()))
+
+    def test_completeAuthorization_unauthorized(self):
+        root_macaroon = Macaroon(version=2)
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True, store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": root_macaroon.serialize(JsonSerializer())})
+        with person_logged_in(self.factory.makePerson()):
+            self.assertRaises(
+                Unauthorized, getattr, recipe, "completeAuthorization")
+
+    def test_completeAuthorization_malformed_discharge_macaroon(self):
+        root_macaroon = Macaroon(version=2)
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True, store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": root_macaroon.serialize(JsonSerializer())})
+        with person_logged_in(recipe.registrant):
+            self.assertRaisesWithContent(
+                CannotAuthorizeCharmhubUploads,
+                "discharge_macaroon_raw is invalid.",
+                recipe.completeAuthorization, "nonsense")
 
 
 class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):

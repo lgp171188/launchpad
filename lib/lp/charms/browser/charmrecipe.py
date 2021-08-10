@@ -7,6 +7,7 @@ __metaclass__ = type
 __all__ = [
     "CharmRecipeAddView",
     "CharmRecipeAdminView",
+    "CharmRecipeAuthorizeView",
     "CharmRecipeContextMenu",
     "CharmRecipeDeleteView",
     "CharmRecipeEditView",
@@ -22,6 +23,7 @@ from lazr.restful.interface import (
     use_template,
     )
 from zope.component import getUtility
+from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import (
     implementer,
     Interface,
@@ -43,7 +45,11 @@ from lp.app.browser.tales import format_link
 from lp.charms.browser.widgets.charmrecipebuildchannels import (
     CharmRecipeBuildChannelsWidget,
     )
+from lp.charms.interfaces.charmhubclient import (
+    BadRequestPackageUploadResponse,
+    )
 from lp.charms.interfaces.charmrecipe import (
+    CannotAuthorizeCharmhubUploads,
     ICharmRecipe,
     ICharmRecipeSet,
     NoSuchCharmRecipe,
@@ -64,11 +70,13 @@ from lp.services.webapp import (
     Navigation,
     NavigationMenu,
     stepthrough,
+    structured,
     )
 from lp.services.webapp.breadcrumb import (
     Breadcrumb,
     NameBreadcrumb,
     )
+from lp.services.webapp.candid import request_candid_discharge
 from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.snappy.browser.widgets.storechannels import StoreChannelsWidget
 from lp.soyuz.browser.build import get_build_by_id_str
@@ -130,7 +138,7 @@ class CharmRecipeNavigationMenu(NavigationMenu):
 
     facet = "overview"
 
-    links = ("admin", "edit", "delete")
+    links = ("admin", "edit", "authorize", "delete")
 
     @enabled_with_permission("launchpad.Admin")
     def admin(self):
@@ -139,6 +147,14 @@ class CharmRecipeNavigationMenu(NavigationMenu):
     @enabled_with_permission("launchpad.Edit")
     def edit(self):
         return Link("+edit", "Edit charm recipe", icon="edit")
+
+    @enabled_with_permission("launchpad.Edit")
+    def authorize(self):
+        if self.context.store_secrets:
+            text = "Reauthorize Charmhub uploads"
+        else:
+            text = "Authorize Charmhub uploads"
+        return Link("+authorize", text, icon="edit")
 
     @enabled_with_permission("launchpad.Edit")
     def delete(self):
@@ -264,7 +280,26 @@ class ICharmRecipeEditSchema(Interface):
     store_channels = copy_field(ICharmRecipe["store_channels"], required=True)
 
 
-class CharmRecipeAddView(LaunchpadFormView):
+def log_oops(error, request):
+    """Log an oops report without raising an error."""
+    info = (error.__class__, error, None)
+    getUtility(IErrorReportingUtility).raising(info, request)
+
+
+class CharmRecipeAuthorizeMixin:
+
+    def requestAuthorization(self, recipe):
+        try:
+            self.next_url = CharmRecipeAuthorizeView.requestAuthorization(
+                recipe, self.request)
+        except BadRequestPackageUploadResponse as e:
+            self.setFieldError(
+                "store_upload",
+                "Cannot get permission from Charmhub to upload this package.")
+            log_oops(e, self.request)
+
+
+class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
     """View for creating charm recipes."""
 
     page_title = label = "Create a new charm recipe"
@@ -336,7 +371,10 @@ class CharmRecipeAddView(LaunchpadFormView):
             store_upload=data["store_upload"],
             store_name=data["store_name"],
             store_channels=data.get("store_channels"))
-        self.next_url = canonical_url(recipe)
+        if data["store_upload"]:
+            self.requestAuthorization(recipe)
+        else:
+            self.next_url = canonical_url(recipe)
 
     def validate(self, data):
         super(CharmRecipeAddView, self).validate(data)
@@ -354,7 +392,8 @@ class CharmRecipeAddView(LaunchpadFormView):
                     "this name." % (owner.display_name, project.display_name))
 
 
-class BaseCharmRecipeEditView(LaunchpadEditFormView):
+class BaseCharmRecipeEditView(
+        CharmRecipeAuthorizeMixin, LaunchpadEditFormView):
 
     schema = ICharmRecipeEditSchema
 
@@ -391,6 +430,16 @@ class BaseCharmRecipeEditView(LaunchpadEditFormView):
                     "git_ref",
                     "A public charm recipe cannot have a private repository.")
 
+    def _needCharmhubReauth(self, data):
+        """Does this change require reauthorizing to Charmhub?"""
+        store_upload = data.get("store_upload", False)
+        store_name = data.get("store_name")
+        if not store_upload or store_name is None:
+            return False
+        return (
+            not self.context.store_upload or
+            store_name != self.context.store_name)
+
     @action("Update charm recipe", name="update")
     def request_action(self, action, data):
         if not data.get("auto_build", False):
@@ -402,8 +451,12 @@ class BaseCharmRecipeEditView(LaunchpadEditFormView):
                 del data["store_name"]
             if "store_channels" in data:
                 del data["store_channels"]
+        need_charmhub_reauth = self._needCharmhubReauth(data)
         self.updateContextFromData(data)
-        self.next_url = canonical_url(self.context)
+        if need_charmhub_reauth:
+            self.requestAuthorization(self.context)
+        else:
+            self.next_url = canonical_url(self.context)
 
     @property
     def adapters(self):
@@ -464,6 +517,69 @@ class CharmRecipeEditView(BaseCharmRecipeEditView):
                         (owner.display_name, project.display_name))
             except NoSuchCharmRecipe:
                 pass
+
+
+class CharmRecipeAuthorizeView(LaunchpadEditFormView):
+    """View for authorizing charm recipe uploads to Charmhub."""
+
+    @property
+    def label(self):
+        return "Authorize Charmhub uploads of %s" % self.context.name
+
+    page_title = "Authorize Charmhub uploads"
+
+    class schema(Interface):
+        """Schema for authorizing charm recipe uploads to Charmhub."""
+
+        discharge_macaroon = TextLine(
+            title="Serialized discharge macaroon", required=True)
+
+    render_context = False
+
+    focusedElementScript = None
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    @classmethod
+    def requestAuthorization(cls, recipe, request):
+        """Begin the process of authorizing uploads of a charm recipe."""
+        try:
+            root_macaroon_raw = recipe.beginAuthorization()
+        except CannotAuthorizeCharmhubUploads as e:
+            request.response.addInfoNotification(str(e))
+            request.response.redirect(canonical_url(recipe))
+        else:
+            base_url = canonical_url(recipe, view_name="+authorize")
+            return request_candid_discharge(
+                request, root_macaroon_raw, base_url,
+                "field.discharge_macaroon",
+                discharge_macaroon_action="field.actions.complete")
+
+    @action("Begin authorization", name="begin")
+    def begin_action(self, action, data):
+        login_url = self.requestAuthorization(self.context, self.request)
+        if login_url is not None:
+            self.request.response.redirect(login_url)
+
+    @action("Complete authorization", name="complete")
+    def complete_action(self, action, data):
+        if not data.get("discharge_macaroon"):
+            self.addError(structured(
+                _("Uploads of %(recipe)s to Charmhub were not authorized."),
+                recipe=self.context.name))
+            return
+        self.context.completeAuthorization(data["discharge_macaroon"])
+        self.request.response.addInfoNotification(structured(
+            _("Uploads of %(recipe)s to Charmhub are now authorized."),
+            recipe=self.context.name))
+        self.request.response.redirect(canonical_url(self.context))
+
+    @property
+    def adapters(self):
+        """See `LaunchpadFormView`."""
+        return {self.schema: self.context}
 
 
 class CharmRecipeDeleteView(BaseCharmRecipeEditView):
