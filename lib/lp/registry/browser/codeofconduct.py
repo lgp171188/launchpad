@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 __all__ = [
+    'AffirmCodeOfConductView',
     'SignedCodeOfConductSetNavigation',
     'CodeOfConductSetNavigation',
     'CodeOfConductOverviewMenu',
@@ -23,8 +24,11 @@ __all__ = [
     'SignedCodeOfConductDeactiveView',
     ]
 
+from lazr.restful.interface import copy_field
 from zope.component import getUtility
+from zope.interface import Interface
 
+from lp import _
 from lp.app.browser.launchpadform import (
     action,
     LaunchpadFormView,
@@ -158,6 +162,38 @@ class CodeOfConductSetView(LaunchpadView):
     """Simple view class for CoCSet page."""
 
     page_title = 'Ubuntu Codes of Conduct'
+
+
+class AffirmCodeOfConductView(LaunchpadFormView):
+    """Add a new `SignedCodeOfConduct` via affirmation."""
+
+    class schema(Interface):
+        """Schema for affirming a code of conduct."""
+
+        affirmed = copy_field(
+            ISignedCodeOfConduct["affirmed"],
+            title=_("I agree to this Code of Conduct"), description=u"")
+
+    field_names = ['affirmed']
+
+    @property
+    def page_title(self):
+        return "Affirm %s" % self.context.title
+
+    @property
+    def code_of_conduct(self):
+        return self.context.content
+
+    @action('Affirm', name='affirm')
+    def affirm_action(self, action, data):
+        if data.get('affirmed'):
+            signedcocset = getUtility(ISignedCodeOfConductSet)
+            error_message = signedcocset.affirmAndStore(
+                self.user, self.context.content)
+            if error_message:
+                self.addError(error_message)
+                return
+        self.next_url = canonical_url(self.user) + '/+codesofconduct'
 
 
 class SignedCodeOfConductAddView(LaunchpadFormView):

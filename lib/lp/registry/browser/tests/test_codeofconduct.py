@@ -171,3 +171,27 @@ class TestCodeOfConductBrowser(BrowserTestCase):
         self.assertThat(
             browser.headers['Content-type'],
             MatchesRegex(r'^text/plain;charset="?utf-8"?$'))
+
+
+class TestAffirmCodeOfConductView(BrowserTestCase):
+    """Test the affirmation view for the CoC"""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_affirm(self):
+        """Check we can affirm a CoC"""
+        user = self.factory.makePerson()
+        name = user.name
+        displayname = user.displayname
+        coc = getUtility(ICodeOfConductSet)['2.0']
+        content = coc.content
+        browser = self.getViewBrowser(coc, "+affirm", user=user)
+        self.assertIn(content, browser.contents)
+        browser.getControl('I agree to this Code of Conduct').click()
+        browser.getControl('Affirm').click()
+        self.assertEqual(
+            "http://launchpad.test/~{}/+codesofconduct".format(name),
+            browser.url)
+        self.assertIn(
+            "affirmed by {}".format(displayname),
+            browser.contents)

@@ -85,11 +85,21 @@ class ISignedCodeOfConduct(Interface):
                                 "is considered active.")
                   )
 
+    version = Text(title=_("Version"))
+
     displayname = Attribute("Fancy Title for CoC.")
+
+    affirmed = Bool(title=_("Affirmed"),
+                    description=_("Whether this CoC has been affirmed."))
 
     def sendAdvertisementEmail(subject, content):
         """Send Advertisement email to signature owner preferred address
         containing arbitrary content and subject.
+        """
+
+    def sendAffirmationEmail(subject, content):
+        """Send confirmation of affirmation email to signature owner preferred
+        address containing arbitrary content and subject.
         """
 
 
@@ -126,6 +136,9 @@ class ISignedCodeOfConductSet(Interface):
 
     def verifyAndStore(user, signedcode):
         """Verify and Store a Signed CoC."""
+
+    def affirmAndStore(user):
+        """Affirm and Store a Signed CoC."""
 
     def searchByDisplayname(displayname, searchfor=None):
         """Search SignedCoC by Owner.displayname"""
