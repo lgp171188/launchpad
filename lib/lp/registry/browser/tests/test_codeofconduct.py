@@ -175,7 +175,7 @@ class TestCodeOfConductBrowser(BrowserTestCase):
             MatchesRegex(r'^text/plain;charset="?utf-8"?$'))
 
 
-class TestCodeOfConductAffirmView(BrowserTestCase):
+class TestAffirmCodeOfConductView(BrowserTestCase):
     """Test the affirmation view for the CoC"""
 
     layer = DatabaseFunctionalLayer
@@ -189,7 +189,7 @@ class TestCodeOfConductAffirmView(BrowserTestCase):
         content = coc.content
         browser = self.getViewBrowser(coc, "+affirm", user=user)
         self.assertIn(content, browser.contents)
-        browser.getControl(' I agree to this Code of Conduct').click()
+        browser.getControl('I agree to this Code of Conduct').click()
         browser.getControl('Affirm').click()
         self.assertEqual(
             "http://launchpad.test/~{}/+codesofconduct".format(name),
