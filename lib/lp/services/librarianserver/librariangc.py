@@ -5,10 +5,7 @@
 
 __metaclass__ = type
 
-try:
-    from contextlib import ExitStack
-except ImportError:
-    from contextlib2 import ExitStack
+from contextlib import ExitStack
 from datetime import (
     datetime,
     timedelta,

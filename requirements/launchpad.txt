@@ -29,7 +29,6 @@ Chameleon==3.6.2
 configobj==5.0.6
 contextvars==2.4
 constantly==15.1.0
-contextlib2==0.6.0.post1
 cookies==2.2.1
 cryptography==2.7
 cssselect==0.9.1
