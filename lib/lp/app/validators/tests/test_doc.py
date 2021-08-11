@@ -19,7 +19,7 @@ def test_suite():
     suite = unittest.TestSuite()
     test = LayeredDocFileSuite(
         'validation.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer)
     suite.addTest(test)
     return suite

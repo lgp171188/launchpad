@@ -244,10 +244,7 @@ class PrettyPrinter(pprint.PrettyPrinter, object):
     del _dispatch[bytearray.__repr__]
 
 
-# XXX cjwatson 2018-05-13: Once all doctests are made safe for the standard
-# __future__ imports, the `future=True` behaviour should become
-# unconditional.
-def setGlobs(test, future=False):
+def setGlobs(test):
     """Add the common globals for testing system documentation."""
     test.globs['ANONYMOUS'] = ANONYMOUS
     test.globs['login'] = login
@@ -270,16 +267,10 @@ def setGlobs(test, future=False):
     test.globs['six'] = six
     test.globs['backslashreplace'] = backslashreplace
 
-    if future:
-        import __future__
-        for future_item in (
-                'absolute_import', 'print_function', 'unicode_literals'):
-            test.globs[future_item] = getattr(__future__, future_item)
 
-
-def setUp(test, future=False):
+def setUp(test):
     """Setup the common globals and login for testing system documentation."""
-    setGlobs(test, future=future)
+    setGlobs(test)
     # Set up an anonymous interaction.
     login(ANONYMOUS)
 

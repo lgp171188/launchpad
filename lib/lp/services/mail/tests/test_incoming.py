@@ -391,7 +391,7 @@ class TestExtractAddresses(TestCaseWithFactory):
 
 
 def setUp(test):
-    setGlobs(test, future=True)
+    setGlobs(test)
     test._old_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
     switch_dbuser(config.processmail.dbuser)
 

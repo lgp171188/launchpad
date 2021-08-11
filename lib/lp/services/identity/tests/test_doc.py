@@ -9,14 +9,11 @@ import os
 
 from lp.services.testing import build_test_suite
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.systemdocs import setUp
 
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 
 def test_suite():
-    suite = build_test_suite(
-        here, layer=DatabaseFunctionalLayer,
-        setUp=lambda test: setUp(test, future=True))
+    suite = build_test_suite(here, layer=DatabaseFunctionalLayer)
     return suite

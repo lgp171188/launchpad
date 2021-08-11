@@ -58,7 +58,7 @@ def test_suite():
     suite.addTest(
         LayeredDocFileSuite(
             'test_logger.txt',
-            setUp=lambda test: setGlobs(test, future=True), layer=BaseLayer))
+            setUp=setGlobs, layer=BaseLayer))
     suite.addTest(
         unittest.TestLoader().loadTestsFromName(__name__))
     return suite

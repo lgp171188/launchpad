@@ -32,7 +32,7 @@ def test_suite():
         path = filename
         one_test = LayeredDocFileSuite(
             path,
-            setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+            setUp=setUp, tearDown=tearDown,
             layer=LaunchpadFunctionalLayer,
             stdout_logging_level=logging.WARNING
             )

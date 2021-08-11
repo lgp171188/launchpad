@@ -22,7 +22,7 @@ def test_suite():
 
     test = LayeredDocFileSuite(
         'decoratedresultset.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=DatabaseFunctionalLayer)
     suite.addTest(test)
     return suite

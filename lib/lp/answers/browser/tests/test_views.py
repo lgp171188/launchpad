@@ -50,15 +50,12 @@ def test_suite():
     loader = unittest.TestLoader()
     suite.addTest(loader.loadTestsFromTestCase(TestEmailObfuscated))
     suite.addTest(LayeredDocFileSuite(
-        'question-subscribe_me.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        'question-subscribe_me.txt', setUp=setUp, tearDown=tearDown,
         layer=DatabaseFunctionalLayer))
     suite.addTest(LayeredDocFileSuite(
-        'views.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        'views.txt', setUp=setUp, tearDown=tearDown,
         layer=DatabaseFunctionalLayer))
     suite.addTest(LayeredDocFileSuite(
-        'faq-views.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        'faq-views.txt', setUp=setUp, tearDown=tearDown,
         layer=DatabaseFunctionalLayer))
     return suite

@@ -8,12 +8,10 @@ Run the doctests.
 import os
 
 from lp.services.testing import build_doctest_suite
-from lp.testing.systemdocs import setUp
 
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 
 def test_suite():
-    return build_doctest_suite(
-        here, '', setUp=lambda test: setUp(test, future=True))
+    return build_doctest_suite(here, '')
