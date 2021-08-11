@@ -15,7 +15,8 @@ branches.
 
     >>> browser.open(url)
 
-Since the links point to the code subdomain, the links are relative to the root.
+Since the links point to the code subdomain, the links are relative to the
+root.
 
     >>> div = find_tag_by_id(browser.contents, 'nearby-branches')
     >>> for anchor in div.find_all('a'):

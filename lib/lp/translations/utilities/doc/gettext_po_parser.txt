@@ -216,7 +216,8 @@ and a translation header with some fields set.
     ...     Plural-Forms: nplurals=2; plural=n != 1;
     ...     """)
 
-Once we do the update, the resulting output will be a mix between both headers.
+Once we do the update, the resulting output will be a mix between both
+headers.
 
     >>> translation_header.updateFromTemplateHeader(template_header)
     >>> print(translation_header.getRawContent())

@@ -56,8 +56,8 @@ Demonstrating a navigation class
 --------------------------------
 
 In order to demonstrate a navigation class, we need to create an interface
-for the thing being navigated.  Rather than use a standard Launchpad interface,
-we'll define one here.
+for the thing being navigated.  Rather than use a standard Launchpad
+interface, we'll define one here.
 
     >>> from zope.interface import Interface, Attribute, implementer
 
@@ -355,10 +355,10 @@ stepthrough traversals
 You can say that there is a traversal to particular subobjects that occurs
 through a particular "namespace", such as '+bug' or '+language'.
 
-A stepthrough traversal can return None or raise NotFoundError to indicate that
-the traversal actually failed.  If this happens, then the whole traversal
-will have failed.  No further steps, including default traversal, will be
-tried.
+A stepthrough traversal can return None or raise NotFoundError to indicate
+that the traversal actually failed.  If this happens, then the whole
+traversal will have failed.  No further steps, including default traversal,
+will be tried.
 
 This is step three:
 

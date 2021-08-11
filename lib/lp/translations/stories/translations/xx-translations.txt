@@ -140,7 +140,8 @@ pofile) for evolution-2.2
     >>> print(browser.getLink('man').url)
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/man/hr/+translate
 
-pmount and pkgconf-mozilla are not in this page, because it belongs to the next batch.
+pmount and pkgconf-mozilla are not in this page, because it belongs to the
+next batch.
 
     >>> browser.getLink('pkgconf-mozilla')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2

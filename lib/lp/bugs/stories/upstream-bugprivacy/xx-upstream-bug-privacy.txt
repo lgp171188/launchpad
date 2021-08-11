@@ -76,8 +76,8 @@ fails, because we pretend that inaccessible private bugs do not exist.
     ...
     zope.publisher.interfaces.NotFound: ...
 
-The no-privs user cannot access bug #10, because it's filed on a private bug on
-which the no-privs is not an explicit subscriber.
+The no-privs user cannot access bug #10, because it's filed on a private bug
+on which the no-privs is not an explicit subscriber.
 
     >>> browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> browser.open(

@@ -1,8 +1,8 @@
 In Launchpad Translations, new lines matter with textareas.
 
-This test checks that we don't miss or add extra new lines. Changes to this test
-are quite fragile because we depend a lot on how new lines are handled in
-textareas by web browsers. Seems like they strip any new line character
+This test checks that we don't miss or add extra new lines. Changes to this
+test are quite fragile because we depend a lot on how new lines are handled
+in textareas by web browsers. Seems like they strip any new line character
 after the opening <textarea> tag and thus, we must add such extra new line
 always, to prevent that content starting with new line characters lose it on
 submission. For more details, please see

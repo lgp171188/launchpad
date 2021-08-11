@@ -1,8 +1,8 @@
 Sprints relevant for pillars
 ============================
 
-For Products, ProjectGroups and Distributions, we have a +sprints page which lists
-all events relevant to that pillar.
+For Products, ProjectGroups and Distributions, we have a +sprints page which
+lists all events relevant to that pillar.
 
     >>> import re
     >>> def print_sprints(contents):

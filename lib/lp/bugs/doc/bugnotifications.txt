@@ -160,11 +160,11 @@ bug. Let's take a look at each type.
     An upstream tasks notes that a bug needs to be fixed upstream. "Upstream"
     is a somewhat ambiguous term -- it can have different meanings in the eyes
     of an Ubuntu maintainer vs. a maintainer of a package from an Ubuntu
-    derivative. At the moment, "upstream" means "the distro-agnostic place from
-    which we procured a source tarball to create a source package for a distro."
-    The common case will be that bugs filed in distros bubble up to upstream,
-    and are fixed there then bubble back down (via patches) to the various
-    distros via patches.
+    derivative. At the moment, "upstream" means "the distro-agnostic place
+    from which we procured a source tarball to create a source package for a
+    distro." The common case will be that bugs filed in distros bubble up to
+    upstream, and are fixed there then bubble back down (via patches) to the
+    various distros via patches.
 
     >>> evolution = getUtility(IProductSet).get(5)
     >>> evolution_crashes_too = getUtility(IBugTaskSet).createTask(
