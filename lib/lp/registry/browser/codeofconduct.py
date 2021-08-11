@@ -167,6 +167,9 @@ class CodeOfConductSetView(LaunchpadView):
 class AffirmCodeOfConductView(LaunchpadFormView):
     """Add a new `SignedCodeOfConduct` via affirmation."""
 
+    # This is a long view, with the form controls at the bottom.
+    # Disable automatic focussing so the view doesn't auto-scroll
+    # to the bottom and miss most of the text
     focusedElementScript = None
 
     class schema(Interface):
