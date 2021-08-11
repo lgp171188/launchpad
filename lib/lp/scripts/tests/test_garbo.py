@@ -276,7 +276,7 @@ class TestSessionPruner(TestCase):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestCase, self).setUp()
+        super().setUp()
 
         # Session database isn't reset between tests. We need to do this
         # manually.

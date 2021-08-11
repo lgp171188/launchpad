@@ -191,7 +191,7 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
     layer = ZopelessLayer
 
     def setUp(self, *args, **kwargs):
-        super(TestCaseWithFactory, self).setUp(*args, **kwargs)
+        super().setUp(*args, **kwargs)
         self.response_factory = SigningServiceResponseFactory()
 
         client = removeSecurityProxy(getUtility(ISigningServiceClient))

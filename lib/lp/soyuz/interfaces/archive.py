@@ -307,7 +307,7 @@ class InvalidExternalDependencies(Exception):
 
     def __init__(self, errors):
         error_msg = 'Invalid external dependencies:\n%s\n' % '\n'.join(errors)
-        super(Exception, self).__init__(error_msg)
+        super().__init__(error_msg)
         self.errors = errors
 
 
