@@ -12,7 +12,7 @@ anyjson==0.3.3
 appdirs==1.4.3
 asn1crypto==0.23.0
 attrs==19.3.0
-Automat==0.6.0
+Automat==20.2.0
 backports.functools-lru-cache==1.5
 # ztk-versions.cfg uses 3.2.0 on Python 3, but that drops support for Python
 # 3.5.  Pin to 3.1.7 until we no longer care about xenial.
