@@ -19,28 +19,6 @@ from lp.services.database.sqlbase import (
     )
 
 
-def _py3ish_repr(value):
-    """Like `repr`, but uses Python 3 spelling of text.
-
-    This is a local helper for doctests.
-    """
-    if isinstance(value, six.text_type):
-        value = value.encode('unicode_escape').decode('ASCII')
-        if "'" in value and '"' not in value:
-            return '"%s"' % value
-        else:
-            return "'%s'" % value.replace("'", "\\'")
-    elif isinstance(value, tuple):
-        if len(value) == 1:
-            return '(' + _py3ish_repr(value[0]) + ',)'
-        else:
-            return '(' + ', '.join(_py3ish_repr(item) for item in value) + ')'
-    elif isinstance(value, list):
-        return '[' + ', '.join(_py3ish_repr(item) for item in value) + ']'
-    else:
-        return repr(value)
-
-
 def listReferences(cur, table, column, indirect=True, _state=None):
     """Return a list of all foreign key references to the given table column
 
@@ -63,7 +41,7 @@ def listReferences(cur, table, column, indirect=True, _state=None):
     to change keys.
 
     >>> for r in listReferences(cur, 'a', 'aid'):
-    ...     print(_py3ish_repr(r))
+    ...     print(repr(r))
     ('a', 'selfref', 'a', 'aid', 'a', 'a')
     ('b', 'aid', 'a', 'aid', 'c', 'c')
     ('c', 'aid', 'b', 'aid', 'a', 'a')
@@ -135,32 +113,32 @@ def listIndexes(cur, table, column, only_unique=False):
 
     Simple indexes
 
-    >>> print(_py3ish_repr(listIndexes(cur, 'b', 'aid')))
+    >>> listIndexes(cur, 'b', 'aid')
     [('aid',)]
-    >>> print(_py3ish_repr(listIndexes(cur, 'a', 'name')))
+    >>> listIndexes(cur, 'a', 'name')
     [('name',)]
 
     Primary keys are indexes too
 
-    >>> print(_py3ish_repr(listIndexes(cur, 'a', 'aid')))
+    >>> listIndexes(cur, 'a', 'aid')
     [('aid',)]
 
     Compound indexes
 
-    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'aid')))
+    >>> listIndexes(cur, 'c', 'aid')
     [('aid', 'bid')]
-    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'bid')))
+    >>> listIndexes(cur, 'c', 'bid')
     [('aid', 'bid')]
-    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'name')))
+    >>> listIndexes(cur, 'c', 'name')
     [('name', 'description')]
-    >>> print(_py3ish_repr(listIndexes(cur, 'c', 'description')))
+    >>> listIndexes(cur, 'c', 'description')
     [('name', 'description')]
 
     And any combination
 
     >>> l = listIndexes(cur, 'd', 'aid')
     >>> l.sort()
-    >>> print(_py3ish_repr(l))
+    >>> l
     [('aid',), ('aid', 'bid')]
 
     If there are no indexes using the secified column
@@ -225,26 +203,26 @@ def listUniques(cur, table, column):
 
     Simple UNIQUE index
 
-    >>> print(_py3ish_repr(listUniques(cur, 'b', 'aid')))
+    >>> listUniques(cur, 'b', 'aid')
     [('aid',)]
 
     Primary keys are UNIQUE indexes too
 
-    >>> print(_py3ish_repr(listUniques(cur, 'a', 'aid')))
+    >>> listUniques(cur, 'a', 'aid')
     [('aid',)]
 
     Compound indexes
 
-    >>> print(_py3ish_repr(listUniques(cur, 'c', 'aid')))
+    >>> listUniques(cur, 'c', 'aid')
     [('aid', 'bid')]
-    >>> print(_py3ish_repr(listUniques(cur, 'c', 'bid')))
+    >>> listUniques(cur, 'c', 'bid')
     [('aid', 'bid')]
 
     And any combination
 
     >>> l = listUniques(cur, 'd', 'aid')
     >>> l.sort()
-    >>> print(_py3ish_repr(l))
+    >>> l
     [('aid',), ('aid', 'bid')]
 
     If there are no UNIQUE indexes using the secified column
@@ -270,7 +248,7 @@ def listSequences(cur):
     standalone.
 
     >>> for r in listSequences(cur):
-    ...     print(_py3ish_repr(r))
+    ...     print(repr(r))
     ('public', 'a_aid_seq', 'a', 'aid')
     ('public', 'standalone', None, None)
 
