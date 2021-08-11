@@ -557,9 +557,9 @@ Bad site search response handling
 ----------------------------
 
 Connectivity problems can cause missing or incomplete responses from
-the site search engine. The LaunchpadSearchView will display the other searches and
-show a message explaining that the user can search again to find
-matching pages.
+the site search engine. The LaunchpadSearchView will display the other
+searches and show a message explaining that the user can search again to
+find matching pages.
 
     >>> search_view = getSearchView(form={'field.text': 'gnomebaker'})
     >>> search_view.has_matches

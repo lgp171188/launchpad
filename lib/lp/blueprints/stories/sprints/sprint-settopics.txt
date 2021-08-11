@@ -42,8 +42,8 @@ Regular users can't approve items to be discussed in a sprint.
     ...
     zope.security.interfaces.Unauthorized: ...
 
-It's possible to delegate the approval of a sprint agenda items to somebody else.
-First choose a driver for the UDS Guacamole sprint.
+It's possible to delegate the approval of a sprint agenda items to somebody
+else.  First choose a driver for the UDS Guacamole sprint.
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
     >>> browser.open('http://launchpad.test/sprints/uds-guacamole')

@@ -157,8 +157,8 @@ should have a branch at the endpoint of landing_candidates.
     http://.../~eric/fooix/feature-branch
 
 
-The source_branch of the landing candidate should have this same merge proposal
-in its landing_targets.
+The source_branch of the landing candidate should have this same merge
+proposal in its landing_targets.
 
     >>> feature_branch_link = \
     ...     '/~eric/fooix/feature-branch'

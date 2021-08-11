@@ -6,10 +6,11 @@ though the search usually returns a huge number of results. For this
 reason, the search result is sorted by how well the given summary
 matches the bug's summary and description.
 
-These bugs used to return more hits, but the more restrictive search introduced
-to bandaid search scaling issues inhibits that in the sample data; when we get
-a relevance-integrated index we'll be able to do relevance ordered, limited
-searches efficiently and these tests can be expanded at that point.
+These bugs used to return more hits, but the more restrictive search
+introduced to bandaid search scaling issues inhibits that in the sample
+data; when we get a relevance-integrated index we'll be able to do relevance
+ordered, limited searches efficiently and these tests can be expanded at
+that point.
 
     >>> user_browser.open("http://launchpad.test/products/firefox/+filebug")
 

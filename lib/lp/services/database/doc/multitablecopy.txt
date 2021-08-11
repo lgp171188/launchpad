@@ -199,10 +199,10 @@ We insert a few more rows to play with:
     ...     cur.execute("INSERT INTO numeric (n, textual) VALUES (%d, %d)"
     ...                 % (number, many_id))
 
-Now we add the doubles of the 'many' numbers to numeric using a MultiTableCopy,
-linking the numeric entries to a new copy of "many" in the textual table.  In
-order to make redirection of the foreign key work properly, we must start with
-the table that the foreign key will refer to.
+Now we add the doubles of the 'many' numbers to numeric using a
+MultiTableCopy, linking the numeric entries to a new copy of "many" in the
+textual table.  In order to make redirection of the foreign key work
+properly, we must start with the table that the foreign key will refer to.
 
     >>> copier = MultiTableCopy('test', ['textual', 'numeric'], 1, 1)
     >>> copier.extract('textual', where_clause="t='many'")
@@ -278,9 +278,9 @@ skipped table, they will not have any rows extracted either.
 Recovery
 --------
 
-We may get interrupted while going through the multi-table copy.  In that case,
-data will be left behind.  If we never get to start the pouring stage, we end
-up with incomplete data that should be deleted:
+We may get interrupted while going through the multi-table copy.  In that
+case, data will be left behind.  If we never get to start the pouring stage,
+we end up with incomplete data that should be deleted:
 
     >>> copier = MultiTableCopy('test', ['textual', 'numeric'], 0.01, 2)
     >>> copier.extract('textual', where_clause="t='many'")
@@ -308,9 +308,9 @@ up with incomplete data that should be deleted:
     three    2
     two      2
 
-If something goes wrong while pouring, however, some of the data will probably
-already have been poured back and the only way to recovery is forward.  In that
-case, we skip the extraction and pour again.
+If something goes wrong while pouring, however, some of the data will
+probably already have been poured back and the only way to recovery is
+forward.  In that case, we skip the extraction and pour again.
 
 To produce the effect of an abortive run, we do a new copy (inserting even
 higher numbers) but sabotage the data so that the pouring will fail half-way

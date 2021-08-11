@@ -1,8 +1,8 @@
 Bug Text Pages
 ==============
 
-Launchpad provides a way for users to view textual descriptions of bug reports,
-as an alternative to the graphical user interface.
+Launchpad provides a way for users to view textual descriptions of bug
+reports, as an alternative to the graphical user interface.
 
 To demonstrate this feature, we'll use bug 1.
 

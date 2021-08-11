@@ -10,10 +10,10 @@ a particular question.
 Fix up sample data
 ------------------
 
-The sample data has question titles which perform poorly with the sample data's
-answers in fulltext searching, using efficient tsearch2 queries; we are going
-to overhaul the fulltext search implementation but in the interim less prose
-permits better matching. See bug 612384.
+The sample data has question titles which perform poorly with the sample
+data's answers in fulltext searching, using efficient tsearch2 queries; we
+are going to overhaul the fulltext search implementation but in the interim
+less prose permits better matching. See bug 612384.
 
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.product import IProductSet

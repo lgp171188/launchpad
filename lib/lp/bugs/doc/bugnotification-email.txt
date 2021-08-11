@@ -468,8 +468,9 @@ This applies for all users.  For example, Stuart has four email addresses:
     stub@fastmail.fm NEW
     zen@shangri-la.dropbear.id.au OLD
 
-However, because of DMARC compliance, we only use the bug's email address in the
-From field, with Stuart's name in the 'display name' portion of the email address:
+However, because of DMARC compliance, we only use the bug's email address in
+the From field, with Stuart's name in the 'display name' portion of the
+email address:
 
     >>> get_bugmail_from_address(stub, bug_four)
     'Stuart Bishop <4@bugs.launchpad.net>'

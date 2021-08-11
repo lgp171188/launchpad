@@ -98,8 +98,8 @@ Next, we check there are no ICanonicalUrlData adapters for these objects.
     >>> for obj in countryset_instance, country_instance, town_instance:
     ...     assert ICanonicalUrlData(obj, None) is None
 
-Configure a browser:url for ITown.  Our first attempt fails because we mistyped
-'countryOopsTypo', and there is no such name in ITown.
+Configure a browser:url for ITown.  Our first attempt fails because we
+mistyped 'countryOopsTypo', and there is no such name in ITown.
 
     >>> from zope.configuration import xmlconfig
     >>> zcmlcontext = xmlconfig.string("""
@@ -389,8 +389,8 @@ zope.publisher.interfaces.http.IHTTPApplicationRequest.
     >>> print(canonical_url(country_instance, mandrill_request))
     https://mandrill.example.org:23/countries/England
 
-However, if we log in, then that request should be used when none is explicitly
-given otherwise.
+However, if we log in, then that request should be used when none is
+explicitly given otherwise.
 
     >>> sesame_request = FakeRequest('http://muppet.example.com')
     >>> login(ANONYMOUS, sesame_request)

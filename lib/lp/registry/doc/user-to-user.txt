@@ -150,7 +150,8 @@ to include his full name.  His contact is still recorded correctly.
 Adapters
 --------
 
-As noticed above, we can adapt from an IPerson to an IDirectEmailAuthorization.
+As noticed above, we can adapt from an IPerson to an
+IDirectEmailAuthorization.
 
     >>> from zope.interface.verify import verifyObject
     >>> adapted = IDirectEmailAuthorization(anne)

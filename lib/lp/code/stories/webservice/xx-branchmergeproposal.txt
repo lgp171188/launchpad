@@ -334,8 +334,8 @@ proposal status to "Approved" as well.
     >>> print(merge_proposal['reviewed_revid'])
     25
 
-However, there may have been breakage in the branch, and we need to revert back
-to "Work In Progress" and not specify the revision_id.
+However, there may have been breakage in the branch, and we need to revert
+back to "Work In Progress" and not specify the revision_id.
 
     >>> _unused = reviewer_webservice.named_post(
     ...     merge_proposal['self_link'], 'setStatus',
@@ -441,8 +441,8 @@ The person's proposals can also be filtered by status.
 Getting a Project Group's Merge Proposals
 -----------------------------------------
 
-Getting the merge proposals for a project group will get all the proposals for all
-the projects that are part of the project group.
+Getting the merge proposals for a project group will get all the proposals
+for all the projects that are part of the project group.
 
     >>> login('admin@canonical.com')
     >>> projectgroup = factory.makeProject(name='widgets')

@@ -34,8 +34,8 @@ Joining and Subscribing to the List
     >>> from lp.registry.interfaces.mailinglist import IMailingListSet
     >>> subscribers = getUtility(IMailingListSet)
 
-Attempting to post a mailing list subscription request to a team that has no list
-is thwarted by the view because it strips the checkbox from the form.
+Attempting to post a mailing list subscription request to a team that has no
+list is thwarted by the view because it strips the checkbox from the form.
 Therefore no error message is seen.
 
     >>> sample_person = personset.getByName('name12')

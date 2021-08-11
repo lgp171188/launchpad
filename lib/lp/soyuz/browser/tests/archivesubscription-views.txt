@@ -387,8 +387,8 @@ on the archive:
     >>> check_permission('launchpad.View', spiv_subscription)
     True
 
-Now that we're logged in as Celso, the view still realizes the user in question
-is spiv:
+Now that we're logged in as Celso, the view still realizes the user in
+question is spiv:
 
     >>> view = create_initialized_view(spiv_subscription, name="+index")
     >>> view.active_token.token == current_token
