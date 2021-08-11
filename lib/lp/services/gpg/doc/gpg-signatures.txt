@@ -137,21 +137,18 @@ signed text can not be attributed solely to either key:
     ... -----END PGP SIGNATURE-----
     ... """
 
-XXX: See discussion on the launchpad@ mailing list for an explanation to this
-change. -- Guilherme Salgado, 2007-04-05
-(https://lists.ubuntu.com/mailman/private/launchpad/2007-April/015085.html)
+Originally we could test for the exception text "Single signature expected,
+found multiple signatures", but this stopped working as of
+https://ubuntu.com/security/notices/USN-432-2
+(https://launchpad.net/ubuntu/+source/gpgme1.0/1.1.0-1ubuntu0.1), and GPGME
+now only gives us a rather less informative "Bad data" exception.  We don't
+care too much about the details as long as it fails.
 
     >>> master_sig = gpghandler.getVerifiedSignature(content)
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGVerificationError: ...
-
-#     >>> master_sig = gpghandler.getVerifiedSignature(content)
-#     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
-#     Traceback (most recent call last):
-#     ...
-#     lp.services.gpg.interfaces.GPGVerificationError: Single signature expected, found multiple signatures
 
 The text below was signed by  key that's is not part of the
 imported keyring. Note that we have extra debug information containing
