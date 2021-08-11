@@ -10,10 +10,7 @@ __all__ = [
     'PreviewDiff',
     ]
 
-try:
-    from contextlib import ExitStack
-except ImportError:
-    from contextlib2 import ExitStack
+from contextlib import ExitStack
 import io
 from operator import attrgetter
 import sys
