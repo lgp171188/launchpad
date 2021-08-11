@@ -12,5 +12,4 @@ from lp.testing.systemdocs import (
 
 
 def test_suite():
-    return LayeredDocFileSuite(
-        '../README.txt', setUp=lambda test: setGlobs(test, future=True))
+    return LayeredDocFileSuite('../README.txt', setUp=setGlobs)

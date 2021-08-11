@@ -9,13 +9,10 @@ import os
 
 from lp.services.testing import build_test_suite
 from lp.testing.layers import LaunchpadFunctionalLayer
-from lp.testing.systemdocs import setUp
 
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 
 def test_suite():
-    return build_test_suite(
-        here, layer=LaunchpadFunctionalLayer,
-        setUp=lambda test: setUp(test, future=True))
+    return build_test_suite(here, layer=LaunchpadFunctionalLayer)

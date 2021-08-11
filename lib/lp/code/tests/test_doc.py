@@ -16,7 +16,6 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
-from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setGlobs,
@@ -31,7 +30,7 @@ here = os.path.dirname(os.path.realpath(__file__))
 def branchscannerSetUp(test):
     """Setup the user for the branch scanner tests."""
     switch_dbuser("branchscanner")
-    setUp(test, future=True)
+    setUp(test)
 
 
 def zopelessLaunchpadSecuritySetUp(test):
@@ -43,7 +42,7 @@ def zopelessLaunchpadSecuritySetUp(test):
     functionality used in the webapp, it needs to use the
     LaunchpadSecurityPolicy.
     """
-    setGlobs(test, future=True)
+    setGlobs(test)
     test.old_security_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
 
 
@@ -65,28 +64,26 @@ special = {
         ),
     'codeimport-result.txt': LayeredDocFileSuite(
         '../doc/codeimport-result.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
     'branch-merge-proposal-notifications.txt': LayeredDocFileSuite(
         '../doc/branch-merge-proposal-notifications.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),
     'branch-notifications.txt': LayeredDocFileSuite(
         '../doc/branch-notifications.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),
     'codereviewcomment.txt': LayeredDocFileSuite(
         '../doc/codereviewcomment.txt',
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
         ),
     }
 
 
 def test_suite():
-    return build_test_suite(
-        here, special, setUp=lambda test: setUp(test, future=True),
-        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))
+    return build_test_suite(here, special)

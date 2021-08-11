@@ -101,5 +101,5 @@ def test_suite():
     suite.addTest(LayeredDocFileSuite(
         'test_launchpad_login_source.txt',
         layer=LaunchpadFunctionalLayer,
-        setUp=lambda test: setUp(test, future=True), tearDown=tearDown))
+        setUp=setUp, tearDown=tearDown))
     return suite

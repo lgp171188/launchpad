@@ -12,6 +12,4 @@ from lp.testing.systemdocs import (
 
 
 def test_suite():
-    return LayeredDocFileSuite(
-        'test_preferredcharsets.txt',
-        setUp=lambda test: setGlobs(test, future=True))
+    return LayeredDocFileSuite('test_preferredcharsets.txt', setUp=setGlobs)

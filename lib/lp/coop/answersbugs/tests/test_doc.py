@@ -29,7 +29,6 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     )
 from lp.testing.mail_helpers import pop_notifications
-from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setUp,
@@ -74,7 +73,7 @@ def bugLinkedToQuestionSetUp(test):
     def get_bugtask_linked_to_question():
         return getUtility(IBugTaskSet).get(bugtask_id)
 
-    setUp(test, future=True)
+    setUp(test)
     bugtask_id = _createUbuntuBugTaskLinkedToQuestion()
     test.globs['get_bugtask_linked_to_question'] = (
         get_bugtask_linked_to_question)
@@ -125,7 +124,4 @@ special = {
 
 
 def test_suite():
-    return build_test_suite(
-        here, special,
-        setUp=lambda test: setUp(test, future=True),
-        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))
+    return build_test_suite(here, special)

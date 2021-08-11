@@ -24,8 +24,7 @@ def test_suite():
     import lp.app.validators.validation
     test = DocTestSuite(
         lp.app.validators.validation,
-        setUp=lambda test: setUp(test, future=True),
-        tearDown=tearDown,
+        setUp=setUp, tearDown=tearDown,
         optionflags=ELLIPSIS | NORMALIZE_WHITESPACE
         )
     # We have to invoke the LaunchpadFunctionalLayer in order to
