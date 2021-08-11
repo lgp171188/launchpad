@@ -167,6 +167,8 @@ class CodeOfConductSetView(LaunchpadView):
 class AffirmCodeOfConductView(LaunchpadFormView):
     """Add a new `SignedCodeOfConduct` via affirmation."""
 
+    focusedElementScript = None
+
     class schema(Interface):
         """Schema for affirming a code of conduct."""
 
