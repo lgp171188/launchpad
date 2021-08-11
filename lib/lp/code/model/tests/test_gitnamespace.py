@@ -3,6 +3,8 @@
 
 """Tests for `IGitNamespace` implementations."""
 
+from unittest import mock
+
 import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -45,7 +47,6 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantFlatSource,
     IAccessPolicySource,
     )
-from lp.services.compat import mock
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,

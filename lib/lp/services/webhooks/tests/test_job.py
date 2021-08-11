@@ -10,6 +10,7 @@ from datetime import (
     timedelta,
     )
 import re
+from unittest import mock
 
 from fixtures import (
     FakeLogger,
@@ -44,7 +45,6 @@ from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
-from lp.services.compat import mock
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus

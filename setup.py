@@ -189,7 +189,6 @@ setup(
         'lpjsmin',
         'Markdown',
         'meliae',
-        'mock',
         'oauth',
         'oauthlib',
         'oops',

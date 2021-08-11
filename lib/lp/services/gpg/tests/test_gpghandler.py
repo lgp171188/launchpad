@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import shutil
 import subprocess
+from unittest import mock
 
 from fixtures import (
     Fixture,
@@ -23,7 +24,6 @@ from testtools.matchers import (
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.services.compat import mock
 from lp.services.features.testing import FeatureFixture
 from lp.services.gpg.handler import signing_only_param
 from lp.services.gpg.interfaces import (

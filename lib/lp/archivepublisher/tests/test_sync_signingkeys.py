@@ -15,6 +15,7 @@ __all__ = [
 from datetime import datetime
 import os
 from textwrap import dedent
+from unittest import mock
 
 from fixtures import (
     MockPatch,
@@ -41,7 +42,6 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     )
 from lp.archivepublisher.model.publisherconfig import PublisherConfig
 from lp.archivepublisher.scripts.sync_signingkeys import SyncSigningKeysScript
-from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.config.fixture import (
     ConfigFixture,
