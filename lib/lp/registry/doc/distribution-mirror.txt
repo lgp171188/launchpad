@@ -805,7 +805,8 @@ freshness will also be 'Up to date'.
     >>> archive_mirror.getOverallFreshness().title
     'Up to date'
 
-apt has supported HTTP redirects since Ubuntu 9.04, so mirrors that redirect are treated as good:
+apt has supported HTTP redirects since Ubuntu 9.04, so mirrors that redirect
+are treated as good:
 
     >>> archive_mirror = mirrorset.getByName('archive-redirect-mirror')
     >>> mirror_arch_series = (

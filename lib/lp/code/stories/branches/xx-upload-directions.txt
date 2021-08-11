@@ -70,8 +70,8 @@ definitive that it is not possible to upload to this branch.
     can upload to this branch.
     ...
 
-The user is the owner of the branch and logs in. The page gives the full upload
-URL for the branch.
+The user is the owner of the branch and logs in. The page gives the full
+upload URL for the branch.
 
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
@@ -117,8 +117,8 @@ The branch page should no longer display the SSH key directions.
     None
 
 If the user is not logged in, or does have the permission to upload to the
-branch, the SSH key directions are not displayed. So they do not become part of
-the perceptual "noise" of the page, and the user pays attention when they
+branch, the SSH key directions are not displayed. So they do not become part
+of the perceptual "noise" of the page, and the user pays attention when they
 appear.
 
     >>> anon_browser.open(branch_page)
@@ -179,8 +179,8 @@ a link to the team.
 
 Finally, if the user is a member of the team, we display the same "you can
 upload" message as before. Of course the upload URL looks different, in
-particular the login should be the user name, while the branch URL reflects the
-owning team's name.
+particular the login should be the user name, while the branch URL reflects
+the owning team's name.
 
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents

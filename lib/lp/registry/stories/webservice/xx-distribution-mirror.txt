@@ -1,8 +1,8 @@
 Distribution Mirrors
 ====================
 
-For every mirror of distribution we publish most of its attributes. For archive
-mirrors:
+For every mirror of distribution we publish most of its attributes. For
+archive mirrors:
 
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> distros = webservice.get("/distros").jsonBody()
@@ -162,7 +162,8 @@ Mirror listing admins may see all:
     web_link: 'http://launchpad.../ubuntu/+mirror/archive-404-mirror'
     whiteboard: None
 
-Now trying to set the owner using Sample Person's webservice is not authorized.
+Now trying to set the owner using Sample Person's webservice is not
+authorized.
 
     >>> karl = webservice.get("/~karl").jsonBody()
     >>> patch = {
@@ -173,7 +174,8 @@ Now trying to set the owner using Sample Person's webservice is not authorized.
     >>> response.status
     401
 
-But if we use Karl, the mirror listing admin's, webservice, we can update the owner.
+But if we use Karl, the mirror listing admin's, webservice, we can update
+the owner.
 
     >>> response = karl_webservice.patch(
     ...     canonical_archive['self_link'], 'application/json', dumps(patch))
@@ -250,8 +252,8 @@ Distribution Mirror Custom Operations
 
 DistributionMirror has some custom operations.
 
-"isOfficial" returns a boolean result on whether a mirror is an official mirror
-or not.
+"isOfficial" returns a boolean result on whether a mirror is an official
+mirror or not.
 
     >>> is_official_mirror = webservice.named_get(canonical_releases['self_link'],
     ...     'isOfficial').jsonBody()

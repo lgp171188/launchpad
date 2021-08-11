@@ -14,8 +14,8 @@ You get access to the context and the request, as you would expect.
     >>> print(viewobj.request)
     somerequest
 
-Like a LaunchpadView, you can get 'self.user', which is the currently logged-in
-user, or None when there is no user logged in.
+Like a LaunchpadView, you can get 'self.user', which is the currently
+logged-in user, or None when there is no user logged in.
 
     >>> viewobj.user is None
     True

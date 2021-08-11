@@ -20,8 +20,8 @@ well-formed request will be rejected:
     reply: '400 Database-Name header is required'
     connection closed
 
-If Database-Name is specified by the client, and doesn't match the database name
-of the server, the upload is rejected.
+If Database-Name is specified by the client, and doesn't match the database
+name of the server, the upload is rejected.
 
     >>> upload_request(b"""STORE 14 hello.txt
     ... Content-Type: text/plain

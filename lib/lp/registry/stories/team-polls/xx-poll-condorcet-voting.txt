@@ -203,9 +203,9 @@
     ...
 
 
-  Logged in as mark@example.com (which is a member of ubuntu-team), go to a public
-  condorcet-style poll that's still open and get redirected to a page where
-  it's possible to vote (and see the current vote).
+  Logged in as mark@example.com (which is a member of ubuntu-team), go to a
+  public condorcet-style poll that's still open and get redirected to a page
+  where it's possible to vote (and see the current vote).
 
     >>> print(http(r"""
     ... GET /~ubuntu-team/+poll/never-closes3 HTTP/1.1

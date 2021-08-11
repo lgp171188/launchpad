@@ -11,8 +11,8 @@ One way to solve this is to measure performance of your loop, and pick a chunk
 size that will give you decent performance while also stopping at more or less
 regular intervals to update your progress display, refresh your locks, or
 whatever else you want to do.  But what if the Moon is in the House of Uranus
-and the server slows down?  Conversely, you may be wasting time if you stop too
-often.
+and the server slows down?  Conversely, you may be wasting time if you stop
+too often.
 
 The LoopTuner solves this.  You tell it what you want to do and how long each
 chunk should take, and it will figure out how many items you need to process

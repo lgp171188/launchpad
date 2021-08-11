@@ -1,8 +1,8 @@
 Security proxies
 ----------------
 
-SQLObjects that are security proxied should still behave normally, this includes
-being comparable with non-security proxied objects.
+SQLObjects that are security proxied should still behave normally, this
+includes being comparable with non-security proxied objects.
 
 First, some imports and set up::
 

@@ -61,8 +61,8 @@ A user can subscribe to a branch through the API.
 Get the subscription
 ====================
 
-Sometimes it's necessary to get a single person's subscriptions through the API
-without getting everyone's subscriptions.
+Sometimes it's necessary to get a single person's subscriptions through the
+API without getting everyone's subscriptions.
 
     >>> subscription = webservice.named_get(
     ...     corn['self_link'], 'getSubscription',
@@ -110,8 +110,8 @@ only one subscription.
 Unsubscribing from a branch
 ===========================
 
-Sometimes branches get too noisy.  It's possible to unsubscribe from the branch
-through the API as well.
+Sometimes branches get too noisy.  It's possible to unsubscribe from the
+branch through the API as well.
 
     >>> _unused = webservice.named_post(
     ...     corn['self_link'], 'unsubscribe', person=joe['self_link'])
