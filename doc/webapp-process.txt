@@ -42,7 +42,7 @@ Web application architecture
 
 For the purposes of this document, a web application is put together as
 follows::
- 
+
  +--------------------------------------------------------------------------+
  |              {  Amorphous cloud of URLs  }                               |
  |  URLS      {   /rosetta/foo/bar/baz.html   }                             |

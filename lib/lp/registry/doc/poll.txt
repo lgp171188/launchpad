@@ -30,7 +30,7 @@ reasons why we teams can have polls attached to them.
     >>> now = datetime.now(pytz.timezone('UTC'))
     >>> onesec = timedelta(seconds=1)
 
-We need to login with one of the administrators of the team named 
+We need to login with one of the administrators of the team named
 'ubuntu-team' to be able to create/edit polls.
     >>> login('colin.watson@ubuntulinux.com')
 

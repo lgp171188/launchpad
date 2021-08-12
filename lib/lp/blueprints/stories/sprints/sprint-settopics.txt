@@ -61,7 +61,7 @@ else.  First choose a driver for the UDS Guacamole sprint.
     >>> print(extract_text(meeting_drivers.find_next('a')))
     Ubuntu Team
 
-Any member of the Ubuntu-Team can now approve and/or decline items to the UDS 
+Any member of the Ubuntu-Team can now approve and/or decline items to the UDS
 Guacamole agenda.
 
     >>> cprov_browser = setupBrowser(

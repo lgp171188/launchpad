@@ -7,7 +7,7 @@ originated.  This functionality is provided so that apt can pick the
 mirror which is geographically closer to the box where it's running.
 One problem with that, though, is that there are way too many Ubuntu
 users and most of them will update their systems when security updates
-are available, causing apt to DDoS Launchpad.  To avoid that we'll 
+are available, causing apt to DDoS Launchpad.  To avoid that we'll
 periodically generate static versions of these lists and serve them
 through apache.
 

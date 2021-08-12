@@ -58,7 +58,7 @@ File format
 
 The request must specify a file format.
 
-    >>> user_browser.getControl('Format:').clear() 
+    >>> user_browser.getControl('Format:').clear()
     >>> user_browser.getControl('Request Download').click()
 
     >>> print_feedback_messages(user_browser.contents)

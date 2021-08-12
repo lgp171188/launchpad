@@ -257,7 +257,7 @@ Thus only 98 entries remain in the Needs Review filter.
 Status filter validation
 ------------------------
 
-An attempt to filter for an undefined status is an UnexpectedFormData. 
+An attempt to filter for an undefined status is an UnexpectedFormData.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/+imports?'
@@ -339,7 +339,7 @@ Ubuntu.
     ...     """Show import queue entries that browser currently sees."""
     ...     output = []
     ...     import_list = find_tag_by_id(
-    ...         browser.contents, 'import-entries-list') 
+    ...         browser.contents, 'import-entries-list')
     ...     for entry in import_list.find_all('tr'):
     ...         output.append(represent_queue_entry(entry))
     ...     return '\n'.join(output)

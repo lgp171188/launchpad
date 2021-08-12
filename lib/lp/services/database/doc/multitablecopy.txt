@@ -495,7 +495,7 @@ through an SQL condition.
     ...     'textual', where_clause="length(t) = 3", inert_where="t <> 'one'")
 
 Inert rows can be useful in a table (here "textual") if you want to copy rows
-in a later table (here "numeric") that contains a foreign key referring to 
+in a later table (here "numeric") that contains a foreign key referring to
 the first.  You can use inert rows in this situation so that regular,
 non-inert in "numeric" will be attached to newly copied rows in "textual" as
 usual, but others are copied while remaining attached to their original

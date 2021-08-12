@@ -59,7 +59,7 @@ result set below has only one element.
     2
 
     >>> for bug in result_set:
-    ...     print('%d: %s' % (bug.id, bug.title[:40]))
+    ...     print('%d: %s' % (bug.id, bug.title[:40]))  # noqa
     1: Firefox does not support SVG
     6: Firefox crashes when Save As dialog for 
 

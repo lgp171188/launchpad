@@ -15,7 +15,7 @@ is raised.
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: Unknown sort column 'foobar'
-    
+
     >>> browser.open(
     ...     "http://launchpad.test/firefox/+bugs?"
     ...     "field.status_upstream=hide_open")

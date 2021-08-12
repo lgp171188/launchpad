@@ -28,32 +28,32 @@
     ... Authorization: Basic %s
     ... Referer: https://launchpad.test/
     ... Content-Type: application/x-www-form-urlencoded
-    ... 
+    ...
     ... token=9WjxQq2V9p&showvote=Show+My+Vote""" % jdub_auth))
     HTTP/1.1 200 Ok
     ...
                   <p>Your vote was as follows:</p>
                   <p>
     <BLANKLINE>
-                      <b>1</b>. 
+                      <b>1</b>.
                       D
     <BLANKLINE>
                   </p>
                   <p>
     <BLANKLINE>
-                      <b>2</b>. 
+                      <b>2</b>.
                       B
     <BLANKLINE>
                   </p>
                   <p>
     <BLANKLINE>
-                      <b>3</b>. 
+                      <b>3</b>.
                       A
     <BLANKLINE>
                   </p>
                   <p>
     <BLANKLINE>
-                      <b>3</b>. 
+                      <b>3</b>.
                       C
     <BLANKLINE>
                   </p>
@@ -84,7 +84,7 @@
     ... Authorization: Basic %s
     ... Referer: https://launchpad.test/
     ... Content-Type: application/x-www-form-urlencoded
-    ... 
+    ...
     ... token=W7gR5mjNrX&showvote=Show+My+Vote""" % jdub_auth))
     HTTP/1.1 200 Ok
     ...

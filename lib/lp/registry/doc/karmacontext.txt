@@ -52,7 +52,7 @@ product/project group/distribution grouped by categories.
     >>> sorted_categories = sorted(contributors.keys(),
     ...                            key=operator.attrgetter('title'))
     >>> for category in sorted_categories:
-    ...     people = [(person.name, karmavalue) 
+    ...     people = [(person.name, karmavalue)
     ...               for person, karmavalue in contributors[category]]
     ...     print("%s: %s" % (category.title, pretty(people)))
     Bug Management: [('name16', 26), ('name12', 13)]

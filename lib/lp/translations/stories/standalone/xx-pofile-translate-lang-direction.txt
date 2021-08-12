@@ -1,4 +1,4 @@
-In order to correctly display multilingual text and handle input, 
+In order to correctly display multilingual text and handle input,
 the browser needs to know the language and text direction for sections
 of the document. This information is used for a number of things including:
 

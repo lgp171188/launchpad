@@ -74,7 +74,7 @@ As usual, when there is an error, two emails should be sent:
 
 One is for the user with the error notification.
 
-    >>> print_emails(notifications=[carlos_email], decode=True)
+    >>> print_emails(notifications=[carlos_email], decode=True)  # noqa
     From: ...
     To: carlos@canonical.com
     Subject: Launchpad translation download: Evolution trunk -
@@ -97,7 +97,7 @@ One is for the user with the error notification.
 And the other to the admins.  This one lists the files that were being
 exported as context to help tracking down any bugs.
 
-    >>> print_emails(notifications=[admin_email], decode=True)
+    >>> print_emails(notifications=[admin_email], decode=True)  # noqa
     From: ...
     To: launchpad-error-reports@lists.canonical.com
     Subject: Launchpad translation download errors: Evolution trunk -
@@ -161,7 +161,7 @@ inject a mock exception in that case so that the test can pass.
 The user's notification looks no different from that for an ordinary
 error.
 
-    >>> print_emails(notifications=[carlos_email], decode=True)
+    >>> print_emails(notifications=[carlos_email], decode=True)  # noqa
     From: ...
     To: carlos@canonical.com
     Subject: Launchpad translation download: Evolution trunk -
@@ -184,7 +184,7 @@ error.
 The one for the administrators, however, does not include the
 unprintable exception text.
 
-    >>> print_emails(notifications=[admin_email], decode=True)
+    >>> print_emails(notifications=[admin_email], decode=True)  # noqa
     From: ...
     To: launchpad-error-reports@lists.canonical.com
     Subject: Launchpad translation download errors: Evolution trunk -
@@ -230,7 +230,7 @@ In this case, there are no errors, so we should get just a single email
     >>> len(test_emails)
     1
 
-    >>> print_emails(notifications=test_emails, decode=True)
+    >>> print_emails(notifications=test_emails, decode=True)  # noqa
     From: ...
     To: carlos@canonical.com
     Subject: Launchpad translation download: Evolution trunk -
@@ -299,7 +299,7 @@ And a confirmation email was sent to carlos, the importer.
 
 The confirmation email shows no errors at all.
 
-    >>> print_emails(notifications=test_emails, decode=True)
+    >>> print_emails(notifications=test_emails, decode=True)  # noqa
     From: ...
     To: carlos@canonical.com
     Subject: Launchpad translation download: Evolution trunk -

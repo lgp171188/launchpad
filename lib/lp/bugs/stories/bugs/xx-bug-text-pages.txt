@@ -58,7 +58,7 @@ For example, users can view a textual description of bug 1:
     >>> anon_browser.url
     'http://launchpad.test/bugs/1/+text'
     >>> print(anon_browser.headers['content-type'])
-    text/plain;charset=utf-8 
+    text/plain;charset=utf-8
 
 The textual description contains basic information about that bug, along with
 all tasks related to that bug, presented in an easy-to-digest format:
@@ -70,16 +70,16 @@ all tasks related to that bug, presented in an easy-to-digest format:
     date-reported: Thu, 01 Jan 2004 20:58:04 -0000
     date-updated: ...
     reporter: Sample Person (name12)
-    duplicate-of: 
-    duplicates: 
+    duplicate-of:
+    duplicates:
     attachments:
        http://bugs.launchpad.test/.../+files/file_a.txt text/html
        http://bugs.launchpad.test/.../+files/file%20with%20space.txt
          text/plain; name="file with space.txt"
     patches:
         http://.../bug-patch.diff text/plain
-    tags: 
-    subscribers: 
+    tags:
+    subscribers:
         Steve Alexander (stevea)
         Sample Person (name12)
     <BLANKLINE>
@@ -98,7 +98,7 @@ all tasks related to that bug, presented in an easy-to-digest format:
     reporter: Sample Person (name12)
     importance: Low
     assignee: Márk Shúttlewòrth (mark)
-    milestone: 
+    milestone:
     <BLANKLINE>
     task: mozilla-firefox (Ubuntu)
     status: New
@@ -107,8 +107,8 @@ all tasks related to that bug, presented in an easy-to-digest format:
     reporter: Foo Bar (name16)
     importance: Medium
     component: main
-    assignee: 
-    milestone: 
+    assignee:
+    milestone:
     <BLANKLINE>
     task: mozilla-firefox (Debian)
     status: Confirmed
@@ -117,8 +117,8 @@ all tasks related to that bug, presented in an easy-to-digest format:
     reporter: Sample Person (name12)
     watch: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=304014
     importance: Low
-    assignee: 
-    milestone: 
+    assignee:
+    milestone:
     <BLANKLINE>
     Content-Type: multipart/mixed; boundary="...
 
@@ -247,7 +247,7 @@ duplicated bug's ID:
     >>> anon_browser.url
     'http://launchpad.test/bugs/6/+text'
     >>> print(anon_browser.headers['content-type'])
-    text/plain;charset=utf-8 
+    text/plain;charset=utf-8
 
     >>> print(anon_browser.contents)
     bug: 6
@@ -262,12 +262,12 @@ duplicate bug IDs:
     >>> anon_browser.url
     'http://launchpad.test/bugs/5/+text'
     >>> print(anon_browser.headers['content-type'])
-    text/plain;charset=utf-8 
+    text/plain;charset=utf-8
 
     >>> print(anon_browser.contents)
     bug: 5
     ...
-    duplicate-of: 
+    duplicate-of:
     duplicates: 6
     ...
 
@@ -286,7 +286,7 @@ For example, users can see the IDs of open bugs on Mozilla Firefox:
     >>> anon_browser.url
     'http://launchpad.test/firefox/+bugs-text'
     >>> print(anon_browser.headers['content-type'])
-    text/plain;charset=utf-8 
+    text/plain;charset=utf-8
 
     >>> print(anon_browser.contents)
     5

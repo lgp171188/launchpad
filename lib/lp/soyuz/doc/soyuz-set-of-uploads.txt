@@ -334,7 +334,7 @@ Check the email recipient for displayname containing special chars,
 '.', must be rfc2047 compliant:
 
     >>> simulate_upload('bar_1.0-4')
-    >>> read_email()
+    >>> read_email()  # noqa
     To: "Foo B. Bar" <foo.bar@canonical.com>
     Subject: [ubuntutest/breezy] bar 1.0-4 (Accepted)
     Content-Type: text/plain; charset="utf-8"
