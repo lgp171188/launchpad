@@ -310,7 +310,7 @@ remote server. This allows us to include salient information, such as
 the comment author, with the pushed comment.
 
     >>> formatted_message = bugwatch_updater._formatRemoteComment(message)
-    >>> print(formatted_message)
+    >>> print(formatted_message)  # noqa
     Sample Person added the following comment to Launchpad bug report...:
     <BLANKLINE>
     Pushing, for the purpose of.

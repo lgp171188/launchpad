@@ -30,7 +30,7 @@ There are two templates for evolution in Ubuntu Hoary
 
 Each template lists it's language translation statuses that are
 comprised of the translated languages plus the languages of the user,
-(except for English which is not translatable). For the Template 
+(except for English which is not translatable). For the Template
 "evolution-2.2", there are 22 untranslated strings for each language.
 100% of the strings are untranslated. The Last and Edited By columns
 indicate that these languages have never been edited my anyone.

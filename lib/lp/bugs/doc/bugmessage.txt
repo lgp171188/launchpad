@@ -101,8 +101,8 @@ scores.
     >>> test_message = bug_one.newMessage(
     ...     owner=bug_watch_updater,
     ...     subject="test message subject",
-    ...     content="""This is a test comment. This bug is the same as the 
-    ...                one described here 
+    ...     content="""This is a test comment. This bug is the same as the
+    ...                one described here
     ...                http://some.bugzilla/show_bug.cgi?id=9876
     ...                See also CVE-1991-9911
     ...             """)

@@ -87,12 +87,12 @@ backports excluded.
     >>> warty = ubuntu['warty']
     >>> hoary = ubuntu['hoary']
 
-This demonstrates the scenario where a newer distroseries becomes obsolete 
+This demonstrates the scenario where a newer distroseries becomes obsolete
 before an older distroseries. The latest_overall_publication property will
 return the publication from the older distroseries because a published
 publication is considered more relevant than an obsolete publication.
 
-Note that the component of the package in the newer obsolete distroseries 
+Note that the component of the package in the newer obsolete distroseries
 is 'main' and in the older distroseries it is 'universe'.
 
     >>> compiz_publication_warty = publisher.getPubSource(
@@ -105,7 +105,7 @@ is 'main' and in the older distroseries it is 'universe'.
     >>> print(compiz.latest_overall_publication.component.name)
     universe
 
-When more than one published publication exists in a single distroseries, 
+When more than one published publication exists in a single distroseries,
 latest_overall_publication will favor updates over security and security over
 release.
 

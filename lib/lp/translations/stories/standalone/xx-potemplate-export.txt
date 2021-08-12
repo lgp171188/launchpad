@@ -25,7 +25,7 @@ Logged in as a regular user, the +export page is accessible.
 If we POST without the appropriate format included, we tell the user off:
 
     >>> browser.getControl('Everything').selected = True
-    >>> browser.getControl('Format:').clear() 
+    >>> browser.getControl('Format:').clear()
     >>> browser.getControl('Request Download').click()
 
     >>> print_feedback_messages(browser.contents)

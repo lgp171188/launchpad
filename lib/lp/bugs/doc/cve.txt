@@ -123,7 +123,8 @@ linkCVE are bypassed.
     >>> private_bug.unlinkCVE(cve, user=private_bug.owner)
     >>> login("test@canonical.com")
 
-== 2014 CVE identification format changes =  
+2014 CVE identification format changes
+--------------------------------------
 
 Since 2014, CVEs can have an identifier (sequence) longer than 4-digits.
 
@@ -136,7 +137,7 @@ CVEs creation accepts 2014 format:
     CVE-2014-999999
 
 Text references to CVEs using 2014 format can be found:
- 
+
     >>> b.findCvesInText('''
     ...     This bug is related to CVE-2014-999999
     ... ''', user=no_priv)

@@ -123,7 +123,7 @@ One must have special permissions to access certain attributes:
     whiteboard: ...redacted...
 
 Mirror registrars may see some:
-    
+
     >>> response = test_webservice.get(
     ...     archive_404_mirror['self_link']).jsonBody()
     >>> pprint_entry(response)

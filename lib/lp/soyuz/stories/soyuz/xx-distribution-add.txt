@@ -1,7 +1,7 @@
 Creating new distributions
 ==========================
 
-A non launchpad admin doesn't see the link to create a new distribution on 
+A non launchpad admin doesn't see the link to create a new distribution on
 the distributions page:
 
     >>> user_browser.open("http://launchpad.test/distros")

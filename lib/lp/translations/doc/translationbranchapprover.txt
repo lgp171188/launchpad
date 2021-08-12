@@ -116,7 +116,7 @@ object.
 
 Next the owner of the branch realizes that they need to put their translation
 template files in proper subdirectories for multiple templates to work
-correctly. Also, they start using a tool that calls the template 
+correctly. Also, they start using a tool that calls the template
 "messages.pot" consistently. So they move and rename the files. The branch
 upload job detects two changed files and places them in the upload queue.
 
