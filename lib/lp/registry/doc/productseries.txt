@@ -223,9 +223,12 @@ them informational.
     ...     SpecificationDefinitionStatus,
     ...     SpecificationImplementationStatus,
     ...     )
-    >>> a.definition_status = b.definition_status = SpecificationDefinitionStatus.APPROVED
-    >>> a.implementation_status = SpecificationImplementationStatus.INFORMATIONAL
-    >>> b.implementation_status = SpecificationImplementationStatus.INFORMATIONAL
+    >>> a.definition_status = b.definition_status = (
+    ...     SpecificationDefinitionStatus.APPROVED)
+    >>> a.implementation_status = (
+    ...     SpecificationImplementationStatus.INFORMATIONAL)
+    >>> b.implementation_status = (
+    ...     SpecificationImplementationStatus.INFORMATIONAL)
     >>> a.acceptBy(a.owner)
     >>> shim = a.updateLifecycleStatus(a.owner)
     >>> b.declineBy(b.owner)
@@ -330,7 +333,8 @@ change the overall state of the spec to "completed".
 
     >>> jdub = getUtility(IPersonSet).getByName('jdub')
     >>> b.definition_status = SpecificationDefinitionStatus.APPROVED
-    >>> b.implementation_status = SpecificationImplementationStatus.INFORMATIONAL
+    >>> b.implementation_status = (
+    ...     SpecificationImplementationStatus.INFORMATIONAL)
     >>> print(b.updateLifecycleStatus(jdub).title)
     Complete
     >>> print(b.completer.name)
@@ -383,7 +387,8 @@ checks when setting and resetting the driver attributes.
     >>> product = factory.makeProduct(owner=mark, name='testprod',
     ...     displayname='Test Product', title='Test product title',
     ...     summary='summary', projectgroup=projectgroup)
-    >>> series = factory.makeProductSeries(owner=jblack, name='1.0', product=product,
+    >>> series = factory.makeProductSeries(
+    ...     owner=jblack, name='1.0', product=product,
     ...     summary='Series summary')
 
 

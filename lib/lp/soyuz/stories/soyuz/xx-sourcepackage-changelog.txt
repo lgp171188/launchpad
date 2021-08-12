@@ -28,7 +28,8 @@ Browse the changelog of a sourcepackage..
 .. and another one:
 
     >>> user_browser.open(
-    ...     "http://launchpad.test/ubuntu/hoary/+source/alsa-utils/+changelog")
+    ...     "http://launchpad.test/ubuntu/hoary/+source/alsa-utils/"
+    ...     "+changelog")
     >>> print(extract_text(
     ...           find_tag_by_id(user_browser.contents, 'changelogs')))
     alsa-utils (1.0.9a-4ubuntu1) hoary; urgency=low
@@ -71,7 +72,8 @@ the changelog are obfuscated when the user is not logged in (this stops
 bots from picking them up):
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/ubuntu/hoary/+source/alsa-utils/+changelog")
+    ...     "http://launchpad.test/ubuntu/hoary/+source/alsa-utils/"
+    ...     "+changelog")
     >>> print(extract_text(find_main_content(anon_browser.contents)))
     Change logs for ...alsa-utils... in Hoary
     ...

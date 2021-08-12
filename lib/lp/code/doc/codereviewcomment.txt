@@ -70,7 +70,8 @@ a notification is produced when the comment is created.
     >>> from lp.testing.mail_helpers import (
     ...     pop_notifications, print_emails)
     >>> _unused = pop_notifications()
-    >>> merge_proposal.root_message_id = '<201003111740.test.root@example.com>'
+    >>> merge_proposal.root_message_id = (
+    ...     '<201003111740.test.root@example.com>')
     >>> comment = merge_proposal.createComment(
     ...     sender, 'Please merge', 'This patch is very nice.',
     ...     vote=CodeReviewVote.APPROVE, review_type='DB')

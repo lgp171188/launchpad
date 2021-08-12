@@ -74,7 +74,8 @@ some terms and do another search.
     >>> project_search.getControl(name='text').value
     ''
     >>> project_search.getControl('Search').click()
-    >>> empty_search = find_tag_by_id(anon_browser.contents, 'empty-search-string')
+    >>> empty_search = find_tag_by_id(
+    ...     anon_browser.contents, 'empty-search-string')
     >>> print(empty_search.decode_contents())
     <BLANKLINE>
     ...Enter one or more words related to the project you want to find.

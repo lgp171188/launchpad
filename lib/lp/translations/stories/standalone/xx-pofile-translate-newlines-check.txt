@@ -9,7 +9,7 @@ submission. For more details, please see
 https://bugzilla.mozilla.org/show_bug.cgi?id=299009
 
     >>> def print_tags(browser, tags):
-    ...     """Find and print [tags] in browser.contents. End each with '--'."""
+    ...     """Print [tags] from browser.contents. End each with '--'."""
     ...     soup = find_main_content(browser.contents)
     ...     for tag in soup.find_all(attrs={'id': tags}):
     ...         print(u"%s\n--\n" % tag.decode_contents())
@@ -22,7 +22,8 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=299009
 We can see that the message we are interested in is not translated.
 
     >>> print_tags(browser,
-    ...     ['msgset_149', 'msgset_149_singular', 'msgset_149_es_translation_0'])
+    ...     ['msgset_149', 'msgset_149_singular',
+    ...      'msgset_149_es_translation_0'])
     20.
     <input name="msgset_149" type="hidden"/>
     --
@@ -57,13 +58,15 @@ change the test, to be 100% sure that the textarea content is the right one.
     >>> browser.getControl(
     ...     name='msgset_149_es_translation_0_radiobutton').value = [
     ...         'msgset_149_es_translation_0_new']
-    >>> browser.getControl(name='msgset_149_es_translation_0_new').value = 'foo'
+    >>> browser.getControl(name='msgset_149_es_translation_0_new').value = (
+    ...     'foo')
     >>> browser.getControl(name='submit_translations').click()
     >>> print(browser.url)
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?start=19&batch=1
     >>> print(find_tag_by_id(
     ...     browser.contents,
-    ...     'msgset_149_es_translation_0_new')) #doctest: -NORMALIZE_WHITESPACE
+    ...     'msgset_149_es_translation_0_new'))
+    ... #doctest: -NORMALIZE_WHITESPACE
     <textarea ... name="msgset_149_es_translation_0_new"...>
     foo</textarea>
 
@@ -92,7 +95,8 @@ Get previous page to check that the save translation is the right one.
 And, as we can see, we get the trailing new line char
 
     >>> print_tags(browser, [
-    ...     'msgset_165', 'msgset_165_singular', 'msgset_165_es_translation_0'])
+    ...     'msgset_165', 'msgset_165_singular',
+    ...     'msgset_165_es_translation_0'])
     23.
     <input name="msgset_165" type="hidden"/>
     --
@@ -122,7 +126,8 @@ Get previous page to check that the save translation is the right one.
 And, as we can see, we get the same output, just one trailing newline char.
 
     >>> print_tags(browser, [
-    ...     'msgset_165', 'msgset_165_singular', 'msgset_165_es_translation_0'])
+    ...     'msgset_165', 'msgset_165_singular',
+    ...     'msgset_165_es_translation_0'])
     23.
     <input name="msgset_165" type="hidden"/>
     --
@@ -152,7 +157,8 @@ Get previous page to check that the save translation is the right one.
 And Launchpad comes to the rescue and stores just one!
 
     >>> print_tags(browser, [
-    ...     'msgset_165', 'msgset_165_singular', 'msgset_165_es_translation_0'])
+    ...     'msgset_165', 'msgset_165_singular',
+    ...     'msgset_165_es_translation_0'])
     23.
     <input name="msgset_165" type="hidden"/>
     --

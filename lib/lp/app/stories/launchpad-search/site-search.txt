@@ -49,7 +49,8 @@ get an explanation of the search function.
 
     >>> print_search_results()
 
-    >>> print(extract_text(find_tag_by_id(anon_browser.contents, 'no-search')))
+    >>> print(extract_text(
+    ...     find_tag_by_id(anon_browser.contents, 'no-search')))
     Enter a term or many terms to find matching pages...
 
 When the user searches for specific item, such as a project name, they

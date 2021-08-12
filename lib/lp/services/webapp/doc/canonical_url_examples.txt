@@ -225,7 +225,8 @@ An IBugTask on a distribution without a sourcepackage.
     ...     distro_task.target.distribution, getUtility(ILaunchBag).user)
     >>> print(canonical_url(distro_task))
     http://bugs.launchpad.test/debian/+bug/1
-    >>> distro_task.transitionToTarget(temp_target, getUtility(ILaunchBag).user)
+    >>> distro_task.transitionToTarget(
+    ...     temp_target, getUtility(ILaunchBag).user)
 
 An IBugTask on a distribution series source package.
 
@@ -237,7 +238,8 @@ An IBugTask on a distribution series without a sourcepackage.
 
     >>> temp_target = distro_series_task.target
     >>> distro_series_task.transitionToTarget(
-    ...     distro_series_task.target.distroseries, getUtility(ILaunchBag).user)
+    ...     distro_series_task.target.distroseries,
+    ...     getUtility(ILaunchBag).user)
     >>> print(canonical_url(distro_series_task))
     http://bugs.launchpad.test/debian/sarge/+bug/3
     >>> distro_series_task.transitionToTarget(

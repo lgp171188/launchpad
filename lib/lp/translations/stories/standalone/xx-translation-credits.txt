@@ -56,7 +56,8 @@ displayed credits once we submit the translation.
     >>> inputradio = browser.getControl(
     ...    name='msgset_198_sr_translation_0_radiobutton')
     >>> inputradio.value = [ 'msgset_198_sr_translation_0_new']
-    >>> inputfield = browser.getControl(name='msgset_198_sr_translation_0_new')
+    >>> inputfield = browser.getControl(
+    ...     name='msgset_198_sr_translation_0_new')
     >>> inputfield.value = 'Test translation'
     >>> browser.getControl('Save & Continue').click()
     >>> print(browser.url)

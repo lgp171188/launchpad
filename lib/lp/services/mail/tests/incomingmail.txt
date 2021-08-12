@@ -321,7 +321,8 @@ OOPS notifications work even if the From: address isn't properly MIME-encoded.
     >>> notification = pop_notifications()[-1]
     >>> print(notification.get_content_type())
     multipart/mixed
-    >>> print(pretty(six.ensure_text(decode_header(notification['To'])[0][0])))
+    >>> print(pretty(
+    ...     six.ensure_text(decode_header(notification['To'])[0][0])))
     '\u05d1 <bet@canonical.com>'
     >>> error_message, original_message = notification.get_payload()
     >>> print(error_message.get_content_type())

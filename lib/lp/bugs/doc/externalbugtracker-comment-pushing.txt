@@ -46,7 +46,8 @@ In order to test the pushing of comments to remote systems we'll create
 an example ExternalBugTracker that implements the
 ISupportsCommentPushing interface.
 
-    >>> from lp.bugs.interfaces.externalbugtracker import ISupportsCommentPushing
+    >>> from lp.bugs.interfaces.externalbugtracker import (
+    ...     ISupportsCommentPushing)
     >>> from lp.bugs.externalbugtracker import (
     ...     ExternalBugTracker)
 
@@ -182,7 +183,8 @@ The bug watch updater won't try to push comments that have been imported
 from the remote bugtracker. To demonstrate this, we need to create an
 example ExternalBugTracker that does comment importing.
 
-    >>> from lp.bugs.interfaces.externalbugtracker import ISupportsCommentImport
+    >>> from lp.bugs.interfaces.externalbugtracker import (
+    ...     ISupportsCommentImport)
     >>> @implementer(ISupportsCommentImport)
     ... class CommentImportingExternalBugTracker(
     ...     CommentPushingExternalBugTracker):
