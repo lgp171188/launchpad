@@ -87,6 +87,7 @@ level checks.
     >>> voting_page = getMultiAdapter((poll, request), name="+vote")
     >>> form_processed = False
     >>> def form_processing():
+    ...     global form_processed
     ...     form_processed = True
     >>> voting_page.processCondorcetVotingForm = form_processing
     >>> voting_page.initialize()
