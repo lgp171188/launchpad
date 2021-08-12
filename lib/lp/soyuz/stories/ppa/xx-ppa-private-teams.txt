@@ -8,7 +8,8 @@ Activating Personal Package Archives for Private Teams
 Private teams can have PPAs and the process of activation is the same
 as for individuals and public teams.
 
-    >>> # Create a private team.
+Create a private team.
+
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import (
     ...     IPersonSet, PersonVisibility, TeamMembershipPolicy)

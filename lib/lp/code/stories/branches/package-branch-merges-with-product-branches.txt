@@ -13,8 +13,10 @@ and vice versa.
     >>> b1_name = b1.unique_name
     >>> b2_url = canonical_url(b2)
     >>> b2_name = b2.unique_name
-    >>> # XXX TimPenhey 2009-05-15 bug=376851
-    >>> # Need more than one package and product branch to show links.
+
+XXX TimPenhey 2009-05-15 bug=376851
+Need more than one package and product branch to show links.
+
     >>> ignored = factory.makePackageBranch(sourcepackage=b1.sourcepackage)
     >>> ignored = factory.makeProductBranch(product=b1.product)
     >>> logout()

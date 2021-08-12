@@ -10,7 +10,8 @@ Bugs
 Bug subscriptions
 -----------------
 
-    >>> # Create the necessary teams.
+Create the necessary teams.
+
     >>> team_owner = factory.makePerson(name='team-owner')
     >>> from lp.registry.interfaces.person import (
     ...     IPersonSet,
@@ -141,7 +142,8 @@ Private teams can be subscribed to private PPAs.
     ...     owner=team_owner,
     ...     visibility=PersonVisibility.PRIVATE)
 
-    >>> # We must login as the archive owner to add the subscription.
+We must login as the archive owner to add the subscription.
+
     >>> ignored = login_person(team_owner)
     >>> subscription = private_archive.newSubscription(
     ...     subscriber=another_priv_team,
@@ -206,7 +208,8 @@ Maintainer/Owner
 
 A public team and a private team can be a project owner.
 
-    >>> # The registrant must be specified or it will default to the owner.
+The registrant must be specified or it will default to the owner.
+
     >>> product = factory.makeProduct(registrant=admin_user)
     >>> product.owner = public_team
     >>> product.owner = priv_team

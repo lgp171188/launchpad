@@ -1,9 +1,9 @@
 Code Review Comments
 ====================
 
-Set up required objects
+Set up required objects.  We need to be admin to add a landing target to a
+random branch.
 
-    >>> # We need to be admin to add a landing target to a random branch
     >>> login('foo.bar@canonical.com')
     >>> eric = factory.makePerson(
     ...     name="eric", email="eric@example.com",

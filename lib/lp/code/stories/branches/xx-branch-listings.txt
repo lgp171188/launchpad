@@ -388,7 +388,9 @@ both the series link in the first column with the branch unique name.
 
     >>> browser.open('http://code.launchpad.test/gnome-terminal')
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
-    >>> # The development focus is always first.
+
+The development focus is always first.
+
     >>> row = table.tbody.find_all('tr')[0]
     >>> cols = row.find_all('td')
     >>> print(extract_text(cols[0]))

@@ -164,7 +164,8 @@ Only the Spanish request is new, and that goes into the queue.
     pmount:cs
     pmount:es
 
-    >>> # Clean up the queue again.
+Clean up the queue again.
+
     >>> for request in IStore(POExportRequest).find(POExportRequest):
     ...     request.destroySelf()
 

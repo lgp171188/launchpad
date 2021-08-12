@@ -189,8 +189,9 @@ possible.
     >>> from pytz import UTC
     >>> pending_job = reviewed_import.import_job
     >>> future_date = datetime(2100, 1, 1, tzinfo=UTC)
-    >>> # ICodeImportJob does not expose date_due,
-    >>> # so we must use removeSecurityProxy.
+
+ICodeImportJob does not expose date_due, so we must use removeSecurityProxy.
+
     >>> removeSecurityProxy(pending_job).date_due = future_date
     >>> new_events = NewEvents()
 

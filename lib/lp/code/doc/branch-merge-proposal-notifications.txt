@@ -95,22 +95,27 @@ Email
 Jobs for notifications are automagically generated when the merge proposal
 is created.  When those jobs are run, the email is sent from the registrant.
 
-    >>> #clear any existing notifications
     >>> source_branch = bmp.source_branch
     >>> factory.makeRevisionsForBranch(source_branch, count=1)
     >>> target_branch = bmp.target_branch
-    >>> # Login to delete the proposal.
+
+Login to delete the proposal.
+
     >>> login('admin@canonical.com')
     >>> bmp.deleteProposal()
     >>> notifications = pop_notifications()
     >>> registrant = factory.makePerson(
     ...     displayname="Eric", email="eric@example.com")
-    >>> # To avoid needing to access branches, pre-populate diffs.
+
+To avoid needing to access branches, pre-populate diffs.
+
     >>> bmp = source_branch.addLandingTarget(
     ...     registrant, target_branch, needs_review=True)
     >>> previewdiff = factory.makePreviewDiff(merge_proposal=bmp)
     >>> transaction.commit()
-    >>> # Fake the update preview diff as done.
+
+Fake the update preview diff as done.
+
     >>> bmp.next_preview_diff_job.start()
     >>> bmp.next_preview_diff_job.complete()
     >>> [job] = list(getUtility(IBranchMergeProposalJobSource).iterReady())
@@ -169,7 +174,9 @@ in the email.
     ...     review_requests=reviewers, needs_review=True)
     >>> previewdiff = factory.makePreviewDiff(merge_proposal=bmp)
     >>> transaction.commit()
-    >>> # Fake the update preview diff as done.
+
+Fake the update preview diff as done.
+
     >>> bmp.next_preview_diff_job.start()
     >>> bmp.next_preview_diff_job.complete()
     >>> [job] = list(getUtility(IBranchMergeProposalJobSource).iterReady())

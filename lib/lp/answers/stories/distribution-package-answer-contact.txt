@@ -13,7 +13,9 @@ contacts as well as the distribution answer contacts.
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> login('test@canonical.com')
     >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> # Answer contacts must speak a language
+
+Answer contacts must speak a language.
+
     >>> user = getUtility(ILaunchBag).user
     >>> user.addLanguage(getUtility(ILanguageSet)['en'])
     >>> ubuntu.addAnswerContact(user, user)

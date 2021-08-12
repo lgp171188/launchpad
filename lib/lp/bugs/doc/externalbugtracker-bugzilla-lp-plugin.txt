@@ -171,10 +171,11 @@ The BugzillaLPPlugin ExternalBugTracker, like all other
 ExternalBugTrackers, has a getCurrentDBTime() method, which returns the
 current time on the remote server.
 
+It seems there's no way to create a UTC timestamp without monkey-patching
+the TZ environment variable. Rather than do that, we create our own datetime
+and work with that.
+
     >>> from datetime import datetime
-    >>> # It seems there's no way to create a UTC timestamp without
-    >>> # monkey-patching the TZ environment variable. Rather than do
-    >>> # that, we create our own datetime and work with that.
     >>> remote_time = datetime(2008, 5, 16, 16, 53, 20)
 
     >>> test_transport.utc_offset = 60**2

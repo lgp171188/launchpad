@@ -51,8 +51,9 @@ Each of the lines is prefixed with a tick if the result status was
 success, or a cross if the status was a failure.  The title of the image
 is the text of the failure or success type.
 
-    >>> # The ordering here is dependant on the order the status values
-    >>> # are declared in the enumeration.
+The ordering here is dependent on the order the status values are declared
+in the enumeration.
+
     >>> for img in import_results.find_all('img'):
     ...     print(img)
     <img src="/@@/no" title="Unsupported feature"/>

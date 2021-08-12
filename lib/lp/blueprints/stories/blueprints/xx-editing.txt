@@ -89,7 +89,6 @@ implementation status, estimated man days etc) of the specification.
     >>> back_link.url
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
     >>> browser.getControl('Definition Status').value = ['DRAFT']
-    >>> # browser.getControl('Estimated Developer Days').value = '5'
     >>> browser.getControl('Implementation Status').value = ['SLOW']
     >>> browser.getControl('Status Whiteboard').value = 'XXX'
     >>> browser.getControl('Change').click()

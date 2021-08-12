@@ -124,7 +124,8 @@ Private teams can be subscribed to bugs. Any logged in user can see
 the private team in the subscribers list. Additionally if they are a member
 of the private team they can unsubscribe the team.
 
-    >>> # Create a private team with Foo Bar as the owner.
+Create a private team with Foo Bar as the owner.
+
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet, PersonVisibility
     >>> login('foo.bar@canonical.com')
