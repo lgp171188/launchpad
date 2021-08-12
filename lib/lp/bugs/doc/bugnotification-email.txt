@@ -199,7 +199,7 @@ is wrapped properly:
     ...         'new': edited_bug.description,
     ...         'old': old_description,
     ...     })
-    >>> for change in get_bug_changes(bug_delta):
+    >>> for change in get_bug_changes(bug_delta):  # noqa
     ...     notification = change.getBugNotification()
     ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")

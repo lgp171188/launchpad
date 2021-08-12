@@ -17,7 +17,7 @@ the code home page "Import your project".
     Request a code import...
 
     >>> browser.contents
-    '...You will not be able to push directly to the 
+    '...You will not be able to push directly to the
     imported\n        branch or repository...'
 
 There is a cancel link on this page near the buttons to take the

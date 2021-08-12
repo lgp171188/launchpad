@@ -81,7 +81,7 @@ generates a notification email only to Ubuntu Team administrators.
     >>> len(stub.test_emails)
     5
 
-    >>> print_distinct_emails(include_reply_to=True, decode=True)
+    >>> print_distinct_emails(include_reply_to=True, decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -131,7 +131,7 @@ job now.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -189,7 +189,7 @@ The same goes for approving a proposed member.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -239,7 +239,7 @@ The same for deactivating a membership.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -285,7 +285,7 @@ message sent.
     >>> len(stub.test_emails)
     5
 
-    >>> print_distinct_emails(include_reply_to=True, decode=True)
+    >>> print_distinct_emails(include_reply_to=True, decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -337,7 +337,7 @@ Now, the emails have been sent.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Marilize Coetzee <marilize@hbd.com>
     X-Launchpad-Message-Rationale: Member (ubuntu-team)
@@ -396,7 +396,7 @@ membership will only be activated if they accept the invitation.
     >>> len(stub.test_emails)
     1
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Mark Shuttleworth <mark@example.com>
     X-Launchpad-Message-Rationale: Admin (ubuntu-mirror-admins)
@@ -434,7 +434,7 @@ team.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -498,7 +498,7 @@ Similarly, a notification is sent if the invitation is declined.
     >>> len(stub.test_emails)
     7
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -553,7 +553,7 @@ passing force_team_add=True to the addMember() method.
     >>> len(stub.test_emails)
     5
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Foo Bar <foo.bar@canonical.com>
     X-Launchpad-Message-Rationale: Member (ubuntu-team) @launchpad
@@ -621,7 +621,7 @@ ubuntu-team's admins.
     >>> flush_database_updates()
     >>> beta_testers_on_ubuntu_team.sendExpirationWarningEmail()
     >>> run_mail_jobs()
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Launchpad Beta Testers Owner <beta-admin@launchpad.net>
     X-Launchpad-Message-Rationale: Member (ubuntu-team)
@@ -667,7 +667,7 @@ to renew their own membership.
     >>> flush_database_updates()
     >>> kamion_on_ubuntu_team.sendExpirationWarningEmail()
     >>> run_mail_jobs()
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Colin Watson <colin.watson@ubuntulinux.com>
     X-Launchpad-Message-Rationale: Member (ubuntu-team)
@@ -695,7 +695,7 @@ to renew their own membership.
 
     >>> beta_testers_on_ubuntu_team.sendExpirationWarningEmail()
     >>> run_mail_jobs()
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Launchpad Beta Testers Owner <beta-admin@launchpad.net>
     X-Launchpad-Message-Rationale: Member (ubuntu-team)
@@ -740,7 +740,7 @@ their membership page, where they can extend it.
     >>> flush_database_updates()
     >>> sampleperson_on_landscape.sendExpirationWarningEmail()
     >>> run_mail_jobs()
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Landscape Developers <noreply@launchpad.net>
     To: Sample Person <test@canonical.com>
     X-Launchpad-Message-Rationale: Member (landscape-developers)
@@ -800,7 +800,7 @@ notification is sent to all team admins.
     >>> len(stub.test_emails)
     1
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Mirror Administrators <noreply@launchpad.net>
     To: Mark Shuttleworth <mark@example.com>
     X-Launchpad-Message-Rationale: Admin (ubuntu-mirror-admins)
@@ -852,7 +852,7 @@ email notification.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Colin Watson <colin.watson@ubuntulinux.com>,
@@ -899,7 +899,7 @@ will only be sent to the team administrators.
     >>> len(stub.test_emails)
     5
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Celso Providelo <celso.providelo@canonical.com>,
@@ -934,7 +934,7 @@ wouldn't make sense to the members of the team reading it.
     >>> len(stub.test_emails)
     6
 
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Ubuntu Team <noreply@launchpad.net>
     To: Alexander Limi <limi@plone.org>,
         Celso Providelo <celso.providelo@canonical.com>,
@@ -1031,7 +1031,7 @@ notification email contain subscription information.
     ...     name='team-member', email='team-member@example.com')
     >>> ignored = team_one.addMember(member, owner)
     >>> run_mail_jobs()
-    >>> print_distinct_emails(decode=True)
+    >>> print_distinct_emails(decode=True)  # noqa
     From: Team One ...
     To: Team-member <team-member...>
     X-Launchpad-Message-Rationale: Member (team-one)
@@ -1058,7 +1058,7 @@ emails contain subscription information.
     ...     name='team-two', email='team-two@example.com', owner=owner)
     >>> ignored = team_one.addMember(team_two, owner, force_team_add=True)
     >>> run_mail_jobs()
-    >>> print_distinct_emails(include_for=True, decode=True)
+    >>> print_distinct_emails(include_for=True, decode=True)  # noqa
     From: Team One ...
     To: Team Two <team-two...>
     X-Launchpad-Message-Rationale: Member (team-one) @team-two

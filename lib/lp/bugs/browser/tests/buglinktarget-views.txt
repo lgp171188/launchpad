@@ -83,7 +83,7 @@ Unlink Bugs View
 
 
 The +unlinkbug view is used to unlink a selection of bugs from an
-IBugLinkTarget. 
+IBugLinkTarget.
 
     >>> view = create_view(cve, name='+unlinkbug')
     >>> print(view.label)

@@ -2,11 +2,11 @@ Blueprint Batching
 ==================
 
 For projects with large numbers of blueprints, it's important that users are
-able to navigate easily through those blueprints. It's also important for us 
-to render lists of blueprints in a way that is scalable, making efficient use 
+able to navigate easily through those blueprints. It's also important for us
+to render lists of blueprints in a way that is scalable, making efficient use
 of Launchpad resources.
 
-To support these aims, we render long lists of blueprints in batches. We allow 
+To support these aims, we render long lists of blueprints in batches. We allow
 the user to navigate between the batches on demand.
 
 To demonstrate this, we'll create a new project:
@@ -56,11 +56,11 @@ We'll go ahead and add just a single blueprint:
     >>> browser.url
     'http://blueprints.launchpad.test/big-project/+spec/blueprint-0'
 
-When we ask for the complete list of blueprints for our project, the new 
+When we ask for the complete list of blueprints for our project, the new
 blueprint is listed:
 
     >>> browser.open("http://blueprints.launchpad.test/big-project")
-    >>> print(extract_text(first_tag_by_class(browser.contents, 
+    >>> print(extract_text(first_tag_by_class(browser.contents,
     ...                                      'batch-navigation-index')))
     1...→...1...of...1 result
 
@@ -77,20 +77,20 @@ Observe that now when we ask for the complete list of blueprints, only some of
 the blueprints are listed:
 
     >>> browser.open("http://blueprints.launchpad.test/big-project")
-    >>> print(extract_text(first_tag_by_class(browser.contents, 
+    >>> print(extract_text(first_tag_by_class(browser.contents,
     ...                                      'batch-navigation-index')))
     1...→...5...of...20 results
 
 We can go to the next batch of blueprints by following the 'Next' link:
 
     >>> browser.getLink('Next').click()
-    >>> print(extract_text(first_tag_by_class(browser.contents, 
+    >>> print(extract_text(first_tag_by_class(browser.contents,
     ...                                      'batch-navigation-index')))
     6...→...10...of...20 results
 
 Following the 'Last' link takes us to the last batch of blueprints:
 
     >>> browser.getLink('Last').click()
-    >>> print(extract_text(first_tag_by_class(browser.contents, 
+    >>> print(extract_text(first_tag_by_class(browser.contents,
     ...                                      'batch-navigation-index')))
     16...→...20...of...20 results

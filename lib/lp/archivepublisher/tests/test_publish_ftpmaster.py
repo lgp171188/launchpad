@@ -159,7 +159,7 @@ class HelpersMixin:
 class TestNewerMtime(TestCase):
 
     def setUp(self):
-        super(TestCase, self).setUp()
+        super().setUp()
         tempdir = self.useTempDir()
         self.a = os.path.join(tempdir, "a")
         self.b = os.path.join(tempdir, "b")

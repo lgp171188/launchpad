@@ -203,7 +203,7 @@ used as a default.
     ... Content-Type: multipart/mixed; charset="latin-1";
     ...               boundary="=====BOUNDARY====="
     ... MIME-Version: 1.0
-    ... Subject: 
+    ... Subject: something
     ... From: foo.bar@canonical.com
     ... Message-Id: <20080603@localhost.localdomain>
     ... Date: Thu Mar 06 13:00 MET 2008

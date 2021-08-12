@@ -201,7 +201,7 @@ We need an standard template header.
     ...     Content-Type: text/plain; charset=CHARSET
     ...     Content-Transfer-Encoding: 8bit
     ...     Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;
-    ...     """)
+    ...     """)  # noqa
 
 and a translation header with some fields set.
 
@@ -267,7 +267,7 @@ template.
     ...     Content-Transfer-Encoding: 8bit
     ...     Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;
     ...     Domain: blahdomain
-    ...     """)
+    ...     """)  # noqa
     >>> translation_header.updateFromTemplateHeader(template_header)
     >>> print(translation_header.getRawContent())
     Project-Id-Version: PACKAGE VERSION

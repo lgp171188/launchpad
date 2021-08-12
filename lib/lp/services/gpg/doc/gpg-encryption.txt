@@ -51,7 +51,7 @@ Note fingerprint is also unicode.
 
     >>> key = gpghandler.retrieveKey(fingerprint)
     >>> cipher = gpghandler.encryptContent(content.encode('utf-8'), key)
-    
+
 cipher constains the encrypted content.
 
 Storing the raw password may compromise the security, but is the
@@ -60,8 +60,8 @@ only way we can decrypt the cipher content.
     >>> password = six.ensure_str('test')
     >>> plain = decrypt_content(cipher, password)
 
-voilá, the same content shows up again. 
-    
+voilá, the same content shows up again.
+
     >>> print(backslashreplace(plain.decode('utf-8')))
     \ufcber
 

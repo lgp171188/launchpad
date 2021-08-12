@@ -180,7 +180,7 @@ This is the body of the rejection email.
     None
     >>> print(body.get('Content-Type'))
     text/plain; charset="utf-8"
-    >>> print(body.get_payload(decode=True).decode('UTF-8'))
+    >>> print(body.get_payload(decode=True).decode('UTF-8'))  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     Rejected:
     The source bar - 1.0-1 is already accepted in ubuntu/hoary and you cannot upload the same version within the same distribution. You have to modify the source version and re-upload.
@@ -212,7 +212,7 @@ changes file is enclosed as an attachment.
     attachment; filename="changesfile"
     >>> print(attachment.get('Content-Type'))
     text/plain; charset="utf-8"
-    >>> print(attachment.get_payload(decode=True).decode('UTF-8'))
+    >>> print(attachment.get_payload(decode=True).decode('UTF-8'))  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     Format: 1.7
     Date: Thu, 16 Feb 2006 15:34:09 +0000
@@ -394,7 +394,7 @@ UNAPPROVED source uploads for 'translations' section via insecure:
     'UNAPPROVED'
 
 UNAPPROVED message was also skipped for an upload targeted to
-'translation' section: 
+'translation' section:
     >>> transaction.commit()
     >>> len(stub.test_emails)
     0
@@ -667,7 +667,7 @@ changes file is mentioned toward the end of the email.
     None
     >>> print(body.get('Content-Type'))
     text/plain; charset="utf-8"
-    >>> print(body.get_payload(decode=True).decode('UTF-8'))
+    >>> print(body.get_payload(decode=True).decode('UTF-8'))  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     bar (1.0-10) breezy; urgency=low
     <BLANKLINE>
@@ -714,7 +714,7 @@ And what follows is the content of the attachment.
     attachment; filename="changesfile"
     >>> print(attachment.get('Content-Type'))
     text/plain; charset="utf-8"
-    >>> print(attachment.get_payload(decode=True).decode('UTF-8'))
+    >>> print(attachment.get_payload(decode=True).decode('UTF-8'))  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     Format: 1.7
     Date: Thu, 30 Mar 2006 01:36:14 +0100

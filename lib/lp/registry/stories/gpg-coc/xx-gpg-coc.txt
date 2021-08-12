@@ -655,7 +655,7 @@ Test if the advertisement email was sent:
 
     >>> admin_console_link.click()
 
-  We are in the Administration page 
+  We are in the Administration page
 
     >>> browser.url
     'http://localhost:9000/codeofconduct/console'

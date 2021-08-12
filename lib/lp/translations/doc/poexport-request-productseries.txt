@@ -51,7 +51,7 @@ The user receives a confirmation email.
     >>> test_emails = pop_notifications()
     >>> len(test_emails)
     1
-    >>> print_emails(notifications=test_emails, decode=True)
+    >>> print_emails(notifications=test_emails, decode=True)  # noqa
     From: ...
     Subject: Launchpad translation download: Evolution trunk
     Hello ...,

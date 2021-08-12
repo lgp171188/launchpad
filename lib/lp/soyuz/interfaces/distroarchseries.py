@@ -65,8 +65,7 @@ class ChrootNotPublic(Exception):
     """Raised when trying to set a chroot from a private livefs build."""
 
     def __init__(self):
-        super(Exception, self).__init__(
-            "Cannot set chroot from a private build.")
+        super().__init__("Cannot set chroot from a private build.")
 
 
 @error_status(http_client.BAD_REQUEST)
@@ -74,7 +73,7 @@ class FilterSeriesMismatch(Exception):
     """DAS and packageset distroseries do not match when setting a filter."""
 
     def __init__(self, distroarchseries, packageset):
-        super(Exception, self).__init__(
+        super().__init__(
             "The requested package set is for %s and cannot be set as a "
             "filter for %s %s." % (
                 packageset.distroseries.fullseriesname,
