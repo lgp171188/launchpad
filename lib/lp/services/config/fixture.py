@@ -12,13 +12,13 @@ __all__ = [
     ]
 
 from configparser import RawConfigParser
+import io
 import os.path
 import shutil
 from textwrap import dedent
 
 from fixtures import Fixture
 import scandir
-import six
 
 from lp.services.config import config
 
@@ -47,11 +47,8 @@ class ConfigFixture(Fixture):
     def _parseConfigData(self, conf_data, conf_filename):
         """Parse a single chunk of config data, with no inheritance."""
         # Compare https://bugs.launchpad.net/lazr.config/+bug/1397779.
-        parser_kws = {}
-        if six.PY3:
-            parser_kws['strict'] = False
-        parser = RawConfigParser(**parser_kws)
-        parser.readfp(six.StringIO(conf_data), conf_filename)
+        parser = RawConfigParser(strict=False)
+        parser.read_file(io.StringIO(conf_data), conf_filename)
         return parser
 
     def _parseConfigFile(self, conf_filename):
