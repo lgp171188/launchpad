@@ -857,6 +857,60 @@ class TestSnap(TestCaseWithFactory):
             snap_base, snap_base.build_channels,
             distro_series=snap_base.distro_series)
 
+    def test_requestBuildsFromJob_snap_base_build_channels_by_arch(self):
+        # If the snap base declares different build channels for specific
+        # architectures, then requestBuildsFromJob uses those when requesting
+        # builds for those architectures.
+        self.useFixture(GitHostingFixture(blob="base: test-base\n"))
+        processors = [
+            self.factory.makeProcessor(supports_virtualized=True)
+            for _ in range(3)]
+        distroseries = self.factory.makeDistroSeries()
+        for processor in processors:
+            self.makeBuildableDistroArchSeries(
+                distroseries=distroseries, architecturetag=processor.name,
+                processor=processor)
+        with admin_logged_in():
+            snap_base = self.factory.makeSnapBase(
+                name="test-base", distro_series=distroseries,
+                build_channels={
+                    "snapcraft": "stable/launchpad-buildd",
+                    "_byarch": {
+                        processors[0].name: {
+                            "core": "candidate",
+                            "snapcraft": "5.x/stable",
+                            },
+                        },
+                    })
+        snap = self.factory.makeSnap(
+            distroseries=None, git_ref=self.factory.makeGitRefs()[0])
+        job = getUtility(ISnapRequestBuildsJobSource).create(
+            snap, snap.owner.teamowner, snap_base.distro_series.main_archive,
+            PackagePublishingPocket.RELEASE, None)
+        self.assertEqual(
+            get_transaction_timestamp(IStore(snap)), job.date_created)
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = snap.requestBuildsFromJob(
+                job.requester, job.archive, job.pocket,
+                build_request=job.build_request)
+        self.assertThat(builds, MatchesSetwise(
+            *(MatchesStructure(
+                requester=Equals(job.requester),
+                snap=Equals(job.snap),
+                archive=Equals(job.archive),
+                distro_arch_series=Equals(
+                    snap_base.distro_series[processor.name]),
+                pocket=Equals(job.pocket),
+                snap_base=Equals(snap_base),
+                channels=Equals(channels))
+              for processor, channels in (
+                  (processors[0],
+                   {"core": "candidate", "snapcraft": "5.x/stable"}),
+                  (processors[1], {"snapcraft": "stable/launchpad-buildd"}),
+                  (processors[2], {"snapcraft": "stable/launchpad-buildd"}),
+                  ))))
+
     def test_requestBuildsFromJob_unsupported_remote(self):
         # If the snap is based on an external Git repository from which we
         # don't support fetching blobs, requestBuildsFromJob falls back to
