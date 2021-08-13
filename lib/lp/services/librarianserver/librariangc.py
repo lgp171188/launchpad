@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Librarian garbage collection routines"""
@@ -31,7 +31,6 @@ from lp.services.database.postgresql import (
     listReferences,
     quoteIdentifier,
     )
-from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features import getFeatureFlag
 from lp.services.librarianserver import swift
 from lp.services.librarianserver.storage import (
@@ -116,14 +115,19 @@ def sha1_file(content_id):
     return hasher.hexdigest(), length
 
 
-def confirm_no_clock_skew(store):
+def confirm_no_clock_skew(con):
     """Raise an exception if there is significant clock skew between the
     database and this machine.
 
     It is theoretically possible to lose data if there is more than several
     hours of skew.
     """
-    db_now = get_transaction_timestamp(store)
+    cur = con.cursor()
+    try:
+        cur.execute("SELECT CURRENT_TIMESTAMP AT TIME ZONE 'UTC'")
+        db_now = cur.fetchone()[0].replace(tzinfo=pytz.UTC)
+    finally:
+        cur.close()
     local_now = _utcnow()
     five_minutes = timedelta(minutes=5)
 
