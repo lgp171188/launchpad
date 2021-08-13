@@ -1445,7 +1445,6 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
     def test_index_cancelling_build(self):
         oci_project = self.factory.makeOCIProject(
             pillar=self.distroseries.distribution)
-        oci_project_display = oci_project.display_name
         [ref] = self.factory.makeGitRefs(
             owner=self.person, target=self.person, name="recipe-repository",
             paths=["refs/heads/v1.0-20.04"])
@@ -1470,25 +1469,11 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         login_person(self.person)
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
             .*
-            OCI recipe information
-            Owner: Test Person
-            OCI project: %s
-            Source: ~test-person/\\+git/recipe-repository:v1.0-20.04
-            Build file path: Dockerfile
-            Build context directory: %s
-            Build schedule: Built on request
-            Official recipe:
-            No
-            Latest builds
-            Build status
-            Upload status
-            When requested
-            When complete
             There were build failures.
             No registry upload requested.
             a moment ago
             in 30 minutes
-            (estimated)
+            \\(estimated\\)
             amd64
             Cancelling build
             386
@@ -1496,10 +1481,9 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             amd64
             386
             in 30 minutes
-            (estimated)
-            Recipe push rules
-            This OCI recipe has no push rules defined yet.
-            """ % (oci_project_display, recipe.build_path),
+            \\(estimated\\)
+            .*
+            """,
             extract_text(find_main_content(browser.contents)))
 
         # Check portlet on side menu.
