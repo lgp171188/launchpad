@@ -64,6 +64,7 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNotNone(getattr(self.widget, "core_widget", None))
         self.assertIsNotNone(getattr(self.widget, "core18_widget", None))
         self.assertIsNotNone(getattr(self.widget, "core20_widget", None))
+        self.assertIsNotNone(getattr(self.widget, "core22_widget", None))
 
     def test_setUpSubWidgets_second_call(self):
         # The setUpSubWidgets method exits early if a flag is set to
@@ -74,6 +75,7 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(getattr(self.widget, "core_widget", None))
         self.assertIsNone(getattr(self.widget, "core18_widget", None))
         self.assertIsNone(getattr(self.widget, "core20_widget", None))
+        self.assertIsNone(getattr(self.widget, "core22_widget", None))
 
     def test_setRenderedValue_None(self):
         self.widget.setRenderedValue(None)
@@ -81,6 +83,7 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(self.widget.core_widget._getCurrentValue())
         self.assertIsNone(self.widget.core18_widget._getCurrentValue())
         self.assertIsNone(self.widget.core20_widget._getCurrentValue())
+        self.assertIsNone(self.widget.core22_widget._getCurrentValue())
 
     def test_setRenderedValue_empty(self):
         self.widget.setRenderedValue({})
@@ -88,6 +91,7 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(self.widget.core_widget._getCurrentValue())
         self.assertIsNone(self.widget.core18_widget._getCurrentValue())
         self.assertIsNone(self.widget.core20_widget._getCurrentValue())
+        self.assertIsNone(self.widget.core22_widget._getCurrentValue())
 
     def test_setRenderedValue_one_channel(self):
         self.widget.setRenderedValue({"charmcraft": "stable"})
@@ -96,17 +100,20 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(self.widget.core_widget._getCurrentValue())
         self.assertIsNone(self.widget.core18_widget._getCurrentValue())
         self.assertIsNone(self.widget.core20_widget._getCurrentValue())
+        self.assertIsNone(self.widget.core22_widget._getCurrentValue())
 
     def test_setRenderedValue_all_channels(self):
         self.widget.setRenderedValue(
             {"charmcraft": "stable", "core": "candidate", "core18": "beta",
-             "core20": "edge"})
+             "core20": "edge", "core22": "edge/feature"})
         self.assertEqual(
             "stable", self.widget.charmcraft_widget._getCurrentValue())
         self.assertEqual(
             "candidate", self.widget.core_widget._getCurrentValue())
         self.assertEqual("beta", self.widget.core18_widget._getCurrentValue())
         self.assertEqual("edge", self.widget.core20_widget._getCurrentValue())
+        self.assertEqual(
+            "edge/feature", self.widget.core22_widget._getCurrentValue())
 
     def test_hasInput_false(self):
         # hasInput is false when there are no channels in the form data.
@@ -128,6 +135,7 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core": "",
             "field.auto_build_channels.core18": "beta",
             "field.auto_build_channels.core20": "edge",
+            "field.auto_build_channels.core22": "edge/feature",
             }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertTrue(self.widget.hasValidInput())
@@ -138,10 +146,12 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core": "",
             "field.auto_build_channels.core18": "beta",
             "field.auto_build_channels.core20": "edge",
+            "field.auto_build_channels.core22": "edge/feature",
             }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(
-            {"charmcraft": "stable", "core18": "beta", "core20": "edge"},
+            {"charmcraft": "stable", "core18": "beta", "core20": "edge",
+             "core22": "edge/feature"},
             self.widget.getInputValue())
 
     def test_call(self):
@@ -151,6 +161,7 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNotNone(self.widget.core_widget)
         self.assertIsNotNone(self.widget.core18_widget)
         self.assertIsNotNone(self.widget.core20_widget)
+        self.assertIsNotNone(self.widget.core22_widget)
         soup = BeautifulSoup(markup)
         fields = soup.find_all(["input"], {"id": re.compile(".*")})
         expected_ids = [
@@ -158,6 +169,7 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core",
             "field.auto_build_channels.core18",
             "field.auto_build_channels.core20",
+            "field.auto_build_channels.core22",
             ]
         ids = [field["id"] for field in fields]
         self.assertContentEqual(expected_ids, ids)

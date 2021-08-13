@@ -19,6 +19,10 @@
     <td>core20</td>
     <td><div tal:content="structure view/core20_widget" /></td>
   </tr>
+  <tr>
+    <td>core22</td>
+    <td><div tal:content="structure view/core22_widget" /></td>
+  </tr>
 </table>
 
 </tal:root>
