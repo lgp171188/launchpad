@@ -1390,7 +1390,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
 
         # We also need to account for builds that don't have a build_request
         build = self.makeBuild(
-            recipe=recipe, status=BuildStatus.CANCELLING,
+            recipe=recipe, status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=30))
 
         browser = self.getViewBrowser(build_request.recipe)
@@ -1431,6 +1431,72 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Successfully built
             386
             30 minutes ago
+            Recipe push rules
+            This OCI recipe has no push rules defined yet.
+            """ % (oci_project_display, recipe.build_path),
+            extract_text(find_main_content(browser.contents)))
+
+        # Check portlet on side menu.
+        privacy_tag = find_tag_by_id(browser.contents, "privacy")
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            "This OCI recipe contains Public information",
+            extract_text(privacy_tag))
+
+    def test_index_cancelling_build(self):
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        oci_project_display = oci_project.display_name
+        [ref] = self.factory.makeGitRefs(
+            owner=self.person, target=self.person, name="recipe-repository",
+            paths=["refs/heads/v1.0-20.04"])
+        recipe = self.makeRecipe(
+            processor_names=["amd64", "386"],
+            build_file="Dockerfile", git_ref=ref,
+            oci_project=oci_project, registrant=self.person, owner=self.person)
+        build_request = recipe.requestBuilds(self.person)
+        builds = recipe.requestBuildsFromJob(self.person, build_request)
+        job = removeSecurityProxy(build_request).job
+        removeSecurityProxy(job).builds = builds
+
+        for build in builds:
+            removeSecurityProxy(build).updateStatus(
+                    BuildStatus.BUILDING, builder=None,
+                    date_started=build.date_created)
+            removeSecurityProxy(build).updateStatus(
+                BuildStatus.CANCELLING, builder=None,
+                date_finished=build.date_started + timedelta(minutes=30))
+
+        browser = self.getViewBrowser(build_request.recipe)
+        login_person(self.person)
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            .*
+            OCI recipe information
+            Owner: Test Person
+            OCI project: %s
+            Source: ~test-person/\\+git/recipe-repository:v1.0-20.04
+            Build file path: Dockerfile
+            Build context directory: %s
+            Build schedule: Built on request
+            Official recipe:
+            No
+            Latest builds
+            Build status
+            Upload status
+            When requested
+            When complete
+            There were build failures.
+            No registry upload requested.
+            a moment ago
+            in 30 minutes
+            (estimated)
+            amd64
+            Cancelling build
+            386
+            Cancelling build
+            amd64
+            386
+            in 30 minutes
+            (estimated)
             Recipe push rules
             This OCI recipe has no push rules defined yet.
             """ % (oci_project_display, recipe.build_path),
