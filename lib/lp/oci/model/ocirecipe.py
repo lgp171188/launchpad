@@ -972,6 +972,7 @@ class OCIRecipeSet:
         building = collect_builds(BuildStatus.BUILDING,
                                   BuildStatus.UPLOADING)
         successful = collect_builds(BuildStatus.FULLYBUILT)
+        cancelled = collect_builds(BuildStatus.CANCELLED)
 
         # Note: the BuildStatus DBItems are used here to summarize the
         # status of a set of builds:s
@@ -987,7 +988,7 @@ class OCIRecipeSet:
                 'status': BuildSetStatus.NEEDSBUILD,
                 'builds': needsbuild,
                 }
-        elif len(failed) != 0:
+        elif len(failed) != 0 or len(cancelled) != 0:
             return {
                 'status': BuildSetStatus.FAILEDTOBUILD,
                 'builds': failed,
