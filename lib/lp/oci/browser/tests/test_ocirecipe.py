@@ -1390,7 +1390,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
 
         # We also need to account for builds that don't have a build_request
         build = self.makeBuild(
-            recipe=recipe, status=BuildStatus.FULLYBUILT,
+            recipe=recipe, status=BuildStatus.CANCELLING,
             duration=timedelta(minutes=30))
 
         browser = self.getViewBrowser(build_request.recipe)
