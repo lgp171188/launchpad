@@ -8,10 +8,11 @@ __all__ = [
     'SigningServiceClientFixture',
     ]
 
+from unittest import mock
+
 import fixtures
 from nacl.public import PrivateKey
 
-from lp.services.compat import mock
 from lp.services.signing.interfaces.signingserviceclient import (
     ISigningServiceClient,
     )

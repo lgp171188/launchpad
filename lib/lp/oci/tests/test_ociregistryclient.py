@@ -14,6 +14,7 @@ import json
 import os
 import re
 import tarfile
+from unittest import mock
 import uuid
 
 from fixtures import MockPatch
@@ -64,7 +65,6 @@ from lp.oci.model.ociregistryclient import (
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.compat import mock
 from lp.services.features.testing import FeatureFixture
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.testing import (

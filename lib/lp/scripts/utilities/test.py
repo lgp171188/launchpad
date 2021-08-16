@@ -21,6 +21,7 @@ import re
 import signal
 import sys
 import time
+from unittest import mock
 import warnings
 
 import distro
@@ -33,7 +34,6 @@ from lp.scripts.utilities import (
     importpedant,
     warninghandler,
     )
-from lp.services.compat import mock
 from lp.services.config import config
 
 

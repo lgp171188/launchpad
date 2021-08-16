@@ -7,6 +7,7 @@ __metaclass__ = type
 
 import os
 from textwrap import dedent
+from unittest import mock
 
 import six
 from testtools.matchers import (
@@ -37,7 +38,6 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.registry.interfaces.gpg import IGPGKeySet
-from lp.services.compat import mock
 from lp.services.features.testing import FeatureFixture
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.gpg.tests.test_gpghandler import FakeGenerateKey
