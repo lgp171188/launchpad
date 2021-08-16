@@ -543,7 +543,6 @@ class ProjectGroupSet:
         apache
         >>> getUtility(IProjectGroupSet).get(-1)
         ... # doctest: +NORMALIZE_WHITESPACE
-        ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
         Traceback (most recent call last):
         ...
         lp.app.errors.NotFoundError: -1

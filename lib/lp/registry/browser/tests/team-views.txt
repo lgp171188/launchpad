@@ -61,7 +61,6 @@ Posting malformed data to the team home page raises an error.
     >>> team_home = getMultiAdapter(
     ...     (ubuntu_team, broken_request), name='+index')
     >>> team_home.initialize()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: The mailing list form did not receive the expected form fields.

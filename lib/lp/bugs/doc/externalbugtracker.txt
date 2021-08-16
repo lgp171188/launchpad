@@ -345,7 +345,6 @@ is, an error is raised.
 
     >>> bug_watch_updater.updateBugWatches(
     ...     PositiveTimeSkewExternalBugTracker(), [], now=utc_now)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.bugs.scripts.checkwatches.core.TooMuchTimeSkew: ...
@@ -357,7 +356,6 @@ is, an error is raised.
 
     >>> bug_watch_updater.updateBugWatches(
     ...     NegativeTimeSkewExternalBugTracker(), [], now=utc_now)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.bugs.scripts.checkwatches.core.TooMuchTimeSkew: ...
@@ -371,7 +369,6 @@ before re-raising the error.
     >>> server_time = utc_now - timedelta(minutes=25)
     >>> bug_watch_updater._getRemoteIdsToCheck(
     ...     NegativeTimeSkewExternalBugTracker(), [], server_time, utc_now)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.bugs.scripts.checkwatches.core.TooMuchTimeSkew: ...

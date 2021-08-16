@@ -38,7 +38,6 @@ is linked, but the link to this page is not enabled.
       url='http://launchpad.test/ubuntu/hoary/+needs-packaging'>
 
     >>> anon_browser.getLink('All upstream links')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -118,7 +117,6 @@ linked, but the link to this page is not enabled.
       url='http://launchpad.test/ubuntu/hoary/+packaging'>
 
     >>> anon_browser.getLink('Needs upstream links')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     zope.testbrowser.browser.LinkNotFoundError

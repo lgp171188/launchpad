@@ -5,7 +5,6 @@ Team (ubuntu-team).
     >>> name12_browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> name12_browser.open(
     ...     'http://launchpad.test/ubuntu/hoary/+addmilestone')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

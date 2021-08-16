@@ -127,7 +127,7 @@ Now, lets test all of that for DistroSeriess too!
 Trying to retrieve a milestone that doesn't exist will raise a
 zope.exceptions.NotFoundError:
 
-    >>> milestoneset.get(-1)  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> milestoneset.get(-1)
     Traceback (most recent call last):
       ...
     lp.app.errors.NotFoundError: 'Milestone with ID -1 does not exist'

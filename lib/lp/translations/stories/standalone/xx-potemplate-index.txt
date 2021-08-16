@@ -282,13 +282,11 @@ administration or download/upload links.
     ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> anon_browser.getLink('upload')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.getLink('download').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -300,7 +298,6 @@ but not the one for uploading file to this potemplate.
     ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> user_browser.getLink('upload')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

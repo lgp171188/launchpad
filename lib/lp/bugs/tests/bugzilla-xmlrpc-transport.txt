@@ -51,7 +51,6 @@ Authentication
 Some methods require authentication.
 
     >>> server.Test.login_required()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 410: 'Login Required'>
@@ -439,7 +438,6 @@ add_comment() requires authentication.
 
     >>> bugzilla_transport.expireCookie(bugzilla_transport.auth_cookie)
     >>> server.Launchpad.add_comment({'id': 1, 'comment': "This won't work"})
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 410: 'Login Required'>
@@ -471,7 +469,6 @@ If add_comment is called on a bug that doesn't exist a fault will be
 raised.
 
     >>> server.Launchpad.add_comment({'id': 42, 'comment': "This won't work"})
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 101: 'Bug #42 does not exist.'>
@@ -489,7 +486,6 @@ Launchpad.set_link() requires authentication.
 
     >>> bugzilla_transport.expireCookie(bugzilla_transport.auth_cookie)
     >>> server.Launchpad.set_link({'id': 1, 'launchpad_id': 1})
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 410: 'Login Required'>

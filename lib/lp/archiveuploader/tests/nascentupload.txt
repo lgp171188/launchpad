@@ -54,7 +54,7 @@ on that.
 
     >>> nonexistent = NascentUpload.from_changesfile_path(
     ...     datadir("DOES-NOT-EXIST"), buildd_policy, FakeLogger())
-    >>> nonexistent.process()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> nonexistent.process()
     Traceback (most recent call last):
     ...
     lp.archiveuploader.nascentupload.EarlyReturnUploadError: An error occurred that prevented further processing.

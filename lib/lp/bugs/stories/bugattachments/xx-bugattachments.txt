@@ -2,7 +2,6 @@ We need to login in order to add attachments.
 
     >>> anon_browser.open(
     ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

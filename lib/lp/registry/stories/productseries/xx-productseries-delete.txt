@@ -92,7 +92,6 @@ that the series was deleted, and can not see a link to it anymore.
     Series trunk deleted.
 
     >>> owner_browser.getLink('trunk')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     zope.testbrowser.browser.LinkNotFoundError

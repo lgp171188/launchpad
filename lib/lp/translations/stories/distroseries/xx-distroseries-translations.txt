@@ -11,7 +11,6 @@ In this case, we're asking for the translation overview for Hoary.
 The system is not showing non visible languages:
 
     >>> anon_browser.getLink('Spanish (Spain)')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -19,7 +18,6 @@ The system is not showing non visible languages:
 The system will not show English because it is not translatable:
 
     >>> anon_browser.getLink('English')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -33,7 +31,6 @@ Launchpad has an option to hide all of the translations for a distribution
 series.  The link to hide translations is not available to anonymous users:
 
     >>> anon_browser.getLink('Change settings')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -43,7 +40,6 @@ And the page is not available either:
     >>> anon_browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+translations-admin')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -74,7 +70,6 @@ Now, the translation status page will no longer display any languages to
 regular users.
 
     >>> user_browser.open('http://translations.launchpad.test/ubuntu/hoary')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.TranslationUnavailable: ...
@@ -85,7 +80,6 @@ the system tells them that they're not allowed to see those pages.
     >>> user_browser.handleErrors = True
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/es')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     urllib.error.HTTPError: HTTP Error 503: Service Unavailable
@@ -106,14 +100,12 @@ should not viewed
 
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/notexists')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
 
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/en')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -124,7 +116,6 @@ non-administrative users.
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+sources/evolution/+pots/evolution-2.2')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.TranslationUnavailable: ...

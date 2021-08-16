@@ -22,7 +22,6 @@ Select an existing ITranslationMessage and try to remove it.
 It should not exist now.
 
     >>> translationmessage = TranslationMessage.get(1)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     storm.sqlobject.SQLObjectNotFound: ...

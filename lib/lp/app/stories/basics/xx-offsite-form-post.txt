@@ -44,7 +44,6 @@ If we try to create a new team with with the referrer set to
     >>> browser.getControl('Name', index=0).value = 'team1'
     >>> browser.getControl('Display Name').value = 'Team 1'
     >>> browser.getControl('Create').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
@@ -57,7 +56,6 @@ Similarly, posting with a garbage referer fails:
     >>> browser.getControl('Name', index=0).value = 'team2'
     >>> browser.getControl('Display Name').value = 'Team 2'
     >>> browser.getControl('Create').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.webapp.interfaces.OffsiteFormPostError: not a url
@@ -70,7 +68,6 @@ It also fails if there is no referrer.
     >>> browser.getControl('Name', index=0).value = 'team3'
     >>> browser.getControl('Display Name').value = 'Team 3'
     >>> browser.getControl('Create').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.webapp.interfaces.NoReferrerError: No value for REFERER header
@@ -84,7 +81,6 @@ present a hopefully helpful error message.
     >>> browser.getControl('Name', index=0).value = 'team3'
     >>> browser.getControl('Display Name').value = 'Team 3'
     >>> browser.getControl('Create').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     urllib.error.HTTPError: ...
@@ -117,7 +113,6 @@ exception for +access-token, it would result in an
 OffsiteFormPostError.
 
     >>> browser.post('http://launchpad.test/+access-token', 'x=1')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     urllib.error.HTTPError: HTTP Error 401: Unauthorized
@@ -154,14 +149,12 @@ a referrerless POST request to the browser-accessible API.
 
     >>> browser.post(
     ...     'http://launchpad.test/api/devel/people', 'ws.op=foo&x=1')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
 
     >>> no_referrer_browser.post(
     ...     'http://launchpad.test/api/devel/people', 'ws.op=foo&x=1')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.NoReferrerError: No value for REFERER header
@@ -172,7 +165,6 @@ though it were signed with OAuth.
     >>> browser.post(
     ...     'http://launchpad.test/',
     ...     'oauth_consumer_key=foo&oauth_token=bar')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
@@ -180,7 +172,6 @@ though it were signed with OAuth.
     >>> no_referrer_browser.post(
     ...     'http://launchpad.test/',
     ...     'oauth_consumer_key=foo&oauth_token=bar')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.NoReferrerError: No value for REFERER header
@@ -200,7 +191,6 @@ But the browser-accessible API ignores OAuth credentials altogether.
 
     >>> browser.post(
     ...     'http://launchpad.test/api/devel/projects', sig)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
@@ -209,7 +199,6 @@ If you go through the 'api' vhost, the signed request will be
 processed despite the bogus referrer, but...
 
     >>> browser.post('http://api.launchpad.test/devel/projects', sig)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     storm.exceptions.NoneError: None isn't acceptable as a value for Product...

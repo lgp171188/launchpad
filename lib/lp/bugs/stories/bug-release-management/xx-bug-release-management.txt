@@ -203,7 +203,6 @@ in the release task.
     >>> ubuntu_edit_url = (
     ...     'http://bugs.launchpad.test/ubuntu/+bug/2/+editstatus')
     >>> user_browser.getLink(url=ubuntu_edit_url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -255,7 +254,6 @@ the distribution task won't be editable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=ubuntu_edit_url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -272,7 +270,6 @@ general distribution task will remain uneditable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=ubuntu_edit_url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -293,7 +290,6 @@ in the series task.
     >>> firefox_edit_url = (
     ...     'http://bugs.launchpad.test/firefox/+bug/4/+editstatus')
     >>> user_browser.getLink(url=firefox_edit_url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -347,7 +343,6 @@ the distribution task won't be editable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=firefox_edit_url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -364,7 +359,6 @@ general distribution task will remain uneditable.
     >>> user_browser.getControl('Save Changes').click()
 
     >>> user_browser.getLink(url=firefox_edit_url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

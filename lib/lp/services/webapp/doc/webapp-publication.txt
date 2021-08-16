@@ -530,7 +530,6 @@ UnexpectedFormData is raised if more than one value was submitted for
 the field:
 
     >>> request.form_ng.getOne('items_field')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: ...
@@ -790,7 +789,6 @@ the Talisker logging context.
     ... except:
     ...     publication.handleException(
     ...         None, request, sys.exc_info(), retry_allowed=True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.Retry: foo
@@ -820,7 +818,6 @@ the Talisker logging context.
     ...     exc_info = sys.exc_info()
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.Retry: foo DisconnectionError
@@ -854,7 +851,6 @@ WSGI env.
     ... except:
     ...     publication.handleException(
     ...         None, request, sys.exc_info(), retry_allowed=True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.Retry: foo
@@ -1183,7 +1179,6 @@ raised, though.
     >>> form2['oauth_nonce'] = '1764572616e48616d6d65724c61686'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.oauth.interfaces.TokenException: Expired token...
@@ -1195,7 +1190,6 @@ raised, though.
     >>> form2['oauth_nonce'] = '4572616e48616d6d65724c61686176'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.oauth.interfaces.TokenException: Unknown access token...
@@ -1207,7 +1201,6 @@ correct.
     >>> form2['oauth_consumer_key'] += 'z'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: Unknown consumer (foobar123451432z).
@@ -1217,7 +1210,6 @@ correct.
     >>> form2['oauth_nonce'] = '2616e48616d6d65724c61686176457'
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.oauth.interfaces.TokenException: Invalid signature.
@@ -1232,7 +1224,6 @@ The user's account must be active.
     >>> login('salgado@ubuntu.com')
     >>> test_request = LaunchpadTestRequest(form=form)
     >>> publication.getPrincipal(test_request)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.oauth.interfaces.TokenException: Inactive account.

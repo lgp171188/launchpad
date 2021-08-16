@@ -357,7 +357,6 @@ No Privileges Person cannot access 'forReview'.
     >>> check_permission('launchpad.Moderate', product_set)
     False
     >>> gnome =  product_set.forReview(commercial_member, search_text='gnome')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ... 'forReview', 'launchpad.Moderate'...

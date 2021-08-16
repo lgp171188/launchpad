@@ -38,7 +38,6 @@ the target.
 
     >>> no_priv = getUtility(ILaunchBag).user
     >>> target.newFAQ(no_priv, 'Title', 'Summary', content='Content')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

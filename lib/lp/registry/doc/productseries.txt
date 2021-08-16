@@ -70,7 +70,6 @@ owner or driver can call Product.newSeries().
     >>> series_driver = factory.makePerson(name="driver")
     >>> summary = "Port of Firefox to the Emacs operating system."
     >>> emacs = firefox.newSeries(series_driver , 'emacs', summary)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (..., 'newSeries', 'launchpad.Driver')
@@ -166,13 +165,11 @@ that the url uses one of the supported schemes (ftp, http, http).
 Invalid URLs and unsupported schemes raise a LaunchpadValidationError.
 
     >>> validate_release_glob('ftp.gnu.org/gnu/emacs/emacs-21.*.gz')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     lp.app.validators.LaunchpadValidationError: ...
 
     >>> validate_release_glob('wais://ftp.gnu.org/gnu/emacs/emacs-21.*.gz')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     lp.app.validators.LaunchpadValidationError: ...
@@ -180,7 +177,6 @@ Invalid URLs and unsupported schemes raise a LaunchpadValidationError.
 The URL must contain a glob (*) or , and may contain more than one.
 
     >>> validate_release_glob('http://ftp.gnu.org/gnu/emacs/emacs-21.10.1.gz')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     lp.app.validators.LaunchpadValidationError: ...

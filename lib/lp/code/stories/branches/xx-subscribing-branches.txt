@@ -28,7 +28,6 @@ In order to subscribe to a branch, the user must be logged in.
     >>> anon_browser.open(
     ...     'http://code.launchpad.test/~name12/gnome-terminal/main')
     >>> anon_browser.getLink('Subscribe')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -148,7 +147,6 @@ You need to be logged in to see the link.
     >>> anon_browser.open(
     ...     'http://code.launchpad.test/~name12/gnome-terminal/main')
     >>> anon_browser.getLink('Subscribe someone else')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

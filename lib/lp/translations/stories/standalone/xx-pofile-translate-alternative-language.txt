@@ -242,7 +242,6 @@ get an UnexpectedFormData exception:
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/+translate'
     ...     '?field.alternative_language=ja&field.alternative_language=aj')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: You specified...

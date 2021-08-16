@@ -110,13 +110,11 @@ and are not permitted if they go directly to the URL.
 
     >>> anon_browser.open("http://launchpad.test/+builds/+index")
     >>> anon_browser.getLink("Register a new build machine")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open("http://launchpad.test/+builds/+new")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ..., 'launchpad.Admin')

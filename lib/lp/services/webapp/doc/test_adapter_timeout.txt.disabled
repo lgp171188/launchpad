@@ -84,7 +84,6 @@ Now we actually demonstrate the behaviour.  The view did raise a TimeoutError.
 
     >>> browser = setupBrowser()
     >>> browser.open('http://launchpad.test/doom_test')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.timeout.TimeoutError: ...

@@ -64,7 +64,6 @@ say that there's no need to join since the user is already a member of that
 team.
 
     >>> browser.getLink('Join the team')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -177,7 +176,6 @@ If it was a restricted team, users wouldn't even see a link to join the team.
     Restricted Team
 
     >>> browser.getLink('Join the team')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

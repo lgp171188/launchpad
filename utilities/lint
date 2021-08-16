@@ -38,16 +38,10 @@ fi
 lint_files=`echo "$lint_files" | tr " " "\n"`
 
 non_js_files=`echo "$lint_files" | env -i grep -v '\.js$'`
-js_files=`echo "$lint_files" | env -i grep '\.js$'`
 
 ret=0
 if [ "$non_js_files" ]; then
     echo ""
     pocketlint $non_js_files 2>&1 || ret=$?
-fi
-if [ "$js_files" ]; then
-    # eslint emits a leading blank line by itself if it produces any other
-    # output.
-    nodejs yarn/node_modules/.bin/eslint $js_files 2>&1 || ret=$?
 fi
 exit $ret

@@ -56,7 +56,6 @@ getRemoteStatus() method. If we pass a bug number that doesn't exist in
 the debbugs db, BugNotFound is raised.
 
     >>> external_debbugs.getRemoteStatus('42')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.bugs.externalbugtracker.base.BugNotFound: 42
@@ -64,7 +63,6 @@ the debbugs db, BugNotFound is raised.
 If we pass a non-integer bug id, InvalidBugId is raised.
 
     >>> external_debbugs.getRemoteStatus('foo')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.bugs.externalbugtracker.base.InvalidBugId: Debbugs bug number not an integer: foo
@@ -281,7 +279,6 @@ If we pass in a malformed status string an UnknownRemoteStatusError will
 be raised.
 
     >>> print(external_debbugs.convertRemoteStatus('open'))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: open
@@ -719,7 +716,6 @@ Trying to call getRemoteProduct() on a bug that doesn't exist will raise
 a BugNotFound error.
 
     >>> print(external_debbugs.getRemoteProduct('42'))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: 42

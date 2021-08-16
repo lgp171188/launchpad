@@ -107,7 +107,6 @@ Passing invalid tsquery expressions as fast_searchtext raises an exception.
     >>> bad_search = BugTaskSearchParams(
     ...     user=None, fast_searchtext=u'happens pretty often')
     >>> list(firefox.searchTasks(bad_search))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     storm.database.ProgrammingError: syntax error in tsquery: "happens pretty often" ...

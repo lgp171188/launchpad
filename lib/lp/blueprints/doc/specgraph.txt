@@ -306,7 +306,6 @@ to the command is bad:
     ...     (svg_support, request), name="+deptreeimgtag")
     >>> graph_view.initialize()
     >>> graph_view.renderGraphvizGraph('cmapx')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     lp.blueprints.browser.specification.ProblemRenderingGraph: (... syntax error in line 1 near 'bad'...)

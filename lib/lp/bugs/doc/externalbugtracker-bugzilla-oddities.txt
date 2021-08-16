@@ -147,7 +147,6 @@ invalid XML:
     >>> remote_bugs = ['42', '2000']
     >>> with broken_bugzilla.responses():
     ...     broken_bugzilla.initializeRemoteBugDB(remote_bugs)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.bugs.externalbugtracker.base.UnparsableBugData: Failed to parse XML description...

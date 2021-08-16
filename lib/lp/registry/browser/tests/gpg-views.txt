@@ -133,7 +133,6 @@ validation.
 In some unknown way, the action sent to the form can be None (see bug 520476).
 
     >>> view = post_fingerprint(good_fingerprint, action=None)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     lp.app.errors.UnexpectedFormData: Action not permitted: None

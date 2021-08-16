@@ -509,7 +509,6 @@ performance problem in production.
     ...     """
     >>> config.push('bug_search_feed_data', bug_search_feed_data)
     >>> browser.open(url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: Bug search feed deactivated

@@ -126,7 +126,6 @@ cannot access the page.
     >>> view = create_initialized_view(firefox, name='+index')
 
     >>> view = create_initialized_view(firefox, name='+review-license')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<Product..., 'project_reviewed', 'launchpad.Moderate')

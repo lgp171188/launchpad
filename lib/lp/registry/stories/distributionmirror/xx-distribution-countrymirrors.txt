@@ -61,7 +61,6 @@ Also, the +countrymirrors-archive page is only available for the Ubuntu
 distribution.
 
     >>> browser.open('http://launchpad.test/debian/+countrymirrors-archive')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     urllib.error.HTTPError: HTTP Error 404: Not Found

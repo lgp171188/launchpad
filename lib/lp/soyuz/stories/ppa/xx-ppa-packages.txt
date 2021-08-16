@@ -223,7 +223,6 @@ But Joe himself will not see the link.
     ...     auth="Basic joe@example.com:test")
     >>> joe_browser.open(expander_url)
     >>> joe_browser.getLink("PPA named p3a for Celso Providelo")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -232,7 +231,6 @@ And neither can an anonymous user.
 
     >>> anon_browser.open(expander_url)
     >>> anon_browser.getLink("PPA named p3a for Celso Providelo")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -242,7 +240,6 @@ pagelet isn't publicly available.
 
     >>> anon_browser.open(
     ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+repository-size")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (..., 'launchpad.View')

@@ -108,7 +108,6 @@ login_required() raises a fault.
 
     >>> test_transport.expireCookie(test_transport.auth_cookie)
     >>> test_bugzilla.xmlrpc_proxy.Test.login_required()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 410: 'Login Required'>
@@ -148,7 +147,6 @@ If authentication fails, a BugTrackerAuthenticationError will be raised.
     ...     )
 
     >>> test_bugzilla._authenticate()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://example.com: XML-RPC Fault: 100 "Sorry, you can't log in."
@@ -158,7 +156,6 @@ This is also true if an error occurs at the protocol level:
     >>> fail_transport.error = ProtocolError(
     ...     'http://example.com', 500, 'Internal server error', {})
     >>> test_bugzilla._authenticate()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
        ...
     lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://example.com: Protocol error: 500 "Internal server error"
@@ -385,7 +382,6 @@ called and the bug exists locally.
     >>> transaction.commit()
 
     >>> bugzilla.getCommentIds(remote_bug)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: 42

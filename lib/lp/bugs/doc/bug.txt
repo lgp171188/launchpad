@@ -29,13 +29,12 @@ Or you can use IBugSet.getByNameOrID to get it by its nickname:
 If the bug can't be found, a zope.exceptions.NotFoundError will be
 raised:
 
-    >>> bugset.get(123456)  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> bugset.get(123456)
     Traceback (most recent call last):
       ...
     lp.app.errors.NotFoundError: 'Unable to locate bug with ID 123456.'
 
     >>> bugset.getByNameOrID('+bugs')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.NotFoundError: ...'Unable to locate bug with nickname +bugs.'
@@ -176,13 +175,11 @@ private. A bug cannot be made private by an anonymous user.
     ...     return getUtility(ILaunchBag).user
 
     >>> firefox_crashes.private = True
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.ForbiddenAttribute: ('private', ...)
 
     >>> firefox_crashes.setPrivate(True, current_user())
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: (..., 'setPrivate', 'launchpad.Append')
@@ -208,7 +205,6 @@ Even though we are logged in and subscribed to the bug, we are
 prevented from using the private attribute to mark bug #6 private:
 
     >>> firefox_crashes.private = True
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.ForbiddenAttribute: ('private', ...)
@@ -337,7 +333,6 @@ Trying to access a property of this bug will again raise an
 Unauthorized:
 
     >>> reflow_problems_bug.title
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: (..., 'title', 'launchpad.View')

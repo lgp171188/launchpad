@@ -393,7 +393,7 @@ the look up code won't be able to identify any duplications:
 As expected the second item acceptance will fail and the item will
 remain in the original queue
 
-    >>> dup_two.setAccepted()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> dup_two.setAccepted()
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueInconsistentStateError: The source cnews - 1.0 is already accepted in ubuntu/breezy-autotest and you cannot upload the same version within the same distribution. You have to modify the source version and re-upload.
@@ -423,7 +423,7 @@ test after the former accepted item was published (DONE queue)
 
 The protection code should also identify dups with items in DONE queue
 
-    >>> dup_two.setAccepted()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> dup_two.setAccepted()
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueInconsistentStateError: The source cnews - 1.0 is already accepted in ubuntu/breezy-autotest and you cannot upload the same version within the same distribution. You have to modify the source version and re-upload.
@@ -592,7 +592,6 @@ an error:
     >>> print(item.overrideSource(
     ...     new_component=restricted, new_section=web,
     ...     allowed_components=(universe,)))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override to restricted
@@ -603,7 +602,6 @@ is "main":
     >>> print(item.overrideSource(
     ...     new_component=restricted, new_section=web,
     ...     allowed_components=(restricted,)))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override from main
@@ -640,14 +638,12 @@ Similarly for binaries:
     ...     }]
     >>> print(item.overrideBinaries(
     ...     binary_changes, allowed_components=(universe,)))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override to restricted
 
     >>> print(item.overrideBinaries(
     ...     binary_changes, allowed_components=(restricted,)))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override from main

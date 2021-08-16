@@ -208,7 +208,6 @@ If get_bug_change_class() is asked for a BugChange for an object or
 field that it doesn't know about, it will raise a NoBugChangeFoundError.
 
     >>> get_bug_change_class(object(), 'fooix')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.adapters.bugchange.NoBugChangeFoundError: Unable to find a suitable BugChange for field 'fooix' on object <object object at ...>

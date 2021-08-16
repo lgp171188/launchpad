@@ -235,13 +235,11 @@ Asking for a non-existent question or an invalid ID will still raise a
 404 though:
 
     >>> browser.open('http://answers.launchpad.test/questions/255')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...
 
     >>> browser.open('http://answers.launchpad.test/questions/bad_id')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...
@@ -268,14 +266,12 @@ It also works with pages below that URL:
 But again, an invalid ID still raises a 404:
 
     >>> browser.open('http://answers.launchpad.test/ubuntu/+question/255')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...
 
     >>> browser.open(
     ...     'http://answers.launchpad.test/ubuntu/+question/bad_id')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...

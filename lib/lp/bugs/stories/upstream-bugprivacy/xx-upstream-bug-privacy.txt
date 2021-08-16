@@ -71,7 +71,6 @@ fails, because we pretend that inaccessible private bugs do not exist.
     >>> browser = setupBrowser()
     >>> browser.open(
     ...     "http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -82,7 +81,6 @@ on which the no-privs is not an explicit subscriber.
     >>> browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> browser.open(
     ...     "http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...

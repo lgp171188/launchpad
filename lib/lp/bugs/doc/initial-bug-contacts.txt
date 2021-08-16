@@ -29,7 +29,6 @@ logged in to call this method:
     >>> sample_person = personset.getByName("name12")
 
     >>> debian_firefox.addBugSubscription(sample_person, sample_person)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -80,7 +79,6 @@ raises a DeleteSubscriptionError.
 
     >>> foobar = personset.getByName("name16")
     >>> debian_firefox.removeBugSubscription(foobar, foobar)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.registry.errors.DeleteSubscriptionError: ...

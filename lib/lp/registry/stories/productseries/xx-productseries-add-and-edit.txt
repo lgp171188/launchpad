@@ -10,12 +10,10 @@ Person won't even see the link nor can access the page directly.
 
     >>> user_browser.open('http://launchpad.test/firefox')
     >>> user_browser.getLink('Register a series').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.open('http://launchpad.test/firefox/+addseries')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

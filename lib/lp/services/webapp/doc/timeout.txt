@@ -50,7 +50,7 @@ If the timeout is already expired, a RequestExpired error is raised:
     >>> from lp.services.webapp.adapter import clear_request_started
     >>> clear_request_started()
     >>> adapter.set_request_started(time.time()-12)
-    >>> timeout_func()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> timeout_func()
     Traceback (most recent call last):
       ...
     lp.services.webapp.adapter.RequestExpired: request expired.
@@ -61,7 +61,7 @@ Same thing if a function decorated using @with_timeout is called.
     >>> @with_timeout()
     ... def wait_a_little():
     ...     time.sleep(1)
-    >>> wait_a_little()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> wait_a_little()
     Traceback (most recent call last):
       ...
     lp.services.webapp.adapter.RequestExpired: request expired.

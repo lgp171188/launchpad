@@ -36,7 +36,6 @@ share their name namespace are Product, ProjectGroup and Distribution.
     >>> 'fnord' in pillar_set
     False
     >>> pillar_set['fnord']
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'fnord'
@@ -54,7 +53,6 @@ pillars.
     >>> 'gimp' in pillar_set
     False
     >>> pillar_set['gimp']
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'gimp'
@@ -71,7 +69,6 @@ It also works if you use Unicode strings.
     >>> u'launchpad' in pillar_set
     False
     >>> pillar_set[u'launchpad']
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'launchpad'
@@ -134,12 +131,10 @@ Also, if the pillar is inactive, it can't be retrieved through any of its
 aliases, in the same way that it can't be retrieved through its name.
 
     >>> pillar_set['iceweasel']
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...
     >>> pillar_set['firefox']
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...
@@ -158,7 +153,6 @@ to be able to set its aliases.
     >>> check_permission('launchpad.Edit', firefox)
     True
     >>> firefox.setAliases(['iceweasel'])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -169,7 +163,6 @@ Ditto for the Mozilla project.
     >>> check_permission('launchpad.Edit', mozilla)
     True
     >>> mozilla.setAliases(['moz'])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -181,7 +174,6 @@ And the same is true for Colin Watson on the Guadalinex distribution.
     >>> check_permission('launchpad.Edit', guadalinex)
     True
     >>> guadalinex.setAliases(['guada'])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

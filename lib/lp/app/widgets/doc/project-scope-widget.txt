@@ -52,7 +52,7 @@ If the widget is required, getInputValue() raises UnexpectedFormData if
 there is no input.
 
     >>> widget.required = True
-    >>> widget.getInputValue()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> widget.getInputValue()
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: No valid option was selected.
@@ -120,7 +120,6 @@ raised:
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.formlib.interfaces.WidgetInputError: ('field.scope', ...'', LaunchpadValidationError(...'There is no project named &#x27;invalid&#x27; registered in Launchpad'))
@@ -139,7 +138,6 @@ If no project name is given at all, a widget error is also raised:
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.formlib.interfaces.WidgetInputError: ('field.scope', ...'', LaunchpadValidationError(...'Please enter a project name'))
@@ -154,7 +152,6 @@ If no project name is given at all, a widget error is also raised:
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.formlib.interfaces.WidgetInputError: ('field.scope', ...'', LaunchpadValidationError(...'Please enter a project name'))

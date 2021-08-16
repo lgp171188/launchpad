@@ -11,7 +11,6 @@ An unpriviledged user cannot reach this page.
     >>> browser.open(
     ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/+edit')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -22,7 +21,6 @@ In fact, the "Change details" option won't even appear for them.
     ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/')
     >>> browser.getLink('Change details').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

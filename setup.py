@@ -125,13 +125,6 @@ class lp_develop(develop):
             with open(instance_name_path, "w") as instance_name_file:
                 print(os.environ["LPCONFIG"], file=instance_name_file)
 
-            # Write out the build-time Python major/minor version so that
-            # scripts run with /usr/bin/python3 know whether they need to
-            # re-exec.
-            python_version_path = os.path.join(env_top, "python_version")
-            with open(python_version_path, "w") as python_version_file:
-                print("%s.%s" % sys.version_info[:2], file=python_version_file)
-
 
 __version__ = '2.2.3'
 

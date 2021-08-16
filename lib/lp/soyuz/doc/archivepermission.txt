@@ -146,7 +146,6 @@ If the string is not a valid component, a NotFound exception is thrown:
 
     >>> uploaders = permission_set.uploadersForComponent(
     ...     ubuntu.main_archive, "badcomponent")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.ComponentNotFound: No such component: 'badcomponent'.
@@ -194,7 +193,6 @@ NoSuchSourcePackageName to be thrown.
 
     >>> uploaders = permission_set.uploadersForPackage(
     ...     ubuntu.main_archive, "fakepackage")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.registry.errors.NoSuchSourcePackageName: No such source package: 'fakepackage'.

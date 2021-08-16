@@ -20,7 +20,6 @@ administrator. There's no link leading to the +newpoll page, but the user can
 easily guess it.
 
     >>> no_priv_browser.open('http://launchpad.test/~ubuntu-team/+newpoll')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

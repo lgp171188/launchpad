@@ -167,7 +167,6 @@ Even if we try the URL directly:
 
     >>> cprov_browser.open(
     ...    "http://launchpad.test/~landscape-developers/+activate-ppa")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (..., 'launchpad.Edit')
@@ -320,7 +319,6 @@ virtualisation settings, and so on.
 
     >>> sample_browser.open("http://launchpad.test/~jblack/+archive")
     >>> print(sample_browser.getLink("Administer archive"))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -352,7 +350,6 @@ Trying to shortcut the URL as a non-privileged user does not work:
 
     >>> sample_browser.open(
     ...     "http://launchpad.test/~jblack/+archive/ppa/+admin")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -678,13 +675,11 @@ required.
 And direct access to the PPA page is also denied.
 
     >>> anon_browser.open("http://launchpad.test/~cprov/+archive/edge")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
     >>> browser.open("http://launchpad.test/~cprov/+archive/edge")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -758,7 +753,6 @@ navigation menu.
 
     >>> anon_browser.open("http://launchpad.test/~no-priv/+archive/ppa")
     >>> print(anon_browser.getLink("Delete PPA"))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -812,20 +806,17 @@ However, most of the action links are removed for deleted PPAs, so you can
 no longer "Delete packages", "Edit PPA dependencies", or "Change details".
 
     >>> print(no_priv_browser.getLink("Change details"))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> print(no_priv_browser.getLink("Edit PPA dependencies"))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> no_priv_browser.getLink("View package details").click()
     >>> print(no_priv_browser.getLink("Delete packages"))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

@@ -151,7 +151,6 @@ Published the 'non-epoched' bar source version as the base package:
 When publishing the 'epoched' bar source the collision is detected:
 
     >>> bar_src_queue_epoch.realiseUpload()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueInconsistentStateError: bar_1.0-1.diff.gz is already published in archive for hoary
@@ -170,7 +169,6 @@ containing a orig file with diferent contents than the one already
 published in 'non-epoched' version:
 
     >>> bar_src_queue_epoch2.realiseUpload()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueInconsistentStateError: bar_1.0.orig.tar.gz is already published in archive for hoary with a different SHA1 hash (e918d6f5ec2184ae1d795a130da36c9a82c4beaf != 73a04163fee97fd2257ab266bd48f1d3d528e012)

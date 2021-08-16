@@ -962,15 +962,6 @@
       />
 
   <!-- TALES fmt: namespace for strings -->
-  <!-- On Python 2, registering this adapter for both INativeString and
-       ITextString covers both str (bytes) and unicode.  On Python 3, this
-       covers only str; the redundancy is harmless. -->
-  <adapter
-      for="zope.interface.common.builtins.INativeString"
-      provides="zope.traversing.interfaces.IPathAdapter"
-      factory="lp.app.browser.stringformatter.FormattersAPI"
-      name="fmt"
-      />
   <adapter
       for="zope.interface.common.builtins.ITextString"
       provides="zope.traversing.interfaces.IPathAdapter"

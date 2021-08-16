@@ -150,7 +150,6 @@ and "(pending)" is appended to the text as a further hint that it's not
 ready yet.
 
     >>> anon_browser.getLink('diff from 1.0-2 to 1.0-3')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

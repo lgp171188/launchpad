@@ -44,7 +44,6 @@ Construct the base object with just enough data to do the check:
 The filename tries to use an epoch in an invalid way:
 
     >>> upload_file.checkNameIsTaintFree()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.archiveuploader.utils.UploadError: Invalid character(s) in filename: 'package-1.1.2-3:0ubuntu4'.
@@ -263,7 +262,6 @@ Launchpad:
 If the address is unparsable, we get an error.
 
     >>> sig_file.parseAddress("Cannot Parse Me <FOOO>")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.archiveuploader.utils.UploadError: Cannot Parse Me <FOOO>: no @ found in email address part.

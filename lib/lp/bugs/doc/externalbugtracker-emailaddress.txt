@@ -25,7 +25,6 @@ create a new ExternalBugTracker for an email address will fail.
     ...     new_bugtracker)
     >>> bug_tracker = get_external_bugtracker(
     ...     new_bugtracker(BugTrackerType.EMAILADDRESS))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnknownBugTrackerTypeError: EMAILADDRESS

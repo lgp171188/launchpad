@@ -165,7 +165,6 @@ Failing to specify a product or distribution.
 
     >>> params = dict()
     >>> filebug_api.filebug(params)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     xmlrpc.client.Fault: <Fault 60: 'Required arguments missing. You must specify either a product or distribution in which the bug exists.'>
@@ -174,7 +173,6 @@ Specifying *both* a product and distribution.
 
     >>> params = dict(product='firefox', distro='ubuntu')
     >>> filebug_api.filebug(params)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     xmlrpc.client.Fault: <Fault 70: 'Too many arguments. You may specify either a product or a distribution, but not both.'>
@@ -183,7 +181,6 @@ Specifying a non-existent product.
 
     >>> params = dict(product='nosuchproduct')
     >>> filebug_api.filebug(params)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     xmlrpc.client.Fault: <Fault 10: 'No such project: nosuchproduct'>
@@ -192,7 +189,6 @@ Specifying a non-existent distribution.
 
     >>> params = dict(distro='nosuchdistro')
     >>> filebug_api.filebug(params)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     xmlrpc.client.Fault: <Fault 80: 'No such distribution: nosuchdistro'>
@@ -201,7 +197,6 @@ Specifying a non-existent package.
 
     >>> params = dict(distro='ubuntu', package='nosuchpackage')
     >>> filebug_api.filebug(params)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     xmlrpc.client.Fault: <Fault 90: 'No such package: nosuchpackage'>
@@ -210,7 +205,6 @@ Missing summary.
 
     >>> params = dict(product='firefox')
     >>> filebug_api.filebug(params)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     xmlrpc.client.Fault: <Fault 100: 'Required parameter missing: summary'>
@@ -219,7 +213,6 @@ Missing comment.
 
     >>> params = dict(product='firefox', summary='the summary')
     >>> filebug_api.filebug(params)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     xmlrpc.client.Fault: <Fault 100: 'Required parameter missing: comment'>
@@ -230,7 +223,6 @@ Invalid subscriber.
     ...     product='firefox', summary='summary', comment='comment',
     ...     subscribers=["foo.bar@canonical.com", "nosuch@subscriber.com"])
     >>> filebug_api.filebug(params)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     xmlrpc.client.Fault: <Fault 20: 'Invalid subscriber: No user with the email address "nosuch@subscriber.com" was found'>

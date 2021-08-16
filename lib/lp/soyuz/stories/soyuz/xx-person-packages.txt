@@ -431,7 +431,6 @@ Please note also that disabled archives are not viewable by anonymous users.
     >>> update_cached_records()
     >>> logout()
     >>> anon_browser.open("http://launchpad.test/~cprov/+archive/ppa")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (..., 'browserDefault', 'launchpad.SubscriberView')

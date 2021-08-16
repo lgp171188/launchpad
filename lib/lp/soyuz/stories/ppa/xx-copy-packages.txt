@@ -33,14 +33,12 @@ access 'Copy package' page from any PPA.
     >>> anon_browser.open(
     ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> anon_browser.getLink('Copy packages').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open(
     ...     'http://launchpad.test/~cprov/+archive/ppa/+copy-packages')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ... 'launchpad.AnyPerson')
@@ -308,7 +306,6 @@ Hence the archive's title does not link back to the source archive
 (as would be the case with a source PPA).
 
     >>> jblack_browser.getLink("Primary Archive for Ubuntu Linux")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

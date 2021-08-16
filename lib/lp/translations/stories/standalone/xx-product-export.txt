@@ -49,7 +49,6 @@ Use the DB classes directly to avoid having to setup a zope interaction
     >>> product.sync()
     >>> user_browser.open('http://translations.launchpad.test/evolution')
     >>> user_browser.getLink('download')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -70,7 +69,6 @@ Only logged-in users get the option to request downloads.
 
     >>> anon_browser.open('http://translations.launchpad.test/evolution/')
     >>> anon_browser.getLink('download').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -92,7 +90,6 @@ We can't see its placeholder in non-development mode:
 Even "hacking the URL" to the download option will fail.
 
     >>> anon_browser.open(download_url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

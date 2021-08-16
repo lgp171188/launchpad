@@ -56,7 +56,6 @@ when Mantis redirects back to the login page with an error it forgets
 the "return" parameter.
 
     >>> run_hook('http://mantis.example.com/login_page.php')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugTrackerConnectError: http://mantis.example.com/login_page.php: Mantis redirected us to the login page but did not set a return path.

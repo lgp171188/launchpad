@@ -17,7 +17,6 @@ An anonymous user cannot create a question.
     'Bug #10 ... : Bugs : linux-source-2.6.15 package : Ubuntu'
 
     >>> anon_browser.getLink('Convert to a question').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

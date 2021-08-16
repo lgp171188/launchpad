@@ -352,13 +352,11 @@ Non-administrators may not change a person's standing.
 
     >>> login('test@canonical.com')
     >>> lifeless.personal_standing = PersonalStanding.POOR
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
     >>> lifeless.personal_standing_reason = 'Such a cool guy!'
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -437,7 +435,6 @@ If the given name is already in use by another team/person, an exception
 is raised.
 
     >>> personset.newTeam(ddaa, 'ddaa', 'Just a new team')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.registry.errors.NameAlreadyTaken: ...
@@ -531,7 +528,6 @@ account_status is NOACCOUNT, though.
     AssertionError: Only Person entries whose account_status is NOACCOUNT...
 
     >>> not_a_person.convertToTeam(team_owner=landscape_devs)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.registry.interfaces.person.AlreadyConvertedException: foo-... has already been converted to a team.
@@ -1443,7 +1439,6 @@ error will be raised.
     >>> person_set._newPerson(
     ...     'new-name', 'New Person', True,
     ...     PersonCreationRationale.BUGIMPORT)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.registry.errors.NameAlreadyTaken: The name 'new-name' is already taken.
@@ -1454,7 +1449,6 @@ be raised.
     >>> person_set._newPerson(
     ...     "ThisIsn'tValid", 'New Person', True,
     ...     PersonCreationRationale.BUGIMPORT)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.registry.errors.InvalidName: ThisIsn'tValid is not a valid name for a person.
