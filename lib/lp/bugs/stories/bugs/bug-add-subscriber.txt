@@ -48,7 +48,8 @@ currently subscribed to the bug:
 
 They subscribe David Allouche to the bug using his Launchpad username.
 
-    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1/+addsubscriber')
+    >>> user_browser.open(
+    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addsubscriber')
     >>> user_browser.getControl("Person").value = 'ddaa'
     >>> user_browser.getControl("Subscribe user").click()
     >>> user_browser.url

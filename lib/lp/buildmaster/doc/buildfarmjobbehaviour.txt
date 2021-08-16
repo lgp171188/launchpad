@@ -44,7 +44,7 @@ For this documentation, we'll also need a dummy new build farm job.
     ...     pass
 
 Custom behaviours are not normally instantiated directly, instead an adapter
-is specified for the specific IBuildFarmJob. Normaly we'd add some ZCML to
+is specified for the specific IBuildFarmJob. Normally we'd add some ZCML to
 adapt our specific build farm job to its behaviour like:
 
     <!-- MyNewBuildBehaviour -->
@@ -59,7 +59,8 @@ But for the sake of this documentation we'll add the adapter manually.
 
     >>> from zope.component import provideAdapter
     >>> provideAdapter(
-    ...     MyNewBuildBehaviour, (IMyNewBuildFarmJob,), IBuildFarmJobBehaviour)
+    ...     MyNewBuildBehaviour, (IMyNewBuildFarmJob,),
+    ...     IBuildFarmJobBehaviour)
 
 This will then allow the builder to request and set the required behaviour
 from the current job. Bob the builder currently has a binary package job and

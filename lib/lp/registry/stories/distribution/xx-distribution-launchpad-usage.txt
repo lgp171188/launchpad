@@ -73,7 +73,8 @@ Just like Launchpad administrators can.
     >>> print(admin_browser.getControl(
     ...     name='field.enable_bug_expiration').value)
     True
-    >>> print(admin_browser.getControl(name='field.blueprints_usage').value[0])
+    >>> print(
+    ...     admin_browser.getControl(name='field.blueprints_usage').value[0])
     LAUNCHPAD
     >>> print(admin_browser.getControl(name='field.answers_usage').value[0])
     LAUNCHPAD

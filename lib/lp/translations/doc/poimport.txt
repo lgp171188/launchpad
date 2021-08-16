@@ -305,8 +305,9 @@ not appear in the POTemplate.
 
     >>> def show_translation_details(translationmessage, pofile):
     ...     print(translationmessage.potmsgset.singular_text, end=' ')
-    ...     print(pretty(removeSecurityProxy(translationmessage.translations)),
-    ...           end=' ')
+    ...     print(
+    ...         pretty(removeSecurityProxy(translationmessage.translations)),
+    ...         end=' ')
     ...     print(translationmessage.potmsgset.getSequence(pofile.potemplate))
     >>> for translationmessage in pofile.translation_messages:
     ...     if translationmessage.is_current_ubuntu:

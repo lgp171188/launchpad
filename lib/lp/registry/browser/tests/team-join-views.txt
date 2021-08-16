@@ -13,7 +13,10 @@ Joining and Subscribing to the List
     >>> from zope.component import getMultiAdapter
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> def join_team(team):
-    ...     form = {'field.actions.join': '1', 'field.mailinglist_subscribe': u'on'}
+    ...     form = {
+    ...         'field.actions.join': '1',
+    ...         'field.mailinglist_subscribe': u'on',
+    ...         }
     ...     request = LaunchpadTestRequest(method='POST', form=form)
     ...     view = getMultiAdapter((team, request), name='+join')
     ...     view.initialize()

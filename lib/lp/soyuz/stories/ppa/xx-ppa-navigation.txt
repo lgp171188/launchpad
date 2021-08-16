@@ -134,7 +134,8 @@ From that page the user can return to the PPA overview.
 When the number of packages in the PPA is large the user will see them
 displayed in batches.
 
-    >>> anon_browser.open('http://launchpad.test/~cprov/+archive/ubuntu/ppa?batch=1')
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/~cprov/+archive/ubuntu/ppa?batch=1')
 
 Since they are on the first page, the 'First' and 'Previous' links are
 inactive:

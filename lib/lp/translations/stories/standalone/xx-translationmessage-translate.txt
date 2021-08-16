@@ -194,7 +194,8 @@ Check that the message #13 is without translation.
 
 First what we represent in the form when there is no translation:
 
-    >>> print(find_tag_by_id(browser.contents, 'msgset_142').decode_contents())
+    >>> print(find_tag_by_id(
+    ...     browser.contents, 'msgset_142').decode_contents())
     13.
     <input name="msgset_142" type="hidden"/>
 
@@ -203,7 +204,8 @@ First what we represent in the form when there is no translation:
     Migrating `<code>%s</code>':
 
     >>> print(find_tag_by_id(
-    ...     browser.contents, 'msgset_142_es_translation_0').decode_contents())
+    ...     browser.contents,
+    ...     'msgset_142_es_translation_0').decode_contents())
     (no translation yet)
 
 And also, we don't get anyone as the Last translator because there is no
@@ -248,7 +250,8 @@ Let's submit an invalid value for this message #13.
 
 The message is still without translation:
 
-    >>> print(find_tag_by_id(browser.contents, 'msgset_142').decode_contents())
+    >>> print(find_tag_by_id(
+    ...     browser.contents, 'msgset_142').decode_contents())
     13.
     <input name="msgset_142" type="hidden"/>
 
@@ -257,7 +260,8 @@ The message is still without translation:
     Migrating `<code>%s</code>':
 
     >>> print(find_tag_by_id(
-    ...     browser.contents, 'msgset_142_es_translation_0').decode_contents())
+    ...     browser.contents,
+    ...     'msgset_142_es_translation_0').decode_contents())
     (no translation yet)
 
 And now a good submit.
@@ -282,7 +286,8 @@ Now, it has the submitted value.
 
 Check that the message #13 has the new value we submitted.
 
-    >>> print(find_tag_by_id(browser.contents, 'msgset_142').decode_contents())
+    >>> print(find_tag_by_id(
+    ...     browser.contents, 'msgset_142').decode_contents())
     13.
     <input name="msgset_142" type="hidden"/>
 
@@ -291,7 +296,8 @@ Check that the message #13 has the new value we submitted.
     Migrating `<code>%s</code>':
 
     >>> print(find_tag_by_id(
-    ...     browser.contents, 'msgset_142_es_translation_0').decode_contents())
+    ...     browser.contents,
+    ...     'msgset_142_es_translation_0').decode_contents())
     foo <code>%s</code>
 
 And now, we get the translator and reviewer, who happen to be the same
@@ -452,7 +458,8 @@ Also, we should still have previous translation:
     <input name="msgset_143" type="hidden"/>
 
     >>> print(find_tag_by_id(
-    ...     slow_submission.contents, 'msgset_143_singular').decode_contents())
+    ...     slow_submission.contents,
+    ...     'msgset_143_singular').decode_contents())
     The location and hierarchy of the Evolution contact...
 
     >>> print(find_tag_by_id(
@@ -481,8 +488,9 @@ If there is a message which has a translation, but no reviewer (eg.
 uploaded from a package), it only shows the translator, and not
 reviewer.
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...              'mozilla/+pots/pkgconf-mozilla/de/1/+translate')
+    >>> browser.open(
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'mozilla/+pots/pkgconf-mozilla/de/1/+translate')
     >>> print(extract_text(
     ...     find_tag_by_id(browser.contents, "translated_by").parent))
     Translated by Helge Kreutzmann on 2005-05-06
