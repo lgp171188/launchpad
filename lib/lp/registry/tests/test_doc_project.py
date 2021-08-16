@@ -6,7 +6,6 @@ __metaclass__ = type
 from doctest import DocTestSuite
 
 from zope.component import getUtility
-from zope.testing.renormalizing import OutputChecker
 
 from lp.testing import (
     ANONYMOUS,
@@ -21,7 +20,6 @@ def setUp(test):
 
 
 def test_suite():
-    suite = DocTestSuite(
-        'lp.registry.model.projectgroup', setUp=setUp, checker=OutputChecker())
+    suite = DocTestSuite('lp.registry.model.projectgroup', setUp=setUp)
     suite.layer = LaunchpadFunctionalLayer
     return suite
