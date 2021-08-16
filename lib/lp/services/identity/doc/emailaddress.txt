@@ -36,7 +36,6 @@ exception.
     >>> personset = getUtility(IPersonSet)
     >>> foobar = personset.getByName('name16')
     >>> emailset.new(email.email, foobar)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.identity.interfaces.emailaddress.EmailAddressAlreadyTaken: The email address '...' is already registered.
@@ -44,7 +43,6 @@ exception.
 The email address verification is case insensitive as well:
 
     >>> emailset.new(email.email.upper(), foobar)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.identity.interfaces.emailaddress.EmailAddressAlreadyTaken: The email address '...' is already registered.
@@ -95,7 +93,6 @@ or the address of a team's mailing list.
 Otherwise, UndeletableEmailAddress is raised.
 
     >>> foobar.preferredemail.destroySelf()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.identity.model.emailaddress.UndeletableEmailAddress: This is a person's preferred email...
@@ -105,7 +102,6 @@ Otherwise, UndeletableEmailAddress is raised.
     >>> mailing_list = new_list_for_team(guadamen)
     >>> email = emailset.getByEmail(guadamen.mailing_list.address)
     >>> email.destroySelf()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.identity.model.emailaddress.UndeletableEmailAddress: This is the email address of a team's mailing list...

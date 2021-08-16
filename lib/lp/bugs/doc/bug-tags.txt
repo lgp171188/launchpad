@@ -138,7 +138,6 @@ wrong.
     >>> request = LaunchpadTestRequest(form={'field.tags': u'!!!! foo $$$$'})
     >>> tags_widget = BugTagsWidget(bug_tags_field, tag_field, request)
     >>> tags_widget.getInputValue()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.formlib.interfaces.WidgetInputError: ...

@@ -65,7 +65,6 @@ will raise an error:
     ...     xmlrpc_transport=transport)
 
     >>> non_auth_bugzilla._authenticate()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://thiswillfail.example.com: No credentials found.
@@ -82,7 +81,6 @@ raise an error.
     ...     xmlrpc_transport=transport)
 
     >>> non_auth_bugzilla._authenticate()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         ...
     lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://thiswillfail.example.com: Fault 300: The username or password you entered is not valid.
@@ -305,7 +303,6 @@ severity as a string.
 If a bug can't be found a BugNotFound error will be raised.
 
     >>> bugzilla.getRemoteStatus('no-such-bug')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: no-such-bug
@@ -316,7 +313,6 @@ error will be raised. We can add a sample bug to demonstrate this.
 
     >>> bugzilla._bugs[999] = {}
     >>> bugzilla.getRemoteStatus(999)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnparsableBugData: No status or resolution defined for bug 999
@@ -406,7 +402,6 @@ If the product is requested for a bug that can't be found, BugNotFound
 is raised.
 
     >>> bugzilla.getRemoteProduct(12345)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.bugs.externalbugtracker.base.BugNotFound: 12345
@@ -469,7 +464,6 @@ getCommentIds() can only be called if initializeRemoteBugDB() has been
 called and the bug exists locally.
 
     >>> bugzilla.getCommentIds(bug_watch_broken.remotebug)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: 42
@@ -619,7 +613,6 @@ then that instance does not provide ISupportsCommentPushing.
 
     >>> verifyObject(ISupportsCommentPushing, BugzillaAPI(
     ...     'http://unknown.example.com/', xmlrpc_transport=test_transport))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.interface.exceptions.DoesNotImplement: ...
@@ -681,7 +674,6 @@ then that instance does not provide ISupportsBackLinking.
 
     >>> verifyObject(ISupportsBackLinking, BugzillaAPI(
     ...     'http://unknown.example.com/', xmlrpc_transport=test_transport))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.interface.exceptions.DoesNotImplement: ...

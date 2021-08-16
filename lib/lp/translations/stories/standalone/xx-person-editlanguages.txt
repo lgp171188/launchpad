@@ -131,7 +131,6 @@ The launchpad.AnyPerson permission means that when an anonymous user goes
 to that page, they'll be asked to login.
 
     >>> anon_browser.open('http://launchpad.test/+editmylanguages')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

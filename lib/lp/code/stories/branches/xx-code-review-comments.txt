@@ -55,7 +55,6 @@ The person's name links back to the main site for that person.
 Reply link is displayed even if the user isn't logged in.
 
     >>> anon_browser.getLink('Reply').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     zope.security.interfaces.Unauthorized: ...
 

@@ -96,7 +96,6 @@ Administration page is inaccessible.
     ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
     >>> utc_browser.getLink(
     ...     url='+source/evolution/+pots/evolution-2.2/+admin')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -116,7 +115,6 @@ Administration page is inaccessible.
     ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
     >>> utc_browser.getLink(
     ...     url='+source/evolution/+pots/disabled-template/+admin')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

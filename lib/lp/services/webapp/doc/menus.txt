@@ -820,7 +820,6 @@ We also report when the selected facet does not exist with a
 LocationError exception:
 
     >>> test_tales('view/menu:broken/bar', view=view)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.location.interfaces.LocationError: ..., 'broken')
@@ -856,7 +855,6 @@ When there is no menu for a thing, we get an empty iterator.
 And thus, we don't have a facet to navigate to:
 
     >>> test_tales('view/menu:foo/+first', view=view)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.location.interfaces.LocationError: ..., 'foo')

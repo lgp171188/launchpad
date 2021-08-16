@@ -10,7 +10,6 @@ don't have access to that feature.
 
     >>> user_browser.open('http://launchpad.test/firefox/+question/2')
     >>> user_browser.getLink('Reject question')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -20,7 +19,6 @@ error.
 
     >>> user_browser.open(
     ...     'http://launchpad.test/firefox/+question/2/+reject')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -104,7 +102,6 @@ That action isn't available to a non-privileged user:
 
     >>> browser.open('http://launchpad.test/firefox/+question/2')
     >>> browser.getLink('Change status')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError

@@ -209,21 +209,18 @@ Since No Privileges Person isn't an answer contact for the project nor
 the project owner, they don't have the possibility to create a new FAQ.
 
     >>> user_browser.getLink('Create a FAQ')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.getLink('Link to a FAQ').click()
     >>> user_browser.getLink('create a new FAQ')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...     'http://answers.launchpad.test/firefox/+question/2/+createfaq')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

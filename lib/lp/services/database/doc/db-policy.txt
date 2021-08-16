@@ -38,7 +38,7 @@ a single master.
     False
 
     >>> ro_janitor.display_name = 'Janice the Janitor'
-    >>> transaction.commit()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> transaction.commit()
     Traceback (most recent call last):
     ...
     storm.database.InternalError: ...
@@ -81,7 +81,6 @@ resources.
     >>> with SlaveOnlyDatabasePolicy():
     ...     whoops = IMasterStore(Person).find(
     ...         Person, Person.name == 'janitor').one()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.database.interfaces.DisallowedStore: master
@@ -95,7 +94,6 @@ database transaction.
     >>> with DatabaseBlockedPolicy():
     ...     whoops = IStore(Person).find(
     ...         Person, Person.name == 'janitor').one()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.database.interfaces.DisallowedStore: ('main', 'default')

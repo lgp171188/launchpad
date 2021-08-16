@@ -46,13 +46,11 @@ But when querying the private PPA, anonymous access will be refused:
 
     >>> login(ANONYMOUS)
     >>> source_pub = private_ppa.getPublishedSources().first()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
     >>> binary_pub = private_ppa.getAllPublishedBinaries()[0]
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -61,13 +59,11 @@ As is for a regular user.
 
     >>> login('no-priv@canonical.com')
     >>> source_pub = private_ppa.getPublishedSources().first()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
     >>> binary_pub = private_ppa.getAllPublishedBinaries()[0]
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

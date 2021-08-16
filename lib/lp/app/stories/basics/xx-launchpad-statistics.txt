@@ -3,7 +3,6 @@ We also have the special Launchpad Statistics summary page. This is only
 acessible to launchpad Admins:
 
     >>> user_browser.open('http://launchpad.test/+statistics')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

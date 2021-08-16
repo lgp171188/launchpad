@@ -132,7 +132,6 @@ If authentication fails, a BugTrackerAuthenticationError will be raised.
     ...     requests_mock.add(
     ...         'GET', re.compile(r'.*/launchpad-auth/.*'), status=401)
     ...     trac._authenticate()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://example.com: 401 Client Error: Unauthorized
@@ -303,7 +302,6 @@ since that bug wasn't in the list of bugs that were modified since our
 last_checked time.
 
     >>> trac.getRemoteStatus('2')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: 2
@@ -398,7 +396,6 @@ Trying to call getCommentIds() on a bug that doesn't exist will raise a
 BugNotFound error.
 
     >>> trac.getCommentIds(bug_watch_broken.remotebug)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: 123
@@ -606,14 +603,12 @@ If we try to call getLaunchpadBugId() or setLaunchpadBugId() for a
 remote bug that doesn't exist, a BugNotFound error will be raised.
 
     >>> trac.getLaunchpadBugId('12345')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: 12345
 
     >>> trac.setLaunchpadBugId(
     ...     '12345', 1, 'http://bugs.launchpad.test/bugs/xxx')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: 12345

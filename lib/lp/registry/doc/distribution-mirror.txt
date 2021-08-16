@@ -912,7 +912,6 @@ Only mirrors which have never been probed can be deleted this way.
 
     >>> ignored = login_person(cdimage_mirror.owner)
     >>> cdimage_mirror.destroySelf()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -960,7 +959,6 @@ for the status, however, they may not change it:
     >>> de_archive_mirror.canTransitionToCountryMirror()
     True
     >>> de_archive_mirror.transitionToCountryMirror(True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<DistributionMirror at ...>, 'transitionToCountryMirror', 'launchpad.Admin')
@@ -1002,7 +1000,6 @@ There cannot be multiple country mirrors of one type for one country:
 
     >>> davis_station_archive.transitionToCountryMirror(True)
     >>> archive_mirror2.transitionToCountryMirror(True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.registry.errors.CountryMirrorAlreadySet: Antarctica already has a country Archive mirror set.
@@ -1015,7 +1012,6 @@ Mirrors which have not been probed may not be marked as country mirrors:
     ...     official_candidate=True)
     >>> linux_au_mirror.status = MirrorStatus.OFFICIAL
     >>> linux_au_mirror.transitionToCountryMirror(True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.registry.errors.MirrorNotProbed: This mirror may not be set as a country mirror as it has not been probed.
@@ -1036,13 +1032,11 @@ country mirrors:
     False
 
     >>> osuosl_mirror.transitionToCountryMirror(None)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     storm.exceptions.NoneError: None isn't acceptable as a value for DistributionMirror.country_dns_mirror
 
     >>> osuosl_mirror.transitionToCountryMirror(True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.registry.errors.MirrorHasNoHTTPURL: This mirror may not be set as a country mirror as it does not have an HTTP URL set.

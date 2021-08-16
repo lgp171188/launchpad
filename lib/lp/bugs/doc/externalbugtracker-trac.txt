@@ -138,7 +138,6 @@ If the status isn't one that our Trac ExternalBugTracker can understand
 an UnknownRemoteStatusError will be raised.
 
     >>> trac.convertRemoteStatus('eggs').title
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: eggs
@@ -215,7 +214,6 @@ test.
 
     >>> with trac.responses(broken=True):
     ...     trac.initializeRemoteBugDB([6, 7, 8, 9, 10])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker http://test.trac does not define all the necessary fields for bug status imports (Defined field names: ['<html>']).
@@ -224,7 +222,6 @@ This is also true of the single bug export mode.
 
     >>> with trac.responses(broken=True):
     ...     trac.initializeRemoteBugDB([6])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker http://test.trac does not define all the necessary fields for bug status imports (Defined field names: ['<html>']).
@@ -233,7 +230,6 @@ Trying to get the remote status of the bug will raise a BugNotFound
 error since the bug was never imported.
 
     >>> trac.getRemoteStatus(6)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: 6
@@ -263,7 +259,6 @@ export, it will raise an UnparsableBugData error.
 
     >>> with trac.responses(broken=True):
     ...     trac._fetchBugData(query_url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker http://test.trac does not define all the necessary fields for bug status imports (Defined field names: ['<html>']).

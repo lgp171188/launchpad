@@ -18,7 +18,6 @@ The user sees an involvement link to ask a question.
 Asking a new question requires logging in:
 
     >>> browser.getLink('Ask a question').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

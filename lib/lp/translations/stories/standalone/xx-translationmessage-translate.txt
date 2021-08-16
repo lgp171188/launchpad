@@ -76,13 +76,11 @@ right ones.
     ...     'evolution/+pots/evolution-2.2/es/1/+translate')
 
     >>> browser.getLink('First')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.getLink('Prev')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -133,13 +131,11 @@ And the last one.
     http://.../hoary/+source/evolution/+pots/evolution-2.2/es/21/+translate
 
     >>> browser.getLink('Next')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.getLink('Last')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -372,7 +368,6 @@ UnexpectedFormData exception:
     ...  'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
     ...  '+pots/evolution-2.2/es/14/+translate?field.alternative_language=ca&'
     ...  'field.alternative_language=es')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: You specified...

@@ -57,7 +57,6 @@ If you choose to publish immediately, the date field must be empty.
     >>> action_widget.request.form[action_widget.name] = 'immediately'
     >>> date_widget.request.form[date_widget.name] = '2005-07-23'
     >>> print(widget.getInputValue())
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.formlib.interfaces.WidgetInputError: ('field.foo', ...'Foo', LaunchpadValidationError(...'Please do not provide a date if you want to publish immediately.'))
@@ -68,7 +67,6 @@ must be filled.
     >>> action_widget.request.form[action_widget.name] = 'specific'
     >>> date_widget.request.form[date_widget.name] = ''
     >>> print(widget.getInputValue())
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.formlib.interfaces.WidgetInputError: ('field.foo', ...'Foo', LaunchpadValidationError(...'Please provide a publication date.'))

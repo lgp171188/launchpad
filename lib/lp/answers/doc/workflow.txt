@@ -426,7 +426,6 @@ As a Launchpad administrator, so can Stub.
     >>> login(marilize.preferredemail.email)
     >>> spam_question.reject(
     ...     marilize, "We don't send free CDs any more.")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -485,7 +484,6 @@ It is not possible to change the status attribute directly.
     >>> login('foo.bar@canonical.com')
     >>> question = ubuntu.newQuestion(**new_question_args)
     >>> question.status = QuestionStatus.INVALID
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.ForbiddenAttribute: ...
@@ -544,7 +542,6 @@ permission, an Unauthorized exception is thrown.
 
     >>> login('test@canonical.com')
     >>> question.setStatus(sample_person, QuestionStatus.EXPIRED, 'Expire.')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -593,7 +590,6 @@ Users without launchpad.Moderator privileges cannot set the assignee.
 
     >>> login('no-priv@canonical.com')
     >>> question.assignee = sample_person
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: (<lp.answers.model.question.Question ...>, 'assignee', 'launchpad.Append')
@@ -767,7 +763,6 @@ method.
 
     >>> login(stub.preferredemail.email)
     >>> question.setStatus(stub, QuestionStatus.OPEN, reject_message)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.answers.errors.NotMessageOwnerError: ...

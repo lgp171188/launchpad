@@ -308,7 +308,6 @@ Distribution can do that for us.
 
 If we ask for a totally unknown distroseries, we raise NotFoundError
     >>> ubuntu.getDistroSeriesAndPocket('unknown')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'unknown'
@@ -339,7 +338,6 @@ Find the backports pocket, too:
 If we ask for a valid distroseries which doesn't have a given pocket it should
 raise NotFoundError for us
     >>> ubuntu.getDistroSeriesAndPocket('hoary-bullshit')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'hoary-bullshit'
@@ -469,15 +467,12 @@ But others can't.
 
     >>> login('no-priv@canonical.com')
     >>> debian.blueprints_usage = ServiceUsage.LAUNCHPAD
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     zope.security.interfaces.Unauthorized: (..., 'blueprints_usage', 'launchpad.Edit')
     >>> debian.official_malone = True
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     zope.security.interfaces.Unauthorized: (..., 'official_malone', 'launchpad.Edit')
     >>> debian.translations_usage = ServiceUsage.LAUNCHPAD
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     zope.security.interfaces.Unauthorized: (..., 'translations_usage', 'launchpad.TranslationsAdmin')
 
@@ -595,7 +590,6 @@ Milestones for distros can only be created by distro owners or admins.
     >>> login('no-priv@canonical.com')
     >>> woody.newMilestone(
     ...     name='impossible', dateexpected=datetime(2028, 10, 1))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<DistroSeries ...'woody'>, 'newMilestone', 'launchpad.Edit')

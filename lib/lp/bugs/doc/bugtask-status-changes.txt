@@ -32,7 +32,6 @@ other status.
 
     >>> ignored = login_person(user)
     >>> bugtask.transitionToStatus(BugTaskStatus.CONFIRMED, user)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.bugs.interfaces.bugtask.UserCannotEditBugTaskStatus: ...

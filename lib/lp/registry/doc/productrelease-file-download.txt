@@ -90,7 +90,6 @@ The alias can be retrieved by name.
 Attempting to retrieve an alias that does not exist is an error.
 
     >>> file_alias = rel.getFileAliasByName('bar.txt')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'bar.txt'
@@ -105,7 +104,6 @@ Attempting to retrieve a ProductReleaseFile  that does not exist is an
 error.
 
     >>> prf = rel.getProductReleaseFileByName('bar.txt')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'bar.txt'
@@ -116,7 +114,6 @@ delete a product file.
 
     >>> login(ANONYMOUS)
     >>> rel.files[0].destroySelf()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<ProductReleaseFile...>, 'destroySelf', 'launchpad.Edit')
@@ -143,7 +140,6 @@ Deleting files via a GET method is not allowed.
     >>> firefox = getUtility(IProductSet).getByName('firefox')
     >>> view = getMultiAdapter((firefox,request), name='+download')
     >>> view.initialize()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     lp.services.webapp.interfaces.UnsafeFormGetSubmissionError: Delete Files
@@ -196,7 +192,6 @@ Only the product owner can create a new release.
     >>> owner_email = firefox.owner.preferredemail.email
     >>> login(ANONYMOUS)
     >>> trunk.milestones[0].createProductRelease(firefox.owner, now)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<Milestone ...>, 'createProductRelease', 'launchpad.Edit')

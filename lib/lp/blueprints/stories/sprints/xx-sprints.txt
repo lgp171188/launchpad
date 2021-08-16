@@ -174,7 +174,6 @@ available to those who have permissions to edit that sprint.
     Ubuntu Below Zero : Meetings
 
     >>> anon_browser.getLink('Change details')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -498,13 +497,11 @@ Unregistered and anonymous users cannot access the CSV report.
 
     >>> user_browser.open('http://launchpad.test/sprints/ubz')
     >>> user_browser.getLink('Export attendees to CSV').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open('http://launchpad.test/sprints/ubz/+attendees-csv')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

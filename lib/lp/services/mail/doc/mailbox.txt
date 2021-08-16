@@ -62,7 +62,7 @@ Before we can use it, it has to be opened.
 To prevent two threads opening it the same time, if it's already open,
 we can't open it again:
 
-    >>> mailbox.open()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> mailbox.open()
     Traceback (most recent call last):
     ...
     lp.services.mail.mailbox.MailBoxError: The mail box is already open.
@@ -103,7 +103,7 @@ Let's delete all mails in the mail box:
 
 If we try to delete a mail that doesn't exist we get an error:
 
-    >>> mailbox.delete(-1)  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> mailbox.delete(-1)
     Traceback (most recent call last):
     ...
     lp.services.mail.mailbox.MailBoxError: No such id: -1

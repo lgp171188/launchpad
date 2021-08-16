@@ -41,7 +41,6 @@ The page indicates that the team is private.
 A normal user cannot see the team.
 
     >>> user_browser.open('http://launchpad.test/~private-team')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -49,7 +48,6 @@ A normal user cannot see the team.
 An anonymous user cannot see the team.
 
     >>> anon_browser.open('http://launchpad.test/~private-team')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...

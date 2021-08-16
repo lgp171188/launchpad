@@ -14,14 +14,12 @@ appear for the anonymous user nor No Privileges Person:
     FAQ #7 : Questions : Mozilla Firefox
 
     >>> anon_browser.getLink('Edit FAQ')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open('http://answers.launchpad.test/firefox/+faq/7')
     >>> user_browser.getLink('Edit FAQ')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -30,13 +28,11 @@ Even trying to access the link directly will fail:
 
     >>> anon_browser.open(
     ...     'http://answers.launchpad.test/firefox/+faq/7/+edit')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
     >>> user_browser.open(
     ...     'http://answers.launchpad.test/firefox/+faq/7/+edit')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

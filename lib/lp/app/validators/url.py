@@ -152,7 +152,6 @@ def valid_webref(web_ref):
     >>> valid_webref('sftp://example.com//absolute/path/maybe')
     True
     >>> valid_webref('other://example.com/moo')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: ...

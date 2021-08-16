@@ -17,7 +17,6 @@ Team branding
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open('http://launchpad.test/~ubuntu-team/+branding')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -80,7 +79,6 @@ Distribution branding
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open('http://launchpad.test/kubuntu/+edit')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -141,7 +139,6 @@ ProjectGroup branding
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open('http://launchpad.test/mozilla/+branding')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -204,7 +201,6 @@ Product branding
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open('http://launchpad.test/jokosher/+branding')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -271,7 +267,6 @@ Again, for Sprints, we have not exposed icon editing through the UI.
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open('http://launchpad.test/sprints/futurista/+branding')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

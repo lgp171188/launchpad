@@ -89,7 +89,6 @@ Anonymous users cannot use newQuestion().
     >>> login(ANONYMOUS)
     >>> question = target.newQuestion(
     ...     sample_person, 'This will fail', 'Failed?')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -388,7 +387,6 @@ is only available to registered users.
 
     >>> name18 = getUtility(IPersonSet).getByName('name18')
     >>> target.addAnswerContact(name18, name18)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -419,7 +417,6 @@ languages.
     >>> len(sample_person.languages)
     0
     >>> target.addAnswerContact(sample_person, sample_person)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.answers.errors.AddAnswerContactError: An answer contact must speak a language...
@@ -441,7 +438,6 @@ Only registered users can remove an answer contact.
 
     >>> login(ANONYMOUS)
     >>> target.removeAnswerContact(name18, name18)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

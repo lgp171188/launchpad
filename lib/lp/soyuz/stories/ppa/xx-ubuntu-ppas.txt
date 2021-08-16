@@ -63,7 +63,6 @@ Currently we only support PPAs for a limited number of distros. The
 
     >>> anon_browser.open("http://launchpad.test/debian")
     >>> anon_browser.getLink("Personal Package Archives")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -689,13 +688,11 @@ either via the new-style URL or the compatibility redirection, will
 result in a NotFound error.
 
     >>> admin_browser.open("http://launchpad.test/~name16/+archive/ppa")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: Object: <Person at ... name16 (Foo Bar)>, name: '+archive'
 
     >>> admin_browser.open("http://launchpad.test/~name16/+archive")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: Object: <Person at ... name16 (Foo Bar)>, name: '+archive'

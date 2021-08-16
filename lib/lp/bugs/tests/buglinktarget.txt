@@ -78,7 +78,7 @@ Of course, if no new link is created, no events should be fired:
 Anonymous users cannot use linkBug():
 
     >>> login(ANONYMOUS)
-    >>> target.linkBug(bug2)  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> target.linkBug(bug2)
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -91,7 +91,6 @@ if they are an administrator:
     >>> private_bug.setPrivate(True, factory.makePerson())
     True
     >>> target.linkBug(private_bug, factory.makePerson())
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -121,7 +120,6 @@ This method is only available to registered users:
 
     >>> login(ANONYMOUS)
     >>> target.unlinkBug(bug2, None)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -164,7 +162,6 @@ A user can only remove a link to a private bug if they are subscribed to
 the bug or if they are an administrator.
 
     >>> target.unlinkBug(private_bug)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

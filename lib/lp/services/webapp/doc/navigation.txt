@@ -223,7 +223,6 @@ The name doesn't begin with a 't', so it isn't found.
     >>> INewLayer.providedBy(request)
     False
     >>> navigation.publishTraverse(request, 'xxx')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet...name: 'xxx'
@@ -338,12 +337,10 @@ Let's create a subclass of ThingSetNavigation, and add a 'stepto'.
     >>> print(navigation2.publishTraverse(request, 'thistle'))
     A little thistle
     >>> navigation2.publishTraverse(request, 'neverthere')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet..., name: 'neverthere'
     >>> navigation2.publishTraverse(request, 'neverthere2')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet..., name: 'neverthere2'
@@ -390,14 +387,12 @@ Let's create another subclass and add a stepthrough.
     >>> request.traversal_stack = ['prince', 'charming']
     >>> navigation3 = ThingSetNavigation3(thingset, request)
     >>> navigation3.publishTraverse(request, 'neverland')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet..., name: 'charming'
     >>> request.traversal_stack = ['prince', 'charming']
     >>> navigation3 = ThingSetNavigation3(thingset, request)
     >>> navigation3.publishTraverse(request, 'neverland2')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet..., name: 'charming'

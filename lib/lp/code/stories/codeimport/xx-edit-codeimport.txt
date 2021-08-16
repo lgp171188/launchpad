@@ -54,7 +54,6 @@ do not get an Edit link.
 Because it's an svn:// URL, it doesn't get linkified:
 
     >>> anon_browser.getLink("svn://svn.example.com/fooix/trunk")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -68,12 +67,10 @@ they will get a not authorised page if the branch has a code import,
 and a 404 if the branch doesn't have an import.
 
     >>> anon_browser.open(svn_import_location + '/+edit-import')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     zope.security.interfaces.Unauthorized: (... 'launchpad.Edit')
 
     >>> admin_browser.open(hosted_branch_location + '/+edit-import')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     lp.app.errors.NotFoundError
 

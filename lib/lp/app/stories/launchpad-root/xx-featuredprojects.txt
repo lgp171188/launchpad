@@ -52,7 +52,6 @@ Adding a featured project
 Anonymous users cannot see the link to administer featured projects:
 
     >>> anon_browser.getLink(MANAGE_LINK)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -61,7 +60,6 @@ A user without privileges cannot see the administration link, either:
 
     >>> user_browser.open('http://launchpad.test/')
     >>> user_browser.getLink(MANAGE_LINK)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -76,7 +74,6 @@ But Foo Bar, who is an administrator, can see the management link:
 No Privilege persons is denied access to this page:
 
     >>> user_browser.open('http://launchpad.test/+featuredprojects')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

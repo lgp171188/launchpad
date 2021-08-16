@@ -262,7 +262,6 @@ An attempt to filter for an undefined status is an UnexpectedFormData.
     >>> browser.open(
     ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_status=boguscode')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: Invalid status parameter.
@@ -400,7 +399,6 @@ mistyped URL, an UnexpectedFormData is raised.
     >>> browser.open(
     ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_target=bogus/target')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: Unknown target.

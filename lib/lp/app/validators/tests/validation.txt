@@ -38,13 +38,11 @@ fail for that specific series.
 
     >>> nomination = bug.addNomination(no_priv, firefox.series[0])
     >>> can_be_nominated_for_series(firefox.series)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: ...
 
     >>> can_be_nominated_for_series([firefox.series[0]])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: ...
@@ -62,7 +60,6 @@ fail:
     ...     'foo.bar@canonical.com')
     >>> nomination.approve(foo_bar)
     >>> can_be_nominated_for_series([firefox.series[0]])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: ...
@@ -73,7 +70,6 @@ nominated.
     >>> trunk_nomination = bug.addNomination(
     ...     no_priv, firefox.series[1])
     >>> can_be_nominated_for_series(firefox.series)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: This bug has already been nominated for these series: 1.0, Trunk
@@ -115,7 +111,6 @@ Or a name that is not already in use.
 But you can't use Mark's name, of course. ;)
 
     >>> field.validate(u'mark')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: ...mark is already in use by another person or team...

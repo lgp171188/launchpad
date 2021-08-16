@@ -99,7 +99,6 @@ InvalidSignature will be raised:
     >>> name, addr = email.utils.parseaddr(msg['From'])
     >>> from_user = getUtility(IPersonSet).getByEmail(addr)
     >>> principal = authenticateEmail(msg, accept_any_timestamp)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.mail.incoming.InvalidSignature: ...
@@ -123,7 +122,6 @@ message.
     >>> from lp.services.gpg.interfaces import IGPGHandler
     >>> getUtility(IGPGHandler).getVerifiedSignature(
     ...     msg.signedContent, msg.signature)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGVerificationError: (7, 8, ...'Bad signature')

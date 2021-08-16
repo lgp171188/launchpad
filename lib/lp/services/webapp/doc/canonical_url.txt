@@ -113,7 +113,6 @@ mistyped 'countryOopsTypo', and there is no such name in ITown.
     ...       />
     ... </configure>
     ... """.format(module_name=module.__name__))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.configuration.xmlconfig.ZopeXMLConfigurationError: File "<string>", line ... AttributeError: The name "countryOopsTypo" is not in ....ITown
@@ -277,7 +276,6 @@ itself be adapted to ICanonicalUrlData.
 
     >>> object_that_has_no_url = object()
     >>> canonical_url(object_that_has_no_url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...object at ...> because <...object at ...> broke the chain.
@@ -292,7 +290,6 @@ ICanonicalUrlData, but its parent or its parent's parent (and so on) cannot.
     ...         self.inside = parent
     >>> unrooted_object = ObjectThatHasUrl('unrooted', object_that_has_no_url)
     >>> canonical_url(unrooted_object)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...ObjectThatHasUrl...> because <...object...> broke the chain.
@@ -339,7 +336,7 @@ to work properly.
     >>> iterator = canonical_url_iterator(object_that_has_no_url)
     >>> next(iterator).__class__.__name__
     'object'
-    >>> next(iterator)  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> next(iterator)
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...object...> because <...object...> broke the chain.
@@ -349,7 +346,7 @@ to work properly.
     'ObjectThatHasUrl'
     >>> next(iterator).__class__.__name__
     'object'
-    >>> next(iterator)  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> next(iterator)
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...ObjectThatHasUrl...> because <...object...> broke the chain.

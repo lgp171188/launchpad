@@ -41,12 +41,10 @@ registered.
 
     >>> user_browser.open('http://launchpad.test/ubuntu/hoary')
     >>> user_browser.getLink('Add architecture')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.open('http://launchpad.test/ubuntu/hoary/+addport')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

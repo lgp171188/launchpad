@@ -23,7 +23,6 @@ The maintainer of a project can edit its details.
 Regular users can't access the +review page.
 
     >>> browser.getLink('Administer')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -123,7 +122,6 @@ Registry experts are not allowed access to the +edit page.
 
     >>> expert_browser.open('http://launchpad.test/new-name')
     >>> expert_browser.getLink('Change details').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -131,7 +129,6 @@ Registry experts are not allowed access to the +edit page.
 And going directly to the URL is not allowed.
 
     >>> expert_browser.open('http://launchpad.test/new-name/+edit')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

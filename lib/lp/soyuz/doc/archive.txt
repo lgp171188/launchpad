@@ -89,7 +89,6 @@ build dependencies on the context PPA.  Its default value is None:
 Amending it as an unprivileged user results in failure:
 
     >>> cprov_archive.external_dependencies = "test"
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (..., 'external_dependencies', 'launchpad.Admin')
@@ -116,7 +115,6 @@ once a IArchive is created. Changing those values would affect the way
 archives are published on disk.
 
     >>> cprov_archive.purpose = ArchivePurpose.COPY
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.ForbiddenAttribute: ('purpose', <Archive at ...>)
@@ -137,7 +135,6 @@ It is only editable by someone with launchpad.Edit permissions:
 
     >>> login(ANONYMOUS)
     >>> cprov_archive.status = ArchiveStatus.ACTIVE
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -154,7 +151,6 @@ deleted.
     >>> login("celso.providelo@canonical.com")
 
     >>> cprov_archive.name = 'no-it-will-not-change-yet'
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (..., 'name', 'launchpad.Admin')
@@ -345,14 +341,12 @@ filter is not passed too.
 
     >>> moz_version_lookup = cprov_archive.getAllPublishedBinaries(
     ...     version='1.0')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.VersionRequiresName: The 'version' parameter can be used only together with the 'name' parameter.
 
     >>> moz_version_lookup = cprov_archive.getPublishedOnDiskBinaries(
     ...     version='1.0')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.VersionRequiresName: The 'version' parameter can be used only together with the 'name' parameter.
@@ -827,7 +821,6 @@ dependency is published in Mark's PPA.
 
     >>> no_priv.archive.addArchiveDependency(
     ...     cprov.archive, release_pocket, main_component)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.ArchiveDependencyError: This dependency is already registered.
@@ -836,7 +829,6 @@ dependency is published in Mark's PPA.
 
     >>> no_priv.archive.addArchiveDependency(
     ...     no_priv.archive, release_pocket, main_component)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.ArchiveDependencyError: An archive should not depend on itself.
@@ -869,7 +861,6 @@ Only one dependency per archive can be added.
     >>> no_priv.archive.addArchiveDependency(
     ...     ubuntu.main_archive, PackagePublishingPocket.RELEASE,
     ...     getUtility(IComponentSet)['main'])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.ArchiveDependencyError: This dependency is already registered.
@@ -899,7 +890,6 @@ RELEASE or other components than 'main'.
     >>> no_priv.archive.addArchiveDependency(
     ...     mark.archive, PackagePublishingPocket.UPDATES,
     ...     main_component)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.ArchiveDependencyError: Non-primary archives only support the RELEASE pocket.
@@ -907,7 +897,6 @@ RELEASE or other components than 'main'.
     >>> no_priv.archive.addArchiveDependency(
     ...     mark.archive, release_pocket,
     ...     getUtility(IComponentSet)['universe'])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.ArchiveDependencyError: Non-primary archives only support the 'main' component.
@@ -1680,7 +1669,6 @@ anacronism can be removed.
 
     >>> joes_ppa.newComponentUploader(
     ...     carlos, "universe")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.InvalidComponent: Component for PPAs should be 'main'
@@ -1690,7 +1678,6 @@ You'll get the same error if you use a component object that's not main.
     >>> universe = getUtility(IComponentSet)['universe']
     >>> joes_ppa.newComponentUploader(
     ...     carlos, universe)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.InvalidComponent: Component for PPAs should be 'main'
@@ -1902,7 +1889,6 @@ release pocket, but to do so we must have edit permissions on the archive.
     >>> sources = ["package1", "package2"]
     >>> mark.archive.syncSources(
     ...     sources, cprov.archive, "release", person=None)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -1928,7 +1914,6 @@ Repeating this source copy gives an error:
 
     >>> mark.archive.syncSources(
     ...     sources, cprov.archive, "release", person=mark)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.CannotCopy: package1 1.1 in hoary (same version already building in the destination archive for Hoary) package2 1.0 in hoary (same version already building in the destination archive for Hoary)
@@ -1938,7 +1923,6 @@ Repeating this copy with binaries also gives an error:
     >>> mark.archive.syncSources(
     ...     sources, cprov.archive, "release", include_binaries=True,
     ...     person=mark)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.CannotCopy: package1 1.1 in hoary (source has no binaries to be copied) package2 1.0 in hoary (source has no binaries to be copied)
@@ -1948,14 +1932,12 @@ all result in a NotFound exception:
 
     >>> mark.archive.syncSources(["bogus"], cprov.archive, "release",
     ...     person=mark)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.registry.errors.NoSuchSourcePackageName: No such source package: 'bogus'.
 
     >>> mark.archive.syncSources(sources, cprov.archive, "badpocket",
     ...     person=mark)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.PocketNotFound: No such pocket: 'BADPOCKET'.
@@ -1963,7 +1945,6 @@ all result in a NotFound exception:
     >>> mark.archive.syncSources(
     ...     sources, cprov.archive, "release", to_series="badseries",
     ...     person=mark)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.registry.errors.NoSuchDistroSeries: No such distribution series: 'badseries'.
@@ -1971,7 +1952,6 @@ all result in a NotFound exception:
 If a package exists but not in the source archive, we get an error:
 
     >>> mark.archive.syncSources(["pack"], mark.archive, "release")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.CannotCopy: None of the supplied package names are published in PPA for Mark Shuttleworth.
@@ -2021,7 +2001,6 @@ As with syncSources() you need to have edit permission on the archive.
     >>> login(ANONYMOUS)
     >>> mark.archive.syncSource("pack", "1.0", cprov.archive, "release",
     ...     person=None)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -2039,7 +2018,6 @@ Login as mark to continue.
 If the supplied package exists but not in the source archive, we get an error:
 
     >>> mark.archive.syncSource("package3", "1.0", mark.archive, "release")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.CannotCopy: package3 is not published in PPA for Mark Shuttleworth.
@@ -2087,7 +2065,6 @@ or a CannotCopy exception is thrown.
 
     >>> mark.archive.syncSource(
     ...     "package3", "1.2", cprov.archive, "updates", person=mark)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.CannotCopy: PPA uploads must be for the RELEASE pocket.

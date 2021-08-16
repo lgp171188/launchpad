@@ -105,13 +105,11 @@ Accessing the Archive Pages
 A non-privileged user cannot access the private PPA pages.
 
     >>> browser.open("http://launchpad.test/~cprov/+archive/p3a")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
     >>> browser.open("http://launchpad.test/~landscape-developers/+archive")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -140,7 +138,6 @@ link to the PPA page is not present.
     None
 
     >>> browser.getLink("PPA for Landscape Developers").click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

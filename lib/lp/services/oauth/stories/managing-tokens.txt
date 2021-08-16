@@ -131,7 +131,6 @@ That page is protected with the launchpad.Edit permission, for obvious
 reasons, so users can only access their own.
 
     >>> user_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...launchpad.Edit...

@@ -457,7 +457,6 @@ have a 'signing_key' set,  it raises an error.
     >>> del get_property_cache(cprov.archive).signing_key
 
     >>> archive_signing_key.signRepository(test_suite)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.archivepublisher.interfaces.archivegpgsigningkey.CannotSignArchive: No signing key available for PPA for Celso Providelo

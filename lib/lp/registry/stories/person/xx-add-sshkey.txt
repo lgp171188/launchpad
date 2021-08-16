@@ -133,7 +133,6 @@ Launchpad administrators are not allowed to poke at other user's ssh keys.
     >>> logout()
     >>> admin_browser = setupBrowserFreshLogin(foo_bar)
     >>> admin_browser.open('http://launchpad.test/~salgado/+editsshkeys')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -173,7 +172,6 @@ belong to him, it will fail with an error message.
 
     >>> browser.getControl(name='key', index=0).value = '1'
     >>> browser.getControl('Remove', index=0).click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     lp.app.errors.UnexpectedFormData: ...
 
@@ -183,7 +181,6 @@ this case we'll raise an UnexpectedFormData.
     >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
     >>> browser.getControl(name='key', index=0).value = ''
     >>> browser.getControl('Remove', index=0).click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: ...

@@ -57,7 +57,6 @@ not be found.
     >>> verifyObject(IThing, thing)
     True
     >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.xml')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.interface.interfaces.ComponentLookupError: ...
@@ -72,12 +71,10 @@ found.
 
     >>> thing = object()
     >>> verifyObject(IThing, thing)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.interface.exceptions.MultipleInvalid: ... Does not declaratively implement the interface The lp.services.feeds.tests.helper.IThing.value attribute was not provided
     >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.atom')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.interface.interfaces.ComponentLookupError: ...
@@ -89,7 +86,6 @@ found.
     >>> verifyObject(IThing, thing)
     True
     >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.xml')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.interface.interfaces.ComponentLookupError: ...

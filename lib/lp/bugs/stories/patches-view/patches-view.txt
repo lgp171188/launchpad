@@ -201,7 +201,6 @@ importance and status.
 But we can't sort by things that aren't validated by the view.
 
     >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches?orderby=star-sign')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: Unexpected value for field 'orderby': 'star-sign'

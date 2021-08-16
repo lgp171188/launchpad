@@ -44,7 +44,6 @@ For projects that don't have products, the Answers facet is disabled.
 
     >>> browser.open('http://launchpad.test/aaa')
     >>> browser.getLink('Answers')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -88,14 +87,12 @@ out.
     >>> 'Next' in browser.contents
     True
     >>> browser.getLink('Next')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
     >>> 'Last' in browser.contents
     True
     >>> browser.getLink('Last')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
@@ -111,14 +108,12 @@ greyed out:
     >>> 'Previous' in browser.contents
     True
     >>> browser.getLink('Previous')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
     >>> 'First' in browser.contents
     True
     >>> browser.getLink('First')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
@@ -386,7 +381,6 @@ They need to login to access that page:
     ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/'
     ...     '+questions')
     >>> anon_browser.getLink('My questions').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -460,7 +454,6 @@ They need to login to access that page:
 
     >>> anon_browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> anon_browser.getLink('Need attention').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

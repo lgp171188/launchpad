@@ -5,7 +5,6 @@ Just make sure this page contains the right links:
 This link was removed.
 
     >>> user_browser.getLink("Show all teams").url
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

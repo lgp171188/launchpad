@@ -753,7 +753,6 @@ class POParser(object):
           >>> utf8_string = u'"view \\302\\253${version_title}\\302\\273"'
           >>> parser._parseQuotedString(utf8_string)
           ... # doctest: +NORMALIZE_WHITESPACE
-          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
           ...
           lp.translations.interfaces.translationimporter.TranslationFormatInvalidInputError: Could not decode escaped string: (\302\253)
@@ -775,7 +774,6 @@ class POParser(object):
           >>> iso8859_1_string = u'"foo \\xf9"'
           >>> parser._parseQuotedString(iso8859_1_string)
           ... # doctest: +NORMALIZE_WHITESPACE
-          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
           ...
           lp.translations.interfaces.translationimporter.TranslationFormatInvalidInputError: Could not decode escaped string as UTF-8: (\xf9)
@@ -785,19 +783,16 @@ class POParser(object):
 
           >>> parser._parseQuotedString(u'abc')
           ... # doctest: +NORMALIZE_WHITESPACE
-          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
           lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: String is not quoted
           >>> parser._parseQuotedString(u'\"ab')
           ... # doctest: +NORMALIZE_WHITESPACE
-          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
           lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: String not terminated
           >>> parser._parseQuotedString(u'\"ab\"x')
           ... # doctest: +NORMALIZE_WHITESPACE
-          ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
           Traceback (most recent call last):
             ...
           lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: Extra content found after string: (x)

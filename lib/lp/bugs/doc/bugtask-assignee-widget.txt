@@ -129,7 +129,7 @@ The chooser widget got its name updated as well.
 If this option is selected, but no value is entered in
 "field.assignee", validation will fail:
 
-    >>> widget.validate()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> widget.validate()
     Traceback (most recent call last):
     ...
     zope.formlib.interfaces.WidgetInputError: ...
@@ -138,7 +138,7 @@ Likewise, if a non-existent field.assignee is provided, the validation
 will fail:
 
     >>> request.form['foo.assignee'] = 'name'
-    >>> widget.validate()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> widget.validate()
     Traceback (most recent call last):
     ...
     zope.formlib.interfaces.WidgetInputError: ...

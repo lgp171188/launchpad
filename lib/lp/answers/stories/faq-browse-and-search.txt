@@ -185,13 +185,11 @@ Accessing an FAQ directly
 Asking for a non-existent FAQ or an invalid ID will raise a 404 error.
 
     >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+faq/171717')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...
 
     >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+faq/bad')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...

@@ -364,13 +364,11 @@ If you try to retrieve this file through the standard ILibrarianClient,
 you'll get a DownloadFailed error.
 
     >>> client.getFileByAlias(private_file_id)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.librarian.interfaces.client.DownloadFailed: Alias ... cannot be downloaded from this client.
 
     >>> client.getURLForAlias(private_file_id)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.librarian.interfaces.client.DownloadFailed: Alias ... cannot be downloaded from this client.
@@ -391,7 +389,6 @@ Trying to access that file directly on the normal librarian will fail
     ...     config.librarian.restricted_download_url,
     ...     config.librarian.download_url)
     >>> urlopen(sneaky_url).read()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     urllib.error.HTTPError: HTTP Error 404: Not Found
@@ -415,13 +412,11 @@ also fails:
     >>> transaction.commit()
 
     >>> restricted_client.getURLForAlias(public_file_id)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.librarian.interfaces.client.DownloadFailed: ...
 
     >>> restricted_client.getFileByAlias(public_file_id)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.librarian.interfaces.client.DownloadFailed: ...
@@ -482,7 +477,6 @@ An UploadFailed will be raised if you try to create a file with no
 content
 
     >>> client.addFile('test.txt', 0, io.BytesIO(b'hello'), 'text/plain')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
     lp.services.librarian.interfaces.client.UploadFailed: Invalid length: 0
@@ -638,7 +632,6 @@ The count starts at 0, and cannot be changed directly.
     0
 
     >>> public_file.hits = 10
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.ForbiddenAttribute: ...

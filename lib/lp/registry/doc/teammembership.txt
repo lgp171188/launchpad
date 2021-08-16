@@ -99,7 +99,6 @@ given team.
     True
     >>> ignored = login_person(salgado)
     >>> salgado.join(launchpad)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.registry.errors.JoinNotAllowed: This is a restricted team
@@ -153,7 +152,6 @@ to a team.
     >>> mark = personset.getByName('mark')
     >>> t3.addMember(salgado, reviewer=mark,
     ...     status=TeamMembershipStatus.ADMIN)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -512,13 +510,11 @@ an extra check to ensure that doesn't happen.
     >>> ignored = login_person(foobar)
     >>> membership = foobar.team_memberships[0]
     >>> membership.status = None
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.ForbiddenAttribute: ...
 
     >>> membership.dateexpires = None
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.ForbiddenAttribute: ...
@@ -726,7 +722,6 @@ The member themselves can't change the expiration date of their membership.
 
     >>> ignored = login_person(karl)
     >>> karl_on_mirroradmins.setExpirationDate(tomorrow, karl)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

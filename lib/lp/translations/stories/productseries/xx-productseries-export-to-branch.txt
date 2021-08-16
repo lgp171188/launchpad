@@ -148,7 +148,6 @@ And of course, setting the translations branch requires edit privileges
 on the release series.
 
     >>> user_browser.open(link_page)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

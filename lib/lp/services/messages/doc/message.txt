@@ -389,7 +389,6 @@ explicitly told to do so:
     ...
     ... Foo Bar
     ... ''')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
     lp.services.messages.interfaces.message.UnknownSender: ...'invalid@example.com'
@@ -423,7 +422,6 @@ passed through a broken MTA and we have no choice but to bounce them.
     ...
     ... Moo
     ... ''')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
     lp.services.messages.interfaces.message.InvalidEmailMessage: Missing Message-Id
@@ -435,7 +433,6 @@ passed through a broken MTA and we have no choice but to bounce them.
     ...
     ... Moo
     ... ''')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
     lp.services.messages.interfaces.message.InvalidEmailMessage: No From: or Reply-To: header
@@ -449,7 +446,6 @@ Also, we generally insist that a message has a date associated with it.
     ...
     ... Moo
     ... ''')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
         [...]
     lp.services.messages.interfaces.message.InvalidEmailMessage: Invalid date...

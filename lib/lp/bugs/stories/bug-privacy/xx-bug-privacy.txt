@@ -80,7 +80,6 @@ Anonymous users cannot see private bugs filed on distros, of course!
 Not directly.
 
     >>> anon_browser.open("http://launchpad.test/bugs/14")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...
@@ -97,7 +96,6 @@ Neither directly.
 
     >>> browser = setupBrowser("Basic no-privs@canonical.com:test")
     >>> browser.open("http://launchpad.test/bugs/14")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...

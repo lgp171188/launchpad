@@ -98,7 +98,6 @@ display forms.
 
     >>> cprov_browser.open(
     ...     'http://launchpad.test/~cprov/+editsshkeys/++form++')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -107,7 +106,6 @@ Nor will it allow unauthorized access to data that it should not present.
 
     >>> browser.open(
     ...     'http://launchpad.test/~cprov/+archive/ppa/+edit/++form++')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
