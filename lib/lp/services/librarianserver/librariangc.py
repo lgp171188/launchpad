@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Librarian garbage collection routines"""
@@ -31,7 +31,6 @@ from lp.services.database.postgresql import (
     listReferences,
     quoteIdentifier,
     )
-from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features import getFeatureFlag
 from lp.services.librarianserver import swift
 from lp.services.librarianserver.storage import (
@@ -116,14 +115,19 @@ def sha1_file(content_id):
     return hasher.hexdigest(), length
 
 
-def confirm_no_clock_skew(store):
+def confirm_no_clock_skew(con):
     """Raise an exception if there is significant clock skew between the
     database and this machine.
 
     It is theoretically possible to lose data if there is more than several
     hours of skew.
     """
-    db_now = get_transaction_timestamp(store)
+    cur = con.cursor()
+    try:
+        cur.execute("SELECT CURRENT_TIMESTAMP AT TIME ZONE 'UTC'")
+        db_now = cur.fetchone()[0].replace(tzinfo=pytz.UTC)
+    finally:
+        cur.close()
     local_now = _utcnow()
     five_minutes = timedelta(minutes=5)
 
@@ -610,10 +614,18 @@ def delete_unreferenced_content(con):
 
 
 def delete_unwanted_files(con):
-    delete_unwanted_disk_files(con)
-    swift_enabled = getFeatureFlag('librarian.swift.enabled') or False
-    if swift_enabled:
-        delete_unwanted_swift_files(con)
+    con.rollback()
+    orig_autocommit = con.autocommit
+    try:
+        # Disable autocommit so that we can use named cursors.
+        con.autocommit = False
+        delete_unwanted_disk_files(con)
+        swift_enabled = getFeatureFlag('librarian.swift.enabled') or False
+        if swift_enabled:
+            delete_unwanted_swift_files(con)
+    finally:
+        con.rollback()
+        con.autocommit = orig_autocommit
 
 
 def delete_unwanted_disk_files(con):
@@ -629,7 +641,7 @@ def delete_unwanted_disk_files(con):
 
     swift_enabled = getFeatureFlag('librarian.swift.enabled') or False
 
-    cur = con.cursor()
+    cur = con.cursor(name="librariangc_disk_lfcs")
 
     # Calculate all stored LibraryFileContent ids that we want to keep.
     # Results are ordered so we don't have to suck them all in at once.
@@ -737,6 +749,7 @@ def delete_unwanted_disk_files(con):
                 "was not found on disk." % next_wanted_content_id)
             next_wanted_content_id = get_next_wanted_content_id()
 
+    cur.close()
     log.info(
         "Deleted %d files from disk that were no longer referenced "
         "in the db." % removed_count)
@@ -791,12 +804,16 @@ def delete_unwanted_swift_files(con):
 
     log.info("Deleting unwanted files from Swift.")
 
-    cur = con.cursor()
-
     # Get the largest LibraryFileContent id in the database. This lets
     # us know when to stop looking in Swift for more files.
-    cur.execute("SELECT max(id) FROM LibraryFileContent")
-    max_lfc_id = cur.fetchone()[0]
+    cur = con.cursor()
+    try:
+        cur.execute("SELECT max(id) FROM LibraryFileContent")
+        max_lfc_id = cur.fetchone()[0]
+    finally:
+        cur.close()
+
+    cur = con.cursor(name="librariangc_swift_lfcs")
 
     # Calculate all stored LibraryFileContent ids that we want to keep.
     # Results are ordered so we don't have to suck them all in at once.
@@ -877,6 +894,7 @@ def delete_unwanted_swift_files(con):
                 "but was not found in Swift.".format(next_wanted_content_id))
         next_wanted_content_id = get_next_wanted_content_id()
 
+    cur.close()
     log.info(
         "Deleted {0} files from Swift that were no longer referenced "
         "in the db.".format(removed_count))

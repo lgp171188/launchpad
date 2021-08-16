@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Librarian garbage collection tests"""
@@ -96,8 +96,8 @@ class TestLibrarianGarbageCollectionBase:
         # Make sure that every file the database knows about exists on disk.
         # We manually remove them for tests that need to cope with missing
         # library items.
-        self.store = IMasterStore(LibraryFileContent)
-        for content in self.store.find(LibraryFileContent):
+        store = IMasterStore(LibraryFileContent)
+        for content in store.find(LibraryFileContent):
             path = librariangc.get_file_path(content.id)
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
@@ -596,13 +596,13 @@ class TestLibrarianGarbageCollectionBase:
 
     def test_confirm_no_clock_skew(self):
         # There should not be any clock skew when running the test suite.
-        librariangc.confirm_no_clock_skew(self.store)
+        librariangc.confirm_no_clock_skew(self.con)
 
         # To test this function raises an excption when it should,
         # fool the garbage collector into thinking it is tomorrow.
         with self.librariangc_thinking_it_is_tomorrow():
             self.assertRaises(
-                Exception, librariangc.confirm_no_clock_skew, (self.store,)
+                Exception, librariangc.confirm_no_clock_skew, (self.con,)
                 )
 
 
