@@ -127,21 +127,21 @@ doc:
 	$(MAKE) -C doc/ html
 
 # Run by PQM.
-check_config: build $(JS_BUILD_DIR)/.development
+check_config: build
 	bin/test -m lp.services.config.tests -vvt test_config
 
 # Clean before running the test suite, since the build might fail depending
 # what source changes happened. (e.g. apidoc depends on interfaces)
-check: clean build $(JS_BUILD_DIR)/.development
+check: clean build
 	# Run all tests. test_on_merge.py takes care of setting up the
 	# database.
 	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS)
 	bzr status --no-pending
 
-lint: ${PY} $(JS_BUILD_DIR)/.development
+lint: ${PY}
 	@bash ./utilities/lint
 
-lint-verbose: ${PY} $(JS_BUILD_DIR)/.development
+lint-verbose: ${PY}
 	@bash ./utilities/lint -v
 
 logs:
@@ -219,10 +219,6 @@ $(JS_BUILD_DIR)/.production: yarn/package.json | $(YARN_BUILD)
 	# We don't use YUI's Flash components and they have a bad security
 	# record. Kill them.
 	find yarn/node_modules/yui -name '*.swf' -delete
-	touch $@
-
-$(JS_BUILD_DIR)/.development: $(JS_BUILD_DIR)/.production
-	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) install --offline --frozen-lockfile
 	touch $@
 
 $(YUI_SYMLINK): $(JS_BUILD_DIR)/.production
