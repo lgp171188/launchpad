@@ -34,7 +34,7 @@ class SnapBuildChannelsWidget(BrowserWidget, InputWidget):
 
     template = ViewPageTemplateFile("templates/snapbuildchannels.pt")
     hint = False
-    snap_names = ["core", "core18", "core20", "snapcraft"]
+    snap_names = ["core", "core18", "core20", "core22", "snapcraft"]
     _widgets_set_up = False
 
     def __init__(self, context, request):
