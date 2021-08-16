@@ -106,8 +106,10 @@ pre-populated with the last comment.
 
     >>> url = '/~ubuntu-team/+member/kamion'
     >>> browser.getLink(url=url).click()
-    >>> # Do not use 'print' for the following test as it will eliminate potential
-    >>> # leading and trailing whitespace, which we don't want.
+
+Do not use 'print' for the following test as it will eliminate potential
+leading and trailing whitespace, which we don't want.
+
     >>> browser.getControl(name='comment').value
     'Arfie'
 

@@ -6,10 +6,11 @@
 __metaclass__ = type
 __all__ = ['StatsMixin']
 
+from unittest import mock
+
 from fixtures import MockPatchObject
 from zope.component import getUtility
 
-from lp.services.compat import mock
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 

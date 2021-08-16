@@ -52,7 +52,8 @@ The view renders summaries by category.
     Person             Specification Tracking Karma  Total Karma
     Mark Shuttleworth  22                            130
 
-    >>> print(extract_text(find_tag_by_id(content, 'Translations in Rosetta')))
+    >>> print(extract_text(
+    ...     find_tag_by_id(content, 'Translations in Rosetta')))
     Person      Translations in Rosetta Karma  Total Karma
     Foo Bar     164                            241
     Carlos ...    9                              9

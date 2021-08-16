@@ -16,8 +16,10 @@ Create some specific branches to use for this test
     >>> from lp.testing import time_counter
     >>> from datetime import datetime, timedelta
     >>> import pytz
-    >>> # Since the feed only shows revisions from the last 30 days, we
-    >>> # need recent revisions.
+
+Since the feed only shows revisions from the last 30 days, we need recent
+revisions.
+
     >>> initial_revision_date = datetime.now(pytz.UTC) - timedelta(days=10)
     >>> date_generator = time_counter(
     ...     initial_revision_date, timedelta(days=1))

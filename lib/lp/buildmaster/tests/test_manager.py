@@ -10,6 +10,7 @@
 import os
 import signal
 import time
+from unittest import mock
 
 import six
 from six.moves import xmlrpc_client
@@ -70,7 +71,6 @@ from lp.buildmaster.tests.test_interactor import (
     MockBuilderFactory,
     )
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.services.statsd.tests import StatsMixin

@@ -39,8 +39,9 @@ Use of Launchpad Translations
 The Download link is not shown if the product does not use Launchpad
 Translations.
 
-    # Use the DB classes directly to avoid having to setup a zope interaction
-    # (i.e. login()) and bypass the security proxy.
+Use the DB classes directly to avoid having to setup a zope interaction
+(i.e. login()) and bypass the security proxy.
+
     >>> from lp.app.enums import ServiceUsage
     >>> from lp.registry.model.product import Product
     >>> product = Product.byName('evolution')
@@ -53,7 +54,8 @@ Translations.
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
-    >>> # Restore previous state for subsequent tests, and verify
+Restore previous state for subsequent tests, and verify.
+
     >>> product.translations_usage = ServiceUsage.LAUNCHPAD
     >>> product.sync()
     >>> user_browser.open('http://translations.launchpad.test/evolution')

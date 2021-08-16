@@ -266,13 +266,13 @@ Iteration Process
    with real application components.
 
 
-I will note that these processes are just guidelines on how to go about writing
-the software.  You might choose to prototype the application in order to learn
-about what URLs are required for some tricky interaction. Or, you might decide
-to write two iterations' worth of URLs into the URLs table all at once, but
-then implement them in two iterations.  The important thing is to understand
-where you are in this process, and why you are doing what you are doing at any
-particular stage.
+I will note that these processes are just guidelines on how to go about
+writing the software.  You might choose to prototype the application in
+order to learn about what URLs are required for some tricky interaction. Or,
+you might decide to write two iterations' worth of URLs into the URLs table
+all at once, but then implement them in two iterations.  The important thing
+is to understand where you are in this process, and why you are doing what
+you are doing at any particular stage.
 
 Keep the iterations short!
 

@@ -305,7 +305,7 @@ Parsing a PO template:
     ... #: foo/bar.c:42
     ... msgid "Foo"
     ... msgstr ""
-    ... """
+    ... """  # noqa
 
     >>> parser = POParser()
     >>> translation_file = parser.parse(content)
@@ -326,7 +326,7 @@ errors occur:
     ... #:foo/baz.c:42
     ... msgid "Baz"
     ... msgstr "abcdef"
-    ... """
+    ... """  # noqa
 
     >>> parser.parse(content + chunk2)
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
@@ -355,7 +355,7 @@ character.
     ... #: lib/regex.c:1367
     ... msgid "Success"
     ... msgstr "\xa6\xa8\xa5\\"
-    ... """
+    ... """  # noqa
 
     >>> translation_file = parser.parse(content)
 
@@ -427,7 +427,7 @@ the Content-Type field of the header.
     ... #: foo/bar.c: 50
     ... msgid "view \\302\\253${version_title}\\302\\273"
     ... msgstr ""
-    ... """
+    ... """  # noqa
 
     >>> translation_file = parser.parse(content)
 
@@ -545,7 +545,7 @@ Let's parse a Spanish PO file with an inverted plural formula.
     ... msgid_plural "files"
     ... msgstr[0] "plural translation"
     ... msgstr[1] "singular translation"
-    ... """
+    ... """  # noqa
 
     >>> parser = POParser(spanish_pluralformula)
     >>> translation_file = parser.parse(content)

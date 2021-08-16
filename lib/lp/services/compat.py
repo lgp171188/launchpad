@@ -11,7 +11,6 @@ __all__ = [
     'escape',
     'message_as_bytes',
     'message_from_bytes',
-    'mock',
     ]
 
 try:
@@ -25,12 +24,6 @@ except ImportError:
     from cgi import escape
 
 import io
-
-
-try:
-    import mock
-except ImportError:
-    from unittest import mock
 
 
 def message_as_bytes(message):

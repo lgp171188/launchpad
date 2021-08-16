@@ -86,7 +86,7 @@ This is the file that'll get imported.
     ...
     ... msgid "translator-credits"
     ... msgstr ""
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... ''' % datetime.datetime.now(UTC).isoformat())  # noqa
 
 We sometimes saw deadlocks as POFile statistics were updated after
 importing a template.  The operation would read all translation messages
@@ -257,7 +257,7 @@ validation errors.
     ... msgstr[1] "Bars %%d"
     ... msgstr[2] "Welsh power! %%d"
     ... msgstr[3] "We have four! %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... ''' % datetime.datetime.now(UTC).isoformat())  # noqa
 
 This is the dbschema that controls the validation of a translation.
 
@@ -305,8 +305,9 @@ not appear in the POTemplate.
 
     >>> def show_translation_details(translationmessage, pofile):
     ...     print(translationmessage.potmsgset.singular_text, end=' ')
-    ...     print(pretty(removeSecurityProxy(translationmessage.translations)),
-    ...           end=' ')
+    ...     print(
+    ...         pretty(removeSecurityProxy(translationmessage.translations)),
+    ...         end=' ')
     ...     print(translationmessage.potmsgset.getSequence(pofile.potemplate))
     >>> for translationmessage in pofile.translation_messages:
     ...     if translationmessage.is_current_ubuntu:
@@ -439,7 +440,7 @@ For example, here's a gettext PO file with two headers.
     ...
     ... msgid "a"
     ... msgstr "b"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... ''' % datetime.datetime.now(UTC).isoformat())  # noqa
     >>> eo_pofile = potemplate.newPOFile('eo')
     >>> warning_entry = translation_import_queue.addOrUpdateEntry(
     ...     'eo.po', pofile_with_warning, False, potemplate.owner,
@@ -660,7 +661,7 @@ We'll import a POFile with 3 plural forms into this POFile:
     ... msgstr[0] "First form %%d"
     ... msgstr[1] "Second form %%d"
     ... msgstr[2] "Third form %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... ''' % datetime.datetime.now(UTC).isoformat())  # noqa
 
 We now import this POFile as this language's translation for the soure
 package:
@@ -669,7 +670,9 @@ package:
     ...     pofile.path, pofile_with_plurals, True, person,
     ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
     ...     potemplate=potemplate)
-    >>> # Allow Librarian to see the change.
+
+Allow the Librarian to see the change.
+
     >>> transaction.commit()
     >>> entry.pofile = pofile
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)

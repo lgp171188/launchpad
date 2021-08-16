@@ -132,7 +132,9 @@ pending mirrors have never been probed.
     zope.security.interfaces.Unauthorized: ...
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
-    >>> # Register an unreviewed archive mirror.
+
+Register an unreviewed archive mirror.
+
     >>> browser.open('http://launchpad.test/ubuntu/+newmirror')
     >>> browser.getControl(
     ...     name='field.display_name').value = 'Kabul LUG mirror'

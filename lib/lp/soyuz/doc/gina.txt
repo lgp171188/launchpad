@@ -196,9 +196,16 @@ Testing Source Package Results
 We should have more source packages in the database:
 
     >>> existing = 9
-    >>> hc = 13 - 2   # 2 packages fail
-    >>> bc = 9 - 3 - 2 + 1  # 3 packages are the same as in hoary, 2 fail,
-    ... #one that is imported forcefully (ubuntu-meta)
+
+Two packages fail.
+
+    >>> hc = 13 - 2
+
+Three packages are the same as in hoary; two fail; one is imported
+forcefully (ubuntu-meta).
+
+    >>> bc = 9 - 3 - 2 + 1
+
     >>> hc + bc
     16
     >>> count = SourcePackageRelease.select().count()

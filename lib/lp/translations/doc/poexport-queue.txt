@@ -139,7 +139,7 @@ It's not clear that it's possible to trigger this failure mode normally on
 Python 3 at all, because bytes will just be formatted as b'...'.  For now,
 inject a mock exception in that case so that the test can pass.
 
-    >>> from lp.services.compat import mock
+    >>> from unittest import mock
     >>> patcher = mock.patch.object(result, 'failure')
     >>> mock_failure = patcher.start()
     >>> mock_failure.__str__.side_effect = lambda: b'\xc3'.decode('UTF-8')

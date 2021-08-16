@@ -117,12 +117,3 @@ created.
     uno/dos             | <directory>
     uno/dos/tres        | <directory>
     uno/dos/tres/cuatro | blah
-
-Also, if there is a duplicated file, last one is the one that remains there.
-
-    >>> archive = LaunchpadWriteTarFile.files_to_tarfile({
-    ...     'foo.po': b'blah',
-    ...     'foo.po': b'duplicated file',
-    ...     })
-    >>> examine_tarfile(archive)
-    foo.po | duplicated file

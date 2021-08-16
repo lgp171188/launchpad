@@ -1145,6 +1145,7 @@ cannot be handled.
     ... #, ycp-format
     ... msgid "This program is running as process number %1."
     ... msgstr "Hierdie program loop as prosesnommer %1."'''.encode('UTF-8')
+    ... # noqa
 
     >>> upload = admin_browser.getControl(name='file')
     >>> upload.add_file(BytesIO(af_file), 'application/msword', 'af.doc')

@@ -3,7 +3,8 @@
 
 """Tests memoizer decorators"""
 
-from lp.services.compat import mock
+from unittest import mock
+
 from lp.services.memoizer import memoize
 from lp.testing import TestCase
 

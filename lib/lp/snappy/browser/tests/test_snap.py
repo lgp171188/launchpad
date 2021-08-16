@@ -2133,6 +2133,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             core
             core18
             core20
+            core22
             snapcraft
             The channels to use for build tools when building the snap
             package.

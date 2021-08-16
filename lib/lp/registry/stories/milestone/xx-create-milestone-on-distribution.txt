@@ -3,7 +3,8 @@ add a milestone to the Ubuntu/hoary distroseries, which is owned by the Ubuntu
 Team (ubuntu-team).
 
     >>> name12_browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> name12_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
+    >>> name12_browser.open(
+    ...     'http://launchpad.test/ubuntu/hoary/+addmilestone')
     ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
@@ -18,7 +19,8 @@ of the distribution should be able to add milestones for it, of course!
 
 Now let's go back and try the add milestone page again. It works:
 
-    >>> name12_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
+    >>> name12_browser.open(
+    ...     'http://launchpad.test/ubuntu/hoary/+addmilestone')
 
 Now, if we post to that form, we should see a success, and the page should
 redirect to the Ubuntu Hoary page showing the milestone we added.

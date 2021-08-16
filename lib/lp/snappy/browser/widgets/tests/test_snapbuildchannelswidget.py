@@ -89,6 +89,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNotNone(getattr(self.widget, "core_widget", None))
         self.assertIsNotNone(getattr(self.widget, "core18_widget", None))
         self.assertIsNotNone(getattr(self.widget, "core20_widget", None))
+        self.assertIsNotNone(getattr(self.widget, "core22_widget", None))
         self.assertIsNotNone(getattr(self.widget, "snapcraft_widget", None))
 
     def test_setUpSubWidgets_second_call(self):
@@ -99,6 +100,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(getattr(self.widget, "core_widget", None))
         self.assertIsNone(getattr(self.widget, "core18_widget", None))
         self.assertIsNone(getattr(self.widget, "core20_widget", None))
+        self.assertIsNone(getattr(self.widget, "core22_widget", None))
         self.assertIsNone(getattr(self.widget, "snapcraft_widget", None))
 
     def test_setRenderedValue_None(self):
@@ -106,6 +108,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(self.widget.core_widget._getCurrentValue())
         self.assertIsNone(self.widget.core18_widget._getCurrentValue())
         self.assertIsNone(self.widget.core20_widget._getCurrentValue())
+        self.assertIsNone(self.widget.core22_widget._getCurrentValue())
         self.assertIsNone(self.widget.snapcraft_widget._getCurrentValue())
 
     def test_setRenderedValue_empty(self):
@@ -113,6 +116,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(self.widget.core_widget._getCurrentValue())
         self.assertIsNone(self.widget.core18_widget._getCurrentValue())
         self.assertIsNone(self.widget.core20_widget._getCurrentValue())
+        self.assertIsNone(self.widget.core22_widget._getCurrentValue())
         self.assertIsNone(self.widget.snapcraft_widget._getCurrentValue())
 
     def test_setRenderedValue_one_channel(self):
@@ -120,17 +124,21 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(self.widget.core_widget._getCurrentValue())
         self.assertIsNone(self.widget.core18_widget._getCurrentValue())
         self.assertIsNone(self.widget.core20_widget._getCurrentValue())
+        self.assertIsNone(self.widget.core20_widget._getCurrentValue())
+        self.assertIsNone(self.widget.core22_widget._getCurrentValue())
         self.assertEqual(
             "stable", self.widget.snapcraft_widget._getCurrentValue())
 
     def test_setRenderedValue_all_channels(self):
         self.widget.setRenderedValue(
             {"core": "candidate", "core18": "beta", "core20": "edge",
-             "snapcraft": "stable"})
+             "core22": "edge/feature", "snapcraft": "stable"})
         self.assertEqual(
             "candidate", self.widget.core_widget._getCurrentValue())
         self.assertEqual("beta", self.widget.core18_widget._getCurrentValue())
         self.assertEqual("edge", self.widget.core20_widget._getCurrentValue())
+        self.assertEqual(
+            "edge/feature", self.widget.core22_widget._getCurrentValue())
         self.assertEqual(
             "stable", self.widget.snapcraft_widget._getCurrentValue())
 
@@ -153,6 +161,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core": "",
             "field.auto_build_channels.core18": "beta",
             "field.auto_build_channels.core20": "edge",
+            "field.auto_build_channels.core22": "edge/feature",
             "field.auto_build_channels.snapcraft": "stable",
             }
         self.widget.request = LaunchpadTestRequest(form=form)
@@ -163,11 +172,12 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core": "",
             "field.auto_build_channels.core18": "beta",
             "field.auto_build_channels.core20": "edge",
+            "field.auto_build_channels.core22": "edge/feature",
             "field.auto_build_channels.snapcraft": "stable",
             }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(
-            {"core18": "beta", "core20": "edge",
+            {"core18": "beta", "core20": "edge", "core22": "edge/feature",
              "snapcraft": "stable"},
             self.widget.getInputValue())
 
@@ -177,6 +187,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNotNone(self.widget.core_widget)
         self.assertIsNotNone(self.widget.core18_widget)
         self.assertIsNotNone(self.widget.core20_widget)
+        self.assertIsNotNone(self.widget.core22_widget)
         self.assertIsNotNone(self.widget.snapcraft_widget)
         soup = BeautifulSoup(markup)
         fields = soup.find_all(["input"], {"id": re.compile(".*")})
@@ -184,6 +195,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core",
             "field.auto_build_channels.core18",
             "field.auto_build_channels.core20",
+            "field.auto_build_channels.core22",
             "field.auto_build_channels.snapcraft",
             ]
         ids = [field["id"] for field in fields]

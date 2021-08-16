@@ -129,8 +129,9 @@ Upstream packaging portlet
 The distroseries page contains a portlet with information on the
 upstream packaging.
 
-    >>> # Note that warty's sourcecount is stale in sample data
-    >>> # which causes -2 need linking.
+Note that warty's sourcecount is stale in sample data which causes -2 need
+linking.
+
     >>> anon_browser.open('http://launchpad.test/ubuntu/warty')
     >>> print(extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'series-packaging')))

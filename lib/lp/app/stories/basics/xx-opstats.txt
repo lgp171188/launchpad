@@ -14,9 +14,9 @@ We can access them via XML-RPC:
 We also emit similar metrics to statsd, so set that up.
 
     >>> from textwrap import dedent
+    >>> from unittest import mock
     >>> from fixtures import MockPatchObject
     >>> from zope.component import getUtility
-    >>> from lp.services.compat import mock
     >>> from lp.services.config import config
     >>> from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
@@ -248,7 +248,9 @@ also return a timeout Fault:
     ...         """))
     >>> output.getStatus()
     503
-    >>> # Reset the timeouts so +opstat doesn't die.
+
+Reset the timeouts so +opstats doesn't die.
+
     >>> base_test_data = config.pop('base_test_data')
     >>> report()
     503s: 1

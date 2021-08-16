@@ -31,7 +31,8 @@ source publications can be retrieved.
 
 Retrieve a source publication:
 
-    >>> cprov_archive = webservice.get("/~cprov/+archive/ubuntu/ppa").jsonBody()
+    >>> cprov_archive = webservice.get(
+    ...     "/~cprov/+archive/ubuntu/ppa").jsonBody()
     >>> pubs = webservice.named_get(
     ...     cprov_archive['self_link'], 'getPublishedSources').jsonBody()
     >>> source_pub = pubs['entries'][0]

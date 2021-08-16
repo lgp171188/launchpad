@@ -9,6 +9,7 @@ from datetime import (
     timedelta,
     )
 from time import sleep
+from unittest import mock
 
 import iso8601
 from lazr.delegates import delegate_to
@@ -24,7 +25,6 @@ from testtools.matchers import (
 import transaction
 from zope.interface import implementer
 
-from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture

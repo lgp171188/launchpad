@@ -23,13 +23,13 @@ IScriptActivitySet.recordSuccess():
     >>> import subprocess
     >>> import tempfile
     >>> from textwrap import dedent
+    >>> from unittest import mock
 
     >>> from fixtures import MockPatchObject
     >>> import pytz
     >>> import transaction
     >>> from zope.component import getUtility
 
-    >>> from lp.services.compat import mock
     >>> from lp.services.config import config
     >>> from lp.services.scripts.interfaces.scriptactivity import (
     ...     IScriptActivitySet)

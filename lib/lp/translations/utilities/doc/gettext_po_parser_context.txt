@@ -83,7 +83,7 @@ the same message in gettext, and we have to use msgctxt on one of them).
     ... msgid_plural "%%d files"
     ... msgstr[0] ""
     ... msgstr[1] ""
-    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')
+    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')  # noqa
 
 This file can now be correctly imported:
 
@@ -197,7 +197,7 @@ We can also import POFile with context messages.
     ... msgstr[0] "%%d translation"
     ... msgstr[1] "%%d translationes"
     ... msgstr[2] "%%d translations"
-    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')
+    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')  # noqa
 
 Importing this file succeeds.
 

@@ -7,6 +7,7 @@ __metaclass__ = type
 
 import os
 import signal
+from unittest import mock
 
 from fixtures import FakeLogger
 from storm.locals import Store
@@ -42,7 +43,6 @@ from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJobType,
     OCIRegistryUploadJob,
     )
-from lp.services.compat import mock
 from lp.services.config import config
 from lp.services.database.locking import (
     LockType,

@@ -12,7 +12,9 @@ and only teams that have branches are shown.
     ...     name="eric", email="eric@example.com",
     ...     displayname="Eric the Viking")
     >>> vikings = factory.makeTeam(name="vikings", owner=eric)
-    >>> # Also give vikings a cool icon.
+
+Also give vikings a cool icon.
+
     >>> icon = factory.makeLibraryFileAlias(
     ...     filename='vikings.png', content_type='image/png')
     >>> from lp.testing import run_with_login

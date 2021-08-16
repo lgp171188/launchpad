@@ -17,11 +17,12 @@ project.  Bugs in the Firefox product are displayed.
     1 Firefox does not support SVG
      Mozilla Firefox Low New
 
-Bug listings default to open bugtasks:
+Debian must enable the Launchpad bug tracker to access bugs.
 
-    >>> # Debian must enable the Launchpad bug tracker to access bugs.
     >>> from lp.testing.service_usage_helpers import set_service_usage
     >>> set_service_usage('debian', bug_tracking_usage='LAUNCHPAD')
+
+Bug listings default to open bugtasks:
 
     >>> user_browser.open('http://launchpad.test/debian/+bugs')
     >>> print_bugtasks(user_browser.contents)

@@ -13,6 +13,7 @@ import lzma
 import os
 import subprocess
 import tarfile
+from unittest import mock
 
 from debian.deb822 import (
     Changes,
@@ -41,7 +42,6 @@ from lp.archiveuploader.nascentuploadfile import (
 from lp.archiveuploader.tests import AbsolutelyAnythingGoesUploadPolicy
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.services.compat import mock
 from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
 from lp.soyuz.enums import (

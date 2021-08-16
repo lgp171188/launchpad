@@ -49,7 +49,8 @@ Comments can be marked as replies to particular comments.
 When comments are added, a job is created to send the emails to the
 subscribers of the merge proposal.
 
-    >>> # Needed for now to make the iterReady show the jobs.
+Needed for now to make the iterReady show the jobs.
+
     >>> factory.makeRevisionsForBranch(merge_proposal.source_branch)
     >>> factory.makeRevisionsForBranch(merge_proposal.target_branch)
     >>> from lp.code.tests.helpers import mark_all_merge_proposal_jobs_done
@@ -70,7 +71,8 @@ a notification is produced when the comment is created.
     >>> from lp.testing.mail_helpers import (
     ...     pop_notifications, print_emails)
     >>> _unused = pop_notifications()
-    >>> merge_proposal.root_message_id = '<201003111740.test.root@example.com>'
+    >>> merge_proposal.root_message_id = (
+    ...     '<201003111740.test.root@example.com>')
     >>> comment = merge_proposal.createComment(
     ...     sender, 'Please merge', 'This patch is very nice.',
     ...     vote=CodeReviewVote.APPROVE, review_type='DB')

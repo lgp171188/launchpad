@@ -549,7 +549,8 @@ If the source package was created from a recipe build, link to it.
     ~cprov/product/mybranch recipe build in ubuntu shiny [~cprov/ubuntu/ppa]
     ...
 
-    >>> print(anon_browser.getLink('~cprov/product/mybranch recipe build').url)
+    >>> print(
+    ...     anon_browser.getLink('~cprov/product/mybranch recipe build').url)
     http://launchpad.test/~cprov/+archive/ubuntu/ppa/+recipebuild/...
 
 Finally, the 'Build files' section is identical for PPA builds.
