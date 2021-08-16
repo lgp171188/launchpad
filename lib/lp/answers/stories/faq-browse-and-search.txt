@@ -12,7 +12,8 @@ page on Launchpad to try to get some help. She clicks the
 find her problem there (surely playing a DVD must be common thing to do
 with a computer these days).
 
-    >>> # Kubuntu must enable answers to access questions.
+Kubuntu must enable answers to access questions.
+
     >>> from zope.component import getUtility
     >>> from lp.app.enums import ServiceUsage
     >>> from lp.registry.interfaces.distribution import IDistributionSet

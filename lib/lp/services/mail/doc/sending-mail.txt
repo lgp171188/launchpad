@@ -29,7 +29,9 @@ Now let's look at the sent email:
     'Subject'
     >>> print(six.ensure_text(msg.get_payload(decode=True)))
     Content
-    >>> # Make sure bulk headers are set for vacation programs
+
+Make sure bulk headers are set for vacation programs.
+
     >>> msg['Precedence']
     'bulk'
 

@@ -149,9 +149,10 @@ instance returns another time zone.
     ...     'http://example.com/', xmlrpc_transport=test_transport,
     ...     internal_xmlrpc_transport=TestInternalXMLRPCTransport())
 
+There doesn't seem to be a way to generate a UTC time stamp, without mocking
+around with the TZ environment variable.
+
     >>> from datetime import datetime
-    >>> # There doesn't seem to be a way to generate a UTC time stamp,
-    >>> # without mocking around with the TZ environment variable.
     >>> datetime.utcfromtimestamp(1207706521)
     datetime.datetime(2008, 4, 9, 2, 2, 1)
 

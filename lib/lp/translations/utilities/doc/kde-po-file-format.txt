@@ -116,7 +116,7 @@ message is preceded with '_n: ' (space at the end of the string is important).
     ...
     ... msgid "_n: entry\nentries"
     ... msgstr ""
-    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')  # noqa
 
 And strangely, importing this file actually works, and format is changed
 to KDE PO format.
@@ -197,7 +197,7 @@ forms. They are simply newline-separated strings.
     ... msgid "_n: entry\nentries"
     ... msgstr "singular entry\n\nplural entries"
     ...
-    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')
+    ... ''' % ISO_FORMATTED_DATE).encode('UTF-8')  # noqa
 
 Importing this file succeeds, even if the number of %d printf specifications
 doesn't match: this is because this is now specially handled with KDE PO

@@ -2379,7 +2379,7 @@ transformed to be a bit more readable as a plain text document.
     ... Some Text. [[Macro()]]
     ... Don't push the [#boom red button]!
     ... See you in {{{#launchpad}}}.
-    ... """
+    ... """  # noqa
     >>> print(reformat_wiki_text(wiki_text))
     = Sample Wiki Text =
     Some Text.

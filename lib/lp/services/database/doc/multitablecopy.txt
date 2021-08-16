@@ -9,7 +9,8 @@ may be interlinked through foreign keys.
     >>> from lp.services.database.multitablecopy import MultiTableCopy
     >>> from lp.services.database.sqlbase import cursor
 
-    >>> # Keep track of tables we'll want to clean up later
+Keep track of tables we'll want to clean up later.
+
     >>> tables_to_clean_up = []
 
 
@@ -409,7 +410,8 @@ This time we run to completion without problems.
     112  lots
     114  lots
 
-    >>> # To keep things simple, we erase the high values again:
+To keep things simple, we erase the high values again:
+
     >>> cur.execute("DELETE FROM numeric WHERE n > 100")
     >>> cur.execute("""
     ...     DELETE FROM textual WHERE NOT EXISTS (
@@ -659,5 +661,4 @@ The callbacks are called only while pouring, once per batch.
 Cleanup
 -------
 
-    >>> #postgresql.drop_tables(cursor(), tables_to_clean_up)
-
+    >>> postgresql.drop_tables(cursor(), tables_to_clean_up)

@@ -248,7 +248,9 @@ also return a timeout Fault:
     ...         """))
     >>> output.getStatus()
     503
-    >>> # Reset the timeouts so +opstat doesn't die.
+
+Reset the timeouts so +opstats doesn't die.
+
     >>> base_test_data = config.pop('base_test_data')
     >>> report()
     503s: 1

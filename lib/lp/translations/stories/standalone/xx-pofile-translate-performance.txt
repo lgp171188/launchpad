@@ -48,5 +48,6 @@ Disable it for now.
     #>>> statement_count < query_counter.count < 150
     #True
 
-    >>> # Cleanup.
+Cleanup.
+
     >>> query_counter.unregister()

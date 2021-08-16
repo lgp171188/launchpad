@@ -39,7 +39,9 @@ Make two proposals for bob, one needing review, and one approved.
     ...     owner=bob, product=fooix, name='review')
     >>> proposal = branch.addLandingTarget(bob, trunk)
     >>> proposal.requestReview()
-    >>> # Ensure the date_created is later to ensure stable ordering.
+
+Ensure the date_created is later to ensure stable ordering.
+
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from datetime import timedelta
     >>> removeSecurityProxy(proposal).date_created += timedelta(1)
