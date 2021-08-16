@@ -892,6 +892,7 @@ class Snap(Storm, WebhookTargetMixin):
             snap_base, snap_base_name = self._findBase(snapcraft_data)
             distro_series = self._pickDistroSeries(snap_base, snap_base_name)
             channels = self._pickChannels(snap_base, channels=channels)
+            channels_by_arch = channels.pop("_byarch", {})
 
             # Sort by Processor.id for determinism.  This is chosen to be
             # the same order as in BinaryPackageBuildSet.createForSource, to
@@ -915,10 +916,13 @@ class Snap(Storm, WebhookTargetMixin):
         builds = []
         for build_instance in architectures_to_build:
             arch = build_instance.architecture
+            arch_channels = dict(channels)
+            if arch in channels_by_arch:
+                arch_channels.update(channels_by_arch[arch])
             try:
                 build = self.requestBuild(
                     requester, archive, supported_arches[arch], pocket,
-                    snap_base=snap_base, channels=channels,
+                    snap_base=snap_base, channels=arch_channels,
                     build_request=build_request)
                 if logger is not None:
                     logger.debug(

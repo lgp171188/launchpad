@@ -154,7 +154,10 @@ class ISnapBaseEditableAttributes(Interface):
         key_type=TextLine(), required=True, readonly=False,
         description=_(
             "A dictionary mapping snap names to channels to use when building "
-            "snaps that specify this base.")))
+            "snaps that specify this base.  The special '_byarch' key may "
+            "have a mapping of architecture names to mappings of snap names "
+            "to channels, which if present override the channels declared at "
+            "the top level when building for those architectures.")))
 
 
 class ISnapBaseEdit(Interface):
