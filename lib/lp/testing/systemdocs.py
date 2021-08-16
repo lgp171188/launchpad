@@ -27,7 +27,6 @@ import six
 import transaction
 from zope.component import getUtility
 from zope.testing.loggingsupport import Handler
-from zope.testing.renormalizing import OutputChecker
 
 from lp.services.config import config
 from lp.services.database.sqlbase import flush_database_updates
@@ -79,9 +78,6 @@ class FilePrefixStrippingDocTestParser(doctest.DocTestParser):
 
 
 default_parser = FilePrefixStrippingDocTestParser()
-
-
-default_checker = OutputChecker()
 
 
 class StdoutHandler(Handler):
@@ -150,7 +146,6 @@ def LayeredDocFileSuite(paths, id_extensions=None, **kw):
         id_extensions = []
     kw.setdefault('optionflags', default_optionflags)
     kw.setdefault('parser', default_parser)
-    kw.setdefault('checker', default_checker)
 
     # Make sure that paths are resolved relative to our caller
     kw['package'] = doctest._normalize_module(kw.get('package'))
