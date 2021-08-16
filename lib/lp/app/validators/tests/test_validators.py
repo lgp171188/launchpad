@@ -12,8 +12,6 @@ from doctest import (
     )
 from unittest import TestSuite
 
-from zope.testing.renormalizing import OutputChecker
-
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.systemdocs import (
     setUp,
@@ -51,7 +49,7 @@ def suitefor(module):
     """Make a doctest suite with common setUp and tearDown functions."""
     suite = DocTestSuite(
         module, setUp=setUp, tearDown=tearDown,
-        optionflags=ELLIPSIS | NORMALIZE_WHITESPACE, checker=OutputChecker())
+        optionflags=ELLIPSIS | NORMALIZE_WHITESPACE)
     # We have to invoke the LaunchpadFunctionalLayer in order to
     # initialize the ZCA machinery, which is a pre-requisite for using
     # login().
