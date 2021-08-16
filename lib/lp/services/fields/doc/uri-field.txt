@@ -36,7 +36,6 @@ valid URI:
     >>> field = IURIFieldTest['field']
     >>> field.validate(u'http://launchpad.net/')
     >>> field.validate(u'not-a-uri')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: &quot;not-a-uri&quot; is not a valid URI
@@ -52,7 +51,6 @@ will result in a validation error:
     >>> sftp_only = IURIFieldTest['sftp_only']
     >>> sftp_only.validate(u'sFtp://launchpad.net/')
     >>> sftp_only.validate(u'http://launchpad.net/')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: The URI scheme &quot;http&quot; is not allowed. Only URIs with the following schemes may be used: sftp
@@ -67,13 +65,11 @@ product home page, where authentication is not generally required:
 
     >>> no_userinfo = IURIFieldTest['no_userinfo']
     >>> no_userinfo.validate(u'http://launchpad.net:80@127.0.0.1/ubuntu')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: A username may not be specified in the URI.
 
     >>> no_userinfo.validate(u'http://launchpad.net@127.0.0.1/ubuntu')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: A username may not be specified in the URI.
@@ -87,7 +83,6 @@ URIs.  This can be done with the allow_port option:
 
     >>> no_port = IURIFieldTest['no_port']
     >>> no_port.validate(u'http://launchpad.net:21')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: Non-default ports are not allowed.
@@ -107,7 +102,6 @@ reject those URIs:
 
     >>> no_query = IURIFieldTest['no_query']
     >>> no_query.validate(u'http://launchpad.net/?key=value')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: URIs with query strings are not allowed.
@@ -120,7 +114,6 @@ The fragment component can also be disallowed:
 
     >>> no_fragment = IURIFieldTest['no_fragment']
     >>> no_fragment.validate(u'http://launchpad.net/#fragment')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: URIs with fragment identifiers are not allowed.
@@ -212,7 +205,6 @@ This widget is registered as an input widget:
 Multiple values will cause an UnexpectedFormData exception:
 
     >>> widget._toFieldValue(['http://launchpad.net', 'http://ubuntu.com'])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: Only a single value is expected

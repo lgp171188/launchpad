@@ -17,7 +17,6 @@ PO files with empty headers are not allowed.
 
     >>> parser = POParser()
     >>> parser.parse(b'msgid "foo"\nmsgstr ""\n')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
@@ -26,7 +25,6 @@ PO files with context after msgids are reported as broken.
 
     >>> parser.parse(b'msgid ""\nmsgstr ""\n'
     ...              b'msgid "blah"\nmsgctxt "foo"\nmsgstr "bar"\n')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
@@ -36,7 +34,6 @@ And a msgctxt followed by msgctxt is caught as well.
     >>> parser.parse(b'msgid ""\nmsgstr ""\n'
     ...              b'msgctxt "foo"\nmsgctxt "foo1"\n'
     ...              b'msgid "blah"\nmsgstr "bar"\n')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
@@ -46,7 +43,6 @@ as an error.
 
     >>> parser.parse(b'msgid ""\nmsgstr "something"\n'
     ...              b'"foo"  whatever\n')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...Extra content found after string...
@@ -54,7 +50,6 @@ as an error.
 Unrecognized escape sequences are caught as well.
 
     >>> parser.parse(b'msgid "\!"\nmsgstr ""\n')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...Unknown escape sequence...
@@ -62,7 +57,6 @@ Unrecognized escape sequences are caught as well.
 Unclosed strings (missing closing quotes) are caught.
 
     >>> parser.parse(b'msgid ""\nmsgstr "\n')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...String not terminated...
@@ -329,7 +323,6 @@ errors occur:
     ... """  # noqa
 
     >>> parser.parse(content + chunk2)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatInvalidInputError: Line 13: Could not decode input from UTF-8

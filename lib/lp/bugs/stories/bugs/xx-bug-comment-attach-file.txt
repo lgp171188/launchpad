@@ -6,7 +6,6 @@ case, it means being logged in.
 
     >>> anon_browser.open(
     ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
     zope.security.interfaces.Unauthorized: ...launchpad.Edit...

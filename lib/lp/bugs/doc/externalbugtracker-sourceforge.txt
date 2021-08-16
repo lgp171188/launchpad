@@ -70,7 +70,6 @@ If the status isn't something that our SourceForge ExternalBugTracker can
 understand an UnknownRemoteStatusError will be raised.
 
     >>> sourceforge.convertRemoteStatus('eggs').title
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: eggs
@@ -100,7 +99,6 @@ resolution, to demonstrate this:
 
     >>> with sourceforge.responses():
     ...     sourceforge.initializeRemoteBugDB([0])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnparsableBugData: Remote bug 0 does not define a status.
@@ -134,7 +132,6 @@ Trying to access the remote status of a private bug, however, will raise
 a PrivateRemoteBug error.
 
     >>> sourceforge.getRemoteStatus(99)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     lp.bugs.externalbugtracker.base.PrivateRemoteBug: Bug 99 on http://example.com is private.
@@ -284,7 +281,6 @@ If you try to get the remote product of a bug that doesn't exist you'll
 get a BugNotFound error.
 
     >>> print(sourceforge.getRemoteProduct(999999999))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: 999999999

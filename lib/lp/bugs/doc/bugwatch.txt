@@ -22,7 +22,6 @@ Bug watches are accessed via a utility that provides IBugWatchSet.
     >>> from zope.component import getUtility
     >>> from lp.bugs.interfaces.bugwatch import IBugWatchSet
     >>> getUtility(IBugWatchSet).get(98765)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: 98765
@@ -627,7 +626,6 @@ Calling setNextCheck() on this watch will cause an Exception,
 BugWatchCannotBeRescheduled, to be raised.
 
     >>> schedulable_watch.setNextCheck(datetime.now(utc))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.bugs.interfaces.bugwatch.BugWatchCannotBeRescheduled

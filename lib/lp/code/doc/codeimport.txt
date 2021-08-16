@@ -430,7 +430,6 @@ When you ask for an id that is not present ICodeImportSet.get() raises
 lp.app.errors.NotFoundError, rather than some internal database exception.
 
     >>> code_import_set.get(-10)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.NotFoundError: -10
@@ -471,7 +470,6 @@ on those objects.
     >>> print(svn_import.url)
     svn://svn.example.com/trunk
     >>> svn_import.url = 'svn://svn.example.com/branch/1.0'
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.ForbiddenAttribute: ('url', <CodeImport ...>)
@@ -497,7 +495,6 @@ The launchpad.Edit privilege is required to use CodeImport.updateFromData.
 
     >>> login(ANONYMOUS)
     >>> svn_import.updateFromData({}, nopriv)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<CodeImport ...>, 'updateFromData', 'launchpad.Moderate')

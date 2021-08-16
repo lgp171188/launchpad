@@ -52,7 +52,6 @@ an error being raised.
 
     >>> server.User.login(
     ...     {'login': 'test@canonical.com', 'password': 'test'})
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 300: 'The username or password you entered is not valid.'>
@@ -455,7 +454,6 @@ add_comment() requires authentication.
 
     >>> bugzilla_transport.expireCookie(bugzilla_transport.auth_cookie)
     >>> server.Bug.add_comment({'id': 1, 'comment': "This won't work"})
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 410: 'Login Required'>
@@ -492,7 +490,6 @@ If add_comment is called on a bug that doesn't exist a fault will be
 raised.
 
     >>> server.Bug.add_comment({'id': 42, 'comment': "This breaks"})
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 101: 'Bug #42 does not exist.'>
@@ -545,7 +542,6 @@ Trying to add a non Bugzilla or Launchpad URL will raise a Fault.
 
     >>> server.Bug.update_see_also({
     ...     'ids': [1], 'add': ['http://example.com/fail']});
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 112: 'Bug URL http://example.com/fail is invalid.'>

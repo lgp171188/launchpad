@@ -327,7 +327,6 @@ which means that the attempt to insert it will violate a unique constraint.
     ...             % numeric_holding_table)
 
     >>> copier.pour(transaction)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     storm.database.IntegrityError: duplicate ... violates unique constraint ...

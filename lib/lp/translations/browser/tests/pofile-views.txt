@@ -443,7 +443,6 @@ The traversal value should be an integer.
 
     >>> request.method = 'GET'
     >>> navigation.traverse('foo')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...
@@ -451,7 +450,6 @@ The traversal value should be an integer.
 Also, translation message sequence numbers are always >= 1.
 
     >>> navigation.traverse('0')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...
@@ -460,7 +458,6 @@ The given sequence number, we also need that is part of the available ones,
 if we use a high one, we should detect it.
 
     >>> navigation.traverse('30')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...

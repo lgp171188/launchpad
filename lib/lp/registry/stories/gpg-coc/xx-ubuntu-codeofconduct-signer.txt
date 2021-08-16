@@ -25,7 +25,6 @@ A regular user can't see the link to Foo Bar's signed codes of conduct.
     Signed Ubuntu Code of Conduct: Yes
 
     >>> browser.getLink(url='+codesofconduct')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

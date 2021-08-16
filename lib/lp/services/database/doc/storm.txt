@@ -72,7 +72,7 @@ from a store other than the correct Master.
     >>> t = transaction.begin()
     >>> person = main_slave.find(Person, name='mark').one()
     >>> person.display_name = 'Cannot change'
-    >>> transaction.commit()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> transaction.commit()
     Traceback (most recent call last):
     ...
     storm.database.InternalError: ...
@@ -94,7 +94,6 @@ similarly wrapped.
     >>> print(person.displayname)
     No Privileges Person
     >>> person.name = 'foo'
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -105,7 +104,6 @@ similarly wrapped.
     >>> print(person.displayname)
     No Privileges Person
     >>> person.name = 'foo'
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

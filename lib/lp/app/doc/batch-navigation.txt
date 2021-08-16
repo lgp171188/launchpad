@@ -81,7 +81,6 @@ InvalidBatchSizeError is raised.
     ...     """))
     >>> request = build_request({"start": "0", "batch": "20"})
     >>> BatchNavigator(reindeer, request=request )
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lazr.batchnavigator.interfaces.InvalidBatchSizeError: Maximum for "batch" parameter is 5.

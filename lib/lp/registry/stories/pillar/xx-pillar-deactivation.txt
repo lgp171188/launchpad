@@ -44,24 +44,20 @@ The projects are now no longer publicly visible:
 
     >>> anon_browser.open('http://launchpad.test/projects/+index?text=mozilla')
     >>> anon_browser.getLink(url='/firefox')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
     >>> anon_browser.getLink(url='/mozilla')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open('http://launchpad.test/firefox')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
 
     >>> anon_browser.open('http://launchpad.test/mozilla')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...

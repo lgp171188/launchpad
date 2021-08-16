@@ -31,25 +31,21 @@ see the link to add a milestone nor access the page directly.
 
     >>> user_browser.open('http://launchpad.test/alsa-utils/trunk')
     >>> user_browser.getLink('Create milestone').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.open(
     ...     'http://launchpad.test/alsa-utils/trunk/+addmilestone')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
 
     >>> user_browser.open('http://launchpad.test/ubuntu/hoary')
     >>> user_browser.getLink('Create milestone').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -86,7 +82,6 @@ But we can't subscribe to project milestones, since they are not real objects.
 
     >>> user_browser.open('http://launchpad.test/mozilla/+milestone/1.0')
     >>> user_browser.getLink('Subscribe to bug mail')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

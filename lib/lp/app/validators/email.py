@@ -77,11 +77,10 @@ def email_validator(emailaddr):
     >>> email_validator('bugs@example.com')
     True
     >>> email_validator('not-valid')
-    ... # noqa
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
-    lp.app.validators.LaunchpadValidationError: Invalid email &#x27;not-valid&#x27;.
+    lp.app.validators.LaunchpadValidationError: Invalid email
+    &#x27;not-valid&#x27;.
     """
     if not valid_email(emailaddr):
         raise LaunchpadValidationError(_(

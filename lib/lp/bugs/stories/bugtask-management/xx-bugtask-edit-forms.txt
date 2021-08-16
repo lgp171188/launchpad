@@ -26,7 +26,6 @@ respective bug task.
     http://bugs.launchpad.test/firefox/+bug/1/+editstatus
 
     >>> print(admin_browser.getLink('Confirmed').url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

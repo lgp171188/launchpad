@@ -4,7 +4,6 @@ Adding new projects
 Normal users should not be able to do this:
 
     >>> user_browser.open("http://launchpad.test/projectgroups/+new")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

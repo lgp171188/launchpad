@@ -41,7 +41,6 @@ unit tests somewhere else at some point. -- Guilherme Salgado, 2006-08-23
 A GPGKeyNotFoundError is raised if we try to import an empty content.
 
     >>> key = gpghandler.importPublicKey(b'')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
@@ -49,7 +48,6 @@ A GPGKeyNotFoundError is raised if we try to import an empty content.
 The same happens for bogus content.
 
     >>> key = gpghandler.importPublicKey(b'XXXXXXXXX')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
@@ -99,7 +97,6 @@ SecretGPGKeyImportDetected exception to be raised.
     >>> with open(filepath, 'rb') as f:
     ...     seckey = f.read()
     >>> key = gpghandler.importPublicKey(seckey)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.SecretGPGKeyImportDetected: ...
@@ -111,7 +108,6 @@ exception to be raised.
     >>> with open(filepath, 'rb') as f:
     ...     pubkey2 = f.read()
     >>> key = gpghandler.importPublicKey(b'\n'.join([pubkey, pubkey2]))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.MoreThanOneGPGKeyFound: ...
@@ -120,7 +116,6 @@ Raise a GPGKeyNotFoundError if we try to import a public key with damaged
 preamble.
 
     >>> key = gpghandler.importPublicKey(pubkey[1:])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
@@ -138,7 +133,6 @@ But we get an error if the damage is big:
 (what probably happened in bug #2547)
 
     >>> key = gpghandler.importPublicKey(pubkey[:-500])
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
@@ -224,7 +218,6 @@ hit the keyserver and import it automatically.
 An attempt to upload an unknown key will fail.
 
     >>> gpghandler.uploadPublicKey('F' * 40)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGKeyDoesNotExistOnServer: GPG key FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF does not exist on the keyserver.
@@ -239,7 +232,6 @@ in a error.
 
     >>> tac.tearDown()
     >>> gpghandler.uploadPublicKey(new_key.fingerprint)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGUploadFailure: Could not reach keyserver at http://localhost:11371...Connection refused...

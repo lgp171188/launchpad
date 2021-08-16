@@ -216,7 +216,6 @@ Note that the "CVE reports" link is not shown above; distribution
 source packages do not have a CVE reports page.
 
     >>> print(user_browser.getLink('CVE report').url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -289,7 +288,6 @@ Note that the "CVE reports" link is not shown above; source packages
 do not have a CVE reports page.
 
     >>> print(user_browser.getLink('CVE report').url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -362,7 +360,6 @@ Note that the "CVE reports" link is not shown above; project groups do
 not have a CVE reports page.
 
     >>> print(user_browser.getLink('CVE report').url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

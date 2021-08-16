@@ -298,7 +298,6 @@ retrying the build is not a possibility anymore.
     Build score:... Rescore build (What's this?)
 
     >>> admin_browser.getLink("Retry this build").click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -354,7 +353,6 @@ linkified. That's because its `DistroArchSeriesBinaryPackageRelease`
 page does not exist yet.
 
     >>> print(anon_browser.getLink('testing-bin-1.0'))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -383,7 +381,6 @@ Binary upload can also be awaiting approval in UNAPPROVED queue
     testing-bin-1.0
 
     >>> print(anon_browser.getLink('testing-bin-1.0'))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -408,7 +405,6 @@ xx-queue-pages.txt) this condition is presented in the build page.
     testing-bin-1.0
 
     >>> print(anon_browser.getLink('testing-bin-1.0'))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -497,7 +493,6 @@ packages, since they do not exist.
     Component: main
 
     >>> print(anon_browser.getLink('ppa-test - 1.0').url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -520,7 +515,6 @@ section for PPA builds.
     ppa-test-bin-1.0
 
     >>> print(anon_browser.getLink('ppa-test-bin-1.0').url)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

@@ -80,7 +80,6 @@ they were out of date, missing some content, etc). This list can only be
 seen by distro owners, mirror admins of the distro or launchpad admins.
 
     >>> user_browser.open('http://launchpad.test/ubuntu/+disabledmirrors')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -103,7 +102,6 @@ It's only visible to distro owners, mirror admins of the distro or
 launchpad admins.
 
     >>> user_browser.open('http://launchpad.test/ubuntu/+unofficialmirrors')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -126,7 +124,6 @@ type of mirror is shown.  Also the freshness is not visible since
 pending mirrors have never been probed.
 
     >>> user_browser.open('http://launchpad.test/ubuntu/+pendingreviewmirrors')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

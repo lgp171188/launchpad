@@ -98,7 +98,6 @@ Non privileged access to the admin page results in a 'Unauthorized'
 error.
 
     >>> user_browser.open("http://launchpad.test/ubuntu/warty/i386/+admin")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

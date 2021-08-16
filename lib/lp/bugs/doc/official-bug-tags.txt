@@ -41,7 +41,6 @@ But bug tags must be unique for each product and distribution.
     >>> store.add(distro_tag3)
     <lp.bugs.model.bugtarget.OfficialBugTag object at...
     >>> store.flush()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     storm.database.IntegrityError: ...
 
@@ -116,25 +115,21 @@ Ordinary users cannot add and remove official bug tags.
 
     >>> login('no-priv@canonical.com')
     >>> ubuntu.addOfficialBugTag(u'foo')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'addOfficialBugTag', 'launchpad.Edit')
 
     >>> ubuntu.removeOfficialBugTag(u'foo')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'removeOfficialBugTag', 'launchpad.Edit')
 
     >>> firefox.addOfficialBugTag(u'foo')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<Product at ...>, 'addOfficialBugTag', 'launchpad.Edit')
 
     >>> firefox.removeOfficialBugTag(u'foo')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<Product at ...>, 'removeOfficialBugTag', 'launchpad.Edit')
@@ -175,7 +170,6 @@ But only writable for users with edit permissions.
 
     >>> login('no-priv@canonical.com')
     >>> ubuntu.official_bug_tags = [u'foo', u'bar']
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'official_bug_tags', 'launchpad.BugSupervisor')

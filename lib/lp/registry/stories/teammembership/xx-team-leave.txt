@@ -71,7 +71,6 @@ team's overview page.
 
     # The 'Leave' link should be gone.
     >>> browser.getLink('Leave the Team')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -87,7 +86,6 @@ Team owners do not have the option to leave.
     ...     find_tag_by_id(browser.contents, 'your-involvement')))
     You own this team...
     >>> browser.getLink('Leave the Team')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

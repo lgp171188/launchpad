@@ -276,7 +276,7 @@ Attributes can be edited, but not by the anonymous user.
 
     >>> mark = lp_anon.people['mark']
     >>> firefox.driver = mark
-    >>> firefox.lp_save()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> firefox.lp_save()
     Traceback (most recent call last):
       ...
     urllib.error.HTTPError: HTTP Error 401: Unauthorized...
@@ -328,7 +328,7 @@ Changing the owner of a project can change other attributes as well.
 Read-only attributes cannot be changed.
 
     >>> firefox.registrant = nopriv
-    >>> firefox.lp_save()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> firefox.lp_save()
     Traceback (most recent call last):
       ...
     urllib.error.HTTPError: HTTP Error 400: Bad Request ... registrant_link: You tried to modify a read-only attribute...

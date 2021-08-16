@@ -4,14 +4,12 @@ is raised.
 
     >>> browser.open(
     ...     "http://localhost/ubuntu/+bugs?search=Search&field.status=Fred")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: Unexpected value for field 'status'...
 
     >>> browser.open(
     ...     "http://localhost/ubuntu/+bugs?search=Search&orderby=foobar")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: Unknown sort column 'foobar'
@@ -19,7 +17,6 @@ is raised.
     >>> browser.open(
     ...     "http://launchpad.test/firefox/+bugs?"
     ...     "field.status_upstream=hide_open")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: Unexpected value for field 'status_upstream'...

@@ -57,7 +57,7 @@ have permission to save changes:
     >>> print(bob.active)
     True
     >>> bob.active = False
-    >>> bob.lp_save()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> bob.lp_save()
     Traceback (most recent call last):
     ...
     lazr.restfulclient.errors.Unauthorized: ...

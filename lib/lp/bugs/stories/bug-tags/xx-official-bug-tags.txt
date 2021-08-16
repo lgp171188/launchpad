@@ -28,14 +28,12 @@ distributions but not for other bug targets.
     >>> admin_browser.open(
     ...     'http://bugs.launchpad.test/firefox/1.0')
     >>> print(admin_browser.getLink('Edit official tags'))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> admin_browser.open(
     ...     'http://bugs.launchpad.test/firefox/1.0/+manage-official-tags')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -45,14 +43,12 @@ administrators but not for ordinary users.
 
     >>> browser.open('http://bugs.launchpad.test/firefox')
     >>> print(browser.getLink('Edit official tags'))
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> browser.open(
     ...     'http://bugs.launchpad.test/firefox/+manage-official-tags')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

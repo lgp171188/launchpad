@@ -212,7 +212,6 @@ timeout by sleeping for 200ms with a 100ms statement timeout:
     >>> print(current_statement_timeout(store))
     100ms
     >>> store.execute(six.ensure_str('SELECT pg_sleep(0.200)'), noresult=True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.webapp.adapter.LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.200)' Parameters:() Original error: QueryCanceledError('canceling statement due to statement timeout\n',)
@@ -283,7 +282,6 @@ This final invokation, we will actually sleep to ensure that the
 timeout being reported by PostgreSQL is actually working:
 
     >>> store.execute(six.ensure_str('SELECT pg_sleep(0.2)'), noresult=True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.services.webapp.adapter.LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.2)' Parameters:() Original error: QueryCanceledError('canceling statement due to statement timeout\n',)
@@ -342,7 +340,6 @@ another query:
 
     >>> set_request_started(time.time() - 60)
     >>> store.execute('SELECT 2', noresult=True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.webapp.adapter.RequestExpired: request expired.
@@ -362,7 +359,6 @@ transaction will be doomed:
     >>> transaction.get().isDoomed()
     True
     >>> transaction.commit()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     transaction.interfaces.DoomedTransaction: transaction doomed, cannot commit
@@ -406,7 +402,6 @@ remove the timout:
     >>> thread.start()
     >>> _ = started_request.wait()
     >>> store.execute('SELECT 1', noresult=True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.services.webapp.adapter.RequestExpired: request expired.
@@ -447,7 +442,6 @@ config section.  By default we connect as "launchpad"
     >>> store.execute("""
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')
     ...     """, noresult=True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     storm.database.ProgrammingError: permission denied for relation sourcepackagename
@@ -460,7 +454,6 @@ This is not reset at the end of the transaction:
     >>> store.execute("""
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')
     ...     """, noresult=True)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     storm.database.ProgrammingError: permission denied for relation sourcepackagename

@@ -102,7 +102,6 @@ error:
 
     >>> dup_diff = pmount_from.requestDiffTo(
     ...     requester=cprov, to_sourcepackagerelease=pmount_to)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.packagediff.PackageDiffAlreadyRequested: diff from 0.1-1 to 0.1-2 has already been requested

@@ -9,7 +9,7 @@ exception that will redirect the user to the login page.
     >>> link = anon_browser.getLink("Are you Diogo Matsubara?")
     >>> print(link.url)
     http://launchpad.test/people/+requestmerge?field.dupe_person=matsubara
-    >>> link.click()  # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
+    >>> link.click()
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

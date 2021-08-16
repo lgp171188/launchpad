@@ -191,7 +191,6 @@ Ensure a non-owner doesn't see the 'Add download file' link.
 
     >>> non_owner.open('http://launchpad.test/firefox/+download')
     >>> non_owner.getLink('1.0.0')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -208,7 +207,6 @@ navigating to the product release page.
 
     >>> non_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
     >>> non_owner.getLink('Add download file')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

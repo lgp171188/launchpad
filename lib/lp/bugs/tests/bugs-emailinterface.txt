@@ -430,7 +430,6 @@ IWeaklyAuthenticatedPrincipal was provided by the current principal, no
 changes was made to the bug, and the comment wasn't added.
 
     >>> added_message = getUtility(IMessageSet).get('<yada-yada-test2>')[0]
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...
@@ -465,7 +464,6 @@ The same will happen if we send the same email without signing it:
     >>> transaction.commit()
 
     >>> added_message = getUtility(IMessageSet).get('<yada-yada-test2>')[0]
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...

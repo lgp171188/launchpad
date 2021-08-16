@@ -37,7 +37,6 @@ not available to anonymous visitors.
 
     >>> anon_browser.open('http://translations.launchpad.test/evolution/trunk/')
     >>> anon_browser.getLink('download')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -102,7 +101,6 @@ link for "Download translations" is hidden.
 
     >>> user_browser.open('http://translations.launchpad.test/bzr/')
     >>> user_browser.getLink('download')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

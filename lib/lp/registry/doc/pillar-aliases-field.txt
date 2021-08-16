@@ -29,7 +29,6 @@ to be a valid alias for that pillar, but only for that pillar.
     >>> bound_field.validate(u'iceweasel')
 
     >>> field.bind(getUtility(IProductSet)['bzr']).validate(u'iceweasel')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: iceweasel is already used by another project
@@ -54,13 +53,11 @@ If an empty string (or None) is given, all aliases will be removed.
 Each of these aliases must be valid names and must be unique.
 
     >>> bound_field.validate(u'names_cannot_have_underscores')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: Invalid name...
 
     >>> bound_field.validate(u'ubuntu')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: ubuntu is already used by another project
@@ -68,7 +65,6 @@ Each of these aliases must be valid names and must be unique.
 Also, they must not be identical to the pillar's own name.
 
     >>> bound_field.validate(firefox.name)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: This is your name: firefox
@@ -76,7 +72,6 @@ Also, they must not be identical to the pillar's own name.
 Black-listed names are not accepted as aliases either.
 
     >>> bound_field.validate(u'blacklisted')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: The name &#x27;blacklisted&#x27; has been blocked...

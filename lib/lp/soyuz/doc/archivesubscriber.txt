@@ -42,7 +42,6 @@ log in as an unprivileged user.
 We can create a new subscription for joesmith to access cprov's PPA like this:
 
     >>> new_sub = cprov.archive.newSubscription(joesmith, cprov)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -54,7 +53,6 @@ Users cannot create their own subscriptions either.  Log in as joesmith:
 
     >>> login("joe@example.com")
     >>> new_token = cprov.archive.newSubscription(joesmith, cprov)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -65,7 +63,6 @@ public:
     >>> login("celso.providelo@canonical.com")
     >>> new_sub = cprov.archive.newSubscription(
     ...     joesmith, cprov, description=u"subscription for joesmith")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.ArchiveNotPrivate: Only private archives can have subscriptions.
@@ -181,7 +178,6 @@ cannot be created:
 
     >>> new_sub = cprov_private_ppa.newSubscription(
     ...     joesmith, cprov, description=u"subscription for joesmith")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.AlreadySubscribed: Joe Smith already has a current subscription for 'PPA named p3a for Celso Providelo'.
@@ -246,7 +242,6 @@ admins.
     >>> login("no-priv@canonical.com")
 
     >>> sub = sub_set.getBySubscriber(new_sub.subscriber)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -359,7 +354,6 @@ IPerson:
 
     >>> login("no-priv@canonical.com")
     >>> urls = joesmith.getArchiveSubscriptionURLs(no_priv)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized
@@ -388,7 +382,6 @@ Trying to set the properties as the subscribed person will fail:
 
     >>> from lp.services.database.constants import UTC_NOW
     >>> new_sub.date_expires = UTC_NOW
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -408,13 +401,11 @@ We can also do this as an admin.
 The subscriber and registrant properties are not editable.
 
     >>> new_sub.subscriber = cprov
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.ForbiddenAttribute: ...
 
     >>> new_sub.registrant = joesmith
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.ForbiddenAttribute: ...
@@ -429,7 +420,6 @@ IArchive launchpad.Append (as for creating new tokens) or an admin.
 
     >>> login("no-priv@canonical.com")
     >>> new_sub.cancel()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -462,7 +452,6 @@ We can cancel subscriptions in bulk:
     ...     cprov_private_ppa.newSubscription(factory.makePerson(), cprov)
     ...     for _ in range(3)]
     >>> sub_set.cancel([subs[0].id, subs[1].id], cprov)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

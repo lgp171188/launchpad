@@ -103,7 +103,6 @@ your teams as members.
 
     >>> browser.open('http://launchpad.test/~ubuntu-team')
     >>> browser.getLink('Add one of my teams')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
      ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -118,7 +117,6 @@ your teams as members.
 The page is restricted to logged in users.
 
     >>> anon_browser.open('http://launchpad.test/~ubuntu-team/+add-my-teams')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     zope.security.interfaces.Unauthorized: ...
 

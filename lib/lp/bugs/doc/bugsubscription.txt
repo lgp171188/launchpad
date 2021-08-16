@@ -560,7 +560,6 @@ that the unsubscribing user has the appropriate permissions.  unsubscribe
 will raise an exception if the user does not have permission.
 
     >>> bug.unsubscribe(team, non_member)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UserCannotUnsubscribePerson: ...

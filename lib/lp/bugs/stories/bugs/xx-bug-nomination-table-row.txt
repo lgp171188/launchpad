@@ -56,7 +56,6 @@ buttons) directly either.
     >>> user_browser.open(
     ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
     ...     "+bug/1/nominations/2/+edit-form")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...

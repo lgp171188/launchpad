@@ -79,7 +79,6 @@ If there is no project with the specified name, a NotFoundError will be
 raised.
 
     >>> projectset['non-existant']
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...
@@ -96,7 +95,6 @@ the project.
 
 
     >>> gnome = getUtility(IProjectGroupSet)['gnome']
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...

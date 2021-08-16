@@ -23,7 +23,6 @@ A random logged in user won't have the rights to see that page.
     >>> user_browser.open(
     ...     'http://launchpad.test/ubuntu/+mirror/archive-mirror2/')
     >>> user_browser.getLink('Content check logs')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -31,7 +30,6 @@ A random logged in user won't have the rights to see that page.
     >>> user_browser.open(
     ...     'http://launchpad.test/ubuntu/+mirror/archive-mirror2/'
     ...     '+prober-logs')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

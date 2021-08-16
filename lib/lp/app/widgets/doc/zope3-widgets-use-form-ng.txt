@@ -41,7 +41,6 @@ contains more than one argument.
     >>> Zope3WidgetsUseIBrowserFormNGMonkeyPatch.install()
 
     >>> int_widget.getInputValue()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: ...
@@ -51,7 +50,6 @@ contains more than one argument.
     ...     form={'field.text': ['two', 'strings']})
     >>> text_widget = TextWidget(text_field, request)
     >>> text_widget.getInputValue()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: ...
@@ -63,7 +61,6 @@ with the Launchpad widgets extending it:
 
     >>> stripped_text_widget = StrippedTextWidget(text_field, request)
     >>> stripped_text_widget.getInputValue()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: ...

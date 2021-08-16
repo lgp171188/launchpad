@@ -352,7 +352,6 @@ But our database connections are broken.
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.registry.model.person import Person
     >>> IStore(Person).find(Person, name='janitor')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     storm.exceptions.DisconnectionError: FATAL:  database "nonexistant" does not exist

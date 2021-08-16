@@ -55,7 +55,6 @@ the system detects it and warns the user.
 But, with a new language, it will succeed.
 
     >>> browser.open('http://translations.launchpad.test/+languages/foos')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -76,14 +75,12 @@ A normal user will not be able to see or use the url to add languages.
     http://translations.launchpad.test/+languages
 
     >>> user_browser.getLink('Add new language')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/+languages/+add')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -204,14 +201,12 @@ Finally, there is the edit form to change language basic information.
 A plain user is not able to reach it.
 
     >>> user_browser.getLink('Administer')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...     'http://translations.launchpad.test/+languages/es/+admin')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -310,7 +305,6 @@ That was a renaming action, which means that language code 'es' doesn't
 exist anymore.
 
     >>> browser.open('http://translations.launchpad.test/+languages/es')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...

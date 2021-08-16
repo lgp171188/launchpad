@@ -11,28 +11,24 @@ edit dependencies, even if they try the URL directly.
 
     >>> anon_browser.open('http://launchpad.test/~cprov/+archive/ubuntu/ppa')
     >>> anon_browser.getLink('Edit PPA dependencies').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open(
     ...     'http://launchpad.test/~cprov/+archive/ubuntu/ppa/+edit-dependencies')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ..., 'launchpad.Edit')
 
     >>> user_browser.open('http://launchpad.test/~cprov/+archive/ubuntu/ppa')
     >>> user_browser.getLink('Edit PPA dependencies').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...    'http://launchpad.test/~cprov/+archive/ubuntu/ppa/+edit-dependencies')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ..., 'launchpad.Edit')
@@ -194,7 +190,6 @@ aware of this condition.
     PPA for No Privileges Person (included ... ago)
 
     >>> anon_browser.getLink('PPA for Mark Shuttleworth')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

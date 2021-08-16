@@ -59,7 +59,6 @@ Is the same as:
 Here's a set of exhaustive examples:
 
     >>> test_tales('foo/fmt:float', foo=12345.67890)
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.location.interfaces.LocationError: 'fmt:float requires a single decimal argument'

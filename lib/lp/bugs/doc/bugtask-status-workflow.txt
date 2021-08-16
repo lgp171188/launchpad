@@ -56,7 +56,6 @@ directly.
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
 
     >>> ubuntu_firefox_task.status = BugTaskStatus.CONFIRMED
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.ForbiddenAttribute: ...
@@ -282,7 +281,6 @@ setting an assignee has "side effects".
     >>> sample_person = getUtility(IPersonSet).get(12)
 
     >>> ubuntu_firefox_task.assignee = foobar
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ...
     zope.security.interfaces.ForbiddenAttribute: ...

@@ -277,7 +277,6 @@ code is prepared to raise the correct exception:
 
     >>> anon_browser.open(
     ...     "http://launchpad.test/+builds/bob/+history?build_state=foo")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: No suitable state found for value "foo"
@@ -289,7 +288,6 @@ form values are submitted:
     ...     "http://launchpad.test/ubuntu/+builds"
     ...     "?build_text=binutils&build_state=building"
     ...     "&build_text=binutils&build_state=all")
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: No suitable state found for value "[...'building', ...'all']"

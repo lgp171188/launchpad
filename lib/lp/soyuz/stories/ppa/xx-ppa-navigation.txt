@@ -143,14 +143,12 @@ inactive:
     >>> 'Previous' in anon_browser.contents
     True
     >>> anon_browser.getLink('Previous')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
     >>> 'First' in anon_browser.contents
     True
     >>> anon_browser.getLink('First')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
@@ -170,14 +168,12 @@ This is the last page, so the next and last links are inactive.
     >>> 'Next' in anon_browser.contents
     True
     >>> anon_browser.getLink('Next')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
     >>> 'Last' in anon_browser.contents
     True
     >>> anon_browser.getLink('Last')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError

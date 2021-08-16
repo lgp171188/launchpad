@@ -32,7 +32,6 @@ Only those with edit permissions on a branch can request an upgrade.
     ...     auth='Basic nopriv@canonical.com:test')
     >>> nopriv_browser.open(branch_url)
     >>> link = nopriv_browser.getLink('Upgrade this branch')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     zope.testbrowser.browser.LinkNotFoundError
 

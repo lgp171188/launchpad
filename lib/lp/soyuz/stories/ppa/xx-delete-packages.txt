@@ -11,14 +11,12 @@ console, even if they try the URL directly.
     >>> anon_browser.open(
     ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> anon_browser.getLink('Delete packages').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open(
     ...     'http://launchpad.test/~cprov/+archive/ppa/+delete-packages')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ..., 'launchpad.Edit')
@@ -26,14 +24,12 @@ console, even if they try the URL directly.
     >>> user_browser.open(
     ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> user_browser.getLink('Delete packages').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
     ...    'http://launchpad.test/~cprov/+archive/ppa/+delete-packages')
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ..., 'launchpad.Edit')
@@ -289,7 +285,6 @@ the 'Delete packages' link.
     >>> admin_browser.open(
     ...     'http://launchpad.test/~no-priv/+archive/ppa/+packages')
     >>> admin_browser.getLink('Delete packages').click()
-    ... # doctest: +IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
