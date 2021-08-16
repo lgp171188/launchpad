@@ -11,12 +11,12 @@ import re
 import shutil
 import stat
 import tarfile
+from unittest.mock import call
 
 from fixtures import (
     MockPatch,
     MonkeyPatch,
     )
-from mock import call
 from pytz import utc
 import scandir
 import six

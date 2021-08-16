@@ -9,8 +9,8 @@ import hashlib
 import io
 import os.path
 import time
+from unittest.mock import patch
 
-from mock import patch
 import six
 from swiftclient import client as swiftclient
 import transaction
