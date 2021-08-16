@@ -9,7 +9,6 @@ Editing Email Address bugtasks
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> def widget_visibility(user, url):
-    ...     naked_user = removeSecurityProxy(user)
     ...     naked_email = removeSecurityProxy(user.preferredemail)
     ...     browser = setupBrowser(
     ...         "Basic %s:test" % naked_email.email)
