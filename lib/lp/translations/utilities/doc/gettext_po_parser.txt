@@ -91,7 +91,7 @@ POHeader.
     ... Content-Type: text/plain; charset=UTF-8
     ... Content-Transfer-Encoding: 8bit
     ... Report-Msgid-Bugs-To: serrador@hispalinux.es
-    ... Plural-Forms: n != 1'''
+    ... Plural-Forms: n != 1'''  # noqa
     >>> new_header = POHeader(new_header_string)
 
 Plural forms are now the default ones. No plural forms.
