@@ -647,10 +647,12 @@ def delete_unwanted_disk_files(con):
     cur.execute("""
         SELECT id FROM LibraryFileContent ORDER BY id
         """)
+    content_id_iter = iter(cur)
 
     def get_next_wanted_content_id():
-        result = cur.fetchone()
-        if result is None:
+        try:
+            result = next(content_id_iter)
+        except StopIteration:
             return None
         else:
             return result[0]
@@ -819,10 +821,12 @@ def delete_unwanted_swift_files(con):
     cur.execute("""
         SELECT id FROM LibraryFileContent ORDER BY id
         """)
+    content_id_iter = iter(cur)
 
     def get_next_wanted_content_id():
-        result = cur.fetchone()
-        if result is None:
+        try:
+            result = next(content_id_iter)
+        except StopIteration:
             return None
         else:
             return result[0]
