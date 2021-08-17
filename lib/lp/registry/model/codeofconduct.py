@@ -14,7 +14,6 @@ from datetime import datetime
 import os
 
 import pytz
-import scandir
 import six
 from storm.locals import (
     Bool,
@@ -154,7 +153,7 @@ class CodeOfConductSet:
         cocs_path = getUtility(ICodeOfConductConf).path
 
         # iter through files and store the CoC Object
-        for entry in scandir.scandir(cocs_path):
+        for entry in os.scandir(cocs_path):
             # Select the correct filenames
             if entry.name.endswith('.txt'):
                 # Extract the version from filename

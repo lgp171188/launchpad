@@ -27,7 +27,6 @@ import tempfile
 import textwrap
 
 from pytz import utc
-import scandir
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -282,7 +281,7 @@ class SigningUpload(CustomUpload):
             SigningKeyType.FIT: self.signFit,
             }
 
-        for dirpath, dirnames, filenames in scandir.walk(self.tmpdir):
+        for dirpath, dirnames, filenames in os.walk(self.tmpdir):
             for filename in filenames:
                 file_path = os.path.join(dirpath, filename)
                 if filename.endswith(".efi"):

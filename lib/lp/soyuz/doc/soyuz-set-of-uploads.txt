@@ -116,12 +116,11 @@ Firstly, we need a way to copy a test upload into the queue (but skip
 lock files, which have names starting with a dot).
 
     >>> import shutil
-    >>> import scandir
     >>> from lp.archiveuploader.tests import datadir
     >>> def punt_upload_into_queue(leaf, distro):
     ...     inc_dir = os.path.join(incoming_dir, leaf, distro)
     ...     os.makedirs(inc_dir)
-    ...     for entry in scandir.scandir(datadir(os.path.join("suite", leaf))):
+    ...     for entry in os.scandir(datadir(os.path.join("suite", leaf))):
     ...         shutil.copy(entry.path, inc_dir)
 
 We need a way to count the items in a queue directory
@@ -614,7 +613,6 @@ release files in the way bug-54039 infected code would.
 
 First a couple helpers.
 
-    >>> import os
     >>> import stat
     >>> from lp.testing.script import run_script
 

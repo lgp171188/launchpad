@@ -14,7 +14,6 @@ import os
 import shutil
 
 from pytz import utc
-import scandir
 import six
 from zope.component import getUtility
 
@@ -471,7 +470,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         backup_top = os.path.join(get_backup_dists(archive_config), suite)
         staging_top = os.path.join(archive_config.stagingroot, suite)
         updated = False
-        for staging_dir, _, filenames in scandir.walk(staging_top):
+        for staging_dir, _, filenames in os.walk(staging_top):
             rel_dir = os.path.relpath(staging_dir, staging_top)
             backup_dir = os.path.join(backup_top, rel_dir)
             for filename in filenames:

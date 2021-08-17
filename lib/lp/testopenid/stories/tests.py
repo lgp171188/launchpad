@@ -4,8 +4,6 @@
 import os
 import unittest
 
-import scandir
-
 from lp.testing.pages import PageTestSuite
 
 
@@ -14,7 +12,7 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 def test_suite():
     stories = sorted(
-        entry.name for entry in scandir.scandir(here)
+        entry.name for entry in os.scandir(here)
         if not entry.name.startswith('.') and entry.is_dir())
 
     suite = unittest.TestSuite()

@@ -18,7 +18,6 @@ import tarfile
 import tempfile
 import time
 
-import scandir
 from zope.component import getUtility
 
 from lp.archiveuploader.nascentupload import NascentUpload
@@ -377,7 +376,7 @@ class FakePackager:
 
     def listAvailableUploads(self):
         """Return the path for all available changesfiles."""
-        changes = [entry.path for entry in scandir.scandir(self.sandbox_path)
+        changes = [entry.path for entry in os.scandir(self.sandbox_path)
                    if entry.name.endswith('.changes')]
 
         return sorted(changes)

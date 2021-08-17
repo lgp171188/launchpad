@@ -7,7 +7,6 @@ __metaclass__ = type
 
 import os
 
-import scandir
 from zope.component import getUtility
 
 from lp.buildmaster.enums import BuildStatus
@@ -37,7 +36,7 @@ class LiveFSUpload:
         """Process this upload, loading it into the database."""
         self.logger.debug("Beginning processing.")
 
-        for dirpath, _, filenames in scandir.walk(self.upload_path):
+        for dirpath, _, filenames in os.walk(self.upload_path):
             if dirpath == self.upload_path:
                 # All relevant files will be in a subdirectory.
                 continue

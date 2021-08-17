@@ -21,7 +21,6 @@ import os
 import unittest
 
 import launchpadlib
-import scandir
 import wadllib
 
 from lp.testing.layers import AppServerLayer
@@ -33,7 +32,7 @@ def add_testable_opensource_package(suite, package):
     topdir = os.path.dirname(package.__file__)
 
     packages = []
-    for dirpath, dirnames, filenames in scandir.walk(topdir):
+    for dirpath, dirnames, filenames in os.walk(topdir):
         if 'docs' in dirnames:
             docsdir = os.path.join(dirpath, 'docs')[len(topdir) + 1:]
             packages.append(docsdir)

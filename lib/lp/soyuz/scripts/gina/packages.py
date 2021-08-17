@@ -28,7 +28,6 @@ import re
 import shutil
 import tempfile
 
-import scandir
 import six
 
 from lp.app.validators.version import valid_debian_version
@@ -92,7 +91,7 @@ def get_dsc_path(name, version, component, archive_root):
         return filename, fullpath, component
 
     # Do a second pass, scrubbing through all components in the pool.
-    for alt_component_entry in scandir.scandir(pool_root):
+    for alt_component_entry in os.scandir(pool_root):
         if not alt_component_entry.is_dir():
             continue
         pool_dir = poolify(name, alt_component_entry.name)

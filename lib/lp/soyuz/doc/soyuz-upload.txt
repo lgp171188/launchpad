@@ -101,10 +101,9 @@ files match the uploaded ones.
     ...     with open(filename, 'rb') as f:
     ...         return hashlib.md5(f.read()).digest()
 
-    >>> import scandir
     >>> def get_upload_dir(num, dir=incoming_dir):
     ...     """Return the path to the upload, if found in the dir."""
-    ...     for upload_entry in scandir.scandir(dir):
+    ...     for upload_entry in os.scandir(dir):
     ...         if upload_entry.name.endswith("%06d" % num):
     ...             return upload_entry.path
     ...     return None

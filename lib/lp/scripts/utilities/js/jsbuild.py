@@ -16,7 +16,6 @@ import sys
 
 import cssutils
 from cssutils import settings
-import scandir
 
 
 HERE = os.path.dirname(__file__)
@@ -256,7 +255,7 @@ class Builder:
             return
 
         # Process sub-skins.
-        for entry in scandir.scandir(src_skins_dir):
+        for entry in os.scandir(src_skins_dir):
             self.build_skin(component_name, entry.name)
 
     def link_directory_content(self, src_dir, target_dir, link_filter=None):
@@ -269,7 +268,7 @@ class Builder:
             If the filter returns False, no symlink will be created. By
             default a symlink is created for everything.
         """
-        for entry in scandir.scandir(src_dir):
+        for entry in os.scandir(src_dir):
             if entry.name.endswith('~'):
                 continue
             if link_filter and not link_filter(entry.path):
@@ -334,7 +333,7 @@ class Builder:
     def do_build(self):
         # We need this to be both repeatable and in the desired order
         dir_list = sorted(
-            scandir.scandir(self.src_dir),
+            os.scandir(self.src_dir),
             key=lambda x: x.name.lower(),
             reverse=True)
         for entry in dir_list:
