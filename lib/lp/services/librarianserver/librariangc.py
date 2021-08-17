@@ -20,7 +20,6 @@ from time import time
 
 import iso8601
 import pytz
-import scandir
 import six
 from swiftclient import client as swiftclient
 from zope.interface import implementer
@@ -662,8 +661,8 @@ def delete_unwanted_disk_files(con):
     hex_content_id_re = re.compile(r'^([0-9a-f]{8})(\.migrated)?$')
     ONE_DAY = 24 * 60 * 60
 
-    for dirpath, dirnames, filenames in scandir.walk(
-        get_storage_root(), followlinks=True):
+    for dirpath, dirnames, filenames in os.walk(
+            get_storage_root(), followlinks=True):
 
         # Ignore known and harmless noise in the Librarian storage area.
         if 'incoming' in dirnames:

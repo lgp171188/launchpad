@@ -9,7 +9,6 @@ __all__ = ['test_suite']
 import os
 import unittest
 
-import scandir
 import wadllib
 
 from lp.testing.systemdocs import LayeredDocFileSuite
@@ -23,7 +22,7 @@ def test_suite():
 
     # Find all the doctests in wadllib.
     packages = []
-    for dirpath, dirnames, filenames in scandir.walk(topdir):
+    for dirpath, dirnames, filenames in os.walk(topdir):
         if 'docs' in dirnames:
             docsdir = os.path.join(dirpath, 'docs')[len(topdir) + 1:]
             packages.append(docsdir)

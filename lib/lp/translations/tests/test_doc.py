@@ -9,8 +9,6 @@ import logging
 import os
 import unittest
 
-import scandir
-
 from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
@@ -62,7 +60,7 @@ def test_suite():
     stories_dir = os.path.join(os.path.pardir, 'stories')
     suite.addTest(PageTestSuite(stories_dir))
     stories_path = os.path.join(here, stories_dir)
-    for story_entry in scandir.scandir(stories_path):
+    for story_entry in os.scandir(stories_path):
         if not story_entry.is_dir():
             continue
         story_path = os.path.join(stories_dir, story_entry.name)

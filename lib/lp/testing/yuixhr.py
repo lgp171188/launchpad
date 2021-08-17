@@ -20,7 +20,6 @@ import unittest
 
 from lazr.restful import ResourceJSONEncoder
 from lazr.restful.utils import get_current_browser_request
-import scandir
 import simplejson
 from six.moves import reload_module
 from zope.component import getUtility
@@ -451,7 +450,7 @@ class YUITestFixtureControllerView(LaunchpadView):
 
 
 def find_tests(root):
-    for dirpath, dirnames, filenames in scandir.walk(root):
+    for dirpath, dirnames, filenames in os.walk(root):
         dirpath = os.path.relpath(dirpath, root)
         for filename in filenames:
             if fnmatchcase(filename, 'test_*.js'):

@@ -21,8 +21,6 @@ import logging
 import os
 import unittest
 
-import scandir
-
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setUp,
@@ -100,7 +98,7 @@ def build_test_suite(base_dir, special_tests={},
     if os.path.exists(stories_path):
         suite.addTest(PageTestSuite(
             stories_dir, package, setUp=pageTestsSetUp))
-        for story_entry in scandir.scandir(stories_path):
+        for story_entry in os.scandir(stories_path):
             if not story_entry.is_dir():
                 continue
             story_path = os.path.join(stories_dir, story_entry.name)

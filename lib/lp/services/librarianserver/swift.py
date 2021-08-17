@@ -21,7 +21,6 @@ import os.path
 import re
 import time
 
-import scandir
 import six
 from six.moves.urllib.parse import quote
 from swiftclient import client as swiftclient
@@ -90,8 +89,7 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
     # Walk the Librarian on disk file store, searching for matching
     # files that may need to be copied into Swift. We need to follow
     # symlinks as they are being used span disk partitions.
-    for dirpath, dirnames, filenames in scandir.walk(
-            fs_root, followlinks=True):
+    for dirpath, dirnames, filenames in os.walk(fs_root, followlinks=True):
 
         # Don't recurse if we know this directory contains no matching
         # files.

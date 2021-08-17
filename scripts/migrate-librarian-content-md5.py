@@ -13,8 +13,6 @@ import os
 import subprocess
 import sys
 
-import scandir
-
 
 SQL = "UPDATE LibraryFileContent SET md5 = '%s' WHERE id = %d;"
 
@@ -23,7 +21,7 @@ def main(path, minimumID=0):
     if not path.endswith('/'):
         path += '/'
 
-    for dirpath, dirname, filenames in scandir.walk(path):
+    for dirpath, dirname, filenames in os.walk(path):
         dirname.sort()
         databaseID = dirpath[len(path):]
         if not len(databaseID) == 8:  # "xx/xx/xx"

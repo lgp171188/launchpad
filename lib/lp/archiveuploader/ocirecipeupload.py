@@ -10,7 +10,6 @@ __all__ = ['OCIRecipeUpload']
 import json
 import os
 
-import scandir
 from zope.component import getUtility
 
 from lp.archiveuploader.utils import UploadError
@@ -39,7 +38,7 @@ class OCIRecipeUpload:
         self.logger.debug("Beginning processing.")
 
         # Find digest file
-        for dirpath, _, filenames in scandir.walk(self.upload_path):
+        for dirpath, _, filenames in os.walk(self.upload_path):
             if dirpath == self.upload_path:
                 # All relevant files will be in a subdirectory.
                 continue

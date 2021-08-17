@@ -51,7 +51,6 @@ import os
 import shutil
 import sys
 
-import scandir
 from sqlobject import SQLObjectNotFound
 from zope.component import getUtility
 
@@ -215,7 +214,7 @@ class UploadProcessor:
             alphabetically sorted.
         """
         return sorted(
-            entry.name for entry in scandir.scandir(fsroot) if entry.is_dir())
+            entry.name for entry in os.scandir(fsroot) if entry.is_dir())
 
 
 class UploadHandler:
@@ -262,7 +261,7 @@ class UploadHandler:
         """
         changes_files = []
 
-        for dirpath, dirnames, filenames in scandir.walk(self.upload_path):
+        for dirpath, dirnames, filenames in os.walk(self.upload_path):
             relative_path = dirpath[len(self.upload_path) + 1:]
             for filename in filenames:
                 if filename.endswith(".changes"):

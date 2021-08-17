@@ -32,7 +32,6 @@ from unittest import mock
 from debian.deb822 import Release
 from fixtures import MonkeyPatch
 import pytz
-import scandir
 import six
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -512,7 +511,7 @@ class ByHashesHaveContents(Matcher):
 
     def match(self, root):
         children = set()
-        for dirpath, dirnames, _ in scandir.walk(root):
+        for dirpath, dirnames, _ in os.walk(root):
             if "by-hash" in dirnames:
                 children.add(os.path.relpath(dirpath, root))
         mismatch = MatchesSetwise(

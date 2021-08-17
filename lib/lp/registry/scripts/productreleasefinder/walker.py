@@ -13,6 +13,7 @@ __all__ = [
     ]
 
 import ftplib
+import os
 import socket
 
 from lazr.uri import (
@@ -20,7 +21,6 @@ from lazr.uri import (
     URI,
     )
 import requests
-import scandir
 from six.moves.urllib.parse import (
     unquote_plus,
     urljoin,
@@ -55,7 +55,7 @@ class WalkerBase:
     """Base class for URL walkers.
 
     This class is a base class for those wishing to implement protocol
-    specific walkers.  Walkers behave much like the scandir.walk() function,
+    specific walkers.  Walkers behave much like the os.walk() function,
     but taking a URL and working remotely.
 
     A typical usage would be:
@@ -108,7 +108,7 @@ class WalkerBase:
         """Walk through the URL.
 
         Yields (dirpath, dirnames, filenames) for each path under the base;
-        dirnames can be modified as with scandir.walk.
+        dirnames can be modified as with os.walk.
         """
         try:
             self.open()
@@ -384,7 +384,7 @@ def walk(url, log_parent=None):
     elif scheme in ["http", "https"]:
         return HTTPWalker(url, log_parent)
     elif scheme in ["file"]:
-        return scandir.walk(path)
+        return os.walk(path)
     else:
         raise WalkerError("Unknown scheme: %s" % scheme)
 

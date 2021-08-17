@@ -10,8 +10,6 @@ __all__ = [
 import os
 import subprocess
 
-import scandir
-
 import lp
 from lp.services.config import config
 
@@ -34,7 +32,7 @@ def find_lp_scripts():
     scripts = []
     for script_location in SCRIPT_LOCATIONS:
         location = os.path.join(LP_TREE, script_location)
-        for path, dirs, filenames in scandir.walk(location):
+        for path, dirs, filenames in os.walk(location):
             for filename in filenames:
                 script_path = os.path.join(path, filename)
                 if (filename.startswith('_') or
