@@ -191,7 +191,7 @@ easier you can use IBugWatchSet.fromText().
     ...         mailto:foo.bar@canonical.com
     ...     A Google Code URL:
     ...         http://code.google.com/p/myproject/issues/detail?id=12345
-    ... """
+    ... """  # noqa
     >>> bug_watches = getUtility(IBugWatchSet).fromText(
     ...     text, bug_one, sample_person)
     >>> bugs_and_types = [
