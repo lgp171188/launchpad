@@ -47,11 +47,11 @@ def main():
         if options.verbose and notified:
             print(' ... Done', file=sys.stderr)
 
-        chunk = sys.stdin.read(chunk_size)
-        if chunk == '':
-            sys.stdout.flush()
+        chunk = sys.stdin.buffer.read(chunk_size)
+        if chunk == b'':
+            sys.stdout.buffer.flush()
             return 0
-        sys.stdout.write(chunk)
+        sys.stdout.buffer.write(chunk)
 
 
 if __name__ == '__main__':
