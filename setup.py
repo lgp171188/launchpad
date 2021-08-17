@@ -240,7 +240,6 @@ setup(
         'Werkzeug',
         'WSGIProxy2',
         'z3c.ptcompat',
-        'zope.app.appsetup',
         'zope.app.http',
         'zope.app.publication',
         'zope.app.publisher',
