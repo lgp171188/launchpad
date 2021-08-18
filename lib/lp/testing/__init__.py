@@ -82,7 +82,6 @@ from lazr.restful.testing.webservice import FakeRequest
 import lp_sitecustomize
 import oops_datedir_repo.serializer_rfc822
 import pytz
-import scandir
 import simplejson
 import six
 from storm.store import Store
@@ -1162,7 +1161,7 @@ def build_yui_unittest_suite(app_testing_path, yui_test_class):
 
 
 def _harvest_yui_test_files(file_path):
-    for dirpath, dirnames, filenames in scandir.walk(file_path):
+    for dirpath, dirnames, filenames in os.walk(file_path):
         for filename in filenames:
             if fnmatchcase(filename, "test_*.html"):
                 yield os.path.join(dirpath, filename)

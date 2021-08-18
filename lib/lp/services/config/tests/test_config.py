@@ -18,7 +18,6 @@ import unittest
 from fixtures import TempDir
 from lazr.config import ConfigSchema
 from lazr.config.interfaces import ConfigErrors
-import scandir
 import testtools
 
 import lp.services.config
@@ -136,7 +135,7 @@ def test_suite():
     load_testcase = unittest.defaultTestLoader.loadTestsFromTestCase
     # Add a test for every launchpad[.lazr].conf file in our tree.
     for config_dir in lp.services.config.CONFIG_ROOT_DIRS:
-        for dirpath, dirnames, filenames in scandir.walk(config_dir):
+        for dirpath, dirnames, filenames in os.walk(config_dir):
             if os.path.basename(dirpath) in EXCLUDED_CONFIGS:
                 del dirnames[:]  # Don't look in subdirectories.
                 continue

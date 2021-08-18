@@ -23,7 +23,6 @@ from io import BytesIO
 import os
 
 import gpgme
-import scandir
 import six
 from zope.component import getUtility
 
@@ -113,7 +112,7 @@ def test_pubkey_from_email(email_addr):
 
 def test_keyrings():
     """Iterate over the filenames for test keyrings."""
-    for entry in scandir.scandir(gpgkeysdir):
+    for entry in os.scandir(gpgkeysdir):
         if entry.name.endswith('.gpg'):
             yield entry.path
 

@@ -30,7 +30,6 @@ from debian.deb822 import (
     Deb822Dict,
     PkgRelation,
     )
-import scandir
 import six
 from zope.component import getUtility
 
@@ -617,7 +616,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
 
             # Check if 'dpkg-source' created only one directory.
             temp_directories = [
-                entry.name for entry in scandir.scandir(unpacked_dir)
+                entry.name for entry in os.scandir(unpacked_dir)
                 if entry.is_dir()]
             if len(temp_directories) > 1:
                 yield UploadError(

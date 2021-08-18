@@ -49,6 +49,7 @@
     ... Referer: https://launchpad.test/
     ...
     ... token=xn9FDCTp4m&showvote=Show+My+Vote&option_12=&option_13=&option_14=&option_15="""))
+    ... # noqa
     HTTP/1.1 200 Ok
     ...
                     <p>Your current vote is as follows:</p>
@@ -85,6 +86,7 @@
     ... Referer: https://launchpad.test/
     ...
     ... token=xn9FDCTp4m&option_12=2&option_13=3&option_14=4&option_15=1&changevote=Change+Vote"""))
+    ... # noqa
     HTTP/1.1 200 Ok
     ...
     ...Your vote was changed successfully.</p>
@@ -173,6 +175,7 @@
     ... Referer: https://launchpad.test/
     ...
     ... option_16=4&option_17=2&option_18=1&option_19=3&changevote=Change+Vote"""))
+    ... # noqa
     HTTP/1.1 200 Ok
     ...
                     <p>Your current vote is as follows:</p>

@@ -113,7 +113,7 @@ unadulterated, email into the Librarian and builds all the MessageChunks.
     ... =00>=00
     ... --===============0294339828==--
     ... The epilogue is not included, including Unicode\N{COPYRIGHT SIGN}
-    ... """.encode('latin1')
+    ... """.encode('latin1')  # noqa
     >>> msg = msgset.fromEmail(raw_msg)
 
 Once the email is stuffed into the Message and MessageChunk tables and

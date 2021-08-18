@@ -36,7 +36,6 @@ from debian.deb822 import (
     _multivalued,
     Release,
     )
-import scandir
 import six
 from storm.expr import Desc
 from zope.component import getUtility
@@ -358,7 +357,7 @@ class ByHash:
             hash_path = os.path.join(self.path, archive_hash.apt_name)
             if os.path.exists(hash_path):
                 prune_hash_directory = True
-                for entry in list(scandir.scandir(hash_path)):
+                for entry in list(os.scandir(hash_path)):
                     if entry.name not in self.known_digests[
                             archive_hash.apt_name]:
                         self.log.debug(
@@ -1189,7 +1188,7 @@ class Publisher(object):
                 distroseries, pocket, component, core_files)
             dep11_dir = os.path.join(suite_dir, component, "dep11")
             try:
-                for entry in scandir.scandir(dep11_dir):
+                for entry in os.scandir(dep11_dir):
                     if (entry.name.startswith("Components-") or
                             entry.name.startswith("icons-")):
                         dep11_path = os.path.join(
@@ -1355,7 +1354,7 @@ class Publisher(object):
         i18n_dir = os.path.join(self._config.distsroot, suite, i18n_subpath)
         i18n_files = set()
         try:
-            for entry in scandir.scandir(i18n_dir):
+            for entry in os.scandir(i18n_dir):
                 if not entry.name.startswith('Translation-'):
                     continue
                 i18n_files.add(remove_suffix(entry.name))
@@ -1556,7 +1555,7 @@ class DirectoryHash:
 
     def add_dir(self, path):
         """Recursively add a directory path to be checksummed."""
-        for dirpath, dirnames, filenames in scandir.walk(path):
+        for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 self.add(os.path.join(dirpath, filename))
 

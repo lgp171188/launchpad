@@ -18,7 +18,6 @@ from fixtures import (
     MonkeyPatch,
     )
 from pytz import utc
-import scandir
 import six
 from testtools.matchers import (
     Contains,
@@ -79,7 +78,7 @@ class SignedMatches(Matcher):
 
     def match(self, base):
         content = []
-        for root, dirs, files in scandir.walk(base):
+        for root, dirs, files in os.walk(base):
             content.extend(
                 [os.path.relpath(os.path.join(root, f), base) for f in files])
 

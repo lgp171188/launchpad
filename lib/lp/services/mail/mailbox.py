@@ -16,7 +16,6 @@ import poplib
 import socket
 import threading
 
-import scandir
 from zope.interface import (
     implementer,
     Interface,
@@ -170,7 +169,7 @@ class DirectoryMailBox:
 
     def items(self):
         """See IMailBox."""
-        for entry in scandir.scandir(self.mail_dir):
+        for entry in os.scandir(self.mail_dir):
             if entry.is_file():
                 with open(entry.path, "rb") as mail_file:
                     yield (entry.path, mail_file.read())

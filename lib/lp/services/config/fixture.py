@@ -18,7 +18,6 @@ import shutil
 from textwrap import dedent
 
 from fixtures import Fixture
-import scandir
 
 from lp.services.config import config
 
@@ -125,7 +124,7 @@ class ConfigFixture(Fixture):
         self.absroot = os.path.abspath(root)
         self.addCleanup(shutil.rmtree, self.absroot)
         source = os.path.join(config.root, 'configs', self.copy_from_instance)
-        for entry in scandir.scandir(source):
+        for entry in os.scandir(source):
             if entry.name == 'launchpad-lazr.conf':
                 self.add_section(self._extend_str % self.copy_from_instance)
                 continue

@@ -6,7 +6,6 @@ import os
 import re
 import time
 
-import scandir
 import six
 from storm.expr import (
     Desc,
@@ -61,7 +60,7 @@ def make_clean_dir(path, clean_pattern=".*"):
         If omitted, all files are removed.
     """
     if os.path.isdir(path):
-        for entry in list(scandir.scandir(path)):
+        for entry in list(os.scandir(path)):
             if (entry.name == "by-hash" or
                     not re.match(clean_pattern, entry.name)):
                 # Ignore existing by-hash directories; they will be cleaned

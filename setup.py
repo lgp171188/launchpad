@@ -214,7 +214,6 @@ setup(
         'requests-file',
         'requests-toolbelt',
         'responses',
-        'scandir',
         'secure-cookie',
         'setproctitle',
         'setuptools',
