@@ -126,6 +126,9 @@ class CursorWrapper:
         else:
             return setattr(self.real_cursor, key, val)
 
+    def __iter__(self):
+        return iter(self.real_cursor)
+
 
 _org_connect = None
 
