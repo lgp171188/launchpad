@@ -6,7 +6,13 @@
 __all__ = [
     "BadExchangeMacaroonsResponse",
     "BadRequestPackageUploadResponse",
+    "BadReviewStatusResponse",
     "ICharmhubClient",
+    "ReleaseFailedResponse",
+    "ReviewFailedResponse",
+    "UnauthorizedUploadResponse",
+    "UploadFailedResponse",
+    "UploadNotReviewedYetResponse",
     ]
 
 import http.client
@@ -30,6 +36,30 @@ class BadRequestPackageUploadResponse(CharmhubError):
 
 
 class BadExchangeMacaroonsResponse(CharmhubError):
+    pass
+
+
+class UploadFailedResponse(CharmhubError):
+    pass
+
+
+class UnauthorizedUploadResponse(CharmhubError):
+    pass
+
+
+class BadReviewStatusResponse(CharmhubError):
+    pass
+
+
+class UploadNotReviewedYetResponse(CharmhubError):
+    pass
+
+
+class ReviewFailedResponse(CharmhubError):
+    pass
+
+
+class ReleaseFailedResponse(CharmhubError):
     pass
 
 
@@ -60,4 +90,37 @@ class ICharmhubClient(Interface):
             unbound discharge macaroon from Candid.
         :return: A serialized macaroon from Charmhub with no third-party
             Candid caveat.
+        """
+
+    def upload(build):
+        """Upload a charm recipe build to CharmHub.
+
+        :param build: The `ICharmRecipeBuild` to upload.
+        :return: A URL to poll for upload processing status.
+        :raises UnauthorizedUploadResponse: if the user who authorised this
+            upload is not themselves authorised to upload the snap in
+            question.
+        :raises UploadFailedResponse: if uploading the build to Charmhub
+            failed.
+        """
+
+    def checkStatus(status_url):
+        """Poll Charmhub once for upload scan status.
+
+        :param status_url: A URL as returned by `upload`.
+        :raises UploadNotReviewedYetResponse: if the upload has not yet been
+            reviewed.
+        :raises BadReviewStatusResponse: if Charmhub failed to review the
+            upload.
+        :return: The Charmhub revision number for the upload.
+        """
+
+    def release(build, revision):
+        """Tell Charmhub to release a build to specified channels.
+
+        :param build: The `ICharmRecipeBuild` to release.
+        :param revision: The revision returned by Charmhub when uploading
+            the build.
+        :raises ReleaseFailedResponse: if Charmhub failed to release the
+            build.
         """

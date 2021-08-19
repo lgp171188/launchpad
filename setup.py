@@ -182,6 +182,7 @@ setup(
         'lpjsmin',
         'Markdown',
         'meliae',
+        'multipart',
         'oauth',
         'oauthlib',
         'oops',
