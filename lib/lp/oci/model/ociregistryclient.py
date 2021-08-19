@@ -47,6 +47,7 @@ from lp.oci.interfaces.ociregistryclient import (
     )
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
+from lp.services.librarian.utils import EncodableLibraryFileAlias
 from lp.services.propertycache import cachedproperty
 from lp.services.timeout import urlfetch
 
@@ -69,33 +70,6 @@ def is_aws_bearer_token_domain(domain):
         # flag is not set, force it.
         domains = 'public.ecr.aws'
     return any(domain.endswith(i) for i in domains.split())
-
-
-class LibraryFileAliasWrapper:
-
-    """A `LibraryFileAlias` wrapper used to read an LFA.
-
-    The LFA is uploaded by Buildd to Librarian as tar.gz
-    after building the OCI image. Each LFA is essentially
-    a docker image layer and it is read in chunks when
-    uploading the layer to Dockerhub Registry."""
-
-    def __init__(self, lfa):
-        self.lfa = lfa
-        self.position = 0
-
-    def __len__(self):
-        return self.lfa.content.filesize - self.position
-
-    """ Reads from the LFA in chunks. See ILibraryFileAlias."""
-    def read(self, length=-1):
-        chunksize = None if length == -1 else length
-        data = self.lfa.read(chunksize=chunksize)
-        if chunksize is None:
-            self.position = self.lfa.content.filesize
-        else:
-            self.position += length
-        return data
 
 
 @implementer(IOCIRegistryClient)
@@ -210,7 +184,7 @@ class OCIRegistryClient:
                         return tarinfo.size
             else:
                 size = lfa.content.filesize
-                wrapper = LibraryFileAliasWrapper(lfa)
+                wrapper = EncodableLibraryFileAlias(lfa)
                 cls._upload(
                     digest, push_rule, wrapper, size,
                     http_client)
