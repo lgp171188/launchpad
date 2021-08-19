@@ -16,7 +16,8 @@ Mark is a qualified user.
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/mozilla/')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'mozilla/')
     >>> download = browser.getLink('download a full tarball')
     >>> download_url = download.url
     >>> download.click()

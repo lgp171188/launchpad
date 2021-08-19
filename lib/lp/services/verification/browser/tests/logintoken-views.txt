@@ -20,7 +20,9 @@ addresses, so here we'll make sure that even non-logged-in users can
 perform the last step of the workflow for adding a GPG key.
 
     >>> from zope.component import getMultiAdapter
-    >>> from lp.services.verification.interfaces.authtoken import LoginTokenType
+    >>> from lp.services.verification.interfaces.authtoken import (
+    ...     LoginTokenType,
+    ...     )
     >>> from lp.services.verification.interfaces.logintoken import (
     ...     ILoginTokenSet)
     >>> from lp.services.webapp.servers import LaunchpadTestRequest

@@ -10,7 +10,8 @@ Try creating a project with a blacklisted name:
     >>> admin_browser.getControl('Project Group Summary').value = 'Whatever'
     >>> admin_browser.getControl('Description').value = 'Whatever'
     >>> admin_browser.getControl('Add').click()
-    >>> "The name &#x27;blacklisted&#x27; has been blocked" in admin_browser.contents
+    >>> ("The name &#x27;blacklisted&#x27; has been blocked" in
+    ...  admin_browser.contents)
     True
 
 Try renaming a project to a blacklisted name:
@@ -19,7 +20,8 @@ Try renaming a project to a blacklisted name:
     >>> admin_browser.getLink('Administer').click()
     >>> admin_browser.getControl('Name', index=0).value = 'blacklisted'
     >>> admin_browser.getControl('Change Details').click()
-    >>> "The name &#x27;blacklisted&#x27; has been blocked" in admin_browser.contents
+    >>> ("The name &#x27;blacklisted&#x27; has been blocked" in
+    ...  admin_browser.contents)
     True
 
 Same behaviour for products:
@@ -28,7 +30,8 @@ Same behaviour for products:
     >>> admin_browser.getLink('Administer').click()
     >>> admin_browser.getControl('Name').value = 'blacklisted'
     >>> admin_browser.getControl('Change').click()
-    >>> "The name &#x27;blacklisted&#x27; has been blocked" in admin_browser.contents
+    >>> ("The name &#x27;blacklisted&#x27; has been blocked"
+    ...  in admin_browser.contents)
     True
 
 Same behaviour for people:
@@ -37,7 +40,8 @@ Same behaviour for people:
     >>> admin_browser.getLink('Change details').click()
     >>> admin_browser.getControl('Name', index=1).value = 'admin42'
     >>> admin_browser.getControl('Save').click()
-    >>> "The name &#x27;admin42&#x27; has been blocked" in admin_browser.contents
+    >>> ("The name &#x27;admin42&#x27; has been blocked" in
+    ...  admin_browser.contents)
     True
 
 Note that it is possible to have an object with a blacklisted name. These

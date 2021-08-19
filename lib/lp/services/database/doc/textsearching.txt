@@ -278,7 +278,8 @@ string finds the indexed text.
     '~' FTI data: 'foo':1 '~bar':2 query: 'foo' & '~bar' match: True
 
     >>> for symbol in punctuation:
-    ...     print(repr(symbol), search_same('aa %sbb%s cc' % (symbol, symbol)))
+    ...     print(repr(symbol),
+    ...           search_same('aa %sbb%s cc' % (symbol, symbol)))
     "'" FTI data: 'aa':1 'bb':2 'cc':3 query: 'aa' & 'bb' & 'cc' match: True
     '"' FTI data: 'aa':1 'bb':2 'cc':3 query: 'aa' & 'bb' & 'cc' match: True
     '#' FTI data: 'aa':1 'bb':2 'cc':3 query: 'aa' & 'bb' & 'cc' match: True
@@ -705,7 +706,8 @@ More than 50% of the questions matches firefox:
 
 So firefox will be removed from the final query:
 
-    >>> print(nl_phrase_search('system is slow when running firefox', Question,
+    >>> print(nl_phrase_search(
+    ...     'system is slow when running firefox', Question,
     ...     fast_enabled=False))
     system|slow|run
 
@@ -717,8 +719,8 @@ So firefox will be removed from the final query:
 The fast code path does not remove any terms. Rather it uses an & query over
 all the terms combined with an & query for each ordinal-1 subset of the terms:
 
-    >>> print(nl_phrase_search('system is slow when running firefox on ubuntu',
-    ...     Question))
+    >>> print(nl_phrase_search(
+    ...     'system is slow when running firefox on ubuntu', Question))
     (firefox&run&slow&system&ubuntu)|(run&slow&system&ubuntu)|(firefox&slow&system&ubuntu)|(firefox&run&system&ubuntu)|(firefox&run&slow&ubuntu)|(firefox&run&slow&system)
 
 Short queries are expanded more simply:
@@ -806,5 +808,6 @@ questions:
     >>> print(nl_phrase_search(
     ...     'firefox is slow', Question,
     ...     [Question.distribution == ubuntu,
-    ...      Question.sourcepackagename == firefox_package.sourcepackagename]))
+    ...      Question.sourcepackagename ==
+    ...         firefox_package.sourcepackagename]))
     firefox|slow

@@ -297,7 +297,8 @@ of them are either merged or abandoned and there is no development focus
 branch, then they will not appear on the initial branch listing and
 the portlets will not be shown.
 
-    >>> admin_browser.open('http://code.launchpad.test/~carlos/iso-codes/0.35')
+    >>> admin_browser.open(
+    ...     'http://code.launchpad.test/~carlos/iso-codes/0.35')
     >>> admin_browser.getLink('Change branch details').click()
     >>> admin_browser.getControl('Abandoned').click()
     >>> admin_browser.getControl('Change Branch').click()

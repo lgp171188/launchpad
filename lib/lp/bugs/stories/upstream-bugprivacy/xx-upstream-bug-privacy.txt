@@ -96,7 +96,8 @@ view the page because they are an explicit subscriber on the bug.
 They now access the task page of a task on a private bug; also permitted.
 
     >>> browser = setupBrowser(auth="Basic foo.bar@canonical.com:test")
-    >>> browser.open("http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id)
+    >>> browser.open(
+    ...     "http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id)
     >>> print(browser.headers["Status"])
     200 Ok
 

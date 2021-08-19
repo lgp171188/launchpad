@@ -507,7 +507,8 @@ with the remainder of the URL and or query string.
     ...
     ...     @stepto('+foo')
     ...     def traverse_foo(self):
-    ...         return self.redirectSubTree('http://wiki.canonical.com', status=303)
+    ...         return self.redirectSubTree(
+    ...             'http://wiki.canonical.com', status=303)
 
     >>> navigation5 = ThingSetNavigation5(thingset, request)
     >>> navigation5.publishTraverse(request, 'jobs')

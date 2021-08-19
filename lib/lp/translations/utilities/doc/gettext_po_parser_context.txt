@@ -120,14 +120,14 @@ To get a message with a context, we pass a context parameter.
 
 It also works for plural form messages.
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'%d file',
-    ...                                                context=u'First message')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
+    ...     u'%d file', context=u'First message')
     >>> print(potmsgset.singular_text)
     %d file
     >>> print(potmsgset.context)
     First message
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'%d file', u'%d files',
-    ...                                                context=u'Second message')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
+    ...     u'%d file', u'%d files', context=u'Second message')
     >>> print(potmsgset.singular_text)
     %d file
     >>> print(potmsgset.context)
@@ -234,8 +234,8 @@ If message has a context, you cannot get it without specifying the context:
 
 If you specify context, it actually works.
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'%d file',
-    ...                                                context=u'First message')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
+    ...     u'%d file', context=u'First message')
     >>> current = potmsgset.getCurrentTranslation(
     ...     potemplate, pofile.language, potemplate.translation_side)
     >>> print(pretty(current.translations))

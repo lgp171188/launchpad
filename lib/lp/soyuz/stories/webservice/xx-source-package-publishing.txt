@@ -30,7 +30,8 @@ We need to insert some dependent fake data before continuing.
     >>> cprov_webservice = webservice_for_person(
     ...     cprov_db, permission=OAuthPermission.WRITE_PUBLIC)
 
-    >>> cprov_archive = webservice.get("/~cprov/+archive/ubuntu/ppa").jsonBody()
+    >>> cprov_archive = webservice.get(
+    ...     "/~cprov/+archive/ubuntu/ppa").jsonBody()
     >>> cprov_srcs_response = pubs = webservice.named_get(
     ...     cprov_archive['self_link'], 'getPublishedSources')
     >>> pubs = cprov_srcs_response.jsonBody()

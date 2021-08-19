@@ -27,7 +27,8 @@ Create some specific branches to use for this test
     ...         owner=owner, date_created=next(date_generator))
     >>> mike = factory.makePerson(name='mike', displayname='Mike Murphy')
     >>> mary = factory.makePerson(name='mary', displayname='Mary Murphy')
-    >>> projectgroup = factory.makeProject(name='oh-man', displayname='Oh Man')
+    >>> projectgroup = factory.makeProject(
+    ...     name='oh-man', displayname='Oh Man')
     >>> product1 = factory.makeProduct(
     ...     name='fooix', projectgroup=projectgroup, displayname="Fooix")
     >>> product2 = factory.makeProduct(
@@ -128,7 +129,8 @@ developers team has two branches which are both private.
 If we look at the feed for landscape developers there will be no
 branches listed, just an id for the feed.
 
-    >>> browser.open('http://feeds.launchpad.test/~landscape-developers/branches.atom')
+    >>> browser.open(
+    ...     'http://feeds.launchpad.test/~landscape-developers/branches.atom')
     >>> _ = feedparser.parse(browser.contents)
     >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
     ...     print(element)
@@ -214,7 +216,9 @@ Feed for a single branch
 A single branch can have an Atom feed with each revision being a
 different entry.
 
-    >>> url = 'http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom'
+    >>> url = (
+    ...     'http://feeds.launchpad.test/~mark/firefox/release--0.9.1/'
+    ...     'branch.atom')
     >>> browser.open(url)
     >>> _ = feedparser.parse(browser.contents)
     >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:

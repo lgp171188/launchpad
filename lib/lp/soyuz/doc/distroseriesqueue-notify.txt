@@ -108,7 +108,8 @@ to the changer.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.registry.interfaces.gpg import IGPGKeySet
-    >>> gpgkey = getUtility(IGPGKeySet).getByFingerprint('ABCDEF0123456789ABCDDCBA0000111112345678')
+    >>> gpgkey = getUtility(IGPGKeySet).getByFingerprint(
+    ...     'ABCDEF0123456789ABCDDCBA0000111112345678')
     >>> removeSecurityProxy(netapplet_upload).signing_key_owner = gpgkey.owner
     >>> removeSecurityProxy(netapplet_upload).signing_key_fingerprint = (
     ...     gpgkey.fingerprint)
@@ -217,7 +218,9 @@ parameter provided that everything is already committed to the database
 (which is not the case when nascent upload runs).  This example
 demonstrates this usage:
 
-    >>> from lp.services.librarianserver.testing.server import fillLibrarianFile
+    >>> from lp.services.librarianserver.testing.server import (
+    ...     fillLibrarianFile,
+    ...     )
     >>> changes_file = open(changes_file_path, "rb")
     >>> fillLibrarianFile(1, content=changes_file.read())
     >>> changes_file.close()

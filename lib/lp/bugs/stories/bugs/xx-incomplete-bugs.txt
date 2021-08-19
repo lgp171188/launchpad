@@ -75,7 +75,8 @@ incomplete bugs without response.
     >>> user_browser.getControl(name='field.status:list').value = (
     ...     ['INCOMPLETE_WITH_RESPONSE'])
     >>> user_browser.getControl('Search', index=1).click()
-    >>> ('<a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">' in
+    >>> ('<a class="bugtitle" '
+    ...  'href="http://bugs.launchpad.test/jokosher/+bug/11">' in
     ...     find_tag_by_id(user_browser.contents, 'bugs-table-listing'))
     False
 
@@ -233,7 +234,8 @@ it is by default.  So we set the bug back to NEW.
     >>> logout()
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/8')
+    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/'
+    ...     '8')
     >>> user_browser.getControl('Status').value = ['Incomplete']
     >>> user_browser.getControl('Save Changes', index=0).click()
     >>> print(find_tag_by_id(user_browser.contents, 'can-expire'))
@@ -271,7 +273,8 @@ response) bugs.
     >>> user_browser.getControl(name='field.status:list').value = (
     ...     ['INCOMPLETE_WITHOUT_RESPONSE'])
     >>> user_browser.getControl('Search', index=1).click()
-    >>> ('<a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">' in
+    >>> ('<a class="bugtitle" '
+    ...  'href="http://bugs.launchpad.test/jokosher/+bug/11">' in
     ...     six.text_type(
     ...         find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
     True
@@ -282,7 +285,8 @@ A default search turns that bug up as well.
     >>> user_browser.getControl('Search', index=0).click()
     >>> print(user_browser.url)
     http://bugs.launchpad.test/jokosher/+bugs?...&field.status%3Alist=INCOMPLETE_WITH_RESPONSE&field.status%3Alist=INCOMPLETE_WITHOUT_RESPONSE...
-    >>> ('<a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">' in
+    >>> ('<a class="bugtitle" '
+    ...  'href="http://bugs.launchpad.test/jokosher/+bug/11">' in
     ...     six.text_type(
     ...         find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
     True

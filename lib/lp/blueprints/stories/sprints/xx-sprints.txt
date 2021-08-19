@@ -131,7 +131,8 @@ the new sprint.
 Since the sprint's time zone was set to UTC, the dates are displayed in
 that time zone:
 
-    >>> print(extract_text(find_tag_by_id(user_browser.contents, 'start-end')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     user_browser.contents, 'start-end')))
     Starts: 09:15 UTC on Tuesday, 2006-10-10
     Ends: 16:00 UTC on Friday, 2006-10-13
 
@@ -160,7 +161,8 @@ Add a new sprint with a different time zone is also handled correctly.
     >>> user_browser.url
     'http://launchpad.test/sprints/africa-sprint'
 
-    >>> print(extract_text(find_tag_by_id(user_browser.contents, 'start-end')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     user_browser.contents, 'start-end')))
     Starts: 09:15 SAST on Monday, 2006-07-10
     Ends: 16:00 SAST on Thursday, 2006-07-13
 
@@ -234,7 +236,8 @@ sprint home page.
 
 The address of the sprint is now visible.
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'sprint-address')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     browser.contents, 'sprint-address')))
     Address: Holiday Inn Select, Downtown Montreal, Canada
 
     >>> print(extract_text(find_tag_by_id(browser.contents, 'start-end')))

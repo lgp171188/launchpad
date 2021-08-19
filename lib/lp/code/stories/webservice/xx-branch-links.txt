@@ -70,7 +70,8 @@ If it turns out that the branch has no connection with the spec, it can be
 unlinked from the spec as well.
 
     >>> _unused = webservice.named_post(
-    ...     robots['self_link'], 'unlinkSpecification', spec=spec['self_link'])
+    ...     robots['self_link'], 'unlinkSpecification',
+    ...     spec=spec['self_link'])
     >>> spec_links = webservice.get(
     ...     robots['spec_links_collection_link']).jsonBody()
     >>> print(len(spec_links['entries']))

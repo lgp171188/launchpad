@@ -16,7 +16,8 @@ edit dependencies, even if they try the URL directly.
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ubuntu/ppa/+edit-dependencies')
+    ...     'http://launchpad.test/~cprov/+archive/ubuntu/ppa/'
+    ...     '+edit-dependencies')
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ..., 'launchpad.Edit')
@@ -28,7 +29,8 @@ edit dependencies, even if they try the URL directly.
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
-    ...    'http://launchpad.test/~cprov/+archive/ubuntu/ppa/+edit-dependencies')
+    ...    'http://launchpad.test/~cprov/+archive/ubuntu/ppa/'
+    ...    '+edit-dependencies')
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ..., 'launchpad.Edit')
@@ -38,7 +40,8 @@ any sources.
 
     >>> no_priv_browser = setupBrowser(
     ...     auth='Basic no-priv@canonical.com:test')
-    >>> no_priv_browser.open("http://launchpad.test/~no-priv/+archive/ubuntu/ppa")
+    >>> no_priv_browser.open(
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/ppa")
 
     >>> no_priv_browser.getLink('Edit PPA dependencies').click()
     >>> print(no_priv_browser.url)
@@ -114,7 +117,8 @@ When a valid PPA is chosen the dependency is added, a notification
 is rendered on top of the page and the list of dependencies available
 for removal is updated.
 
-    >>> admin_browser.getControl("Add PPA dependency").value = '~mark/ubuntu/ppa'
+    >>> admin_browser.getControl("Add PPA dependency").value = (
+    ...     '~mark/ubuntu/ppa')
     >>> admin_browser.getControl("Save").click()
     >>> print_feedback_messages(admin_browser.contents)
     Dependency added: PPA for Mark Shuttleworth
@@ -125,7 +129,8 @@ for removal is updated.
 
 Trying to add a dependency that is already recorded results in a error.
 
-    >>> admin_browser.getControl("Add PPA dependency").value = '~mark/ubuntu/ppa'
+    >>> admin_browser.getControl("Add PPA dependency").value = (
+    ...     '~mark/ubuntu/ppa')
     >>> admin_browser.getControl("Save").click()
     >>> print_feedback_messages(admin_browser.contents)
     There is 1 error.
@@ -134,7 +139,8 @@ Trying to add a dependency that is already recorded results in a error.
 Trying to add a dependency for the context PPA itself also results in
 a error.
 
-    >>> admin_browser.getControl("Add PPA dependency").value = '~cprov/ubuntu/ppa'
+    >>> admin_browser.getControl("Add PPA dependency").value = (
+    ...     '~cprov/ubuntu/ppa')
     >>> admin_browser.getControl("Save").click()
     >>> print_feedback_messages(admin_browser.contents)
     There is 1 error.
@@ -142,14 +148,16 @@ a error.
 
 If it's a new dependency everything is fine.
 
-    >>> admin_browser.getControl("Add PPA dependency").value = '~no-priv/ubuntu/ppa'
+    >>> admin_browser.getControl("Add PPA dependency").value = (
+    ...     '~no-priv/ubuntu/ppa')
     >>> admin_browser.getControl("Save").click()
     >>> print_feedback_messages(admin_browser.contents)
     Dependency added: PPA for No Privileges Person
 
 Now Celso's PPA will list Mark's and No-Priv's PPA as its dependencies.
+Reloading will set old form values.
 
-    >>> admin_browser.open(admin_browser.url) # Reload will set old form values.
+    >>> admin_browser.open(admin_browser.url)
     >>> print_ppa_dependencies(admin_browser.contents)
     PPA for Mark Shuttleworth
     PPA for No Privileges Person
@@ -273,7 +281,8 @@ dependency.
     >>> logout()
 
     # Attempt to add Mark's PPA
-    >>> admin_browser.getControl("Add PPA dependency").value = '~mark/ubuntu/ppa'
+    >>> admin_browser.getControl("Add PPA dependency").value = (
+    ...     '~mark/ubuntu/ppa')
     >>> admin_browser.getControl("Save").click()
     >>> print_feedback_messages(admin_browser.contents)
     There is 1 error.
@@ -462,7 +471,8 @@ The form can perform multiple actions in a single submit.
 
 First we will create a PPA dependency for 'No privileged' PPA.
 
-    >>> admin_browser.getControl("Add PPA dependency").value = '~no-priv/ubuntu/ppa'
+    >>> admin_browser.getControl("Add PPA dependency").value = (
+    ...     '~no-priv/ubuntu/ppa')
     >>> admin_browser.getControl("Save").click()
     >>> print_feedback_messages(admin_browser.contents)
     Dependency added: PPA for No Privileges Person
@@ -491,13 +501,14 @@ In a single submit we will remove the PPA dependency, add another one
 from 'Mark Shuttleworth' PPA and modify the primary dependency to
 RELEASE.
 
-    >>> admin_browser.getControl(
-    ...     name="field.selected_dependencies").value = ['~no-priv/ubuntu/ppa']
+    >>> admin_browser.getControl(name="field.selected_dependencies").value = (
+    ...     ['~no-priv/ubuntu/ppa'])
 
     >>> admin_browser.getControl(
     ...     "Use all Ubuntu components available.").selected = True
 
-    >>> admin_browser.getControl("Add PPA dependency").value = '~mark/ubuntu/ppa'
+    >>> admin_browser.getControl("Add PPA dependency").value = (
+    ...     '~mark/ubuntu/ppa')
 
     >>> admin_browser.getControl(
     ...     "Basic (only released packages).").selected = True
@@ -557,7 +568,8 @@ PPA context page and the action won't be executed.
 
     >>> admin_browser.getLink('Edit PPA dependencies').click()
 
-    >>> admin_browser.getControl("Add PPA dependency").value = '~no-priv/ubuntu/ppa'
+    >>> admin_browser.getControl("Add PPA dependency").value = (
+    ...     '~no-priv/ubuntu/ppa')
     >>> admin_browser.getControl(
     ...     name="field.selected_dependencies").value = ['~mark/ubuntu/ppa']
     >>> admin_browser.getControl(

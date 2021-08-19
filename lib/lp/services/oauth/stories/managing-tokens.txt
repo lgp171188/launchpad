@@ -92,7 +92,8 @@ shown as one of the authorized ones.
     Authorization revoked successfully.
 
     >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
-    >>> print(extract_text(find_tag_by_id(my_browser.contents, 'maincontent')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     my_browser.contents, 'maincontent')))
     Authorized applications
     ...
     Claimed tokens:
@@ -119,7 +120,8 @@ include that.
     >>> access_token, _ = token.createAccessToken()
     >>> logout()
     >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
-    >>> print(extract_text(find_tag_by_id(my_browser.contents, 'maincontent')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     my_browser.contents, 'maincontent')))
     Authorized applications
     ...
     launchpad-library

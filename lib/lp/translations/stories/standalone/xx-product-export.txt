@@ -17,7 +17,8 @@ currently the preferred translation target.
 Another way of getting that same export would be to browse to the series
 first and requesting a download there.
 
-    >>> user_browser.open('http://translations.launchpad.test/evolution/trunk')
+    >>> user_browser.open(
+    ...     'http://translations.launchpad.test/evolution/trunk')
     >>> user_browser.getLink('download').click()
     >>> user_browser.url
     'http://translations.launchpad.test/evolution/trunk/+export'

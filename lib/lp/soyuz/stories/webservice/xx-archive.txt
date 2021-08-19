@@ -4,7 +4,8 @@ Archives
 Representations for IArchive can be fetched via the API for PPAs and
 distribution archives.
 
-    >>> cprov_archive = webservice.get("/~cprov/+archive/ubuntu/ppa").jsonBody()
+    >>> cprov_archive = webservice.get(
+    ...     "/~cprov/+archive/ubuntu/ppa").jsonBody()
     >>> print(cprov_archive['self_link'])
     http://.../~cprov/+archive/ubuntu/ppa
 
@@ -91,7 +92,8 @@ We can quickly assign a random OpenPGP key to Celso's PPA.
 
 And then the new attribute value is exported as a string.
 
-    >>> cprov_archive = webservice.get("/~cprov/+archive/ubuntu/ppa").jsonBody()
+    >>> cprov_archive = webservice.get(
+    ...     "/~cprov/+archive/ubuntu/ppa").jsonBody()
     >>> print(cprov_archive['signing_key_fingerprint'])
     ABCDEF0123456789ABCDDCBA0000111112345678
 
@@ -1190,7 +1192,8 @@ Note that the 'description' and the 'signing_key_fingerprint'
 attributes are only exposed when the requestor has View permission in
 the IArchive context, in this case only Celso has it.
 
-    >>> pprint_entry(user_webservice.get("/~cprov/+archive/ubuntu/p3a").jsonBody())
+    >>> pprint_entry(user_webservice.get(
+    ...     "/~cprov/+archive/ubuntu/p3a").jsonBody())
     authorized_size: 'tag:launchpad.net:2008:redacted'
     dependencies_collection_link:
         'http://.../~cprov/+archive/ubuntu/p3a/dependencies'
@@ -1210,7 +1213,8 @@ the IArchive context, in this case only Celso has it.
     suppress_subscription_notifications: False
     web_link: 'http://launchpad.../~cprov/+archive/ubuntu/p3a'
 
-    >>> pprint_entry(cprov_webservice.get("/~cprov/+archive/ubuntu/p3a").jsonBody())
+    >>> pprint_entry(cprov_webservice.get(
+    ...     "/~cprov/+archive/ubuntu/p3a").jsonBody())
     authorized_size: 2048
     dependencies_collection_link:
         'http://.../~cprov/+archive/ubuntu/p3a/dependencies'
@@ -1467,8 +1471,8 @@ Asking for an archive on which there is no dependency returns None.
 
 Archives will also give us a list of their custom dependencies.
 
-    >>> print_self_link_of_entries(
-    ...     webservice.get('/~cprov/+archive/ubuntu/ppa/dependencies').jsonBody())
+    >>> print_self_link_of_entries(webservice.get(
+    ...     '/~cprov/+archive/ubuntu/ppa/dependencies').jsonBody())
     http://.../~cprov/+archive/ubuntu/ppa/+dependency/1
 
 Crafting a URL to a non-dependency 404s:

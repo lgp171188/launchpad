@@ -458,11 +458,13 @@ other:
 A practical example we can find on-line is that of Slovenian translations.
 Plural formula in GNOME and a preferred value is:
 
-    >>> form_1 = '(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || n%100==4 ? 3 : 0)'
+    >>> form_1 = (
+    ...     '(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || n%100==4 ? 3 : 0)')
 
 However, KDE uses the formula which returns indices shifted by one:
 
-    >>> form_2 = '(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3)'
+    >>> form_2 = (
+    ...     '(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3)')
 
 We can easily and correctly map between these:
 

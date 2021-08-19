@@ -309,7 +309,8 @@ the branch.
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
     >>> browser.open(
-    ...     'http://code.launchpad.test/~landscape-developers/landscape/trunk')
+    ...     'http://code.launchpad.test/~landscape-developers/landscape/'
+    ...     'trunk')
 
 
 Download URL
@@ -336,7 +337,8 @@ revisions. So we need to fake that here.
     >>> logout()
 
     >>> browser.open(
-    ...     'http://code.launchpad.test/~landscape-developers/landscape/trunk')
+    ...     'http://code.launchpad.test/~landscape-developers/landscape/'
+    ...     'trunk')
     >>> print(extract_text(find_tag_by_id(
     ...     browser.contents, 'branch-management')))
     Get this branch:

@@ -19,7 +19,8 @@ Two main operations are supported: upload and queue administration.
 The ArchivePermission context class implements the IArchivePermission
 interface.
 
-    >>> random_permission = IStore(ArchivePermission).get(ArchivePermission, 1)
+    >>> random_permission = IStore(ArchivePermission).get(
+    ...     ArchivePermission, 1)
     >>> verifyObject(IArchivePermission, random_permission)
     True
 

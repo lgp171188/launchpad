@@ -148,7 +148,8 @@ Now all types of branches should be shown.
 Selecting an individual lifecycle status from the select control
 will cause only branches with that status to be listed.
 
-    >>> browser.getControl(name='field.lifecycle').displayValue = ['Abandoned']
+    >>> browser.getControl(name='field.lifecycle').displayValue = [
+    ...     'Abandoned']
     >>> browser.getControl('Filter').click()
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
     >>> for row in table.tbody.find_all('tr'):
@@ -331,7 +332,8 @@ lifecycle ceases to be relevant, and the default is to sort by registrant.
 
 The implicitly sorted listings do not have an ordering widget at all.
 
-    >>> browser.open('http://code.launchpad.test/+recently-registered-branches')
+    >>> browser.open(
+    ...     'http://code.launchpad.test/+recently-registered-branches')
     >>> browser.getControl(name='field.sort_by').value
     Traceback (most recent call last):
     ...
@@ -455,7 +457,8 @@ subset of the branches are shown.
 Selecting an individual lifecycle status from the select control
 will cause only branches with that status to be listed.
 
-    >>> browser.getControl(name='field.lifecycle').displayValue = ['Experimental']
+    >>> browser.getControl(name='field.lifecycle').displayValue = [
+    ...     'Experimental']
     >>> browser.getControl('Filter').click()
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
     >>> for row in table.tbody.find_all('tr'):
@@ -465,7 +468,8 @@ will cause only branches with that status to be listed.
 If the development focus matches the lifecycle selected, it is still shown
 first.
 
-    >>> browser.getControl(name='field.lifecycle').displayValue = ['Development']
+    >>> browser.getControl(name='field.lifecycle').displayValue = [
+    ...     'Development']
     >>> browser.getControl('Filter').click()
     >>> table = find_tag_by_id(browser.contents, 'branchtable')
     >>> for row in table.tbody.find_all('tr'):

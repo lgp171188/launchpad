@@ -107,8 +107,8 @@ to where we can edit imports.
 Now, we attach a new file to an already existing translation resource.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-    ...     '+pots/evolution-2.2/+upload')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...     'evolution/+pots/evolution-2.2/+upload')
     >>> upload = browser.getControl('File')
     >>> upload
     <Control name='file' type='file'>

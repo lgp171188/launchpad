@@ -7,7 +7,8 @@ information the bugs in it. It also displays the list of bugs.
     >>> anon_browser.open('http://bugs.launchpad.test/firefox/+bugs')
     >>> anon_browser.title
     'Bugs : Mozilla Firefox'
-    >>> find_tags_by_class(anon_browser.contents, 'buglisting-row') is not None
+    >>> find_tags_by_class(
+    ...     anon_browser.contents, 'buglisting-row') is not None
     True
 
 The page has a link to see all open bugs.
@@ -15,7 +16,8 @@ The page has a link to see all open bugs.
     >>> anon_browser.getLink('Open bugs').click()
     >>> anon_browser.url
     'http://bugs.launchpad.test/firefox/+bugs'
-    >>> find_tags_by_class(anon_browser.contents, 'buglisting-row') is not None
+    >>> find_tags_by_class(
+    ...     anon_browser.contents, 'buglisting-row') is not None
     True
 
 It also has a link to subscribe to bug mail (which is implemented in

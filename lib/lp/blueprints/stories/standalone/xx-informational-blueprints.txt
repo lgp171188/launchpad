@@ -16,7 +16,8 @@ implementation.
 
 We register a new blueprint.
 
-    >>> user_browser.open('http://blueprints.launchpad.test/jokosher/+addspec')
+    >>> user_browser.open(
+    ...     'http://blueprints.launchpad.test/jokosher/+addspec')
     >>> user_browser.getControl('Name').value = 'informational-blueprint'
     >>> user_browser.getControl('Title').value = 'Informational blueprint'
     >>> user_browser.getControl('Summary').value = \
@@ -49,7 +50,8 @@ project's documentation page.
     >>> user_browser.getLink(url='+status').click()
     >>> user_browser.getControl('Definition Status').value = ['APPROVED']
     >>> user_browser.getControl('Change').click()
-    >>> browser.open('http://blueprints.launchpad.test/jokosher/+documentation')
+    >>> browser.open(
+    ...     'http://blueprints.launchpad.test/jokosher/+documentation')
     >>> print(extract_text(
     ...     find_tag_by_id(browser.contents, 'documentation-listing-table')))
     ...

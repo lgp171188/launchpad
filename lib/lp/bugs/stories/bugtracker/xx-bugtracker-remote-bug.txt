@@ -31,7 +31,8 @@ then a list of the relevant Launchpad bugs:
 If there is only a single bug watching the remote bug, then we skip
 the list page and redirect the user directly to that bug's page:
 
-    >>> browser.open('http://launchpad.test/bugs/bugtrackers/mozilla.org/2000')
+    >>> browser.open(
+    ...     'http://launchpad.test/bugs/bugtrackers/mozilla.org/2000')
     >>> print(browser.url)
     http://bugs.launchpad.test/firefox/+bug/1
 
@@ -39,7 +40,8 @@ If there are no bug watches for a particular remote bug, then a Not
 Found page is generated:
 
     >>> browser.handleErrors = True
-    >>> browser.open('http://launchpad.test/bugs/bugtrackers/mozilla.org/99999')
+    >>> browser.open(
+    ...     'http://launchpad.test/bugs/bugtrackers/mozilla.org/99999')
     Traceback (most recent call last):
     ...
     urllib.error.HTTPError: HTTP Error 404: Not Found

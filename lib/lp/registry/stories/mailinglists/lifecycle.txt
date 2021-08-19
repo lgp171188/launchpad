@@ -94,8 +94,8 @@ address.
     >>> from lp.testing.pages import strip_label
 
     >>> browser.getLink(url='+mailinglist').click()
-    >>> print(extract_text(find_tag_by_id(browser.contents,
-    ...                                   'mailing_list_not_contact_address')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     browser.contents, 'mailing_list_not_contact_address')))
     The mailing list is not set as the team contact address. You can
     set it.
 
@@ -120,8 +120,8 @@ list configuration screen displays a message to this effect.
     >>> browser.getControl('Change').click()
 
     >>> browser.getLink(url='+mailinglist').click()
-    >>> print(extract_text(find_tag_by_id(browser.contents,
-    ...                                   'mailing_list_not_contact_address')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     browser.contents, 'mailing_list_not_contact_address')))
     The mailing list is not set as the team contact address. You can
     set it.
 

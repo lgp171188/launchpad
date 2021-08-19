@@ -716,7 +716,8 @@ Valid teams do not include teams that have been merged.
     >>> from lp.registry.personmerge import merge_people
     >>> ignored = login_person(foo_bar)
     >>> registry_experts = getUtility(ILaunchpadCelebrities).registry_experts
-    >>> merge_people(ephemeral, registry_experts, reviewer=ephemeral.teamowner)
+    >>> merge_people(
+    ...     ephemeral, registry_experts, reviewer=ephemeral.teamowner)
     >>> ignored = login_person(sample_person)
     >>> for person in sorted(vocab.search('team'), key=attrgetter('name')):
     ...     print(person.name)

@@ -39,7 +39,8 @@ If a MASTER_FLAVOR is requested, it should allow writes to table in that
 Store's replication set.
 
     >>> t = transaction.begin()
-    >>> main_master = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+    >>> main_master = getUtility(IStoreSelector).get(
+    ...     MAIN_STORE, MASTER_FLAVOR)
     >>> main_master.find(Person, name='janitor').one().display_name = 'BenD'
     >>> transaction.commit()
     >>> t = transaction.begin()

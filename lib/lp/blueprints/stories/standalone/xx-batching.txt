@@ -33,7 +33,8 @@ In the beginning, a project hasn't had blueprints set up:
 But it's easy to change that.
 
     >>> browser.open(
-    ...     "http://blueprints.launchpad.test/big-project/+configure-blueprints")
+    ...     "http://blueprints.launchpad.test/big-project/"
+    ...     "+configure-blueprints")
     >>> browser.getControl(
     ...     name='field.blueprints_usage').value = ['LAUNCHPAD']
     >>> browser.getControl('Change').click()

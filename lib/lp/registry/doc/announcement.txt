@@ -61,8 +61,9 @@ publication:
     ...  mark,
     ...  "Last Call for OSSummit Asia CFP",
     ...  summary="""For all those procrastinating submitting talks and
-    ...  tutorials for OS Summit Asia, here's your friendly reminder!  The call
-    ...  for papers ends this week, so please submit your proposals promptly.""",
+    ...  tutorials for OS Summit Asia, here's your friendly reminder!  The
+    ...  call for papers ends this week, so please submit your proposals
+    ...  promptly.""",
     ...  url="http://www.mail-archive.com/announce@apache.org/msg00367.html",
     ...  publication_date=None)
 
@@ -86,9 +87,9 @@ And we can also force immediate publication of the announcement:
     ...  immediate availability of version 1.2.25 of the Apache Tomcat
     ...  Connectors.
     ...
-    ...  It contains connectors, which allow a web server such as Apache HTTPD,
-    ...  Microsoft IIS and Sun Web Server to act as a front end to the Tomcat
-    ...  web application server.""",
+    ...  It contains connectors, which allow a web server such as Apache
+    ...  HTTPD, Microsoft IIS and Sun Web Server to act as a front end to the
+    ...  Tomcat web application server.""",
     ...  publication_date=NOW)
 
 And we can set a date in the future for publishing too:

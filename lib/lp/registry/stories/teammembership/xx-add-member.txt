@@ -90,7 +90,8 @@ invitation. Not even an admin of the landscape team (which as so has the
 rights to edit the membership in question) can do it.
 
     >>> landscape_admin_browser.open(
-    ...    'http://launchpad.test/~launchpad/+invitation/landscape-developers')
+    ...    'http://launchpad.test/~launchpad/+invitation/'
+    ...    'landscape-developers')
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

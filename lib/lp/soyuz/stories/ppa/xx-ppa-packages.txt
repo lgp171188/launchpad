@@ -239,7 +239,8 @@ While we are there, we can also see that the private PPA's 'repository-size'
 pagelet isn't publicly available.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+repository-size")
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/"
+    ...     "+repository-size")
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (..., 'launchpad.View')

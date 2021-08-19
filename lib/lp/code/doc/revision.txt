@@ -119,7 +119,8 @@ sequence attribute is None.
     ...     BranchRevision, BranchRevision.branch == branch)
     >>> for branch_revision in sorted(ancestry,
     ...         key=lambda r: (
-    ...             0 if r.sequence is None else 1, r.sequence, r.revision.id),
+    ...             0 if r.sequence is None else 1, r.sequence,
+    ...             r.revision.id),
     ...         reverse=True):
     ...     print(branch_revision.sequence, branch_revision.revision.id)
     6 9
