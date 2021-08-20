@@ -280,7 +280,8 @@ The base template used for LaunchpadFormView classes takes care of
 displaying these errors in the appropriate locations.
 
 
-== Widget Validation ===
+Widget Validation
+-----------------
 
 A form may contain multiple actions, and a widget used for action A
 might not be used for action B. The validate_widgets() method makes it
