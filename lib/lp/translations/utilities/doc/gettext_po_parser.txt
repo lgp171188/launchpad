@@ -16,7 +16,7 @@ POParser
 PO files with empty headers are not allowed.
 
     >>> parser = POParser()
-    >>> parser.parse(b'msgid "foo"\nmsgstr ""\n')
+    >>> parser.parse(b'msgid "foo"\nmsgstr ""\n')  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
@@ -24,7 +24,7 @@ PO files with empty headers are not allowed.
 PO files with context after msgids are reported as broken.
 
     >>> parser.parse(b'msgid ""\nmsgstr ""\n'
-    ...              b'msgid "blah"\nmsgctxt "foo"\nmsgstr "bar"\n')
+    ...              b'msgid "blah"\nmsgctxt "foo"\nmsgstr "bar"\n')  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
@@ -33,7 +33,7 @@ And a msgctxt followed by msgctxt is caught as well.
 
     >>> parser.parse(b'msgid ""\nmsgstr ""\n'
     ...              b'msgctxt "foo"\nmsgctxt "foo1"\n'
-    ...              b'msgid "blah"\nmsgstr "bar"\n')
+    ...              b'msgid "blah"\nmsgstr "bar"\n')  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
@@ -42,21 +42,21 @@ When a string is followed by non-string, non-space data, it is caught
 as an error.
 
     >>> parser.parse(b'msgid ""\nmsgstr "something"\n'
-    ...              b'"foo"  whatever\n')
+    ...              b'"foo"  whatever\n')  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...Extra content found after string...
 
 Unrecognized escape sequences are caught as well.
 
-    >>> parser.parse(b'msgid "\!"\nmsgstr ""\n')
+    >>> parser.parse(b'msgid "\!"\nmsgstr ""\n')  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...Unknown escape sequence...
 
 Unclosed strings (missing closing quotes) are caught.
 
-    >>> parser.parse(b'msgid ""\nmsgstr "\n')
+    >>> parser.parse(b'msgid ""\nmsgstr "\n')  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...String not terminated...
@@ -322,7 +322,7 @@ errors occur:
     ... msgstr "abcdef"
     ... """  # noqa
 
-    >>> parser.parse(content + chunk2)
+    >>> parser.parse(content + chunk2)  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatInvalidInputError: Line 13: Could not decode input from UTF-8

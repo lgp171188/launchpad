@@ -176,7 +176,7 @@ This is a permission that allows a team to upload to a component:
     >>> url = ('/ubuntu/+archive/primary/+upload/ubuntu-team'
     ...     '?type=component&item=main')
     >>> ubuntu_main_permission = webservice.get(url).jsonBody()
-    >>> pprint_entry(ubuntu_main_permission)
+    >>> pprint_entry(ubuntu_main_permission)  # noqa
     archive_link: 'http://.../ubuntu/+archive/primary'
     component_name: 'main'
     date_created: ...
@@ -192,7 +192,7 @@ This is a permission that allows an individual to upload a source package.
     >>> url = ('/ubuntu/+archive/primary/+upload/carlos'
     ...     '?type=packagename&item=mozilla-firefox')
     >>> carlos_mozilla_permission = webservice.get(url).jsonBody()
-    >>> pprint_entry(carlos_mozilla_permission)
+    >>> pprint_entry(carlos_mozilla_permission)  # noqa
     archive_link: 'http://.../ubuntu/+archive/primary'
     component_name: None
     date_created: ...
@@ -209,7 +209,7 @@ This is a queue admin right for ubuntu-team:
     >>> url = ('/ubuntu/+archive/primary/+queue-admin/ubuntu-team'
     ...     '?type=component&item=main')
     >>> ubuntu_main_permission = webservice.get(url).jsonBody()
-    >>> pprint_entry(ubuntu_main_permission)
+    >>> pprint_entry(ubuntu_main_permission)  # noqa
     archive_link: 'http://.../ubuntu/+archive/primary'
     component_name: 'main'
     date_created: ...
@@ -226,7 +226,7 @@ And one for an individual:
     >>> url = ('/ubuntu/+archive/primary/+queue-admin/name12'
     ...     '?type=component&item=universe')
     >>> name16_admin_permission = webservice.get(url).jsonBody()
-    >>> pprint_entry(name16_admin_permission)
+    >>> pprint_entry(name16_admin_permission)  # noqa
     archive_link: 'http://.../ubuntu/+archive/primary'
     component_name: 'universe'
     date_created: ...
@@ -273,7 +273,7 @@ archive.  First, define some general helper functions.
     ...         api_version='devel').jsonBody()
     ...     show_permission_entries(permissions)
 
-    >>> show_all_permissions(ubuntu_devel['main_archive_link'])
+    >>> show_all_permissions(ubuntu_devel['main_archive_link'])  # noqa
     Archive Upload Rights ...~carlos None mozilla-firefox None None
     Archive Upload Rights ...~ubuntu-team main None None None
     Archive Upload Rights ...~ubuntu-team restricted None None None
@@ -407,7 +407,7 @@ for a person to upload a package.
 
     >>> new_permission = user_webservice.get(
     ...     response.getHeader('Location')).jsonBody()
-    >>> print(new_permission['self_link'])
+    >>> print(new_permission['self_link'])  # noqa
     http://.../ubuntu/+archive/primary/+upload/name12?type=packagename&item=mozilla-firefox
 
     >>> show_mozilla_permissions()
@@ -468,7 +468,7 @@ component.
 
     >>> new_permission = user_webservice.get(
     ...     response.getHeader('Location')).jsonBody()
-    >>> print(new_permission['self_link'])
+    >>> print(new_permission['self_link'])  # noqa
     http://.../ubuntu/+archive/primary/+upload/name12?type=component&item=restricted
 
     >>> show_component_permissions()
@@ -599,7 +599,7 @@ queues in a particular component.
 
     >>> new_permission = ubuntu_owner_webservice.get(
     ...     response.getHeader('Location')).jsonBody()
-    >>> print(new_permission['self_link'])
+    >>> print(new_permission['self_link'])  # noqa
     http://.../ubuntu/+archive/primary/+queue-admin/name12?type=component&item=partner
 
     >>> show_components_for_admin(name12)
@@ -658,7 +658,7 @@ newPocketUploader adds a new permission for a person to upload to a pocket.
 
     >>> new_permission = user_webservice.get(
     ...     response.getHeader('Location')).jsonBody()
-    >>> print(new_permission['self_link'])
+    >>> print(new_permission['self_link'])  # noqa
     http://.../ubuntu/+archive/primary/+upload/name12?type=pocket&item=PROPOSED
 
     >>> show_pocket_permissions('Proposed')
@@ -737,7 +737,7 @@ distroseries queues in a particular pocket.
 
     >>> new_permission = ubuntu_owner_webservice.get(
     ...     response.getHeader('Location')).jsonBody()
-    >>> print(new_permission['self_link'])
+    >>> print(new_permission['self_link'])  # noqa
     http://.../ubuntu/+archive/primary/+queue-admin/name12?type=pocket&item=SECURITY
 
     >>> show_pockets_for_admin(name12)
@@ -762,9 +762,9 @@ It can also grant series-specific pocket queue admin permissions.
     HTTP/1.1 201 Created
     ...
 
-    >>> print(new_permissions[0]['self_link'])
+    >>> print(new_permissions[0]['self_link'])  # noqa
     http://.../ubuntu/+archive/primary/+queue-admin/ubuntu-owner?type=pocket&item=SECURITY&series=hoary
-    >>> print(new_permissions[1]['self_link'])
+    >>> print(new_permissions[1]['self_link'])  # noqa
     http://.../ubuntu/+archive/primary/+queue-admin/ubuntu-owner?type=pocket&item=SECURITY&series=grumpy
 
     >>> show_pockets_for_admin(ubuntu_owner_ws)

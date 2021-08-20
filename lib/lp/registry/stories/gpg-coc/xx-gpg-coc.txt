@@ -65,7 +65,7 @@ followed by ASCII armored encrypted confirmation instructions.  Ensure that
 the clear text instructions contain the expected URLs pointing to more help.
 
     >>> cipher_body = msg.get_payload(decode=True)
-    >>> print(six.ensure_text(cipher_body))
+    >>> print(six.ensure_text(cipher_body))  # noqa
     Hello,
     <BLANKLINE>
     This message contains the instructions for confirming registration of an

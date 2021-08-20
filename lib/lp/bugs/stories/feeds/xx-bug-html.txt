@@ -52,7 +52,7 @@ the bug itself.
     ...              'show_column=bugtargetdisplayname')
     >>> browser.title
     'Bugs in Jokosher'
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://feeds.launchpad.test/jokosher/latest-bugs.html?show_column=bugtargetdisplayname'
 
     >>> entries = parse_entries(browser.contents)
@@ -79,7 +79,7 @@ as the latest bugs feed for a product.
     ...              'show_column=bugtargetdisplayname')
     >>> browser.title
     'Bugs in The Mozilla Project'
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://feeds.launchpad.test/mozilla/latest-bugs.html?show_column=bugtargetdisplayname'
 
     >>> entries = parse_entries(browser.contents)
@@ -161,7 +161,7 @@ This feed gets the latest bugs reported against any target.
     ...              'show_column=bugtargetdisplayname')
     >>> browser.title
     'Launchpad bugs'
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://feeds.launchpad.test/bugs/latest-bugs.html?show_column=bugtargetdisplayname'
 
     >>> entries = parse_entries(browser.contents)

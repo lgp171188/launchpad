@@ -127,7 +127,7 @@ Clicking on a template name will take the user to that template's overview
 page.
 
     >>> admin_browser.getLink('pmount').click()
-    >>> print(admin_browser.url)
+    >>> print(admin_browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/pmount/+pots/pmount
 
 Clicking on 'Edit' will take the user to the page to edit the template

@@ -154,7 +154,7 @@ It's time to test the wrapping with the '-' char:
     ...     TranslationConstants.SINGULAR_FORM,
     ...     u"WARNUNG: Unsichere Zugriffsrechte des umgebenden Verzeichnisses"
     ...         u" des Home-Verzeichnisses `%s'\n")
-    >>> print(export_translation_message(translation_message))
+    >>> print(export_translation_message(translation_message))  # noqa
     msgid "WARNING: unsafe enclosing directory permissions on homedir `%s'\n"
     msgstr ""
     "WARNUNG: Unsichere Zugriffsrechte des umgebenden Verzeichnisses des Home-"

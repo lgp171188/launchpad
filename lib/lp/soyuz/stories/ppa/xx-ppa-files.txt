@@ -341,7 +341,7 @@ redirect to the files for the default named PPA.
     >>> print(http(six.ensure_binary(r"""
     ... GET %s HTTP/1.1
     ... """ % file_lp_url_without_ppa_name.replace(
-    ...     'http://launchpad.test', ''))))
+    ...     'http://launchpad.test', ''))))  # noqa
     HTTP/1.1 301 Moved Permanently
     ...
     Location: http://localhost/~no-priv/+archive/ubuntu/ppa/+files/test-pkg_1.0.dsc
@@ -405,7 +405,7 @@ remains in the PPA page, but it's not a link anymore.
 If by any chance, mostly bookmarked URLs, it gets accessed via the
 LP proxy URL a proper NotFound error is raised.
 
-    >>> print(file_lp_url)
+    >>> print(file_lp_url)  # noqa
     http://launchpad.test/~no-priv/+archive/ubuntu/ppa/+sourcefiles/test-pkg/1.0/test-pkg_1.0.dsc
 
     >>> not_found_file = http(six.ensure_binary(r"""

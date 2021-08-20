@@ -30,7 +30,7 @@ respective bug task.
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
-    >>> print(admin_browser.getLink('Low', index=1).url)
+    >>> print(admin_browser.getLink('Low', index=1).url)  # noqa
     http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/1/+editstatus
     >>> print(admin_browser.getLink('New', index=1).url)
     http://bugs...test/ubuntu/+source/mozilla-firefox/+bug/1/+editstatus

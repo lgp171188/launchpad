@@ -21,7 +21,7 @@ And this is what the FOAF document for an individual actually looks
 like. It includes GPG information, if the user has any.
 
     >>> anon_browser.open("http://launchpad.test/~name16/+rdf")
-    >>> print(anon_browser.contents)
+    >>> print(anon_browser.contents)  # noqa
     <?xml version="1.0"...?>
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
              xmlns:foaf="http://xmlns.com/foaf/0.1/"

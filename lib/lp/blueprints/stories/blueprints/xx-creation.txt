@@ -185,7 +185,7 @@ Users can also follow the textual "Register a blueprint" link:
 
     >>> for tag in find_tags_by_class(
     ...     user_browser.contents, 'menu-link-new'):
-    ...     print(tag)
+    ...     print(tag)  # noqa
     <a class="menu-link-new..."
      href="http://blueprints.launchpad.test/sprints/futurista/+addspec">Register
        a blueprint</a>

@@ -563,6 +563,7 @@ distribution.
     >>> print(webservice.named_post(
     ...     distro_bugtask_path, 'transitionToTarget',
     ...     target=webservice.getAbsoluteUrl('/ubuntu/+source/alsa-utils')))
+    ... # noqa
     HTTP/1.1 301 Moved Permanently
     ...
     Location: http://api.launchpad.test/beta/ubuntu/+source/alsa-utils/+bug/...

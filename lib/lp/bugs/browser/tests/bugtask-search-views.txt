@@ -460,6 +460,5 @@ get_buglisting_search_filter_url().
 
     >>> print(get_buglisting_search_filter_url(
     ...     status_upstream='open_upstream', status='NEW',
-    ...     importance='WISHLIST', assignee='mark'))
+    ...     importance='WISHLIST', assignee='mark'))  # noqa
     +bugs?search=Search&field.assignee=mark&field.importance=WISHLIST&field.status=NEW&field.status_upstream=open_upstream
-

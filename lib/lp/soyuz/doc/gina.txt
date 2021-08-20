@@ -224,7 +224,9 @@ Check that x11proto-damage has its Build-Depends-Indep value correctly set:
 
 Check if the changelog message was stored correcly:
 
-    >>> print(x11p.changelog_entry) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(x11p.changelog_entry)
+    ... # noqa
+    ... # doctest: -NORMALIZE_WHITESPACE
     x11proto-damage (6.8.99.7-2) breezy; urgency=low
     <BLANKLINE>
       * Add dependency on x11proto-fixes-dev.
@@ -238,6 +240,7 @@ Check if the changelog message was stored correcly:
 Check that the changelog was uploaded to the librarian correctly:
 
     >>> print(six.ensure_text(x11p.changelog.read()))
+    ... # noqa
     x11proto-damage (6.8.99.7-2) breezy; urgency=low
     <BLANKLINE>
       * Add dependency on x11proto-fixes-dev.

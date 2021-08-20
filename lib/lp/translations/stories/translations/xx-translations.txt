@@ -134,9 +134,9 @@ pofile) for evolution-2.2
     True
     >>> six.ensure_str('Translatable templates') in browser.contents
     True
-    >>> print(browser.getLink('evolution-2.2').url)
+    >>> print(browser.getLink('evolution-2.2').url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/hr/+translate
-    >>> print(browser.getLink('man').url)
+    >>> print(browser.getLink('man').url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/man/hr/+translate
 
 pmount and pkgconf-mozilla are not in this page, because it belongs to the
@@ -157,9 +157,9 @@ Let's go to next page.
 
 Now, we have the other man and pkgconf-mozilla:
 
-    >>> print(browser.getLink('man').url)
+    >>> print(browser.getLink('man').url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/pmount/+pots/man/hr/+translate
-    >>> print(browser.getLink('pkgconf-mozilla').url)
+    >>> print(browser.getLink('pkgconf-mozilla').url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/mozilla/+pots/pkgconf-mozilla/hr/+translate
 
 Let's go to next page.
@@ -168,7 +168,7 @@ Let's go to next page.
 
 And finally, we will get pmount.
 
-    >>> print(browser.getLink('pmount').url)
+    >>> print(browser.getLink('pmount').url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/pmount/+pots/pmount/hr/+translate
 
 With its latest translator.
@@ -260,7 +260,7 @@ The template title points to the general translate page:
     >>> unfiltered = all_links[0]
     >>> print(extract_text(unfiltered))
     evolution-2.2
-    >>> print(extract_link_from_tag(unfiltered, base_href))
+    >>> print(extract_link_from_tag(unfiltered, base_href))  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate
 
 The number of untranslated entries points to the same page, which now show
@@ -272,7 +272,7 @@ has the right filter preselected.
     15
     >>> untranslated_link = extract_link_from_tag(untranslated, base_href)
     >>> browser.open(untranslated_link)
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
     >>> print(browser.getControl(name='show', index=1).value)
     ['untranslated']
@@ -285,7 +285,7 @@ with the 'with new suggestions' filter selected.
     1
     >>> unreviewed_link = extract_link_from_tag(unreviewed, base_href)
     >>> browser.open(unreviewed_link)
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
     >>> print(browser.getControl(name='show', index=1).value)
     ['new_suggestions']
@@ -298,7 +298,7 @@ The number of updated entries points to the translation page with the
     1
     >>> updated_link = extract_link_from_tag(updated, base_href)
     >>> browser.open(updated_link)
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
     >>> print(browser.getControl(name='show', index=1).value)
     ['changed_in_ubuntu']
@@ -434,7 +434,7 @@ Language title points to the general translate page:
     >>> unfiltered = all_links[0]
     >>> print(extract_text(unfiltered))
     Spanish
-    >>> print(extract_link_from_tag(unfiltered, base_href))
+    >>> print(extract_link_from_tag(unfiltered, base_href))  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate
 
 The number of untranslated entries points to the same page, which now shows
@@ -446,7 +446,7 @@ the right filter preselected.
     15
     >>> untranslated_link = extract_link_from_tag(untranslated, base_href)
     >>> browser.open(untranslated_link)
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=untranslated'
     >>> print(browser.getControl(name='show', index=2).value)
     untranslated
@@ -459,7 +459,7 @@ with the 'with new suggestions' filter selected.
     1
     >>> unreviewed_link = extract_link_from_tag(unreviewed, base_href)
     >>> browser.open(unreviewed_link)
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=new_suggestions'
     >>> print(browser.getControl(name='show', index=2).value)
     new_suggestions
@@ -472,7 +472,7 @@ The number of updated entries points to the translation page with the
     1
     >>> updated_link = extract_link_from_tag(updated, base_href)
     >>> browser.open(updated_link)
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?show=changed_in_ubuntu'
     >>> print(browser.getControl(name='show', index=2).value)
     changed_in_ubuntu

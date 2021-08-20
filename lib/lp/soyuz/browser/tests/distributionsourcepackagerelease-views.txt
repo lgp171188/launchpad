@@ -29,7 +29,7 @@ upload encapsulated as `ProxiedSourceLibraryFileAlias` objects. Their
 tofiles allowing them to be downloaded using `dget`.
 
     >>> for source_file in dspr_view.files:
-    ...     print(source_file.filename, source_file.http_url)
+    ...     print(source_file.filename, source_file.http_url)  # noqa
     testing-dspr_1.0.dsc
     http://.../ubuntutest/+archive/primary/+sourcefiles/testing-dspr/1.0/testing-dspr_1.0.dsc
 

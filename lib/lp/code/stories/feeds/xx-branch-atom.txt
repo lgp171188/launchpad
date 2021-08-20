@@ -234,10 +234,10 @@ own <id>, which in the case of a single branch feed will be identical.
     ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> ids = parse_ids(browser.contents)
     >>> for id_ in ids:
-    ...     print(id_)
+    ...     print(id_)  # noqa
     <id>tag:launchpad.net,2006-10-16:/code/~mark/firefox/release--0.9.1</id>
     <id>tag:launchpad.net,2005-03-09:/code/~mark/firefox/release--0.9.1/revision/1</id>
-    >>> print_parse_links(browser)
+    >>> print_parse_links(browser)  # noqa
     <link href="http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom" rel="self"/>
     >>> strainer = SoupStrainer('updated')
     >>> updated_dates = [

@@ -51,7 +51,7 @@ intermediate archive information.
     ...     '+publishinghistory' % new_distro.name)
 
     >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
-    >>> print(extract_text(table))
+    >>> print(extract_text(table))  # noqa
     Date    Status    Target          Pocket   Component Section Version
     ... UTC Pending   Foo-series      release  main      base    666
     Copied from ubuntutest breezy-autotest in Primary Archive for Ubuntu Test by Person123
@@ -79,7 +79,7 @@ original distribution was Ubuntutest breezy-autotest.
     ...     'http://launchpad.test/%s/+source/test-history/'
     ...     '+publishinghistory' % new_distro.name)
     >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
-    >>> print(extract_text(table))
+    >>> print(extract_text(table))  # noqa
     Date    Status    Target          Pocket   Component Section Version
     ... UTC Pending   Another-series  release  main      base    666
     Copied from Primary Archive for Foo-distro by Person123
@@ -101,7 +101,7 @@ messages.
     ...     'http://launchpad.test/%s/+source/test-history/'
     ...     '+publishinghistory' % new_distro.name)
     >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
-    >>> print(extract_text(table))
+    >>> print(extract_text(table))  # noqa
     Date    Status    Target          Pocket   Component Section Version
     ... UTC Pending   Another-series  release  universe  base    666
     Copied from ubuntutest breezy-autotest in Primary Archive for Ubuntu Test by Foo Bar
@@ -176,8 +176,7 @@ distro-arch-series-binarypackage page.
 
     >>> anon_browser.open(url)
     >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
-    >>> print(extract_text(table))
+    >>> print(extract_text(table))  # noqa
         Date    Status    Target     Pocket   Component Section Priority Phased updates Version
     ... UTC Pending   ubuntutest Breezy ... release  main  base Standard 666
     Copied from ubuntutest breezy-autotest-release i386 in Primary Archive for Ubuntu Test
-

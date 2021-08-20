@@ -297,7 +297,7 @@ The callable's argument is the pre-wrapped paragraph.
     ...     return paragraph.startswith('http://')
 
     >>> body = wrapper.format(text, force_wrap=True, wrap_func=nowrap)
-    >>> print(body)
+    >>> print(body)  # noqa
     Hello Scarlett O'Hara,
     <BLANKLINE>
     frankly-my-dear-i-dont-give-a-damn has a new message requiring your

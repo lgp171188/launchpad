@@ -741,7 +741,7 @@ let us use a DTD to define the html entities that standard xml is missing.
     >>> soup = BeautifulSoup(nopriv_browser.contents)
     >>> soup.find('feed').entry.title
     <...>Ampersand="&amp;" LessThan="&lt;" GreaterThan="&gt;"</title>
-    >>> print(soup.find('feed').entry.content)
+    >>> print(soup.find('feed').entry.content)  # noqa
     <...
     Ampersand="&amp;amp;"&lt;br/&gt;
     LessThan="&amp;lt;"&lt;br/&gt;

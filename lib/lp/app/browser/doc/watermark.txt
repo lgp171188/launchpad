@@ -74,7 +74,7 @@ Any HTML in the context title will be escaped to avoid XSS vulnerabilities.
 
     >>> person = factory.makePerson(
     ...     displayname="Fubar<br/><script>alert('XSS')</script>")
-    >>> print(get_hierarchy(person).heading())
+    >>> print(get_hierarchy(person).heading())  # noqa
     <h...><a...>Fubar&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a></h...>
 
 

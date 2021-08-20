@@ -132,7 +132,7 @@ get an export error exception:
 
     >>> mofile = compiler.compile(b'''
     ... blah
-    ... ''')
+    ... ''')  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationexporter.UnknownTranslationExporterError: ...
