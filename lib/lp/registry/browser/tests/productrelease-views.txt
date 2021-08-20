@@ -44,7 +44,8 @@ milestone.
     ...     'field.actions.create': 'Create release',
     ...     'field.keep_milestone_active.used': '', # false
     ...     }
-    >>> view = create_initialized_view(naked_milestone, '+addrelease', form=form)
+    >>> view = create_initialized_view(
+    ...     naked_milestone, '+addrelease', form=form)
     >>> print(view.errors)
     []
 
@@ -55,14 +56,16 @@ milestone.
     False
 
     >>> for release in series.releases:
-    ...     print(release.version, release.release_notes, release.datereleased)
+    ...     print(
+    ...         release.version, release.release_notes, release.datereleased)
     0.1 Initial release. 2007-05-11 00:00:00+00:00
 
     >>> transaction.commit()
 
 Only one release can be created for the milestone.
 
-    >>> view = create_initialized_view(naked_milestone, '+addrelease', form=form)
+    >>> view = create_initialized_view(
+    ...     naked_milestone, '+addrelease', form=form)
     >>> for notice in view.request.response.notifications:
     ...     print(notice.message)
     A project release already exists for this milestone.

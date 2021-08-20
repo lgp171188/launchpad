@@ -12,7 +12,8 @@ the 'Related Bugs' section.
 
     >>> anon_browser.open(
     ...     'http://launchpad.test/firefox/+spec/svg-support')
-    >>> print(extract_text(find_tag_by_id(anon_browser.contents, 'bug_links')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     anon_browser.contents, 'bug_links')))
     Related bugs
     Bug #1: Firefox does not support SVG   New
 
@@ -26,7 +27,8 @@ Linking a bug report to a specification is done by using the
 This link is only available to registered users:
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.test/firefox/+spec/svg-support/+linkbug')
+    ...     'http://blueprints.launchpad.test/firefox/+spec/svg-support/'
+    ...     '+linkbug')
     >>> user_browser.url
     'http://blueprints.launchpad.test/firefox/+spec/svg-support/+linkbug'
     >>> back_link = user_browser.getLink('Support Native SVG Objects')

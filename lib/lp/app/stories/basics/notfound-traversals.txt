@@ -12,7 +12,8 @@ HTTP status is returned.
     ...             "%s returned status %s instead of 404\n\n%s" % (
     ...                 url, status, str(output)))
 
-    >>> def check_redirect(url, auth=False, host='launchpad.test', status=303):
+    >>> def check_redirect(url, auth=False, host='launchpad.test',
+    ...                    status=303):
     ...     get_cmd = """
     ... GET %s HTTP/1.1
     ... Host: %s

@@ -330,7 +330,9 @@ means that we can use it to import comments from the remote Bugzilla
 instance.
 
     >>> from lp.testing import verifyObject
-    >>> from lp.bugs.interfaces.externalbugtracker import ISupportsCommentImport
+    >>> from lp.bugs.interfaces.externalbugtracker import (
+    ...     ISupportsCommentImport,
+    ...     )
     >>> verifyObject(ISupportsCommentImport, bugzilla)
     True
 

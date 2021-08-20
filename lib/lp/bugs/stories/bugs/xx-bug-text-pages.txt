@@ -158,7 +158,8 @@ The comments are represented as a MIME message.
 
     >>> print(comments[3]['Content-Type'])
     text/plain; charset="utf-8"
-    >>> [(author_bytes, author_charset)] = decode_header(comments[3]['Author'])
+    >>> [(author_bytes, author_charset)] = decode_header(
+    ...     comments[3]['Author'])
     >>> print(author_bytes.decode(author_charset))
     Márk Shúttlewòrth (mark)
     >>> 'Date' in comments[3]

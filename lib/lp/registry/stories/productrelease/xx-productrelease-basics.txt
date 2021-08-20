@@ -73,7 +73,8 @@ the "Keep the milestone <name> active" checkbox.
     >>> browser.open('http://launchpad.test/firefox/trunk/+addmilestone')
     >>> browser.getControl('Name').value = 'bar'
     >>> browser.getControl('Register Milestone').click()
-    >>> browser.open('http://launchpad.test/firefox/+milestone/bar/+addrelease')
+    >>> browser.open(
+    ...     'http://launchpad.test/firefox/+milestone/bar/+addrelease')
     >>> browser.getControl("Date released").value = '2009-01-01'
     >>> browser.getControl("Keep the bar milestone active.").selected = True
     >>> browser.getControl('Create release').click()
@@ -94,7 +95,8 @@ has a productrelease.
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
-    >>> browser.open('http://launchpad.test/firefox/+milestone/1.0/+addrelease')
+    >>> browser.open(
+    ...     'http://launchpad.test/firefox/+milestone/1.0/+addrelease')
     >>> browser.url
     'http://launchpad.test/firefox/trunk/1.0/+edit'
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
@@ -146,7 +148,8 @@ Let's add a release as Jeff:
 
 Celso is a member of ubuntu-team, so he can edit this release too:
 
-    >>> browser = setupBrowser(auth='Basic celso.providelo@canonical.com:test')
+    >>> browser = setupBrowser(
+    ...     auth='Basic celso.providelo@canonical.com:test')
     >>> browser.open('http://launchpad.test/tomcat/trunk/0.6.6.6')
     >>> browser.getLink('Change release details', index=0).click()
     >>> print(browser.title)

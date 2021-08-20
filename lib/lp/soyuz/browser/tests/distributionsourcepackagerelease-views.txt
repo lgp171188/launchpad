@@ -104,7 +104,8 @@ copies.
     ...     for build_group in dspr_view.grouped_builds:
     ...         arch_tags = ' '.join(
     ...             build.arch_tag for build in build_group['builds'])
-    ...         print('%s: %s' % (build_group['distroseries'].name, arch_tags))
+    ...         print('%s: %s' %
+    ...               (build_group['distroseries'].name, arch_tags))
     ...     print('END')
 
     >>> print_grouped_builds()

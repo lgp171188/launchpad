@@ -700,7 +700,8 @@ created by a certain person.
     >>> carlos = person_set.getByName('carlos')
     >>> translationmessages = evolution_es.getTranslationsFilteredBy(carlos)
     >>> for translationmessage in translationmessages:
-    ...     print(pretty(removeSecurityProxy(translationmessage.translations)))
+    ...     print(pretty(removeSecurityProxy(
+    ...         translationmessage.translations)))
     ['libreta de direcciones de Evolution']
     ['carpeta de libretas de direcciones actual']
     ['lalalala']

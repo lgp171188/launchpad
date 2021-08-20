@@ -376,7 +376,8 @@ zope.publisher.interfaces.http.IHTTPApplicationRequest.
     ...             return self.getApplicationURL() + '/'
     ...
     ...     def getApplicationURL(self, depth=0, path_only=False):
-    ...         assert depth == 0, 'this is not a real IHTTPApplicationRequest'
+    ...         assert depth == 0, (
+    ...             'this is not a real IHTTPApplicationRequest')
     ...         assert not path_only, 'not a real IHTTPApplicationRequest'
     ...         return self.applicationurl
 

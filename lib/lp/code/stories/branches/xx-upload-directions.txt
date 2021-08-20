@@ -5,7 +5,8 @@ The branch ~name12/gnome-terminal/pushed is an upload branch. Its index page
 shows contextual directions on how to upload to it.
 
     >>> branch_page = (
-    ...     'http://code.launchpad.test/~name12/+branch/gnome-terminal/pushed')
+    ...     'http://code.launchpad.test/~name12/+branch/gnome-terminal/'
+    ...     'pushed')
 
 We will need multiple browsers, logged in with different users. Set them up
 now.

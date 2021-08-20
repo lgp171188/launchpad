@@ -389,7 +389,9 @@ But if the branch is private, there should be no link.
 Even so, if they somehow manage to hack the url, they are redirected to a page
 with an error notification:
 
-    >>> browser.open('http://feeds.launchpad.test/~name12/landscape/feature-x/branch.atom')
+    >>> browser.open(
+    ...     'http://feeds.launchpad.test/~name12/landscape/feature-x/'
+    ...     'branch.atom')
     >>> print(browser.url)
     http://code.launchpad.test/
     >>> print_feedback_messages(browser.contents)

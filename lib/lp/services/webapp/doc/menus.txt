@@ -102,7 +102,8 @@ mark is as being "structured".
     >>> from lp.services.webapp import structured
     >>> text = structured('some <b>%s</b> text', ' --> ')
 
-    >>> full_link = Link('target', text, 'summary', icon='icon', enabled=False)
+    >>> full_link = Link(
+    ...     'target', text, 'summary', icon='icon', enabled=False)
     >>> ILinkData.providedBy(full_link)
     True
 

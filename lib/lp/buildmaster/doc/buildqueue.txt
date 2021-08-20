@@ -33,7 +33,9 @@ Instances returned by IBuildQueueSet provides the IBuildQueue interface:
 The IBuild record related to this job is provided by the 'build'
 attribute:
 
-    >>> from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
+    >>> from lp.soyuz.interfaces.binarypackagebuild import (
+    ...     IBinaryPackageBuildSet,
+    ...     )
     >>> build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(bq)
     >>> build.id
     8

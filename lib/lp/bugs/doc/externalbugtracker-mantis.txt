@@ -57,7 +57,8 @@ Tracker:
     >>> from lp.bugs.tests.externalbugtracker import (
     ...     TestMantis)
 
-    >>> sample_person = getUtility(IPersonSet).getByEmail('test@canonical.com')
+    >>> sample_person = getUtility(IPersonSet).getByEmail(
+    ...     'test@canonical.com')
 
     >>> example_bug_tracker = new_bugtracker(BugTrackerType.MANTIS)
 

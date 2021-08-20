@@ -242,7 +242,8 @@ Looking at the Spanish language overview page, we can see that there are
 15 untranslated, 1 unreviewed and 1 changed in Ubuntu Evolution translations
 (all numbers repeated as hidden 'sortkey' values).
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/+lang/es')
+    >>> browser.open(
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+lang/es')
     >>> evolution_line = find_tag_by_id(browser.contents, 'evolution-2.2')
     >>> print(extract_text(evolution_line))
     evolution-2.2
@@ -319,7 +320,8 @@ a random choice of an IP address for which we hold no GeoIP mappings.
 
     >>> anon_browser.addHeader('X-Forwarded-For', '255.255.255.255')
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/evolution/trunk/+translations')
+    ...     'http://translations.launchpad.test/evolution/trunk/'
+    ...     '+translations')
     >>> find_tag_by_id(anon_browser.contents, 'legend') is None
     False
 
@@ -335,16 +337,16 @@ will again see the legend.
 The same happens for template overview page for packages.
 
     >>> anon_browser.open(
-    ...    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-    ...    '+translations')
+    ...    'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...    'evolution/+translations')
     >>> find_tag_by_id(anon_browser.contents, 'legend') is None
     True
 
 And with at least one translation, legend is shown.
 
     >>> anon_browser.open(
-    ...    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
-    ...    '+pots/man')
+    ...    'http://translations.launchpad.test/ubuntu/hoary/+source/'
+    ...    'evolution/+pots/man')
     >>> find_tag_by_id(anon_browser.contents, 'legend') is None
     False
 

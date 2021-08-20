@@ -377,7 +377,8 @@ processor queue in the PPA category.
     >>> one_minute = datetime.timedelta(seconds=60)
     >>> any_failed_build.retry()
     >>> removeSecurityProxy(
-    ...     any_failed_build.buildqueue_record).estimated_duration = one_minute
+    ...     any_failed_build.buildqueue_record).estimated_duration = (
+    ...         one_minute)
     >>> transaction.commit()
     >>> login(ANONYMOUS)
 

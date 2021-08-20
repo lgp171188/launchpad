@@ -23,7 +23,8 @@ on their status and content.
     ...             # from different countries, so we'll just skip it.
     ...             pass
     ...         else:
-    ...             tds = tuple([extract_text(td) for td in tr.find_all('td')])
+    ...             tds = tuple(
+    ...                 [extract_text(td) for td in tr.find_all('td')])
     ...             mirrors.append(tds)
 
 Official mirrors
@@ -89,7 +90,8 @@ seen by distro owners, mirror admins of the distro or launchpad admins.
     >>> browser.url
     'http://launchpad.test/ubuntu/+disabledmirrors'
 
-    >>> print(find_tag_by_id(browser.contents, 'maincontent').decode_contents())
+    >>> print(find_tag_by_id(
+    ...     browser.contents, 'maincontent').decode_contents())
     <BLANKLINE>
     ...We don't know of any Disabled Mirrors for this distribution...
 
@@ -123,7 +125,8 @@ looked at yet.  Since all pending mirrors are grouped on one page the
 type of mirror is shown.  Also the freshness is not visible since
 pending mirrors have never been probed.
 
-    >>> user_browser.open('http://launchpad.test/ubuntu/+pendingreviewmirrors')
+    >>> user_browser.open(
+    ...     'http://launchpad.test/ubuntu/+pendingreviewmirrors')
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

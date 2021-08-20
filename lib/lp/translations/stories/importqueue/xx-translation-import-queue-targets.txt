@@ -87,7 +87,8 @@ Import queue for product series
 
 The import queue is linked from the translations page for product series.
 
-    >>> user_browser.open('http://translations.launchpad.test/evolution/trunk')
+    >>> user_browser.open(
+    ...     'http://translations.launchpad.test/evolution/trunk')
     >>> user_browser.getLink('import queue').click()
 
 This time, we do have content for this product:

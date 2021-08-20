@@ -188,7 +188,8 @@ we'll get a nice error message.
 
 We can edit the details of the newly added bugtracker.
 
-    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers/testmantis/')
+    >>> user_browser.open(
+    ...     'http://launchpad.test/bugs/bugtrackers/testmantis/')
     >>> user_browser.getLink('Change details').click()
 
     >>> user_browser.url
@@ -460,7 +461,8 @@ deleting bug watches en masse:
     >>> admin_browser.open(
     ...     'http://launchpad.test/bugs/bugtrackers/debbugs/+edit')
     >>> print(extract_text(find_tag_by_id(
-    ...     admin_browser.contents, 'bugtracker-delete-not-possible-reasons')))
+    ...     admin_browser.contents,
+    ...     'bugtracker-delete-not-possible-reasons')))
     Please note, this bug tracker cannot be deleted because:
       Bug comments have been imported via this bug tracker.
       This bug tracker is protected from deletion.
@@ -606,7 +608,8 @@ details are displayed. For example, when a bug watch is associated with
 a private bug:
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/debian/+source/mozilla-firefox/+bug/3/+secrecy')
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/+bug/3/'
+    ...     '+secrecy')
     >>> admin_browser.getControl('Private', index=1).selected = True
     >>> admin_browser.getControl('Change').click()
 

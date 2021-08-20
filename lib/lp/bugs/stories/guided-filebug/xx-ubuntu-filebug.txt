@@ -40,7 +40,8 @@ filing view of another context.
 When filing bugs directly on source packages we are also not redirected.
 
     >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+filebug')
+    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/'
+    ...     '+filebug')
     >>> print(admin_browser.url)
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+filebug
 

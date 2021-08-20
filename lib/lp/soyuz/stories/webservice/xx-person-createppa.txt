@@ -98,8 +98,8 @@ And the PPA is, of course, private:
 It's possible to create PPAs for all sorts of distributions.
 
     >>> print(ppa_owner_webservice.named_post(
-    ...     ppa_owner['self_link'], 'createPPA', {}, distribution='/ubuntutest',
-    ...     name='ppa'))
+    ...     ppa_owner['self_link'], 'createPPA', {},
+    ...     distribution='/ubuntutest', name='ppa'))
     HTTP/1.1 201 Created
     ...
     Location: http://api.launchpad.test/.../+archive/ubuntutest/ppa

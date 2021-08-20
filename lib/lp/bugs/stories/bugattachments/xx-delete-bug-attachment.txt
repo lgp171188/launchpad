@@ -58,7 +58,8 @@ But this delete option should not be shown for other users.
     >>> logout()
 
     >>> another_browser.open('http://launchpad.test/bugs/2')
-    >>> another_browser.getLink(url=re.compile(r'.*/\+attachment/\d+$')).click()
+    >>> another_browser.getLink(
+    ...     url=re.compile(r'.*/\+attachment/\d+$')).click()
     >>> print(another_browser.title)
     Bug #2...
     >>> try:

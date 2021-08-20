@@ -5,7 +5,8 @@ Binary Package Publishing
 Binary package publishing details are available via a custom operation on
 archives, getPublishedBinaries().
 
-    >>> cprov_archive = webservice.get("/~cprov/+archive/ubuntu/ppa").jsonBody()
+    >>> cprov_archive = webservice.get(
+    ...     "/~cprov/+archive/ubuntu/ppa").jsonBody()
     >>> pubs = webservice.named_get(
     ...     cprov_archive['self_link'], 'getPublishedBinaries').jsonBody()
 
@@ -121,7 +122,8 @@ Create a private PPA for Celso with some binaries.
 Only Celso (or anyone who participates on the PPA owner team) has
 access to the PPA publications.
 
-    >>> cprov_private_ppa = webservice.get("/~cprov/+archive/ubuntu/p3a").jsonBody()
+    >>> cprov_private_ppa = webservice.get(
+    ...     "/~cprov/+archive/ubuntu/p3a").jsonBody()
     >>> cprov_bins_response = webservice.named_get(
     ...     cprov_private_ppa['self_link'], 'getPublishedBinaries')
     >>> print(cprov_bins_response)
@@ -223,27 +225,32 @@ But other URLs result in a 404.
     ...
 
     >>> print(webservice.get(
-    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/phoenix/1.0/hppa/2010-02-23/unknown'))
+    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/phoenix/1.0/'
+    ...     'hppa/2010-02-23/unknown'))
     HTTP/1.1 404 Not Found
     ...
 
     >>> print(webservice.get(
-    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.1/hppa/2010-02-23/unknown'))
+    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.1/'
+    ...     'hppa/2010-02-23/unknown'))
     HTTP/1.1 404 Not Found
     ...
 
     >>> print(webservice.get(
-    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/foo/2010-02-23/unknown'))
+    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/'
+    ...     'foo/2010-02-23/unknown'))
     HTTP/1.1 404 Not Found
     ...
 
     >>> print(webservice.get(
-    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/hppa/2010-02-25/unknown'))
+    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/'
+    ...     'hppa/2010-02-25/unknown'))
     HTTP/1.1 404 Not Found
     ...
 
     >>> print(webservice.get(
-    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/hppa/2010-02-23/XX'))
+    ...     '/~cprov/+archive/ubuntu/ppa/+binaryhits/mozilla-firefox/1.0/'
+    ...     'hppa/2010-02-23/XX'))
     HTTP/1.1 404 Not Found
     ...
 

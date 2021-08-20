@@ -49,7 +49,8 @@ POST request.
 Get the association handle, which we will need for later tests.
 
     >>> import re
-    >>> [assoc_handle] = re.findall('assoc_handle:(.*)', anon_browser.contents)
+    >>> [assoc_handle] = re.findall(
+    ...     'assoc_handle:(.*)', anon_browser.contents)
 
 
 checkid_setup Mode

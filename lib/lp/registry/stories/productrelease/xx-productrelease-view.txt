@@ -46,7 +46,8 @@ downloaded and the date of the last download on that table as well.
     >>> lfa.updateDownloadCount(date(2006, 5, 4), None, 1)
 
     >>> anon_browser.reload()
-    >>> print(extract_text(find_tag_by_id(anon_browser.contents, 'downloads')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     anon_browser.contents, 'downloads')))
     File                            Description  Downloads
     firefox_0.9.2.orig.tar.gz (md5)              1 last downloaded ...
                               Total downloads:   1
@@ -58,7 +59,8 @@ downloaded, so we can't say it was downloaded a few minutes/hours ago.
     >>> import pytz
     >>> lfa.updateDownloadCount(datetime.now(pytz.utc).date(), None, 4356)
     >>> anon_browser.reload()
-    >>> print(extract_text(find_tag_by_id(anon_browser.contents, 'downloads')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     anon_browser.contents, 'downloads')))
     File                            Description  Downloads
     firefox_0.9.2.orig.tar.gz (md5)              4,357 last downloaded today
                               Total downloads:   4,357

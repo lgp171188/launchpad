@@ -175,7 +175,8 @@ Their page functionality is identical to regular packages, which is described
 in the previous section of this page.
 
     >>> browser.open(
-    ...     'http://launchpad.test/ubuntu/breezy-autotest/i386/commercialpackage')
+    ...     'http://launchpad.test/ubuntu/breezy-autotest/i386/'
+    ...     'commercialpackage')
 
 This page provides the publishing history of this BinaryPackage within
 this architecture:

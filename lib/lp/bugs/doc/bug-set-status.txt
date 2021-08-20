@@ -15,7 +15,8 @@ changing the status, the target, and the new status.
     ...     login('no-priv@canonical.com')
     ...     no_priv = getUtility(IPersonSet).getByName('no-priv')
     ...     bug_params = CreateBugParams(
-    ...         owner=no_priv, title='Sample bug', comment='This is a sample bug.')
+    ...         owner=no_priv, title='Sample bug',
+    ...         comment='This is a sample bug.')
     ...     firefox = getUtility(IProductSet).getByName('firefox')
     ...     bug = firefox.createBug(bug_params)
     ...     bug_id = bug.id
@@ -163,7 +164,8 @@ If a source package is given, but no such package exists, no bugtask
 will be edited.
 
     >>> ubuntu_firefox = ubuntu.getSourcePackage('mozilla-firefox')
-    >>> bug.setStatus(ubuntu_firefox, BugTaskStatus.CONFIRMED, no_priv) is None
+    >>> bug.setStatus(
+    ...     ubuntu_firefox, BugTaskStatus.CONFIRMED, no_priv) is None
     True
 
 If the bug is targeted to a source package, that bugtask is of course
@@ -226,7 +228,8 @@ targeted to the non-current series of course.
     >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     >>> ubuntu_warty = ubuntu.getSeries('warty')
     >>> warty_firefox = ubuntu_warty.getSourcePackage('mozilla-firefox')
-    >>> bug.setStatus(warty_firefox, BugTaskStatus.INCOMPLETE, no_priv) is None
+    >>> bug.setStatus(
+    ...     warty_firefox, BugTaskStatus.INCOMPLETE, no_priv) is None
     True
 
     >>> login('foo.bar@canonical.com')

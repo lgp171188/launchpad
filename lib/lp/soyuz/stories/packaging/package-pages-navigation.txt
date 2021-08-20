@@ -28,7 +28,8 @@ pages.
     * Answers - http://answers.launchpad.test/ubuntu/+source/alsa-utils
     Main heading: alsa-utils package in Ubuntu
 
-    >>> anon_browser.open('http://bugs.launchpad.test/ubuntu/+source/alsa-utils')
+    >>> anon_browser.open(
+    ...     'http://bugs.launchpad.test/ubuntu/+source/alsa-utils')
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > alsa-utils package
     Tabs:
@@ -70,7 +71,8 @@ A distribution source package release build should have almost the same
 navigation as its parent distribution source package release.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1/+build/11')
+    ...     'http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1/'
+    ...     '+build/11')
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > alsa-utils package > 1.0.9a-4ubuntu1 > i386 build
     Tabs:

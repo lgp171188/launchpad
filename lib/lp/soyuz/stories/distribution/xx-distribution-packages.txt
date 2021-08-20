@@ -335,8 +335,8 @@ are displayed.
 
 A link to further PPA searches is also included.
 
-    >>> link = browser.getLink(
-    ...     url='http://launchpad.test/ubuntutest/+ppas?name_filter=netapplet')
+    >>> link = browser.getLink(url=(
+    ...     'http://launchpad.test/ubuntutest/+ppas?name_filter=netapplet'))
     >>> link.text
     "...other untrusted versions of..."
 

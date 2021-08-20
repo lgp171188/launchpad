@@ -61,7 +61,8 @@ still shows no patches.
     >>> with_anybody(factory.makeBugAttachment)(bug=bug_a, is_patch=False)
     <BugAttachment at...
     >>> transaction.commit()
-    >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches')
+    >>> anon_browser.open(
+    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -150,7 +151,8 @@ attachments, and various statuses...
 ...the youngest patch on each bug is visible in the patch report
 (except for bugs in "Fix Released" state, which aren't shown):
 
-    >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches')
+    >>> anon_browser.open(
+    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_c title               Wishlist  Fix Committed ...second...
@@ -200,7 +202,9 @@ importance and status.
 
 But we can't sort by things that aren't validated by the view.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches?orderby=star-sign')
+    >>> anon_browser.open(
+    ...     'http://bugs.launchpad.test/patchy-product-1/+patches'
+    ...     '?orderby=star-sign')
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: Unexpected value for field 'orderby': 'star-sign'
@@ -252,7 +256,8 @@ Bugs in a product series show up in the patches view for that series.
     ...         target = ubuntu_distro.getSeries(target)
     ...     bugtask = factory.makeBugTask(bug=bug, target=target)
     ...     if importance is not None:
-    ...         bugtask.transitionToImportance(importance, ubuntu_distro.owner)
+    ...         bugtask.transitionToImportance(
+    ...             importance, ubuntu_distro.owner)
     ...     if status is not None:
     ...         bugtask.transitionToStatus(status, ubuntu_distro.owner)
     >>> login(ANONYMOUS)

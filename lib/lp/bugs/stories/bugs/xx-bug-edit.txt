@@ -16,7 +16,8 @@ And now we show that any logged-in user can edit public bugs.
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open(
-    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/3')
+    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/'
+    ...     '3')
     >>> browser.getLink(url="+edit").click()
     >>> browser.url
     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/3/+edit'

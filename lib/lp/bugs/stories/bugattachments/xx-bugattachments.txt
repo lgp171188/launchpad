@@ -400,7 +400,8 @@ And another patch...
 
 And now we'll search for patches for firefox bugs.
 
-    >>> user_browser.open("http://bugs.launchpad.test/firefox/+bugs?advanced=1")
+    >>> user_browser.open(
+    ...     "http://bugs.launchpad.test/firefox/+bugs?advanced=1")
     >>> user_browser.getControl(
     ...     "Show only bugs with patches available").selected = True
     >>> user_browser.getControl("Search", index=1).click()

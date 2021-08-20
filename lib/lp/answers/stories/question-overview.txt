@@ -61,7 +61,8 @@ question page.
     >>> print(browser.title)
     Question #2 : ...
 
-    >>> print(find_main_content(browser.contents).find('h1').decode_contents())
+    >>> print(find_main_content(
+    ...     browser.contents).find('h1').decode_contents())
     Problem showing the SVG demo on W3C site
 
 
@@ -197,7 +198,8 @@ involving a person.
     >>> print(browser.title)
     Questions : Foo Bar
 
-    >>> print(find_main_content(browser.contents).find('h1').decode_contents())
+    >>> print(find_main_content(
+    ...     browser.contents).find('h1').decode_contents())
     Questions for Foo Bar
 
     >>> browser.getLink('Slow system').url
@@ -222,7 +224,8 @@ the proper context where the question can be found:
     >>> print(browser.url)
     http://answers.launchpad.test/firefox/+question/1
 
-    >>> print(find_main_content(browser.contents).find('h1').decode_contents())
+    >>> print(find_main_content(
+    ...     browser.contents).find('h1').decode_contents())
     Firefox cannot render Bank Site
 
 This also works on the webservice.
