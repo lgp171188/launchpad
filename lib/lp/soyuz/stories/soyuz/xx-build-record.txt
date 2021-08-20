@@ -474,7 +474,7 @@ The 'Build status' section is identical for PPAs.
     >>> print(anon_browser.getLink('Bob The Builder').url)
     http://launchpad.test/builders/bob
 
-    >>> print(anon_browser.getLink('buildlog').url)
+    >>> print(anon_browser.getLink('buildlog').url)  # noqa
     http://launchpad.test/~cprov/+archive/ubuntu/ppa/+build/.../+files/buildlog_...
 
     >>> print(anon_browser.getLink('ppa-test-bin_1.0_i386.changes').url)

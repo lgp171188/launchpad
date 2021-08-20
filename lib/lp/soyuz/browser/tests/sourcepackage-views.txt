@@ -107,7 +107,7 @@ sourcepackagename before passing to regexp.
 
     >>> libc = ubuntu.getSourcePackage('libstdc++').getVersion('b8p')
     >>> libc_view = queryMultiAdapter((libc, request), name="+changelog")
-    >>> print(libc_view.changelog_entry)
+    >>> print(libc_view.changelog_entry)  # noqa
     libstdc++ (9.9-1) hoary; urgency=high
     <BLANKLINE>
      * Placeholder

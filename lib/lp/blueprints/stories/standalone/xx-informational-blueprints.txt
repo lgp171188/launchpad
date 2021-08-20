@@ -29,7 +29,7 @@ We register a new blueprint.
 We then set the blueprint's implementation status to ''informational''.
 
     >>> user_browser.getLink(url='+status').click()
-    >>> user_browser.url
+    >>> user_browser.url  # noqa
     'http://blueprints.launchpad.test/jokosher/+spec/informational-blueprint/+status'
     >>> user_browser.getControl('Implementation Status').value = (
     ...     ['INFORMATIONAL'])

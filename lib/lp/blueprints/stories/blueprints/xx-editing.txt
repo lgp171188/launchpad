@@ -11,13 +11,13 @@ First, we need to load the +edit page.
     >>> spec_path = '/firefox/+spec/extension-manager-upgrades'
     >>> browser.open(features_domain + spec_path)
     >>> browser.getLink('Change details').click()
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades/+edit'
 
 The page links back to the blueprint page, in case we change our minds.
 
     >>> back_link = browser.getLink('Extension Manager Upgrades')
-    >>> back_link.url
+    >>> back_link.url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
 
 Launchpad won't let us use an URL already used in another blueprint.
@@ -61,24 +61,24 @@ specification home page.
     >>> browser.getControl('Summary').value = summary
     >>> browser.getControl('Status Whiteboard').value = 'XXX'
     >>> browser.getControl('Change').click()
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
 
 Also, we would like to assign these to someone other than Carlos, and we
 would also like to have a drafter associated with it.
 
     >>> browser.getLink(url='+people').click()
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades/+people'
     >>> back_link = browser.getLink('Extension Manager System Upgrades')
-    >>> back_link.url
+    >>> back_link.url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
     >>> browser.getControl('Assignee').value = 'tsukimi@quaqua.net'
     >>> browser.getControl('Drafter').value = 'daf@canonical.com'
     >>> browser.getControl('Approver').value = 'stuart.bishop@canonical.com'
     >>> browser.getControl('Status Whiteboard').value = 'YYY'
     >>> browser.getControl('Change').click()
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
 
 Finally, we should be able to change the status metadata (definition status,
@@ -86,13 +86,13 @@ implementation status, estimated man days etc) of the specification.
 
     >>> browser.getLink(url='+status').click()
     >>> back_link = browser.getLink('Extension Manager System Upgrades')
-    >>> back_link.url
+    >>> back_link.url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
     >>> browser.getControl('Definition Status').value = ['DRAFT']
     >>> browser.getControl('Implementation Status').value = ['SLOW']
     >>> browser.getControl('Status Whiteboard').value = 'XXX'
     >>> browser.getControl('Change').click()
-    >>> browser.url
+    >>> browser.url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
 
 Any logged in user can edit a specification whiteboard.
@@ -143,7 +143,7 @@ But an administrator can.
     ...     'http://blueprints.launchpad.test/kubuntu/'
     ...     '+spec/krunch-desktop-plan')
     >>> admin_browser.getLink(url='+priority').click()
-    >>> admin_browser.url
+    >>> admin_browser.url  # noqa
     'http://blueprints.launchpad.test/kubuntu/+spec/krunch-desktop-plan/+priority'
     >>> back_link = admin_browser.getLink('The Krunch Desktop Plan')
     >>> back_link.url

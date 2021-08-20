@@ -283,7 +283,7 @@ A default search turns that bug up as well.
 
     >>> user_browser.open('http://bugs.launchpad.test/jokosher')
     >>> user_browser.getControl('Search', index=0).click()
-    >>> print(user_browser.url)
+    >>> print(user_browser.url)  # noqa
     http://bugs.launchpad.test/jokosher/+bugs?...&field.status%3Alist=INCOMPLETE_WITH_RESPONSE&field.status%3Alist=INCOMPLETE_WITHOUT_RESPONSE...
     >>> ('<a class="bugtitle" '
     ...  'href="http://bugs.launchpad.test/jokosher/+bug/11">' in

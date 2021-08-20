@@ -426,7 +426,7 @@ is also included in the statistics portlet.
 Current build activity is linked to the builds page with the relevant
 filter.
 
-    >>> print(anon_browser.getLink('1 package building').url)
+    >>> print(anon_browser.getLink('1 package building').url)  # noqa
     http://launchpad.test/~cprov/+archive/ubuntu/ppa/+builds?build_state=building
 
 
@@ -595,7 +595,7 @@ The key fingerprint links to the actual key available in the ubuntu
 keyserver.
 
     >>> print(anon_browser.getLink(
-    ...     '1024D/ABCDEF0123456789ABCDDCBA0000111112345678').url)
+    ...     '1024D/ABCDEF0123456789ABCDDCBA0000111112345678').url)  # noqa
     https://keyserver.ubuntu.com/pks/lookup?fingerprint=on&op=index&search=0xABCDEF0123456789ABCDDCBA0000111112345678
 
 Using software from a PPA can be hard for novices. We offer two

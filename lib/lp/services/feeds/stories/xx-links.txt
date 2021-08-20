@@ -165,7 +165,7 @@ it must have quotes and html escaped.
     >>> logout()
     >>> browser.open('http://launchpad.test/bad-displayname')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.find_all('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')  # noqa
     [<link href="http://feeds.launchpad.test/bad-displayname/announcements.atom"
         rel="alternate"
         title='Announcements for Bad displayname"&gt;&lt;script&gt;alert("h4x0r")&lt;/script&gt;'
@@ -297,7 +297,7 @@ show a link to the atom feed for that source package's latest bugs.
 
     >>> browser.open('http://bugs.launchpad.test/ubuntu/+source/cnews')
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.find_all('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')  # noqa
     [<link
         href="http://feeds.launchpad.test/ubuntu/+source/cnews/latest-bugs.atom"
         rel="alternate" title="Latest Bugs for cnews in Ubuntu"
@@ -367,7 +367,7 @@ atom feed for that branch's revisions.
     >>> url = 'http://code.launchpad.test/~mark/firefox/release--0.9.1'
     >>> browser.open(url)
     >>> soup = BeautifulSoup(browser.contents)
-    >>> soup.head.find_all('link', type='application/atom+xml')
+    >>> soup.head.find_all('link', type='application/atom+xml')  # noqa
     [<link
         href="http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom"
         rel="alternate"

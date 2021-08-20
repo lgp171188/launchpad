@@ -269,7 +269,7 @@ We can create a Git-to-Git import targetting a distribution source package.
     >>> location = response.getHeader('Location')
     >>> response = import_webservice.get(location)
     >>> representation = response.jsonBody()
-    >>> print(representation['self_link'])
+    >>> print(representation['self_link'])  # noqa
     http://.../~import-owner/scruffbuntu/+source/scruff/+git/new-import/+code-import
     >>> print(representation['branch_link'])
     None

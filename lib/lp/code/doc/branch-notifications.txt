@@ -66,7 +66,9 @@ also sends the email to the list of recipients.
     name12
     >>> notification_body = six.ensure_text(
     ...     branch_notification.get_payload(decode=True))
-    >>> print(notification_body) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(notification_body)
+    ... # noqa
+    ... # doctest: -NORMALIZE_WHITESPACE
     The contents.
     <BLANKLINE>
     --

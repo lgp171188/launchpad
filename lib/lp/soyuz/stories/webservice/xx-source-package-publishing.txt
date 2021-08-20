@@ -149,6 +149,7 @@ publication to play with first.
 
     >>> print(webservice.named_get(
     ...     pubs['entries'][0]['self_link'], 'changesFileUrl').jsonBody())
+    ... # noqa
     http://.../~cprov/+archive/ubuntu/ppa/+files/testwebservice_666_source.changes
 
 
@@ -376,7 +377,7 @@ for this package:
     ...     entry['self_link'] for entry in pubs['entries']):
     ...     source_urls = webservice.named_get(
     ...         pub_link, 'sourceFileUrls').jsonBody()
-    ...     print(pretty(source_urls))
+    ...     print(pretty(source_urls))  # noqa
     ['http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/cdrkit/1.0/foobar-1.0.dsc']
     ['http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/iceweasel/1.0/firefox_0.9.2.orig.tar.gz',
      'http://.../~cprov/+archive/ubuntu/ppa/+sourcefiles/iceweasel/1.0/iceweasel-1.0.dsc']
@@ -389,7 +390,7 @@ binaryFileUrls() is similar:
     ...     entry['self_link'] for entry in pubs['entries']):
     ...     binary_urls = webservice.named_get(
     ...         pub_link, 'binaryFileUrls').jsonBody()
-    ...     print(pretty(binary_urls))
+    ...     print(pretty(binary_urls))  # noqa
     []
     ['http://.../~cprov/+archive/ubuntu/ppa/+files/mozilla-firefox_0.9_i386.deb']
     []

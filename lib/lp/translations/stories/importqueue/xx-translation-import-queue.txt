@@ -116,7 +116,7 @@ Now, we attach a new file to an already existing translation resource.
     >>> upload.add_file(BytesIO(b'# foo\n'),
     ...   'text/x-gettext-translation-template', 'evolution.pot')
     >>> browser.getControl('Upload').click()
-    >>> print(browser.url)
+    >>> print(browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/+upload
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
     ...     print(tag.decode_contents())

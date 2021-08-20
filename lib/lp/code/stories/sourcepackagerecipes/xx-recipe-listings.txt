@@ -49,7 +49,7 @@ read "3 recipes." Let's click through.
 
     >>> nopriv_browser.open(branch_url)
     >>> nopriv_browser.getLink('3 recipes').click()
-    >>> print(nopriv_browser.url)
+    >>> print(nopriv_browser.url)  # noqa
     http://code.launchpad.test/~person-name.../product-name.../branch.../+recipes
 
 The "Base Source" column should not be shown.
@@ -97,7 +97,7 @@ should now read "4 recipes."  Let's click through.
 
     >>> nopriv_browser.open(repository_url)
     >>> nopriv_browser.getLink('4 recipes').click()
-    >>> print(nopriv_browser.url)
+    >>> print(nopriv_browser.url)  # noqa
     http://code.launchpad.test/~person-name.../product-name.../+git/gitrepository.../+recipes
 
 The "Base Source" column should not be shown.
@@ -124,7 +124,7 @@ listed.
     >>> with GitHostingFixture():
     ...     nopriv_browser.open(ref1_url)
     >>> nopriv_browser.getLink('2 recipes').click()
-    >>> print(nopriv_browser.url)
+    >>> print(nopriv_browser.url)  # noqa
     http://code.launchpad.test/~person-name.../product-name.../+git/gitrepository.../+ref/a/+recipes
 
     >>> print_recipe_listing_head(nopriv_browser)

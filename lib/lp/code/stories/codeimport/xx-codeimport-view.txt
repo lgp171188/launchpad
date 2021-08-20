@@ -88,7 +88,7 @@ imports appear again.
     >>> table = find_tag_by_id(browser.contents, 'code-import-listing')
     >>> rows = [extract_text(tr) for tr in table('tr')]
     >>> for row in rows:
-    ...     print(row)
+    ...     print(row)  # noqa
     Import                                     Created  Source type        Target type Location     Status
     ~vcs-imports/gnome-terminal/import         2007-... Subversion via ... Bazaar      http://sv... Reviewed
     ~vcs-imports/evolution/import              2007-... Concurrent Vers... Bazaar      :pserver:... Pending Review
@@ -105,7 +105,7 @@ We can also filter by source type.
     >>> table = find_tag_by_id(browser.contents, 'code-import-listing')
     >>> rows = [extract_text(tr) for tr in table('tr')]
     >>> for row in rows:
-    ...     print(row)
+    ...     print(row)  # noqa
     Import                        Created  Source type        Target type Location     Status
     ~vcs-imports/evolution/import 2007-... Concurrent Vers... Bazaar      :pserver:... Pending Review
 
@@ -120,7 +120,7 @@ We can also filter by source type.
     >>> table = find_tag_by_id(browser.contents, 'code-import-listing')
     >>> rows = [extract_text(tr) for tr in table('tr')]
     >>> for row in rows:
-    ...     print(row)
+    ...     print(row)  # noqa
     Import                                     Created  Source type        Target type Location     Status
     ~name12/gnome-terminal/+git/gnome-terminal ...      Git                Git         git://git... Reviewed
     ~name12/evolution/+git/evolution           ...      Git                Git         https://g... Reviewed

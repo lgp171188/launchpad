@@ -497,7 +497,7 @@ tags.
     >>> cprov.archive.description = (
     ...     '<a href="http://example.com/">http://example.com/</a>')
     >>> login(ANONYMOUS)
-    >>> print(view.archive_description_html.value)
+    >>> print(view.archive_description_html.value)  # noqa
     <p>&lt;a href=&quot;http://example.com/&quot;&gt;http://example.com/&lt;/a&gt;</p>
 
 The PPA description is linked when the user has made a contribution.

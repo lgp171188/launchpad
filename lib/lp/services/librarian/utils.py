@@ -93,5 +93,5 @@ class EncodableLibraryFileAlias:
         if chunksize is None:
             self.position = self.lfa.content.filesize
         else:
-            self.position += length
+            self.position += len(data)
         return data

@@ -190,6 +190,7 @@ Detailed download counts are also available from the getDownloadCounts method.
 A detailed count object can be retrieved by its URL.
 
     >>> pprint_entry(webservice.get(counts[1]['self_link']).jsonBody())
+    ... # noqa
     archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
     binary_package_name: 'mozilla-firefox'
     binary_package_version: '1.0'
@@ -208,6 +209,7 @@ We can also filter by date.
     1
 
     >>> pprint_entry(webservice.get(counts[0]['self_link']).jsonBody())
+    ... # noqa
     archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
     binary_package_name: 'mozilla-firefox'
     binary_package_version: '1.0'

@@ -721,6 +721,7 @@ all the terms combined with an & query for each ordinal-1 subset of the terms:
 
     >>> print(nl_phrase_search(
     ...     'system is slow when running firefox on ubuntu', Question))
+    ... # noqa
     (firefox&run&slow&system&ubuntu)|(run&slow&system&ubuntu)|(firefox&slow&system&ubuntu)|(firefox&run&system&ubuntu)|(firefox&run&slow&ubuntu)|(firefox&run&slow&system)
 
 Short queries are expanded more simply:

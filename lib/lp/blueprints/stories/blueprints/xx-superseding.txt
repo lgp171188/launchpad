@@ -26,9 +26,9 @@ The page contains a link back to the blueprint, in case we change our
 mind.
 
     >>> back_link = browser.getLink('Extension Manager Upgrades')
-    >>> back_link.url
+    >>> back_link.url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
-    >>> browser.getLink('Cancel').url
+    >>> browser.getLink('Cancel').url  # noqa
     'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
 
 Next, we will POST to that form, setting the spec which supersedes this one:

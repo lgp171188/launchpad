@@ -41,7 +41,7 @@ a translator needs to mark the needs review checkbox.
     >>> user_browser.getControl(
     ...     name='msgset_130_es_translation_0_new').value = "New suggestion"
     >>> user_browser.getControl('Save & Continue').click()
-    >>> print(user_browser.url)
+    >>> print(user_browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/2/+translate
 
 The needs review flag is unset when we go back to the previous message.

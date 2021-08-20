@@ -84,7 +84,7 @@ They target bug #1 to milestone 5.04-rc1 for Ubuntu.
 
     >>> admin_browser.open('http://launchpad.test/firefox/+bug/1')
     >>> table = find_tag_by_id(admin_browser.contents, 'affected-software')
-    >>> print(extract_text(table))
+    >>> print(extract_text(table))  # noqa
     Affects                      Status  Importance  Assigned to           Milestone
     ... Mozilla Firefox          ... New     Low     Mark Shuttleworth ... 1.0
     ...
@@ -99,7 +99,7 @@ They target bug #1 to milestone 5.04-rc1 for Ubuntu.
     >>> milestone_control.displayValue = ['Ubuntu 5.04.rc1']
     >>> admin_browser.getControl('Save Changes', index=3).click()
     >>> table = find_tag_by_id(admin_browser.contents, 'affected-software')
-    >>> print(extract_text(table))
+    >>> print(extract_text(table))  # noqa
     Affects                      Status  Importance  Assigned to           Milestone
     ... Mozilla Firefox      ... New     Low         Mark Shuttleworth ... 1.0
     ...

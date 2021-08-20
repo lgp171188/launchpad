@@ -64,5 +64,6 @@ the milestone is inactive.
 
     >>> print(extract_text(
     ...     find_tag_by_id(salgados_browser.contents, 'series-trunk')))
+    ... # noqa
     Version                   Expected              Released      Summary
     Mozilla Firefox 0.9.2...  Set date  Change details   This is an inactive ...

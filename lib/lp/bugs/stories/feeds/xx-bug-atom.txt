@@ -527,16 +527,16 @@ to True.
     >>> soup = BeautifulSoup(
     ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> feed_id = extract_text(soup.find('id'))
-    >>> print(feed_id)
+    >>> print(feed_id)  # noqa
     tag:launchpad.net,2008:/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports
 
     >>> from lp.services.webapp.escaping import html_escape
-    >>> print(html_escape(browser.url))
+    >>> print(html_escape(browser.url))  # noqa
     http://feeds.launchpad.test/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
-    ...     print(link)
+    ...     print(link)  # noqa
     <link href="http://feeds.launchpad.test/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)

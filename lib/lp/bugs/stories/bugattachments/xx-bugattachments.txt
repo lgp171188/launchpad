@@ -113,7 +113,7 @@ the flag "this attachment is a patch"...
 
 ...we are redirected to a page...
 
-    >>> user_browser.url
+    >>> user_browser.url  # noqa
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/.../+confirm-is-patch'
 
 ...where we see a message that we should double-check if this file
@@ -169,7 +169,7 @@ if we set the "patch" flag for this attachment...
 ...we are redirected to the page where we must confirm that this attachment
 is indeed a patch.
 
-    >>> user_browser.url
+    >>> user_browser.url  # noqa
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/.../+confirm-is-patch'
 
 ...where we see a message asking us if we really ant to declare this file
@@ -301,7 +301,7 @@ The server now checks if the attachment looks like a patch. In this case,
 is doesn't, and we get the edit page again, with a message asking us if
 the attachment should indeed be labeled as a patch
 
-    >>> user_browser.url
+    >>> user_browser.url  # noqa
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/.../+confirm-is-patch'
 
     >>> print(extract_text(find_tags_by_class(

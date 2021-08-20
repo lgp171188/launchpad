@@ -183,6 +183,6 @@ The 'First' and 'Previous' links, however, are now active.
     >>> anon_browser.getLink('First').url
     'http://launchpad.test/%7Ecprov/+archive/ubuntu/ppa/+index?batch=1'
 
-    >>> anon_browser.getLink('Previous').url
+    >>> anon_browser.getLink('Previous').url  # noqa
     'http://launchpad.test/%7Ecprov/+archive/ubuntu/ppa/+index?batch=1&direction=backwards&memo=2&start=1'
 

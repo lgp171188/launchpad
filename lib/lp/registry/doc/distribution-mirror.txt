@@ -569,7 +569,7 @@ checked if that mirror's last sync was in the last one or two days.
     >>> when = datetime(2005, 9, 17, tzinfo=utc)
     >>> urls = warty_mirror.getURLsToCheckUpdateness(when=when)
     >>> for (freshness, url) in urls.items():
-    ...     print('%s: %s' % (freshness.name, url))
+    ...     print('%s: %s' % (freshness.name, url))  # noqa
     UP: http://foo.bar.com/pub/pool/main/a/alsa-utils/alsa-utils_1.0.9a-4.dsc
     TWODAYSBEHIND:
     http://foo.bar.com/pub/pool/main/a/alsa-utils/alsa-utils_1.0.8-1ubuntu1.dsc
@@ -625,7 +625,7 @@ so we need to skip that upload.
     >>> when = datetime(2005, 6, 22, tzinfo=utc)
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness(when=when)
     >>> for (freshness, url) in urls.items():
-    ...     print('%s: %s' % (freshness.name, url))
+    ...     print('%s: %s' % (freshness.name, url))  # noqa
     UP: http://foo.bar.com/pub/pool/main/p/pmount/pmount_1.9-1_all.deb
     ONEWEEKBEHIND:
     http://foo.bar.com/pub/pool/main/m/mozilla-firefox/mozilla-firefox_0.9_i386.deb
@@ -633,7 +633,7 @@ so we need to skip that upload.
     >>> when = datetime(2005, 6, 20, 0, 1, tzinfo=utc)
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness(when=when)
     >>> for (freshness, url) in urls.items():
-    ...     print('%s: %s' % (freshness.name, url))
+    ...     print('%s: %s' % (freshness.name, url))  # noqa
     UP: http://foo.bar.com/pub/pool/main/p/pmount/pmount_1.9-1_all.deb
     TWODAYSBEHIND:
     http://foo.bar.com/pub/pool/main/m/mozilla-firefox/mozilla-firefox_0.9_i386.deb

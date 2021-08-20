@@ -386,6 +386,7 @@ Adding an attachment will generate a notification that looks as follows:
     ...     notification = change.getBugNotification()
     ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
+    ... # noqa
     ** Attachment added: "A screenshot of the problem"
        http://bugs.launchpad.test/bugs/.../+attachment/.../+files/screenshot.png
     -----------------------------
@@ -401,6 +402,7 @@ Removing an attachment generates a notification, too.
     ...     notification = change.getBugNotification()
     ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
+    ... # noqa
     ** Attachment removed: "A screenshot of the problem"
        http://bugs.launchpad.test/bugs/.../+attachment/.../+files/screenshot.png
     -----------------------------
