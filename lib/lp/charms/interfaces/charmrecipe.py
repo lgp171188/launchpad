@@ -274,6 +274,12 @@ class ICharmRecipeView(Interface):
         title=_("Private"), required=False, readonly=False,
         description=_("Whether this charm recipe is private."))
 
+    can_upload_to_store = Bool(
+        title=_("Can upload to Charmhub"), required=True, readonly=True,
+        description=_(
+            "Whether everything is set up to allow uploading builds of this "
+            "charm recipe to Charmhub."))
+
     def getAllowedInformationTypes(user):
         """Get a list of acceptable `InformationType`s for this charm recipe.
 

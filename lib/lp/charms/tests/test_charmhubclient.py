@@ -4,67 +4,167 @@
 """Tests for communication with Charmhub."""
 
 import base64
+import hashlib
+import io
 import json
+from urllib.parse import quote
 
 from lazr.restful.utils import get_current_browser_request
-from pymacaroons import Macaroon
+import multipart
+from nacl.public import PrivateKey
+from pymacaroons import (
+    Macaroon,
+    Verifier,
+    )
 from pymacaroons.serializers import JsonSerializer
 import responses
 from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
     Equals,
+    Is,
+    Matcher,
     MatchesAll,
+    MatchesDict,
+    MatchesListwise,
     MatchesStructure,
+    Mismatch,
     )
+import transaction
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.enums import BuildStatus
 from lp.charms.interfaces.charmhubclient import (
     BadExchangeMacaroonsResponse,
     BadRequestPackageUploadResponse,
+    BadReviewStatusResponse,
     ICharmhubClient,
+    ReleaseFailedResponse,
+    ReviewFailedResponse,
+    UnauthorizedUploadResponse,
+    UploadFailedResponse,
+    UploadNotReviewedYetResponse,
     )
 from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
+from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.features.testing import FeatureFixture
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import ZopelessDatabaseLayer
+from lp.testing.dbuser import dbuser
+from lp.testing.layers import LaunchpadZopelessLayer
 
 
-class RequestMatches(MatchesStructure):
+class MacaroonVerifies(Matcher):
+    """Matches if a serialized macaroon passes verification."""
+
+    def __init__(self, key):
+        self.key = key
+
+    def match(self, macaroon_raw):
+        macaroon = Macaroon.deserialize(macaroon_raw)
+        try:
+            Verifier().verify(macaroon, self.key)
+        except Exception as e:
+            return Mismatch("Macaroon does not verify: %s" % e)
+
+
+class RequestMatches(MatchesAll):
     """Matches a request with the specified attributes."""
 
-    def __init__(self, macaroons=None, json_data=None, **kwargs):
+    def __init__(self, macaroons=None, auth=None, json_data=None,
+                 file_data=None, **kwargs):
+        matchers = []
         kwargs = dict(kwargs)
         if macaroons is not None:
-            headers_matcher = ContainsDict({
+            matchers.append(MatchesStructure(headers=ContainsDict({
                 "Macaroons": AfterPreprocessing(
                     lambda v: json.loads(
                         base64.b64decode(v.encode()).decode()),
                     Equals([json.loads(m) for m in macaroons])),
-                })
-            if kwargs.get("headers"):
-                headers_matcher = MatchesAll(
-                    kwargs["headers"], headers_matcher)
-            kwargs["headers"] = headers_matcher
+                })))
+        if auth is not None:
+            auth_scheme, auth_params_matcher = auth
+            matchers.append(MatchesStructure(headers=ContainsDict({
+                "Authorization": AfterPreprocessing(
+                    lambda v: v.split(" ", 1),
+                    MatchesListwise([
+                        Equals(auth_scheme),
+                        auth_params_matcher,
+                        ])),
+                })))
         if json_data is not None:
-            body_matcher = AfterPreprocessing(
-                lambda b: json.loads(b.decode()), Equals(json_data))
-            if kwargs.get("body"):
-                body_matcher = MatchesAll(kwargs["body"], body_matcher)
-            kwargs["body"] = body_matcher
-        super().__init__(**kwargs)
+            matchers.append(MatchesStructure(body=AfterPreprocessing(
+                lambda b: json.loads(b.decode()), Equals(json_data))))
+        elif file_data is not None:
+            matchers.append(AfterPreprocessing(
+                lambda r: multipart.parse_form_data({
+                    "REQUEST_METHOD": r.method,
+                    "CONTENT_TYPE": r.headers["Content-Type"],
+                    "CONTENT_LENGTH": r.headers["Content-Length"],
+                    "wsgi.input": io.BytesIO(
+                        r.body.read() if hasattr(r.body, "read") else r.body),
+                    })[1],
+                MatchesDict(file_data)))
+        if kwargs:
+            matchers.append(MatchesStructure(**kwargs))
+        super().__init__(*matchers)
 
 
 class TestCharmhubClient(TestCaseWithFactory):
 
-    layer = ZopelessDatabaseLayer
+    layer = LaunchpadZopelessLayer
 
     def setUp(self):
         super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
-        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        self.pushConfig(
+            "charms",
+            charmhub_url="http://charmhub.example/",
+            charmhub_storage_url="http://storage.charmhub.example/")
         self.client = getUtility(ICharmhubClient)
+
+    def _setUpSecretStorage(self):
+        self.private_key = PrivateKey.generate()
+        self.pushConfig(
+            "charms",
+            charmhub_secrets_public_key=base64.b64encode(
+                bytes(self.private_key.public_key)).decode(),
+            charmhub_secrets_private_key=base64.b64encode(
+                bytes(self.private_key)).decode())
+
+    def _makeStoreSecrets(self):
+        self.exchanged_key = hashlib.sha256(
+            self.factory.getUniqueBytes()).hexdigest()
+        exchanged_macaroon = Macaroon(key=self.exchanged_key)
+        container = getUtility(IEncryptedContainer, "charmhub-secrets")
+        return {
+            "exchanged_encrypted": removeSecurityProxy(container.encrypt(
+                exchanged_macaroon.serialize().encode())),
+            }
+
+    def _addUnscannedUploadResponse(self):
+        responses.add(
+            "POST", "http://storage.charmhub.example/unscanned-upload/",
+            json={"successful": True, "upload_id": 1})
+
+    def _addCharmPushResponse(self, name):
+        responses.add(
+            "POST",
+            "http://charmhub.example/v1/charm/{}/revisions".format(
+                quote(name)),
+            status=200,
+            json={
+                "status-url": (
+                    "http://charmhub.example/v1/charm/{}/revisions/review"
+                    "?upload-id=123".format(quote(name))),
+                })
+
+    def _addCharmReleaseResponse(self, name):
+        responses.add(
+            "POST",
+            "http://charmhub.example/v1/charm/{}/releases".format(quote(name)),
+            json={})
 
     @responses.activate
     def test_requestPackageUploadPermission(self):
@@ -104,7 +204,7 @@ class TestCharmhubClient(TestCaseWithFactory):
     def test_requestPackageUploadPermission_error(self):
         responses.add(
             "POST", "http://charmhub.example/v1/tokens",
-            status=503, json={"error_list": [{"message": "Failed"}]})
+            status=503, json={"error-list": [{"message": "Failed"}]})
         self.assertRaisesWithContent(
             BadRequestPackageUploadResponse, "Failed",
             self.client.requestPackageUploadPermission, "test-charm")
@@ -161,7 +261,7 @@ class TestCharmhubClient(TestCaseWithFactory):
         responses.add(
             "POST", "http://charmhub.example/v1/tokens/exchange",
             status=401,
-            json={"error_list": [{"message": "Exchange window expired"}]})
+            json={"error-list": [{"message": "Exchange window expired"}]})
         root_macaroon_raw = Macaroon(version=2).serialize(JsonSerializer())
         discharge_macaroon_raw = Macaroon(version=2).serialize(
             JsonSerializer())
@@ -182,3 +282,235 @@ class TestCharmhubClient(TestCaseWithFactory):
             "404 Client Error: Not Found",
             self.client.exchangeMacaroons,
             root_macaroon_raw, discharge_macaroon_raw)
+
+    def makeUploadableCharmRecipeBuild(self, store_secrets=None):
+        if store_secrets is None:
+            store_secrets = self._makeStoreSecrets()
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True,
+            store_name="test-charm", store_secrets=store_secrets)
+        build = self.factory.makeCharmRecipeBuild(recipe=recipe)
+        charm_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-charm.charm", content="dummy charm content")
+        self.factory.makeCharmFile(build=build, library_file=charm_lfa)
+        manifest_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-charm.manifest", content="dummy manifest content")
+        self.factory.makeCharmFile(build=build, library_file=manifest_lfa)
+        build.updateStatus(BuildStatus.BUILDING)
+        build.updateStatus(BuildStatus.FULLYBUILT)
+        return build
+
+    @responses.activate
+    def test_upload(self):
+        self._setUpSecretStorage()
+        build = self.makeUploadableCharmRecipeBuild()
+        transaction.commit()
+        self._addUnscannedUploadResponse()
+        self._addCharmPushResponse("test-charm")
+        # XXX cjwatson 2021-08-19: Use
+        # config.ICharmhubUploadJobSource.dbuser once that job exists.
+        with dbuser("charm-build-job"):
+            self.assertEqual(
+                "http://charmhub.example/v1/charm/test-charm/revisions/review"
+                "?upload-id=123",
+                self.client.upload(build))
+        requests = [call.request for call in responses.calls]
+        self.assertThat(requests, MatchesListwise([
+            RequestMatches(
+                url=Equals(
+                    "http://storage.charmhub.example/unscanned-upload/"),
+                method=Equals("POST"),
+                file_data={
+                    "binary": MatchesStructure.byEquality(
+                        name="binary", filename="test-charm.charm",
+                        value="dummy charm content",
+                        content_type="application/octet-stream",
+                        )}),
+            RequestMatches(
+                url=Equals(
+                    "http://charmhub.example/v1/charm/test-charm/revisions"),
+                method=Equals("POST"),
+                headers=ContainsDict(
+                    {"Content-Type": Equals("application/json")}),
+                auth=("Macaroon", MacaroonVerifies(self.exchanged_key)),
+                json_data={"upload-id": 1}),
+            ]))
+
+    @responses.activate
+    def test_upload_unauthorized(self):
+        self._setUpSecretStorage()
+        build = self.makeUploadableCharmRecipeBuild()
+        transaction.commit()
+        self._addUnscannedUploadResponse()
+        charm_push_error = {
+            "code": "permission-required",
+            "message": "Missing required permission: package-manage-revisions",
+            }
+        responses.add(
+            "POST", "http://charmhub.example/v1/charm/test-charm/revisions",
+            status=401,
+            json={"error-list": [charm_push_error]})
+        # XXX cjwatson 2021-08-19: Use
+        # config.ICharmhubUploadJobSource.dbuser once that job exists.
+        with dbuser("charm-build-job"):
+            self.assertRaisesWithContent(
+                UnauthorizedUploadResponse,
+                "Missing required permission: package-manage-revisions",
+                self.client.upload, build)
+
+    @responses.activate
+    def test_upload_file_error(self):
+        self._setUpSecretStorage()
+        build = self.makeUploadableCharmRecipeBuild()
+        transaction.commit()
+        responses.add(
+            "POST", "http://storage.charmhub.example/unscanned-upload/",
+            status=502, body="The proxy exploded.\n")
+        # XXX cjwatson 2021-08-19: Use
+        # config.ICharmhubUploadJobSource.dbuser once that job exists.
+        with dbuser("charm-build-job"):
+            err = self.assertRaises(
+                UploadFailedResponse, self.client.upload, build)
+            self.assertEqual("502 Server Error: Bad Gateway", str(err))
+            self.assertThat(err, MatchesStructure(
+                detail=Equals("The proxy exploded.\n"),
+                can_retry=Is(True)))
+
+    @responses.activate
+    def test_checkStatus_pending(self):
+        self._setUpSecretStorage()
+        build = self.makeUploadableCharmRecipeBuild()
+        status_url = (
+            "http://charmhub.example/v1/charm/test-charm/revisions/review"
+            "?upload-id=123")
+        responses.add(
+            "GET", status_url,
+            json={
+                "revisions": [
+                    {
+                        "upload-id": "123",
+                        "status": "new",
+                        "revision": None,
+                        "errors": None,
+                        },
+                    ],
+                })
+        self.assertRaises(
+            UploadNotReviewedYetResponse,
+            self.client.checkStatus, build, status_url)
+
+    @responses.activate
+    def test_checkStatus_error(self):
+        self._setUpSecretStorage()
+        build = self.makeUploadableCharmRecipeBuild()
+        status_url = (
+            "http://charmhub.example/v1/charm/test-charm/revisions/review"
+            "?upload-id=123")
+        responses.add(
+            "GET", status_url,
+            json={
+                "revisions": [
+                    {
+                        "upload-id": "123",
+                        "status": "rejected",
+                        "revision": None,
+                        "errors": [
+                            {"code": None, "message": "This charm is broken."},
+                            ],
+                        },
+                    ],
+                })
+        self.assertRaisesWithContent(
+            ReviewFailedResponse, "This charm is broken.",
+            self.client.checkStatus, build, status_url)
+
+    @responses.activate
+    def test_checkStatus_approved(self):
+        self._setUpSecretStorage()
+        build = self.makeUploadableCharmRecipeBuild()
+        status_url = (
+            "http://charmhub.example/v1/charm/test-charm/revisions/review"
+            "?upload-id=123")
+        responses.add(
+            "GET", status_url,
+            json={
+                "revisions": [
+                    {
+                        "upload-id": "123",
+                        "status": "approved",
+                        "revision": 1,
+                        "errors": None,
+                        },
+                    ],
+                })
+        self.assertEqual(1, self.client.checkStatus(build, status_url))
+        requests = [call.request for call in responses.calls]
+        self.assertThat(requests, MatchesListwise([
+            RequestMatches(
+                url=Equals(status_url),
+                method=Equals("GET"),
+                auth=("Macaroon", MacaroonVerifies(self.exchanged_key))),
+            ]))
+
+    @responses.activate
+    def test_checkStatus_404(self):
+        self._setUpSecretStorage()
+        build = self.makeUploadableCharmRecipeBuild()
+        status_url = (
+            "http://charmhub.example/v1/charm/test-charm/revisions/review"
+            "?upload-id=123")
+        responses.add("GET", status_url, status=404)
+        self.assertRaisesWithContent(
+            BadReviewStatusResponse, "404 Client Error: Not Found",
+            self.client.checkStatus, build, status_url)
+
+    @responses.activate
+    def test_release(self):
+        self._setUpSecretStorage()
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True, store_name="test-charm",
+            store_secrets=self._makeStoreSecrets(),
+            store_channels=["stable", "edge"])
+        build = self.factory.makeCharmRecipeBuild(recipe=recipe)
+        self._addCharmReleaseResponse("test-charm")
+        self.client.release(build, 1)
+        self.assertThat(responses.calls[-1].request, RequestMatches(
+            url=Equals("http://charmhub.example/v1/charm/test-charm/releases"),
+            method=Equals("POST"),
+            headers=ContainsDict({"Content-Type": Equals("application/json")}),
+            auth=("Macaroon", MacaroonVerifies(self.exchanged_key)),
+            json_data=[
+                {"channel": "stable", "revision": 1},
+                {"channel": "edge", "revision": 1},
+                ]))
+
+    @responses.activate
+    def test_release_error(self):
+        self._setUpSecretStorage()
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True, store_name="test-charm",
+            store_secrets=self._makeStoreSecrets(),
+            store_channels=["stable", "edge"])
+        build = self.factory.makeCharmRecipeBuild(recipe=recipe)
+        responses.add(
+            "POST", "http://charmhub.example/v1/charm/test-charm/releases",
+            status=503,
+            json={"error-list": [{"message": "Failed to publish"}]})
+        self.assertRaisesWithContent(
+            ReleaseFailedResponse, "Failed to publish",
+            self.client.release, build, 1)
+
+    @responses.activate
+    def test_release_404(self):
+        self._setUpSecretStorage()
+        recipe = self.factory.makeCharmRecipe(
+            store_upload=True, store_name="test-charm",
+            store_secrets=self._makeStoreSecrets(),
+            store_channels=["stable", "edge"])
+        build = self.factory.makeCharmRecipeBuild(recipe=recipe)
+        responses.add(
+            "POST", "http://charmhub.example/v1/charm/test-charm/releases",
+            status=404)
+        self.assertRaisesWithContent(
+            ReleaseFailedResponse, "404 Client Error: Not Found",
+            self.client.release, build, 1)

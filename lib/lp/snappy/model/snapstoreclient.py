@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Communication with the snap store."""
@@ -29,6 +29,7 @@ from lp.services.crypto.interfaces import (
     IEncryptedContainer,
     )
 from lp.services.features import getFeatureFlag
+from lp.services.librarian.utils import EncodableLibraryFileAlias
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.scripts import log
 from lp.services.timeline.requesttimeline import get_request_timeline
@@ -46,27 +47,6 @@ from lp.snappy.interfaces.snapstoreclient import (
     UploadFailedResponse,
     UploadNotScannedYetResponse,
     )
-
-
-class LibraryFileAliasWrapper:
-    """A `LibraryFileAlias` wrapper usable with a `MultipartEncoder`."""
-
-    def __init__(self, lfa):
-        self.lfa = lfa
-        self.position = 0
-
-    @property
-    def len(self):
-        return self.lfa.content.filesize - self.position
-
-    def read(self, length=-1):
-        chunksize = None if length == -1 else length
-        data = self.lfa.read(chunksize=chunksize)
-        if chunksize is None:
-            self.position = self.lfa.content.filesize
-        else:
-            self.position += length
-        return data
 
 
 class InvalidStoreSecretsError(Exception):
@@ -264,7 +244,7 @@ class SnapStoreClient:
             config.snappy.store_upload_url, "unscanned-upload/")
         lfa.open()
         try:
-            lfa_wrapper = LibraryFileAliasWrapper(lfa)
+            lfa_wrapper = EncodableLibraryFileAlias(lfa)
             encoder = MultipartEncoder(
                 fields={
                     "binary": (
