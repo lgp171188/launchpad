@@ -223,7 +223,8 @@ In the three sample data PPAs, only one matches the search string "Celso".
     1
 
 
-=== Hand-hacked search URLs ==
+Hand-hacked search URLs
+.......................
 
 If the search term is specified more than once by someone hand-hacking the
 URL, the page copes gracefully with this by searching for all the terms

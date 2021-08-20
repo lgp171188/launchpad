@@ -119,7 +119,8 @@ The fragment component can also be disallowed:
     lp.app.validators.LaunchpadValidationError: URIs with fragment identifiers are not allowed.
 
 
-== Requiring or Forbidding a Trailing Slash ===
+Requiring or Forbidding a Trailing Slash
+----------------------------------------
 
 For some URIs we want to require or forbid a trailing slash.  This
 might be because a certain URI type only makes sense with (or without)
