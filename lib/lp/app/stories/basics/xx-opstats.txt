@@ -354,7 +354,8 @@ But our database connections are broken.
     >>> IStore(Person).find(Person, name='janitor')
     Traceback (most recent call last):
     ...
-    storm.exceptions.DisconnectionError: FATAL:  database "nonexistant" does not exist
+    storm.exceptions.DisconnectionError:
+    FATAL:  database "nonexistant" does not exist
 
     >>> dummy = config.pop('no_db')
     >>> getUtility(IZStorm)._reset()

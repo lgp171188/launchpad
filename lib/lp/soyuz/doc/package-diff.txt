@@ -104,7 +104,8 @@ error:
     ...     requester=cprov, to_sourcepackagerelease=pmount_to)
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.packagediff.PackageDiffAlreadyRequested: diff from 0.1-1 to 0.1-2 has already been requested
+    lp.soyuz.interfaces.packagediff.PackageDiffAlreadyRequested:
+    diff from 0.1-1 to 0.1-2 has already been requested
 
 
 Diff request for source uploads

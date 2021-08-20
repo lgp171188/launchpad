@@ -67,7 +67,8 @@ will raise an error:
     >>> non_auth_bugzilla._authenticate()
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://thiswillfail.example.com: No credentials found.
+    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError:
+    http://thiswillfail.example.com: No credentials found.
 
 Trying to log in to a Bugzilla with incorrect credentials will also
 raise an error.
@@ -83,7 +84,9 @@ raise an error.
     >>> non_auth_bugzilla._authenticate()
     Traceback (most recent call last):
         ...
-    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://thiswillfail.example.com: Fault 300: The username or password you entered is not valid.
+    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError:
+    http://thiswillfail.example.com: Fault 300: The username or password you
+    entered is not valid.
 
 
 Getting the server time
@@ -315,7 +318,8 @@ error will be raised. We can add a sample bug to demonstrate this.
     >>> bugzilla.getRemoteStatus(999)
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.UnparsableBugData: No status or resolution defined for bug 999
+    lp.bugs.externalbugtracker.base.UnparsableBugData: No status or resolution
+    defined for bug 999
 
     >>> del bugzilla._bugs[999]
 

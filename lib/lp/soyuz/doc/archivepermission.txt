@@ -149,7 +149,8 @@ If the string is not a valid component, a NotFound exception is thrown:
     ...     ubuntu.main_archive, "badcomponent")
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.archive.ComponentNotFound: No such component: 'badcomponent'.
+    lp.soyuz.interfaces.archive.ComponentNotFound:
+    No such component: 'badcomponent'.
 
 If the component argument is not passed, it will return
 ArchivePermission records for all matching components:
@@ -196,7 +197,8 @@ NoSuchSourcePackageName to be thrown.
     ...     ubuntu.main_archive, "fakepackage")
     Traceback (most recent call last):
     ...
-    lp.registry.errors.NoSuchSourcePackageName: No such source package: 'fakepackage'.
+    lp.registry.errors.NoSuchSourcePackageName:
+    No such source package: 'fakepackage'.
 
 Similarly, packagesForUploader() returns the ArchivePermission records where
 the supplied user has permission to upload to packages.

@@ -93,7 +93,8 @@ raise an error. e.g. http://launchpad.test/ubuntu/+tickets/foo
     >>> view.publishTraverse(request, u'foo')
     Traceback (most recent call last):
      ...
-    zope.publisher.interfaces.NotFound: Object: <Distribution 'Ubuntu' (ubuntu)>, name: 'foo'
+    zope.publisher.interfaces.NotFound:
+    Object: <Distribution 'Ubuntu' (ubuntu)>, name: 'foo'
 
 
 Registering from ZCML

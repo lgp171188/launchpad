@@ -127,7 +127,9 @@ integration has its own section, below.)
     ...         % (urlencode(params), allow_permission))
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: Consumer "foobar123451432" asked for desktop integration, but didn't say what kind of desktop it is, or name the computer being integrated.
+    zope.security.interfaces.Unauthorized: Consumer "foobar123451432" asked
+    for desktop integration, but didn't say what kind of desktop it is, or
+    name the computer being integrated.
 
 An application may also specify a context, so that the access granted
 by the user is restricted to things related to that context.
@@ -365,13 +367,17 @@ level that specifically applies across the entire desktop.
     >>> print_access_levels_for('allow_permission=WRITE_PRIVATE')
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: Desktop integration token requested a permission ("Change Anything") not supported for desktop-wide use.
+    zope.security.interfaces.Unauthorized: Desktop integration token
+    requested a permission ("Change Anything") not supported for
+    desktop-wide use.
 
     >>> print_access_levels_for(
     ...     'allow_permission=WRITE_PUBLIC&' + allow_desktop)
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: Desktop integration token requested a permission ("Change Non-Private Data") not supported for desktop-wide use.
+    zope.security.interfaces.Unauthorized: Desktop integration token
+    requested a permission ("Change Non-Private Data") not supported for
+    desktop-wide use.
 
 You can't specify a callback URL when authorizing a desktop-wide
 token, since callback URLs should only be used when integrating
@@ -381,7 +387,8 @@ websites into Launchpad.
     >>> print_access_levels_for(allow_desktop)
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: A desktop integration may not specify an OAuth callback URL.
+    zope.security.interfaces.Unauthorized: A desktop integration may not
+    specify an OAuth callback URL.
 
 This is true even if the desktop token isn't asking for the
 DESKTOP_INTEGRATION permission.
@@ -389,7 +396,8 @@ DESKTOP_INTEGRATION permission.
     >>> print_access_levels_for('allow_permission=WRITE_PRIVATE')
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: A desktop integration may not specify an OAuth callback URL.
+    zope.security.interfaces.Unauthorized: A desktop integration may not
+    specify an OAuth callback URL.
 
     >>> del params['oauth_callback']
 

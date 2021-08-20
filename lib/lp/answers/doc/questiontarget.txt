@@ -419,7 +419,8 @@ languages.
     >>> target.addAnswerContact(sample_person, sample_person)
     Traceback (most recent call last):
       ...
-    lp.answers.errors.AddAnswerContactError: An answer contact must speak a language...
+    lp.answers.errors.AddAnswerContactError: An answer contact must speak a
+    language...
 
 Answer contacts can be removed by using the removeAnswerContact() method.
 Like its counterpart, it returns True when the answer contact was removed and

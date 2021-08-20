@@ -220,7 +220,8 @@ An attempt to upload an unknown key will fail.
     >>> gpghandler.uploadPublicKey('F' * 40)
     Traceback (most recent call last):
     ...
-    lp.services.gpg.interfaces.GPGKeyDoesNotExistOnServer: GPG key FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF does not exist on the keyserver.
+    lp.services.gpg.interfaces.GPGKeyDoesNotExistOnServer: GPG key
+    FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF does not exist on the keyserver.
 
 Uploading the same key more than once is fine, it is handled on the
 keyserver side.
@@ -234,7 +235,8 @@ in a error.
     >>> gpghandler.uploadPublicKey(new_key.fingerprint)
     Traceback (most recent call last):
     ...
-    lp.services.gpg.interfaces.GPGUploadFailure: Could not reach keyserver at http://localhost:11371...Connection refused...
+    lp.services.gpg.interfaces.GPGUploadFailure: Could not reach keyserver at
+    http://localhost:11371...Connection refused...
 
 
 Fingerprint sanitizing

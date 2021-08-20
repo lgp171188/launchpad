@@ -109,7 +109,8 @@ Passing invalid tsquery expressions as fast_searchtext raises an exception.
     >>> list(firefox.searchTasks(bad_search))
     Traceback (most recent call last):
     ...
-    storm.database.ProgrammingError: syntax error in tsquery: "happens pretty often" ...
+    storm.database.ProgrammingError:
+    syntax error in tsquery: "happens pretty often" ...
 
     >>> import transaction
     >>> transaction.abort()

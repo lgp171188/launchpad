@@ -153,7 +153,8 @@ When publishing the 'epoched' bar source the collision is detected:
     >>> bar_src_queue_epoch.realiseUpload()
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.queue.QueueInconsistentStateError: bar_1.0-1.diff.gz is already published in archive for hoary
+    lp.soyuz.interfaces.queue.QueueInconsistentStateError: bar_1.0-1.diff.gz
+    is already published in archive for hoary
     >>> bar_src_queue_epoch.status.name
     'ACCEPTED'
 
@@ -171,7 +172,10 @@ published in 'non-epoched' version:
     >>> bar_src_queue_epoch2.realiseUpload()
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.queue.QueueInconsistentStateError: bar_1.0.orig.tar.gz is already published in archive for hoary with a different SHA1 hash (e918d6f5ec2184ae1d795a130da36c9a82c4beaf != 73a04163fee97fd2257ab266bd48f1d3d528e012)
+    lp.soyuz.interfaces.queue.QueueInconsistentStateError: bar_1.0.orig.tar.gz
+    is already published in archive for hoary with a different SHA1 hash
+    (e918d6f5ec2184ae1d795a130da36c9a82c4beaf !=
+    73a04163fee97fd2257ab266bd48f1d3d528e012)
 
     >>> bar_src_queue_epoch2.status.name
     'ACCEPTED'

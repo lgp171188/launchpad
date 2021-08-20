@@ -366,12 +366,14 @@ you'll get a DownloadFailed error.
     >>> client.getFileByAlias(private_file_id)
     Traceback (most recent call last):
       ...
-    lp.services.librarian.interfaces.client.DownloadFailed: Alias ... cannot be downloaded from this client.
+    lp.services.librarian.interfaces.client.DownloadFailed:
+    Alias ... cannot be downloaded from this client.
 
     >>> client.getURLForAlias(private_file_id)
     Traceback (most recent call last):
       ...
-    lp.services.librarian.interfaces.client.DownloadFailed: Alias ... cannot be downloaded from this client.
+    lp.services.librarian.interfaces.client.DownloadFailed:
+    Alias ... cannot be downloaded from this client.
 
 But using the restricted librarian will work:
 

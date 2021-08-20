@@ -207,7 +207,8 @@ But we can't sort by things that aren't validated by the view.
     ...     '?orderby=star-sign')
     Traceback (most recent call last):
     ...
-    lp.app.errors.UnexpectedFormData: Unexpected value for field 'orderby': 'star-sign'
+    lp.app.errors.UnexpectedFormData:
+    Unexpected value for field 'orderby': 'star-sign'
 
 
 Bugs in a product series show up in the patches view for that series.

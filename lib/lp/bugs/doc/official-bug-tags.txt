@@ -117,22 +117,27 @@ Ordinary users cannot add and remove official bug tags.
     >>> ubuntu.addOfficialBugTag(u'foo')
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'addOfficialBugTag', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized:
+    (<Distribution 'Ubuntu' (ubuntu)>, 'addOfficialBugTag', 'launchpad.Edit')
 
     >>> ubuntu.removeOfficialBugTag(u'foo')
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'removeOfficialBugTag', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized:
+    (<Distribution 'Ubuntu' (ubuntu)>, 'removeOfficialBugTag',
+     'launchpad.Edit')
 
     >>> firefox.addOfficialBugTag(u'foo')
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<Product at ...>, 'addOfficialBugTag', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized:
+    (<Product at ...>, 'addOfficialBugTag', 'launchpad.Edit')
 
     >>> firefox.removeOfficialBugTag(u'foo')
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<Product at ...>, 'removeOfficialBugTag', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized:
+    (<Product at ...>, 'removeOfficialBugTag', 'launchpad.Edit')
 
 Official tags are accessible as a list property of official tag targets.
 
@@ -172,7 +177,9 @@ But only writable for users with edit permissions.
     >>> ubuntu.official_bug_tags = [u'foo', u'bar']
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<Distribution 'Ubuntu' (ubuntu)>, 'official_bug_tags', 'launchpad.BugSupervisor')
+    zope.security.interfaces.Unauthorized:
+    (<Distribution 'Ubuntu' (ubuntu)>, 'official_bug_tags',
+     'launchpad.BugSupervisor')
 
 The same is available for products.
 

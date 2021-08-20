@@ -292,7 +292,8 @@ form values are submitted:
     ...     "&build_text=binutils&build_state=all")
     Traceback (most recent call last):
     ...
-    lp.app.errors.UnexpectedFormData: No suitable state found for value "[...'building', ...'all']"
+    lp.app.errors.UnexpectedFormData: No suitable state found for value
+    "[...'building', ...'all']"
 
 
 Builder history

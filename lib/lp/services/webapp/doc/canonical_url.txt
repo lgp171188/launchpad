@@ -115,7 +115,8 @@ mistyped 'countryOopsTypo', and there is no such name in ITown.
     ... """.format(module_name=module.__name__))
     Traceback (most recent call last):
     ...
-    zope.configuration.xmlconfig.ZopeXMLConfigurationError: File "<string>", line ... AttributeError: The name "countryOopsTypo" is not in ....ITown
+    zope.configuration.xmlconfig.ZopeXMLConfigurationError: File "<string>",
+    line ... AttributeError: The name "countryOopsTypo" is not in ....ITown
 
     >>> zcmlcontext = xmlconfig.string("""
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
@@ -278,7 +279,8 @@ itself be adapted to ICanonicalUrlData.
     >>> canonical_url(object_that_has_no_url)
     Traceback (most recent call last):
     ...
-    lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...object at ...> because <...object at ...> broke the chain.
+    lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...object at
+    ...> because <...object at ...> broke the chain.
 
 Now, we must test the case where the object can be adapted to
 ICanonicalUrlData, but its parent or its parent's parent (and so on) cannot.
@@ -292,7 +294,8 @@ ICanonicalUrlData, but its parent or its parent's parent (and so on) cannot.
     >>> canonical_url(unrooted_object)
     Traceback (most recent call last):
     ...
-    lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...ObjectThatHasUrl...> because <...object...> broke the chain.
+    lp.services.webapp.interfaces.NoCanonicalUrl: No url for
+    <...ObjectThatHasUrl...> because <...object...> broke the chain.
 
 The first argument to NoCanonicalUrl is the object that a canonical url was
 requested for.  The second argument is the object that broke the chain.
@@ -339,7 +342,8 @@ to work properly.
     >>> next(iterator)
     Traceback (most recent call last):
     ...
-    lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...object...> because <...object...> broke the chain.
+    lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...object...>
+    because <...object...> broke the chain.
 
     >>> iterator = canonical_url_iterator(unrooted_object)
     >>> next(iterator).__class__.__name__
@@ -349,7 +353,8 @@ to work properly.
     >>> next(iterator)
     Traceback (most recent call last):
     ...
-    lp.services.webapp.interfaces.NoCanonicalUrl: No url for <...ObjectThatHasUrl...> because <...object...> broke the chain.
+    lp.services.webapp.interfaces.NoCanonicalUrl: No url for
+    <...ObjectThatHasUrl...> because <...object...> broke the chain.
 
 
 canonical_url and requests
