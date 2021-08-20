@@ -199,7 +199,8 @@ Distributions.
 
     >>> from lp.app.enums import InformationType
     >>> factory.makeProduct(
-    ...     name='ubuntu-sekrit', information_type=InformationType.PROPRIETARY)
+    ...     name='ubuntu-sekrit',
+    ...     information_type=InformationType.PROPRIETARY)
     <Product ...>
     >>> for row in pillar_set.search(
     ...         getUtility(ILaunchBag).user, 'ubuntu', limit=6):

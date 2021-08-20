@@ -15,7 +15,8 @@ even if the user was trying to set the milestone value.
 
 (Revert the change we just made.)
 
-    >>> browser.open("http://bugs.launchpad.test/evolution/+bug/1/+editstatus")
+    >>> browser.open(
+    ...     "http://bugs.launchpad.test/evolution/+bug/1/+editstatus")
     >>> browser.getControl(name="evolution.target.product").value = "firefox"
     >>> browser.getControl("Save Changes").click()
 

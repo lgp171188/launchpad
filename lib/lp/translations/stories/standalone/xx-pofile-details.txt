@@ -93,8 +93,9 @@ was reviewed and rejected).
 Looking at the same page filtered by 'no-priv' person, the user is shown
 only a single unused suggestion instead:
 
-    >>> anon_browser.open('http://translations.launchpad.test/evolution/trunk/'
-    ...                   '+pots/evolution-2.2/es/+filter?person=no-priv')
+    >>> anon_browser.open(
+    ...     'http://translations.launchpad.test/evolution/trunk/'
+    ...     '+pots/evolution-2.2/es/+filter?person=no-priv')
     >>> print_shown_translations(anon_browser)
     english    14. The location and hierarchy of the Evolution...
      unused    2005-08-29 This is a suggestion added by a non-...
@@ -113,16 +114,18 @@ Invalid input
 
 Manually filtering by non-existent user warns the user of the problem.
 
-    >>> anon_browser.open('http://translations.launchpad.test/evolution/trunk/'
-    ...                   '+pots/evolution-2.2/es/+filter?person=danilo')
+    >>> anon_browser.open(
+    ...     'http://translations.launchpad.test/evolution/trunk/'
+    ...     '+pots/evolution-2.2/es/+filter?person=danilo')
     >>> print_feedback_messages(anon_browser.contents)
     Requested person not found.
     This person has made no contributions to this file.
 
 If a person to filter by is not specified, user is notified of that.
 
-    >>> anon_browser.open('http://translations.launchpad.test/evolution/trunk/'
-    ...                   '+pots/evolution-2.2/es/+filter')
+    >>> anon_browser.open(
+    ...     'http://translations.launchpad.test/evolution/trunk/'
+    ...     '+pots/evolution-2.2/es/+filter')
     >>> print_feedback_messages(anon_browser.contents)
     No person to filter by specified.
     This person has made no contributions to this file.

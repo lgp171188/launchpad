@@ -376,7 +376,8 @@ need to make sure that everything is quoted before displaying the input.
     ...     'http://launchpad.test/debian/+source/mozilla-firefox/+bug/3'
     ...     '/+choose-affected-product')
 
-    >>> user_browser.getControl('Project').value = b'N\xc3\xb6 Such Product&<>'
+    >>> user_browser.getControl('Project').value = (
+    ...     b'N\xc3\xb6 Such Product&<>')
     >>> user_browser.getControl('Continue').click()
     >>> print(user_browser.url)
     http://.../debian/+source/mozilla-firefox/+bug/3/+choose-affected-product

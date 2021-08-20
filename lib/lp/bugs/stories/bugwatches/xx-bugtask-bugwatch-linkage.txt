@@ -26,7 +26,8 @@ This means that we only display the status, it's not possible to edit it:
     <td><span class="statusConfirmed">Confirmed</span></td>
     ...
 
-    >>> status_control = browser.getControl(name='debian_mozilla-firefox.status')
+    >>> status_control = browser.getControl(
+    ...     name='debian_mozilla-firefox.status')
     Traceback (most recent call last):
     ...
     LookupError: name ...'debian_mozilla-firefox.status'
@@ -56,7 +57,8 @@ been reset to New.
     >>> browser.open(
     ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/1/+editstatus')
-    >>> status_control = browser.getControl(name='debian_mozilla-firefox.status')
+    >>> status_control = browser.getControl(
+    ...     name='debian_mozilla-firefox.status')
     >>> status_control.displayValue
     ['New']
 
@@ -72,7 +74,8 @@ Let's try to actually edit the status to see that it works:
     >>> browser.open(
     ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/1/+editstatus')
-    >>> status_control = browser.getControl(name='debian_mozilla-firefox.status')
+    >>> status_control = browser.getControl(
+    ...     name='debian_mozilla-firefox.status')
     >>> status_control.displayValue
     ['Invalid']
 
@@ -86,7 +89,8 @@ From the edit page we can also create a new bug watch:
     >>> url_control = browser.getControl(
     ...     name='debian_mozilla-firefox.url')
     >>> bugwatch_control.value = ['NEW']
-    >>> url_control.value = 'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1'
+    >>> url_control.value = (
+    ...     'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1')
 
     >>> submit_button = browser.getControl('Save Changes')
     >>> submit_button.click()
@@ -111,14 +115,16 @@ created, instead the old one will be used.
     >>> url_control = browser.getControl(
     ...     name='debian_mozilla-firefox.url')
     >>> bugwatch_control.value = ['NEW']
-    >>> url_control.value = 'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1'
+    >>> url_control.value = (
+    ...     'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1')
 
     >>> submit_button = browser.getControl('Save Changes')
     >>> submit_button.click()
     >>> browser.url
     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/1'
 
-    >>> bugwatch_portlet = find_portlet(browser.contents, 'Remote bug watches')
+    >>> bugwatch_portlet = find_portlet(
+    ...     browser.contents, 'Remote bug watches')
     >>> for li_tag in bugwatch_portlet.find_all('li'):
     ...     print(li_tag.find_all('a')[0].string)
     mozilla.org #123543

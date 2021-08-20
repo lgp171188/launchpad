@@ -25,7 +25,8 @@ error.
 
 To reject the question, the user clicks on the 'Reject Question' link.
 
-    >>> admin_browser.open('http://answers.launchpad.test/firefox/+question/2')
+    >>> admin_browser.open(
+    ...     'http://answers.launchpad.test/firefox/+question/2')
     >>> admin_browser.getLink('Reject question').click()
     >>> admin_browser.getControl('Reject').click()
 

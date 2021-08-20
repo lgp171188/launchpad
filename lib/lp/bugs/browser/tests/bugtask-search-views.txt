@@ -150,7 +150,8 @@ message.
     >>> distro_advanced_search_listingview = create_view(
     ...     debian, '+bugs', form_values)
 
-    >>> print(distro_advanced_search_listingview.getFieldError('bug_reporter'))
+    >>> print(
+    ...     distro_advanced_search_listingview.getFieldError('bug_reporter'))
     There&#x27;s no person with the name or email address &#x27;invalid-reporter&#x27;.
 
 The same if we try with an invalid assignee.
@@ -225,7 +226,8 @@ The simple search form returns only open bugtasks.
     ...     sarge, "+bugs", form_values)
 
     >>> open_bugtasks = list(distroseries_search_listingview.search().batch)
-    >>> [(bugtask.id, bugtask.bug.id, bugtask.status.name, bugtask.importance.name)
+    >>> [(bugtask.id, bugtask.bug.id, bugtask.status.name,
+    ...   bugtask.importance.name)
     ...  for bugtask in open_bugtasks]
     [(19, 3, 'NEW', 'MEDIUM')]
 
@@ -329,7 +331,8 @@ And the advanced form allows us to query for specific bug statuses.
     ...     'field.searchtext': '',
     ...     'field.orderby': '-importance'}
 
-    >>> mozilla_search_listingview = create_view(mozilla, '+bugs', form_values)
+    >>> mozilla_search_listingview = create_view(
+    ...     mozilla, '+bugs', form_values)
     >>> invalid_bugtasks = list(mozilla_search_listingview.search().batch)
     >>> for bugtask in invalid_bugtasks:
     ...     print(bugtask.bug.id, bugtask.product.name, bugtask.status.name)
@@ -381,7 +384,8 @@ Submit the search:
     ...     'field.searchtext': '',
     ...     'field.orderby': '-importance'}
 
-    >>> mozilla_search_listingview = create_view(mozilla, '+bugs', form_values)
+    >>> mozilla_search_listingview = create_view(
+    ...     mozilla, '+bugs', form_values)
     >>> userdata_bugtasks = list(mozilla_search_listingview.search().batch)
     >>> for bugtask in userdata_bugtasks:
     ...     print(bugtask.bug.id, bugtask.product.name,

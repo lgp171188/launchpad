@@ -263,7 +263,8 @@ relation to some bug.
 
 Bug messages can be accessed anonymously.
 
-    >>> messages = anon_webservice.get("/bugs/5/messages").jsonBody()['entries']
+    >>> messages = anon_webservice.get(
+    ...     "/bugs/5/messages").jsonBody()['entries']
     >>> print(messages[0]['self_link'])
     http://.../firefox/+bug/5/comments/0
 
@@ -272,7 +273,8 @@ We can add a new message to a bug by calling the newMessage method.
     >>> print(webservice.named_post(
     ...     "/bugs/5", 'newMessage',
     ...     subject='A new message',
-    ...     content='This is a new message added through the webservice API.'))
+    ...     content=(
+    ...         'This is a new message added through the webservice API.')))
     HTTP/1.1 201 Created...
     Content-Length: 0
     ...
@@ -361,7 +363,8 @@ It's possible to change the task's assignee.
 
     >>> patch = {u'assignee_link': webservice.getAbsoluteUrl('/~cprov')}
     >>> bugtask_path = bug_one_bugtasks[0]['self_link']
-    >>> print(webservice.patch(bugtask_path, 'application/json', dumps(patch)))
+    >>> print(webservice.patch(
+    ...     bugtask_path, 'application/json', dumps(patch)))
     HTTP/1.1 209 Content Returned...
 
     >>> print(webservice.get(bugtask_path).jsonBody()['assignee_link'])
@@ -375,7 +378,8 @@ The task's importance can be modified directly.
     Low
 
     >>> patch = {u'importance': u'High'}
-    >>> print(webservice.patch(bugtask_path, 'application/json', dumps(patch)))
+    >>> print(webservice.patch(
+    ...     bugtask_path, 'application/json', dumps(patch)))
     HTTP/1.1 209 Content Returned...
 
     >>> body = webservice.get(bugtask_path).jsonBody()
@@ -399,7 +403,8 @@ The task's status can also be modified directly.
     Confirmed
 
     >>> patch = {u'status': u'Fix Committed'}
-    >>> print(webservice.patch(bugtask_path, 'application/json', dumps(patch)))
+    >>> print(webservice.patch(
+    ...     bugtask_path, 'application/json', dumps(patch)))
     HTTP/1.1 209 Content Returned...
 
     >>> print(webservice.get(bugtask_path).jsonBody()['status'])
@@ -415,7 +420,8 @@ If an error occurs during a request that sets both 'status' and
     High
 
     >>> patch = {u'importance': 'High', u'status': u'No Such Status'}
-    >>> print(webservice.patch(bugtask_path, 'application/json', dumps(patch)))
+    >>> print(webservice.patch(
+    ...     bugtask_path, 'application/json', dumps(patch)))
     HTTP/1.1 400 Bad Request...
 
     >>> task = webservice.get(bugtask_path).jsonBody()
@@ -431,7 +437,8 @@ The milestone can only be set by appropriately privileged users.
 
     >>> patch = {u'milestone_link': webservice.getAbsoluteUrl(
     ...                                 '/debian/+milestone/3.1')}
-    >>> print(webservice.patch(bugtask_path, 'application/json', dumps(patch)))
+    >>> print(webservice.patch(
+    ...     bugtask_path, 'application/json', dumps(patch)))
     HTTP/1.1 209 Content Returned...
 
     >>> print(webservice.get(bugtask_path).jsonBody()['milestone_link'])
@@ -865,7 +872,8 @@ Each subscription can be accessed individually.
 
 Subscriptions can also be accessed anonymously.
 
-    >>> subscriptions = anon_webservice.get(bug_one_subscriptions_url).jsonBody()
+    >>> subscriptions = anon_webservice.get(
+    ...     bug_one_subscriptions_url).jsonBody()
     >>> print(subscriptions['entries'][0]['self_link'])
     http://.../bugs/1/+subscription/stevea
 

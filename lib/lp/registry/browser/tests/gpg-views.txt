@@ -22,9 +22,10 @@ Set up some fingerprints for testing:
     >>> malformed   = "XXXX"
     >>> bogus       = "1111 1111 1111 1111 1111  1111 1111 1111 1111 1111"
     >>> gpgv3       = "11 28 37 E2 CB 46 72 67  9E 8E 22 18 DA F9 C0 96"
-    >>> with_crap   = ("CFDD 0231 D4A8 992D C760 F5B3 E0B4 E659 E389 E544 uid "
-    ...                "S\xe9bastien Serre (Bienvenue sous Ubuntu) "
-    ...                "<sebastien.serre@gmail.com> sub 1024g/F39C8D42 2006-08-17")
+    >>> with_crap   = (
+    ...     "CFDD 0231 D4A8 992D C760 F5B3 E0B4 E659 E389 E544 uid "
+    ...     "S\xe9bastien Serre (Bienvenue sous Ubuntu) "
+    ...     "<sebastien.serre@gmail.com> sub 1024g/F39C8D42 2006-08-17")
     >>> revoked     = "84D2 05F0 3E1E 6709 6CB5  4E26 2BE8 3793 AACC D97C"
     >>> expired     = "0DD6 4D28 E5F4 1138 5334  9520 0E3D B4D4 02F5 3CC6"
 
@@ -34,7 +35,8 @@ Set up some fingerprints for testing:
     ...         'action': action,
     ...         'import': 'Import Key'})
     ...     request.method = "POST"
-    ...     view = getMultiAdapter((sample_user, request), name="+editpgpkeys")
+    ...     view = getMultiAdapter(
+    ...         (sample_user, request), name="+editpgpkeys")
     ...     view.form_action()
     ...     return view
 

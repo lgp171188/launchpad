@@ -13,7 +13,8 @@ Any authenticated user can request a tarball export for a productseries.  The
 option is presented in the sidebar as "Download translations" on the
 productseries' translations page.
 
-    >>> user_browser.open('http://translations.launchpad.test/evolution/trunk/')
+    >>> user_browser.open(
+    ...     'http://translations.launchpad.test/evolution/trunk/')
     >>> user_browser.getLink('download').click()
     >>> print(user_browser.url)
     http://translations.launchpad.test/evolution/trunk/+export
@@ -35,7 +36,8 @@ Anonymous access
 To prevent spambot activity from becoming a problem, the download option is
 not available to anonymous visitors.
 
-    >>> anon_browser.open('http://translations.launchpad.test/evolution/trunk/')
+    >>> anon_browser.open(
+    ...     'http://translations.launchpad.test/evolution/trunk/')
     >>> anon_browser.getLink('download')
     Traceback (most recent call last):
     ...
@@ -92,7 +94,8 @@ Nothing to export
 Where there are no translation files to be exported, the user is not offered
 the option to download any.
 
-    >>> user_browser.open('http://translations.launchpad.test/bzr/trunk/+export')
+    >>> user_browser.open(
+    ...     'http://translations.launchpad.test/bzr/trunk/+export')
     >>> print_feedback_messages(user_browser.contents)
     There are no translations to download in Bazaar trunk series.
 

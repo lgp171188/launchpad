@@ -65,7 +65,8 @@ The comment isn't synchronized immediately. To make that clear, we
 mark the comment as 'awaiting synchronization' until it makes its way
 to the remote bug tracker.
 
-    >>> activity = new_bug_comment.find(attrs={'class': 'boardCommentActivity'})
+    >>> activity = new_bug_comment.find(
+    ...     attrs={'class': 'boardCommentActivity'})
     >>> print(extract_text(activity.find_all('td')[1]))
     Awaiting synchronization
 

@@ -69,7 +69,8 @@ Any team member can join the mailing list.
     >>> logout()
     >>> no_team_browser = setupBrowserFreshLogin(person)
 
-    >>> no_team_browser.open('http://launchpad.test/people/+me/+editmailinglists')
+    >>> no_team_browser.open(
+    ...     'http://launchpad.test/people/+me/+editmailinglists')
     >>> rosetta_admins = no_team_browser.getControl(
     ...     name='field.subscription.rosetta-admins')
     >>> rosetta_admins.displayOptions

@@ -267,7 +267,8 @@ Let's try uploading a file with some weird characters in them:
     >>> len(add_comment_view.errors)
     0
     >>> attachments = bug_four.attachments
-    >>> print(attachments[bug_four.attachments.count()-1].libraryfile.filename)
+    >>> print(
+    ...     attachments[bug_four.attachments.count()-1].libraryfile.filename)
     foö bar
     >>> attachments[bug_four.attachments.count()-1].libraryfile.http_url
     'http://.../fo%C3%B6%20bar'

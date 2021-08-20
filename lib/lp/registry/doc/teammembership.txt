@@ -785,7 +785,8 @@ And you can check which direct memberships a team has by using
 member_memberships:
 
     >>> for membership in t3.member_memberships:
-    ...     print('%s: %s' % (membership.person.name, membership.status.title))
+    ...     print('%s: %s' %
+    ...           (membership.person.name, membership.status.title))
     cprov: Approved
     jdub: Administrator
 

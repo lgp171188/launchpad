@@ -84,7 +84,8 @@ it from the browser headers.  His secondary language choice, Spanish, is
 misconfigured (the language name is not spelled in proper UTF-8) but the
 pt_br language code is recognized properly.
 
-    >>> portlet = find_tag_by_id(browser.contents, 'portlet-browser-languages')
+    >>> portlet = find_tag_by_id(
+    ...     browser.contents, 'portlet-browser-languages')
     >>> print(extract_text(portlet))
     Your browser languages:
     Portuguese (Brazil)

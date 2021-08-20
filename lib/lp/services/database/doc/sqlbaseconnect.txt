@@ -13,7 +13,8 @@ Ensure that lp.services.database.sqlbase connects as we expect.
     ...     where = cur.fetchone()[0]
     ...     cur.execute('SHOW transaction_isolation')
     ...     how = cur.fetchone()[0]
-    ...     print('Connected as %s to %s in %s isolation.' % (who, where, how))
+    ...     print(
+    ...         'Connected as %s to %s in %s isolation.' % (who, where, how))
 
 Specifying the user connects as that user.
 

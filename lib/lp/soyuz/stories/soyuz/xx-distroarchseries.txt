@@ -157,7 +157,8 @@ distroseries page. We will use a small helper function to extract the
 current distroseries architecture list.
 
     >>> def check_arch_list(distroseries='warty'):
-    ...     anon_browser.open("http://launchpad.test/ubuntu/%s" % distroseries)
+    ...     anon_browser.open(
+    ...         "http://launchpad.test/ubuntu/%s" % distroseries)
     ...     print(extract_text(find_tag_by_id(
     ...         anon_browser.contents, 'portlet-architectures-list')))
 

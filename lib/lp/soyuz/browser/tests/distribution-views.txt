@@ -208,7 +208,8 @@ package:
 
     >>> distro_pkg_search_view = create_initialized_view(
     ...     ubuntu, name="+search", form={'text': 'moz'})
-    >>> for key, value in distro_pkg_search_view.matching_binary_names.items():
+    >>> for key, value in (
+    ...         distro_pkg_search_view.matching_binary_names.items()):
     ...     print('%s: %s' % (key, value))
     mozilla-firefox: mozilla-firefox, mozilla-firefox-data
 

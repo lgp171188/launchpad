@@ -10,14 +10,16 @@ according to the selected buildstate, by default All.
     ...     """Check if the label and/or the field for the optional
     ...     "names containing" search are present in the given page contents.
     ...
-    ...     Check the presence of "build_state" selection widget via assertion.
+    ...     Check the presence of "build_state" selection widget via
+    ...     assertion.
     ...
     ...     Check the presence of "Filter" submit button via assertion.
     ...
-    ...     Return "State and Name present" if the page provide both parameters,
-    ...     "State present, Name not present" if the page only permits browse
-    ...     by state and "mismatch" if the page, erroneously,  provide only
-    ...     part of the required arguments to enable filter by name.
+    ...     Return "State and Name present" if the page provide both
+    ...     parameters, "State present, Name not present" if the page only
+    ...     permits browse by state and "mismatch" if the page, erroneously,
+    ...     provide only part of the required arguments to enable filter by
+    ...     name.
     ...     """
     ...     assert six.ensure_str(
     ...         '<input type="submit" value="Filter" />') in contents

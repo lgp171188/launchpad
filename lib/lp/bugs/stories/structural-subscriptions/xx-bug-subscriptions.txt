@@ -41,7 +41,8 @@ And subscribe some people to the Firefox source package in ubuntu.
 Sample Person and the Landscape team are now subscribed.
 
     >>> browser.open(
-    ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+subscribe')
+    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/'
+    ...     '+subscribe')
     >>> print(backslashreplace(extract_text(find_portlet(
     ...     browser.contents, 'Subscribers'))))
     Subscribers
@@ -61,7 +62,8 @@ Sample Person can also unsubscribe themselves and the Landscape team.
     >>> subscribe_team.selected = False
     >>> browser.getControl('Save these changes').click()
     >>> browser.open(
-    ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+subscribe')
+    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/'
+    ...     '+subscribe')
     >>> print(extract_text(find_portlet(browser.contents, 'Subscribers')))
     Subscribers
       To all bugs in mozilla-firefox in Ubuntu:
@@ -95,7 +97,8 @@ The driver sees an extended form in the +subscribe view, which allows them
 to subscribe other people.
 
     >>> browser.open(
-    ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+subscribe')
+    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/'
+    ...     '+subscribe')
     >>> subscribe_other = browser.getControl('Subscribe someone else:')
     >>> subscribe_other.value = 'no-priv'
     >>> browser.getControl('Save these changes').click()
@@ -108,7 +111,8 @@ No Privileges Person is now subscribed...
     or changes a public bug in "mozilla-firefox in Ubuntu".
 
     >>> browser.open(
-    ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+subscribe')
+    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/'
+    ...     '+subscribe')
     >>> print(extract_text(find_portlet(browser.contents, 'Subscribers')))
     Subscribers
       To all bugs in mozilla-firefox in Ubuntu:
@@ -130,7 +134,8 @@ No Privileges Person is now subscribed...
     No Privileges Person will no longer automatically receive email about
     public bugs in "mozilla-firefox in Ubuntu".
     >>> browser.open(
-    ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+subscribe')
+    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/'
+    ...     '+subscribe')
     >>> print(extract_text(find_portlet(browser.contents, 'Subscribers')))
     Subscribers
       To all bugs in mozilla-firefox in Ubuntu:
@@ -171,7 +176,8 @@ purges the submitted form data from now unexpected values.
     >>> subscribe_other.value = 'nopriv'
     >>> browser.getControl('Save these changes').click()
     >>> browser.open(
-    ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+subscribe')
+    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/'
+    ...     '+subscribe')
     >>> print(extract_text(find_portlet(browser.contents, 'Subscribers')))
     Subscribers
       To all bugs in mozilla-firefox in Ubuntu:
@@ -183,7 +189,8 @@ When Sample Person now visits the bug subscription page, they no longer see
 the UI elements for the subscription/unsubscription of arbitrary persons.
 
     >>> browser.open(
-    ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+subscribe')
+    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/'
+    ...     '+subscribe')
     >>> browser.getControl('Subscribe someone else:')
     Traceback (most recent call last):
     ...

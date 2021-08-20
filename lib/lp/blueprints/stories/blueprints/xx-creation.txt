@@ -178,7 +178,8 @@ From a sprint
 
 Starting from the Future Mega Meeting sprint page:
 
-    >>> user_browser.open('http://blueprints.launchpad.test/sprints/futurista')
+    >>> user_browser.open(
+    ...     'http://blueprints.launchpad.test/sprints/futurista')
 
 Users can also follow the textual "Register a blueprint" link:
 

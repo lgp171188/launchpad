@@ -117,7 +117,8 @@ Jeff is also an administrator and his subscription never expires, but he can
 demote himself. He starts by paging though the memberships, then he deselects
 the administrator control on the membership page.
 
-    >>> jdub_browser = setupBrowser(auth='Basic jeff.waugh@ubuntulinux.com:test')
+    >>> jdub_browser = setupBrowser(
+    ...     auth='Basic jeff.waugh@ubuntulinux.com:test')
     >>> jdub_browser.open('http://launchpad.test/~ubuntu-team/+members')
     >>> jdub_browser.getLink('Next').click()
     >>> url = '/~ubuntu-team/+member/jdub'
@@ -184,7 +185,8 @@ But in the second browser with the stale data we get an error message:
 
     >>> second_browser.getControl('Approve').click()
     >>> message = (
-    ...     'The membership request for Dave Miller has already been processed')
+    ...     'The membership request for Dave Miller has already been '
+    ...     'processed')
     >>> message in six.ensure_text(second_browser.contents)
     True
 

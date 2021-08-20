@@ -364,7 +364,8 @@ translations in Spanish:
     ...     evo_distro_message.getCurrentTranslation(
     ...         evo_distro_template, spanish,
     ...         evo_distro_template.translation_side))
-    >>> print(pretty(removeSecurityProxy(evo_distro_translation.translations)))
+    >>> print(pretty(removeSecurityProxy(
+    ...     evo_distro_translation.translations)))
     [' caratas']
 
     >>> suggestions = (

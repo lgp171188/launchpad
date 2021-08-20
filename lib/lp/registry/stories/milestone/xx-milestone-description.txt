@@ -28,7 +28,8 @@ We can set the summary while creating a milestone for a Distribution.
 
 The summary appears on the milestone index page.
 
-    >>> test_browser.open('http://launchpad.test/ubuntu/+milestone/milestone1')
+    >>> test_browser.open(
+    ...     'http://launchpad.test/ubuntu/+milestone/milestone1')
     >>> tag = find_tag_by_id(test_browser.contents, 'description')
     >>> print(extract_text(tag))
     Summary of first Ubuntu milestone.
@@ -43,7 +44,8 @@ We can edit the summary after creating the milestone.
 
 And see that it is indeed modified on the milestone page.
 
-    >>> test_browser.open('http://launchpad.test/ubuntu/+milestone/milestone1')
+    >>> test_browser.open(
+    ...     'http://launchpad.test/ubuntu/+milestone/milestone1')
     >>> tag = find_tag_by_id(test_browser.contents, 'description')
     >>> print(extract_text(tag))
     Modified summary of first Ubuntu milestone.

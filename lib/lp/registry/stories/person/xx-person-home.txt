@@ -126,7 +126,8 @@ The contact details portlet shows the languages that the user speaks. No
 Privileges Person can see the languages that mark speaks.
 
     >>> user_browser.open('http://launchpad.test/~carlos')
-    >>> print(extract_text(find_tag_by_id(user_browser.contents, 'languages')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     user_browser.contents, 'languages')))
     Languages:
     Catalan, English, Spanish
 
@@ -134,7 +135,8 @@ When viewing their own page, No Privileges Person sees their languages and
 can edit them.
 
     >>> user_browser.open('http://launchpad.test/~no-priv')
-    >>> print(extract_text(find_tag_by_id(user_browser.contents, 'languages')))
+    >>> print(extract_text(find_tag_by_id(
+    ...     user_browser.contents, 'languages')))
     Languages: Set preferred languages
     English
 

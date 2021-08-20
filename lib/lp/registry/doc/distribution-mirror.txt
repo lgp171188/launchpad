@@ -153,7 +153,9 @@ We also have a property which returns all unofficial mirrors.
 It's possible to retrieve a mirror by its name:
 
     >>> from lp.testing import verifyObject
-    >>> from lp.registry.interfaces.distributionmirror import IDistributionMirror
+    >>> from lp.registry.interfaces.distributionmirror import (
+    ...     IDistributionMirror,
+    ...     )
     >>> example_mirror = mirrorset.getByName('archive-mirror')
     >>> verifyObject(IDistributionMirror, example_mirror)
     True
@@ -950,7 +952,8 @@ tracked in Launchpad.
     ...     http_url="http://mirror.davis.antarctica.org/ubuntu",
     ...     official_candidate=True)
     >>> de_archive_mirror.status = MirrorStatus.OFFICIAL
-    >>> de_archive_prober_log = factory.makeMirrorProbeRecord(de_archive_mirror)
+    >>> de_archive_prober_log = factory.makeMirrorProbeRecord(
+    ...     de_archive_mirror)
 
 Normal users can access country_dns_mirror, can see if a mirror is eligible
 for the status, however, they may not change it:

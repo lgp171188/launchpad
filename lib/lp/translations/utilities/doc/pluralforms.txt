@@ -18,7 +18,9 @@ the number of plural forms for the considered language.
 Let's use a Serbian language as example. Here's the plural forms
 expression for Serbian:
 
-    >>> expression = 'n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2'
+    >>> expression = (
+    ...     'n%10==1 && n%100!=11 ? 0 : '
+    ...     'n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2')
 
 It's also known that Serbian has 3 plural forms.
 

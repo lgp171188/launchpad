@@ -54,7 +54,8 @@ Tracker:
     >>> from lp.bugs.tests.externalbugtracker import (
     ...     TestMantis)
 
-    >>> sample_person = getUtility(IPersonSet).getByEmail('test@canonical.com')
+    >>> sample_person = getUtility(IPersonSet).getByEmail(
+    ...     'test@canonical.com')
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType

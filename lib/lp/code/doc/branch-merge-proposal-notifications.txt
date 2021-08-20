@@ -16,7 +16,9 @@ notification they would like to receive.
     ...     CodeReviewNotificationLevel)
     >>> from lp.code.interfaces.branchmergeproposal import (
     ...     IBranchMergeProposalJobSource)
-    >>> from lp.code.tests.helpers import make_merge_proposal_without_reviewers
+    >>> from lp.code.tests.helpers import (
+    ...     make_merge_proposal_without_reviewers,
+    ...     )
     >>> from lp.services.config import config
     >>> from lp.testing.dbuser import dbuser
     >>> from lp.testing.mail_helpers import pop_notifications

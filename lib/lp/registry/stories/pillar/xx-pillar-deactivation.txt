@@ -25,12 +25,14 @@ cover that part of the change. See bug #156263 for more details.
 
 We start off with active and visible projects:
 
-    >>> anon_browser.open('http://launchpad.test/projects/+index?text=firefox')
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/projects/+index?text=firefox')
     >>> anon_browser.getLink(url='/firefox').click()
     >>> anon_browser.title
     'Mozilla Firefox in Launchpad'
 
-    >>> anon_browser.open('http://launchpad.test/projects/+index?text=mozilla')
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/projects/+index?text=mozilla')
     >>> anon_browser.getLink(url='/mozilla').click()
     >>> anon_browser.title
     'The Mozilla Project in Launchpad'
@@ -42,7 +44,8 @@ We then choose to disable them via each project's +review:
 
 The projects are now no longer publicly visible:
 
-    >>> anon_browser.open('http://launchpad.test/projects/+index?text=mozilla')
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/projects/+index?text=mozilla')
     >>> anon_browser.getLink(url='/firefox')
     Traceback (most recent call last):
     ...
@@ -79,14 +82,16 @@ they'll see an informative message. They can then reactivate them..
 
 And they are back to normal:
 
-    >>> anon_browser.open('http://launchpad.test/projects/+index?text=firefox')
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/projects/+index?text=firefox')
     >>> anon_browser.getLink(url='/firefox').click()
     >>> anon_browser.title
     'Mozilla Firefox in Launchpad'
     >>> print(find_tag_by_id(anon_browser.contents, 'project-inactive'))
     None
 
-    >>> anon_browser.open('http://launchpad.test/projects/+index?text=mozilla')
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/projects/+index?text=mozilla')
     >>> anon_browser.getLink(url='/mozilla').click()
     >>> anon_browser.title
     'The Mozilla Project in Launchpad'
