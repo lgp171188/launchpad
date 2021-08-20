@@ -692,6 +692,14 @@ class CharmRecipe(StormBase):
             container.encrypt(exchanged_macaroon_raw.encode()))
         self.store_secrets.pop("root", None)
 
+    @property
+    def can_upload_to_store(self):
+        return (
+            config.charms.charmhub_url is not None and
+            self.store_name is not None and
+            self.store_secrets is not None and
+            "exchanged_encrypted" in self.store_secrets)
+
     def destroySelf(self):
         """See `ICharmRecipe`."""
         store = IStore(self)

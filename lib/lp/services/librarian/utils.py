@@ -1,9 +1,10 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 __all__ = [
     'copy_and_close',
+    'EncodableLibraryFileAlias',
     'filechunks',
     'guess_librarian_encoding',
     'sha1_from_path',
@@ -74,3 +75,23 @@ def guess_librarian_encoding(filename, mimetype):
         encoding = None
 
     return encoding, mimetype
+
+
+class EncodableLibraryFileAlias:
+    """A `LibraryFileAlias` wrapper usable with a `MultipartEncoder`."""
+
+    def __init__(self, lfa):
+        self.lfa = lfa
+        self.position = 0
+
+    def __len__(self):
+        return self.lfa.content.filesize - self.position
+
+    def read(self, length=-1):
+        chunksize = None if length == -1 else length
+        data = self.lfa.read(chunksize=chunksize)
+        if chunksize is None:
+            self.position = self.lfa.content.filesize
+        else:
+            self.position += length
+        return data
