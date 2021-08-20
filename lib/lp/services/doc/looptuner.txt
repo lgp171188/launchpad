@@ -270,7 +270,8 @@ The model behind LoopTuner assumes that the cost of an iteration will tend to
 increase as a linear function of chunk size.  Constant cost is a degenerate
 case of that; here we look at more meaningful linear functions.
 
-==== Without Constant ====
+Without Constant
+~~~~~~~~~~~~~~~~
 
 If cost function is purely linear with zero overhead, we approach our time
 goal asymptotically.  In principle we never quite get there.
@@ -293,7 +294,8 @@ goal asymptotically.  In principle we never quite get there.
     True
 
 
-==== With Constant ====
+With Constant
+~~~~~~~~~~~~~
 
 Here's a variant with a relatively flat linear cost function (25 units of work
 per second), plus a large constant overhead of half the time goal.  It does
@@ -325,7 +327,8 @@ What if the relationship between chunk size and iteration time is much more
 radical?
 
 
-==== Low Exponent ====
+Low Exponent
+~~~~~~~~~~~~
 
 Due to the way LoopTuner's approximation function works, an exponential cost
 function will cause some oscillation where iteration time overshoots the goal,
@@ -353,7 +356,8 @@ be a neat alternation of oversized and undersized chunks.
     done
 
 
-==== High Exponent ====
+High Exponent
+~~~~~~~~~~~~~
 
 With more extreme exponential behaviour, the overshoot increases but the
 effect remains the same:

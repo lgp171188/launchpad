@@ -141,7 +141,8 @@ Now the request can take 20 seconds to complete.
     >>> abs(adapter._get_request_timeout()-20000) < 0.001
     True
 
-== Clean up ===
+Clean up
+========
 
     >>> ignored = config.pop('timeout')
 
