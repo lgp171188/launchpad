@@ -544,7 +544,7 @@ Git references
 For Git references, fmt:link links to the reference page.
 
     >>> [ref] = factory.makeGitRefs(repository=repository, paths=[u"master"])
-    >>> print(test_tales("ref/fmt:link", ref=ref))
+    >>> print(test_tales("ref/fmt:link", ref=ref))  # noqa
     <a href=".../~eric/fooix/+git/bar/+ref/master">~eric/fooix/+git/bar:master</a>
 
 

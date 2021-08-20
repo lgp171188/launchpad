@@ -83,7 +83,7 @@ previous line.  This aids in the display of code samples:
     ...     '    def currentCount(self, language=None):\n'
     ...     '        """See IRosettaStats."""\n'
     ...     '        return self.currentCount\n')
-    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))  # noqa
     <p>This is a code sample written in Python.<br />
     &nbsp;&nbsp;&nbsp;&nbsp;def messageCount(self):<br />
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;See IRosettaStats.&quot;&quot;&quot;<br />
@@ -104,7 +104,7 @@ Testing a bunch of URL links.
     ...     '\n'
     ...     'I have a Jabber account (jabber:foo@jabber.example.com)\n'
     ...     'Foo Bar <mailto:foo.bar@example.net>')
-    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))  # noqa
     <p><a rel="nofollow" href="https://launchpad.net/">https:/<wbr />/launchpad.<wbr />net/</a> is the new Launchpad site<br />
     <a rel="nofollow" href="http://example.com/something?foo=bar&amp;hum=baz">http://<wbr />example.<wbr />com/something?<wbr />foo=bar&amp;<wbr />hum=baz</a><br />
     You can check the PPC md5sums at <a rel="nofollow" href="ftp://ftp.ubuntu.com/ubuntu/dists/breezy/main/installer-powerpc/current/images/MD5SUMS">ftp://ftp.<wbr />ubuntu.<wbr />com/ubuntu/<wbr />dists/breezy/<wbr />main/installer-<wbr />powerpc/<wbr />current/<wbr />images/<wbr />MD5SUMS</a><br />
@@ -159,7 +159,7 @@ fmt:text-to-html knows how to linkify URLs:
     ...     'http://localhost?testing=[square-brackets-in-query]\n'
     ... )
 
-    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))  # noqa
     <p><a rel="nofollow" href="http://localhost:8086/bar/baz/foo.html">http://<wbr />localhost:<wbr />8086/bar/<wbr />baz/foo.<wbr />html</a><br />
     <a rel="nofollow" href="ftp://localhost:8086/bar/baz/foo.bar.html">ftp://localhost<wbr />:8086/bar/<wbr />baz/foo.<wbr />bar.html</a><br />
     <a rel="nofollow" href="sftp://localhost:8086/bar/baz/foo.bar.html">sftp://<wbr />localhost:<wbr />8086/bar/<wbr />baz/foo.<wbr />bar.html</a>.<br />
@@ -432,21 +432,21 @@ After login, a link:
     >>> getUtility(ILaunchBag).developer
     True
 
-    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))  # noqa
     <p><a href="https://oops.canonical.com/oops/?oopsid=OOPS-38C23">OOPS-38C23</a></p>
 
 OOPS references can take a number of forms:
 
     >>> text = 'OOPS-38C23'
-    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))  # noqa
     <p><a href="https://oops.canonical.com/oops/?oopsid=OOPS-38C23">OOPS-38C23</a></p>
 
     >>> text = 'OOPS-123abcdef'
-    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))  # noqa
     <p><a href="https://oops.canonical.com/oops/?oopsid=OOPS-123abcdef">OOPS-123abcdef</a></p>
 
     >>> text = 'OOPS-abcdef123'
-    >>> print(test_tales('foo/fmt:text-to-html', foo=text))
+    >>> print(test_tales('foo/fmt:text-to-html', foo=text))  # noqa
     <p><a href="https://oops.canonical.com/oops/?oopsid=OOPS-abcdef123">OOPS-abcdef123</a></p>
 
 If the configuration value doesn't end with a slash, we won't add one. This

@@ -20,7 +20,7 @@ this test a tripwire for the number potentially getting out of hand.
     >>> anon_browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/+translate')
-    >>> anon_browser.url
+    >>> anon_browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
     >>> print(anon_browser.contents)
     <...
@@ -38,7 +38,7 @@ queries, but it still shouldn't run in the hundreds.
     >>> admin_browser.open(
     ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/+translate')
-    >>> admin_browser.url
+    >>> admin_browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
 
 XXX: JeroenVermeulen 2008-06-20 bug=241394: This has just started

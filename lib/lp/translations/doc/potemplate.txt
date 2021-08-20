@@ -294,7 +294,7 @@ Templates can be exported to its native format.
     ...     if 'X-Launchpad-Export-Date' in line:
     ...         # Avoid a time bomb in our tests and ignore this field.
     ...         continue
-    ...     print(line)
+    ...     print(line)  # noqa
     #, fuzzy
     msgid ""
     msgstr ""

@@ -53,7 +53,7 @@ displayed as the bug report).
     (8 bytes,
     text/plain)
     >>> link = browser.getLink('sample data')
-    >>> print(link.url)
+    >>> print(link.url)  # noqa
     http://bugs.launchpad.test/jokosher/+bug/11/+attachment/.../+files/test.txt
     >>> print(comment_0.find('a', text='Edit'))
     <a class="sprite edit action-icon"

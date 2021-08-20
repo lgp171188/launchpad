@@ -153,5 +153,5 @@ URL uses '+latest-full-language-pack'.
 
     >>> print(browser.getLink('2007-09-10 19:15:01 UTC').url)
     http.../72/ubuntu-hoary-translations-update.tar.gz
-    >>> print(browser.getLink('2007-09-10 19:15:19 UTC').url)
+    >>> print(browser.getLink('2007-09-10 19:15:19 UTC').url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+latest-delta-language-pack

@@ -273,7 +273,7 @@ lp/bugs/tests/test_bugnotification.py), and not demonstrated here.
 Another thing worth noting is that there's a blank line before the
 signature, and the signature marker has a trailing space.
 
-    >>> six.ensure_str(message.get_payload(decode=True)).splitlines()
+    >>> six.ensure_str(message.get_payload(decode=True)).splitlines()  # noqa
     [...,
      '',
      '-- ',

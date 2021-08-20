@@ -43,7 +43,7 @@ Retrieve a source publication:
 of properties:
 
     >>> from lazr.restful.testing.webservice import pprint_entry
-    >>> pprint_entry(builds['entries'][0])
+    >>> pprint_entry(builds['entries'][0])  # noqa
     arch_tag: 'i386'
     archive_link: 'http://.../beta/~cprov/+archive/ubuntu/ppa'
     builder_link: 'http://.../beta/builders/bob'
@@ -76,7 +76,7 @@ Whereas the 1.0 webservice for builds maintains the old property names
 
     >>> builds_1_0 = webservice.named_get(
     ...     source_pub['self_link'].replace('beta', '1.0'), 'getBuilds')
-    >>> pprint_entry(builds_1_0.jsonBody()['entries'][0])
+    >>> pprint_entry(builds_1_0.jsonBody()['entries'][0])  # noqa
     arch_tag: 'i386'
     archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
     build_log_url:
@@ -108,7 +108,7 @@ devel webservice also contains build date_started and duration.
 
     >>> builds_devel = webservice.named_get(
     ...     source_pub['self_link'].replace('beta', 'devel'), 'getBuilds')
-    >>> pprint_entry(builds_devel.jsonBody()['entries'][0])
+    >>> pprint_entry(builds_devel.jsonBody()['entries'][0])  # noqa
     arch_tag: 'i386'
     archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
     build_log_url:

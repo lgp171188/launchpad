@@ -172,10 +172,10 @@ and open questions the package has.
 
 Links exist to jump to the query page for the new bugs and open questions.
 
-    >>> print(user_browser.getLink("0 new bugs").url)
+    >>> print(user_browser.getLink("0 new bugs").url)  # noqa
     http://bugs.launchpad.test/ubuntu/+source/iceweasel/+bugs?field.status:list=NEW
 
-    >>> print(user_browser.getLink("0 open questions").url)
+    >>> print(user_browser.getLink("0 open questions").url)  # noqa
     http://answers.launchpad.test/ubuntu/+source/iceweasel/+questions?field.status=OPEN
 
 The page also has a table that shows the distro series in which the package is

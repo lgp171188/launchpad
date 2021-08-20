@@ -57,7 +57,7 @@ redirected back to the spec page when we are done.
     >>> user_browser.open(
     ...     'http://blueprints.launchpad.test/ubuntu/+spec/'
     ...     'media-integrity-check/+setdistroseries')
-    >>> user_browser.url
+    >>> user_browser.url  # noqa
     'http://blueprints.launchpad.test/ubuntu/+spec/media-integrity-check/+setdistroseries'
     >>> user_browser.getControl('Goal').value = ['5']
     >>> user_browser.getControl('Continue').click()

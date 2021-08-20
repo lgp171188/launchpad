@@ -1138,7 +1138,7 @@ cannot be handled.
     >>> upload = admin_browser.getControl(name='file')
     >>> upload.add_file(BytesIO(af_file), 'application/msword', 'af.doc')
     >>> admin_browser.getControl('Upload').click()
-    >>> print(admin_browser.url)
+    >>> print(admin_browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'error'):
@@ -1151,7 +1151,7 @@ With all the correct information, a file can be uploaded.
     >>> upload = admin_browser.getControl(name='file')
     >>> upload.add_file(BytesIO(af_file), 'application/x-po', 'af.po')
     >>> admin_browser.getControl('Upload').click()
-    >>> print(admin_browser.url)
+    >>> print(admin_browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):

@@ -27,5 +27,5 @@ Submit the form.
 We should be redirected to the next page because the validation didn't get
 it as an error.
 
-    >>> print(browser.url)
+    >>> print(browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?batch=1&memo=13&start=13

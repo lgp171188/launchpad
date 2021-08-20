@@ -230,7 +230,7 @@ We cannot allow proprietary bugs to affect more than one pillar.
     >>> browser.getLink(url='+choose-affected-product').click()
     >>> browser.getControl(name='field.product').value = other_product_name
     >>> browser.getControl('Continue').click()
-    >>> print(browser.url)
+    >>> print(browser.url)  # noqa
     http://bugs.launchpad.test/proprietary-product/+bug/.../+choose-affected-product
 
     >>> print_feedback_messages(browser.contents)
@@ -267,7 +267,7 @@ If this wasn't what we intended, we can go back to choose another
 product, though.
 
     >>> user_browser.getLink('Choose another project').click()
-    >>> print(user_browser.url)
+    >>> print(user_browser.url)  # noqa
     http://bugs.launchpad.test/ubuntu/+source/evolution/+bug/6/+choose-affected-product?field.product=evolution
 
     >>> user_browser.getControl('Project').value

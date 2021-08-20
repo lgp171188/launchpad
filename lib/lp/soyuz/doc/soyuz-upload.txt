@@ -500,6 +500,7 @@ required entry for 'etherwake':
     ...     for source in Sources.iter_paragraphs(sources_file):
     ...         pprint_deb822(source)
     ...     print('END')
+    ... # noqa
     Architecture: any
     Binary: etherwake
     Build-Depends: debhelper (>> 2.0)
@@ -613,7 +614,9 @@ and SHA256) for each index published.
     >>> with open("/var/tmp/archive/ubuntutest/dists/"
     ...           "breezy-autotest/Release") as f:
     ...     releasefile_contents = f.read()
-    >>> print(releasefile_contents + '\nEND') #doctest: -NORMALIZE_WHITESPACE
+    >>> print(releasefile_contents + '\nEND')
+    ... # noqa
+    ... # doctest: -NORMALIZE_WHITESPACE
     Origin: ubuntutest
     Label: ubuntutest
     Suite: breezy-autotest

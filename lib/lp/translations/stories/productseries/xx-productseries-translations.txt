@@ -88,7 +88,7 @@ count links to the correctly filtered PO file pages.
     >>> logout()
 
     >>> browser.open(frobnicator_trunk_url)
-    >>> print_language_stats(browser)
+    >>> print_language_stats(browser)  # noqa
     Language                   Untranslated    Unreviewed
     Serbian                               6             5
     Untranslated link: /frobnicator/trunk/+pots/template1/sr/+translate?show=untranslated
@@ -391,4 +391,5 @@ page togheter with link for uploading a template from that series
 
     >>> print(admin_browser.getLink(
     ... 'automatic', url='/evolution/evo-new/+translations-settings').url)
+    ... # noqa
     http://translations.launchpad.test/evolution/evo-new/+translations-settings
