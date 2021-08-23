@@ -120,7 +120,8 @@ in each Ubuntu series.
     Ubuntu Warty mozilla-firefox
 
     >>> anon_browser.getLink('Ubuntu Warty mozilla-firefox')
-    <Link ... url='http://launchpad.test/ubuntu/warty/+source/mozilla-firefox'>
+    <Link ...
+          url='http://launchpad.test/ubuntu/warty/+source/mozilla-firefox'>
 
 If there are no sourcepackages, any user can see there are none:
 

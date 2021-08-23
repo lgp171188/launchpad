@@ -6,8 +6,9 @@ Launchpad is an OpenID Relying Party that uses the Login Service as its fixed
 OpenID Provider. Because of that, when a user clicks the 'Log in / Register'
 link, they'll be sent to the OP to authenticate.
 
-    # Set handleErrors to True so that the Unauthorized exception is handled
-    # by the publisher and we get redirected to the +login page.
+Set handleErrors to True so that the Unauthorized exception is handled by
+the publisher and we get redirected to the +login page.
+
     >>> from lp.testing.browser import Browser
     >>> from lp.testing.layers import BaseLayer
     >>> root_url = BaseLayer.appserver_root_url()
@@ -17,9 +18,10 @@ link, they'll be sent to the OP to authenticate.
     ...     '%s/people/?name=foo&searchfor=all' % root_url)
     >>> browser.getLink('Log in / Register').click()
 
-    # On a browser with JS support, this page would've been automatically
-    # submitted (thanks to the onload handler), but testbrowser doesn't support
-    # JS, so we have to submit the form manually.
+On a browser with JS support, this page would've been automatically
+submitted (thanks to the onload handler), but testbrowser doesn't support
+JS, so we have to submit the form manually.
+
     >>> print(browser.contents)
     <html>...<body onload="document.forms[0].submit();"...
     >>> browser.getControl('Continue').click()

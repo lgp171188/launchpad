@@ -118,11 +118,10 @@ OffsiteFormPostError.
     ...
     urllib.error.HTTPError: HTTP Error 401: Unauthorized
 
-We also let the request go through if the referrer is from a site
-managed by launchpad:
+We also let the request go through if the referrer is from a site managed by
+launchpad.  (Go behind the curtains and change the hostname of one of our
+sites so that we can test this.)
 
-    # Go behind the curtains and change the hostname of one of our sites so that
-    # we can test this.
     >>> from lp.services.webapp.vhosts import allvhosts
     >>> allvhosts._hostnames.add('bzr.dev')
 

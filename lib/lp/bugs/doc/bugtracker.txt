@@ -432,7 +432,8 @@ it.
     >>> links = example_trac.getBugFilingAndSearchLinks(
     ...     remote_product='testproduct', summary="Foo", description="Bar")
     >>> print_links(links)
-    bug_filing_url: http://trac.example.com/newticket?summary=Foo&description=Bar
+    bug_filing_url:
+      http://trac.example.com/newticket?summary=Foo&description=Bar
     bug_search_url: http://trac.example.com/search?ticket=on&q=Foo
 
     >>> example_roundup = factory.makeBugTracker(

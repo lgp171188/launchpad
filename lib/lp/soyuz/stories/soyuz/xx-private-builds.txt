@@ -320,13 +320,15 @@ Accessing the build page will now also work:
     ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
     ...     private_build_id)
     >>> print(anon_browser.title)
-    i386 build of privacy-test 666 : PPA named p3a for Celso Providelo : Celso Providelo
+    i386 build of privacy-test 666 : PPA named p3a for Celso Providelo : Celso
+    Providelo
 
     >>> browser.open(
     ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
     ...     private_build_id)
     >>> print(browser.title)
-    i386 build of privacy-test 666 : PPA named p3a for Celso Providelo : Celso Providelo
+    i386 build of privacy-test 666 : PPA named p3a for Celso Providelo : Celso
+    Providelo
 
 Similarly, when accessing the distribution source package release page,
 the main content will display a link to the newly unembargoed build:

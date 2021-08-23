@@ -241,7 +241,8 @@ image and map.
     <area shape="poly"
       ...href="http://blueprints.launchpad.test/firefox/+spec/mergewin" .../>
     <area shape="poly"
-      ...href="http://blueprints.launchpad.test/firefox/+spec/svg...support" .../>
+      ...href="http://blueprints.launchpad.test/firefox/+spec/svg...support"
+      .../>
     </map>
 
 

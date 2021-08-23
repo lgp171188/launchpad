@@ -788,7 +788,8 @@ identical to the one in the parent's menu.)
     ...     recipe_ingredients_view, INavigationMenu, name='cookery')
     >>> summarise_links(recipe_overview_menu)
     link edit_instructions
-        url: http://launchpad.test/joy-of-cooking/fried-spam/+edit-instructions
+        url:
+          http://launchpad.test/joy-of-cooking/fried-spam/+edit-instructions
         enabled: True
         menu: None
         linked: True

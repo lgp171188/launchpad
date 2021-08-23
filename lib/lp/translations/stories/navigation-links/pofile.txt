@@ -37,5 +37,6 @@ The Application tabs should point to IDistributionSourcePackage URLs.
     * Code - http://code.launchpad.test/ubuntu/+source/evolution
     * Bugs - http://bugs.launchpad.test/ubuntu/+source/evolution
     * Blueprints - not linked
-    * Translations (selected) - http://translations.launchpad.test/ubuntu/+source/evolution
+    * Translations (selected) -
+      http://translations.launchpad.test/ubuntu/+source/evolution
     * Answers - http://answers.launchpad.test/ubuntu/+source/evolution

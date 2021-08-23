@@ -48,7 +48,8 @@ Bugs are indexed by number beneath the top-level collection.
     users_affected_collection_link: 'http://.../bugs/1/users_affected'
     users_affected_count: 0
     users_affected_count_with_dupes: 0
-    users_affected_with_dupes_collection_link: 'http://.../bugs/1/users_affected_with_dupes'
+    users_affected_with_dupes_collection_link:
+      'http://.../bugs/1/users_affected_with_dupes'
     users_unaffected_collection_link: 'http://.../bugs/1/users_unaffected'
     users_unaffected_count: 0
     web_link: 'http://bugs.../bugs/1'
@@ -346,12 +347,13 @@ data in a bug task is derived from the bug.
     milestone_link: None
     owner_link: 'http://.../~name12'
     related_tasks_collection_link:
-     'http://api.../debian/+source/mozilla-firefox/+bug/1/related_tasks'
+      'http://api.../debian/+source/mozilla-firefox/+bug/1/related_tasks'
     resource_type_link: 'http://.../#bug_task'
     self_link: 'http://api.../debian/+source/mozilla-firefox/+bug/1'
     status: 'Confirmed'
     target_link: 'http://api.../debian/+source/mozilla-firefox'
-    title: 'Bug #1 in mozilla-firefox (Debian): "Firefox does not support SVG"'
+    title:
+      'Bug #1 in mozilla-firefox (Debian): "Firefox does not support SVG"'
     web_link: 'http://bugs.../debian/+source/mozilla-firefox/+bug/1'
 
 The collection of bug tasks is not exposed as a resource:
@@ -1230,7 +1232,8 @@ renamed bug tracker.
     >>> pprint_entry(bug_tracker)
     active: True
     base_url: 'http://bugs.example.com/'
-    base_url_aliases: ['http://bugs.example.com/bugs/', 'http://www.example.com/bugtracker/']
+    base_url_aliases:
+      ['http://bugs.example.com/bugs/', 'http://www.example.com/bugtracker/']
     bug_tracker_type: 'Bugzilla'
     contact_details: 'bob@example.com'
     has_lp_plugin: None
@@ -1355,7 +1358,8 @@ attachment. This is where our comment is recorded.
 
     >>> message = webservice.get(attachment['message_link']).jsonBody()
     >>> pprint_entry(message)
-    bug_attachments_collection_link: 'http://.../firefox/+bug/1/comments/2/bug_attachments'
+    bug_attachments_collection_link:
+      'http://.../firefox/+bug/1/comments/2/bug_attachments'
     content: 'The numbers you asked for.'
     date_created: '...'
     date_deleted: None
@@ -1408,7 +1412,8 @@ But we can remove the attachment altogether.
     >>> attachments = webservice.get(
     ...     bug_one['attachments_collection_link']).jsonBody()
     >>> pprint_collection(attachments)
-    resource_type_link: 'http://api.launchpad.test/beta/#bug_attachment-page-resource'
+    resource_type_link:
+      'http://api.launchpad.test/beta/#bug_attachment-page-resource'
     start: 0
     total_size: 0
     ---
@@ -1927,7 +1932,8 @@ Each bug has a collection of activities that have taken place with it.
     >>> activity = anon_webservice.get(
     ...     bug_one['activity_collection_link']).jsonBody()
     >>> pprint_collection(activity)
-    next_collection_link: 'http://.../bugs/1/activity?ws.size=5&memo=5&ws.start=5'
+    next_collection_link:
+      'http://.../bugs/1/activity?ws.size=5&memo=5&ws.start=5'
     resource_type_link: 'http://.../#bug_activity-page-resource'
     start: 0
     total_size: 24

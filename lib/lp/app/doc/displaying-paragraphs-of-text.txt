@@ -52,7 +52,10 @@ Basics
     >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p>&nbsp;1. Here&#x27;s an example<br />
     &nbsp;2. where a list is followed by a paragraph.<br />
-    &nbsp;&nbsp;&nbsp;Leading spaces in a line or paragraph are presented, which means converting them to &amp;nbsp;. Trailing spaces are passed through as-is, which means browsers will ignore them, but that&#x27;s fine, they&#x27;re not important anyway.</p>
+    &nbsp;&nbsp;&nbsp;Leading spaces in a line or paragraph are presented,
+    which means converting them to &amp;nbsp;. Trailing spaces are passed
+    through as-is, which means browsers will ignore them, but that&#x27;s
+    fine, they&#x27;re not important anyway.</p>
 
     >>> text = (
     ...     'This is a little paragraph all by itself. How cute!'
@@ -281,13 +284,15 @@ Works with multiple bugs:
 
     >>> text = 'LP: #123, #2.\n'
     >>> print(test_tales('foo/fmt:text-to-html', foo=text))
-    <p>LP: <a href="/bugs/123" class="bug-link">#123</a>, <a href="/bugs/2" class="bug-link">#2</a>.</p>
+    <p>LP: <a href="/bugs/123" class="bug-link">#123</a>,
+           <a href="/bugs/2" class="bug-link">#2</a>.</p>
 
 And with lower case 'lp' too:
 
     >>> text = 'lp: #123, #2.\n'
     >>> print(test_tales('foo/fmt:text-to-html', foo=text))
-    <p>lp: <a href="/bugs/123" class="bug-link">#123</a>, <a href="/bugs/2" class="bug-link">#2</a>.</p>
+    <p>lp: <a href="/bugs/123" class="bug-link">#123</a>,
+           <a href="/bugs/2" class="bug-link">#2</a>.</p>
 
 Even line breaks cannot stop the power of bug linking:
 
@@ -369,9 +374,11 @@ Branch references are linkified:
     ...     'lp:/foo\n')
     >>> print(test_tales('foo/fmt:text-to-html', foo=text))
     <p><a href="/+code/~foo/bar/baz" class="...">lp:~foo/bar/baz</a><br />
-    <a href="/+code/~foo/bar/bug-123" class="...">lp:~foo/bar/bug-123</a><br />
+    <a href="/+code/~foo/bar/bug-123"
+       class="...">lp:~foo/bar/bug-123</a><br />
     <a href="/+code/~foo/+junk/baz" class="...">lp:~foo/+junk/baz</a><br />
-    <a href="/+code/~foo/ubuntu/jaunty/evolution/baz" class="...">lp:~foo/ubuntu/jaunty/evolution/baz</a><br />
+    <a href="/+code/~foo/ubuntu/jaunty/evolution/baz"
+       class="...">lp:~foo/ubuntu/jaunty/evolution/baz</a><br />
     <a href="/+code/foo/bar" class="...">lp:foo/bar</a><br />
     <a href="/+code/foo" class="...">lp:foo</a><br />
     <a href="/+code/foo" class="...">lp:foo</a>,<br />

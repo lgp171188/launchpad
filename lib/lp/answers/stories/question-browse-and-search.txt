@@ -139,7 +139,8 @@ details of the question are available.
     Question #7 : ...
     >>> soup = find_main_content(browser.contents)
     >>> soup('div', 'report')
-    [<div class="report"><p>I get really poor hard drive performance.</p></div>]
+    [<div class="report"><p>I get really poor hard drive
+    performance.</p></div>]
 
 
 Jumping to Questions
@@ -392,7 +393,8 @@ They need to login to access that page:
     ...     '+questions')
     >>> sample_person_browser.getLink('My questions').click()
     >>> print(repr(sample_person_browser.title))
-    'Questions you asked about mozilla-firefox in Ubuntu : Questions : mozilla-firefox package : Ubuntu'
+    'Questions you asked about mozilla-firefox in Ubuntu : Questions :
+    mozilla-firefox package : Ubuntu'
     >>> questions = find_tag_by_id(
     ...     sample_person_browser.contents, 'question-listing')
     >>> for question in questions.find_all('td', 'questionTITLE'):
@@ -476,7 +478,8 @@ Like all other report, this one is searchable:
     ...     name='field.search_text').value = 'evolution'
     >>> sample_person_browser.getControl('Search', index=0).click()
     >>> print(sample_person_browser.title)
-    Questions matching "evolution" needing your attention for Ubuntu : Questions : Ubuntu
+    Questions matching "evolution" needing your attention for Ubuntu :
+    Questions : Ubuntu
     >>> search_summary = find_main_content(sample_person_browser.contents)
     >>> print(search_summary)
     <...
@@ -706,11 +709,13 @@ The same standard reports than on regular QuestionTarget are available:
     >>> user_browser.open('http://launchpad.test/mozilla/+questions')
     >>> user_browser.getLink('My questions').click()
     >>> print(user_browser.title)
-    Questions you asked about The Mozilla Project : Questions : The Mozilla Project
+    Questions you asked about The Mozilla Project : Questions : The Mozilla
+    Project
 
     >>> user_browser.getLink('Need attention').click()
     >>> print(user_browser.title)
-    Questions needing your attention for The Mozilla Project : Questions : The Mozilla Project
+    Questions needing your attention for The Mozilla Project : Questions : The
+    Mozilla Project
 
 
 Searching All Questions

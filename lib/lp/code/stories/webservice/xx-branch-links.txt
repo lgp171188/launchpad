@@ -62,7 +62,8 @@ A spec can be linked to a branch through the API.
     branch_link: 'http://.../~prime/cybertron/robots'
     registrant_link: 'http://.../~salgado'
     resource_type_link: 'http://.../#specification_branch'
-    self_link: 'http://.../product-name.../+spec/name.../+branch/prime/cybertron/robots'
+    self_link:
+     'http://.../product-name.../+spec/name.../+branch/prime/cybertron/robots'
     specification_link: 'http://.../product-name.../+spec/name...'
 
 

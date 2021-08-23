@@ -85,7 +85,8 @@ David got a notification, saying that he was subscribed to the bug.
     X-Launchpad-Message-Rationale: Subscriber
     X-Launchpad-Message-For: ddaa
     ...
-    You have been subscribed to a public bug by No Privileges Person (no-priv):
+    You have been subscribed to a public bug by No Privileges Person
+    (no-priv):
     ...
     http://bugs.launchpad.test/bugs/...
 

@@ -159,7 +159,8 @@ The page has an appropriate title and main heading.
     * Code - http://code.launchpad.test/ubuntu/+source/iceweasel
     * Bugs - http://bugs.launchpad.test/ubuntu/+source/iceweasel
     * Blueprints - not linked
-    * Translations - http://translations.launchpad.test/ubuntu/+source/iceweasel
+    * Translations -
+      http://translations.launchpad.test/ubuntu/+source/iceweasel
     * Answers - http://answers.launchpad.test/ubuntu/+source/iceweasel
     Main heading: iceweasel package in Ubuntu
 
@@ -553,7 +554,8 @@ source package hierarchy.
     * Code - http://code.launchpad.test/ubuntu/+source/alsa-utils
     * Bugs - http://bugs.launchpad.test/ubuntu/+source/alsa-utils
     * Blueprints - not linked
-    * Translations - http://translations.launchpad.test/ubuntu/+source/alsa-utils
+    * Translations -
+      http://translations.launchpad.test/ubuntu/+source/alsa-utils
     * Answers - http://answers.launchpad.test/ubuntu/+source/alsa-utils
     Main heading: Publishing history of alsa-utils package in Ubuntu
 

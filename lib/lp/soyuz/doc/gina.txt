@@ -154,11 +154,14 @@ Check STDERR for the errors we expected:
     WARNING Binary package python-pam lacks a section, assumed 'misc'
     ERROR   Error processing package files for python2.4-pam
     ...
-    ...PoolFileNotFound: .../python2.4-pam_0.4.2-10.1ubuntu3_i386.deb not found
+    ...PoolFileNotFound: .../python2.4-pam_0.4.2-10.1ubuntu3_i386.deb not
+    found
     ERROR   Error processing package files for python2.4-sqlite
     ...
-    ...PoolFileNotFound: .../python2.4-sqlite_1.0.1-1ubuntu1_i386.deb not found
-    WARNING No source package rioutil (1.4.4-1.0.1) listed for rioutil (1.4.4-1.0.1), scrubbing archive...
+    ...PoolFileNotFound: .../python2.4-sqlite_1.0.1-1ubuntu1_i386.deb not
+    found
+    WARNING No source package rioutil (1.4.4-1.0.1) listed for rioutil
+            (1.4.4-1.0.1), scrubbing archive...
     WARNING Nope, couldn't find it. Could it be a bin-only-NMU? Checking...
     ERROR   Error processing package files for util-linux
     ...
@@ -180,7 +183,8 @@ Check STDERR for the errors we expected:
     ERROR   Error processing package files for python-sqlite
     ...
     ...PoolFileNotFound: .../python-sqlite_1.0.1-2ubuntu1_all.deb not found
-    WARNING No source package ubuntu-meta (0.80) listed for ubuntu-base (0.80), scrubbing archive...
+    WARNING No source package ubuntu-meta (0.80) listed for ubuntu-base
+            (0.80), scrubbing archive...
     <BLANKLINE>
 
 The exit status must be 0, for success:
@@ -549,10 +553,12 @@ run.
     WARNING Binary package python-pam lacks a section, assumed 'misc'
     ERROR   Error processing package files for python2.4-pam
     ...
-    ...PoolFileNotFound: .../python2.4-pam_0.4.2-10.1ubuntu3_i386.deb not found
+    ...PoolFileNotFound: .../python2.4-pam_0.4.2-10.1ubuntu3_i386.deb not
+    found
     ERROR   Error processing package files for python2.4-sqlite
     ...
-    ...PoolFileNotFound: .../python2.4-sqlite_1.0.1-1ubuntu1_i386.deb not found
+    ...PoolFileNotFound: .../python2.4-sqlite_1.0.1-1ubuntu1_i386.deb not
+    found
     ERROR   Error processing package files for util-linux
     ...
     ...PoolFileNotFound: .../util-linux_2.12p-2ubuntu2_i386.deb not found

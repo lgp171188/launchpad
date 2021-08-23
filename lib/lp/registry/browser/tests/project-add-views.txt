@@ -182,4 +182,4 @@ that's checked for duplicates is the 'name' field.
     >>> for error in view.errors:
     ...     print(error)
     ('name', 'URL',
-     LaunchpadValidationError(...'snowdog is already used by another project'))
+     LaunchpadValidationError('snowdog is already used by another project'))

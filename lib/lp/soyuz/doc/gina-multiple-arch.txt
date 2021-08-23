@@ -83,8 +83,10 @@ Let's set up the filesystem:
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> print(proc.stderr.read())
     WARNING ...
-    WARNING No source package bdftopcf (0.99.0-1) listed for bdftopcf (0.99.0-1), scrubbing archive...
-    WARNING The archive for dapper-updates/universe doesn't contain a directory for powerpc, skipping
+    WARNING No source package bdftopcf (0.99.0-1) listed for bdftopcf
+            (0.99.0-1), scrubbing archive...
+    WARNING The archive for dapper-updates/universe doesn't contain a
+            directory for powerpc, skipping
     <BLANKLINE>
     >>> proc.wait()
     0

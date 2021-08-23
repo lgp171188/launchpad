@@ -205,6 +205,7 @@ leaves.
     ...         [pretty(node.keys) for node in path] + [pretty(result)]))
     ('Snack',) => ('Mars Bar', 'Snickers') => 'Bad'
     ('Snack',) => ('Apple', 'Banana') => 'Good'
-    ('Lunch', 'Dinner') => ('Fish and chips', "Penne all'arrabbiata") => 'Nice'
+    ('Lunch', 'Dinner') => ('Fish and chips', "Penne all'arrabbiata")
+      => 'Nice'
     ('Lunch', 'Dinner') => ('Raw liver',) => 'Not so nice'
     () => 'Make up your mind!'

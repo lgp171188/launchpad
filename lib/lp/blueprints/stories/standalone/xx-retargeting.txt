@@ -62,4 +62,5 @@ We stay on the same page and get an error message printed out:
     ...     print(tag.decode_contents())
     There is 1 error.
     <BLANKLINE>
-    There is no project with the name 'foo bar'. Please check that name and try again.
+    There is no project with the name 'foo bar'. Please check that name and
+    try again.
