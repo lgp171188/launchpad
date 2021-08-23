@@ -185,7 +185,8 @@ builds list is presented.
     >>> check_urls(no_priv_browser, builds_links,
     ...     'http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+build/%d'
     ...     % build_id)
-    buildlog_ubuntutest-breezy-autotest-i386.test-pkg_1.0_FULLYBUILT.txt.gz: OK
+    buildlog_ubuntutest-breezy-autotest-i386.test-pkg_1.0_FULLYBUILT.txt.gz:
+    OK
 
     >>> no_priv_browser.open(
     ...     'http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+packages')

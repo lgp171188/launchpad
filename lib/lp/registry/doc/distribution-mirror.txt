@@ -681,7 +681,8 @@ is correct.
     >>> print(stdout)
     <BLANKLINE>
     >>> print(stderr)
-    INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
+    INFO    Creating lockfile:
+            /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing Archive Mirrors
     INFO    Probed 5 mirrors.
     INFO    Starting to update mirrors statuses outside reactor now.
@@ -696,7 +697,8 @@ is correct.
     >>> print(stdout)
     <BLANKLINE>
     >>> print(stderr)
-    INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
+    INFO    Creating lockfile:
+            /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
     INFO    Starting to update mirrors statuses outside reactor now.
@@ -713,7 +715,8 @@ probed again.
     >>> print(stdout)
     <BLANKLINE>
     >>> print(stderr)
-    INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
+    INFO    Creating lockfile:
+            /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    No mirrors to probe.
     INFO    Done.
@@ -726,7 +729,8 @@ all official mirrors independently if they were probed recently or not.
     >>> print(stdout)
     <BLANKLINE>
     >>> print(stderr)
-    INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
+    INFO    Creating lockfile:
+            /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
     INFO    Starting to update mirrors statuses outside reactor now.
@@ -746,7 +750,8 @@ we'll enable them again.
     >>> transaction.commit()
     >>> prober, stdout, stderr = run_prober('--content-type=cdimage --force')
     >>> print(stderr)
-    INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
+    INFO    Creating lockfile:
+            /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
     INFO    Starting to update mirrors statuses outside reactor now.

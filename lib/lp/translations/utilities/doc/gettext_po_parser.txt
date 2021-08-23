@@ -478,7 +478,8 @@ we'll get a return matrix which indicates no change (so we import them as-is):
     >>> plural_form_mapper(form_1, 'n!=1')
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 
-    # First form uses zero for both 0 and 1, compared to only 1 for the latter.
+First form uses zero for both 0 and 1, compared to only 1 for the latter.
+
     >>> plural_form_mapper('n>1', 'n!=1')
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 

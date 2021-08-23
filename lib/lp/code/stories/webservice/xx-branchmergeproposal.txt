@@ -102,12 +102,14 @@ Our review request is listed in the votes collection.
     >>> votes = webservice.get(
     ...     bmp['votes_collection_link']).jsonBody()
     >>> pprint_entry(votes['entries'][0])
-    branch_merge_proposal_link: 'http://api.launchpad.test/devel/~.../+merge/...'
+    branch_merge_proposal_link:
+      'http://api.launchpad.test/devel/~.../+merge/...'
     comment_link: None
     date_created: '...'
     is_pending: True
     registrant_link: 'http://api.launchpad.test/devel/~person-name...'
-    resource_type_link: 'http://api.launchpad.test/devel/#code_review_vote_reference'
+    resource_type_link:
+      'http://api.launchpad.test/devel/#code_review_vote_reference'
     review_type: 'green'
     reviewer_link: 'http://api.launchpad.test/devel/~person-name...'
     self_link: 'http://api.launchpad.test/devel/~...'
@@ -211,7 +213,8 @@ The comments on a branch merge proposal are exposed through the API.
     resource_type_link: 'http://.../#code_review_comment'
     revisions_collection_link: 'http://...'
     self_link: 'http://.../~source/fooix/fix-it/+merge/.../comments/...'
-    title: 'Comment on proposed merge of lp://dev/~source/fooix/fix-it into lp://dev/~target/fooix/trunk'
+    title: 'Comment on proposed merge of lp://dev/~source/fooix/fix-it into
+            lp://dev/~target/fooix/trunk'
     vote: 'Approve'
     vote_tag: 'code'
     web_link: 'http://code.../~source/fooix/fix-it/+merge/.../comments/...'

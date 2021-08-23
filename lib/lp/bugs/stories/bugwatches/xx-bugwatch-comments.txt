@@ -25,8 +25,8 @@ These comments can be displayed like any other comments on a bug. Bug
        handled in /etc/fstab, so this might not even be a...pmount bug...
     ----------------------------------------
     <div class="comment-text editable-message-text"
-         itemprop="commentText"><p>I'll be happy to add the info you request to
-      the bug report if it will...
+         itemprop="commentText"><p>I'll be happy to add the info you request
+      to the bug report if it will...
     ----------------------------------------
 
 The comments imported for a watch can be seen on that watch's +comments
@@ -56,6 +56,6 @@ The ordinary user can't see these comments:
        in /etc/fstab, so this might not even be a...pmount bug...
     ----------------------------------------
     <div class="comment-text editable-message-text"
-         itemprop="commentText"><p>I'll be happy to add the info you request to
-       the bug report if it will...
+         itemprop="commentText"><p>I'll be happy to add the info you request
+       to the bug report if it will...
     ----------------------------------------

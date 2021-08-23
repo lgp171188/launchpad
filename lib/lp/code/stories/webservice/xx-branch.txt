@@ -112,12 +112,14 @@ time goes on.
     control_format: None
     date_created: '2009-01-01T00:00:00+00:00'
     date_last_modified: '2009-01-01T00:00:00+00:00'
-    dependent_branches_collection_link: '.../~eric/fooix/trunk/dependent_branches'
+    dependent_branches_collection_link:
+      '.../~eric/fooix/trunk/dependent_branches'
     description: None
     display_name: 'lp://dev/~eric/fooix/trunk'
     explicitly_private: False
     information_type: 'Public'
-    landing_candidates_collection_link: '.../~eric/fooix/trunk/landing_candidates'
+    landing_candidates_collection_link:
+      '.../~eric/fooix/trunk/landing_candidates'
     landing_targets_collection_link: '.../~eric/fooix/trunk/landing_targets'
     last_mirror_attempt: None
     last_mirrored: None
@@ -140,7 +142,8 @@ time goes on.
     sourcepackage_link: None
     spec_links_collection_link: '.../~eric/fooix/trunk/spec_links'
     subscribers_collection_link: 'http://.../~eric/fooix/trunk/subscribers'
-    subscriptions_collection_link: 'http://.../~eric/fooix/trunk/subscriptions'
+    subscriptions_collection_link:
+      'http://.../~eric/fooix/trunk/subscriptions'
     unique_name: '~eric/fooix/trunk'
     url: None
     web_link: 'http://code.../~eric/fooix/trunk'

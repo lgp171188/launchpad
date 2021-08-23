@@ -49,7 +49,8 @@ point to the bugs themselves.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/jokosher/latest-bugs.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/jokosher/latest-bugs.atom"
+          rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -101,7 +102,8 @@ as the latest bugs feed for a product.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/mozilla/latest-bugs.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/mozilla/latest-bugs.atom"
+          rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -163,7 +165,8 @@ of content as the latest bugs feed for a product.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/ubuntu/latest-bugs.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/ubuntu/latest-bugs.atom"
+          rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -284,7 +287,8 @@ type of content as the latest bugs feed for a product.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom"
+          rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -325,7 +329,8 @@ type of content as the latest bugs feed for a product.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom"
+          rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -364,7 +369,8 @@ This feed gets the latest bugs for a person.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/~name16/latest-bugs.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/~name16/latest-bugs.atom"
+          rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -438,7 +444,8 @@ some results.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/~simple-team/latest-bugs.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/~simple-team/latest-bugs.atom"
+          rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -469,7 +476,8 @@ This feed gets the latest bugs reported against any target.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/bugs/latest-bugs.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/bugs/latest-bugs.atom"
+          rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))

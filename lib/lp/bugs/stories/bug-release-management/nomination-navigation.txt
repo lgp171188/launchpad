@@ -16,8 +16,10 @@ same navigation as the bug page itself.
     Tabs:
     * Overview - http://launchpad.test/ubuntu/+source/mozilla-firefox
     * Code - http://code.launchpad.test/ubuntu/+source/mozilla-firefox
-    * Bugs (selected) - http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox
+    * Bugs (selected) -
+      http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox
     * Blueprints - not linked
-    * Translations - http://translations.launchpad.test/ubuntu/+source/mozilla-firefox
+    * Translations -
+      http://translations.launchpad.test/ubuntu/+source/mozilla-firefox
     * Answers - http://answers.launchpad.test/ubuntu/+source/mozilla-firefox
     Main heading: Approve or decline nomination for bug #1 in Ubuntu Hoary

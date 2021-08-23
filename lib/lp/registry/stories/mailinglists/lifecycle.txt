@@ -30,7 +30,8 @@ They think for a second whether their mailing list is for Ubuntu or not.
     >>> print(browser.title)
     Landscape Developers in Launchpad
     >>> print_feedback_messages(browser.contents)
-    The mailing list is being created and will be available for use in a few minutes.
+    The mailing list is being created and will be available for use in a few
+    minutes.
 
 Once the mailing list is created, the button to create it is not shown
 anymore.

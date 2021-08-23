@@ -76,7 +76,8 @@ links to a binary in the context in question.
     ...     parse_relationship_section(str(section))
 
     >>> print_relation('provides')
-    LINK: "mozilla-firefox" -> http://launchpad.test/ubuntu/warty/i386/mozilla-firefox
+    LINK: "mozilla-firefox" ->
+    http://launchpad.test/ubuntu/warty/i386/mozilla-firefox
 
     >>> print_relation('predepends')
     TEXT: "foo"

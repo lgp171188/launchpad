@@ -285,8 +285,9 @@ A419AE861E88BC9E04B9C26FBA2B9389DFD20543:
     >>> browser.getControl('Continue').click()
     >>> print_feedback_messages(browser.contents)
     There is 1 error.
-    The key used to sign the content (A419AE861E88BC9E04B9C26FBA2B9389DFD20543)
-    is not the key you were registering
+    The key used to sign the content
+    (A419AE861E88BC9E04B9C26FBA2B9389DFD20543) is not the key you were
+    registering
 
 If they sign the text correctly, they are redirected to their home page.
 
@@ -502,7 +503,8 @@ Now they'll request their key to be reactivated.
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
     ...     print(tag.decode_contents())
-    A message has been sent to test@canonical.com with instructions to reactivate...
+    A message has been sent to test@canonical.com with instructions to
+    reactivate...
 
 
 Get the token from the body of the email sent.
