@@ -639,7 +639,8 @@ domain.
     >>> links = parse_links(nopriv_browser.contents, rel='self')
     >>> for link in links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/netapplet/announcements.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/netapplet/announcements.atom"
+          rel="self"/>
 
     >>> for id_ in parse_ids(nopriv_browser.contents):
     ...     print(extract_text(id_))
@@ -703,7 +704,8 @@ products.
     >>> links = parse_links(nopriv_browser.contents, rel='self')
     >>> for link in links:
     ...     print(link)
-    <link href="http://feeds.launchpad.test/apache/announcements.atom" rel="self"/>
+    <link href="http://feeds.launchpad.test/apache/announcements.atom"
+          rel="self"/>
 
 Finally, there is a feed for all announcements across all projects
 hosted in Launchpad:

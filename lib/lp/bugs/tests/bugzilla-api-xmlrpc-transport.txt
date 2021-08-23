@@ -358,7 +358,8 @@ the comments for those bugs.
         creator: Slartibartfast <slarti@magrathea.example.net>
         id: 6
         is_private: False
-        text: You know the fjords in Norway?  I got a prize for creating those, you know.
+        text: You know the fjords in Norway?  I got a prize for creating
+              those, you know.
         time: 2008-06-20 12:37:00
     <BLANKLINE>
     <BLANKLINE>

@@ -102,7 +102,8 @@ And, as we can see, we get the trailing new line char
     --
     <code>%s</code>: option `<code>%s</code>' is ambiguous...
     --
-    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt="" src="/@@/translation-newline"/><br/>
+    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt=""
+    src="/@@/translation-newline"/><br/>
     --
 
 Now, we do the right submit, with one trailing new line...
@@ -133,7 +134,8 @@ And, as we can see, we get the same output, just one trailing newline char.
     --
     <code>%s</code>: option `<code>%s</code>' is ambiguous...
     --
-    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt="" src="/@@/translation-newline"/><br/>
+    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt=""
+    src="/@@/translation-newline"/><br/>
     --
 
 Last check, the user sends two new line chars instead of just one...
@@ -164,5 +166,6 @@ And Launchpad comes to the rescue and stores just one!
     --
     <code>%s</code>: option `<code>%s</code>' is ambiguous...
     --
-    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt="" src="/@@/translation-newline"/><br/>
+    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt=""
+    src="/@@/translation-newline"/><br/>
     --

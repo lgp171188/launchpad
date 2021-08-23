@@ -27,7 +27,8 @@ was supplied (through comments) are 'Incomplete (without response)'.
     ...     ['INCOMPLETE_WITHOUT_RESPONSE'])
     >>> user_browser.getControl('Search', index=1).click()
     >>> find_tag_by_id(user_browser.contents, 'bugs-table-listing').find('a')
-    <a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">...</a>
+    <a class="bugtitle"
+       href="http://bugs.launchpad.test/jokosher/+bug/11">...</a>
 
 Bugs that have been marked incomplete and for which new information was
 supplied are 'Incomplete (with response)'.
@@ -64,7 +65,8 @@ They try again to find that bug using the advanced search form.
     ...     ['INCOMPLETE_WITH_RESPONSE'])
     >>> user_browser.getControl('Search', index=1).click()
     >>> find_tag_by_id(user_browser.contents, 'bugs-table-listing').find('a')
-    <a class="bugtitle" href="http://bugs.launchpad.test/jokosher/+bug/11">...</a>
+    <a class="bugtitle"
+       href="http://bugs.launchpad.test/jokosher/+bug/11">...</a>
 
 The bug is there, since they supplied new information in a comment. No
 Privileges Person makes sure that it no longer is in the list of

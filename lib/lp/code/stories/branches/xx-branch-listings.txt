@@ -102,7 +102,8 @@ subset of the branches are shown.
     >>> filter_control.displayValue
     ['Any active status']
     >>> filter_control.displayOptions
-    ['Any active status', 'Any status', 'Experimental', 'Development', 'Mature', 'Merged', 'Abandoned']
+    ['Any active status', 'Any status', 'Experimental', 'Development',
+     'Mature', 'Merged', 'Abandoned']
 
 Changing the value of the select control will (in a javascript
 enabled browser) cause the form to be submitted automatically.
@@ -361,11 +362,11 @@ Finally, sorting by a particular criterion has the desired effect.
     ...     print(extract_text(row))
     A development focus ...
     lp://dev/~name12/gnome-terminal/2.6             Mature          ...
-    lp://dev/~vcs-imports/gnome-terminal/import     Development             ...
+    lp://dev/~vcs-imports/gnome-terminal/import     Development     ...
     lp://dev/~name12/gnome-terminal/klingon         Experimental    ...
-    lp://dev/~launchpad/gnome-terminal/launchpad    Development             ...
+    lp://dev/~launchpad/gnome-terminal/launchpad    Development     ...
     lp://dev/~name12/gnome-terminal/main            Development     ...
-    lp://dev/~name12/gnome-terminal/mirrored        Development             ...
+    lp://dev/~name12/gnome-terminal/mirrored        Development     ...
 
 
 Highlighting the development focus branch
@@ -452,7 +453,8 @@ subset of the branches are shown.
     >>> filter_control.displayValue
     ['Any active status']
     >>> filter_control.displayOptions
-    ['Any active status', 'Any status', 'Experimental', 'Development', 'Mature', 'Merged', 'Abandoned']
+    ['Any active status', 'Any status', 'Experimental', 'Development',
+     'Mature', 'Merged', 'Abandoned']
 
 Selecting an individual lifecycle status from the select control
 will cause only branches with that status to be listed.

@@ -345,8 +345,8 @@ Limit hit for jeff:
     To: Jeff Waugh <jeff.waugh@ubuntulinux.com>
     Test message.
     <BLANKLINE>
-    The size of the diff (800 lines) is larger than your specified limit of 500
-    lines...
+    The size of the diff (800 lines) is larger than your specified limit of
+    500 lines...
 
 And everything for mark:
 
@@ -511,7 +511,9 @@ something like this:
     From: Sample Person <test@canonical.com>
     Subject: [Branch ~name12/firefox/new-name]
         Name: main => new-name
-        Branch URL: http://bazaar.example.com/mozilla@arch.ubuntu.com/mozilla--MAIN--0 => http://example.com/foo
+        Branch URL:
+        http://bazaar.example.com/mozilla@arch.ubuntu.com/mozilla--MAIN--0 =>
+        http://example.com/foo
         Status: Development => Experimental
     <BLANKLINE>
     <BLANKLINE>

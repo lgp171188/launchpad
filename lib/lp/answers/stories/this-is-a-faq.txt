@@ -231,7 +231,8 @@ Sample Person who is the project owner does have that ability.
     >>> owner_browser.open(
     ...     'http://answers.launchpad.test/firefox/+question/2')
     >>> owner_browser.getLink('Create a new FAQ')
-    <Link text='Create a new FAQ' url='http://.../firefox/+question/2/+createfaq'>
+    <Link text='Create a new FAQ'
+          url='http://.../firefox/+question/2/+createfaq'>
     >>> owner_browser.getLink('Link to a FAQ').click()
     >>> owner_browser.getLink('create a new FAQ').click()
     >>> print(owner_browser.url)

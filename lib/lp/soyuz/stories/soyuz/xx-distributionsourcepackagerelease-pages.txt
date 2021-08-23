@@ -47,11 +47,13 @@ they all point to the `DistributionSourcePackage` (parent) url.
     >>> print_location(anon_browser.contents)
     Hierarchy: ubuntutest > testing-dspr package
     Tabs:
-    * Overview (selected) - http://launchpad.test/ubuntutest/+source/testing-dspr
+    * Overview (selected) -
+      http://launchpad.test/ubuntutest/+source/testing-dspr
     * Code - http://code.launchpad.test/ubuntutest/+source/testing-dspr
     * Bugs - http://bugs.launchpad.test/ubuntutest/+source/testing-dspr
     * Blueprints - not linked
-    * Translations - http://translations.launchpad.test/ubuntutest/+source/testing-dspr
+    * Translations -
+      http://translations.launchpad.test/ubuntutest/+source/testing-dspr
     * Answers - http://answers.launchpad.test/ubuntutest/+source/testing-dspr
     Main heading: testing-dspr 1.0 source package in ubuntutest
 

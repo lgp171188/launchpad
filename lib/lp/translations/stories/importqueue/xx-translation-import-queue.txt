@@ -99,7 +99,8 @@ to where we can edit imports.
     True
     >>> link = browser.getLink('Change this entry', index=2)
     >>> link
-    <Link text='Change this entry' url='http://translations.launchpad.test/+imports/...'>
+    <Link text='Change this entry'
+          url='http://translations.launchpad.test/+imports/...'>
     >>> qid = int(link.url.rsplit('/', 1)[-1])
     >>> browser.getControl(name='field.status_%d' % qid).displayValue
     ['Needs Review']

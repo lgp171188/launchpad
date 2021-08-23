@@ -215,7 +215,8 @@ CheckwatchesMaster's logger.
     >>> update_all('savannah', batch_size)
     INFO Resetting 1 bug watches for bug tracker 'savannah'
     INFO Updating 1 watches on bug tracker 'savannah'
-    INFO 'Unsupported Bugtracker' error updating http://savannah.gnu.org/: SAVANE
+    INFO 'Unsupported Bugtracker' error updating http://savannah.gnu.org/:
+    SAVANE
     INFO 0 watches left to check on bug tracker 'savannah'
 
 We can see that the Savannah bug watch has been updated recently. Also,

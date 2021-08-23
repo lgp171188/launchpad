@@ -57,7 +57,8 @@ questions' portlet:
     >>> portlet = find_portlet(browser.contents, 'Related questions')
     >>> for question in portlet.find_all('li', 'question-row'):
     ...     print(question.decode_contents())
-    <span class="sprite question">Mozilla Firefox</span>: ...<a href=".../firefox/+question/2">Problem...
+    <span class="sprite question">Mozilla Firefox</span>:
+    ...<a href=".../firefox/+question/2">Problem...
 
 A user can't create a bug report when a question has already a bug linked
 to it.

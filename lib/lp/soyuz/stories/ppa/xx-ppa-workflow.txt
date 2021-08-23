@@ -275,7 +275,8 @@ Similarly to users, teams with active PPAs cannot be renamed either.
     >>> print(extract_text(
     ...     first_tag_by_class(sample_browser.contents, 'form')))
     Name: landscape-developers
-    This team has an active PPA with packages published and may not be renamed.
+    This team has an active PPA with packages published and may not be
+    renamed.
     ...
 
 
