@@ -167,7 +167,8 @@ Failing to specify a product or distribution.
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
-    xmlrpc.client.Fault: <Fault 60: 'Required arguments missing. You must specify either a product or distribution in which the bug exists.'>
+    xmlrpc.client.Fault: <Fault 60: 'Required arguments missing. You must
+    specify either a product or distribution in which the bug exists.'>
 
 Specifying *both* a product and distribution.
 
@@ -175,7 +176,8 @@ Specifying *both* a product and distribution.
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
-    xmlrpc.client.Fault: <Fault 70: 'Too many arguments. You may specify either a product or a distribution, but not both.'>
+    xmlrpc.client.Fault: <Fault 70: 'Too many arguments. You may specify
+    either a product or a distribution, but not both.'>
 
 Specifying a non-existent product.
 
@@ -225,7 +227,8 @@ Invalid subscriber.
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
-    xmlrpc.client.Fault: <Fault 20: 'Invalid subscriber: No user with the email address "nosuch@subscriber.com" was found'>
+    xmlrpc.client.Fault: <Fault 20: 'Invalid subscriber: No user with the
+    email address "nosuch@subscriber.com" was found'>
 
     >>> on_created_listener.cleanUp()
 

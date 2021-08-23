@@ -1203,7 +1203,8 @@ correct.
     >>> publication.getPrincipal(test_request)
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: Unknown consumer (foobar123451432z).
+    zope.security.interfaces.Unauthorized:
+    Unknown consumer (foobar123451432z).
 
     >>> form2 = form.copy()
     >>> form2['oauth_signature'] += 'z'

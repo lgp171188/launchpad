@@ -72,7 +72,8 @@ nominated.
     >>> can_be_nominated_for_series(firefox.series)
     Traceback (most recent call last):
     ...
-    lp.app.validators.LaunchpadValidationError: This bug has already been nominated for these series: 1.0, Trunk
+    lp.app.validators.LaunchpadValidationError:
+    This bug has already been nominated for these series: 1.0, Trunk
 
 Declined nominations can be re-nominated.
 
@@ -113,4 +114,5 @@ But you can't use Mark's name, of course. ;)
     >>> field.validate(u'mark')
     Traceback (most recent call last):
       ...
-    lp.app.validators.LaunchpadValidationError: ...mark is already in use by another person or team...
+    lp.app.validators.LaunchpadValidationError:
+    ...mark is already in use by another person or team...

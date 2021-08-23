@@ -83,7 +83,8 @@ InvalidBatchSizeError is raised.
     >>> BatchNavigator(reindeer, request=request )
     Traceback (most recent call last):
       ...
-    lazr.batchnavigator.interfaces.InvalidBatchSizeError: Maximum for "batch" parameter is 5.
+    lazr.batchnavigator.interfaces.InvalidBatchSizeError:
+    Maximum for "batch" parameter is 5.
 
     >>> ignored = config.pop('max-batch-size')
 

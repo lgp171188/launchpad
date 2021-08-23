@@ -101,7 +101,8 @@ resolution, to demonstrate this:
     ...     sourceforge.initializeRemoteBugDB([0])
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.UnparsableBugData: Remote bug 0 does not define a status.
+    lp.bugs.externalbugtracker.base.UnparsableBugData:
+    Remote bug 0 does not define a status.
 
 Some SourceForge bugs are marked private. Although we can't import a
 status from them, we don't raise an error when trying to initialize the
@@ -134,7 +135,8 @@ a PrivateRemoteBug error.
     >>> sourceforge.getRemoteStatus(99)
     Traceback (most recent call last):
      ...
-    lp.bugs.externalbugtracker.base.PrivateRemoteBug: Bug 99 on http://example.com is private.
+    lp.bugs.externalbugtracker.base.PrivateRemoteBug:
+    Bug 99 on http://example.com is private.
 
 
 Updating Bug Watches

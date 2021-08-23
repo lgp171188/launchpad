@@ -46,7 +46,8 @@ The filename tries to use an epoch in an invalid way:
     >>> upload_file.checkNameIsTaintFree()
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.utils.UploadError: Invalid character(s) in filename: 'package-1.1.2-3:0ubuntu4'.
+    lp.archiveuploader.utils.UploadError: Invalid character(s) in filename:
+    'package-1.1.2-3:0ubuntu4'.
 
 
 With a good filename, no exception is raised.
@@ -264,7 +265,8 @@ If the address is unparsable, we get an error.
     >>> sig_file.parseAddress("Cannot Parse Me <FOOO>")
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.utils.UploadError: Cannot Parse Me <FOOO>: no @ found in email address part.
+    lp.archiveuploader.utils.UploadError: Cannot Parse Me <FOOO>: no @ found
+    in email address part.
 
 If the email address is not yet registered and policy.create_people is True,
 a new Person will be created.

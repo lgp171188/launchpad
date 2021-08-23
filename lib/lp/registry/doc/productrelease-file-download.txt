@@ -116,7 +116,8 @@ delete a product file.
     >>> rel.files[0].destroySelf()
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<ProductReleaseFile...>, 'destroySelf', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized:
+    (<ProductReleaseFile...>, 'destroySelf', 'launchpad.Edit')
     >>> login('foo.bar@canonical.com')
     >>> for release_file in rel.files:
     ...     if release_file.libraryfile.id == file_alias.id:
@@ -194,7 +195,8 @@ Only the product owner can create a new release.
     >>> trunk.milestones[0].createProductRelease(firefox.owner, now)
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<Milestone ...>, 'createProductRelease', 'launchpad.Edit')
+    zope.security.interfaces.Unauthorized:
+    (<Milestone ...>, 'createProductRelease', 'launchpad.Edit')
     >>> login(owner_email)
     >>> milestone = trunk.newMilestone('8.0', code_name='ralph')
     >>> milestone.createProductRelease(firefox.owner, now,

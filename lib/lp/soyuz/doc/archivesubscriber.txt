@@ -65,7 +65,8 @@ public:
     ...     joesmith, cprov, description=u"subscription for joesmith")
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.archive.ArchiveNotPrivate: Only private archives can have subscriptions.
+    lp.soyuz.interfaces.archive.ArchiveNotPrivate:
+    Only private archives can have subscriptions.
 
 If we create a private ppa for Celso, then he can create a
 subscription for joesmith:
@@ -180,7 +181,8 @@ cannot be created:
     ...     joesmith, cprov, description=u"subscription for joesmith")
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.archive.AlreadySubscribed: Joe Smith already has a current subscription for 'PPA named p3a for Celso Providelo'.
+    lp.soyuz.interfaces.archive.AlreadySubscribed: Joe Smith already has a
+    current subscription for 'PPA named p3a for Celso Providelo'.
 
 
 Add another subscription for the test user, this time to mark's ppa:

@@ -91,7 +91,8 @@ If an error occurs trying to make the request, an
     ...     transport.request('www.example.com', 'xmlrpc', request_body)
     Traceback (most recent call last):
     ...
-    xmlrpc.client.ProtocolError: <ProtocolError for http://www.example.com/xmlrpc: 500 Internal Server Error>
+    xmlrpc.client.ProtocolError: <ProtocolError for
+    http://www.example.com/xmlrpc: 500 Internal Server Error>
 
 If the transport encounters a redirect response it will make its request
 to the location indicated in that response rather than the original

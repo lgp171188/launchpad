@@ -964,7 +964,9 @@ for the status, however, they may not change it:
     >>> de_archive_mirror.transitionToCountryMirror(True)
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<DistributionMirror at ...>, 'transitionToCountryMirror', 'launchpad.Admin')
+    zope.security.interfaces.Unauthorized:
+    (<DistributionMirror at ...>, 'transitionToCountryMirror',
+     'launchpad.Admin')
 
 Mirror listing administrators may change the status however:
 
@@ -1005,7 +1007,8 @@ There cannot be multiple country mirrors of one type for one country:
     >>> archive_mirror2.transitionToCountryMirror(True)
     Traceback (most recent call last):
     ...
-    lp.registry.errors.CountryMirrorAlreadySet: Antarctica already has a country Archive mirror set.
+    lp.registry.errors.CountryMirrorAlreadySet:
+    Antarctica already has a country Archive mirror set.
 
 Mirrors which have not been probed may not be marked as country mirrors:
 
@@ -1017,7 +1020,8 @@ Mirrors which have not been probed may not be marked as country mirrors:
     >>> linux_au_mirror.transitionToCountryMirror(True)
     Traceback (most recent call last):
     ...
-    lp.registry.errors.MirrorNotProbed: This mirror may not be set as a country mirror as it has not been probed.
+    lp.registry.errors.MirrorNotProbed:
+    This mirror may not be set as a country mirror as it has not been probed.
 
 Mirrors which are not official or do not have an HTTP URL may not be set as
 country mirrors:
@@ -1037,10 +1041,13 @@ country mirrors:
     >>> osuosl_mirror.transitionToCountryMirror(None)
     Traceback (most recent call last):
     ...
-    storm.exceptions.NoneError: None isn't acceptable as a value for DistributionMirror.country_dns_mirror
+    storm.exceptions.NoneError:
+    None isn't acceptable as a value for DistributionMirror.country_dns_mirror
 
     >>> osuosl_mirror.transitionToCountryMirror(True)
     Traceback (most recent call last):
     ...
-    lp.registry.errors.MirrorHasNoHTTPURL: This mirror may not be set as a country mirror as it does not have an HTTP URL set.
+    lp.registry.errors.MirrorHasNoHTTPURL:
+    This mirror may not be set as a country mirror as it does not have an HTTP
+    URL set.
     >>> logout()

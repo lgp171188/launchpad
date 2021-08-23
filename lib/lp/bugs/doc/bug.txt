@@ -37,7 +37,7 @@ raised:
     >>> bugset.getByNameOrID('+bugs')
     Traceback (most recent call last):
       ...
-    lp.app.errors.NotFoundError: ...'Unable to locate bug with nickname +bugs.'
+    lp.app.errors.NotFoundError: 'Unable to locate bug with nickname +bugs.'
 
 It is also possible to retrieve a number of bugs by specifying the bug numbers
 of interest.
@@ -182,7 +182,8 @@ private. A bug cannot be made private by an anonymous user.
     >>> firefox_crashes.setPrivate(True, current_user())
     Traceback (most recent call last):
       ...
-    zope.security.interfaces.Unauthorized: (..., 'setPrivate', 'launchpad.Append')
+    zope.security.interfaces.Unauthorized:
+    (..., 'setPrivate', 'launchpad.Append')
 
 We have to be logged in, so let's do that:
 

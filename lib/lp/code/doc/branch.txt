@@ -141,7 +141,8 @@ and -, +, _ and @ are allowed after that.
     ...     registrant=registrant)
     Traceback (most recent call last):
       ...
-    lp.app.validators.LaunchpadValidationError: Invalid branch name &#x27;invalid name!&#x27;.  Branch ...
+    lp.app.validators.LaunchpadValidationError: Invalid branch name
+    &#x27;invalid name!&#x27;.  Branch ...
 
 
 Determining the recently changed, registered and imported branches

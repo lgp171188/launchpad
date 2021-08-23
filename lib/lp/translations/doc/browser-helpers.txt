@@ -191,7 +191,8 @@ Test bad format strings are caught and passed through.
     >>> parse_cformat_string(text)
     Traceback (most recent call last):
     ...
-    lp.translations.browser.browser_helpers.UnrecognisedCFormatString: foo %z bar
+    lp.translations.browser.browser_helpers.UnrecognisedCFormatString:
+    foo %z bar
 
     >>> text_to_html(text, ['c-format']) == text
     True

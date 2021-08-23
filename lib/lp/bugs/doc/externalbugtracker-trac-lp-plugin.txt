@@ -134,7 +134,8 @@ If authentication fails, a BugTrackerAuthenticationError will be raised.
     ...     trac._authenticate()
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://example.com: 401 Client Error: Unauthorized
+    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError:
+    http://example.com: 401 Client Error: Unauthorized
 
 
 Current time

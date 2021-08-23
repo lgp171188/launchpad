@@ -149,7 +149,8 @@ If authentication fails, a BugTrackerAuthenticationError will be raised.
     >>> test_bugzilla._authenticate()
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://example.com: XML-RPC Fault: 100 "Sorry, you can't log in."
+    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError:
+    http://example.com: XML-RPC Fault: 100 "Sorry, you can't log in."
 
 This is also true if an error occurs at the protocol level:
 
@@ -158,7 +159,8 @@ This is also true if an error occurs at the protocol level:
     >>> test_bugzilla._authenticate()
     Traceback (most recent call last):
        ...
-    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError: http://example.com: Protocol error: 500 "Internal server error"
+    lp.bugs.externalbugtracker.base.BugTrackerAuthenticationError:
+    http://example.com: Protocol error: 500 "Internal server error"
 
 
 Getting the current time

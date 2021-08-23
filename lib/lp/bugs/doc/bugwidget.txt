@@ -24,7 +24,8 @@ If non-existant bug number is entered, an error is raised.
     >>> bug_widget.getInputValue()
     Traceback (most recent call last):
     ...
-    zope.formlib.interfaces.ConversionError: ('Not a valid bug number or nickname.', None)
+    zope.formlib.interfaces.ConversionError: ('Not a valid bug number or
+    nickname.', None)
 
 It's quite common that bug ids are prefixed by '#', so such inputs are
 accepted as well.

@@ -46,7 +46,8 @@ If we try to create a new team with with the referrer set to
     >>> browser.getControl('Create').click()
     Traceback (most recent call last):
       ...
-    lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
+    lp.services.webapp.interfaces.OffsiteFormPostError:
+    http://evil.people.com/
 
 
 Similarly, posting with a garbage referer fails:
@@ -151,7 +152,8 @@ a referrerless POST request to the browser-accessible API.
     ...     'http://launchpad.test/api/devel/people', 'ws.op=foo&x=1')
     Traceback (most recent call last):
     ...
-    lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
+    lp.services.webapp.interfaces.OffsiteFormPostError:
+    http://evil.people.com/
 
     >>> no_referrer_browser.post(
     ...     'http://launchpad.test/api/devel/people', 'ws.op=foo&x=1')
@@ -167,7 +169,8 @@ though it were signed with OAuth.
     ...     'oauth_consumer_key=foo&oauth_token=bar')
     Traceback (most recent call last):
     ...
-    lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
+    lp.services.webapp.interfaces.OffsiteFormPostError:
+    http://evil.people.com/
 
     >>> no_referrer_browser.post(
     ...     'http://launchpad.test/',
@@ -193,7 +196,8 @@ But the browser-accessible API ignores OAuth credentials altogether.
     ...     'http://launchpad.test/api/devel/projects', sig)
     Traceback (most recent call last):
     ...
-    lp.services.webapp.interfaces.OffsiteFormPostError: http://evil.people.com/
+    lp.services.webapp.interfaces.OffsiteFormPostError:
+    http://evil.people.com/
 
 If you go through the 'api' vhost, the signed request will be
 processed despite the bogus referrer, but...
@@ -201,7 +205,8 @@ processed despite the bogus referrer, but...
     >>> browser.post('http://api.launchpad.test/devel/projects', sig)
     Traceback (most recent call last):
     ...
-    storm.exceptions.NoneError: None isn't acceptable as a value for Product...
+    storm.exceptions.NoneError: None isn't acceptable as a value for
+    Product...
 
 You're making an _anonymous_ request. That's a request that 1) is not
 associated with any Launchpad user account (thus the NoneError when

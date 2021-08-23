@@ -54,7 +54,8 @@ an error being raised.
     ...     {'login': 'test@canonical.com', 'password': 'test'})
     Traceback (most recent call last):
       ...
-    xmlrpc.client.Fault: <Fault 300: 'The username or password you entered is not valid.'>
+    xmlrpc.client.Fault:
+    <Fault 300: 'The username or password you entered is not valid.'>
 
 
 Getting the current time
@@ -544,7 +545,8 @@ Trying to add a non Bugzilla or Launchpad URL will raise a Fault.
     ...     'ids': [1], 'add': ['http://example.com/fail']});
     Traceback (most recent call last):
       ...
-    xmlrpc.client.Fault: <Fault 112: 'Bug URL http://example.com/fail is invalid.'>
+    xmlrpc.client.Fault:
+    <Fault 112: 'Bug URL http://example.com/fail is invalid.'>
 
 It's also possible to remove items from a bug's see_also list.
 

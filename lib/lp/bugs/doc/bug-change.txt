@@ -210,7 +210,8 @@ field that it doesn't know about, it will raise a NoBugChangeFoundError.
     >>> get_bug_change_class(object(), 'fooix')
     Traceback (most recent call last):
       ...
-    lp.bugs.adapters.bugchange.NoBugChangeFoundError: Unable to find a suitable BugChange for field 'fooix' on object <object object at ...>
+    lp.bugs.adapters.bugchange.NoBugChangeFoundError: Unable to find a
+    suitable BugChange for field 'fooix' on object <object object at ...>
 
 For fields it knows about, it will return a more suitable class.
 

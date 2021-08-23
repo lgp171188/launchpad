@@ -65,7 +65,8 @@ If we pass a non-integer bug id, InvalidBugId is raised.
     >>> external_debbugs.getRemoteStatus('foo')
     Traceback (most recent call last):
     ...
-    lp.bugs.externalbugtracker.base.InvalidBugId: Debbugs bug number not an integer: foo
+    lp.bugs.externalbugtracker.base.InvalidBugId:
+    Debbugs bug number not an integer: foo
 
 The debbugs database has two subdirectories in it. The db-h directory
 contains current bugs, while the archive contains older bugs that have

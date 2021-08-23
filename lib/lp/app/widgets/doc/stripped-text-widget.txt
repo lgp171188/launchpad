@@ -63,4 +63,5 @@ provided.
     >>> widget.getInputValue()
     Traceback (most recent call last):
     ...
-    zope.formlib.interfaces.WidgetInputError: ('field', ...'Title', RequiredMissing('field'))
+    zope.formlib.interfaces.WidgetInputError:
+    ('field', ...'Title', RequiredMissing('field'))

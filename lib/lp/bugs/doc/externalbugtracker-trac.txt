@@ -216,7 +216,9 @@ test.
     ...     trac.initializeRemoteBugDB([6, 7, 8, 9, 10])
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker http://test.trac does not define all the necessary fields for bug status imports (Defined field names: ['<html>']).
+    lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker
+    http://test.trac does not define all the necessary fields for bug status
+    imports (Defined field names: ['<html>']).
 
 This is also true of the single bug export mode.
 
@@ -224,7 +226,9 @@ This is also true of the single bug export mode.
     ...     trac.initializeRemoteBugDB([6])
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker http://test.trac does not define all the necessary fields for bug status imports (Defined field names: ['<html>']).
+    lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker
+    http://test.trac does not define all the necessary fields for bug status
+    imports (Defined field names: ['<html>']).
 
 Trying to get the remote status of the bug will raise a BugNotFound
 error since the bug was never imported.
@@ -261,7 +265,9 @@ export, it will raise an UnparsableBugData error.
     ...     trac._fetchBugData(query_url)
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker http://test.trac does not define all the necessary fields for bug status imports (Defined field names: ['<html>']).
+    lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker
+    http://test.trac does not define all the necessary fields for bug status
+    imports (Defined field names: ['<html>']).
 
 
 Updating Bug Watches

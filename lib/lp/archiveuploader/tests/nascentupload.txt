@@ -57,7 +57,8 @@ on that.
     >>> nonexistent.process()
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.nascentupload.EarlyReturnUploadError: An error occurred that prevented further processing.
+    lp.archiveuploader.nascentupload.EarlyReturnUploadError: An error occurred
+    that prevented further processing.
     >>> nonexistent.is_rejected
     True
     >>> print(nonexistent.rejection_message)
