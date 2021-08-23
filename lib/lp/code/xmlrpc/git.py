@@ -565,7 +565,10 @@ class GitAPI(LaunchpadXMLRPCView):
         otherwise Zope's XML-RPC publication machinery gets confused by the
         decorator and publishes a method that takes zero arguments.
         """
-        user = getUtility(IPersonSet).getByName(username) if username else None
+        user = (
+            getUtility(IPersonSet).getByName(username)
+            if username and username != LAUNCHPAD_SERVICES
+            else None)
         verified = self._verifyMacaroon(password, user=user)
         if verified:
             auth_params = {"macaroon": password}

@@ -25,6 +25,7 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
     )
+from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
@@ -143,7 +144,7 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             elif build.snap.git_repository.private:
                 macaroon_raw = yield self.issueMacaroon()
                 url = build.snap.git_repository.getCodebrowseUrl(
-                    username=None, password=macaroon_raw)
+                    username=LAUNCHPAD_SERVICES, password=macaroon_raw)
                 args["git_repository"] = url
             else:
                 args["git_repository"] = (

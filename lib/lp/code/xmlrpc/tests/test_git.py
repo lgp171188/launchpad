@@ -2302,17 +2302,22 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             job = self.factory.makeCodeImportJob(code_import=code_import)
         issuer = getUtility(IMacaroonIssuer, "code-import-job")
         macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
-        self.assertEqual(
-            {"macaroon": macaroon.serialize(), "user": "+launchpad-services"},
-            self.assertDoesNotFault(
-                None, "authenticateWithPassword", "", macaroon.serialize()))
-        other_macaroon = Macaroon(identifier="another", key="another-secret")
-        self.assertFault(
-            faults.Unauthorized, None,
-            "authenticateWithPassword", "", other_macaroon.serialize())
-        self.assertFault(
-            faults.Unauthorized, None,
-            "authenticateWithPassword", "", "nonsense")
+        for username in ("", "+launchpad-services"):
+            self.assertEqual(
+                {"macaroon": macaroon.serialize(),
+                 "user": "+launchpad-services"},
+                self.assertDoesNotFault(
+                    None, "authenticateWithPassword",
+                    username, macaroon.serialize()))
+            other_macaroon = Macaroon(
+                identifier="another", key="another-secret")
+            self.assertFault(
+                faults.Unauthorized, None,
+                "authenticateWithPassword",
+                username, other_macaroon.serialize())
+            self.assertFault(
+                faults.Unauthorized, None,
+                "authenticateWithPassword", username, "nonsense")
 
     def test_authenticateWithPassword_private_snap_build(self):
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
@@ -2325,17 +2330,22 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 requester=owner, owner=owner, git_ref=ref, private=True)
             issuer = getUtility(IMacaroonIssuer, "snap-build")
             macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
-        self.assertEqual(
-            {"macaroon": macaroon.serialize(), "user": "+launchpad-services"},
-            self.assertDoesNotFault(
-                None, "authenticateWithPassword", "", macaroon.serialize()))
-        other_macaroon = Macaroon(identifier="another", key="another-secret")
-        self.assertFault(
-            faults.Unauthorized, None,
-            "authenticateWithPassword", "", other_macaroon.serialize())
-        self.assertFault(
-            faults.Unauthorized, None,
-            "authenticateWithPassword", "", "nonsense")
+        for username in ("", "+launchpad-services"):
+            self.assertEqual(
+                {"macaroon": macaroon.serialize(),
+                 "user": "+launchpad-services"},
+                self.assertDoesNotFault(
+                    None, "authenticateWithPassword",
+                    username, macaroon.serialize()))
+            other_macaroon = Macaroon(
+                identifier="another", key="another-secret")
+            self.assertFault(
+                faults.Unauthorized, None,
+                "authenticateWithPassword",
+                username, other_macaroon.serialize())
+            self.assertFault(
+                faults.Unauthorized, None,
+                "authenticateWithPassword", username, "nonsense")
 
     def test_authenticateWithPassword_user_macaroon(self):
         # A user with a suitable macaroon can authenticate using it, in
@@ -2351,12 +2361,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             self.assertDoesNotFault(
                 None, "authenticateWithPassword",
                 requester.name, macaroon.serialize()))
-        self.assertFault(
-            faults.Unauthorized, None,
-            "authenticateWithPassword", "", macaroon.serialize())
-        self.assertFault(
-            faults.Unauthorized, None,
-            "authenticateWithPassword", "nonexistent", macaroon.serialize())
+        for username in ("", "+launchpad-services", "nonexistent"):
+            self.assertFault(
+                faults.Unauthorized, None,
+                "authenticateWithPassword", username, macaroon.serialize())
         other_macaroon = Macaroon(identifier="another", key="another-secret")
         self.assertFault(
             faults.Unauthorized, None,

@@ -461,7 +461,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
             "fast_cleanup": Is(True),
             "git_repository": AfterPreprocessing(urlsplit, MatchesStructure(
                 scheme=Equals(split_browse_root.scheme),
-                username=Equals(""),
+                username=Equals("+launchpad-services"),
                 password=AfterPreprocessing(
                     Macaroon.deserialize, MatchesStructure(
                         location=Equals(config.vhost.mainsite.hostname),
