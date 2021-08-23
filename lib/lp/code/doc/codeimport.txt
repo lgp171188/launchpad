@@ -497,7 +497,8 @@ The launchpad.Edit privilege is required to use CodeImport.updateFromData.
     >>> svn_import.updateFromData({}, nopriv)
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<CodeImport ...>, 'updateFromData', 'launchpad.Moderate')
+    zope.security.interfaces.Unauthorized: (<CodeImport ...>,
+    'updateFromData', 'launchpad.Moderate')
 
 We saw above how changes to SVN details are displayed in emails above.
 CVS details are displayed in a similar way.

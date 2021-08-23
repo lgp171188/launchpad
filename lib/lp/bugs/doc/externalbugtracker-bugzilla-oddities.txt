@@ -149,7 +149,8 @@ invalid XML:
     ...     broken_bugzilla.initializeRemoteBugDB(remote_bugs)
     Traceback (most recent call last):
     ...
-    lp.bugs.externalbugtracker.base.UnparsableBugData: Failed to parse XML description...
+    lp.bugs.externalbugtracker.base.UnparsableBugData:
+    Failed to parse XML description...
 
 However, embedded control characters do not generate errors.
 

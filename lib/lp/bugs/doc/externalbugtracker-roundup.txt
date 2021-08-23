@@ -60,7 +60,8 @@ values compared to the expected number of fields.
     >>> roundup.convertRemoteStatus('1:2')
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: 1 field(s) expected, got 2: 1:2
+    lp.bugs.externalbugtracker.base.UnknownRemoteStatusError:
+    1 field(s) expected, got 2: 1:2
 
 If the status isn't something that our Roundup ExternalBugTracker can
 understand an UnknownRemoteStatusError will be raised.
@@ -68,7 +69,8 @@ understand an UnknownRemoteStatusError will be raised.
     >>> roundup.convertRemoteStatus('eggs').title
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: Unrecognized value for field 1 (status): eggs
+    lp.bugs.externalbugtracker.base.UnknownRemoteStatusError:
+    Unrecognized value for field 1 (status): eggs
 
 
 Initialization

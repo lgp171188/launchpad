@@ -19,7 +19,8 @@ is raised.
     ...     "field.status_upstream=hide_open")
     Traceback (most recent call last):
       ...
-    lp.app.errors.UnexpectedFormData: Unexpected value for field 'status_upstream'...
+    lp.app.errors.UnexpectedFormData: Unexpected value for field
+    'status_upstream'...
 
 When a UnexpectedFormData is raised, we display a custom error page to the
 user.

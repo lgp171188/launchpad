@@ -571,7 +571,8 @@ request:
     >>> view.initialize()
     Traceback (most recent call last):
       ...
-    lp.services.webapp.interfaces.UnsafeFormGetSubmissionError: field.actions.change
+    lp.services.webapp.interfaces.UnsafeFormGetSubmissionError:
+    field.actions.change
 
     >>> request = LaunchpadTestRequest(
     ...     method='POST',

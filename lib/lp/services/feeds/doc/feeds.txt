@@ -73,7 +73,9 @@ found.
     >>> verifyObject(IThing, thing)
     Traceback (most recent call last):
       ...
-    zope.interface.exceptions.MultipleInvalid: ... Does not declaratively implement the interface The lp.services.feeds.tests.helper.IThing.value attribute was not provided
+    zope.interface.exceptions.MultipleInvalid: ...
+    Does not declaratively implement the interface
+    The lp.services.feeds.tests.helper.IThing.value attribute was not provided
     >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.atom')
     Traceback (most recent call last):
       ...

@@ -308,7 +308,8 @@ to the command is bad:
     >>> graph_view.renderGraphvizGraph('cmapx')
     Traceback (most recent call last):
      ...
-    lp.blueprints.browser.specification.ProblemRenderingGraph: (... syntax error in line 1 near 'bad'...)
+    lp.blueprints.browser.specification.ProblemRenderingGraph:
+    (... syntax error in line 1 near 'bad'...)
 
 The SpecificationTreeImageTag.render() method captures the raised error
 and directly converts it into an oops report. The markup contains a

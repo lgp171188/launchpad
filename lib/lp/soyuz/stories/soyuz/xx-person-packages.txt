@@ -435,4 +435,5 @@ Please note also that disabled archives are not viewable by anonymous users.
     >>> anon_browser.open("http://launchpad.test/~cprov/+archive/ppa")
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (..., 'browserDefault', 'launchpad.SubscriberView')
+    zope.security.interfaces.Unauthorized:
+    (..., 'browserDefault', 'launchpad.SubscriberView')

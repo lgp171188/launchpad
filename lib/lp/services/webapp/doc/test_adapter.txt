@@ -214,7 +214,11 @@ timeout by sleeping for 200ms with a 100ms statement timeout:
     >>> store.execute(six.ensure_str('SELECT pg_sleep(0.200)'), noresult=True)
     Traceback (most recent call last):
       ...
-    lp.services.webapp.adapter.LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.200)' Parameters:() Original error: QueryCanceledError('canceling statement due to statement timeout\n',)
+    lp.services.webapp.adapter.LaunchpadTimeoutError:
+    Statement: 'SELECT pg_sleep(0.200)'
+    Parameters:()
+    Original error:
+    QueryCanceledError('canceling statement due to statement timeout\n',)
 
 Even though the statement timed out, it is recorded in the statement log:
 
@@ -284,7 +288,11 @@ timeout being reported by PostgreSQL is actually working:
     >>> store.execute(six.ensure_str('SELECT pg_sleep(0.2)'), noresult=True)
     Traceback (most recent call last):
       ...
-    lp.services.webapp.adapter.LaunchpadTimeoutError: Statement: 'SELECT pg_sleep(0.2)' Parameters:() Original error: QueryCanceledError('canceling statement due to statement timeout\n',)
+    lp.services.webapp.adapter.LaunchpadTimeoutError:
+    Statement: 'SELECT pg_sleep(0.2)'
+    Parameters:()
+    Original error:
+    QueryCanceledError('canceling statement due to statement timeout\n',)
     >>> clear_request_started()
 
 
@@ -361,7 +369,8 @@ transaction will be doomed:
     >>> transaction.commit()
     Traceback (most recent call last):
     ...
-    transaction.interfaces.DoomedTransaction: transaction doomed, cannot commit
+    transaction.interfaces.DoomedTransaction:
+    transaction doomed, cannot commit
 
 Cleanup:
 
@@ -444,7 +453,8 @@ config section.  By default we connect as "launchpad"
     ...     """, noresult=True)
     Traceback (most recent call last):
     ...
-    storm.database.ProgrammingError: permission denied for relation sourcepackagename
+    storm.database.ProgrammingError:
+    permission denied for relation sourcepackagename
 
 This is not reset at the end of the transaction:
 
@@ -456,7 +466,8 @@ This is not reset at the end of the transaction:
     ...     """, noresult=True)
     Traceback (most recent call last):
     ...
-    storm.database.ProgrammingError: permission denied for relation sourcepackagename
+    storm.database.ProgrammingError:
+    permission denied for relation sourcepackagename
     >>> transaction.abort()
 
 So you need to explicitly set the user back to the default:

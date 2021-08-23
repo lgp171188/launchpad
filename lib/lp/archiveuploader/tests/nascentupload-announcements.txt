@@ -757,7 +757,8 @@ And then try to upload using the changes file with the malformed name.
     >>> bar_src.process()
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.nascentupload.EarlyReturnUploadError: An error occurred that prevented further processing.
+    lp.archiveuploader.nascentupload.EarlyReturnUploadError:
+    An error occurred that prevented further processing.
 
     >>> bar_src.logger = FakeLogger()
     >>> result = bar_src.do_accept()

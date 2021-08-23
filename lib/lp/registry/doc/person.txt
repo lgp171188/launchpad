@@ -530,7 +530,8 @@ account_status is NOACCOUNT, though.
     >>> not_a_person.convertToTeam(team_owner=landscape_devs)
     Traceback (most recent call last):
     ...
-    lp.registry.interfaces.person.AlreadyConvertedException: foo-... has already been converted to a team.
+    lp.registry.interfaces.person.AlreadyConvertedException: foo-... has
+    already been converted to a team.
 
 
 Team members
@@ -1451,7 +1452,8 @@ be raised.
     ...     PersonCreationRationale.BUGIMPORT)
     Traceback (most recent call last):
       ...
-    lp.registry.errors.InvalidName: ThisIsn'tValid is not a valid name for a person.
+    lp.registry.errors.InvalidName: ThisIsn'tValid is not a valid name for a
+    person.
 
 
 Probationary users

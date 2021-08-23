@@ -38,14 +38,16 @@ exception.
     >>> emailset.new(email.email, foobar)
     Traceback (most recent call last):
     ...
-    lp.services.identity.interfaces.emailaddress.EmailAddressAlreadyTaken: The email address '...' is already registered.
+    lp.services.identity.interfaces.emailaddress.EmailAddressAlreadyTaken:
+    The email address '...' is already registered.
 
 The email address verification is case insensitive as well:
 
     >>> emailset.new(email.email.upper(), foobar)
     Traceback (most recent call last):
     ...
-    lp.services.identity.interfaces.emailaddress.EmailAddressAlreadyTaken: The email address '...' is already registered.
+    lp.services.identity.interfaces.emailaddress.EmailAddressAlreadyTaken:
+    The email address '...' is already registered.
 
 Registering a new email address works -- and preserves case -- though:
 
@@ -95,7 +97,8 @@ Otherwise, UndeletableEmailAddress is raised.
     >>> foobar.preferredemail.destroySelf()
     Traceback (most recent call last):
     ...
-    lp.services.identity.model.emailaddress.UndeletableEmailAddress: This is a person's preferred email...
+    lp.services.identity.model.emailaddress.UndeletableEmailAddress:
+    This is a person's preferred email...
 
     >>> from lp.registry.tests.mailinglists_helper import (
     ...     new_list_for_team)
@@ -104,4 +107,5 @@ Otherwise, UndeletableEmailAddress is raised.
     >>> email.destroySelf()
     Traceback (most recent call last):
     ...
-    lp.services.identity.model.emailaddress.UndeletableEmailAddress: This is the email address of a team's mailing list...
+    lp.services.identity.model.emailaddress.UndeletableEmailAddress:
+    This is the email address of a team's mailing list...

@@ -31,7 +31,8 @@ to be a valid alias for that pillar, but only for that pillar.
     >>> field.bind(getUtility(IProductSet)['bzr']).validate(u'iceweasel')
     Traceback (most recent call last):
     ...
-    lp.app.validators.LaunchpadValidationError: iceweasel is already used by another project
+    lp.app.validators.LaunchpadValidationError:
+    iceweasel is already used by another project
 
 If existing aliases are not passed to the field's set() method, they will be
 removed.
@@ -60,7 +61,8 @@ Each of these aliases must be valid names and must be unique.
     >>> bound_field.validate(u'ubuntu')
     Traceback (most recent call last):
     ...
-    lp.app.validators.LaunchpadValidationError: ubuntu is already used by another project
+    lp.app.validators.LaunchpadValidationError:
+    ubuntu is already used by another project
 
 Also, they must not be identical to the pillar's own name.
 
@@ -74,4 +76,5 @@ Black-listed names are not accepted as aliases either.
     >>> bound_field.validate(u'blacklisted')
     Traceback (most recent call last):
     ...
-    lp.app.validators.LaunchpadValidationError: The name &#x27;blacklisted&#x27; has been blocked...
+    lp.app.validators.LaunchpadValidationError:
+    The name &#x27;blacklisted&#x27; has been blocked...

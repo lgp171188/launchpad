@@ -58,7 +58,9 @@ the "return" parameter.
     >>> run_hook('http://mantis.example.com/login_page.php')
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.BugTrackerConnectError: http://mantis.example.com/login_page.php: Mantis redirected us to the login page but did not set a return path.
+    lp.bugs.externalbugtracker.base.BugTrackerConnectError:
+    http://mantis.example.com/login_page.php: Mantis redirected us to the
+    login page but did not set a return path.
 
 In all likelihood, this warning will be followed in the log by an
 error.

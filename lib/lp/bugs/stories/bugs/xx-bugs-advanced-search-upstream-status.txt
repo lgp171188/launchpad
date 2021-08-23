@@ -213,7 +213,9 @@ Other values for status_upstream lead to an error.
     ...         bookmark_params, True))
     Traceback (most recent call last):
     ...
-    lp.app.errors.UnexpectedFormData: Unexpected value for field 'status_upstream'. Perhaps your bookmarks are out of date or you changed the URL by hand?
+    lp.app.errors.UnexpectedFormData: Unexpected value for field
+    'status_upstream'. Perhaps your bookmarks are out of date or you changed
+    the URL by hand?
 
 Let's reset the statuses we set.
 

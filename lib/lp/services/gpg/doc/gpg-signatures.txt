@@ -88,7 +88,8 @@ The text below was "clear signed" by 0xDFD20543 master key but tampered with:
     >>> master_sig = gpghandler.getVerifiedSignature(content)
     Traceback (most recent call last):
     ...
-    lp.services.gpg.interfaces.GPGVerificationError: (7, 8, ...'Bad signature')
+    lp.services.gpg.interfaces.GPGVerificationError:
+    (7, 8, ...'Bad signature')
 
 If no signed content is found, an exception is raised:
 
@@ -166,7 +167,8 @@ the GPGME error codes (they may be helpful).
     >>> gpghandler.getVerifiedSignature(content)
     Traceback (most recent call last):
     ...
-    lp.services.gpg.interfaces.GPGKeyDoesNotExistOnServer: GPG key E192C0543B1BB2EB does not exist on the keyserver.
+    lp.services.gpg.interfaces.GPGKeyDoesNotExistOnServer:
+    GPG key E192C0543B1BB2EB does not exist on the keyserver.
 
 Due to unpredictable behaviour between the production system and
 the external keyserver, we have a resilient signature verifier,
@@ -179,7 +181,11 @@ information for the 3 failures.
     >>> gpghandler.getVerifiedSignatureResilient(content)
     Traceback (most recent call last):
     ...
-    lp.services.gpg.interfaces.GPGVerificationError: Verification failed 3 times: ['GPG key E192C0543B1BB2EB does not exist on the keyserver.', 'GPG key E192C0543B1BB2EB does not exist on the keyserver.', 'GPG key E192C0543B1BB2EB does not exist on the keyserver.']
+    lp.services.gpg.interfaces.GPGVerificationError:
+    Verification failed 3 times:
+    ['GPG key E192C0543B1BB2EB does not exist on the keyserver.',
+     'GPG key E192C0543B1BB2EB does not exist on the keyserver.',
+     'GPG key E192C0543B1BB2EB does not exist on the keyserver.']
 
 
 Debugging exceptions

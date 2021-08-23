@@ -46,7 +46,8 @@ It is not possible to create a token for the subscribed team.
     >>> joe_private_ppa.newAuthToken(teambrad)
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.archive.NoTokensForTeams: Subscription tokens can be created for individuals only.
+    lp.soyuz.interfaces.archive.NoTokensForTeams:
+    Subscription tokens can be created for individuals only.
 
 But now that the subscription is there, we can create a token as Brad.
 
@@ -62,7 +63,8 @@ It is not possible to create a second token when one already exists:
     >>> new_token = joe_private_ppa.newAuthToken(bradsmith)
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.archivesubscriber.ArchiveSubscriptionError: Brad Smith already has a token for PPA for Joe Smith.
+    lp.soyuz.interfaces.archivesubscriber.ArchiveSubscriptionError:
+    Brad Smith already has a token for PPA for Joe Smith.
 
 So deactivate the old token so that we can create a new token:
 

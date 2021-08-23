@@ -50,7 +50,8 @@ If such distribution doesn't exist, parse_upload_path() raises
     >>> check_upload('does-not-exist')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find distribution 'does-not-exist'.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find
+    distribution 'does-not-exist'.
 
 Upload to a distribution can have their 'changesfile' suite target
 overridden by including a specific suite name in the upload path.
@@ -71,7 +72,8 @@ is raised.
     >>> check_upload('debian/imaginary')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find suite 'imaginary'.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find suite
+    'imaginary'.
 
 
 PPA uploads
@@ -104,12 +106,14 @@ up as a Person in Launchpad.
     >>> check_upload('~does-not-exist/ubuntu/ppa')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find person or team named 'does-not-exist'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find
+    person or team named 'does-not-exist'.
 
     >>> check_upload('~cprov/notbuntu/ppa')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find distribution 'notbuntu'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find
+    distribution 'notbuntu'.
 
 Two deprecated PPA paths are still supported for compatibility. Before
 mid-2014 all PPAs were for Ubuntu, and the distribution came after the
@@ -146,7 +150,8 @@ valid. It's also supported for uploads to the deprecated paths.
     >>> check_upload('~cprov/ppa/ubuntu/boing')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find suite 'boing'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find
+    suite 'boing'.
 
 We will disable Celso's default PPA and uploads to it will result in
 an error.
@@ -161,24 +166,28 @@ an error.
     >>> check_upload('~cprov/ubuntu/ppa')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.PPAUploadPathError: PPA for Celso Providelo is disabled.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: PPA for Celso
+    Providelo is disabled.
 
     >>> check_upload('~cprov/ppa/ubuntu')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.PPAUploadPathError: PPA for Celso Providelo is disabled.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: PPA for Celso
+    Providelo is disabled.
 
 Uploading to named PPA that does not exist fails.
 
     >>> check_upload('~cprov/ubuntu/beta')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find a PPA owned by 'cprov' for 'ubuntu' named 'beta'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find a
+    PPA owned by 'cprov' for 'ubuntu' named 'beta'.
 
     >>> check_upload('~cprov/beta/ubuntu')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find a PPA owned by 'cprov' for 'ubuntu' named 'beta'.
+    lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find a
+    PPA owned by 'cprov' for 'ubuntu' named 'beta'.
 
 We will create a 'beta' PPA for Celso.
 
@@ -238,7 +247,8 @@ A old-style PPA upload missing '~':
     >>> check_upload('cprov/ubuntu')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find distribution 'cprov'.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find
+    distribution 'cprov'.
 
 An old-style named PPA upload missing '~'.
 
@@ -288,4 +298,5 @@ is raised.
     >>> check_upload('1234567890/ubuntu')
     Traceback (most recent call last):
     ...
-    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find archive with id=1234567890.
+    lp.archiveuploader.uploadprocessor.UploadPathError: Could not find archive
+    with id=1234567890.

@@ -1344,7 +1344,9 @@ value is submitted.
     >>> print(archive_widget.getInputValue())
     Traceback (most recent call last):
     ...
-    zope.formlib.interfaces.WidgetInputError: ('destination_archive', ...'Destination PPA', RequiredMissing('destination_archive'))
+    zope.formlib.interfaces.WidgetInputError:
+    ('destination_archive', 'Destination PPA',
+     RequiredMissing('destination_archive'))
 
 
 Copy private files to public archives

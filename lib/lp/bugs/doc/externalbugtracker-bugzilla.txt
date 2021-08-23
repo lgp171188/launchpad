@@ -29,7 +29,8 @@ UnparsableBugTrackerVersion is raised:
     >>> external_bugzilla = Bugzilla('http://example.com/', version='A.B')
     Traceback (most recent call last):
       ...
-    lp.bugs.externalbugtracker.base.UnparsableBugTrackerVersion: Failed to parse version 'A.B' for http://...
+    lp.bugs.externalbugtracker.base.UnparsableBugTrackerVersion: Failed to
+    parse version 'A.B' for http://...
 
 The version parsing is carried out by the Bugzilla._parseVersion()
 method, which takes a version string and returns a tuple of
@@ -739,7 +740,8 @@ bug tracker, an error is logged.
     ...         external_bugzilla, [bug_watch1, bug_watch2])
     Traceback (most recent call last):
     ...
-    lp.bugs.externalbugtracker.base.UnparsableBugData: Failed to parse XML description for https://bugzilla.mozilla.org...
+    lp.bugs.externalbugtracker.base.UnparsableBugData: Failed to parse XML
+    description for https://bugzilla.mozilla.org...
 
 The error is also recorded in each bug watch's last_error_type field so that
 it can be displayed to the user.

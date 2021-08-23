@@ -45,4 +45,5 @@ field.
     >>> abugmessage.message.visible = True
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.Unauthorized: (<Message at ...>, 'visible', 'launchpad.Admin')
+    zope.security.interfaces.Unauthorized:
+    (<Message at ...>, 'visible', 'launchpad.Admin')

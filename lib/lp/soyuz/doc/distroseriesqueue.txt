@@ -396,7 +396,10 @@ remain in the original queue
     >>> dup_two.setAccepted()
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.queue.QueueInconsistentStateError: The source cnews - 1.0 is already accepted in ubuntu/breezy-autotest and you cannot upload the same version within the same distribution. You have to modify the source version and re-upload.
+    lp.soyuz.interfaces.queue.QueueInconsistentStateError: The source cnews -
+    1.0 is already accepted in ubuntu/breezy-autotest and you cannot upload
+    the same version within the same distribution. You have to modify the
+    source version and re-upload.
     >>> dup_two.status.name
     'UNAPPROVED'
 
@@ -426,7 +429,10 @@ The protection code should also identify dups with items in DONE queue
     >>> dup_two.setAccepted()
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.queue.QueueInconsistentStateError: The source cnews - 1.0 is already accepted in ubuntu/breezy-autotest and you cannot upload the same version within the same distribution. You have to modify the source version and re-upload.
+    lp.soyuz.interfaces.queue.QueueInconsistentStateError: The source cnews -
+    1.0 is already accepted in ubuntu/breezy-autotest and you cannot upload
+    the same version within the same distribution. You have to modify the
+    source version and re-upload.
 
 The ubuntu policy allows unofficial sections to live sometime in the
 repository, until someone find time to override them. It's better than
@@ -594,7 +600,8 @@ an error:
     ...     allowed_components=(universe,)))
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override to restricted
+    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError:
+    No rights to override to restricted
 
 Allowing "restricted" still won't work because the original component
 is "main":
@@ -604,7 +611,8 @@ is "main":
     ...     allowed_components=(restricted,)))
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override from main
+    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError:
+    No rights to override from main
 
 Specifying both main and restricted allows the override to restricted/web.
 overrideSource() returns True if it completed the task.
@@ -640,13 +648,15 @@ Similarly for binaries:
     ...     binary_changes, allowed_components=(universe,)))
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override to restricted
+    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError:
+    No rights to override to restricted
 
     >>> print(item.overrideBinaries(
     ...     binary_changes, allowed_components=(restricted,)))
     Traceback (most recent call last):
     ...
-    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError: No rights to override from main
+    lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError:
+    No rights to override from main
 
     >>> print(item.overrideBinaries(
     ...     binary_changes, allowed_components=(main, restricted)))
