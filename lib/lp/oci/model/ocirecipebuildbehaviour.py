@@ -34,6 +34,7 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
     )
+from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.oci.interfaces.ocirecipebuild import IOCIFileSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
@@ -156,7 +157,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             if build.recipe.git_repository.private:
                 macaroon_raw = yield self.issueMacaroon()
                 url = build.recipe.git_repository.getCodebrowseUrl(
-                    username=None, password=macaroon_raw)
+                    username=LAUNCHPAD_SERVICES, password=macaroon_raw)
                 args["git_repository"] = url
             else:
                 args["git_repository"] = (
