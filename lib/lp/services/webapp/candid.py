@@ -21,14 +21,14 @@ from urllib.parse import urlencode
 import uuid
 
 from lazr.restful.declarations import error_status
-from requests import HTTPError
 from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
+from requests import HTTPError
 from zope.browserpage import ViewPageTemplateFile
 from zope.session.interfaces import ISession
 
-from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.config import config
+from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import (
     raise_for_status_redacted,
     urlfetch,
