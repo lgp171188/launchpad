@@ -138,12 +138,6 @@ check: clean build
 	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS)
 	bzr status --no-pending
 
-lint: ${PY}
-	@bash ./utilities/lint
-
-lint-verbose: ${PY}
-	@bash ./utilities/lint -v
-
 logs:
 	mkdir logs
 

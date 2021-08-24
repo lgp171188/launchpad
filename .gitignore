@@ -13,7 +13,6 @@ database/schema/diagrams/*.dot
 thread*.request
 TAGS
 cover.txt
-lint.txt
 .shelf
 development-nohup.out
 opensource/launchpadlib/build
