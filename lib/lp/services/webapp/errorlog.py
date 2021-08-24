@@ -21,6 +21,7 @@ import oops_timeline
 import pytz
 import six
 from six.moves.urllib.parse import urlparse
+from talisker.logs import logging_context
 from zope.component import getUtility
 from zope.component.interfaces import ObjectEvent
 from zope.error.interfaces import IErrorReportingUtility
@@ -174,6 +175,7 @@ def attach_http_request(report, context):
             info[1], '__lazr_webservice_error__', 500)
         if webservice_error / 100 != 5:
             request.oopsid = None
+            logging_context.push(oopsid=None)
             # Tell the oops machinery to ignore this error
             report['ignore'] = True
 
@@ -383,6 +385,7 @@ class ErrorReportingUtility:
         if request:
             request.oopsid = report.get('id')
             request.oops = report
+        logging_context.push(oopsid=report.get('id'))
         return report
 
     def _filter_bad_urls_by_referer(self, report):

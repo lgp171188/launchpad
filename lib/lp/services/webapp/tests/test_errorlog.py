@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for error logging & OOPS reporting."""
@@ -16,6 +16,7 @@ import oops_amqp
 import pytz
 import six
 from six.moves import http_client
+from talisker.logs import logging_context
 import testtools
 from timeline.timeline import Timeline
 from zope.interface import directlyProvides
@@ -115,6 +116,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
             report = utility.raising(sys.exc_info(), request)
 
         self.assertFalse('last_oops' in report)
+        self.assertEqual(report['id'], logging_context.flat['oopsid'])
         last_oopsid = request.oopsid
         try:
             raise ArbitraryException('foo')
@@ -123,6 +125,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
 
         self.assertTrue('last_oops' in report)
         self.assertEqual(report['last_oops'], last_oopsid)
+        self.assertEqual(report['id'], logging_context.flat['oopsid'])
 
     def test_raising_with_request(self):
         """Test ErrorReportingUtility.raising() with a request"""
@@ -167,6 +170,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         # verify that the oopsid was set on the request
         self.assertEqual(request.oopsid, report['id'])
         self.assertEqual(request.oops, report)
+        self.assertEqual(report['id'], logging_context.flat['oopsid'])
 
     def test_raising_request_with_principal_person(self):
         utility = ErrorReportingUtility()
@@ -187,6 +191,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         self.assertEqual(
             u'my-username, 42, account-name, description |\u25a0|',
             report['username'])
+        self.assertEqual(report['id'], logging_context.flat['oopsid'])
 
     def test_raising_request_with_principal_person_set_to_none(self):
         """
@@ -211,6 +216,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         self.assertEqual(
             u'account-name, 42, account-name, description |\u25a0|',
             report['username'])
+        self.assertEqual(report['id'], logging_context.flat['oopsid'])
 
     def test_raising_with_xmlrpc_request(self):
         # Test ErrorReportingUtility.raising() with an XML-RPC request.
