@@ -191,12 +191,15 @@ class SnapBuild(PackageBuildMixin, Storm):
 
     failure_count = Int(name='failure_count', allow_none=False)
 
+    store_upload_revision = Int(name='store_upload_revision', allow_none=True)
+
     store_upload_metadata = JSON('store_upload_json_data', allow_none=True)
 
     def __init__(self, build_farm_job, requester, snap, archive,
                  distro_arch_series, pocket, snap_base, channels,
                  processor, virtualized, date_created,
-                 store_upload_metadata=None, build_request=None):
+                 store_upload_metadata=None, store_upload_revision=None,
+                 build_request=None):
         """Construct a `SnapBuild`."""
         super(SnapBuild, self).__init__()
         self.build_farm_job = build_farm_job
@@ -211,6 +214,7 @@ class SnapBuild(PackageBuildMixin, Storm):
         self.virtualized = virtualized
         self.date_created = date_created
         self.store_upload_metadata = store_upload_metadata
+        self.store_upload_revision = store_upload_revision
         if build_request is not None:
             self.build_request_id = build_request.id
         self.status = BuildStatus.NEEDSBUILD
@@ -526,7 +530,11 @@ class SnapBuild(PackageBuildMixin, Storm):
         return job and job.store_url
 
     @property
-    def store_upload_revision(self):
+    def store_upload_revision_property(self):
+        # We're renaming this from "store_upload_revision"
+        # as we have added a DB column called "store_upload_revision".
+        # We will be using this property to populate the new
+        # DB column "store_upload_revision" in PopulateSnapBuildStoreRevision
         job = self.last_store_upload_job
         return job and job.store_revision
 
