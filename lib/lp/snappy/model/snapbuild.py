@@ -530,7 +530,7 @@ class SnapBuild(PackageBuildMixin, Storm):
         return job and job.store_url
 
     @property
-    def store_upload_revision_property(self):
+    def _store_upload_revision(self):
         # We're renaming this from "store_upload_revision"
         # as we have added a DB column called "store_upload_revision".
         # We will be using this property to populate the new

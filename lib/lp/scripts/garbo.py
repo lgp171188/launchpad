@@ -1759,7 +1759,7 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
     def __call__(self, chunk_size):
         builds = list(self.findSnapBuilds()[:chunk_size])
         for build in builds:
-            build.store_upload_revision = build.store_upload_revision_property
+            build.store_upload_revision = build._store_upload_revision
         if len(builds):
             self.start_at = builds[-1].id + 1
         transaction.commit()

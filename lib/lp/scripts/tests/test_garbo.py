@@ -17,6 +17,7 @@ import re
 from textwrap import dedent
 import time
 
+from pymacaroons import Macaroon
 from pytz import UTC
 import six
 from storm.exceptions import LostObjectError
@@ -1989,23 +1990,23 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertIsNotNone(token.date_deactivated)
         self.assertEmailQueueLength(0)
 
-
-    def test_PopulateSnapBuildStoreRevision_triggered_correctly(self):
-        switch_dbuser('testadmin')
-        snap1 = self.factory.makeSnap()
-        self.factory.makeSnapBuild(
-            snap=snap1,
-            status=BuildStatus.FULLYBUILT)
-
-        # This should trigger PopulateSnapBuildStoreRevision but doesn't
-        self.runDaily()
-
     def test_PopulateSnapBuildStoreRevision(self):
+        switch_dbuser("launchpad_main")
+        self.pushConfig(
+            "snappy", store_url="http://sca.example/",
+            store_upload_url="http://updown.example/")
+
         switch_dbuser('testadmin')
         snap1 = self.factory.makeSnap()
+        snap1.store_series = self.factory.makeSnappySeries(
+            usable_distro_series=[snap1.distro_series])
+        snap1.store_name = snap1.name
+        snap1.store_upload = True
+        snap1.store_secrets = {"root": Macaroon().serialize()}
         build1 = self.factory.makeSnapBuild(
             snap=snap1,
-            status=BuildStatus.FULLYBUILT)
+            status=BuildStatus.FULLYBUILT,
+            store_channels=["stable", "edge"])
 
         # test that build1 does not get picked up
         # as it is a build without a store upload
@@ -2013,8 +2014,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         rs = populator.findSnapBuilds()
         self.assertEqual(0, rs.count())
 
-        # Upload build and test it finds this one build that has no
-        # store_upload_revision set yet
+        # Upload build
         job = getUtility(ISnapStoreUploadJobSource).create(build1)
         client = FakeSnapStoreClient()
         client.upload.result = (
@@ -2025,12 +2025,19 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
 
+        # this mimics what we have in the DB right now:
+        # uploaded snaps that do not have the new DB column
+        # store_upload_revision populated yet
         populator = PopulateSnapBuildStoreRevision(None)
         filter = populator.findSnapBuilds()
         self.assertEqual(1, filter.count())
         self.assertEqual(build1, filter.one())
+        self.assertEqual(build1.store_upload_revision, None)
 
-        populator.__call__(5)
+        # run the garbo job and verify store_upload_revision
+        # is not populated with the value assigned to the build during upload
+        self.runDaily()
+        switch_dbuser('testadmin')
         self.assertEqual(build1.store_upload_revision, 1)
 
         # Tests that of all builds for the same snap only those that have
@@ -2047,18 +2054,18 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         client.upload.result = (
             "http://sca.example/dev/api/snaps/1/builds/2/status")
         client.checkStatus.result = (
-            "http://sca.example/dev/click-apps/1/rev/1/", 1)
+            "http://sca.example/dev/click-apps/1/rev/2/", 1)
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
 
         populator = PopulateSnapBuildStoreRevision(None)
-
         filter = populator.findSnapBuilds()
         self.assertEqual(1, filter.count())
         self.assertEqual(build2, filter.one())
 
-        populator.__call__(5)
+        self.runDaily()
+        switch_dbuser('testadmin')
         self.assertEqual(build2.store_upload_revision, 1)
         self.assertIsNone(build3.store_upload_revision)
 
