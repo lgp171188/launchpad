@@ -1111,6 +1111,13 @@ class Snap(Storm, WebhookTargetMixin):
 
         return result
 
+    def getBuildByStoreRevision(self, store_upload_revision):
+       build = Store.of(self).find(
+           SnapBuild,
+           SnapBuild.snap == self,
+           SnapBuild._store_upload_revision == store_upload_revision).one()
+       return build
+
     @property
     def builds(self):
         """See `ISnap`."""

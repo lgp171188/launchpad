@@ -527,6 +527,20 @@ class ISnapView(Interface):
             given snap builds.
         """
 
+    @operation_parameters(
+        store_upload_revision=Int(title="Store revision",
+                                  required=True))
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getBuildByStoreRevision(store_upload_revision, user=None):
+        """Returns the build (if any) of that snap recipe
+            that has the given store_upload_revision.
+
+        :param store_upload_revision: The revision assigned by the store.
+        :param user: The `IPerson` requesting this information.
+        :return: An 'ISnapBuild' or None.
+        """
+
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         request_ids=List(
