@@ -217,17 +217,6 @@ Let's suppose that we want to add the "lazr.foo" package as a dependency.
 
         bin/pip install --no-binary :all: lazr.foo==1.1.2
 
-    You may need to use the ``--ignore-installed`` option if some of the
-    packages involved happen to be installed system-wide on your build
-    system, but we want to consume them as Python packages.  You can spot
-    this situation by looking for output like this from ``pip install``:
-
-        Requirement already satisfied: netaddr>=0.7.6 in /usr/lib/python2.7/dist-packages (from python-keystoneclient==0.7.1)
-
-    If you do this, check the output very carefully, as it can easily be
-    wrong.  (This will stop being a problem once we stop using system
-    site-packages.)
-
 4.  Add the successfully-installed packages to the shared download cache for
     future use.
 
