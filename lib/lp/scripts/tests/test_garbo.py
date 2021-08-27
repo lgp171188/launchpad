@@ -17,7 +17,6 @@ import re
 from textwrap import dedent
 import time
 
-from pymacaroons import Macaroon
 from pytz import UTC
 import six
 from storm.exceptions import LostObjectError
@@ -1991,22 +1990,11 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertEmailQueueLength(0)
 
     def test_PopulateSnapBuildStoreRevision(self):
-        switch_dbuser("launchpad_main")
-        self.pushConfig(
-            "snappy", store_url="http://sca.example/",
-            store_upload_url="http://updown.example/")
-
         switch_dbuser('testadmin')
         snap1 = self.factory.makeSnap()
-        snap1.store_series = self.factory.makeSnappySeries(
-            usable_distro_series=[snap1.distro_series])
-        snap1.store_name = snap1.name
-        snap1.store_upload = True
-        snap1.store_secrets = {"root": Macaroon().serialize()}
         build1 = self.factory.makeSnapBuild(
             snap=snap1,
-            status=BuildStatus.FULLYBUILT,
-            store_channels=["stable", "edge"])
+            status=BuildStatus.FULLYBUILT)
 
         # test that build1 does not get picked up
         # as it is a build without a store upload
@@ -2027,22 +2015,22 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         # this mimics what we have in the DB right now:
         # uploaded snaps that do not have the new DB column
-        # store_upload_revision populated yet
+        # _store_upload_revision populated yet
         populator = PopulateSnapBuildStoreRevision(None)
         filter = populator.findSnapBuilds()
         self.assertEqual(1, filter.count())
         self.assertEqual(build1, filter.one())
-        self.assertEqual(build1.store_upload_revision, None)
+        self.assertEqual(build1._store_upload_revision, None)
 
-        # run the garbo job and verify store_upload_revision
+        # run the garbo job and verify _store_upload_revision
         # is not populated with the value assigned to the build during upload
         self.runDaily()
         switch_dbuser('testadmin')
-        self.assertEqual(build1.store_upload_revision, 1)
+        self.assertEqual(build1._store_upload_revision, 1)
 
         # Tests that of all builds for the same snap only those that have
         # been uploaded to the store will get
-        # their new store_upload_revision DB field updated
+        # their new _store_upload_revision DB column updated
         build2 = self.factory.makeSnapBuild(
             snap=snap1,
             status=BuildStatus.FULLYBUILT)
@@ -2066,8 +2054,8 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         self.runDaily()
         switch_dbuser('testadmin')
-        self.assertEqual(build2.store_upload_revision, 1)
-        self.assertIsNone(build3.store_upload_revision)
+        self.assertEqual(build2._store_upload_revision, 1)
+        self.assertIsNone(build3._store_upload_revision)
 
 
 class TestGarboTasks(TestCaseWithFactory):

@@ -1725,7 +1725,7 @@ class ArchiveAuthTokenDeactivator(BulkPruner):
 
 
 class PopulateSnapBuildStoreRevision(TunableLoop):
-    """Populates snapbuild.store_upload_revision if not set."""
+    """Populates snapbuild.store_revision if not set."""
 
     maximum_chunk_size = 5000
 
@@ -1747,7 +1747,7 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
         builds = self.store.using(*origin).find(
             (SnapBuild),
             SnapBuild.id >= self.start_at,
-            SnapBuild.store_upload_revision == None,
+            SnapBuild._store_upload_revision == None,
             SnapBuildJob.job_type == SnapBuildJobType.STORE_UPLOAD,
             Job._status == JobStatus.COMPLETED)
 
@@ -1759,7 +1759,7 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
     def __call__(self, chunk_size):
         builds = list(self.findSnapBuilds()[:chunk_size])
         for build in builds:
-            build.store_upload_revision = build._store_upload_revision
+            build._store_upload_revision = build.store_upload_revision
         if len(builds):
             self.start_at = builds[-1].id + 1
         transaction.commit()
