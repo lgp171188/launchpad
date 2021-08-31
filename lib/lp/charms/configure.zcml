@@ -68,6 +68,14 @@
             permission="launchpad.Admin"
             interface="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuildAdmin" />
     </class>
+    <subscriber
+        for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild
+             lazr.lifecycle.interfaces.IObjectCreatedEvent"
+        handler="lp.charms.subscribers.charmrecipebuild.charm_recipe_build_created" />
+    <subscriber
+        for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild
+             lazr.lifecycle.interfaces.IObjectModifiedEvent"
+        handler="lp.charms.subscribers.charmrecipebuild.charm_recipe_build_modified" />
 
     <!-- CharmRecipeBuildSet -->
     <securedutility

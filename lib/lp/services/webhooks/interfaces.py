@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Webhook interfaces."""
@@ -74,6 +74,7 @@ from lp.services.webservice.apihelpers import (
 
 WEBHOOK_EVENT_TYPES = {
     "bzr:push:0.1": "Bazaar push",
+    "charm-recipe:build:0.1": "Charm recipe build",
     "git:push:0.1": "Git push",
     "livefs:build:0.1": "Live filesystem build",
     "merge-proposal:0.1": "Merge proposal",

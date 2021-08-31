@@ -135,6 +135,8 @@ from lp.services.propertycache import (
     get_property_cache,
     )
 from lp.services.webapp.candid import extract_candid_caveat
+from lp.services.webhooks.interfaces import IWebhookSet
+from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.model.distroarchseries import (
     DistroArchSeries,
     PocketChroot,
@@ -223,7 +225,7 @@ class CharmRecipeBuildRequest:
 
 
 @implementer(ICharmRecipe)
-class CharmRecipe(StormBase):
+class CharmRecipe(StormBase, WebhookTargetMixin):
     """See `ICharmRecipe`."""
 
     __storm_table__ = "CharmRecipe"
@@ -442,7 +444,7 @@ class CharmRecipe(StormBase):
             and self._isBuildableArchitectureAllowed(das))
 
     def getAllowedArchitectures(self):
-        """See `IOCIRecipe`."""
+        """See `ICharmRecipe`."""
         store = Store.of(self)
         origin = [
             DistroArchSeries,
@@ -700,6 +702,10 @@ class CharmRecipe(StormBase):
             self.store_secrets is not None and
             "exchanged_encrypted" in self.store_secrets)
 
+    @property
+    def valid_webhook_event_types(self):
+        return ["charm-recipe:build:0.1"]
+
     def destroySelf(self):
         """See `ICharmRecipe`."""
         store = IStore(self)
@@ -728,6 +734,7 @@ class CharmRecipe(StormBase):
             [CharmRecipeJob.job_id],
             And(CharmRecipeJob.job == Job.id, CharmRecipeJob.recipe == self))
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
+        getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
             BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
