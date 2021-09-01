@@ -50,6 +50,7 @@ from lp.charms.interfaces.charmhubclient import (
     )
 from lp.charms.interfaces.charmrecipe import (
     CannotAuthorizeCharmhubUploads,
+    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
     ICharmRecipe,
     ICharmRecipeSet,
     NoSuchCharmRecipe,
@@ -59,6 +60,7 @@ from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.interfaces.gitref import IGitRef
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.product import IProduct
+from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp import (
@@ -78,6 +80,7 @@ from lp.services.webapp.breadcrumb import (
     )
 from lp.services.webapp.candid import request_candid_discharge
 from lp.services.webapp.interfaces import ICanonicalUrlData
+from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.widgets.storechannels import StoreChannelsWidget
 from lp.soyuz.browser.build import get_build_by_id_str
 
@@ -101,7 +104,7 @@ class CharmRecipeURL:
         return "+charm/%s" % self.recipe.name
 
 
-class CharmRecipeNavigation(Navigation):
+class CharmRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
     usedfor = ICharmRecipe
 
     @stepthrough("+build-request")
@@ -138,7 +141,7 @@ class CharmRecipeNavigationMenu(NavigationMenu):
 
     facet = "overview"
 
-    links = ("admin", "edit", "authorize", "delete")
+    links = ("admin", "edit", "webhooks", "authorize", "delete")
 
     @enabled_with_permission("launchpad.Admin")
     def admin(self):
@@ -147,6 +150,14 @@ class CharmRecipeNavigationMenu(NavigationMenu):
     @enabled_with_permission("launchpad.Edit")
     def edit(self):
         return Link("+edit", "Edit charm recipe", icon="edit")
+
+    @enabled_with_permission("launchpad.Edit")
+    def webhooks(self):
+        return Link(
+            "+webhooks", "Manage webhooks", icon="edit",
+            enabled=(
+                bool(getFeatureFlag(CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG)) and
+                bool(getFeatureFlag("webhooks.new.enabled"))))
 
     @enabled_with_permission("launchpad.Edit")
     def authorize(self):

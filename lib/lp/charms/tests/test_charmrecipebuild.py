@@ -10,9 +10,15 @@ from datetime import (
     timedelta,
     )
 
+from fixtures import FakeLogger
 import pytz
 import six
-from testtools.matchers import Equals
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    MatchesDict,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -25,6 +31,7 @@ from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
+    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
 from lp.charms.interfaces.charmrecipebuild import (
     ICharmRecipeBuild,
@@ -38,11 +45,14 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import clear_property_cache
+from lp.services.webapp.publisher import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import HasQueryCount
@@ -253,6 +263,76 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.build.updateStatus(
             BuildStatus.BUILDING, slave_status={"revision_id": "dummy"})
         self.assertEqual("dummy", self.build.revision_id)
+
+    def test_updateStatus_triggers_webhooks(self):
+        # Updating the status of a CharmRecipeBuild triggers webhooks on the
+        # corresponding CharmRecipe.
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+            }))
+        logger = self.useFixture(FakeLogger())
+        hook = self.factory.makeWebhook(
+            target=self.build.recipe, event_types=["charm-recipe:build:0.1"])
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        expected_payload = {
+            "recipe_build": Equals(canonical_url(
+                self.build, force_local_path=True)),
+            "action": Equals("status-changed"),
+            "recipe": Equals(canonical_url(
+                self.build.recipe, force_local_path=True)),
+            "build_request": Equals(canonical_url(
+                self.build.build_request, force_local_path=True)),
+            "status": Equals("Successfully built"),
+            }
+        delivery = hook.deliveries.one()
+        self.assertThat(
+            delivery, MatchesStructure(
+                event_type=Equals("charm-recipe:build:0.1"),
+                payload=MatchesDict(expected_payload)))
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>" % (
+                    hook.id, hook.target),
+                repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "charm-recipe:build:0.1",
+                     MatchesDict(expected_payload))]))
+
+    def test_updateStatus_no_change_does_not_trigger_webhooks(self):
+        # An updateStatus call that changes details such as the revision_id
+        # but that doesn't change the build's status attribute does not
+        # trigger webhooks.
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+            }))
+        logger = self.useFixture(FakeLogger())
+        hook = self.factory.makeWebhook(
+            target=self.build.recipe, event_types=["charm-recipe:build:0.1"])
+        builder = self.factory.makeBuilder()
+        self.build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (hook, "charm-recipe:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Currently building"),
+                }))]
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
+        self.build.updateStatus(
+            BuildStatus.BUILDING, builder=builder,
+            slave_status={"revision_id": "1"})
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
+        self.build.updateStatus(BuildStatus.UPLOADING)
+        expected_logs.append(
+            (hook, "charm-recipe:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Uploading build"),
+                })))
+        self.assertEqual(2, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
     def test_notify_fullybuilt(self):
         # notify does not send mail when a recipe build completes normally.

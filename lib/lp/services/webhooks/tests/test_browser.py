@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for Webhook views."""
@@ -16,6 +16,10 @@ from testtools.matchers import (
 import transaction
 from zope.component import getUtility
 
+from lp.charms.interfaces.charmrecipe import (
+    CHARM_RECIPE_ALLOW_CREATE,
+    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
@@ -158,6 +162,29 @@ class OCIRecipeTestHelpers:
         return [obj]
 
 
+class CharmRecipeTestHelpers:
+
+    event_type = "charm-recipe:build:0.1"
+    expected_event_types = [
+        ("charm-recipe:build:0.1", "Charm recipe build"),
+        ]
+
+    def setUp(self):
+        super().setUp()
+
+    def makeTarget(self):
+        self.useFixture(FeatureFixture({
+            'webhooks.new.enabled': 'true',
+            CHARM_RECIPE_ALLOW_CREATE: 'on',
+            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',
+            }))
+        owner = self.factory.makePerson()
+        return self.factory.makeCharmRecipe(registrant=owner, owner=owner)
+
+    def getTraversalStack(self, obj):
+        return [obj]
+
+
 class WebhookTargetViewTestHelpers:
 
     def setUp(self):
@@ -289,6 +316,12 @@ class TestWebhooksViewOCIRecipe(
     pass
 
 
+class TestWebhooksViewCharmRecipe(
+    TestWebhooksViewBase, CharmRecipeTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
 class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
 
     layer = DatabaseFunctionalLayer
@@ -395,6 +428,12 @@ class TestWebhookAddViewLiveFS(
 
 class TestWebhookAddViewOCIRecipe(
     TestWebhookAddViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhookAddViewCharmRecipe(
+    TestWebhookAddViewBase, CharmRecipeTestHelpers, TestCaseWithFactory):
 
     pass
 
@@ -513,6 +552,12 @@ class TestWebhookViewOCIRecipe(
     pass
 
 
+class TestWebhookViewCharmRecipe(
+    TestWebhookViewBase, CharmRecipeTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
 class TestWebhookDeleteViewBase(WebhookViewTestHelpers):
 
     layer = DatabaseFunctionalLayer
@@ -573,5 +618,11 @@ class TestWebhookDeleteViewLiveFS(
 
 class TestWebhookDeleteViewOCIRecipe(
     TestWebhookDeleteViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhookDeleteViewCharmRecipe(
+    TestWebhookDeleteViewBase, CharmRecipeTestHelpers, TestCaseWithFactory):
 
     pass
