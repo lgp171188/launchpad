@@ -8,6 +8,12 @@ __metaclass__ = type
 from datetime import timedelta
 
 from fixtures import FakeLogger
+from testtools.matchers import (
+    Equals,
+    MatchesDict,
+    MatchesListwise,
+    MatchesStructure,
+    )
 import transaction
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -40,6 +46,8 @@ from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
+from lp.services.webapp.publisher import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
@@ -127,9 +135,44 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
             target=build.recipe, event_types=["charm-recipe:build:0.1"])
         return build
 
+    def assertWebhookDeliveries(self, build,
+                                expected_store_upload_statuses, logger):
+        hook = build.recipe.webhooks.one()
+        deliveries = list(hook.deliveries)
+        deliveries.reverse()
+        expected_payloads = [{
+            "recipe_build": Equals(
+                canonical_url(build, force_local_path=True)),
+            "action": Equals("status-changed"),
+            "recipe": Equals(
+                canonical_url(build.recipe, force_local_path=True)),
+            "build_request": Equals(
+                canonical_url(build.build_request, force_local_path=True)),
+            "status": Equals("Successfully built"),
+            "store_upload_status": Equals(expected),
+            } for expected in expected_store_upload_statuses]
+        matchers = [
+            MatchesStructure(
+                event_type=Equals("charm-recipe:build:0.1"),
+                payload=MatchesDict(expected_payload))
+            for expected_payload in expected_payloads]
+        self.assertThat(deliveries, MatchesListwise(matchers))
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            for delivery in deliveries:
+                self.assertEqual(
+                    "<WebhookDeliveryJob for webhook %d on %r>" % (
+                        hook.id, hook.target),
+                    repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "charm-recipe:build:0.1",
+                     MatchesDict(expected_payload))
+                    for expected_payload in expected_payloads]))
+
     def test_run(self):
         # The job uploads the build to Charmhub and records the Charmhub
         # revision.
+        logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
@@ -146,9 +189,11 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertEqual(1, job.store_revision)
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
+        self.assertWebhookDeliveries(build, ["Pending", "Uploaded"], logger)
 
     def test_run_failed(self):
         # A failed run sets the store upload status to FAILED.
+        logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
@@ -164,9 +209,12 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.store_revision)
         self.assertEqual("An upload failure", job.error_message)
         self.assertEqual([], pop_notifications())
+        self.assertWebhookDeliveries(
+            build, ["Pending", "Failed to upload"], logger)
 
     def test_run_unauthorized_notifies(self):
         # A run that gets 401 from Charmhub sends mail.
+        logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
             owner=requester, name="requester-team", members=[requester])
@@ -216,10 +264,13 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
             "test-charm/+build/%d\n"
             "Your team Requester Team is the requester of the build.\n" %
             build.id, footer)
+        self.assertWebhookDeliveries(
+            build, ["Pending", "Failed to upload"], logger)
 
     def test_run_502_retries(self):
         # A run that gets a 502 error from Charmhub schedules itself to be
         # retried.
+        logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
@@ -237,6 +288,7 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.WAITING, job.job.status)
+        self.assertWebhookDeliveries(build, ["Pending"], logger)
         # Try again.  The upload part of the job is retried, and this time
         # it succeeds.
         job.scheduled_start = None
@@ -254,10 +306,12 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
+        self.assertWebhookDeliveries(build, ["Pending", "Uploaded"], logger)
 
     def test_run_upload_failure_notifies(self):
         # A run that gets some other upload failure from Charmhub sends
         # mail.
+        logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
             owner=requester, name="requester-team", members=[requester])
@@ -306,12 +360,15 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertEqual(
             "%s\nYour team Requester Team is the requester of the build.\n" %
             build_url, footer)
+        self.assertWebhookDeliveries(
+            build, ["Pending", "Failed to upload"], logger)
         self.assertIn(
             ("error_detail", "The proxy exploded.\n"), job.getOopsVars())
 
     def test_run_review_pending_retries(self):
         # A run that finds that Charmhub has not yet finished reviewing the
         # charm schedules itself to be retried.
+        logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
@@ -329,6 +386,7 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.WAITING, job.job.status)
+        self.assertWebhookDeliveries(build, ["Pending"], logger)
         # Try again.  The upload part of the job is not retried, and this
         # time the review completes.
         job.scheduled_start = None
@@ -346,9 +404,11 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
+        self.assertWebhookDeliveries(build, ["Pending", "Uploaded"], logger)
 
     def test_run_review_failure_notifies(self):
         # A run that gets a review failure from Charmhub sends mail.
+        logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
             owner=requester, name="requester-team", members=[requester])
@@ -397,10 +457,13 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
             "test-charm/+build/%d\n"
             "Your team Requester Team is the requester of the build.\n" %
             build.id, footer)
+        self.assertWebhookDeliveries(
+            build, ["Pending", "Failed to upload"], logger)
 
     def test_run_release(self):
         # A run configured to automatically release the charm to certain
         # channels does so.
+        logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild(store_channels=["stable", "edge"])
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
@@ -417,10 +480,12 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertEqual(1, job.store_revision)
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
+        self.assertWebhookDeliveries(build, ["Pending", "Uploaded"], logger)
 
     def test_run_release_failure_notifies(self):
         # A run configured to automatically release the charm to certain
         # channels but that fails to do so sends mail.
+        logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
             owner=requester, name="requester-team", members=[requester])
@@ -467,6 +532,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
             "test-charm/+build/%d\n"
             "Your team Requester Team is the requester of the build.\n" %
             build.id, footer)
+        self.assertWebhookDeliveries(
+            build, ["Pending", "Failed to release to channels"], logger)
 
     def test_retry_delay(self):
         # The job is retried every minute, unless it just made one of its
