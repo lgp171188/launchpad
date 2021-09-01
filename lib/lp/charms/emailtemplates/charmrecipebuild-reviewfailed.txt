@@ -1,0 +1,4 @@
+Launchpad uploaded this charm to Charmhub, but Charmhub failed to review
+it:
+
+  %(store_error_message)s

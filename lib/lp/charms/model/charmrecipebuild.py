@@ -43,6 +43,10 @@ from lp.charms.interfaces.charmrecipebuild import (
     ICharmRecipeBuildSet,
     )
 from lp.charms.mail.charmrecipebuild import CharmRecipeBuildMailer
+from lp.charms.model.charmrecipebuildjob import (
+    CharmRecipeBuildJob,
+    CharmRecipeBuildJobType,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distribution import Distribution
@@ -58,6 +62,7 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormbase import StormBase
+from lp.services.job.model.job import Job
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -323,6 +328,25 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
         if self.estimate:
             return self.eta
         return self.date_finished
+
+    @property
+    def store_upload_jobs(self):
+        jobs = Store.of(self).find(
+            CharmRecipeBuildJob,
+            CharmRecipeBuildJob.build == self,
+            CharmRecipeBuildJob.job_type ==
+                CharmRecipeBuildJobType.CHARMHUB_UPLOAD)
+        jobs.order_by(Desc(CharmRecipeBuildJob.job_id))
+
+        def preload_jobs(rows):
+            load_related(Job, rows, ["job_id"])
+
+        return DecoratedResultSet(
+            jobs, lambda job: job.makeDerived(), pre_iter_hook=preload_jobs)
+
+    @cachedproperty
+    def last_store_upload_job(self):
+        return self.store_upload_jobs.first()
 
     def getFiles(self):
         """See `ICharmRecipeBuild`."""

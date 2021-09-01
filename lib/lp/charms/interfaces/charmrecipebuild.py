@@ -10,7 +10,10 @@ __all__ = [
     "ICharmRecipeBuildSet",
     ]
 
-from lazr.restful.fields import Reference
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
 from zope.interface import (
     Attribute,
     Interface,
@@ -106,6 +109,16 @@ class ICharmRecipeBuildView(IPackageBuild):
         description=_(
             "The revision ID of the branch used for this build, if "
             "available."))
+
+    store_upload_jobs = CollectionField(
+        title=_("Store upload jobs for this build."),
+        # Really ICharmhubUploadJob.
+        value_type=Reference(schema=Interface),
+        readonly=True)
+
+    # Really ICharmhubUploadJob.
+    last_store_upload_job = Reference(
+        title=_("Last store upload job for this build."), schema=Interface)
 
     store_upload_metadata = Attribute(
         _("A dict of data about store upload progress."))
