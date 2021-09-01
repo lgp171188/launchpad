@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from storm.store import Store
@@ -13,6 +13,10 @@ from zope.security.checker import getChecker
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.charms.interfaces.charmrecipe import (
+    CHARM_RECIPE_ALLOW_CREATE,
+    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
@@ -433,4 +437,18 @@ class TestWebhookSetOCIRecipe(TestWebhookSetBase, TestCaseWithFactory):
         with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
                              OCI_RECIPE_ALLOW_CREATE: 'on'}):
             return self.factory.makeOCIRecipe(
+                registrant=owner, owner=owner, **kwargs)
+
+
+class TestWebhookSetCharmRecipe(TestWebhookSetBase, TestCaseWithFactory):
+
+    event_type = 'charm-recipe:build:0.1'
+
+    def makeTarget(self, owner=None, **kwargs):
+        if owner is None:
+            owner = self.factory.makePerson()
+
+        with FeatureFixture({CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                             CHARM_RECIPE_ALLOW_CREATE: "on"}):
+            return self.factory.makeCharmRecipe(
                 registrant=owner, owner=owner, **kwargs)

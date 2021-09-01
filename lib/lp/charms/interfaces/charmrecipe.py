@@ -13,6 +13,7 @@ __all__ = [
     "CHARM_RECIPE_ALLOW_CREATE",
     "CHARM_RECIPE_BUILD_DISTRIBUTION",
     "CHARM_RECIPE_PRIVATE_FEATURE_FLAG",
+    "CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG",
     "CharmRecipeBuildAlreadyPending",
     "CharmRecipeBuildDisallowedArchitecture",
     "CharmRecipeBuildRequestStatus",
@@ -72,12 +73,14 @@ from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
     )
+from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.snappy.validators.channels import channels_validator
 
 
 CHARM_RECIPE_ALLOW_CREATE = "charm.recipe.create.enabled"
 CHARM_RECIPE_PRIVATE_FEATURE_FLAG = "charm.recipe.allow_private"
 CHARM_RECIPE_BUILD_DISTRIBUTION = "charm.default_build_distribution"
+CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG = "charm.recipe.webhooks.enabled"
 
 
 @error_status(http_client.UNAUTHORIZED)
@@ -381,7 +384,7 @@ class ICharmRecipeView(Interface):
         value_type=Reference(schema=Interface), readonly=True)
 
 
-class ICharmRecipeEdit(Interface):
+class ICharmRecipeEdit(IWebhookTarget):
     """`ICharmRecipe` methods that require launchpad.Edit permission."""
 
     def beginAuthorization():

@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the webhook webservice objects."""
@@ -21,6 +21,10 @@ from testtools.matchers import (
     )
 from zope.security.proxy import removeSecurityProxy
 
+from lp.charms.interfaces.charmrecipe import (
+    CHARM_RECIPE_ALLOW_CREATE,
+    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
@@ -408,3 +412,14 @@ class TestWebhookTargetOCIRecipe(TestWebhookTargetBase, TestCaseWithFactory):
         with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
                              OCI_RECIPE_ALLOW_CREATE: 'on'}):
             return self.factory.makeOCIRecipe(registrant=owner, owner=owner)
+
+
+class TestWebhookTargetCharmRecipe(TestWebhookTargetBase, TestCaseWithFactory):
+
+    event_type = 'charm-recipe:build:0.1'
+
+    def makeTarget(self):
+        owner = self.factory.makePerson()
+        with FeatureFixture({CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                             CHARM_RECIPE_ALLOW_CREATE: "on"}):
+            return self.factory.makeCharmRecipe(registrant=owner, owner=owner)

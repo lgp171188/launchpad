@@ -1,4 +1,4 @@
-# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -116,6 +116,9 @@ class Webhook(StormBase):
     oci_recipe_id = Int(name='oci_recipe')
     oci_recipe = Reference(oci_recipe_id, 'OCIRecipe.id')
 
+    charm_recipe_id = Int(name='charm_recipe')
+    charm_recipe = Reference(charm_recipe_id, 'CharmRecipe.id')
+
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, 'Person.id')
     date_created = DateTime(tzinfo=utc, allow_none=False)
@@ -139,6 +142,8 @@ class Webhook(StormBase):
             return self.livefs
         elif self.oci_recipe is not None:
             return self.oci_recipe
+        elif self.charm_recipe is not None:
+            return self.charm_recipe
         else:
             raise AssertionError("No target.")
 
@@ -190,6 +195,7 @@ class WebhookSet:
 
     def new(self, target, registrant, delivery_url, event_types, active,
             secret):
+        from lp.charms.interfaces.charmrecipe import ICharmRecipe
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
@@ -207,6 +213,8 @@ class WebhookSet:
             hook.livefs = target
         elif IOCIRecipe.providedBy(target):
             hook.oci_recipe = target
+        elif ICharmRecipe.providedBy(target):
+            hook.charm_recipe = target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         hook.registrant = registrant
@@ -228,6 +236,7 @@ class WebhookSet:
         return IStore(Webhook).get(Webhook, id)
 
     def findByTarget(self, target):
+        from lp.charms.interfaces.charmrecipe import ICharmRecipe
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
@@ -244,6 +253,8 @@ class WebhookSet:
             target_filter = Webhook.livefs == target
         elif IOCIRecipe.providedBy(target):
             target_filter = Webhook.oci_recipe == target
+        elif ICharmRecipe.providedBy(target):
+            target_filter = Webhook.charm_recipe == target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         return IStore(Webhook).find(Webhook, target_filter).order_by(

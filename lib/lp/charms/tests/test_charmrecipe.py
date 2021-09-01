@@ -9,10 +9,12 @@ import base64
 import json
 from textwrap import dedent
 
+from fixtures import FakeLogger
 from nacl.public import PrivateKey
 from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
 import responses
+from storm.exceptions import LostObjectError
 from storm.locals import Store
 from testtools.matchers import (
     AfterPreprocessing,
@@ -48,6 +50,7 @@ from lp.charms.interfaces.charmrecipe import (
     CannotAuthorizeCharmhubUploads,
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_BUILD_DISTRIBUTION,
+    CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
     CharmRecipeBuildAlreadyPending,
     CharmRecipeBuildDisallowedArchitecture,
     CharmRecipeBuildRequestStatus,
@@ -83,7 +86,9 @@ from lp.services.database.sqlbase import (
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
+from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
     person_logged_in,
@@ -355,6 +360,45 @@ class TestCharmRecipe(TestCaseWithFactory):
             recipe.require_virtualized = False
         recipe.requestBuild(build_request, das)
 
+    def test_requestBuild_triggers_webhooks(self):
+        # Requesting a build triggers webhooks.
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+            }))
+        logger = self.useFixture(FakeLogger())
+        recipe = self.factory.makeCharmRecipe()
+        das = self.makeBuildableDistroArchSeries()
+        build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
+        hook = self.factory.makeWebhook(
+            target=recipe, event_types=["charm-recipe:build:0.1"])
+        build = recipe.requestBuild(build_request, das)
+        expected_payload = {
+            "recipe_build": Equals(
+                canonical_url(build, force_local_path=True)),
+            "action": Equals("created"),
+            "recipe": Equals(canonical_url(recipe, force_local_path=True)),
+            "build_request": Equals(
+                canonical_url(build_request, force_local_path=True)),
+            "status": Equals("Needs building"),
+            }
+        with person_logged_in(recipe.owner):
+            delivery = hook.deliveries.one()
+            self.assertThat(
+                delivery, MatchesStructure(
+                    event_type=Equals("charm-recipe:build:0.1"),
+                    payload=MatchesDict(expected_payload)))
+            with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+                self.assertEqual(
+                    "<WebhookDeliveryJob for webhook %d on %r>" % (
+                        hook.id, hook.target),
+                    repr(delivery))
+                self.assertThat(
+                    logger.output,
+                    LogsScheduledWebhooks([
+                        (hook, "charm-recipe:build:0.1",
+                         MatchesDict(expected_payload))]))
+
     def test_requestBuilds(self):
         # requestBuilds schedules a job and returns a corresponding
         # CharmRecipeBuildRequest.
@@ -553,6 +597,47 @@ class TestCharmRecipe(TestCaseWithFactory):
         self.assertRequestedBuildsMatch(
             builds, job, "20.04", ["avr", "riscv64"], job.channels)
 
+    def test_requestBuildsFromJob_triggers_webhooks(self):
+        # requestBuildsFromJob triggers webhooks, and the payload includes a
+        # link to the build request.
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
+            "charm.default_build_series.ubuntu": "20.04",
+            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+            }))
+        self.useFixture(GitHostingFixture(blob="name: foo\n"))
+        logger = self.useFixture(FakeLogger())
+        job = self.makeRequestBuildsJob("20.04", ["mips64el", "riscv64"])
+        hook = self.factory.makeWebhook(
+            target=job.recipe, event_types=["charm-recipe:build:0.1"])
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels))
+            self.assertEqual(2, len(builds))
+            payload_matchers = [
+                MatchesDict({
+                    "recipe_build": Equals(canonical_url(
+                        build, force_local_path=True)),
+                    "action": Equals("created"),
+                    "recipe": Equals(canonical_url(
+                        job.recipe, force_local_path=True)),
+                    "build_request": Equals(canonical_url(
+                        job.build_request, force_local_path=True)),
+                    "status": Equals("Needs building"),
+                    })
+                for build in builds]
+            self.assertThat(hook.deliveries, MatchesSetwise(*(
+                MatchesStructure(
+                    event_type=Equals("charm-recipe:build:0.1"),
+                    payload=payload_matcher)
+                for payload_matcher in payload_matchers)))
+            self.assertThat(
+                logger.output,
+                LogsScheduledWebhooks([
+                    (hook, "charm-recipe:build:0.1", payload_matcher)
+                    for payload_matcher in payload_matchers]))
+
     def test_delete_without_builds(self):
         # A charm recipe with no builds can be deleted.
         owner = self.factory.makePerson()
@@ -565,6 +650,16 @@ class TestCharmRecipe(TestCaseWithFactory):
             recipe.destroySelf()
         self.assertFalse(
             getUtility(ICharmRecipeSet).exists(owner, project, "condemned"))
+
+    def test_related_webhooks_deleted(self):
+        owner = self.factory.makePerson()
+        recipe = self.factory.makeCharmRecipe(registrant=owner, owner=owner)
+        webhook = self.factory.makeWebhook(target=recipe)
+        with person_logged_in(recipe.owner):
+            webhook.ping()
+            recipe.destroySelf()
+            transaction.commit()
+            self.assertRaises(LostObjectError, getattr, webhook, "target")
 
 
 class TestCharmRecipeAuthorization(TestCaseWithFactory):
