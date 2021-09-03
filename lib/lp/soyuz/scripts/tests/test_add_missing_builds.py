@@ -5,7 +5,6 @@
 
 import os
 import subprocess
-import sys
 
 from zope.component import getUtility
 
@@ -66,7 +65,7 @@ class TestAddMissingBuilds(TestCaseWithFactory):
             test_args = []
         script = os.path.join(
             config.root, "scripts", "add-missing-builds.py")
-        args = [sys.executable, script]
+        args = [script]
         args.extend(test_args)
         process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

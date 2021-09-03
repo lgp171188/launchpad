@@ -6,7 +6,6 @@ __metaclass__ = type
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import unittest
 
@@ -32,7 +31,7 @@ class TestProcessUpload(unittest.TestCase):
         if extra_args is None:
             extra_args = []
         script = os.path.join(config.root, "scripts", "process-upload.py")
-        args = [sys.executable, script, "-vvv", self.queue_location]
+        args = [script, "-vvv", self.queue_location]
         args.extend(extra_args)
         process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

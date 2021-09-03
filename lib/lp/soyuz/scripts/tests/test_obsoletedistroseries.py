@@ -5,7 +5,6 @@ __metaclass__ = type
 
 import os
 import subprocess
-import sys
 
 from zope.component import getUtility
 
@@ -44,7 +43,7 @@ class TestObsoleteDistroseriesScript(TestCase):
         script = os.path.join(
             config.root, "scripts", "ftpmaster-tools",
             "obsolete-distroseries.py")
-        args = [sys.executable, script, '-y']
+        args = [script, '-y']
         args.extend(extra_args)
         process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
