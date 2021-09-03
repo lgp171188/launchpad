@@ -345,20 +345,20 @@ When the update interval interval is unspecified, the effective update
 interval, which decides how often the import is actually updated, uses the
 appropriate default value for the RCS type.
 
-    >>> default_interval_cvs
-    datetime.timedelta(0, 43200)
-    >>> cvs_import.effective_update_interval
-    datetime.timedelta(0, 43200)
+    >>> default_interval_cvs.total_seconds()
+    43200.0
+    >>> cvs_import.effective_update_interval.total_seconds()
+    43200.0
 
-    >>> default_interval_subversion
-    datetime.timedelta(0, 21600)
-    >>> svn_import.effective_update_interval
-    datetime.timedelta(0, 21600)
+    >>> default_interval_subversion.total_seconds()
+    21600.0
+    >>> svn_import.effective_update_interval.total_seconds()
+    21600.0
 
-    >>> default_interval_git
-    datetime.timedelta(0, 21600)
-    >>> git_import.effective_update_interval
-    datetime.timedelta(0, 21600)
+    >>> default_interval_git.total_seconds()
+    21600.0
+    >>> git_import.effective_update_interval.total_seconds()
+    21600.0
 
 
 If the update interval is set, then it overrides the default value.
@@ -368,13 +368,13 @@ direct attribute modification. So we use removeSecurityProxy in this example.
 
     >>> removeSecurityProxy(cvs_import).update_interval = (
     ...     timedelta(seconds=7200))
-    >>> cvs_import.effective_update_interval
-    datetime.timedelta(0, 7200)
+    >>> cvs_import.effective_update_interval.total_seconds()
+    7200.0
 
     >>> removeSecurityProxy(svn_import).update_interval = (
     ...     timedelta(seconds=3600))
-    >>> svn_import.effective_update_interval
-    datetime.timedelta(0, 3600)
+    >>> svn_import.effective_update_interval.total_seconds()
+    3600.0
 
 
 Retrieving CodeImports
