@@ -82,7 +82,9 @@ class CharmBase:
         return not self == other
 
     def __hash__(self):
-        return hash((self.name, self.channel, tuple(self.architectures)))
+        architectures = (
+            None if self.architectures is None else tuple(self.architectures))
+        return hash((self.name, self.channel, architectures))
 
     def __str__(self):
         return "{} {} {}".format(
@@ -165,11 +167,18 @@ def determine_instances_to_build(charmcraft_data, supported_arches,
         # those.
         for build_on in config.build_on:
             for das in supported_arches:
-                if (das.distroseries.distribution.name == build_on.name and
-                        build_on.channel in (
-                            das.distroseries.name,
-                            das.distroseries.version) and
-                        das.architecturetag in build_on.architectures):
+                if das.distroseries.distribution.name != build_on.name:
+                    continue
+                if build_on.channel not in (
+                        das.distroseries.name, das.distroseries.version):
+                    continue
+                if build_on.architectures is None:
+                    # Build on all supported architectures for the requested
+                    # series.
+                    instances[das] = None
+                elif das.architecturetag in build_on.architectures:
+                    # Build on the first matching supported architecture for
+                    # the requested series.
                     instances[das] = None
                     break
             else:

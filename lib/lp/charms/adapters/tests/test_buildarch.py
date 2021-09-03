@@ -109,7 +109,7 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     # Scenarios taken from the charmcraft build providers specification:
-    # https://docs.google.com/document/d/1Tix0V2J21hfXj-dukgArbTEN8rg31b7za4VM_KylDkc
+    # https://discourse.charmhub.io/t/charmcraft-bases-provider-support/4713
     scenarios = [
         ("single entry, single arch", {
             "bases": [{
@@ -234,6 +234,28 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
                 }],
             "expected": [("20.04", "amd64")],
             }),
+        ("multiple build-on entries", {
+            "bases": [{
+                "build-on": [
+                    {
+                        "name": "ubuntu",
+                        "channel": "18.04",
+                        "architectures": ["amd64"],
+                        },
+                    {
+                        "name": "ubuntu",
+                        "channel": "20.04",
+                        "architectures": ["amd64"],
+                        },
+                    ],
+                "run-on": [{
+                    "name": "ubuntu",
+                    "channel": "20.04",
+                    "architectures": ["amd64"],
+                    }],
+                }],
+            "expected": [("18.04", "amd64")],
+            }),
         ("redundant outputs", {
             "bases": [
                 {
@@ -270,6 +292,14 @@ class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
             "bases": None,
             "expected": [
                 ("20.04", "amd64"), ("20.04", "arm64"), ("20.04", "riscv64")],
+            }),
+        ("abbreviated, no architectures specified", {
+            "bases": [{
+                "name": "ubuntu",
+                "channel": "18.04",
+                }],
+            "expected": [
+                ("18.04", "amd64"), ("18.04", "arm64"), ("18.04", "riscv64")],
             }),
         ]
 
