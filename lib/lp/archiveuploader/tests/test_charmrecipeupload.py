@@ -7,6 +7,7 @@ __metaclass__ = type
 
 import os
 
+from pymacaroons import Macaroon
 from storm.store import Store
 
 from lp.archiveuploader.tests.test_uploadprocessor import (
@@ -74,3 +75,30 @@ class TestCharmRecipeUploads(TestUploadProcessorBase):
         self.assertIn(
             "ERROR Build did not produce any charms.", self.log.getLogBuffer())
         self.assertFalse(self.build.verifySuccessfulUpload())
+
+    def test_triggers_store_uploads(self):
+        # The upload processor triggers store uploads if appropriate.
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        self.switchToAdmin()
+        self.build.recipe.store_name = self.build.recipe.name
+        self.build.recipe.store_upload = True
+        # CharmRecipe.can_upload_to_store only checks whether
+        # "exchanged_encrypted" is present, so don't bother setting up
+        # encryption keys here.
+        self.build.recipe.store_secrets = {
+            "exchanged_encrypted": Macaroon().serialize()}
+        Store.of(self.build.recipe).flush()
+        self.switchToUploader()
+        self.assertFalse(self.build.verifySuccessfulUpload())
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(self.build.id), "ubuntu")
+        write_file(os.path.join(upload_dir, "foo_0_all.charm"), b"charm")
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", self.build)
+        result = handler.processCharmRecipe(self.log)
+        self.assertEqual(
+            UploadStatusEnum.ACCEPTED, result,
+            "Charm upload failed\nGot: %s" % self.log.getLogBuffer())
+        self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+        self.assertTrue(self.build.verifySuccessfulUpload())
+        self.assertEqual(1, len(list(self.build.store_upload_jobs)))
