@@ -208,7 +208,7 @@ class SnapStoreClient:
                         for error in response_data["error_list"])
         detail = six.ensure_text(
             requests_error.response.content, errors="replace")
-        can_retry = requests_error.response.status_code in (502, 503)
+        can_retry = requests_error.response.status_code in (502, 503, 504)
         return error_class(error_message, detail=detail, can_retry=can_retry)
 
     @classmethod
