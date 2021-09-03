@@ -1,0 +1,6 @@
+Launchpad could not upload this charm to Charmhub because of an
+authorization failure.  If you still want Launchpad to upload this charm
+to Charmhub on your behalf, you will need to reauthorize it.  You can do
+that by following the instructions here:
+
+  %(recipe_authorize_url)s

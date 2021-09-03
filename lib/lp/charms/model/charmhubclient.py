@@ -238,6 +238,9 @@ class CharmhubClient:
                 raise BadReviewStatusResponse(response.text)
             [revision] = response_data["revisions"]
             if revision["status"] == "approved":
+                if revision["revision"] is None:
+                    raise ReviewFailedResponse(
+                        "Review passed but did not assign a revision.")
                 return revision["revision"]
             elif revision["status"] == "rejected":
                 error_message = "\n".join(

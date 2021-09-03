@@ -122,5 +122,17 @@
         <allow interface="lp.charms.interfaces.charmrecipejob.ICharmRecipeJob" />
         <allow interface="lp.charms.interfaces.charmrecipejob.ICharmRecipeRequestBuildsJob" />
     </class>
+    <class class="lp.charms.model.charmrecipebuildjob.CharmRecipeBuildJob">
+        <allow interface="lp.charms.interfaces.charmrecipebuildjob.ICharmRecipeBuildJob" />
+    </class>
+    <securedutility
+        component="lp.charms.model.charmrecipebuildjob.CharmhubUploadJob"
+        provides="lp.charms.interfaces.charmrecipebuildjob.ICharmhubUploadJobSource">
+        <allow interface="lp.charms.interfaces.charmrecipebuildjob.ICharmhubUploadJobSource" />
+    </securedutility>
+    <class class="lp.charms.model.charmrecipebuildjob.CharmhubUploadJob">
+        <allow interface="lp.charms.interfaces.charmrecipebuildjob.ICharmRecipeBuildJob" />
+        <allow interface="lp.charms.interfaces.charmrecipebuildjob.ICharmhubUploadJob" />
+    </class>
 
 </configure>
