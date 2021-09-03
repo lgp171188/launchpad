@@ -33,6 +33,62 @@ class CharmRecipeBuildMailer(BaseMailer):
             config.canonical.noreply_from_address, "charm-recipe-build-status",
             build)
 
+    @classmethod
+    def forUnauthorizedUpload(cls, build):
+        """Create a mailer for notifying about unauthorized Charmhub uploads.
+
+        :param build: The relevant build.
+        """
+        requester = build.requester
+        recipients = {requester: RecipientReason.forBuildRequester(requester)}
+        return cls(
+            "Charmhub authorization failed for %(recipe_name)s",
+            "charmrecipebuild-unauthorized.txt", recipients,
+            config.canonical.noreply_from_address,
+            "charm-recipe-build-upload-unauthorized", build)
+
+    @classmethod
+    def forUploadFailure(cls, build):
+        """Create a mailer for notifying about Charmhub upload failures.
+
+        :param build: The relevant build.
+        """
+        requester = build.requester
+        recipients = {requester: RecipientReason.forBuildRequester(requester)}
+        return cls(
+            "Charmhub upload failed for %(recipe_name)s",
+            "charmrecipebuild-uploadfailed.txt", recipients,
+            config.canonical.noreply_from_address,
+            "charm-recipe-build-upload-failed", build)
+
+    @classmethod
+    def forUploadReviewFailure(cls, build):
+        """Create a mailer for notifying about Charmhub upload review failures.
+
+        :param build: The relevant build.
+        """
+        requester = build.requester
+        recipients = {requester: RecipientReason.forBuildRequester(requester)}
+        return cls(
+            "Charmhub upload review failed for %(recipe_name)s",
+            "charmrecipebuild-reviewfailed.txt", recipients,
+            config.canonical.noreply_from_address,
+            "charm-recipe-build-upload-review-failed", build)
+
+    @classmethod
+    def forReleaseFailure(cls, build):
+        """Create a mailer for notifying about Charmhub release failures.
+
+        :param build: The relevant build.
+        """
+        requester = build.requester
+        recipients = {requester: RecipientReason.forBuildRequester(requester)}
+        return cls(
+            "Charmhub release failed for %(recipe_name)s",
+            "charmrecipebuild-releasefailed.txt", recipients,
+            config.canonical.noreply_from_address,
+            "charm-recipe-build-release-failed", build)
+
     def __init__(self, subject, template_name, recipients, from_address,
                  notification_type, build):
         super(CharmRecipeBuildMailer, self).__init__(
@@ -50,6 +106,11 @@ class CharmRecipeBuildMailer(BaseMailer):
     def _getTemplateParams(self, email, recipient):
         """See `BaseMailer`."""
         build = self.build
+        upload_job = build.last_store_upload_job
+        if upload_job is None:
+            error_message = ""
+        else:
+            error_message = upload_job.error_message or ""
         params = super(CharmRecipeBuildMailer, self)._getTemplateParams(
             email, recipient)
         params.update({
@@ -60,9 +121,12 @@ class CharmRecipeBuildMailer(BaseMailer):
             "build_title": build.title,
             "build_url": canonical_url(build),
             "builder_url": "",
+            "store_error_message": error_message,
             "distroseries": build.distro_series,
             "log_url": "",
             "project_name": build.recipe.project.name,
+            "recipe_authorize_url": canonical_url(
+                build.recipe, view_name="+authorize"),
             "recipe_name": build.recipe.name,
             "upload_log_url": "",
             })

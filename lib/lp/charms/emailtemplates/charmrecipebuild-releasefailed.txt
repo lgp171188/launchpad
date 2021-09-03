@@ -1,0 +1,3 @@
+Launchpad asked Charmhub to release this charm, but it failed:
+
+  %(store_error_message)s

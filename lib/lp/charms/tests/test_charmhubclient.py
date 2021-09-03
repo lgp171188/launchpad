@@ -425,6 +425,30 @@ class TestCharmhubClient(TestCaseWithFactory):
             self.client.checkStatus, build, status_url)
 
     @responses.activate
+    def test_checkStatus_approved_no_revision(self):
+        self._setUpSecretStorage()
+        build = self.makeUploadableCharmRecipeBuild()
+        status_url = (
+            "http://charmhub.example/v1/charm/test-charm/revisions/review"
+            "?upload-id=123")
+        responses.add(
+            "GET", status_url,
+            json={
+                "revisions": [
+                    {
+                        "upload-id": "123",
+                        "status": "approved",
+                        "revision": None,
+                        "errors": None,
+                        },
+                    ],
+                })
+        self.assertRaisesWithContent(
+            ReviewFailedResponse,
+            "Review passed but did not assign a revision.",
+            self.client.checkStatus, build, status_url)
+
+    @responses.activate
     def test_checkStatus_approved(self):
         self._setUpSecretStorage()
         build = self.makeUploadableCharmRecipeBuild()

@@ -5,18 +5,31 @@
 
 __metaclass__ = type
 __all__ = [
+    "CannotScheduleStoreUpload",
+    "CharmRecipeBuildStoreUploadStatus",
     "ICharmFile",
     "ICharmRecipeBuild",
     "ICharmRecipeBuildSet",
     ]
 
-from lazr.restful.fields import Reference
+import http.client
+
+from lazr.enum import (
+    EnumeratedType,
+    Item,
+    )
+from lazr.restful.declarations import error_status
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
 from zope.interface import (
     Attribute,
     Interface,
     )
 from zope.schema import (
     Bool,
+    Choice,
     Datetime,
     Dict,
     Int,
@@ -34,6 +47,51 @@ from lp.registry.interfaces.person import IPerson
 from lp.services.database.constants import DEFAULT
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+
+
+@error_status(http.client.BAD_REQUEST)
+class CannotScheduleStoreUpload(Exception):
+    """This build cannot be uploaded to the store."""
+
+
+class CharmRecipeBuildStoreUploadStatus(EnumeratedType):
+    """Charm recipe build store upload status type
+
+    Charm recipe builds may be uploaded to Charmhub. This represents the
+    state of that process.
+    """
+
+    UNSCHEDULED = Item("""
+        Unscheduled
+
+        No upload of this charm recipe build to Charmhub is scheduled.
+        """)
+
+    PENDING = Item("""
+        Pending
+
+        This charm recipe build is queued for upload to Charmhub.
+        """)
+
+    FAILEDTOUPLOAD = Item("""
+        Failed to upload
+
+        The last attempt to upload this charm recipe build to Charmhub
+        failed.
+        """)
+
+    FAILEDTORELEASE = Item("""
+        Failed to release to channels
+
+        The last attempt to release this charm recipe build to its intended
+        set of channels failed.
+        """)
+
+    UPLOADED = Item("""
+        Uploaded
+
+        This charm recipe build was successfully uploaded to Charmhub.
+        """)
 
 
 class ICharmRecipeBuildView(IPackageBuild):
@@ -107,6 +165,34 @@ class ICharmRecipeBuildView(IPackageBuild):
             "The revision ID of the branch used for this build, if "
             "available."))
 
+    store_upload_jobs = CollectionField(
+        title=_("Store upload jobs for this build."),
+        # Really ICharmhubUploadJob.
+        value_type=Reference(schema=Interface),
+        readonly=True)
+
+    # Really ICharmhubUploadJob.
+    last_store_upload_job = Reference(
+        title=_("Last store upload job for this build."), schema=Interface)
+
+    store_upload_status = Choice(
+        title=_("Store upload status"),
+        vocabulary=CharmRecipeBuildStoreUploadStatus,
+        required=True, readonly=False)
+
+    store_upload_revision = Int(
+        title=_("Store revision"),
+        description=_(
+            "The revision assigned to this charm recipe build by Charmhub."),
+        required=False, readonly=True)
+
+    store_upload_error_message = TextLine(
+        title=_("Store upload error message"),
+        description=_(
+            "The error message, if any, from the last attempt to upload "
+            "this charm recipe build to Charmhub."),
+        required=False, readonly=True)
+
     store_upload_metadata = Attribute(
         _("A dict of data about store upload progress."))
 
@@ -142,6 +228,13 @@ class ICharmRecipeBuildEdit(Interface):
 
         :param lfa: An `ILibraryFileAlias`.
         :return: An `ICharmFile`.
+        """
+
+    def scheduleStoreUpload():
+        """Schedule an upload of this build to the store.
+
+        :raises CannotScheduleStoreUpload: if the build is not in a state
+            where an upload can be scheduled.
         """
 
     def retry():

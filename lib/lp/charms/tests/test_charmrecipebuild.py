@@ -5,12 +5,15 @@
 
 __metaclass__ = type
 
+import base64
 from datetime import (
     datetime,
     timedelta,
     )
 
 from fixtures import FakeLogger
+from nacl.public import PrivateKey
+from pymacaroons import Macaroon
 import pytz
 import six
 from testtools.matchers import (
@@ -34,16 +37,21 @@ from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
 from lp.charms.interfaces.charmrecipebuild import (
+    CannotScheduleStoreUpload,
+    CharmRecipeBuildStoreUploadStatus,
     ICharmRecipeBuild,
     ICharmRecipeBuildSet,
     )
+from lp.charms.interfaces.charmrecipebuildjob import ICharmhubUploadJobSource
 from lp.registry.enums import (
     PersonVisibility,
     TeamMembershipPolicy,
     )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
+from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
@@ -284,6 +292,7 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
             "build_request": Equals(canonical_url(
                 self.build.build_request, force_local_path=True)),
             "status": Equals("Successfully built"),
+            "store_upload_status": Equals("Unscheduled"),
             }
         delivery = hook.deliveries.one()
         self.assertThat(
@@ -333,6 +342,55 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
                 })))
         self.assertEqual(2, hook.deliveries.count())
         self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
+
+    def test_updateStatus_failure_does_not_trigger_store_uploads(self):
+        # A failed build does not trigger store uploads.
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        self.build.recipe.store_name = self.factory.getUniqueUnicode()
+        self.build.recipe.store_upload = True
+        # CharmRecipe.can_upload_to_store only checks whether
+        # "exchanged_encrypted" is present, so don't bother setting up
+        # encryption keys here.
+        self.build.recipe.store_secrets = {
+            "exchanged_encrypted": Macaroon().serialize()}
+        with dbuser(config.builddmaster.dbuser):
+            self.build.updateStatus(BuildStatus.FAILEDTOBUILD)
+        self.assertContentEqual([], self.build.store_upload_jobs)
+
+    def test_updateStatus_fullybuilt_not_configured(self):
+        # A completed build does not trigger store uploads if the recipe is
+        # not properly configured for that.
+        logger = self.useFixture(FakeLogger())
+        with dbuser(config.builddmaster.dbuser):
+            self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.assertEqual(0, len(list(self.build.store_upload_jobs)))
+        self.assertIn(
+            "<CharmRecipe ~%s/%s/+charm/%s> is not configured for upload to "
+            "the store." % (
+                self.build.recipe.owner.name, self.build.recipe.project.name,
+                self.build.recipe.name),
+            logger.output.splitlines())
+
+    def test_updateStatus_fullybuilt_triggers_store_uploads(self):
+        # A completed build triggers store uploads.
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        logger = self.useFixture(FakeLogger())
+        self.build.recipe.store_name = self.factory.getUniqueUnicode()
+        self.build.recipe.store_upload = True
+        # CharmRecipe.can_upload_to_store only checks whether
+        # "exchanged_encrypted" is present, so don't bother setting up
+        # encryption keys here.
+        self.build.recipe.store_secrets = {
+            "exchanged_encrypted": Macaroon().serialize()}
+        with dbuser(config.builddmaster.dbuser):
+            self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.assertEqual(1, len(list(self.build.store_upload_jobs)))
+        self.assertIn(
+            "Scheduling upload of <CharmRecipeBuild "
+            "~%s/%s/+charm/%s/+build/%d> to the store." % (
+                self.build.recipe.owner.name, self.build.recipe.project.name,
+                self.build.recipe.name, self.build.id),
+            logger.output.splitlines())
 
     def test_notify_fullybuilt(self):
         # notify does not send mail when a recipe build completes normally.
@@ -423,6 +481,179 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         clear_property_cache(self.build)
         self.assertFalse(self.build.estimate)
+
+    def setUpStoreUpload(self):
+        self.private_key = PrivateKey.generate()
+        self.pushConfig(
+            "charms",
+            charmhub_url="http://charmhub.example/",
+            charmhub_secrets_public_key=base64.b64encode(
+                bytes(self.private_key.public_key)).decode())
+        self.build.recipe.store_name = self.factory.getUniqueUnicode()
+        container = getUtility(IEncryptedContainer, "charmhub-secrets")
+        self.build.recipe.store_secrets = {
+            "exchanged_encrypted": removeSecurityProxy(
+                container.encrypt(Macaroon().serialize().encode())),
+            }
+
+    def test_store_upload_status_unscheduled(self):
+        build = self.factory.makeCharmRecipeBuild(
+            status=BuildStatus.FULLYBUILT)
+        self.assertEqual(
+            CharmRecipeBuildStoreUploadStatus.UNSCHEDULED,
+            build.store_upload_status)
+
+    def test_store_upload_status_pending(self):
+        build = self.factory.makeCharmRecipeBuild(
+            status=BuildStatus.FULLYBUILT)
+        getUtility(ICharmhubUploadJobSource).create(build)
+        self.assertEqual(
+            CharmRecipeBuildStoreUploadStatus.PENDING,
+            build.store_upload_status)
+
+    def test_store_upload_status_uploaded(self):
+        build = self.factory.makeCharmRecipeBuild(
+            status=BuildStatus.FULLYBUILT)
+        job = getUtility(ICharmhubUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.COMPLETED
+        self.assertEqual(
+            CharmRecipeBuildStoreUploadStatus.UPLOADED,
+            build.store_upload_status)
+
+    def test_store_upload_status_failed_to_upload(self):
+        build = self.factory.makeCharmRecipeBuild(
+            status=BuildStatus.FULLYBUILT)
+        job = getUtility(ICharmhubUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.FAILED
+        self.assertEqual(
+            CharmRecipeBuildStoreUploadStatus.FAILEDTOUPLOAD,
+            build.store_upload_status)
+
+    def test_store_upload_status_failed_to_release(self):
+        build = self.factory.makeCharmRecipeBuild(
+            status=BuildStatus.FULLYBUILT)
+        job = getUtility(ICharmhubUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.FAILED
+        naked_job.store_revision = 1
+        self.assertEqual(
+            CharmRecipeBuildStoreUploadStatus.FAILEDTORELEASE,
+            build.store_upload_status)
+
+    def test_scheduleStoreUpload(self):
+        # A build not previously uploaded to the store can be uploaded
+        # manually.
+        self.setUpStoreUpload()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeCharmFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        self.build.scheduleStoreUpload()
+        [job] = getUtility(ICharmhubUploadJobSource).iterReady()
+        self.assertEqual(JobStatus.WAITING, job.job.status)
+        self.assertEqual(self.build, job.build)
+
+    def test_scheduleStoreUpload_not_configured(self):
+        # A build that is not properly configured cannot be uploaded to the
+        # store.
+        self.setUpStoreUpload()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.build.recipe.store_name = None
+        self.assertRaisesWithContent(
+            CannotScheduleStoreUpload,
+            "Cannot upload this charm to Charmhub because it is not properly "
+            "configured.",
+            self.build.scheduleStoreUpload)
+        self.assertEqual(
+            [], list(getUtility(ICharmhubUploadJobSource).iterReady()))
+
+    def test_scheduleStoreUpload_no_files(self):
+        # A build with no files cannot be uploaded to the store.
+        self.setUpStoreUpload()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.assertRaisesWithContent(
+            CannotScheduleStoreUpload,
+            "Cannot upload this charm because it has no files.",
+            self.build.scheduleStoreUpload)
+        self.assertEqual(
+            [], list(getUtility(ICharmhubUploadJobSource).iterReady()))
+
+    def test_scheduleStoreUpload_already_in_progress(self):
+        # A build with an upload already in progress will not have another
+        # one created.
+        self.setUpStoreUpload()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeCharmFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        old_job = getUtility(ICharmhubUploadJobSource).create(self.build)
+        self.assertRaisesWithContent(
+            CannotScheduleStoreUpload,
+            "An upload of this charm is already in progress.",
+            self.build.scheduleStoreUpload)
+        self.assertEqual(
+            [old_job], list(getUtility(ICharmhubUploadJobSource).iterReady()))
+
+    def test_scheduleStoreUpload_already_uploaded(self):
+        # A build with an upload that has already completed will not have
+        # another one created.
+        self.setUpStoreUpload()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeCharmFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        old_job = getUtility(ICharmhubUploadJobSource).create(self.build)
+        removeSecurityProxy(old_job).job._status = JobStatus.COMPLETED
+        self.assertRaisesWithContent(
+            CannotScheduleStoreUpload,
+            "Cannot upload this charm because it has already been uploaded.",
+            self.build.scheduleStoreUpload)
+        self.assertEqual(
+            [], list(getUtility(ICharmhubUploadJobSource).iterReady()))
+
+    def test_scheduleStoreUpload_triggers_webhooks(self):
+        # Scheduling a store upload triggers webhooks on the corresponding
+        # recipe.
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+            }))
+        logger = self.useFixture(FakeLogger())
+        self.setUpStoreUpload()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeCharmFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        hook = self.factory.makeWebhook(
+            target=self.build.recipe, event_types=["charm-recipe:build:0.1"])
+        self.build.scheduleStoreUpload()
+        expected_payload = {
+            "recipe_build": Equals(canonical_url(
+                self.build, force_local_path=True)),
+            "action": Equals("status-changed"),
+            "recipe": Equals(canonical_url(
+                self.build.recipe, force_local_path=True)),
+            "build_request": Equals(canonical_url(
+                self.build.build_request, force_local_path=True)),
+            "status": Equals("Successfully built"),
+            "store_upload_status": Equals("Pending"),
+            }
+        delivery = hook.deliveries.one()
+        self.assertThat(
+            delivery, MatchesStructure(
+                event_type=Equals("charm-recipe:build:0.1"),
+                payload=MatchesDict(expected_payload)))
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>" % (
+                    hook.id, hook.target),
+                repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "charm-recipe:build:0.1",
+                     MatchesDict(expected_payload))]))
 
 
 class TestCharmRecipeBuildSet(TestCaseWithFactory):

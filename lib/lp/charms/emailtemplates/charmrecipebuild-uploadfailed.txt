@@ -1,0 +1,7 @@
+Launchpad failed to upload this charm to Charmhub:
+
+  %(store_error_message)s
+
+You can retry the upload here:
+
+  %(build_url)s

@@ -8,6 +8,7 @@ __all__ = [
     "BadRequestPackageUploadResponse",
     "BadReviewStatusResponse",
     "ICharmhubClient",
+    "CharmhubError",
     "ReleaseFailedResponse",
     "ReviewFailedResponse",
     "UnauthorizedUploadResponse",

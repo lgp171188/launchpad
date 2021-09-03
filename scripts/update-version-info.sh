@@ -22,19 +22,19 @@ branch_nick="$(git rev-parse --abbrev-ref HEAD | sed "s/'/\\\\'/g")"
 revision_id="$(git rev-parse HEAD)"
 date="$(git show -s --format=%ci HEAD)"
 cat > $newfile <<EOF
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 version_info = {
-    'branch_nick': u'$branch_nick',
-    'date': u'$date',
-    'revision_id': u'$revision_id',
+    'branch_nick': '$branch_nick',
+    'date': '$date',
+    'revision_id': '$revision_id',
     }
 
 if __name__ == '__main__':
     print('revision id: %(revision_id)s' % version_info)
 EOF
 
-revision_id=$(python $newfile | sed -n 's/^revision id: //p')
+revision_id=$(python3 $newfile | sed -n 's/^revision id: //p')
 if ! [ -f version-info.py ]; then
     echo "Creating version-info.py at revision $revision_id"
     mv ${newfile} version-info.py
