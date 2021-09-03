@@ -38,10 +38,13 @@ from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.charms.interfaces.charmrecipebuild import (
+    CannotScheduleStoreUpload,
+    CharmRecipeBuildStoreUploadStatus,
     ICharmFile,
     ICharmRecipeBuild,
     ICharmRecipeBuildSet,
     )
+from lp.charms.interfaces.charmrecipebuildjob import ICharmhubUploadJobSource
 from lp.charms.mail.charmrecipebuild import CharmRecipeBuildMailer
 from lp.charms.model.charmrecipebuildjob import (
     CharmRecipeBuildJob,
@@ -62,6 +65,7 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormbase import StormBase
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import (
     LibraryFileAlias,
@@ -347,6 +351,51 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
     @cachedproperty
     def last_store_upload_job(self):
         return self.store_upload_jobs.first()
+
+    @property
+    def store_upload_status(self):
+        job = self.last_store_upload_job
+        if job is None or job.job.status == JobStatus.SUSPENDED:
+            return CharmRecipeBuildStoreUploadStatus.UNSCHEDULED
+        elif job.job.status in (JobStatus.WAITING, JobStatus.RUNNING):
+            return CharmRecipeBuildStoreUploadStatus.PENDING
+        elif job.job.status == JobStatus.COMPLETED:
+            return CharmRecipeBuildStoreUploadStatus.UPLOADED
+        else:
+            if job.store_revision:
+                return CharmRecipeBuildStoreUploadStatus.FAILEDTORELEASE
+            else:
+                return CharmRecipeBuildStoreUploadStatus.FAILEDTOUPLOAD
+
+    @property
+    def store_upload_revision(self):
+        job = self.last_store_upload_job
+        return job and job.store_revision
+
+    @property
+    def store_upload_error_message(self):
+        job = self.last_store_upload_job
+        return job and job.error_message
+
+    def scheduleStoreUpload(self):
+        """See `ICharmRecipeBuild`."""
+        if not self.recipe.can_upload_to_store:
+            raise CannotScheduleStoreUpload(
+                "Cannot upload this charm to Charmhub because it is not "
+                "properly configured.")
+        if not self.was_built or self.getFiles().is_empty():
+            raise CannotScheduleStoreUpload(
+                "Cannot upload this charm because it has no files.")
+        if (self.store_upload_status ==
+                CharmRecipeBuildStoreUploadStatus.PENDING):
+            raise CannotScheduleStoreUpload(
+                "An upload of this charm is already in progress.")
+        elif (self.store_upload_status ==
+                CharmRecipeBuildStoreUploadStatus.UPLOADED):
+            raise CannotScheduleStoreUpload(
+                "Cannot upload this charm because it has already been "
+                "uploaded.")
+        getUtility(ICharmhubUploadJobSource).create(self)
 
     def getFiles(self):
         """See `ICharmRecipeBuild`."""

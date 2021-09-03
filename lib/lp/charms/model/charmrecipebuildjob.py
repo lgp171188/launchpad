@@ -58,6 +58,7 @@ from lp.services.job.model.job import (
     )
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.propertycache import get_property_cache
+from lp.services.webapp.snapshot import notify_modified
 
 
 class CharmRecipeBuildJobType(DBEnumeratedType):
@@ -188,11 +189,16 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
     @classmethod
     def create(cls, build):
         """See `ICharmhubUploadJobSource`."""
-        charm_recipe_build_job = CharmRecipeBuildJob(
-            build, cls.class_job_type, {})
-        job = cls(charm_recipe_build_job)
-        job.celeryRunOnCommit()
-        del get_property_cache(build).last_store_upload_job
+        edited_fields = set()
+        with notify_modified(build, edited_fields) as before_modification:
+            charm_recipe_build_job = CharmRecipeBuildJob(
+                build, cls.class_job_type, {})
+            job = cls(charm_recipe_build_job)
+            job.celeryRunOnCommit()
+            del get_property_cache(build).last_store_upload_job
+            upload_status = build.store_upload_status
+            if upload_status != before_modification.store_upload_status:
+                edited_fields.add("store_upload_status")
         return job
 
     @property
@@ -245,6 +251,39 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
         if self.build.store_upload_metadata is None:
             self.build.store_upload_metadata = {}
         self.build.store_upload_metadata["status_url"] = url
+
+    # Ideally we'd just override Job._set_status or similar, but
+    # lazr.delegates makes that difficult, so we use this to override all
+    # the individual Job lifecycle methods instead.
+    def _do_lifecycle(self, method_name, manage_transaction=False,
+                      *args, **kwargs):
+        edited_fields = set()
+        with notify_modified(self.build, edited_fields) as before_modification:
+            getattr(super(CharmhubUploadJob, self), method_name)(
+                *args, manage_transaction=manage_transaction, **kwargs)
+            upload_status = self.build.store_upload_status
+            if upload_status != before_modification.store_upload_status:
+                edited_fields.add("store_upload_status")
+        if edited_fields and manage_transaction:
+            transaction.commit()
+
+    def start(self, *args, **kwargs):
+        self._do_lifecycle("start", *args, **kwargs)
+
+    def complete(self, *args, **kwargs):
+        self._do_lifecycle("complete", *args, **kwargs)
+
+    def fail(self, *args, **kwargs):
+        self._do_lifecycle("fail", *args, **kwargs)
+
+    def queue(self, *args, **kwargs):
+        self._do_lifecycle("queue", *args, **kwargs)
+
+    def suspend(self, *args, **kwargs):
+        self._do_lifecycle("suspend", *args, **kwargs)
+
+    def resume(self, *args, **kwargs):
+        self._do_lifecycle("resume", *args, **kwargs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""

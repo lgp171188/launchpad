@@ -381,6 +381,7 @@ class TestCharmRecipe(TestCaseWithFactory):
             "build_request": Equals(
                 canonical_url(build_request, force_local_path=True)),
             "status": Equals("Needs building"),
+            "store_upload_status": Equals("Unscheduled"),
             }
         with person_logged_in(recipe.owner):
             delivery = hook.deliveries.one()
@@ -625,6 +626,7 @@ class TestCharmRecipe(TestCaseWithFactory):
                     "build_request": Equals(canonical_url(
                         job.build_request, force_local_path=True)),
                     "status": Equals("Needs building"),
+                    "store_upload_status": Equals("Unscheduled"),
                     })
                 for build in builds]
             self.assertThat(hook.deliveries, MatchesSetwise(*(
