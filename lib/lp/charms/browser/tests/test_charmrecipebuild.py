@@ -8,6 +8,7 @@ __metaclass__ = type
 import re
 
 from fixtures import FakeLogger
+from pymacaroons import Macaroon
 import soupmatchers
 from storm.locals import Store
 from testtools.matchers import StartsWith
@@ -21,7 +22,9 @@ from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
+from lp.charms.interfaces.charmrecipebuildjob import ICharmhubUploadJobSource
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp import canonical_url
 from lp.testing import (
     ANONYMOUS,
@@ -97,6 +100,63 @@ class TestCharmRecipeBuildView(TestCaseWithFactory):
             soupmatchers.Tag(
                 "revision ID", "li", attrs={"id": "revision-id"},
                 text=re.compile(r"^\s*Revision: dummy\s*$"))))
+
+    def test_store_upload_status_in_progress(self):
+        build = self.factory.makeCharmRecipeBuild(
+            status=BuildStatus.FULLYBUILT)
+        getUtility(ICharmhubUploadJobSource).create(build)
+        build_view = create_initialized_view(build, "+index")
+        self.assertThat(build_view(), soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                "store upload status", "li",
+                attrs={"id": "store-upload-status"},
+                text=re.compile(r"^\s*Charmhub upload in progress\s*$"))))
+
+    def test_store_upload_status_completed(self):
+        build = self.factory.makeCharmRecipeBuild(
+            status=BuildStatus.FULLYBUILT)
+        job = getUtility(ICharmhubUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.COMPLETED
+        build_view = create_initialized_view(build, "+index")
+        self.assertThat(build_view(), soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                "store upload status", "li",
+                attrs={"id": "store-upload-status"},
+                text=re.compile(r"^\s*Uploaded to Charmhub\s*$"))))
+
+    def test_store_upload_status_failed(self):
+        build = self.factory.makeCharmRecipeBuild(
+            status=BuildStatus.FULLYBUILT)
+        job = getUtility(ICharmhubUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.FAILED
+        naked_job.error_message = "Review failed."
+        build_view = create_initialized_view(build, "+index")
+        self.assertThat(build_view(), soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                "store upload status", "li",
+                attrs={"id": "store-upload-status"},
+                text=re.compile(
+                    r"^\s*Charmhub upload failed:\s+"
+                    r"Review failed.\s*$"))))
+
+    def test_store_upload_status_release_failed(self):
+        build = self.factory.makeCharmRecipeBuild(
+            status=BuildStatus.FULLYBUILT)
+        job = getUtility(ICharmhubUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.FAILED
+        naked_job.store_revision = 1
+        naked_job.error_message = "Failed to publish"
+        build_view = create_initialized_view(build, "+index")
+        self.assertThat(build_view(), soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                "store upload status", "li",
+                attrs={"id": "store-upload-status"},
+                text=re.compile(
+                    r"^\s*Charmhub release failed:\s+"
+                    r"Failed to publish\s*$"))))
 
 
 class TestCharmRecipeBuildOperations(BrowserTestCase):
@@ -231,6 +291,71 @@ class TestCharmRecipeBuildOperations(BrowserTestCase):
             soupmatchers.Tag(
                 "notification", "div", attrs={"class": "warning message"},
                 text="Cannot rescore this build because it is not queued.")))
+
+    def setUpStoreUpload(self):
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        with person_logged_in(self.requester):
+            self.build.recipe.store_name = self.factory.getUniqueUnicode()
+            # CharmRecipe.can_upload_to_store only checks whether
+            # "exchanged_encrypted" is present, so don't bother setting up
+            # encryption keys here.
+            self.build.recipe.store_secrets = {
+                "exchanged_encrypted": Macaroon().serialize()}
+
+    def test_store_upload(self):
+        # A build not previously uploaded to Charmhub can be uploaded
+        # manually.
+        self.setUpStoreUpload()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeCharmFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        browser = self.getViewBrowser(self.build, user=self.requester)
+        browser.getControl("Upload this charm to Charmhub").click()
+        self.assertEqual(self.build_url, browser.url)
+        login(ANONYMOUS)
+        [job] = getUtility(ICharmhubUploadJobSource).iterReady()
+        self.assertEqual(JobStatus.WAITING, job.job.status)
+        self.assertEqual(self.build, job.build)
+        self.assertEqual(
+            "An upload has been scheduled and will run as soon as possible.",
+            extract_text(find_tags_by_class(browser.contents, "message")[0]))
+
+    def test_store_upload_retry(self):
+        # A build with a previously-failed Charmhub upload can have the
+        # upload retried.
+        self.setUpStoreUpload()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.factory.makeCharmFile(
+            build=self.build,
+            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+        old_job = getUtility(ICharmhubUploadJobSource).create(self.build)
+        removeSecurityProxy(old_job).job._status = JobStatus.FAILED
+        browser = self.getViewBrowser(self.build, user=self.requester)
+        browser.getControl("Retry").click()
+        self.assertEqual(self.build_url, browser.url)
+        login(ANONYMOUS)
+        [job] = getUtility(ICharmhubUploadJobSource).iterReady()
+        self.assertEqual(JobStatus.WAITING, job.job.status)
+        self.assertEqual(self.build, job.build)
+        self.assertEqual(
+            "An upload has been scheduled and will run as soon as possible.",
+            extract_text(find_tags_by_class(browser.contents, "message")[0]))
+
+    def test_store_upload_error_notifies(self):
+        # If a build cannot be scheduled for uploading to Charmhub, we issue
+        # a notification.
+        self.setUpStoreUpload()
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        browser = self.getViewBrowser(self.build, user=self.requester)
+        browser.getControl("Upload this charm to Charmhub").click()
+        self.assertEqual(self.build_url, browser.url)
+        login(ANONYMOUS)
+        self.assertEqual(
+            [], list(getUtility(ICharmhubUploadJobSource).iterReady()))
+        self.assertEqual(
+            "Cannot upload this charm because it has no files.",
+            extract_text(find_tags_by_class(browser.contents, "message")[0]))
 
     def test_builder_history(self):
         Store.of(self.build).flush()
