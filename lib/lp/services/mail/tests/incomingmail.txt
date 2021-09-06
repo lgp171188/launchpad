@@ -301,8 +301,7 @@ to the user, citing the OOPS ID, with the original message attached.
 
 OOPS notifications work even if the From: address isn't properly MIME-encoded.
 
-    >>> from lp.services.compat import message_from_bytes
-    >>> msg = message_from_bytes(
+    >>> msg = email.message_from_bytes(
     ... u"""From: \u05D1 <bet@canonical.com>
     ... To: launchpad@oops.com
     ... X-Launchpad-Original-To: launchpad@oops.com

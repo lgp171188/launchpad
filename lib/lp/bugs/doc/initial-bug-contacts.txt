@@ -167,8 +167,8 @@ notification). The email has the X-Launchpad-Message-Rationale header to
 track why daf received the email. The rational is repeated in the footer
 of the email with the bug title and URL.
 
+    >>> import email
     >>> from operator import itemgetter
-    >>> from lp.services.compat import message_from_bytes
 
     >>> test_emails = list(stub.test_emails)
     >>> test_emails.sort(key=itemgetter(1))
@@ -183,7 +183,7 @@ of the email with the bug title and URL.
     >>> print(to_addr)
     ['daf@canonical.com']
 
-    >>> msg = message_from_bytes(raw_message)
+    >>> msg = email.message_from_bytes(raw_message)
     >>> msg['References'] == (
     ...        bug_one_in_ubuntu_firefox.bug.initial_message.rfc822msgid)
     True

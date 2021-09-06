@@ -11,12 +11,12 @@ __all__ = [
     'strip_pgp_signature',
     ]
 
+import email
 from email.message import Message
 import re
 
 from zope.interface import implementer
 
-from lp.services.compat import message_from_bytes
 from lp.services.mail.interfaces import ISignedMessage
 
 
@@ -42,7 +42,7 @@ def signed_message_from_bytes(buf):
     It makes sure that the SignedMessage instance has access to the
     parsed bytes.
     """
-    msg = message_from_bytes(buf, _class=SignedMessage)
+    msg = email.message_from_bytes(buf, _class=SignedMessage)
     msg.parsed_bytes = buf
     return msg
 

@@ -3,6 +3,7 @@
 
 """Tests for code import related mailings"""
 
+import email
 import textwrap
 
 import six
@@ -14,7 +15,6 @@ from lp.code.enums import (
     TargetRevisionControlSystems,
     )
 from lp.code.tests.helpers import GitHostingFixture
-from lp.services.compat import message_from_bytes
 from lp.services.mail import stub
 from lp.testing import (
     login_celebrity,
@@ -40,7 +40,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             cvs_module='a_module', branch_name='import',
             product=fooix, registrant=eric)
         transaction.commit()
-        msg = message_from_bytes(stub.test_emails[0][2])
+        msg = email.message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual('~eric/fooix/import', msg['X-Launchpad-Branch'])
         self.assertEqual(
@@ -64,7 +64,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             branch_name='trunk', product=fooix, registrant=eric,
             rcs_type=RevisionControlSystems.BZR_SVN)
         transaction.commit()
-        msg = message_from_bytes(stub.test_emails[0][2])
+        msg = email.message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual('~eric/fooix/trunk', msg['X-Launchpad-Branch'])
         self.assertEqual(
@@ -87,7 +87,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             git_repo_url='git://git.example.com/fooix.git',
             branch_name='master', product=fooix, registrant=eric)
         transaction.commit()
-        msg = message_from_bytes(stub.test_emails[0][2])
+        msg = email.message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual('~eric/fooix/master', msg['X-Launchpad-Branch'])
         self.assertEqual(
@@ -113,7 +113,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             branch_name=u'master', product=fooix, registrant=eric,
             target_rcs_type=TargetRevisionControlSystems.GIT)
         transaction.commit()
-        msg = message_from_bytes(stub.test_emails[0][2])
+        msg = email.message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual('~eric/fooix/+git/master', msg['X-Launchpad-Branch'])
         self.assertEqual(
@@ -141,7 +141,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             git_repo_url='git://git.example.com/fooix.git',
             branch_name='master', sourcepackage=fooix, registrant=eric)
         transaction.commit()
-        msg = message_from_bytes(stub.test_emails[0][2])
+        msg = email.message_from_bytes(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual(
             '~eric/foobuntu/manic/fooix/master', msg['X-Launchpad-Branch'])
@@ -164,7 +164,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def assertSameDetailsEmail(self, details, unique_name):
-        msg = message_from_bytes(stub.test_emails[0][2])
+        msg = email.message_from_bytes(stub.test_emails[0][2])
         self.assertEqual(
             'code-import-updated', msg['X-Launchpad-Notification-Type'])
         self.assertEqual(unique_name, msg['X-Launchpad-Branch'])
@@ -183,7 +183,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
 
     def assertDifferentDetailsEmail(self, old_details, new_details,
                                     unique_name):
-        msg = message_from_bytes(stub.test_emails[0][2])
+        msg = email.message_from_bytes(stub.test_emails[0][2])
         self.assertEqual(
             'code-import-updated', msg['X-Launchpad-Notification-Type'])
         self.assertEqual(unique_name, msg['X-Launchpad-Branch'])

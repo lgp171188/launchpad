@@ -10,13 +10,7 @@ __metaclass__ = type
 __all__ = [
     'escape',
     'message_as_bytes',
-    'message_from_bytes',
     ]
-
-try:
-    from email import message_from_bytes
-except ImportError:
-    from email import message_from_string as message_from_bytes
 
 try:
     from html import escape
