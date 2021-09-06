@@ -316,7 +316,8 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
                     # We made progress, so reset attempt_count.
                     self.attempt_count = 1
                 if self.store_revision is None:
-                    self.store_revision = client.checkStatus(self.status_url)
+                    self.store_revision = client.checkStatus(
+                        self.build, self.status_url)
                     if self.store_revision is None:
                         raise AssertionError(
                             "checkStatus returned successfully but with no "
