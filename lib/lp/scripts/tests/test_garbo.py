@@ -2018,6 +2018,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # _store_upload_revision populated yet
         populator = PopulateSnapBuildStoreRevision(None)
         filter = populator.findSnapBuilds()
+        build1 = removeSecurityProxy(build1)
         self.assertEqual(1, filter.count())
         self.assertEqual(build1, filter.one())
         self.assertEqual(build1._store_upload_revision, None)
@@ -2054,7 +2055,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         self.runDaily()
         switch_dbuser('testadmin')
+        build2 = removeSecurityProxy(build2)
         self.assertEqual(build2._store_upload_revision, 1)
+        build3 = removeSecurityProxy(build3)
         self.assertIsNone(build3._store_upload_revision)
 
 

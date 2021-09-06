@@ -198,8 +198,7 @@ class SnapBuild(PackageBuildMixin, Storm):
     def __init__(self, build_farm_job, requester, snap, archive,
                  distro_arch_series, pocket, snap_base, channels,
                  processor, virtualized, date_created,
-                 store_upload_metadata=None, _store_upload_revision=None,
-                 build_request=None):
+                 store_upload_metadata=None, build_request=None):
         """Construct a `SnapBuild`."""
         super(SnapBuild, self).__init__()
         self.build_farm_job = build_farm_job
@@ -214,7 +213,6 @@ class SnapBuild(PackageBuildMixin, Storm):
         self.virtualized = virtualized
         self.date_created = date_created
         self.store_upload_metadata = store_upload_metadata
-        self._store_upload_revision = _store_upload_revision
         if build_request is not None:
             self.build_request_id = build_request.id
         self.status = BuildStatus.NEEDSBUILD
@@ -537,7 +535,7 @@ class SnapBuild(PackageBuildMixin, Storm):
         # PopulateSnapBuildStoreRevision.
         # If the persisted field (_store_upload_revision)
         # is not populated yet we return the old way of computing this
-        # value so that we don't break exiting API clients.
+        # value so that we don't break existing API clients.
         if self._store_upload_revision:
             return self._store_upload_revision
         else:

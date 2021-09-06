@@ -1745,7 +1745,7 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
                 Job.id == SnapBuildJob.job_id)
             ]
         builds = self.store.using(*origin).find(
-            (SnapBuild),
+            SnapBuild,
             SnapBuild.id >= self.start_at,
             SnapBuild._store_upload_revision == None,
             SnapBuildJob.job_type == SnapBuildJobType.STORE_UPLOAD,

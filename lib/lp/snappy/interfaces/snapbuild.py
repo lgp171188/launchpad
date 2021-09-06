@@ -268,12 +268,6 @@ class ISnapBuildView(IPackageBuild, IPrivacy):
     store_upload_metadata = Attribute(
         _("A dict of data about store upload progress."))
 
-    _store_upload_revision = Int(
-        title=_("Store revision"),
-        description=_("Persisted DB column that stores "
-                      "the revision assigned to this package by the store."),
-        required=False, readonly=True)
-
     def getFiles():
         """Retrieve the build's `ISnapFile` records.
 
