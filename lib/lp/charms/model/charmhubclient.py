@@ -82,7 +82,7 @@ class CharmhubClient:
                         error["message"]
                         for error in response_data["error-list"])
         detail = requests_error.response.content.decode(errors="replace")
-        can_retry = requests_error.response.status_code in (502, 503)
+        can_retry = requests_error.response.status_code in (502, 503, 504)
         return error_class(error_message, detail=detail, can_retry=can_retry)
 
     @classmethod
