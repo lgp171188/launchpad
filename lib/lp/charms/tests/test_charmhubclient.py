@@ -156,8 +156,8 @@ class TestCharmhubClient(TestCaseWithFactory):
             status=200,
             json={
                 "status-url": (
-                    "http://charmhub.example/v1/charm/{}/revisions/review"
-                    "?upload-id=123".format(quote(name))),
+                    "/v1/charm/{}/revisions/review?upload-id=123".format(
+                        quote(name))),
                 })
 
     def _addCharmReleaseResponse(self, name):
@@ -311,8 +311,7 @@ class TestCharmhubClient(TestCaseWithFactory):
         # config.ICharmhubUploadJobSource.dbuser once that job exists.
         with dbuser("charm-build-job"):
             self.assertEqual(
-                "http://charmhub.example/v1/charm/test-charm/revisions/review"
-                "?upload-id=123",
+                "/v1/charm/test-charm/revisions/review?upload-id=123",
                 self.client.upload(build))
         requests = [call.request for call in responses.calls]
         self.assertThat(requests, MatchesListwise([
@@ -380,11 +379,9 @@ class TestCharmhubClient(TestCaseWithFactory):
     def test_checkStatus_pending(self):
         self._setUpSecretStorage()
         build = self.makeUploadableCharmRecipeBuild()
-        status_url = (
-            "http://charmhub.example/v1/charm/test-charm/revisions/review"
-            "?upload-id=123")
+        status_url = "/v1/charm/test-charm/revisions/review?upload-id=123"
         responses.add(
-            "GET", status_url,
+            "GET", "http://charmhub.example" + status_url,
             json={
                 "revisions": [
                     {
@@ -403,11 +400,9 @@ class TestCharmhubClient(TestCaseWithFactory):
     def test_checkStatus_error(self):
         self._setUpSecretStorage()
         build = self.makeUploadableCharmRecipeBuild()
-        status_url = (
-            "http://charmhub.example/v1/charm/test-charm/revisions/review"
-            "?upload-id=123")
+        status_url = "/v1/charm/test-charm/revisions/review?upload-id=123"
         responses.add(
-            "GET", status_url,
+            "GET", "http://charmhub.example" + status_url,
             json={
                 "revisions": [
                     {
@@ -428,11 +423,9 @@ class TestCharmhubClient(TestCaseWithFactory):
     def test_checkStatus_approved_no_revision(self):
         self._setUpSecretStorage()
         build = self.makeUploadableCharmRecipeBuild()
-        status_url = (
-            "http://charmhub.example/v1/charm/test-charm/revisions/review"
-            "?upload-id=123")
+        status_url = "/v1/charm/test-charm/revisions/review?upload-id=123"
         responses.add(
-            "GET", status_url,
+            "GET", "http://charmhub.example" + status_url,
             json={
                 "revisions": [
                     {
@@ -452,11 +445,9 @@ class TestCharmhubClient(TestCaseWithFactory):
     def test_checkStatus_approved(self):
         self._setUpSecretStorage()
         build = self.makeUploadableCharmRecipeBuild()
-        status_url = (
-            "http://charmhub.example/v1/charm/test-charm/revisions/review"
-            "?upload-id=123")
+        status_url = "/v1/charm/test-charm/revisions/review?upload-id=123"
         responses.add(
-            "GET", status_url,
+            "GET", "http://charmhub.example" + status_url,
             json={
                 "revisions": [
                     {
@@ -471,7 +462,7 @@ class TestCharmhubClient(TestCaseWithFactory):
         requests = [call.request for call in responses.calls]
         self.assertThat(requests, MatchesListwise([
             RequestMatches(
-                url=Equals(status_url),
+                url=Equals("http://charmhub.example" + status_url),
                 method=Equals("GET"),
                 auth=("Macaroon", MacaroonVerifies(self.exchanged_key))),
             ]))
@@ -480,10 +471,9 @@ class TestCharmhubClient(TestCaseWithFactory):
     def test_checkStatus_404(self):
         self._setUpSecretStorage()
         build = self.makeUploadableCharmRecipeBuild()
-        status_url = (
-            "http://charmhub.example/v1/charm/test-charm/revisions/review"
-            "?upload-id=123")
-        responses.add("GET", status_url, status=404)
+        status_url = "/v1/charm/test-charm/revisions/review?upload-id=123"
+        responses.add(
+            "GET", "http://charmhub.example" + status_url, status=404)
         self.assertRaisesWithContent(
             BadReviewStatusResponse, "404 Client Error: Not Found",
             self.client.checkStatus, build, status_url)

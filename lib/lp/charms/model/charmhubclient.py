@@ -223,6 +223,8 @@ class CharmhubClient:
     @classmethod
     def checkStatus(cls, build, status_url):
         """See `ICharmhubClient`."""
+        status_url = urlappend(
+            config.charms.charmhub_url, status_url.lstrip("/"))
         macaroon_raw = _get_macaroon(build.recipe)
         request = get_current_browser_request()
         timeline_action = get_request_timeline(request).start(
