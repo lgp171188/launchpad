@@ -105,9 +105,10 @@ class ICharmhubClient(Interface):
             failed.
         """
 
-    def checkStatus(status_url):
+    def checkStatus(build, status_url):
         """Poll Charmhub once for upload scan status.
 
+        :param build: The `ICharmRecipeBuild` being uploaded.
         :param status_url: A URL as returned by `upload`.
         :raises UploadNotReviewedYetResponse: if the upload has not yet been
             reviewed.

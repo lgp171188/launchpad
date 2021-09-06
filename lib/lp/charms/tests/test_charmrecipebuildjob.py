@@ -70,6 +70,10 @@ def run_isolated_jobs(jobs):
         transaction.abort()
 
 
+# XXX cjwatson 2021-09-06: This approach makes it too easy to commit
+# type-safety errors.  Perhaps we should fake the HTTP responses instead, or
+# otherwise ensure that the signatures of the faked methods match the real
+# ones?
 @implementer(ICharmhubClient)
 class FakeCharmhubClient:
 
@@ -183,7 +187,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertEqual([((build,), {})], client.upload.calls)
-        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertEqual(
+            [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
@@ -299,7 +304,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertEqual([((build,), {})], client.upload.calls)
-        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertEqual(
+            [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
@@ -379,7 +385,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertEqual([((build,), {})], client.upload.calls)
-        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertEqual(
+            [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertIsNone(job.store_revision)
@@ -397,7 +404,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertEqual([], client.upload.calls)
-        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertEqual(
+            [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
@@ -426,7 +434,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertEqual([((build,), {})], client.upload.calls)
-        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertEqual(
+            [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertIsNone(job.store_revision)
@@ -474,7 +483,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertEqual([((build,), {})], client.upload.calls)
-        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertEqual(
+            [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([((build, 1), {})], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
@@ -503,7 +513,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             JobRunner([job]).runAll()
         self.assertEqual([((build,), {})], client.upload.calls)
-        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertEqual(
+            [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([((build, 1), {})], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
         self.assertEqual(1, job.store_revision)
