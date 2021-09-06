@@ -155,6 +155,44 @@
            tal:attributes="href context/upload_log_url">uploadlog</a>
         (<span tal:replace="file/content/filesize/fmt:bytes" />)
       </li>
+      <li id="store-upload-status"
+          tal:define="job context/last_store_upload_job"
+          tal:condition="job">
+        <tal:pending
+            condition="context/store_upload_status/enumvalue:PENDING">
+          Charmhub upload in progress
+        </tal:pending>
+        <tal:failed-upload
+            condition="context/store_upload_status/enumvalue:FAILEDTOUPLOAD">
+          Charmhub upload failed:
+          <tal:error-message replace="context/store_upload_error_message" />
+          <form action="" method="POST">
+            <input type="submit" name="field.actions.upload" value="Retry" />
+          </form>
+        </tal:failed-upload>
+        <tal:failed-release
+            condition="context/store_upload_status/enumvalue:FAILEDTORELEASE">
+          Charmhub release failed:
+          <tal:error-message replace="context/store_upload_error_message" />
+          <form action="" method="POST">
+            <input type="submit" name="field.actions.upload" value="Retry" />
+          </form>
+        </tal:failed-release>
+        <tal:uploaded
+            condition="context/store_upload_status/enumvalue:UPLOADED">
+          Uploaded to Charmhub
+        </tal:uploaded>
+      </li>
+      <li id="store-upload-status"
+          tal:condition="python:
+            context.status.title == 'Successfully built' and
+            context.recipe.can_upload_to_store and
+            context.last_store_upload_job is None">
+        <form action="" method="POST">
+          <input type="submit" name="field.actions.upload"
+                 value="Upload this charm to Charmhub" />
+        </form>
+      </li>
     </ul>
 
     <div

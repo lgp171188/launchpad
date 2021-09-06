@@ -16,7 +16,10 @@ from lp.app.browser.launchpadform import (
     action,
     LaunchpadFormView,
     )
-from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
+from lp.charms.interfaces.charmrecipebuild import (
+    CannotScheduleStoreUpload,
+    ICharmRecipeBuild,
+    )
 from lp.services.librarian.browser import (
     FileNavigationMixin,
     ProxiedLibraryFileAlias,
@@ -26,7 +29,6 @@ from lp.services.webapp import (
     canonical_url,
     ContextMenu,
     enabled_with_permission,
-    LaunchpadView,
     Link,
     Navigation,
     )
@@ -65,8 +67,11 @@ class CharmRecipeBuildContextMenu(ContextMenu):
             enabled=self.context.can_be_rescored)
 
 
-class CharmRecipeBuildView(LaunchpadView):
+class CharmRecipeBuildView(LaunchpadFormView):
     """Default view of a charm recipe build."""
+
+    class schema(Interface):
+        """Schema for uploading a build."""
 
     @property
     def label(self):
@@ -91,6 +96,18 @@ class CharmRecipeBuildView(LaunchpadView):
     @property
     def next_url(self):
         return canonical_url(self.context)
+
+    @action("Upload build to Charmhub", name="upload")
+    def upload_action(self, action, data):
+        """Schedule an upload of this build to Charmhub."""
+        try:
+            self.context.scheduleStoreUpload()
+        except CannotScheduleStoreUpload as e:
+            self.request.response.addWarningNotification(str(e))
+        else:
+            self.request.response.addInfoNotification(
+                "An upload has been scheduled and will run as soon as "
+                "possible.")
 
 
 class CharmRecipeBuildRetryView(LaunchpadFormView):
