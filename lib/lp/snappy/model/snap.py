@@ -1111,12 +1111,19 @@ class Snap(Storm, WebhookTargetMixin):
 
         return result
 
-    def getBuildByStoreRevision(self, store_upload_revision):
-       build = Store.of(self).find(
-           SnapBuild,
-           SnapBuild.snap == self,
-           SnapBuild._store_upload_revision == store_upload_revision).one()
-       return build
+    def getBuildByStoreRevision(self, store_upload_revision, user=None):
+        build = Store.of(self).find(
+            SnapBuild,
+            SnapBuild.snap == self,
+            SnapBuild._store_upload_revision == store_upload_revision,
+            SnapBuild.archive == Archive.id,
+            Archive._enabled,
+            get_enabled_archive_filter(
+                user,
+                include_public=True,
+                include_subscribed=True)
+        ).one()
+        return build
 
     @property
     def builds(self):

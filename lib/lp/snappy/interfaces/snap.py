@@ -527,6 +527,7 @@ class ISnapView(Interface):
             given snap builds.
         """
 
+    @call_with(user=REQUEST_USER)
     @operation_parameters(
         store_upload_revision=Int(title="Store revision",
                                   required=True))
