@@ -37,6 +37,7 @@ from storm.expr import (
     Except,
     In,
     Join,
+    LeftJoin,
     Max,
     Min,
     Or,
@@ -134,8 +135,14 @@ from lp.services.verification.model.logintoken import LoginToken
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookJobSource
 from lp.services.webhooks.model import WebhookJob
-from lp.snappy.model.snapbuild import SnapFile
-from lp.snappy.model.snapbuildjob import SnapBuildJobType
+from lp.snappy.model.snapbuild import (
+    SnapBuild,
+    SnapFile,
+    )
+from lp.snappy.model.snapbuildjob import (
+    SnapBuildJob,
+    SnapBuildJobType,
+    )
 from lp.soyuz.enums import ArchiveSubscriberStatus
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
@@ -1717,6 +1724,47 @@ class ArchiveAuthTokenDeactivator(BulkPruner):
         transaction.commit()
 
 
+class PopulateSnapBuildStoreRevision(TunableLoop):
+    """Populates snapbuild.store_revision if not set."""
+
+    maximum_chunk_size = 5000
+
+    def __init__(self, log, abort_time=None):
+        super(PopulateSnapBuildStoreRevision, self).__init__(log, abort_time)
+        self.start_at = 1
+        self.store = IMasterStore(SnapBuild)
+
+    def findSnapBuilds(self):
+        origin = [
+            SnapBuild,
+            LeftJoin(
+                SnapBuildJob,
+                SnapBuildJob.snapbuild_id == SnapBuild.id),
+            LeftJoin(
+                Job,
+                Job.id == SnapBuildJob.job_id)
+            ]
+        builds = self.store.using(*origin).find(
+            SnapBuild,
+            SnapBuild.id >= self.start_at,
+            SnapBuild._store_upload_revision == None,
+            SnapBuildJob.job_type == SnapBuildJobType.STORE_UPLOAD,
+            Job._status == JobStatus.COMPLETED)
+
+        return builds.order_by(SnapBuild.id)
+
+    def isDone(self):
+        return self.findSnapBuilds().is_empty()
+
+    def __call__(self, chunk_size):
+        builds = list(self.findSnapBuilds()[:chunk_size])
+        for build in builds:
+            build._store_upload_revision = build.store_upload_revision
+        if len(builds):
+            self.start_at = builds[-1].id + 1
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
     script_name = None  # Script name for locking and database user. Override.
@@ -2008,6 +2056,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         OCIFilePruner,
         ObsoleteBugAttachmentPruner,
         OldTimeLimitedTokenDeleter,
+        PopulateSnapBuildStoreRevision,
         POTranslationPruner,
         PreviewDiffPruner,
         ProductVCSPopulator,

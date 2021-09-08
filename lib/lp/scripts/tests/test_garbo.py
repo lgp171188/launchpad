@@ -97,6 +97,7 @@ from lp.scripts.garbo import (
     load_garbo_job_state,
     LoginTokenPruner,
     OpenIDConsumerAssociationPruner,
+    PopulateSnapBuildStoreRevision,
     ProductVCSPopulator,
     save_garbo_job_state,
     UnusedPOTMsgSetPruner,
@@ -130,10 +131,16 @@ from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.model.logintoken import LoginToken
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
+from lp.snappy.interfaces.snapbuildjob import ISnapStoreUploadJobSource
+from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snapbuild import SnapFile
 from lp.snappy.model.snapbuildjob import (
     SnapBuildJob,
     SnapStoreUploadJob,
+    )
+from lp.snappy.tests.test_snapbuildjob import (
+    FakeSnapStoreClient,
+    run_isolated_jobs,
     )
 from lp.soyuz.enums import (
     ArchiveSubscriberStatus,
@@ -153,7 +160,11 @@ from lp.testing import (
     TestCase,
     TestCaseWithFactory,
     )
-from lp.testing.dbuser import switch_dbuser
+from lp.testing.dbuser import (
+    dbuser,
+    switch_dbuser,
+    )
+from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     DatabaseLayer,
     LaunchpadScriptLayer,
@@ -1977,6 +1988,77 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser('testadmin')
         self.assertIsNotNone(token.date_deactivated)
         self.assertEmailQueueLength(0)
+
+    def test_PopulateSnapBuildStoreRevision(self):
+        switch_dbuser('testadmin')
+        snap1 = self.factory.makeSnap()
+        build1 = self.factory.makeSnapBuild(
+            snap=snap1,
+            status=BuildStatus.FULLYBUILT)
+
+        # test that build1 does not get picked up
+        # as it is a build without a store upload
+        populator = PopulateSnapBuildStoreRevision(None)
+        rs = populator.findSnapBuilds()
+        self.assertEqual(0, rs.count())
+
+        # Upload build
+        job = getUtility(ISnapStoreUploadJobSource).create(build1)
+        client = FakeSnapStoreClient()
+        client.upload.result = (
+            "http://sca.example/dev/api/snaps/1/builds/1/status")
+        client.checkStatus.result = (
+            "http://sca.example/dev/click-apps/1/rev/1/", 1)
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        # this mimics what we have in the DB right now:
+        # uploaded snaps that do not have the new DB column
+        # _store_upload_revision populated yet
+        populator = PopulateSnapBuildStoreRevision(None)
+        filter = populator.findSnapBuilds()
+        build1 = removeSecurityProxy(build1)
+        self.assertEqual(1, filter.count())
+        self.assertEqual(build1, filter.one())
+        self.assertEqual(build1._store_upload_revision, None)
+
+        # run the garbo job and verify _store_upload_revision
+        # is not populated with the value assigned to the build during upload
+        self.runDaily()
+        switch_dbuser('testadmin')
+        self.assertEqual(build1._store_upload_revision, 1)
+
+        # Tests that of all builds for the same snap only those that have
+        # been uploaded to the store will get
+        # their new _store_upload_revision DB column updated
+        build2 = self.factory.makeSnapBuild(
+            snap=snap1,
+            status=BuildStatus.FULLYBUILT)
+        build3 = self.factory.makeSnapBuild(
+            snap=snap1,
+            status=BuildStatus.FULLYBUILT)
+        job = getUtility(ISnapStoreUploadJobSource).create(build2)
+        client = FakeSnapStoreClient()
+        client.upload.result = (
+            "http://sca.example/dev/api/snaps/1/builds/2/status")
+        client.checkStatus.result = (
+            "http://sca.example/dev/click-apps/1/rev/2/", 1)
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        populator = PopulateSnapBuildStoreRevision(None)
+        filter = populator.findSnapBuilds()
+        self.assertEqual(1, filter.count())
+        self.assertEqual(build2, filter.one())
+
+        self.runDaily()
+        switch_dbuser('testadmin')
+        build2 = removeSecurityProxy(build2)
+        self.assertEqual(build2._store_upload_revision, 1)
+        build3 = removeSecurityProxy(build3)
+        self.assertIsNone(build3._store_upload_revision)
 
 
 class TestGarboTasks(TestCaseWithFactory):
