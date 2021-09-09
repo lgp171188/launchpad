@@ -6,7 +6,7 @@
 __metaclass__ = type
 __all__ = []
 
-from email import message_from_string
+import email
 from textwrap import dedent
 
 from six.moves import xmlrpc_client
@@ -36,10 +36,7 @@ from lp.registry.xmlrpc.mailinglist import (
     ENABLED,
     MailingListAPIView,
     )
-from lp.services.compat import (
-    message_as_bytes,
-    message_from_bytes,
-    )
+from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import (
@@ -449,7 +446,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
             self.factory.makeMailingList(team, owner)
         sender = self.factory.makePerson(email='me@eg.dom')
         with person_logged_in(sender):
-            message = message_from_string(dedent("""\
+            message = email.message_from_string(dedent("""\
                 From: me@eg.dom
                 To: team@lists.launchpad.test
                 Subject: A question
@@ -493,7 +490,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         # Non-ascii messages headers are re-encoded for moderators.
         team, sender, message = self.makeMailingListAndHeldMessage()
         with person_logged_in(sender):
-            message = message_from_bytes(dedent("""\
+            message = email.message_from_bytes(dedent("""\
                 From: \xa9 me <me@eg.dom>
                 To: team@lists.launchpad.test
                 Subject: \xa9 gremlins

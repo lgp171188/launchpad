@@ -15,9 +15,9 @@ def test_simple_sendmail():
     r"""
     Send an email (faked by TestMailer - no actual email is sent)
 
+    >>> from email import message_from_bytes
     >>> from email.mime.text import MIMEText
     >>> import transaction
-    >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> from lp.services.mail.sendmail import simple_sendmail
 

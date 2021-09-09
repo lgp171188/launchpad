@@ -116,9 +116,9 @@ are now subscribed.
 
 Now let's take a look at what the notification looks like:
 
-    >>> from lp.services.compat import message_from_bytes
+    >>> import email
     >>> notifications = [
-    ...     message_from_bytes(raw_message)
+    ...     email.message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']
@@ -158,7 +158,7 @@ Whiteboard change:
     >>> transaction.commit()
 
     >>> notifications = [
-    ...     message_from_bytes(raw_message)
+    ...     email.message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']
@@ -198,7 +198,7 @@ Definition status and whiteboard change:
     >>> transaction.commit()
 
     >>> notifications = [
-    ...     message_from_bytes(raw_message)
+    ...     email.message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']
@@ -238,7 +238,7 @@ Change priority:
     >>> transaction.commit()
 
     >>> notifications = [
-    ...     message_from_bytes(raw_message)
+    ...     email.message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']
@@ -272,7 +272,7 @@ Change approver, assignee and drafter:
     >>> transaction.commit()
 
     >>> notifications = [
-    ...     message_from_bytes(raw_message)
+    ...     email.message_from_bytes(raw_message)
     ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
     >>> status_notification = notifications[0]
     >>> status_notification['To']

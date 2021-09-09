@@ -364,7 +364,7 @@ up on the public mirror listings.
     >>> import transaction
     >>> transaction.commit()
 
-    >>> from lp.services.compat import message_from_bytes
+    >>> import email
     >>> from lp.services.mail import stub
     >>> len(stub.test_emails)
     2
@@ -377,7 +377,7 @@ up on the public mirror listings.
     ['mark@example.com']
     >>> valid_mirror.enabled
     False
-    >>> msg = message_from_bytes(raw_message)
+    >>> msg = email.message_from_bytes(raw_message)
     >>> print(msg.get_payload())
     Dear mirror administrator,
     <BLANKLINE>

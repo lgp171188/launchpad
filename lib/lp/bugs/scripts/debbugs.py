@@ -11,8 +11,6 @@ import sys
 
 import six
 
-from lp.services.compat import message_from_bytes
-
 
 class Bug:
     def __init__(self, db, id, package=None, date=None, status=None,
@@ -59,7 +57,7 @@ class Bug:
         if self._emails:
             return self._emails
         for comment in self.comments:
-            message = message_from_bytes(comment)
+            message = email.message_from_bytes(comment)
             self._emails.append(message)
         return self._emails
 
@@ -207,7 +205,7 @@ class Database:
         bug.report = fd.read()
         fd.close()
 
-        report_msg = message_from_bytes(bug.report)
+        report_msg = email.message_from_bytes(bug.report)
         charset = report_msg.get_content_charset('ascii')
         description = report_msg.get_payload(decode=True)
         bug.description = description.decode(charset)

@@ -5,6 +5,7 @@
 
 __metaclass__ = type
 
+import email
 import operator
 
 import six
@@ -18,7 +19,6 @@ from lp.registry.interfaces.persontransferjob import (
     ITeamInvitationNotificationJobSource,
     ITeamJoinNotificationJobSource,
     )
-from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.job.runner import JobRunner
 from lp.services.log.logger import DevNullLogger
@@ -44,7 +44,7 @@ def pop_notifications(sort_key=None, commit=True):
 
     notifications = []
     for fromaddr, toaddrs, raw_message in stub.test_emails:
-        notification = message_from_bytes(raw_message)
+        notification = email.message_from_bytes(raw_message)
         notification['X-Envelope-To'] = ', '.join(toaddrs)
         notification['X-Envelope-From'] = fromaddr
         notifications.append(notification)

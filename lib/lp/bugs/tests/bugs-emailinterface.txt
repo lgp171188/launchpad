@@ -70,11 +70,11 @@ we'll have to authenticate the user manually:
 Now if we pass the message to the Malone handler, we can see that the
 bug got submitted correctly:
 
+    >>> import email
     >>> from lp.bugs.mail.handler import MaloneHandler
-    >>> from lp.services.compat import message_from_bytes
     >>> handler = MaloneHandler()
     >>> def construct_email(raw_mail):
-    ...     msg = message_from_bytes(raw_mail, _class=MockSignedMessage)
+    ...     msg = email.message_from_bytes(raw_mail, _class=MockSignedMessage)
     ...     if 'Message-Id' not in msg:
     ...         msg['Message-Id'] = factory.makeUniqueRFC822MsgId()
     ...     return msg
@@ -356,7 +356,7 @@ And the person sending the email has received an error message.
     ...     if not stub.test_emails:
     ...         raise AssertionError("No emails queued!")
     ...     from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    ...     sent_msg = message_from_bytes(raw_message)
+    ...     sent_msg = email.message_from_bytes(raw_message)
     ...     error_mail, original_mail = sent_msg.get_payload()
     ...     print("Subject: %s" % sent_msg['Subject'])
     ...     print("To: %s" % ', '.join(to_addrs))
@@ -456,7 +456,8 @@ The same will happen if we send the same email without signing it:
     >>> class MockUnsignedMessage(email.message.Message):
     ...     signedMessage = None
     ...     signature = None
-    >>> msg = message_from_bytes(comment_mail, _class=MockUnsignedMessage)
+    >>> msg = email.message_from_bytes(
+    ...     comment_mail, _class=MockUnsignedMessage)
     >>> handler.process(
     ...     msg, msg['To'],
     ...     )
@@ -2040,7 +2041,7 @@ Let's take a closer look at send_process_error_notification(), which is
 used to send the error messages. It needs the message that caused the
 error, so let's create one.
 
-    >>> test_msg = message_from_bytes(b"""From: foo.bar@canonical.com
+    >>> test_msg = email.message_from_bytes(b"""From: foo.bar@canonical.com
     ... To: bugs@launchpad.net
     ... Message-Id: <original@msg>
     ... Subject: Original Message Subject
@@ -2063,7 +2064,7 @@ The To and Subject headers got set to the values we provided:
 
     >>> transaction.commit()
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> sent_msg = message_from_bytes(raw_message)
+    >>> sent_msg = email.message_from_bytes(raw_message)
     >>> sent_msg['To']
     'test@canonical.com'
     >>> sent_msg['Subject']
@@ -2123,7 +2124,7 @@ the original message.
     ...     max_return_size=max_return_size)
     >>> transaction.commit()
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> sent_msg = message_from_bytes(raw_message)
+    >>> sent_msg = email.message_from_bytes(raw_message)
     >>> failure_msg, original_msg = sent_msg.get_payload()
     >>> msg = original_msg.get_payload()[0]
 
@@ -2220,7 +2221,7 @@ The 'subscribe' command failed, and the user is being notified of the
 failure in an email.
 
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> sent_msg = message_from_bytes(raw_message)
+    >>> sent_msg = email.message_from_bytes(raw_message)
     >>> failure_msg, original_msg = sent_msg.get_payload()
     >>> print(failure_msg.get_payload(decode=True).decode('UTF-8'))
     An error occurred while processing a mail you sent to Launchpad's email
@@ -2268,7 +2269,7 @@ And the sender receives an email to let them know about the failing
 'security' command.
 
     >>> from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    >>> sent_msg = message_from_bytes(raw_message)
+    >>> sent_msg = email.message_from_bytes(raw_message)
     >>> failure_msg, original_msg = sent_msg.get_payload()
     >>> print(failure_msg.get_payload(decode=True).decode('UTF-8'))
     An error occurred while processing a mail you sent to Launchpad's email

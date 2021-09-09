@@ -9,12 +9,12 @@ __all__ = [
     ]
 
 import base64
+import email
 import tempfile
 
 import six
 
 from lp.bugs.model.bug import FileBugData
-from lp.services.compat import message_from_bytes
 
 
 class FileBugDataParser:
@@ -62,7 +62,7 @@ class FileBugDataParser:
         header_text = self._consumeBytes(b'\n\n')
         # Use the email package to return a dict-like object of the
         # headers, so we don't have to parse the text ourselves.
-        return message_from_bytes(header_text)
+        return email.message_from_bytes(header_text)
 
     def readLine(self):
         """Read a line of the message."""

@@ -5,6 +5,7 @@
 __metaclass__ = type
 
 import doctest
+import email
 from operator import attrgetter
 import re
 from textwrap import dedent
@@ -67,7 +68,6 @@ from lp.registry.interfaces.teammembership import (
 from lp.registry.model.karma import KarmaCategory
 from lp.registry.model.milestone import milestone_sort_key
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
-from lp.services.compat import message_from_bytes
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
@@ -938,7 +938,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         messages = [msg for from_addr, to_addr, msg in stub.test_emails]
         raw_msg = None
         for orig_msg in messages:
-            msg = message_from_bytes(orig_msg)
+            msg = email.message_from_bytes(orig_msg)
             if msg.get('to') == added_email:
                 raw_msg = orig_msg
         token_url = get_token_url_from_email(raw_msg)
