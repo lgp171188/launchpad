@@ -356,6 +356,7 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
                             "permissions": [
                                 "package-manage-releases",
                                 "package-manage-revisions",
+                                "package-view-revisions",
                                 ],
                             })))),
             MatchesStructure(
@@ -627,6 +628,7 @@ class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
                                 "permissions": [
                                     "package-manage-releases",
                                     "package-manage-revisions",
+                                    "package-view-revisions",
                                     ],
                                 })))),
                 MatchesStructure(

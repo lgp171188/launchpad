@@ -416,10 +416,9 @@ same comment.
 If we query the DebBugs database directly we'll see that there are two
 copies of the same comment.
 
-    >>> from lp.services.compat import message_from_bytes
     >>> debian_bug = external_debbugs._findBug(bug_watch.remotebug)
     >>> for comment in debian_bug.comments:
-    ...     comment_email = message_from_bytes(comment)
+    ...     comment_email = email.message_from_bytes(comment)
     ...     print(comment_email['message-id'])
     <20040309081430.98BF411EE67@tux>
     <20040309081430.98BF411EE67@tux>
@@ -493,7 +492,7 @@ datecreated comes not from the Date header but from the Received header.
 
     >>> from lp.bugs.tests.externalbugtracker import (
     ...     read_test_file)
-    >>> parsed_message = message_from_bytes(
+    >>> parsed_message = email.message_from_bytes(
     ...     read_test_file('debbugs-comment-with-received-date.txt').encode(
     ...         'UTF-8'))
 
@@ -519,7 +518,7 @@ default to using the Date header again.
     >>> print(message.datecreated)
     2007-12-14 18:54:30+00:00
 
-    >>> parsed_message = message_from_bytes(
+    >>> parsed_message = email.message_from_bytes(
     ...     read_test_file('debbugs-comment-with-received-date.txt').encode(
     ...         'UTF-8'))
 

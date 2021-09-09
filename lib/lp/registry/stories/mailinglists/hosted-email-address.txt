@@ -46,8 +46,8 @@ Launchpad sends that address a confirmation message.
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
     >>> stub.test_emails
     []
-    >>> from lp.services.compat import message_from_bytes
-    >>> msg = message_from_bytes(raw_msg)
+    >>> import email
+    >>> msg = email.message_from_bytes(raw_msg)
     >>> print(msg['From'])
     Launchpad Email Validator <noreply@launchpad.net>
     >>> print(msg['Subject'])

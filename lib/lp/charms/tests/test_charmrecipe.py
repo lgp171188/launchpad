@@ -702,6 +702,7 @@ class TestCharmRecipeAuthorization(TestCaseWithFactory):
                             "permissions": [
                                 "package-manage-releases",
                                 "package-manage-revisions",
+                                "package-view-revisions",
                                 ],
                             })))),
             ]))

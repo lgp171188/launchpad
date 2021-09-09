@@ -3,16 +3,15 @@
 
 """Helper functions for logintoken-related tests."""
 
+import email
 import re
 
 import six
 
-from lp.services.compat import message_from_bytes
-
 
 def get_token_url_from_email(email_msg):
     """Return the logintoken URL contained in the given email message."""
-    msg = message_from_bytes(email_msg)
+    msg = email.message_from_bytes(email_msg)
     return get_token_url_from_bytes(msg.get_payload(decode=True))
 
 

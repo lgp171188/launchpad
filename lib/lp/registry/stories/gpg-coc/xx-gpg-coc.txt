@@ -5,9 +5,9 @@ Claiming GPG Keys
 Setup
 -----
 
+    >>> import email
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> from lp.services.compat import message_from_bytes
     >>> from lp.services.mail import stub
     >>> from lp.testing.keyserver import KeyServerTac
     >>> from lp.testing.pages import setupBrowserFreshLogin
@@ -56,7 +56,7 @@ text part that provides useful information to users who -- for whatever reason
 -- cannot decrypt the token url.  Start by grabbing the confirmation message.
 
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> msg = message_from_bytes(raw_msg)
+    >>> msg = email.message_from_bytes(raw_msg)
     >>> msg.get_content_type()
     'text/plain'
 
@@ -178,7 +178,7 @@ their Launchpad account.
 Sample Person checks their email.
 
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> msg = message_from_bytes(raw_msg)
+    >>> msg = email.message_from_bytes(raw_msg)
     >>> msg.get_content_type()
     'text/plain'
     >>> body = msg.get_payload(decode=True)
@@ -512,7 +512,7 @@ Get the token from the body of the email sent.
     >>> import re
     >>> from lp.services.mail import stub
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> msg = message_from_bytes(raw_msg)
+    >>> msg = email.message_from_bytes(raw_msg)
     >>> cipher_body = msg.get_payload(decode=1)
     >>> body = decrypt_content(cipher_body, six.ensure_str('test'))
     >>> link = get_token_url_from_bytes(body)
@@ -628,7 +628,7 @@ Test if the advertisement email was sent:
 
     >>> from lp.services.mail import stub
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-    >>> msg = message_from_bytes(raw_msg)
+    >>> msg = email.message_from_bytes(raw_msg)
     >>> print(six.ensure_text(msg.get_payload(decode=True)))
     <BLANKLINE>
     ...

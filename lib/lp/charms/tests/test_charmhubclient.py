@@ -181,6 +181,7 @@ class TestCharmhubClient(TestCaseWithFactory):
                 "permissions": [
                     "package-manage-releases",
                     "package-manage-revisions",
+                    "package-view-revisions",
                     ],
                 }))
         self.assertEqual("sentinel", macaroon)

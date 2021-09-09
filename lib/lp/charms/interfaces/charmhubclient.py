@@ -71,8 +71,9 @@ class ICharmhubClient(Interface):
         """Request permission from Charmhub to upload builds of a charm.
 
         We need the following permissions: `package-manage-revisions` (to
-        upload new blobs) and `package-manage-releases` (to release
-        revisions).
+        upload new blobs), `package-manage-releases` (to release revisions),
+        and `package-view-revisions` (to check the status of uploaded
+        blobs).
 
         The returned macaroon will include a third-party caveat that must be
         discharged by Candid.  This method does not acquire that discharge;
