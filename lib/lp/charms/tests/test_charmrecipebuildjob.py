@@ -110,9 +110,7 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
             CHARM_RECIPE_ALLOW_CREATE: "on",
             CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
             }))
-        self.status_url = (
-            "http://charmhub.example/v1/charm/test-charm/revisions/review"
-            "?upload-id=123")
+        self.status_url = "/v1/charm/test-charm/revisions/review?upload-id=123"
 
     def test_provides_interface(self):
         # `CharmhubUploadJob` objects provide `ICharmhubUploadJob`.
