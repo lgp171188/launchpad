@@ -103,6 +103,7 @@ class CharmhubClient:
                     "permissions": [
                         "package-manage-releases",
                         "package-manage-revisions",
+                        "package-view-revisions",
                         ],
                     })
             response_data = response.json()
