@@ -2014,7 +2014,8 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             run_isolated_jobs([job])
 
         # The _store_upload_revision now gets populated when
-        # uploading the build as part of MP 407781.
+        # uploading the build as part of the
+        # `SnapStoreUploadJob.store_revision` property setter.
         # Assert that upload job above populated _store_upload_revision
         # for build1:
         build1 = removeSecurityProxy(build1)
