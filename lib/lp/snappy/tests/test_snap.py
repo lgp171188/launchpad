@@ -125,6 +125,7 @@ from lp.snappy.interfaces.snapbase import (
 from lp.snappy.interfaces.snapbuild import (
     ISnapBuild,
     ISnapBuildSet,
+    SnapBuildStoreUploadStatus,
     )
 from lp.snappy.interfaces.snapbuildjob import ISnapStoreUploadJobSource
 from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
@@ -137,6 +138,10 @@ from lp.snappy.model.snap import (
 from lp.snappy.model.snapbuild import SnapFile
 from lp.snappy.model.snapbuildjob import SnapBuildJob
 from lp.snappy.model.snapjob import SnapJob
+from lp.snappy.tests.test_snapbuildjob import (
+    FakeSnapStoreClient,
+    run_isolated_jobs,
+    )
 from lp.testing import (
     admin_logged_in,
     ANONYMOUS,
@@ -1078,6 +1083,50 @@ class TestSnap(TestCaseWithFactory):
         with person_logged_in(snap.owner):
             snap.destroySelf()
         self.assertFalse(getUtility(ISnapSet).exists(owner, "condemned"))
+
+    def test_getBuildByStoreRevision(self):
+        snap1 = self.factory.makeSnap()
+        build = self.factory.makeSnapBuild(
+            snap=snap1,
+            status=BuildStatus.FULLYBUILT)
+
+        # There is no build with revision 5 for snap1
+        self.assertIsNone(snap1.getBuildByStoreRevision(5))
+
+        # Upload build1 and check we return it by version 1
+        job = getUtility(ISnapStoreUploadJobSource).create(build)
+        client = FakeSnapStoreClient()
+        client.upload.result = (
+            "http://sca.example/dev/api/snaps/1/builds/1/status")
+        client.checkStatus.result = (
+            "http://sca.example/dev/click-apps/1/rev/1/", 1)
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+        self.assertEqual(
+            SnapBuildStoreUploadStatus.UPLOADED, build.store_upload_status)
+        self.assertEqual(build.store_upload_revision, 1)
+        self.assertEqual(snap1.getBuildByStoreRevision(1), build)
+
+        # build & upload again, check revision
+        # and that we return the second build for revision 2
+        build2 = self.factory.makeSnapBuild(
+            snap=snap1,
+            status=BuildStatus.FULLYBUILT)
+        job = getUtility(ISnapStoreUploadJobSource).create(build2)
+        client = FakeSnapStoreClient()
+        client.upload.result = (
+            "http://sca.example/dev/api/snaps/1/builds/2/status")
+        client.checkStatus.result = (
+            "http://sca.example/dev/click-apps/1/rev/2/", 2)
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+        self.assertEqual(
+            SnapBuildStoreUploadStatus.UPLOADED, build2.store_upload_status)
+        self.assertEqual(build2.store_upload_revision, 2)
+        self.assertEqual(snap1.getBuildByStoreRevision(2), build2)
+        self.assertEqual(snap1.getBuildByStoreRevision(1), build)
 
     def test_getBuildSummariesForSnapBuildIds(self):
         snap1 = self.factory.makeSnap()
