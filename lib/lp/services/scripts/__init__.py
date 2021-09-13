@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Library functions for use in all scripts.
@@ -44,7 +44,8 @@ from lp.services.webapp.interaction import (
     )
 
 
-def execute_zcml_for_scripts(use_web_security=False):
+def execute_zcml_for_scripts(use_web_security=False, scriptzcmlfilename=None,
+                             setup_interaction=True):
     """Execute the zcml rooted at launchpad/script.zcml
 
     If use_web_security is True, the same security policy as the web
@@ -68,10 +69,11 @@ def execute_zcml_for_scripts(use_web_security=False):
                 Instead, your test should use the Zopeless layer.
             """
 
-    if config.isTestRunner():
-        scriptzcmlfilename = 'script-testing.zcml'
-    else:
-        scriptzcmlfilename = 'script.zcml'
+    if scriptzcmlfilename is None:
+        if config.isTestRunner():
+            scriptzcmlfilename = 'script-testing.zcml'
+        else:
+            scriptzcmlfilename = 'script.zcml'
 
     scriptzcmlfilename = os.path.abspath(
         os.path.join(config.root, 'zcml', scriptzcmlfilename))
@@ -109,9 +111,11 @@ def execute_zcml_for_scripts(use_web_security=False):
                         "QueueProcessorThread did not shut down")
     atexit.register(kill_queue_processor_threads)
 
-    # This is a convenient hack to set up a zope interaction, before we get
-    # the proper API for having a principal / user running in scripts.
-    setupInteractionByEmail(ANONYMOUS)
+    if setup_interaction:
+        # This is a convenient hack to set up a zope interaction, before we
+        # get the proper API for having a principal / user running in
+        # scripts.
+        setupInteractionByEmail(ANONYMOUS)
 
 
 def db_options(parser):
