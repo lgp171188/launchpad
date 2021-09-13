@@ -263,6 +263,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         if self.snapbuild.store_upload_metadata is None:
             self.snapbuild.store_upload_metadata = {}
         self.snapbuild.store_upload_metadata["store_revision"] = revision
+        self.snapbuild._store_upload_revision = revision
 
     @property
     def status_url(self):
