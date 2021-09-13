@@ -64,7 +64,7 @@ Check it was properly created and create its DistroArchSeriess.
 
 Let's set up the filesystem:
 
-    >>> import subprocess, sys, os
+    >>> import subprocess, os
     >>> try:
     ...     os.unlink("/var/lock/launchpad-gina.lock")
     ... except OSError:
@@ -77,8 +77,7 @@ Let's set up the filesystem:
     >>> path = os.path.join(os.getcwd(), relative_path)
     >>> os.symlink(path, '/tmp/gina_test_archive')
 
-    >>> gina_proc = [sys.executable, 'scripts/gina.py', '-q',
-    ...              'dapper', 'dapper-updates']
+    >>> gina_proc = ['scripts/gina.py', '-q', 'dapper', 'dapper-updates']
     >>> proc = subprocess.Popen(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> print(proc.stderr.read())

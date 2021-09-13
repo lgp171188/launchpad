@@ -9,7 +9,6 @@ from optparse import OptionValueError
 import os
 import shutil
 import subprocess
-import sys
 
 import six
 from storm.store import Store
@@ -84,7 +83,7 @@ class TestPublishDistro(TestNativePublishingBase):
     def runPublishDistroScript(self):
         """Run publish-distro.py, returning the result and output."""
         script = os.path.join(config.root, "scripts", "publish-distro.py")
-        args = [sys.executable, script, "-v", "-d", "ubuntutest"]
+        args = [script, "-v", "-d", "ubuntutest"]
         process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()

@@ -37,8 +37,7 @@ Normal operation produces INFO level information about the
 distribution and respective distroseriess considered in stderr.
 
     >>> import subprocess
-    >>> import sys
-    >>> process = subprocess.Popen([sys.executable, script],
+    >>> process = subprocess.Popen([script],
     ...                            stdout=subprocess.PIPE,
     ...                            stderr=subprocess.PIPE,
     ...                            universal_newlines=True)
