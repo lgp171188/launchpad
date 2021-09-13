@@ -99,9 +99,9 @@ Now, we need to do the final import. It's done as a two steps procedure.
 
 The first one, approves the import.
 
-    >>> import subprocess, sys
+    >>> import subprocess
     >>> process = subprocess.Popen([
-    ...     sys.executable, 'cronscripts/rosetta-approve-imports.py'
+    ...     'cronscripts/rosetta-approve-imports.py'
     ...     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
     ...     stderr=subprocess.STDOUT, universal_newlines=True,
     ...     )
@@ -115,9 +115,8 @@ The first one, approves the import.
 
 The second one, executes the import.
 
-    >>> import subprocess, sys
     >>> process = subprocess.Popen([
-    ...     sys.executable, 'cronscripts/rosetta-poimport.py'
+    ...     'cronscripts/rosetta-poimport.py'
     ...     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
     ...     stderr=subprocess.STDOUT, universal_newlines=True,
     ...     )

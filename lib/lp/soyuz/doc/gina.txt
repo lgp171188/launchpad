@@ -109,7 +109,7 @@ And two completely broken packages:
 
 Let's set up the filesystem:
 
-    >>> import subprocess, sys, os
+    >>> import subprocess, os
     >>> try:
     ...     os.unlink("/var/lock/launchpad-gina.lock")
     ... except OSError:
@@ -124,8 +124,7 @@ Let's set up the filesystem:
 
 And give it a spin:
 
-    >>> gina_proc = [sys.executable, 'scripts/gina.py', '-q',
-    ...              'hoary', 'breezy']
+    >>> gina_proc = ['scripts/gina.py', '-q', 'hoary', 'breezy']
     >>> proc = subprocess.Popen(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
 
@@ -528,8 +527,7 @@ packages that failed to import the last time. Overrides should also have
 been updated for packages in breezy which have changed since the last
 run.
 
-    >>> gina_proc = [sys.executable, 'scripts/gina.py', '-q',
-    ...              'hoary', 'breezy']
+    >>> gina_proc = ['scripts/gina.py', '-q', 'hoary', 'breezy']
     >>> proc = subprocess.Popen(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> print(proc.stderr.read())
@@ -661,7 +659,7 @@ First get a set of existing publishings for both source and binary:
 
 Now run gina to import packages and convert them to partner:
 
-    >>> gina_proc = [sys.executable, 'scripts/gina.py', '-q', 'partner']
+    >>> gina_proc = ['scripts/gina.py', '-q', 'partner']
     >>> proc = subprocess.Popen(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> proc.wait()
@@ -764,8 +762,7 @@ Commit the changes and run the importer script.
 
     >>> transaction.commit()
 
-    >>> gina_proc = [
-    ...     sys.executable, 'scripts/gina.py', '-q', 'lenny']
+    >>> gina_proc = ['scripts/gina.py', '-q', 'lenny']
     >>> proc = subprocess.Popen(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> proc.wait()
@@ -803,8 +800,7 @@ Processing multiple suites in the same batch
 Both, 'lenny' and 'hoary' (as partner) will be processed in the same
 batch.
 
-    >>> gina_proc = [
-    ...     sys.executable, 'scripts/gina.py', 'lenny', 'partner']
+    >>> gina_proc = ['scripts/gina.py', 'lenny', 'partner']
     >>> proc = subprocess.Popen(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
 
@@ -825,7 +821,7 @@ Other tests
 
 For kicks, finally, run gina on a configured but incomplete archive:
 
-    >>> gina_proc = [sys.executable, 'scripts/gina.py', '-q', 'bogus']
+    >>> gina_proc = ['scripts/gina.py', '-q', 'bogus']
     >>> proc = subprocess.Popen(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
     >>> print(proc.stderr.read())

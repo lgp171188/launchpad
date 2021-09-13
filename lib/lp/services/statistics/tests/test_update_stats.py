@@ -7,7 +7,6 @@ __metaclass__ = type
 
 import os
 import subprocess
-import sys
 import unittest
 
 from zope.component import getUtility
@@ -82,7 +81,7 @@ class UpdateStatsTest(unittest.TestCase):
         self.layer.txn.commit()
 
         # Run the update-stats.py script
-        cmd = [sys.executable, get_script(), '--quiet']
+        cmd = [get_script(), '--quiet']
         process = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT, universal_newlines=True)
@@ -263,7 +262,7 @@ class UpdateTranslationStatsTest(unittest.TestCase):
 
         # Run update-stats.py script to see that we don't count the
         # information in that template anymore.
-        cmd = [sys.executable, get_script(), '--quiet']
+        cmd = [get_script(), '--quiet']
         process = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
@@ -346,7 +345,7 @@ class UpdateTranslationStatsTest(unittest.TestCase):
 
         # Run update-stats.py script to see that we don't count the
         # information in the moz_english_pofile template.
-        cmd = [sys.executable, get_script(), '--quiet']
+        cmd = [get_script(), '--quiet']
         process = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)

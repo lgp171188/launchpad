@@ -14,7 +14,6 @@ import datetime
 import os
 import shutil
 import subprocess
-import sys
 from tempfile import mkdtemp
 
 import pytz
@@ -40,7 +39,7 @@ class TestProcessDeathRow(TestCaseWithFactory):
     def runDeathRow(self, extra_args, distribution="ubuntutest"):
         """Run process-death-row.py, returning the result and output."""
         script = os.path.join(config.root, "scripts", "process-death-row.py")
-        args = [sys.executable, script, "-v", "-p", self.primary_test_folder]
+        args = [script, "-v", "-p", self.primary_test_folder]
         args.extend(extra_args)
         process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

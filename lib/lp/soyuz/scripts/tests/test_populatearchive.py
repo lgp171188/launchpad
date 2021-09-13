@@ -6,7 +6,6 @@ __metaclass__ = type
 from datetime import datetime
 import os
 import subprocess
-import sys
 import time
 
 from zope.component import getUtility
@@ -70,7 +69,7 @@ class TestPopulateArchiveScript(TestCaseWithFactory):
             extra_args = []
         script = os.path.join(
             config.root, "scripts", "populate-archive.py")
-        args = [sys.executable, script, '-y']
+        args = [script, '-y']
         args.extend(extra_args)
         process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

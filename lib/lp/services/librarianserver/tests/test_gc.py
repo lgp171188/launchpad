@@ -20,7 +20,6 @@ from subprocess import (
     Popen,
     STDOUT,
     )
-import sys
 import tempfile
 
 from fixtures import MockPatchObject
@@ -570,7 +569,7 @@ class TestLibrarianGarbageCollectionBase:
         script_path = os.path.join(
                 config.root, 'cronscripts', 'librarian-gc.py'
                 )
-        cmd = [sys.executable, script_path, '-q']
+        cmd = [script_path, '-q']
         process = Popen(
             cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE,
             universal_newlines=True)
@@ -1291,7 +1290,7 @@ class TestBlobCollection(TestCase):
         script_path = os.path.join(
                 config.root, 'cronscripts', 'librarian-gc.py'
                 )
-        cmd = [sys.executable, script_path, '-q']
+        cmd = [script_path, '-q']
         process = Popen(
             cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE,
             universal_newlines=True)
