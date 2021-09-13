@@ -39,6 +39,7 @@ from lp.testing.fixture import (
     CaptureOops,
     DisableTriggerFixture,
     PGBouncerFixture,
+    run_capturing_output,
     ZopeAdapterFixture,
     ZopeUtilityFixture,
     )
@@ -263,6 +264,22 @@ class TestPGBouncerFixtureWithoutCA(TestCase):
         # Note that because pgbouncer was left running, we can't confirm
         # that we are now connecting directly to the database.
         self.assertTrue(self.is_db_available())
+
+
+class TestRunCapturingOutput(TestCase):
+    """Test `run_capturing_output`."""
+
+    def test_run_capturing_output(self):
+
+        def f(a, b):
+            sys.stdout.write(str(a))
+            sys.stderr.write(str(b))
+            return a + b
+
+        c, stdout, stderr = run_capturing_output(f, 3, 4)
+        self.assertEqual(7, c)
+        self.assertEqual('3', stdout)
+        self.assertEqual('4', stderr)
 
 
 class TestCaptureOopsNoRabbit(TestCase):

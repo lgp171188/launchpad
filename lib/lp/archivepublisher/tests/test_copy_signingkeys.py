@@ -19,8 +19,8 @@ from lp.services.log.logger import BufferLogger
 from lp.services.scripts.base import LaunchpadScriptFailure
 from lp.services.signing.enums import SigningKeyType
 from lp.services.signing.model.signingkey import ArchiveSigningKey
-from lp.services.utils import CapturedOutput
 from lp.testing import TestCaseWithFactory
+from lp.testing.fixture import CapturedOutput
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.testing.script import run_script
 

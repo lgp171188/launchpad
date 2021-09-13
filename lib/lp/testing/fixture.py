@@ -1,15 +1,17 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad test fixtures that have no better home."""
 
 __metaclass__ = type
 __all__ = [
+    'CapturedOutput',
     'CaptureOops',
     'DemoMode',
     'DisableTriggerFixture',
     'PGBouncerFixture',
     'PGNotReadyError',
+    'run_capturing_output',
     'ZopeAdapterFixture',
     'ZopeEventHandlerFixture',
     'ZopeUtilityFixture',
@@ -25,11 +27,13 @@ import amqp
 from fixtures import (
     EnvironmentVariableFixture,
     Fixture,
+    MonkeyPatch,
     )
 from lazr.restful.utils import get_current_browser_request
 import oops
 import oops_amqp
 import pgbouncer.fixture
+import six
 from zope.component import (
     adapter,
     getGlobalSiteManager,
@@ -261,6 +265,34 @@ class ZopeUtilityFixture(Fixture):
         self.addCleanup(
             gsm.unregisterUtility,
             self.component, self.intf, self.name)
+
+
+class CapturedOutput(Fixture):
+    """A fixture that captures output to stdout and stderr."""
+
+    def __init__(self):
+        super(CapturedOutput, self).__init__()
+        self.stdout = six.StringIO()
+        self.stderr = six.StringIO()
+
+    def _setUp(self):
+        self.useFixture(MonkeyPatch('sys.stdout', self.stdout))
+        self.useFixture(MonkeyPatch('sys.stderr', self.stderr))
+
+
+def run_capturing_output(function, *args, **kwargs):
+    """Run ``function`` capturing output to stdout and stderr.
+
+    :param function: A function to run.
+    :param args: Arguments passed to the function.
+    :param kwargs: Keyword arguments passed to the function.
+    :return: A tuple of ``(ret, stdout, stderr)``, where ``ret`` is the value
+        returned by ``function``, ``stdout`` is the captured standard output
+        and ``stderr`` is the captured stderr.
+    """
+    with CapturedOutput() as captured:
+        ret = function(*args, **kwargs)
+    return ret, captured.stdout.getvalue(), captured.stderr.getvalue()
 
 
 class CaptureOops(Fixture):
