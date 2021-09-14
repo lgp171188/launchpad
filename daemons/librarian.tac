@@ -51,6 +51,9 @@ from lp.services.twistedsupport.loggingsupport import set_up_oops_reporting
 dbconfig.override(
     dbuser=config.librarian.dbuser,
     isolation_level=config.librarian.isolation_level)
+# Note that this doesn't include *-configure-testing.zcml.  That doesn't
+# matter today, but if it does at some point then we'll need to use a
+# different ZCML file if config.isTestRunner() is true.
 execute_zcml_for_scripts(
     scriptzcmlfilename='librarian.zcml', setup_interaction=False)
 

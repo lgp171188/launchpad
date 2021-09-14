@@ -12,6 +12,9 @@
     <include package="storm.zope" file="meta.zcml"/>
     <include package="storm.zope" />
 
+    <!-- XXX cjwatson 2021-09-14: It should be possible to avoid these meta
+         files, but it would require more surgery in errorlog.zcml and
+         librarian/configure.zcml. -->
     <includeOverrides
         package="lp.services.webapp"
         file="meta-overrides.zcml" />
