@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -14,11 +14,15 @@ from twisted.internet import defer
 from twisted.internet.threads import deferToThread
 from twisted.python import log
 from twisted.web.static import StaticProducer
+from zope.component import getUtility
 
-from lp.registry.model.product import Product
 from lp.services.config import dbconfig
 from lp.services.database import write_transaction
-from lp.services.database.interfaces import IStore
+from lp.services.database.interfaces import (
+    DEFAULT_FLAVOR,
+    IStoreSelector,
+    MAIN_STORE,
+    )
 from lp.services.database.postgresql import ConnectionString
 from lp.services.features import getFeatureFlag
 from lp.services.librarianserver import swift
@@ -248,7 +252,9 @@ class LibraryFileUpload(object):
                 config_dbname = ConnectionString(
                     dbconfig.rw_main_master).dbname
 
-                result = IStore(Product).execute("SELECT current_database()")
+                store = getUtility(IStoreSelector).get(
+                    MAIN_STORE, DEFAULT_FLAVOR)
+                result = store.execute("SELECT current_database()")
                 real_dbname = result.get_one()[0]
                 if self.databaseName not in (config_dbname, real_dbname):
                     raise WrongDatabaseError(

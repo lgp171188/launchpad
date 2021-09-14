@@ -1,4 +1,4 @@
-# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # Twisted Application Configuration file.
@@ -51,7 +51,11 @@ from lp.services.twistedsupport.loggingsupport import set_up_oops_reporting
 dbconfig.override(
     dbuser=config.librarian.dbuser,
     isolation_level=config.librarian.isolation_level)
-execute_zcml_for_scripts()
+# Note that this doesn't include *-configure-testing.zcml.  That doesn't
+# matter today, but if it does at some point then we'll need to use a
+# different ZCML file if config.isTestRunner() is true.
+execute_zcml_for_scripts(
+    scriptzcmlfilename='librarian.zcml', setup_interaction=False)
 
 if os.environ.get('LP_TEST_INSTANCE'):
     # Running in ephemeral mode: get the root dir from the environment and

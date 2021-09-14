@@ -1,0 +1,29 @@
+<!-- Copyright 2021 Canonical Ltd.  This software is licensed under the
+     GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="launchpad">
+
+    <include file="zopeapp.zcml" />
+
+    <include package="storm.zope" file="meta.zcml"/>
+    <include package="storm.zope" />
+
+    <!-- XXX cjwatson 2021-09-14: It should be possible to avoid these meta
+         files, but it would require more surgery in errorlog.zcml and
+         librarian/configure.zcml. -->
+    <includeOverrides
+        package="lp.services.webapp"
+        file="meta-overrides.zcml" />
+    <include package="lp.services.webapp" file="meta.zcml" />
+
+    <include package="lp.services.webapp" file="errorlog.zcml" />
+    <include package="lp.services.webapp" file="database.zcml" />
+    <include package="lp.services.librarian" />
+
+    <include package="lp" file="permissions.zcml" />
+
+</configure>

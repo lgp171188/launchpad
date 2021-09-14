@@ -52,7 +52,6 @@ __all__ = [
     ]
 
 
-from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.xmlrpc import LaunchpadFault
 
 
@@ -293,10 +292,9 @@ class CannotHaveLinkedBranch(LaunchpadFault):
         "%(component_type)s cannot have a default branch.")
 
     def __init__(self, component):
-        if IProjectGroup.providedBy(component):
+        component_type = component.__class__.__name__.lower()
+        if component_type == 'projectgroup':
             component_type = 'project group'
-        else:
-            component_type = component.__class__.__name__.lower()
         LaunchpadFault.__init__(
             self, component_name=component.displayname,
             component_type=component_type)
