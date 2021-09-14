@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for our Sphinx documentation."""
@@ -11,8 +11,8 @@ from sphinx.cmd.build import main as sphinx_main
 from testtools.content import text_content
 
 from lp.services.config import config
-from lp.services.utils import run_capturing_output
 from lp.testing import TestCase
+from lp.testing.fixture import run_capturing_output
 
 
 class TestSphinxDocumentation(TestCase):

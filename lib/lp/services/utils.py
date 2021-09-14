@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Generic Python utilities.
@@ -21,7 +21,6 @@ __all__ = [
     'obfuscate_structure',
     're_email_address',
     'round_half_up',
-    'run_capturing_output',
     'sanitise_urls',
     'save_bz2_pickle',
     'seconds_since_epoch',
@@ -44,10 +43,6 @@ import sys
 from textwrap import dedent
 from types import FunctionType
 
-from fixtures import (
-    Fixture,
-    MonkeyPatch,
-    )
 from lazr.enum import BaseItem
 import pytz
 import six
@@ -221,34 +216,6 @@ def docstring_dedent(s):
 def file_exists(filename):
     """Does `filename` exist?"""
     return os.access(filename, os.F_OK)
-
-
-class CapturedOutput(Fixture):
-    """A fixture that captures output to stdout and stderr."""
-
-    def __init__(self):
-        super(CapturedOutput, self).__init__()
-        self.stdout = six.StringIO()
-        self.stderr = six.StringIO()
-
-    def _setUp(self):
-        self.useFixture(MonkeyPatch('sys.stdout', self.stdout))
-        self.useFixture(MonkeyPatch('sys.stderr', self.stderr))
-
-
-def run_capturing_output(function, *args, **kwargs):
-    """Run ``function`` capturing output to stdout and stderr.
-
-    :param function: A function to run.
-    :param args: Arguments passed to the function.
-    :param kwargs: Keyword arguments passed to the function.
-    :return: A tuple of ``(ret, stdout, stderr)``, where ``ret`` is the value
-        returned by ``function``, ``stdout`` is the captured standard output
-        and ``stderr`` is the captured stderr.
-    """
-    with CapturedOutput() as captured:
-        ret = function(*args, **kwargs)
-    return ret, captured.stdout.getvalue(), captured.stderr.getvalue()
 
 
 def traceback_info(info):
