@@ -78,7 +78,8 @@ def run_isolated_jobs(jobs):
 class FakeCharmhubClient:
 
     def __init__(self):
-        self.upload = FakeMethod()
+        self.uploadFile = FakeMethod()
+        self.push = FakeMethod()
         self.checkStatus = FakeMethod()
         self.release = FakeMethod()
 
@@ -129,10 +130,13 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
             repr(job))
 
     def makeCharmRecipeBuild(self, **kwargs):
-        # Make a build with a builder and a webhook.
+        # Make a build with a builder, a file, and a webhook.
         build = self.factory.makeCharmRecipeBuild(
             builder=self.factory.makeBuilder(), **kwargs)
         build.updateStatus(BuildStatus.FULLYBUILT)
+        charm_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-charm.charm", content="dummy charm content")
+        self.factory.makeCharmFile(build=build, library_file=charm_lfa)
         self.factory.makeWebhook(
             target=build.recipe, event_types=["charm-recipe:build:0.1"])
         return build
@@ -176,15 +180,18 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # revision.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
+        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
         client.checkStatus.result = 1
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -198,14 +205,16 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # A failed run sets the store upload status to FAILED.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
+        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.failure = ValueError("An upload failure")
+        client.uploadFile.failure = ValueError("An upload failure")
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
@@ -225,15 +234,18 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.makeCharmRecipeBuild(
             requester=requester_team, name="test-charm", owner=requester_team,
             project=project)
+        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.failure = UnauthorizedUploadResponse(
+        client.uploadFile.result = 1
+        client.uploadFile.failure = UnauthorizedUploadResponse(
             "Authorization failed.")
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
@@ -275,15 +287,17 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # retried.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
+        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.failure = UploadFailedResponse(
+        client.uploadFile.failure = UploadFailedResponse(
             "Proxy error", can_retry=True)
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
@@ -295,13 +309,15 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # Try again.  The upload part of the job is retried, and this time
         # it succeeds.
         job.scheduled_start = None
-        client.upload.calls = []
-        client.upload.failure = None
-        client.upload.result = self.status_url
+        client.uploadFile.calls = []
+        client.uploadFile.failure = None
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
         client.checkStatus.result = 1
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -323,15 +339,17 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.makeCharmRecipeBuild(
             requester=requester_team, name="test-charm", owner=requester_team,
             project=project)
+        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.failure = UploadFailedResponse(
+        client.uploadFile.failure = UploadFailedResponse(
             "Failed to upload", detail="The proxy exploded.\n")
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], build.store_upload_jobs)
@@ -374,15 +392,18 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # charm schedules itself to be retried.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
+        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 2
+        client.push.result = self.status_url
         client.checkStatus.failure = UploadNotReviewedYetResponse()
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((build, 2), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -392,16 +413,18 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.WAITING, job.job.status)
         self.assertWebhookDeliveries(build, ["Pending"], logger)
-        # Try again.  The upload part of the job is not retried, and this
-        # time the review completes.
+        # Try again.  The upload and push parts of the job are not retried,
+        # and this time the review completes.
         job.scheduled_start = None
-        client.upload.calls = []
+        client.uploadFile.calls = []
+        client.push.calls = []
         client.checkStatus.calls = []
         client.checkStatus.failure = None
         client.checkStatus.result = 1
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([], client.upload.calls)
+        self.assertEqual([], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -422,16 +445,19 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.makeCharmRecipeBuild(
             requester=requester_team, name="test-charm", owner=requester_team,
             project=project)
+        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 2
+        client.push.result = self.status_url
         client.checkStatus.failure = ReviewFailedResponse(
             "Review failed.\nCharm is terrible.")
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((build, 2), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -472,15 +498,18 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # channels does so.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild(store_channels=["stable", "edge"])
+        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
         client.checkStatus.result = 1
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([((build, 1), {})], client.release.calls)
@@ -501,16 +530,19 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.makeCharmRecipeBuild(
             requester=requester_team, name="test-charm", owner=requester_team,
             project=project, store_channels=["stable", "edge"])
+        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
         client.checkStatus.result = 1
         client.release.failure = ReleaseFailedResponse("Failed to release")
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             JobRunner([job]).runAll()
-        self.assertEqual([((build,), {})], client.upload.calls)
+        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
         self.assertEqual([((build, 1), {})], client.release.calls)
@@ -552,16 +584,26 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.makeCharmRecipeBuild()
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.failure = UploadFailedResponse(
+        client.uploadFile.failure = UploadFailedResponse(
             "Proxy error", can_retry=True)
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertNotIn("status_url", job.metadata)
+        self.assertNotIn("upload_id", job.store_metadata)
         self.assertEqual(timedelta(seconds=60), job.retry_delay)
         job.scheduled_start = None
-        client.upload.failure = None
-        client.upload.result = self.status_url
+        client.uploadFile.failure = None
+        client.uploadFile.result = 1
+        client.push.failure = UploadFailedResponse(
+            "Proxy error", can_retry=True)
+        with dbuser(config.ICharmhubUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+        self.assertIn("upload_id", job.build.store_upload_metadata)
+        self.assertNotIn("status_url", job.store_metadata)
+        self.assertEqual(timedelta(seconds=60), job.retry_delay)
+        job.scheduled_start = None
+        client.push.failure = None
+        client.push.result = self.status_url
         client.checkStatus.failure = UploadNotReviewedYetResponse()
         for expected_delay in (15, 15, 30, 30, 60):
             with dbuser(config.ICharmhubUploadJobSource.dbuser):
@@ -579,39 +621,80 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
 
     def test_retry_after_upload_does_not_upload(self):
-        # If the job has uploaded, but failed to release, it should
-        # not attempt to upload again on the next run.
+        # If the job has uploaded but failed to push, it should not attempt
+        # to upload again on the next run.
         self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild(store_channels=["stable", "edge"])
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
-        client.upload.result = self.status_url
-        client.checkStatus.result = 1
-        client.release.failure = ReleaseFailedResponse(
+        client.uploadFile.result = 1
+        client.push.failure = UploadFailedResponse(
             "Proxy error", can_retry=True)
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
 
-        previous_upload = client.upload.calls
-        previous_checkStatus = client.checkStatus.calls
-        len_previous_release = len(client.release.calls)
-
-        # Check we uploaded as expected
-        self.assertEqual(1, job.store_revision)
+        # We performed the upload as expected, but the store failed to release
+        # it.
+        self.assertIsNone(job.store_revision)
         self.assertEqual(timedelta(seconds=60), job.retry_delay)
-        self.assertEqual(1, len(client.upload.calls))
+        self.assertEqual(1, len(client.uploadFile.calls))
         self.assertIsNone(job.error_message)
 
-        # Run the job again
+        # Run the job again.
+        client.uploadFile.calls = []
+        client.push.calls = []
+        client.push.failure = None
+        client.push.result = self.status_url
+        client.checkStatus.result = 1
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
 
-        # We should not have called `upload`, but moved straight to `release`
-        self.assertEqual(previous_upload, client.upload.calls)
-        self.assertEqual(previous_checkStatus, client.checkStatus.calls)
-        self.assertEqual(len_previous_release + 1, len(client.release.calls))
+        # The push has now succeeded.  Make sure that we didn't try to
+        # upload the file again first.
+        self.assertEqual(1, job.store_revision)
+        self.assertEqual([], client.uploadFile.calls)
+        self.assertEqual(1, len(client.push.calls))
+        self.assertIsNone(job.error_message)
+
+    def test_retry_after_push_does_not_upload_or_push(self):
+        # If the job has uploaded and pushed but has not yet been reviewed,
+        # it should not attempt to upload or push again on the next run.
+        self.useFixture(FakeLogger())
+        build = self.makeCharmRecipeBuild(store_channels=["stable", "edge"])
+        self.assertContentEqual([], build.store_upload_jobs)
+        job = CharmhubUploadJob.create(build)
+        client = FakeCharmhubClient()
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
+        client.checkStatus.failure = UploadNotReviewedYetResponse()
+        self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
+        with dbuser(config.ICharmhubUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        # We performed the upload as expected, but the store is still
+        # reviewing it.
+        self.assertIsNone(job.store_revision)
+        self.assertEqual(timedelta(seconds=15), job.retry_delay)
+        self.assertEqual(1, len(client.uploadFile.calls))
+        self.assertIsNone(job.error_message)
+
+        # Run the job again.
+        client.uploadFile.calls = []
+        client.push.calls = []
+        client.checkStatus.calls = []
+        client.checkStatus.failure = None
+        client.checkStatus.result = 1
+        with dbuser(config.ICharmhubUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        # The store has now reviewed the upload.  Make sure that we didn't
+        # try to upload or push it again first.
+        self.assertEqual(1, job.store_revision)
+        self.assertEqual([], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
+        self.assertEqual(1, len(client.checkStatus.calls))
         self.assertIsNone(job.error_message)
 
     def test_with_build_metadata_as_none(self):

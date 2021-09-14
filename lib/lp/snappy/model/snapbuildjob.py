@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap build jobs."""
@@ -241,6 +241,29 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         self.metadata["error_messages"] = messages
 
     @property
+    def upload_id(self):
+        """See `ISnapStoreUploadJob`."""
+        return self.store_metadata.get("upload_id")
+
+    @upload_id.setter
+    def upload_id(self, upload_id):
+        """See `ISnapStoreUploadJob`."""
+        if self.snapbuild.store_upload_metadata is None:
+            self.snapbuild.store_upload_metadata = {}
+        self.snapbuild.store_upload_metadata["upload_id"] = upload_id
+
+    @property
+    def status_url(self):
+        """See `ISnapStoreUploadJob`."""
+        return self.store_metadata.get("status_url")
+
+    @status_url.setter
+    def status_url(self, url):
+        if self.snapbuild.store_upload_metadata is None:
+            self.snapbuild.store_upload_metadata = {}
+        self.snapbuild.store_upload_metadata["status_url"] = url
+
+    @property
     def store_url(self):
         """See `ISnapStoreUploadJob`."""
         return self.store_metadata.get("store_url")
@@ -264,17 +287,6 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
             self.snapbuild.store_upload_metadata = {}
         self.snapbuild.store_upload_metadata["store_revision"] = revision
         self.snapbuild._store_upload_revision = revision
-
-    @property
-    def status_url(self):
-        """See `ISnapStoreUploadJob`."""
-        return self.store_metadata.get('status_url')
-
-    @status_url.setter
-    def status_url(self, url):
-        if self.snapbuild.store_upload_metadata is None:
-            self.snapbuild.store_upload_metadata = {}
-        self.snapbuild.store_upload_metadata["status_url"] = url
 
     # Ideally we'd just override Job._set_status or similar, but
     # lazr.delegates makes that difficult, so we use this to override all
@@ -333,8 +345,18 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         client = getUtility(ISnapStoreClient)
         try:
             try:
+                lfa = next((row[1] for row in self.snapbuild.getFiles()), None)
+                if lfa is None:
+                    # Nothing to do.
+                    self.error_message = None
+                    return
+                if "upload_id" not in self.store_metadata:
+                    self.upload_id = client.uploadFile(lfa)
+                    # We made progress, so reset attempt_count.
+                    self.attempt_count = 1
                 if "status_url" not in self.store_metadata:
-                    self.status_url = client.upload(self.snapbuild)
+                    self.status_url = client.push(
+                        self.snapbuild, self.upload_id)
                     # We made progress, so reset attempt_count.
                     self.attempt_count = 1
                 if self.store_url is None:

@@ -94,10 +94,20 @@ class ICharmhubClient(Interface):
             Candid caveat.
         """
 
-    def upload(build):
-        """Upload a charm recipe build to CharmHub.
+    def uploadFile(lfa):
+        """Upload a file to Charmhub.
+
+        :param lfa: The `ILibraryFileAlias` to upload.
+        :return: An upload ID.
+        :raises UploadFailedResponse: if uploading the file to Charmhub
+            failed.
+        """
+
+    def push(build, upload_id):
+        """Push a charm recipe build to CharmHub.
 
         :param build: The `ICharmRecipeBuild` to upload.
+        :param upload_id: An upload ID previously returned by `uploadFile`.
         :return: A URL to poll for upload processing status.
         :raises UnauthorizedUploadResponse: if the user who authorised this
             upload is not themselves authorised to upload the snap in

@@ -361,15 +361,13 @@ class TestSnapStoreClient(TestCaseWithFactory):
         return snapbuild
 
     @responses.activate
-    def test_upload(self):
-        snapbuild = self.makeUploadableSnapBuild()
+    def test_uploadFile(self):
+        snap_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-snap.snap", content=b"dummy snap content")
         transaction.commit()
         self._addUnscannedUploadResponse()
-        self._addSnapPushResponse()
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
-            self.assertEqual(
-                "http://sca.example/dev/api/snaps/1/builds/1/status",
-                self.client.upload(snapbuild))
+            self.assertEqual(1, self.client.uploadFile(snap_lfa))
         requests = [call.request for call in responses.calls]
         self.assertThat(requests, MatchesListwise([
             RequestMatches(
@@ -381,6 +379,34 @@ class TestSnapStoreClient(TestCaseWithFactory):
                         value=b"dummy snap content",
                         type="application/octet-stream",
                         )}),
+            ]))
+
+    @responses.activate
+    def test_uploadFile_error(self):
+        snap_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-snap.snap", content=b"dummy snap content")
+        transaction.commit()
+        responses.add(
+            "POST", "http://updown.example/unscanned-upload/", status=502,
+            body="The proxy exploded.\n")
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            err = self.assertRaises(
+                UploadFailedResponse, self.client.uploadFile, snap_lfa)
+            self.assertEqual("502 Server Error: Bad Gateway", str(err))
+            self.assertEqual("The proxy exploded.\n", err.detail)
+            self.assertTrue(err.can_retry)
+
+    @responses.activate
+    def test_push(self):
+        snapbuild = self.makeUploadableSnapBuild()
+        transaction.commit()
+        self._addSnapPushResponse()
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            self.assertEqual(
+                "http://sca.example/dev/api/snaps/1/builds/1/status",
+                self.client.push(snapbuild, 1))
+        requests = [call.request for call in responses.calls]
+        self.assertThat(requests, MatchesListwise([
             RequestMatches(
                 url=Equals("http://sca.example/dev/api/snap-push/"),
                 method=Equals("POST"),
@@ -394,27 +420,17 @@ class TestSnapStoreClient(TestCaseWithFactory):
             ]))
 
     @responses.activate
-    def test_upload_with_release_intent(self):
+    def test_push_with_release_intent(self):
         snapbuild = self.makeUploadableSnapBuild()
         snapbuild.snap.store_channels = ['beta', 'edge']
         transaction.commit()
-        self._addUnscannedUploadResponse()
         self._addSnapPushResponse()
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             self.assertEqual(
                 "http://sca.example/dev/api/snaps/1/builds/1/status",
-                self.client.upload(snapbuild))
+                self.client.push(snapbuild, 1))
         requests = [call.request for call in responses.calls]
         self.assertThat(requests, MatchesListwise([
-            RequestMatches(
-                url=Equals("http://updown.example/unscanned-upload/"),
-                method=Equals("POST"),
-                form_data={
-                    "binary": MatchesStructure.byEquality(
-                        name="binary", filename="test-snap.snap",
-                        value=b"dummy snap content",
-                        type="application/octet-stream",
-                        )}),
             RequestMatches(
                 url=Equals("http://sca.example/dev/api/snap-push/"),
                 method=Equals("POST"),
@@ -429,29 +445,19 @@ class TestSnapStoreClient(TestCaseWithFactory):
             ]))
 
     @responses.activate
-    def test_upload_no_discharge(self):
+    def test_push_no_discharge(self):
         root_key = hashlib.sha256(self.factory.getUniqueBytes()).hexdigest()
         root_macaroon = Macaroon(key=root_key)
         snapbuild = self.makeUploadableSnapBuild(
             store_secrets={"root": root_macaroon.serialize()})
         transaction.commit()
-        self._addUnscannedUploadResponse()
         self._addSnapPushResponse()
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             self.assertEqual(
                 "http://sca.example/dev/api/snaps/1/builds/1/status",
-                self.client.upload(snapbuild))
+                self.client.push(snapbuild, 1))
         requests = [call.request for call in responses.calls]
         self.assertThat(requests, MatchesListwise([
-            RequestMatches(
-                url=Equals("http://updown.example/unscanned-upload/"),
-                method=Equals("POST"),
-                form_data={
-                    "binary": MatchesStructure.byEquality(
-                        name="binary", filename="test-snap.snap",
-                        value=b"dummy snap content",
-                        type="application/octet-stream",
-                        )}),
             RequestMatches(
                 url=Equals("http://sca.example/dev/api/snap-push/"),
                 method=Equals("POST"),
@@ -465,7 +471,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
             ]))
 
     @responses.activate
-    def test_upload_encrypted_discharge(self):
+    def test_push_encrypted_discharge(self):
         private_key = PrivateKey.generate()
         self.pushConfig(
             "snappy",
@@ -475,23 +481,13 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 bytes(private_key)).decode("UTF-8"))
         snapbuild = self.makeUploadableSnapBuild(encrypted=True)
         transaction.commit()
-        self._addUnscannedUploadResponse()
         self._addSnapPushResponse()
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             self.assertEqual(
                 "http://sca.example/dev/api/snaps/1/builds/1/status",
-                self.client.upload(snapbuild))
+                self.client.push(snapbuild, 1))
         requests = [call.request for call in responses.calls]
         self.assertThat(requests, MatchesListwise([
-            RequestMatches(
-                url=Equals("http://updown.example/unscanned-upload/"),
-                method=Equals("POST"),
-                form_data={
-                    "binary": MatchesStructure.byEquality(
-                        name="binary", filename="test-snap.snap",
-                        value=b"dummy snap content",
-                        type="application/octet-stream",
-                        )}),
             RequestMatches(
                 url=Equals("http://sca.example/dev/api/snap-push/"),
                 method=Equals("POST"),
@@ -505,11 +501,10 @@ class TestSnapStoreClient(TestCaseWithFactory):
             ]))
 
     @responses.activate
-    def test_upload_unauthorized(self):
+    def test_push_unauthorized(self):
         store_secrets = self._make_store_secrets()
         snapbuild = self.makeUploadableSnapBuild(store_secrets=store_secrets)
         transaction.commit()
-        self._addUnscannedUploadResponse()
         snap_push_error = {
             "code": "macaroon-permission-required",
             "message": "Permission is required: package_push",
@@ -522,14 +517,13 @@ class TestSnapStoreClient(TestCaseWithFactory):
             self.assertRaisesWithContent(
                 UnauthorizedUploadResponse,
                 "Permission is required: package_push",
-                self.client.upload, snapbuild)
+                self.client.push, snapbuild, 1)
 
     @responses.activate
-    def test_upload_needs_discharge_macaroon_refresh(self):
+    def test_push_needs_discharge_macaroon_refresh(self):
         store_secrets = self._make_store_secrets()
         snapbuild = self.makeUploadableSnapBuild(store_secrets=store_secrets)
         transaction.commit()
-        self._addUnscannedUploadResponse()
         responses.add(
             "POST", "http://sca.example/dev/api/snap-push/", status=401,
             headers={"WWW-Authenticate": "Macaroon needs_refresh=1"})
@@ -538,10 +532,9 @@ class TestSnapStoreClient(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             self.assertEqual(
                 "http://sca.example/dev/api/snaps/1/builds/1/status",
-                self.client.upload(snapbuild))
+                self.client.push(snapbuild, 1))
         requests = [call.request for call in responses.calls]
         self.assertThat(requests, MatchesListwise([
-            MatchesStructure.byEquality(path_url="/unscanned-upload/"),
             MatchesStructure.byEquality(path_url="/dev/api/snap-push/"),
             MatchesStructure.byEquality(path_url="/api/v2/tokens/refresh"),
             MatchesStructure.byEquality(path_url="/dev/api/snap-push/"),
@@ -551,7 +544,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
             snapbuild.snap.store_secrets["discharge"])
 
     @responses.activate
-    def test_upload_needs_encrypted_discharge_macaroon_refresh(self):
+    def test_push_needs_encrypted_discharge_macaroon_refresh(self):
         private_key = PrivateKey.generate()
         self.pushConfig(
             "snappy",
@@ -562,7 +555,6 @@ class TestSnapStoreClient(TestCaseWithFactory):
         store_secrets = self._make_store_secrets(encrypted=True)
         snapbuild = self.makeUploadableSnapBuild(store_secrets=store_secrets)
         transaction.commit()
-        self._addUnscannedUploadResponse()
         responses.add(
             "POST", "http://sca.example/dev/api/snap-push/", status=401,
             headers={"WWW-Authenticate": "Macaroon needs_refresh=1"})
@@ -571,10 +563,9 @@ class TestSnapStoreClient(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             self.assertEqual(
                 "http://sca.example/dev/api/snaps/1/builds/1/status",
-                self.client.upload(snapbuild))
+                self.client.push(snapbuild, 1))
         requests = [call.request for call in responses.calls]
         self.assertThat(requests, MatchesListwise([
-            MatchesStructure.byEquality(path_url="/unscanned-upload/"),
             MatchesStructure.byEquality(path_url="/dev/api/snap-push/"),
             MatchesStructure.byEquality(path_url="/api/v2/tokens/refresh"),
             MatchesStructure.byEquality(path_url="/dev/api/snap-push/"),
@@ -584,35 +575,19 @@ class TestSnapStoreClient(TestCaseWithFactory):
             snapbuild.snap.store_secrets["discharge_encrypted"])
 
     @responses.activate
-    def test_upload_unsigned_agreement(self):
+    def test_push_unsigned_agreement(self):
         store_secrets = self._make_store_secrets()
         snapbuild = self.makeUploadableSnapBuild(store_secrets=store_secrets)
         transaction.commit()
-        self._addUnscannedUploadResponse()
         snap_push_error = {"message": "Developer has not signed agreement."}
         responses.add(
             "POST", "http://sca.example/dev/api/snap-push/", status=403,
             json={"error_list": [snap_push_error]})
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             err = self.assertRaises(
-                UploadFailedResponse, self.client.upload, snapbuild)
+                UploadFailedResponse, self.client.push, snapbuild, 1)
             self.assertEqual("Developer has not signed agreement.", str(err))
             self.assertFalse(err.can_retry)
-
-    @responses.activate
-    def test_upload_file_error(self):
-        store_secrets = self._make_store_secrets()
-        snapbuild = self.makeUploadableSnapBuild(store_secrets=store_secrets)
-        transaction.commit()
-        responses.add(
-            "POST", "http://updown.example/unscanned-upload/", status=502,
-            body="The proxy exploded.\n")
-        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
-            err = self.assertRaises(
-                UploadFailedResponse, self.client.upload, snapbuild)
-            self.assertEqual("502 Server Error: Bad Gateway", str(err))
-            self.assertEqual("The proxy exploded.\n", err.detail)
-            self.assertTrue(err.can_retry)
 
     @responses.activate
     def test_refresh_discharge_macaroon(self):

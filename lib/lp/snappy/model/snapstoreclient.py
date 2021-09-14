@@ -237,7 +237,7 @@ class SnapStoreClient:
             timeline_action.finish()
 
     @classmethod
-    def _uploadFile(cls, lfa, lfc):
+    def uploadFile(cls, lfa):
         """Upload a single file."""
         assert config.snappy.store_upload_url is not None
         unscanned_upload_url = urlappend(
@@ -262,24 +262,22 @@ class SnapStoreClient:
                 response_data = response.json()
                 if not response_data.get("successful", False):
                     raise UploadFailedResponse(response.text)
-                return {"upload_id": response_data["upload_id"]}
+                return response_data["upload_id"]
             except requests.HTTPError as e:
                 raise cls._makeSnapStoreError(UploadFailedResponse, e)
         finally:
             lfa.close()
 
     @classmethod
-    def _uploadApp(cls, snapbuild, upload_data):
+    def _push(cls, snapbuild, upload_id):
         """Create a new store upload based on the uploaded file."""
         snap = snapbuild.snap
-        assert config.snappy.store_url is not None
-        assert snap.store_name is not None
-        assert snap.store_secrets is not None
+        assert snap.can_upload_to_store
         assert snapbuild.date_started is not None
         upload_url = urlappend(config.snappy.store_url, "dev/api/snap-push/")
         data = {
             "name": snap.store_name,
-            "updown_id": upload_data["upload_id"],
+            "updown_id": upload_id,
             "series": snap.store_series.name,
             "built_at": snapbuild.date_started.isoformat(),
             }
@@ -312,15 +310,10 @@ class SnapStoreClient:
             raise cls._makeSnapStoreError(UploadFailedResponse, e)
 
     @classmethod
-    def upload(cls, snapbuild):
+    def push(cls, snapbuild, upload_id):
         """See `ISnapStoreClient`."""
-        assert snapbuild.snap.can_upload_to_store
-        for _, lfa, lfc in snapbuild.getFiles():
-            if not lfa.filename.endswith(".snap"):
-                continue
-            upload_data = cls._uploadFile(lfa, lfc)
-            return cls.refreshIfNecessary(
-                snapbuild.snap, cls._uploadApp, snapbuild, upload_data)
+        return cls.refreshIfNecessary(
+            snapbuild.snap, cls._push, snapbuild, upload_id)
 
     @classmethod
     def refreshDischargeMacaroon(cls, snap):
