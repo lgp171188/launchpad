@@ -1995,6 +1995,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         build1 = self.factory.makeSnapBuild(
             snap=snap1,
             status=BuildStatus.FULLYBUILT)
+        snap1_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-snap.snap", content=b"dummy snap content")
+        self.factory.makeSnapFile(snapbuild=build1, libraryfile=snap1_lfa)
 
         # test that build1 does not get picked up
         # as it is a build without a store upload
@@ -2005,7 +2008,8 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Upload build
         job = getUtility(ISnapStoreUploadJobSource).create(build1)
         client = FakeSnapStoreClient()
-        client.upload.result = (
+        client.uploadFile.result = 1
+        client.push.result = (
             "http://sca.example/dev/api/snaps/1/builds/1/status")
         client.checkStatus.result = (
             "http://sca.example/dev/click-apps/1/rev/1/", 1)

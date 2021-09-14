@@ -55,12 +55,18 @@ class ICharmhubUploadJob(IRunnableJob):
     error_detail = TextLine(
         title=_("Error message detail"), required=False, readonly=True)
 
-    store_revision = Int(
-        title=_("The revision assigned to this build by Charmhub"),
+    upload_id = Int(
+        title=_(
+            "The ID returned by Charmhub when uploading this build's charm "
+            "file."),
         required=False, readonly=True)
 
     status_url = TextLine(
         title=_("The URL on Charmhub to get the status of this build"),
+        required=False, readonly=True)
+
+    store_revision = Int(
+        title=_("The revision assigned to this build by Charmhub"),
         required=False, readonly=True)
 
 

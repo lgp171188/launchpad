@@ -302,18 +302,15 @@ class TestCharmhubClient(TestCaseWithFactory):
         return build
 
     @responses.activate
-    def test_upload(self):
-        self._setUpSecretStorage()
-        build = self.makeUploadableCharmRecipeBuild()
+    def test_uploadFile(self):
+        charm_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-charm.charm", content="dummy charm content")
         transaction.commit()
         self._addUnscannedUploadResponse()
-        self._addCharmPushResponse("test-charm")
         # XXX cjwatson 2021-08-19: Use
         # config.ICharmhubUploadJobSource.dbuser once that job exists.
         with dbuser("charm-build-job"):
-            self.assertEqual(
-                "/v1/charm/test-charm/revisions/review?upload-id=123",
-                self.client.upload(build))
+            self.assertEqual(1, self.client.uploadFile(charm_lfa))
         requests = [call.request for call in responses.calls]
         self.assertThat(requests, MatchesListwise([
             RequestMatches(
@@ -326,6 +323,40 @@ class TestCharmhubClient(TestCaseWithFactory):
                         value="dummy charm content",
                         content_type="application/octet-stream",
                         )}),
+            ]))
+
+    @responses.activate
+    def test_uploadFile_error(self):
+        charm_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-charm.charm", content="dummy charm content")
+        transaction.commit()
+        responses.add(
+            "POST", "http://storage.charmhub.example/unscanned-upload/",
+            status=502, body="The proxy exploded.\n")
+        # XXX cjwatson 2021-08-19: Use
+        # config.ICharmhubUploadJobSource.dbuser once that job exists.
+        with dbuser("charm-build-job"):
+            err = self.assertRaises(
+                UploadFailedResponse, self.client.uploadFile, charm_lfa)
+            self.assertEqual("502 Server Error: Bad Gateway", str(err))
+            self.assertThat(err, MatchesStructure(
+                detail=Equals("The proxy exploded.\n"),
+                can_retry=Is(True)))
+
+    @responses.activate
+    def test_push(self):
+        self._setUpSecretStorage()
+        build = self.makeUploadableCharmRecipeBuild()
+        transaction.commit()
+        self._addCharmPushResponse("test-charm")
+        # XXX cjwatson 2021-08-19: Use
+        # config.ICharmhubUploadJobSource.dbuser once that job exists.
+        with dbuser("charm-build-job"):
+            self.assertEqual(
+                "/v1/charm/test-charm/revisions/review?upload-id=123",
+                self.client.push(build, 1))
+        requests = [call.request for call in responses.calls]
+        self.assertThat(requests, MatchesListwise([
             RequestMatches(
                 url=Equals(
                     "http://charmhub.example/v1/charm/test-charm/revisions"),
@@ -337,11 +368,10 @@ class TestCharmhubClient(TestCaseWithFactory):
             ]))
 
     @responses.activate
-    def test_upload_unauthorized(self):
+    def test_push_unauthorized(self):
         self._setUpSecretStorage()
         build = self.makeUploadableCharmRecipeBuild()
         transaction.commit()
-        self._addUnscannedUploadResponse()
         charm_push_error = {
             "code": "permission-required",
             "message": "Missing required permission: package-manage-revisions",
@@ -356,25 +386,7 @@ class TestCharmhubClient(TestCaseWithFactory):
             self.assertRaisesWithContent(
                 UnauthorizedUploadResponse,
                 "Missing required permission: package-manage-revisions",
-                self.client.upload, build)
-
-    @responses.activate
-    def test_upload_file_error(self):
-        self._setUpSecretStorage()
-        build = self.makeUploadableCharmRecipeBuild()
-        transaction.commit()
-        responses.add(
-            "POST", "http://storage.charmhub.example/unscanned-upload/",
-            status=502, body="The proxy exploded.\n")
-        # XXX cjwatson 2021-08-19: Use
-        # config.ICharmhubUploadJobSource.dbuser once that job exists.
-        with dbuser("charm-build-job"):
-            err = self.assertRaises(
-                UploadFailedResponse, self.client.upload, build)
-            self.assertEqual("502 Server Error: Bad Gateway", str(err))
-            self.assertThat(err, MatchesStructure(
-                detail=Equals("The proxy exploded.\n"),
-                can_retry=Is(True)))
+                self.client.push, build, 1)
 
     @responses.activate
     def test_checkStatus_pending(self):
