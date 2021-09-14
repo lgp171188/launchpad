@@ -1089,6 +1089,10 @@ class TestSnap(TestCaseWithFactory):
         build = self.factory.makeSnapBuild(
             snap=snap1,
             status=BuildStatus.FULLYBUILT)
+        snap1_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-snap.snap", content=b"dummy snap content",
+            db_only=True)
+        self.factory.makeSnapFile(snapbuild=build, libraryfile=snap1_lfa)
 
         # There is no build with revision 5 for snap1
         self.assertIsNone(snap1.getBuildByStoreRevision(5))
@@ -1096,7 +1100,8 @@ class TestSnap(TestCaseWithFactory):
         # Upload build1 and check we return it by version 1
         job = getUtility(ISnapStoreUploadJobSource).create(build)
         client = FakeSnapStoreClient()
-        client.upload.result = (
+        client.uploadFile.result = 1
+        client.push.result = (
             "http://sca.example/dev/api/snaps/1/builds/1/status")
         client.checkStatus.result = (
             "http://sca.example/dev/click-apps/1/rev/1/", 1)
@@ -1113,9 +1118,14 @@ class TestSnap(TestCaseWithFactory):
         build2 = self.factory.makeSnapBuild(
             snap=snap1,
             status=BuildStatus.FULLYBUILT)
+        snap2_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-snap.snap", content=b"dummy snap content",
+            db_only=True)
+        self.factory.makeSnapFile(snapbuild=build2, libraryfile=snap2_lfa)
         job = getUtility(ISnapStoreUploadJobSource).create(build2)
         client = FakeSnapStoreClient()
-        client.upload.result = (
+        client.uploadFile.result = 2
+        client.push.result = (
             "http://sca.example/dev/api/snaps/1/builds/2/status")
         client.checkStatus.result = (
             "http://sca.example/dev/click-apps/1/rev/2/", 2)
