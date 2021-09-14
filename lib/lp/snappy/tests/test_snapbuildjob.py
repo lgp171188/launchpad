@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for snap build jobs."""
@@ -73,7 +73,8 @@ def run_isolated_jobs(jobs):
 class FakeSnapStoreClient:
 
     def __init__(self):
-        self.upload = FakeMethod()
+        self.uploadFile = FakeMethod()
+        self.push = FakeMethod()
         self.checkStatus = FakeMethod()
         self.listChannels = FakeMethod(result=[])
 
@@ -120,10 +121,13 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             repr(job))
 
     def makeSnapBuild(self, **kwargs):
-        # Make a build with a builder and a webhook.
+        # Make a build with a builder, a file, and a webhook.
         snapbuild = self.factory.makeSnapBuild(
             builder=self.factory.makeBuilder(), **kwargs)
         snapbuild.updateStatus(BuildStatus.FULLYBUILT)
+        snap_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-snap.snap", content=b"dummy snap content")
+        self.factory.makeSnapFile(snapbuild=snapbuild, libraryfile=snap_lfa)
         self.factory.makeWebhook(
             target=snapbuild.snap, event_types=["snap:build:0.1"])
         return snapbuild
@@ -165,15 +169,18 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # and revision.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
         client.checkStatus.result = (self.store_url, 1)
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
@@ -189,14 +196,16 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # A failed run sets the store upload status to FAILED.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.failure = ValueError("An upload failure")
+        client.uploadFile.failure = ValueError("An upload failure")
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -216,15 +225,18 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             owner=requester, name="requester-team", members=[requester])
         snapbuild = self.makeSnapBuild(
             requester=requester_team, name="test-snap", owner=requester_team)
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.failure = UnauthorizedUploadResponse(
+        client.uploadFile.result = 1
+        client.push.failure = UnauthorizedUploadResponse(
             "Authorization failed.")
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -265,15 +277,17 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # retried.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.failure = UploadFailedResponse(
+        client.uploadFile.failure = UploadFailedResponse(
             "Proxy error", can_retry=True)
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -287,13 +301,15 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # Try again.  The upload part of the job is retried, and this time
         # it succeeds.
         job.scheduled_start = None
-        client.upload.calls = []
-        client.upload.failure = None
-        client.upload.result = self.status_url
+        client.uploadFile.calls = []
+        client.uploadFile.failure = None
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
         client.checkStatus.result = (self.store_url, 1)
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
@@ -315,14 +331,17 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             owner=requester, name="requester-team", members=[requester])
         snapbuild = self.makeSnapBuild(
             requester=requester_team, name="test-snap", owner=requester_team)
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.failure = BadRefreshResponse("SSO melted.")
+        client.uploadFile.result = 1
+        client.push.failure = BadRefreshResponse("SSO melted.")
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -368,15 +387,17 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             owner=requester, name="requester-team", members=[requester])
         snapbuild = self.makeSnapBuild(
             requester=requester_team, name="test-snap", owner=requester_team)
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.failure = UploadFailedResponse(
+        client.uploadFile.failure = UploadFailedResponse(
             "Failed to upload", detail="The proxy exploded.\n")
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -420,15 +441,18 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # package schedules itself to be retried.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 2
+        client.push.result = self.status_url
         client.checkStatus.failure = UploadNotScannedYetResponse()
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((snapbuild, 2), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -439,16 +463,18 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.WAITING, job.job.status)
         self.assertWebhookDeliveries(snapbuild, ["Pending"], logger)
-        # Try again.  The upload part of the job is not retried, and this
-        # time the scan completes.
+        # Try again.  The upload and push parts of the job are not retried,
+        # and this time the scan completes.
         job.scheduled_start = None
-        client.upload.calls = []
+        client.uploadFile.calls = []
+        client.push.calls = []
         client.checkStatus.calls = []
         client.checkStatus.failure = None
         client.checkStatus.result = (self.store_url, 1)
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([], client.upload.calls)
+        self.assertEqual([], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
@@ -469,10 +495,12 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             owner=requester, name="requester-team", members=[requester])
         snapbuild = self.makeSnapBuild(
             requester=requester_team, name="test-snap", owner=requester_team)
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 2
+        client.push.result = self.status_url
         client.checkStatus.failure = ScanFailedResponse(
             "Scan failed.\nConfinement not allowed.",
             messages=[
@@ -481,7 +509,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((snapbuild, 2), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -526,15 +555,18 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # URL or revision.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
         client.checkStatus.result = (None, None)
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -551,15 +583,18 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # channels does so.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild(store_channels=["stable", "edge"])
+        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.result = self.status_url
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
         client.checkStatus.result = (self.store_url, 1)
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
@@ -579,16 +614,26 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         snapbuild = self.makeSnapBuild()
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.failure = UploadFailedResponse(
+        client.uploadFile.failure = UploadFailedResponse(
             "Proxy error", can_retry=True)
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertNotIn("status_url", job.metadata)
+        self.assertNotIn("upload_id", job.store_metadata)
         self.assertEqual(timedelta(seconds=60), job.retry_delay)
         job.scheduled_start = None
-        client.upload.failure = None
-        client.upload.result = self.status_url
+        client.uploadFile.failure = None
+        client.uploadFile.result = 1
+        client.push.failure = UploadFailedResponse(
+            "Proxy error", can_retry=True)
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+        self.assertIn("upload_id", job.snapbuild.store_upload_metadata)
+        self.assertNotIn("status_url", job.store_metadata)
+        self.assertEqual(timedelta(seconds=60), job.retry_delay)
+        job.scheduled_start = None
+        client.push.failure = None
+        client.push.result = self.status_url
         client.checkStatus.failure = UploadNotScannedYetResponse()
         for expected_delay in (15, 15, 30, 30, 60):
             with dbuser(config.ISnapStoreUploadJobSource.dbuser):
@@ -608,39 +653,88 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
 
     def test_retry_after_upload_does_not_upload(self):
-        # If the job has uploaded, but failed to release, it should
-        # not attempt to upload again on the next run.
+        # If the job has uploaded but failed to push, it should not attempt
+        # to upload again on the next run.
         self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild(store_channels=["stable", "edge"])
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
-        client.upload.result = self.status_url
-        client.checkStatus.result = (self.store_url, 1)
+        client.uploadFile.result = 1
+        client.push.failure = UploadFailedResponse(
+            "Proxy error", can_retry=True)
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
 
-        previous_upload = client.upload.calls
-        previous_checkStatus = client.checkStatus.calls
-
-        # Check we uploaded as expected
-        self.assertEqual(self.store_url, job.store_url)
-        self.assertEqual(1, job.store_revision)
-        self.assertEqual(1,
-                         removeSecurityProxy(snapbuild)._store_upload_revision)
+        # We performed the upload as expected, but the push failed.
+        self.assertIsNone(job.store_url)
+        self.assertIsNone(job.store_revision)
+        self.assertIsNone(
+            removeSecurityProxy(snapbuild)._store_upload_revision)
         self.assertEqual(timedelta(seconds=60), job.retry_delay)
-        self.assertEqual(1, len(client.upload.calls))
+        self.assertEqual(1, len(client.uploadFile.calls))
         self.assertIsNone(job.error_message)
 
-        # Run the job again
+        # Run the job again.
+        client.uploadFile.calls = []
+        client.push.calls = []
+        client.push.failure = None
+        client.push.result = self.status_url
+        client.checkStatus.result = (self.store_url, 1)
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
 
-        # Release is not called due to release intent in upload
-        # but ensure that we have not called upload twice
-        self.assertEqual(previous_upload, client.upload.calls)
-        self.assertEqual(previous_checkStatus, client.checkStatus.calls)
+        # The push has now succeeded.  Make sure that we didn't try to
+        # upload the file again first.
+        self.assertEqual(self.store_url, job.store_url)
+        self.assertEqual(1, job.store_revision)
+        self.assertEqual([], client.uploadFile.calls)
+        self.assertEqual(1, len(client.push.calls))
+        self.assertIsNone(job.error_message)
+
+    def test_retry_after_push_does_not_upload_or_push(self):
+        # If the job has uploaded and pushed but has not yet been scanned,
+        # it should not attempt to upload or push again on the next run.
+        self.useFixture(FakeLogger())
+        snapbuild = self.makeSnapBuild(store_channels=["stable", "edge"])
+        self.assertContentEqual([], snapbuild.store_upload_jobs)
+        job = SnapStoreUploadJob.create(snapbuild)
+        client = FakeSnapStoreClient()
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
+        client.checkStatus.failure = UploadNotScannedYetResponse()
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        # We performed the upload and push as expected, but the store is
+        # still scanning it.
+        self.assertIsNone(job.store_url)
+        self.assertIsNone(job.store_revision)
+        self.assertIsNone(
+            removeSecurityProxy(snapbuild)._store_upload_revision)
+        self.assertEqual(timedelta(seconds=15), job.retry_delay)
+        self.assertEqual(1, len(client.uploadFile.calls))
+        self.assertEqual(1, len(client.push.calls))
+        self.assertIsNone(job.error_message)
+
+        # Run the job again.
+        client.uploadFile.calls = []
+        client.push.calls = []
+        client.checkStatus.calls = []
+        client.checkStatus.failure = None
+        client.checkStatus.result = (self.store_url, 1)
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        # The store has now scanned the upload.  Make sure that we didn't
+        # try to upload or push it again first.
+        self.assertEqual(self.store_url, job.store_url)
+        self.assertEqual(1, job.store_revision)
+        self.assertEqual([], client.uploadFile.calls)
+        self.assertEqual([], client.push.calls)
+        self.assertEqual(1, len(client.checkStatus.calls))
         self.assertIsNone(job.error_message)
 
     def test_with_snapbuild_metadata_as_none(self):

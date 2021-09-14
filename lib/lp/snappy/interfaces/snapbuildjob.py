@@ -61,16 +61,22 @@ class ISnapStoreUploadJob(IRunnableJob):
     error_detail = TextLine(
         title=_("Error message detail"), required=False, readonly=True)
 
+    upload_id = Int(
+        title=_(
+            "The ID returned by the store when uploading this build's snap "
+            "file."),
+        required=False, readonly=True)
+
+    status_url = TextLine(
+        title=_("The URL on the store to get the status of this build"),
+        required=False, readonly=True)
+
     store_url = TextLine(
         title=_("The URL on the store corresponding to this build"),
         required=False, readonly=True)
 
     store_revision = Int(
         title=_("The revision assigned to this build by the store"),
-        required=False, readonly=True)
-
-    status_url = TextLine(
-        title=_("The URL on the store to get the status of this build"),
         required=False, readonly=True)
 
 

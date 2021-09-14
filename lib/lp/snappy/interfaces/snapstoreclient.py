@@ -88,10 +88,20 @@ class ISnapStoreClient(Interface):
             this snap.
         """
 
-    def upload(snapbuild):
-        """Upload a snap build to the store.
+    def uploadFile(lfa):
+        """Upload a file to the store.
+
+        :param lfa: The `ILibraryFileAlias` to upload.
+        :return: An upload ID.
+        :raises UploadFailedResponse: if uploading the file to the store
+            failed.
+        """
+
+    def push(snapbuild, upload_id):
+        """Push a snap build to the store.
 
         :param snapbuild: The `ISnapBuild` to upload.
+        :param upload_id: An upload ID previously returned by `uploadFile`.
         :return: A URL to poll for upload processing status.
         :raises BadRefreshResponse: if the authorising macaroons need to be
             refreshed, but attempting to do so fails.

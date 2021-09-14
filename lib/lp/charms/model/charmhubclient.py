@@ -147,7 +147,7 @@ class CharmhubClient:
             timeline_action.finish()
 
     @classmethod
-    def _uploadToStorage(cls, lfa):
+    def uploadFile(cls, lfa):
         """Upload a single file to Charmhub's storage."""
         assert config.charms.charmhub_storage_url is not None
         unscanned_upload_url = urlappend(
@@ -182,12 +182,10 @@ class CharmhubClient:
             lfa.close()
 
     @classmethod
-    def _push(cls, build, upload_id):
+    def push(cls, build, upload_id):
         """Push an already-uploaded charm to Charmhub."""
         recipe = build.recipe
-        assert config.charms.charmhub_url is not None
-        assert recipe.store_name is not None
-        assert recipe.store_secrets is not None
+        assert recipe.can_upload_to_store
         push_url = urlappend(
             config.charms.charmhub_url,
             "v1/charm/{}/revisions".format(quote(recipe.store_name)))
@@ -218,7 +216,7 @@ class CharmhubClient:
         for _, lfa, _ in build.getFiles():
             if not lfa.filename.endswith(".charm"):
                 continue
-            upload_id = cls._uploadToStorage(lfa)
+            upload_id = cls.uploadFile(lfa)
             return cls._push(build, upload_id)
 
     @classmethod

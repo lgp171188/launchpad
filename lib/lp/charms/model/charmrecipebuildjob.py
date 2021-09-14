@@ -230,16 +230,16 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
         self.metadata["error_detail"] = detail
 
     @property
-    def store_revision(self):
+    def upload_id(self):
         """See `ICharmhubUploadJob`."""
-        return self.store_metadata.get("store_revision")
+        return self.store_metadata.get("upload_id")
 
-    @store_revision.setter
-    def store_revision(self, revision):
+    @upload_id.setter
+    def upload_id(self, upload_id):
         """See `ICharmhubUploadJob`."""
         if self.build.store_upload_metadata is None:
             self.build.store_upload_metadata = {}
-        self.build.store_upload_metadata["store_revision"] = revision
+        self.build.store_upload_metadata["upload_id"] = upload_id
 
     @property
     def status_url(self):
@@ -251,6 +251,18 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
         if self.build.store_upload_metadata is None:
             self.build.store_upload_metadata = {}
         self.build.store_upload_metadata["status_url"] = url
+
+    @property
+    def store_revision(self):
+        """See `ICharmhubUploadJob`."""
+        return self.store_metadata.get("store_revision")
+
+    @store_revision.setter
+    def store_revision(self, revision):
+        """See `ICharmhubUploadJob`."""
+        if self.build.store_upload_metadata is None:
+            self.build.store_upload_metadata = {}
+        self.build.store_upload_metadata["store_revision"] = revision
 
     # Ideally we'd just override Job._set_status or similar, but
     # lazr.delegates makes that difficult, so we use this to override all
@@ -311,8 +323,17 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
         client = getUtility(ICharmhubClient)
         try:
             try:
+                lfa = next((row[1] for row in self.build.getFiles()), None)
+                if lfa is None:
+                    # Nothing to do.
+                    self.error_message = None
+                    return
+                if "upload_id" not in self.store_metadata:
+                    self.upload_id = client.uploadFile(lfa)
+                    # We made progress, so reset attempt_count.
+                    self.attempt_count = 1
                 if "status_url" not in self.store_metadata:
-                    self.status_url = client.upload(self.build)
+                    self.status_url = client.push(self.build, self.upload_id)
                     # We made progress, so reset attempt_count.
                     self.attempt_count = 1
                 if self.store_revision is None:
