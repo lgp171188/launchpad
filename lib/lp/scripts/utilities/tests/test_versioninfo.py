@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the script to show version information."""
@@ -12,8 +12,8 @@ from testtools.content import text_content
 
 from lp.app import versioninfo
 from lp.scripts.utilities.versioninfo import main as versioninfo_main
-from lp.services.utils import CapturedOutput
 from lp.testing import TestCase
+from lp.testing.fixture import CapturedOutput
 
 
 class TestVersionInfo(TestCase):

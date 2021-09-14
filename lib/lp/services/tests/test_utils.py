@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for lp.services.utils."""
@@ -10,7 +10,6 @@ from datetime import datetime
 from functools import partial
 import itertools
 import os
-import sys
 
 from fixtures import TempDir
 from pytz import UTC
@@ -33,7 +32,6 @@ from lp.services.utils import (
     load_bz2_pickle,
     obfuscate_structure,
     round_half_up,
-    run_capturing_output,
     sanitise_urls,
     save_bz2_pickle,
     seconds_since_epoch,
@@ -280,22 +278,6 @@ class TestTracebackInfo(TestCase):
         self.assertEqual(None, locals().get("__traceback_info__"))
         traceback_info("Pugwash")
         self.assertEqual("Pugwash", locals().get("__traceback_info__"))
-
-
-class TestRunCapturingOutput(TestCase):
-    """Test `run_capturing_output`."""
-
-    def test_run_capturing_output(self):
-
-        def f(a, b):
-            sys.stdout.write(str(a))
-            sys.stderr.write(str(b))
-            return a + b
-
-        c, stdout, stderr = run_capturing_output(f, 3, 4)
-        self.assertEqual(7, c)
-        self.assertEqual('3', stdout)
-        self.assertEqual('4', stderr)
 
 
 class TestFileExists(TestCase):

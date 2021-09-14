@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the script to generate a NaCl key pair."""
@@ -19,8 +19,8 @@ from testtools.matchers import (
     )
 
 from lp.services.crypto.scripts.generatekeypair import main as gkp_main
-from lp.services.utils import CapturedOutput
 from lp.testing import TestCase
+from lp.testing.fixture import CapturedOutput
 
 
 def decode_key(factory, data):
