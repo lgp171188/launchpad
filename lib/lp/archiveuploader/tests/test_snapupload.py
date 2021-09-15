@@ -56,6 +56,8 @@ class TestSnapBuildUploads(TestUploadProcessorBase):
         write_file(os.path.join(upload_dir, "wget_0_all.snap"), b"snap")
         write_file(
             os.path.join(upload_dir, "wget_0_all.manifest"), b"manifest")
+        write_file(os.path.join(upload_dir, "wget_0_all.dpkg.yaml"),
+                   b"yaml file")
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build)
         result = handler.processSnap(self.log)
@@ -64,6 +66,7 @@ class TestSnapBuildUploads(TestUploadProcessorBase):
             "Snap upload failed\nGot: %s" % self.log.getLogBuffer())
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
         self.assertTrue(self.build.verifySuccessfulUpload())
+        self.assertEqual(3, len(list(self.build.getFiles())))
 
     def test_requires_snap(self):
         # The upload processor fails if the upload does not contain any
@@ -99,6 +102,8 @@ class TestSnapBuildUploads(TestUploadProcessorBase):
         upload_dir = os.path.join(
             self.incoming_folder, "test", str(self.build.id), "ubuntu")
         write_file(os.path.join(upload_dir, "wget_0_all.snap"), b"snap")
+        write_file(os.path.join(upload_dir, "wget_0_all.dpkg.yaml"),
+                   b"yaml file")
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build)
         result = handler.processSnap(self.log)
@@ -108,3 +113,5 @@ class TestSnapBuildUploads(TestUploadProcessorBase):
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
         self.assertTrue(self.build.verifySuccessfulUpload())
         self.assertEqual(1, len(list(self.build.store_upload_jobs)))
+        self.assertEqual(2, len(list(self.build.getFiles())))
+
