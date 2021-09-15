@@ -210,16 +210,6 @@ class CharmhubClient:
             timeline_action.finish()
 
     @classmethod
-    def upload(cls, build):
-        """See `ICharmhubClient`."""
-        assert build.recipe.can_upload_to_store
-        for _, lfa, _ in build.getFiles():
-            if not lfa.filename.endswith(".charm"):
-                continue
-            upload_id = cls.uploadFile(lfa)
-            return cls._push(build, upload_id)
-
-    @classmethod
     def checkStatus(cls, build, status_url):
         """See `ICharmhubClient`."""
         status_url = urlappend(
