@@ -277,6 +277,34 @@
                 <xsl:text>/builders/</xsl:text>
                 <var>&lt;builder.name&gt;</var>
             </xsl:when>
+            <xsl:when test="@id = 'charm_recipe'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;project.name&gt;</var>
+                <xsl:text>/+charm/</xsl:text>
+                <var>&lt;recipe.name&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'charm_recipe_build'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;project.name&gt;</var>
+                <xsl:text>/+charm/</xsl:text>
+                <var>&lt;recipe.name&gt;</var>
+                <xsl:text>/+build/</xsl:text>
+                <var>&lt;id&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'charm_recipe_build_request'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;project.name&gt;</var>
+                <xsl:text>/+charm/</xsl:text>
+                <var>&lt;recipe.name&gt;</var>
+                <xsl:text>/+build-request/</xsl:text>
+                <var>&lt;id&gt;</var>
+            </xsl:when>
             <xsl:when test="@id = 'cve'">
                 <xsl:text>/bugs/cve/</xsl:text>
                 <var>&lt;sequence&gt;</var>
@@ -744,6 +772,9 @@
     <xsl:template name="find-root-object-uri">
         <xsl:value-of select="$base"/>
         <xsl:choose>
+            <xsl:when test="@id = 'charm_recipes'">
+                <xsl:text>/+charm-recipes</xsl:text>
+            </xsl:when>
             <xsl:when test="@id = 'polls'">
                 <xsl:text>/+polls</xsl:text>
             </xsl:when>

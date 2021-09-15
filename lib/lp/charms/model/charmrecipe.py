@@ -981,6 +981,10 @@ class CharmRecipeSet:
         recipes.set(
             git_repository_id=None, git_path=None, date_last_modified=UTC_NOW)
 
+    def empty_list(self):
+        """See `ICharmRecipeSet`."""
+        return []
+
 
 @implementer(IEncryptedContainer)
 class CharmhubSecretsEncryptedContainer(NaClEncryptedContainerBase):

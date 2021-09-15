@@ -78,6 +78,11 @@
             template="../templates/charmrecipe-new.pt" />
 
         <browser:url
+            for="lp.charms.interfaces.charmrecipe.ICharmRecipeSet"
+            path_expression="string:+charm-recipes"
+            parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
+
+        <browser:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipeBuildRequest"
             path_expression="string:+build-request/${id}"
             attribute_to_parent="recipe" />

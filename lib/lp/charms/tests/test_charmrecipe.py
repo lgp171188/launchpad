@@ -6,10 +6,12 @@
 __metaclass__ = type
 
 import base64
+from datetime import timedelta
 import json
 from textwrap import dedent
 
 from fixtures import FakeLogger
+import iso8601
 from nacl.public import PrivateKey
 from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
@@ -20,7 +22,10 @@ from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
     Equals,
+    GreaterThan,
     Is,
+    LessThan,
+    MatchesAll,
     MatchesDict,
     MatchesListwise,
     MatchesSetwise,
@@ -50,6 +55,7 @@ from lp.charms.interfaces.charmrecipe import (
     CannotAuthorizeCharmhubUploads,
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_BUILD_DISTRIBUTION,
+    CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
     CharmRecipeBuildAlreadyPending,
     CharmRecipeBuildDisallowedArchitecture,
@@ -58,6 +64,7 @@ from lp.charms.interfaces.charmrecipe import (
     CharmRecipePrivateFeatureDisabled,
     ICharmRecipe,
     ICharmRecipeSet,
+    ICharmRecipeView,
     NoSourceForCharmRecipe,
     )
 from lp.charms.interfaces.charmrecipebuild import (
@@ -71,6 +78,10 @@ from lp.charms.model.charmrecipebuild import CharmFile
 from lp.charms.model.charmrecipejob import CharmRecipeJob
 from lp.code.errors import GitRepositoryBlobNotFound
 from lp.code.tests.helpers import GitHostingFixture
+from lp.registry.enums import (
+    PersonVisibility,
+    TeamMembershipPolicy,
+    )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.crypto.interfaces import IEncryptedContainer
@@ -86,12 +97,19 @@ from lp.services.database.sqlbase import (
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
+    ANONYMOUS,
+    api_url,
+    login,
+    logout,
     person_logged_in,
+    record_two_runs,
+    StormStatementRecorder,
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import dbuser
@@ -100,6 +118,11 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
+from lp.testing.matchers import (
+    DoesNotSnapshot,
+    HasQueryCount,
+    )
+from lp.testing.pages import webservice_for_person
 
 
 class TestCharmRecipeFeatureFlags(TestCaseWithFactory):
@@ -141,6 +164,14 @@ class TestCharmRecipe(TestCaseWithFactory):
             "<CharmRecipe ~%s/%s/+charm/%s>" % (
                 recipe.owner.name, recipe.project.name, recipe.name),
             repr(recipe))
+
+    def test_avoids_problematic_snapshots(self):
+        self.assertThat(
+            self.factory.makeCharmRecipe(),
+            DoesNotSnapshot(
+                ["pending_build_requests", "failed_build_requests",
+                 "builds", "completed_builds", "pending_builds"],
+                ICharmRecipeView))
 
     def test_initial_date_last_modified(self):
         # The initial value of date_last_modified is date_created.
@@ -1114,3 +1145,512 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         for recipe in recipes[:2]:
             self.assertSqlAttributeEqualsDate(
                 recipe, "date_last_modified", UTC_NOW)
+
+
+class TestCharmRecipeWebservice(TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_BUILD_DISTRIBUTION: "ubuntu",
+            CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+            }))
+        self.person = self.factory.makePerson(displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC)
+        self.webservice.default_api_version = "devel"
+        login(ANONYMOUS)
+
+    def getURL(self, obj):
+        return self.webservice.getAbsoluteUrl(api_url(obj))
+
+    def makeCharmRecipe(self, owner=None, project=None, name=None,
+                        git_ref=None, private=False, webservice=None,
+                        **kwargs):
+        if owner is None:
+            owner = self.person
+        if project is None:
+            project = self.factory.makeProduct(owner=owner)
+        if name is None:
+            name = self.factory.getUniqueUnicode()
+        if git_ref is None:
+            [git_ref] = self.factory.makeGitRefs()
+        if webservice is None:
+            webservice = self.webservice
+        transaction.commit()
+        owner_url = api_url(owner)
+        project_url = api_url(project)
+        git_ref_url = api_url(git_ref)
+        logout()
+        information_type = (InformationType.PROPRIETARY if private else
+                            InformationType.PUBLIC)
+        response = webservice.named_post(
+            "/+charm-recipes", "new", owner=owner_url, project=project_url,
+            name=name, git_ref=git_ref_url,
+            information_type=information_type.title, **kwargs)
+        self.assertEqual(201, response.status)
+        return webservice.get(response.getHeader("Location")).jsonBody()
+
+    def getCollectionLinks(self, entry, member):
+        """Return a list of self_link attributes of entries in a collection."""
+        collection = self.webservice.get(
+            entry["%s_collection_link" % member]).jsonBody()
+        return [entry["self_link"] for entry in collection["entries"]]
+
+    def test_new_git(self):
+        # Charm recipe creation based on a Git branch works.
+        team = self.factory.makeTeam(
+            owner=self.person,
+            membership_policy=TeamMembershipPolicy.RESTRICTED)
+        project = self.factory.makeProduct(owner=team)
+        [ref] = self.factory.makeGitRefs()
+        recipe = self.makeCharmRecipe(
+            owner=team, project=project, name="test-charm", git_ref=ref)
+        with person_logged_in(self.person):
+            self.assertThat(recipe, ContainsDict({
+                "registrant_link": Equals(self.getURL(self.person)),
+                "owner_link": Equals(self.getURL(team)),
+                "project_link": Equals(self.getURL(project)),
+                "name": Equals("test-charm"),
+                "git_ref_link": Equals(self.getURL(ref)),
+                "build_path": Is(None),
+                "require_virtualized": Is(True),
+                }))
+
+    def test_new_store_options(self):
+        # The store-related options in CharmRecipe.new work.
+        store_name = self.factory.getUniqueUnicode()
+        recipe = self.makeCharmRecipe(
+            store_upload=True, store_name=store_name, store_channels=["edge"])
+        with person_logged_in(self.person):
+            self.assertThat(recipe, ContainsDict({
+                "store_upload": Is(True),
+                "store_name": Equals(store_name),
+                "store_channels": Equals(["edge"]),
+                }))
+
+    def test_duplicate(self):
+        # An attempt to create a duplicate charm recipe fails.
+        team = self.factory.makeTeam(
+            owner=self.person,
+            membership_policy=TeamMembershipPolicy.RESTRICTED)
+        project = self.factory.makeProduct(owner=team)
+        name = self.factory.getUniqueUnicode()
+        [git_ref] = self.factory.makeGitRefs()
+        owner_url = api_url(team)
+        project_url = api_url(project)
+        git_ref_url = api_url(git_ref)
+        self.makeCharmRecipe(
+            owner=team, project=project, name=name, git_ref=git_ref)
+        response = self.webservice.named_post(
+            "/+charm-recipes", "new", owner=owner_url, project=project_url,
+            name=name, git_ref=git_ref_url)
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=400,
+            body=(
+                b"There is already a charm recipe with the same project, "
+                b"owner, and name.")))
+
+    def test_not_owner(self):
+        # If the registrant is not the owner or a member of the owner team,
+        # charm recipe creation fails.
+        other_person = self.factory.makePerson(displayname="Other Person")
+        other_team = self.factory.makeTeam(
+            owner=other_person, displayname="Other Team")
+        project = self.factory.makeProduct(owner=self.person)
+        [git_ref] = self.factory.makeGitRefs()
+        transaction.commit()
+        other_person_url = api_url(other_person)
+        other_team_url = api_url(other_team)
+        project_url = api_url(project)
+        git_ref_url = api_url(git_ref)
+        logout()
+        response = self.webservice.named_post(
+            "/+charm-recipes", "new", owner=other_person_url,
+            project=project_url, name="test-charm", git_ref=git_ref_url)
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=401,
+            body=(
+                b"Test Person cannot create charm recipes owned by "
+                b"Other Person.")))
+        response = self.webservice.named_post(
+            "/+charm-recipes", "new", owner=other_team_url,
+            project=project_url, name="test-charm", git_ref=git_ref_url)
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=401,
+            body=b"Test Person is not a member of Other Team."))
+
+    def test_cannot_set_private_components_of_public_recipe(self):
+        # If a charm recipe is public, then trying to change its owner or
+        # git_ref components to be private fails.
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, owner=self.person,
+            git_ref=self.factory.makeGitRefs()[0])
+        private_team = self.factory.makeTeam(
+            owner=self.person, visibility=PersonVisibility.PRIVATE)
+        [private_ref] = self.factory.makeGitRefs(
+            owner=self.person,
+            information_type=InformationType.PRIVATESECURITY)
+        recipe_url = api_url(recipe)
+        with person_logged_in(self.person):
+            private_team_url = api_url(private_team)
+            private_ref_url = api_url(private_ref)
+        logout()
+        private_webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PRIVATE)
+        private_webservice.default_api_version = "devel"
+        response = private_webservice.patch(
+            recipe_url, "application/json",
+            json.dumps({"owner_link": private_team_url}))
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=400,
+            body=b"A public charm recipe cannot have a private owner."))
+        response = private_webservice.patch(
+            recipe_url, "application/json",
+            json.dumps({"git_ref_link": private_ref_url}))
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=400,
+            body=b"A public charm recipe cannot have a private repository."))
+
+    def test_is_stale(self):
+        # is_stale is exported and is read-only.
+        recipe = self.makeCharmRecipe()
+        self.assertTrue(recipe["is_stale"])
+        response = self.webservice.patch(
+            recipe["self_link"], "application/json",
+            json.dumps({"is_stale": False}))
+        self.assertEqual(400, response.status)
+
+    def test_getByName(self):
+        # lp.charm_recipes.getByName returns a matching CharmRecipe.
+        project = self.factory.makeProduct(owner=self.person)
+        name = self.factory.getUniqueUnicode()
+        recipe = self.makeCharmRecipe(project=project, name=name)
+        with person_logged_in(self.person):
+            owner_url = api_url(self.person)
+            project_url = api_url(project)
+        response = self.webservice.named_get(
+            "/+charm-recipes", "getByName",
+            owner=owner_url, project=project_url, name=name)
+        self.assertEqual(200, response.status)
+        self.assertEqual(recipe, response.jsonBody())
+
+    def test_getByName_missing(self):
+        # lp.charm_recipes.getByName returns 404 for a non-existent
+        # CharmRecipe.
+        project = self.factory.makeProduct(owner=self.person)
+        logout()
+        with person_logged_in(self.person):
+            owner_url = api_url(self.person)
+            project_url = api_url(project)
+        response = self.webservice.named_get(
+            "/+charm-recipes", "getByName",
+            owner=owner_url, project=project_url, name="nonexistent")
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=404,
+            body=(
+                b"No such charm recipe with this owner and project: "
+                b"'nonexistent'.")))
+
+    def makeBuildableDistroArchSeries(self, distroseries=None,
+                                      architecturetag=None, processor=None,
+                                      supports_virtualized=True,
+                                      supports_nonvirtualized=True, **kwargs):
+        if architecturetag is None:
+            architecturetag = self.factory.getUniqueUnicode("arch")
+        if processor is None:
+            try:
+                processor = getUtility(IProcessorSet).getByName(
+                    architecturetag)
+            except ProcessorNotFound:
+                processor = self.factory.makeProcessor(
+                    name=architecturetag,
+                    supports_virtualized=supports_virtualized,
+                    supports_nonvirtualized=supports_nonvirtualized)
+        das = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag=architecturetag,
+            processor=processor, **kwargs)
+        # Add both a chroot and a LXD image to test that
+        # getAllowedArchitectures doesn't get confused by multiple
+        # PocketChroot rows for a single DistroArchSeries.
+        fake_chroot = self.factory.makeLibraryFileAlias(
+            filename="fake_chroot.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_chroot)
+        fake_lxd = self.factory.makeLibraryFileAlias(
+            filename="fake_lxd.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_lxd, image_type=BuildBaseImageType.LXD)
+        return das
+
+    def test_requestBuilds(self):
+        # Requests for builds for all relevant architectures can be
+        # performed over the webservice, and the returned entry indicates
+        # the status of the asynchronous job.
+        distroseries = self.factory.makeDistroSeries(
+            distribution=getUtility(ILaunchpadCelebrities).ubuntu,
+            registrant=self.person)
+        processors = [
+            self.factory.makeProcessor(supports_virtualized=True)
+            for _ in range(3)]
+        for processor in processors:
+            self.makeBuildableDistroArchSeries(
+                distroseries=distroseries, architecturetag=processor.name,
+                processor=processor, owner=self.person)
+        [git_ref] = self.factory.makeGitRefs()
+        recipe = self.makeCharmRecipe(git_ref=git_ref)
+        now = get_transaction_timestamp(IStore(distroseries))
+        response = self.webservice.named_post(
+            recipe["self_link"], "requestBuilds",
+            channels={"charmcraft": "edge"})
+        self.assertEqual(201, response.status)
+        build_request_url = response.getHeader("Location")
+        build_request = self.webservice.get(build_request_url).jsonBody()
+        self.assertThat(build_request, ContainsDict({
+            "date_requested": AfterPreprocessing(
+                iso8601.parse_date, GreaterThan(now)),
+            "date_finished": Is(None),
+            "recipe_link": Equals(recipe["self_link"]),
+            "status": Equals("Pending"),
+            "error_message": Is(None),
+            "builds_collection_link": Equals(build_request_url + "/builds"),
+            }))
+        self.assertEqual([], self.getCollectionLinks(build_request, "builds"))
+        with person_logged_in(self.person):
+            charmcraft_yaml = "bases:\n"
+            for processor in processors:
+                charmcraft_yaml += (
+                    '  - build-on:\n'
+                    '    - name: ubuntu\n'
+                    '      channel: "%s"\n'
+                    '      architectures: [%s]\n' %
+                    (distroseries.version, processor.name))
+            self.useFixture(GitHostingFixture(blob=charmcraft_yaml))
+            [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
+            with dbuser(config.ICharmRecipeRequestBuildsJobSource.dbuser):
+                JobRunner([job]).runAll()
+        date_requested = iso8601.parse_date(build_request["date_requested"])
+        now = get_transaction_timestamp(IStore(distroseries))
+        build_request = self.webservice.get(
+            build_request["self_link"]).jsonBody()
+        self.assertThat(build_request, ContainsDict({
+            "date_requested": AfterPreprocessing(
+                iso8601.parse_date, Equals(date_requested)),
+            "date_finished": AfterPreprocessing(
+                iso8601.parse_date,
+                MatchesAll(GreaterThan(date_requested), LessThan(now))),
+            "recipe_link": Equals(recipe["self_link"]),
+            "status": Equals("Completed"),
+            "error_message": Is(None),
+            "builds_collection_link": Equals(build_request_url + "/builds"),
+            }))
+        builds = self.webservice.get(
+            build_request["builds_collection_link"]).jsonBody()["entries"]
+        with person_logged_in(self.person):
+            self.assertThat(builds, MatchesSetwise(*(
+                ContainsDict({
+                    "recipe_link": Equals(recipe["self_link"]),
+                    "archive_link": Equals(
+                        self.getURL(distroseries.main_archive)),
+                    "arch_tag": Equals(processor.name),
+                    "channels": Equals({"charmcraft": "edge"}),
+                    })
+                for processor in processors)))
+
+    def test_requestBuilds_failure(self):
+        # If the asynchronous build request job fails, this is reflected in
+        # the build request entry.
+        [git_ref] = self.factory.makeGitRefs()
+        recipe = self.makeCharmRecipe(git_ref=git_ref)
+        now = get_transaction_timestamp(IStore(git_ref))
+        response = self.webservice.named_post(
+            recipe["self_link"], "requestBuilds")
+        self.assertEqual(201, response.status)
+        build_request_url = response.getHeader("Location")
+        build_request = self.webservice.get(build_request_url).jsonBody()
+        self.assertThat(build_request, ContainsDict({
+            "date_requested": AfterPreprocessing(
+                iso8601.parse_date, GreaterThan(now)),
+            "date_finished": Is(None),
+            "recipe_link": Equals(recipe["self_link"]),
+            "status": Equals("Pending"),
+            "error_message": Is(None),
+            "builds_collection_link": Equals(build_request_url + "/builds"),
+            }))
+        self.assertEqual([], self.getCollectionLinks(build_request, "builds"))
+        with person_logged_in(self.person):
+            self.useFixture(GitHostingFixture()).getBlob.failure = Exception(
+                "Something went wrong")
+            [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
+            with dbuser(config.ICharmRecipeRequestBuildsJobSource.dbuser):
+                JobRunner([job]).runAll()
+        date_requested = iso8601.parse_date(build_request["date_requested"])
+        now = get_transaction_timestamp(IStore(git_ref))
+        build_request = self.webservice.get(
+            build_request["self_link"]).jsonBody()
+        self.assertThat(build_request, ContainsDict({
+            "date_requested": AfterPreprocessing(
+                iso8601.parse_date, Equals(date_requested)),
+            "date_finished": AfterPreprocessing(
+                iso8601.parse_date,
+                MatchesAll(GreaterThan(date_requested), LessThan(now))),
+            "recipe_link": Equals(recipe["self_link"]),
+            "status": Equals("Failed"),
+            "error_message": Equals("Something went wrong"),
+            "builds_collection_link": Equals(build_request_url + "/builds"),
+            }))
+        self.assertEqual([], self.getCollectionLinks(build_request, "builds"))
+
+    def test_requestBuilds_not_owner(self):
+        # If the requester is not the owner or a member of the owner team,
+        # build requests are rejected.
+        other_team = self.factory.makeTeam(
+            displayname="Other Team",
+            membership_policy=TeamMembershipPolicy.RESTRICTED)
+        other_webservice = webservice_for_person(
+            other_team.teamowner, permission=OAuthPermission.WRITE_PUBLIC)
+        other_webservice.default_api_version = "devel"
+        login(ANONYMOUS)
+        recipe = self.makeCharmRecipe(
+            owner=other_team, webservice=other_webservice)
+        response = self.webservice.named_post(
+            recipe["self_link"], "requestBuilds")
+        self.assertThat(response, MatchesStructure.byEquality(
+            status=401,
+            body=(
+                b"Test Person cannot create charm recipe builds owned by "
+                b"Other Team.")))
+
+    def test_getBuilds(self):
+        # The builds, completed_builds, and pending_builds properties are as
+        # expected.
+        project = self.factory.makeProduct(owner=self.person)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=getUtility(ILaunchpadCelebrities).ubuntu,
+            registrant=self.person)
+        processors = [
+            self.factory.makeProcessor(supports_virtualized=True)
+            for _ in range(4)]
+        for processor in processors:
+            self.makeBuildableDistroArchSeries(
+                distroseries=distroseries, architecturetag=processor.name,
+                processor=processor, owner=self.person)
+        recipe = self.makeCharmRecipe(project=project)
+        response = self.webservice.named_post(
+            recipe["self_link"], "requestBuilds")
+        self.assertEqual(201, response.status)
+        with person_logged_in(self.person):
+            charmcraft_yaml = "bases:\n"
+            for processor in processors:
+                charmcraft_yaml += (
+                    '  - build-on:\n'
+                    '    - name: ubuntu\n'
+                    '      channel: "%s"\n'
+                    '      architectures: [%s]\n' %
+                    (distroseries.version, processor.name))
+            self.useFixture(GitHostingFixture(blob=charmcraft_yaml))
+            [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
+            with dbuser(config.ICharmRecipeRequestBuildsJobSource.dbuser):
+                JobRunner([job]).runAll()
+        builds = self.getCollectionLinks(recipe, "builds")
+        self.assertEqual(len(processors), len(builds))
+        self.assertEqual(
+            [], self.getCollectionLinks(recipe, "completed_builds"))
+        self.assertEqual(
+            builds, self.getCollectionLinks(recipe, "pending_builds"))
+
+        with person_logged_in(self.person):
+            db_recipe = getUtility(ICharmRecipeSet).getByName(
+                self.person, project, recipe["name"])
+            db_builds = list(db_recipe.builds)
+            db_builds[0].updateStatus(
+                BuildStatus.BUILDING, date_started=db_recipe.date_created)
+            db_builds[0].updateStatus(
+                BuildStatus.FULLYBUILT,
+                date_finished=db_recipe.date_created + timedelta(minutes=10))
+        # Builds that have not yet been started are listed last.  This does
+        # mean that pending builds that have never been started are sorted
+        # to the end, but means that builds that were cancelled before
+        # starting don't pollute the start of the collection forever.
+        self.assertEqual(builds, self.getCollectionLinks(recipe, "builds"))
+        self.assertEqual(
+            builds[:1], self.getCollectionLinks(recipe, "completed_builds"))
+        self.assertEqual(
+            builds[1:], self.getCollectionLinks(recipe, "pending_builds"))
+
+        with person_logged_in(self.person):
+            db_builds[1].updateStatus(
+                BuildStatus.BUILDING, date_started=db_recipe.date_created)
+            db_builds[1].updateStatus(
+                BuildStatus.FULLYBUILT,
+                date_finished=db_recipe.date_created + timedelta(minutes=20))
+        self.assertEqual(
+            [builds[1], builds[0], builds[2], builds[3]],
+            self.getCollectionLinks(recipe, "builds"))
+        self.assertEqual(
+            [builds[1], builds[0]],
+            self.getCollectionLinks(recipe, "completed_builds"))
+        self.assertEqual(
+            builds[2:], self.getCollectionLinks(recipe, "pending_builds"))
+
+    def test_query_count(self):
+        # CharmRecipe has a reasonable query count.
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person, owner=self.person)
+        url = api_url(recipe)
+        logout()
+        store = Store.of(recipe)
+        store.flush()
+        store.invalidate()
+        with StormStatementRecorder() as recorder:
+            self.webservice.get(url)
+        self.assertThat(recorder, HasQueryCount(Equals(19)))
+
+    def test_builds_query_count(self):
+        # The query count of CharmRecipe.builds is constant in the number of
+        # builds, even if they have store upload jobs.
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        distroseries = self.factory.makeDistroSeries(
+            distribution=getUtility(ILaunchpadCelebrities).ubuntu,
+            registrant=self.person)
+        processor = self.factory.makeProcessor(supports_virtualized=True)
+        das = self.makeBuildableDistroArchSeries(
+            distroseries=distroseries, architecturetag=processor.name,
+            processor=processor, owner=self.person)
+        with person_logged_in(self.person):
+            recipe = self.factory.makeCharmRecipe(
+                registrant=self.person, owner=self.person)
+            recipe.store_name = self.factory.getUniqueUnicode()
+            recipe.store_upload = True
+            # CharmRecipe.can_upload_to_store only checks whether
+            # "exchanged_encrypted" is present, so don't bother setting up
+            # encryption keys here.
+            recipe.store_secrets = {
+                "exchanged_encrypted": Macaroon().serialize()}
+        builds_url = "%s/builds" % api_url(recipe)
+        logout()
+
+        def make_build():
+            with person_logged_in(self.person):
+                builder = self.factory.makeBuilder()
+                build_request = self.factory.makeCharmRecipeBuildRequest(
+                    recipe=recipe)
+                build = recipe.requestBuild(build_request, das)
+                with dbuser(config.builddmaster.dbuser):
+                    build.updateStatus(
+                        BuildStatus.BUILDING, date_started=recipe.date_created)
+                    build.updateStatus(
+                        BuildStatus.FULLYBUILT,
+                        builder=builder,
+                        date_finished=(
+                            recipe.date_created + timedelta(minutes=10)))
+                return build
+
+        def get_builds():
+            response = self.webservice.get(builds_url)
+            self.assertEqual(200, response.status)
+            return response
+
+        recorder1, recorder2 = record_two_runs(get_builds, make_build, 2)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
