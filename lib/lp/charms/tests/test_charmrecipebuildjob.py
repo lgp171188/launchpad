@@ -84,6 +84,19 @@ class FakeCharmhubClient:
         self.release = FakeMethod()
 
 
+class FileUploaded(MatchesListwise):
+
+    def __init__(self, filename):
+        super().__init__([
+            MatchesListwise([
+                MatchesListwise([
+                    MatchesStructure.byEquality(filename=filename),
+                    ]),
+                MatchesDict({}),
+                ]),
+            ])
+
+
 class TestCharmRecipeBuildJob(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
@@ -130,12 +143,15 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
             repr(job))
 
     def makeCharmRecipeBuild(self, **kwargs):
-        # Make a build with a builder, a file, and a webhook.
+        # Make a build with a builder, some files, and a webhook.
         build = self.factory.makeCharmRecipeBuild(
             builder=self.factory.makeBuilder(), **kwargs)
         build.updateStatus(BuildStatus.FULLYBUILT)
+        irrelevant_lfa = self.factory.makeLibraryFileAlias(
+            filename="000-irrelevant.txt", content=b"irrelevant file")
+        self.factory.makeCharmFile(build=build, library_file=irrelevant_lfa)
         charm_lfa = self.factory.makeLibraryFileAlias(
-            filename="test-charm.charm", content="dummy charm content")
+            filename="test-charm.charm", content=b"dummy charm content")
         self.factory.makeCharmFile(build=build, library_file=charm_lfa)
         self.factory.makeWebhook(
             target=build.recipe, event_types=["charm-recipe:build:0.1"])
@@ -180,7 +196,6 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # revision.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
-        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -190,7 +205,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
@@ -205,7 +221,6 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # A failed run sets the store upload status to FAILED.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
-        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -213,7 +228,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -234,7 +250,6 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.makeCharmRecipeBuild(
             requester=requester_team, name="test-charm", owner=requester_team,
             project=project)
-        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -244,7 +259,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -287,7 +303,6 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # retried.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
-        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -296,7 +311,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -316,7 +332,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         client.checkStatus.result = 1
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
@@ -339,7 +356,6 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.makeCharmRecipeBuild(
             requester=requester_team, name="test-charm", owner=requester_team,
             project=project)
-        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -348,7 +364,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertEqual([], client.release.calls)
@@ -392,7 +409,6 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # charm schedules itself to be retried.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild()
-        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -402,7 +418,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([((build, 2), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
@@ -445,7 +462,6 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.makeCharmRecipeBuild(
             requester=requester_team, name="test-charm", owner=requester_team,
             project=project)
-        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -456,7 +472,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([((build, 2), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
@@ -498,7 +515,6 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         # channels does so.
         logger = self.useFixture(FakeLogger())
         build = self.makeCharmRecipeBuild(store_channels=["stable", "edge"])
-        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -508,7 +524,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
@@ -530,7 +547,6 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         build = self.makeCharmRecipeBuild(
             requester=requester_team, name="test-charm", owner=requester_team,
             project=project, store_channels=["stable", "edge"])
-        charm_lfa = build.getFiles()[0][1]
         self.assertContentEqual([], build.store_upload_jobs)
         job = CharmhubUploadJob.create(build)
         client = FakeCharmhubClient()
@@ -541,7 +557,8 @@ class TestCharmhubUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ICharmhubClient))
         with dbuser(config.ICharmhubUploadJobSource.dbuser):
             JobRunner([job]).runAll()
-        self.assertEqual([((charm_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-charm.charm"))
         self.assertEqual([((build, 1), {})], client.push.calls)
         self.assertEqual(
             [((build, self.status_url), {})], client.checkStatus.calls)
