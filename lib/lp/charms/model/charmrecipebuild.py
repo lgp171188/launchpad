@@ -10,16 +10,25 @@ __all__ = [
     ]
 
 from datetime import timedelta
+from operator import attrgetter
 
 import pytz
 import six
 from storm.databases.postgres import JSON
+from storm.expr import (
+    Column,
+    Table,
+    With,
+    )
 from storm.locals import (
+    And,
     Bool,
     DateTime,
     Desc,
     Int,
     Reference,
+    Select,
+    SQL,
     Store,
     Unicode,
     )
@@ -186,6 +195,11 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
     def distro_series(self):
         """See `IPackageBuild`."""
         return self.distro_arch_series.distroseries
+
+    @property
+    def arch_tag(self):
+        """See `ICharmRecipeBuild`."""
+        return self.distro_arch_series.architecturetag
 
     @property
     def archive(self):
@@ -512,6 +526,30 @@ class CharmRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
         load_related(Distribution, distroserieses, ["distributionID"])
         recipes = load_related(CharmRecipe, builds, ["recipe_id"])
         getUtility(ICharmRecipeSet).preloadDataForRecipes(recipes)
+        build_ids = set(map(attrgetter("id"), builds))
+        latest_jobs_cte = With("LatestJobs", Select(
+            (CharmRecipeBuildJob.job_id,
+             SQL(
+                 "rank() OVER "
+                 "(PARTITION BY build ORDER BY job DESC) AS rank")),
+            tables=CharmRecipeBuildJob,
+            where=And(
+                CharmRecipeBuildJob.build_id.is_in(build_ids),
+                CharmRecipeBuildJob.job_type ==
+                    CharmRecipeBuildJobType.CHARMHUB_UPLOAD)))
+        LatestJobs = Table("LatestJobs")
+        crbjs = list(IStore(CharmRecipeBuildJob).with_(latest_jobs_cte).using(
+            CharmRecipeBuildJob, LatestJobs).find(
+                CharmRecipeBuildJob,
+                CharmRecipeBuildJob.job_id == Column("job", LatestJobs),
+                Column("rank", LatestJobs) == 1))
+        crbj_map = {}
+        for crbj in crbjs:
+            crbj_map[crbj.build] = crbj.makeDerived()
+        for build in builds:
+            get_property_cache(build).last_store_upload_job = (
+                crbj_map.get(build))
+        load_related(Job, crbjs, ["job_id"])
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""

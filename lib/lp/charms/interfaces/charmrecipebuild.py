@@ -18,7 +18,14 @@ from lazr.enum import (
     EnumeratedType,
     Item,
     )
-from lazr.restful.declarations import error_status
+from lazr.restful.declarations import (
+    error_status,
+    export_write_operation,
+    exported,
+    exported_as_webservice_entry,
+    operation_for_version,
+    operation_parameters,
+    )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -102,50 +109,53 @@ class ICharmRecipeBuildView(IPackageBuild):
         title=_("The build request that caused this build to be created."),
         required=True, readonly=True)
 
-    requester = Reference(
+    requester = exported(Reference(
         IPerson,
         title=_("The person who requested this build."),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
-    recipe = Reference(
+    recipe = exported(Reference(
         ICharmRecipe,
         title=_("The charm recipe to build."),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
-    distro_arch_series = Reference(
+    distro_arch_series = exported(Reference(
         IDistroArchSeries,
         title=_("The series and architecture for which to build."),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
-    channels = Dict(
+    arch_tag = exported(
+        TextLine(title=_("Architecture tag"), required=True, readonly=True))
+
+    channels = exported(Dict(
         title=_("Source snap channels to use for this build."),
         description=_(
             "A dictionary mapping snap names to channels to use for this "
             "build.  Currently only 'charmcraft', 'core', 'core18', 'core20', "
             "and 'core22' keys are supported."),
-        key_type=TextLine())
+        key_type=TextLine()))
 
     virtualized = Bool(
         title=_("If True, this build is virtualized."), readonly=True)
 
-    score = Int(
+    score = exported(Int(
         title=_("Score of the related build farm job (if any)."),
-        required=False, readonly=True)
+        required=False, readonly=True))
 
-    can_be_rescored = Bool(
+    can_be_rescored = exported(Bool(
         title=_("Can be rescored"),
         required=True, readonly=True,
-        description=_("Whether this build record can be rescored manually."))
+        description=_("Whether this build record can be rescored manually.")))
 
-    can_be_retried = Bool(
+    can_be_retried = exported(Bool(
         title=_("Can be retried"),
         required=False, readonly=True,
-        description=_("Whether this build record can be retried."))
+        description=_("Whether this build record can be retried.")))
 
-    can_be_cancelled = Bool(
+    can_be_cancelled = exported(Bool(
         title=_("Can be cancelled"),
         required=True, readonly=True,
-        description=_("Whether this build record can be cancelled."))
+        description=_("Whether this build record can be cancelled.")))
 
     eta = Datetime(
         title=_("The datetime when the build job is estimated to complete."),
@@ -159,11 +169,11 @@ class ICharmRecipeBuildView(IPackageBuild):
             "The date when the build completed or is estimated to complete."),
         readonly=True)
 
-    revision_id = TextLine(
+    revision_id = exported(TextLine(
         title=_("Revision ID"), required=False, readonly=True,
         description=_(
             "The revision ID of the branch used for this build, if "
-            "available."))
+            "available.")))
 
     store_upload_jobs = CollectionField(
         title=_("Store upload jobs for this build."),
@@ -175,23 +185,23 @@ class ICharmRecipeBuildView(IPackageBuild):
     last_store_upload_job = Reference(
         title=_("Last store upload job for this build."), schema=Interface)
 
-    store_upload_status = Choice(
+    store_upload_status = exported(Choice(
         title=_("Store upload status"),
         vocabulary=CharmRecipeBuildStoreUploadStatus,
-        required=True, readonly=False)
+        required=True, readonly=False))
 
-    store_upload_revision = Int(
+    store_upload_revision = exported(Int(
         title=_("Store revision"),
         description=_(
             "The revision assigned to this charm recipe build by Charmhub."),
-        required=False, readonly=True)
+        required=False, readonly=True))
 
-    store_upload_error_message = TextLine(
+    store_upload_error_message = exported(TextLine(
         title=_("Store upload error message"),
         description=_(
             "The error message, if any, from the last attempt to upload "
             "this charm recipe build to Charmhub."),
-        required=False, readonly=True)
+        required=False, readonly=True))
 
     store_upload_metadata = Attribute(
         _("A dict of data about store upload progress."))
@@ -230,6 +240,8 @@ class ICharmRecipeBuildEdit(Interface):
         :return: An `ICharmFile`.
         """
 
+    @export_write_operation()
+    @operation_for_version("devel")
     def scheduleStoreUpload():
         """Schedule an upload of this build to the store.
 
@@ -237,6 +249,8 @@ class ICharmRecipeBuildEdit(Interface):
             where an upload can be scheduled.
         """
 
+    @export_write_operation()
+    @operation_for_version("devel")
     def retry():
         """Restore the build record to its initial state.
 
@@ -244,6 +258,8 @@ class ICharmRecipeBuildEdit(Interface):
         non-scored BuildQueue entry is created for it.
         """
 
+    @export_write_operation()
+    @operation_for_version("devel")
     def cancel():
         """Cancel the build if it is either pending or in progress.
 
@@ -262,10 +278,17 @@ class ICharmRecipeBuildEdit(Interface):
 class ICharmRecipeBuildAdmin(Interface):
     """`ICharmRecipeBuild` methods that require launchpad.Admin."""
 
+    @operation_parameters(score=Int(title=_("Score"), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
     def rescore(score):
         """Change the build's score."""
 
 
+# XXX cjwatson 2021-09-15 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ICharmRecipeBuild(
         ICharmRecipeBuildView, ICharmRecipeBuildEdit, ICharmRecipeBuildAdmin):
     """A build record for a charm recipe."""
