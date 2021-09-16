@@ -79,6 +79,19 @@ class FakeSnapStoreClient:
         self.listChannels = FakeMethod(result=[])
 
 
+class FileUploaded(MatchesListwise):
+
+    def __init__(self, filename):
+        super().__init__([
+            MatchesListwise([
+                MatchesListwise([
+                    MatchesStructure.byEquality(filename=filename),
+                    ]),
+                MatchesDict({}),
+                ]),
+            ])
+
+
 class TestSnapBuildJob(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
@@ -125,6 +138,10 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         snapbuild = self.factory.makeSnapBuild(
             builder=self.factory.makeBuilder(), **kwargs)
         snapbuild.updateStatus(BuildStatus.FULLYBUILT)
+        irrelevant_lfa = self.factory.makeLibraryFileAlias(
+            filename="000-irrelevant.txt", content=b"irrelevant file")
+        self.factory.makeSnapFile(
+            snapbuild=snapbuild, libraryfile=irrelevant_lfa)
         snap_lfa = self.factory.makeLibraryFileAlias(
             filename="test-snap.snap", content=b"dummy snap content")
         self.factory.makeSnapFile(snapbuild=snapbuild, libraryfile=snap_lfa)
@@ -169,7 +186,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # and revision.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -179,7 +195,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -196,7 +213,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # A failed run sets the store upload status to FAILED.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -204,7 +220,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -225,7 +242,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             owner=requester, name="requester-team", members=[requester])
         snapbuild = self.makeSnapBuild(
             requester=requester_team, name="test-snap", owner=requester_team)
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -235,7 +251,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -277,7 +294,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # retried.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -286,7 +302,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -308,7 +325,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         client.checkStatus.result = (self.store_url, 1)
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -331,7 +349,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             owner=requester, name="requester-team", members=[requester])
         snapbuild = self.makeSnapBuild(
             requester=requester_team, name="test-snap", owner=requester_team)
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -340,7 +357,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -387,7 +405,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             owner=requester, name="requester-team", members=[requester])
         snapbuild = self.makeSnapBuild(
             requester=requester_team, name="test-snap", owner=requester_team)
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -396,7 +413,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -441,7 +459,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # package schedules itself to be retried.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -451,7 +468,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([((snapbuild, 2), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -495,7 +513,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             owner=requester, name="requester-team", members=[requester])
         snapbuild = self.makeSnapBuild(
             requester=requester_team, name="test-snap", owner=requester_team)
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -509,7 +526,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([((snapbuild, 2), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -555,7 +573,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # URL or revision.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -565,7 +582,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
@@ -583,7 +601,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         # channels does so.
         logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild(store_channels=["stable", "edge"])
-        snap_lfa = snapbuild.getFiles()[0][1]
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -593,7 +610,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
-        self.assertEqual([((snap_lfa,), {})], client.uploadFile.calls)
+        self.assertThat(
+            client.uploadFile.calls, FileUploaded("test-snap.snap"))
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)

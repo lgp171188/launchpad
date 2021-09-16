@@ -323,13 +323,16 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
         client = getUtility(ICharmhubClient)
         try:
             try:
-                lfa = next((row[1] for row in self.build.getFiles()), None)
-                if lfa is None:
+                charm_lfa = next(
+                    (lfa for _, lfa, _ in self.build.getFiles()
+                     if lfa.filename.endswith(".charm")),
+                    None)
+                if charm_lfa is None:
                     # Nothing to do.
                     self.error_message = None
                     return
                 if "upload_id" not in self.store_metadata:
-                    self.upload_id = client.uploadFile(lfa)
+                    self.upload_id = client.uploadFile(charm_lfa)
                     # We made progress, so reset attempt_count.
                     self.attempt_count = 1
                 if "status_url" not in self.store_metadata:

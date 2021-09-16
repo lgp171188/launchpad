@@ -345,13 +345,16 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         client = getUtility(ISnapStoreClient)
         try:
             try:
-                lfa = next((row[1] for row in self.snapbuild.getFiles()), None)
-                if lfa is None:
+                snap_lfa = next(
+                    (lfa for _, lfa, _ in self.snapbuild.getFiles()
+                     if lfa.filename.endswith(".snap")),
+                    None)
+                if snap_lfa is None:
                     # Nothing to do.
                     self.error_message = None
                     return
                 if "upload_id" not in self.store_metadata:
-                    self.upload_id = client.uploadFile(lfa)
+                    self.upload_id = client.uploadFile(snap_lfa)
                     # We made progress, so reset attempt_count.
                     self.attempt_count = 1
                 if "status_url" not in self.store_metadata:
