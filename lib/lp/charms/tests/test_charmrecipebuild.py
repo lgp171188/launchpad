@@ -10,6 +10,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+from urllib.request import urlopen
 
 from fixtures import FakeLogger
 from nacl.public import PrivateKey
@@ -19,6 +20,7 @@ import six
 from testtools.matchers import (
     ContainsDict,
     Equals,
+    Is,
     MatchesDict,
     MatchesStructure,
     )
@@ -27,6 +29,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
@@ -53,17 +56,26 @@ from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import clear_property_cache
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
+    ANONYMOUS,
+    api_url,
+    login,
+    logout,
     person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import dbuser
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import (
+    LaunchpadFunctionalLayer,
+    LaunchpadZopelessLayer,
+    )
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import HasQueryCount
+from lp.testing.pages import webservice_for_person
 
 
 expected_body = """\
@@ -708,3 +720,120 @@ class TestCharmRecipeBuildSet(TestCaseWithFactory):
         target = self.factory.makeCharmRecipeBuild(
             recipe=recipe, distro_arch_series=distro_arch_series)
         self.assertFalse(target.virtualized)
+
+
+class TestCharmRecipeBuildWebservice(TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+            }))
+        self.person = self.factory.makePerson()
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PRIVATE)
+        self.webservice.default_api_version = "devel"
+        login(ANONYMOUS)
+
+    def getURL(self, obj):
+        return self.webservice.getAbsoluteUrl(api_url(obj))
+
+    def test_properties(self):
+        # The basic properties of a charm recipe build are sensible.
+        db_build = self.factory.makeCharmRecipeBuild(
+            requester=self.person,
+            date_created=datetime(2021, 9, 15, 16, 21, 0, tzinfo=pytz.UTC))
+        build_url = api_url(db_build)
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        with person_logged_in(self.person):
+            self.assertThat(build, ContainsDict({
+                "requester_link": Equals(self.getURL(self.person)),
+                "recipe_link": Equals(self.getURL(db_build.recipe)),
+                "distro_arch_series_link": Equals(
+                    self.getURL(db_build.distro_arch_series)),
+                "arch_tag": Equals(
+                    db_build.distro_arch_series.architecturetag),
+                "channels": Is(None),
+                "score": Is(None),
+                "can_be_rescored": Is(False),
+                "can_be_retried": Is(False),
+                "can_be_cancelled": Is(False),
+                }))
+
+    def test_public(self):
+        # A charm recipe build with a public recipe is itself public.
+        db_build = self.factory.makeCharmRecipeBuild()
+        build_url = api_url(db_build)
+        unpriv_webservice = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+        unpriv_webservice.default_api_version = "devel"
+        logout()
+        self.assertEqual(200, self.webservice.get(build_url).status)
+        self.assertEqual(200, unpriv_webservice.get(build_url).status)
+
+    def test_cancel(self):
+        # The owner of a build can cancel it.
+        db_build = self.factory.makeCharmRecipeBuild(requester=self.person)
+        db_build.queueBuild()
+        build_url = api_url(db_build)
+        unpriv_webservice = webservice_for_person(
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+        unpriv_webservice.default_api_version = "devel"
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertTrue(build["can_be_cancelled"])
+        response = unpriv_webservice.named_post(build["self_link"], "cancel")
+        self.assertEqual(401, response.status)
+        response = self.webservice.named_post(build["self_link"], "cancel")
+        self.assertEqual(200, response.status)
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertFalse(build["can_be_cancelled"])
+        with person_logged_in(self.person):
+            self.assertEqual(BuildStatus.CANCELLED, db_build.status)
+
+    def test_rescore(self):
+        # Buildd administrators can rescore builds.
+        db_build = self.factory.makeCharmRecipeBuild(requester=self.person)
+        db_build.queueBuild()
+        build_url = api_url(db_build)
+        buildd_admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin])
+        buildd_admin_webservice = webservice_for_person(
+            buildd_admin, permission=OAuthPermission.WRITE_PUBLIC)
+        buildd_admin_webservice.default_api_version = "devel"
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertEqual(2510, build["score"])
+        self.assertTrue(build["can_be_rescored"])
+        response = self.webservice.named_post(
+            build["self_link"], "rescore", score=5000)
+        self.assertEqual(401, response.status)
+        response = buildd_admin_webservice.named_post(
+            build["self_link"], "rescore", score=5000)
+        self.assertEqual(200, response.status)
+        build = self.webservice.get(build_url).jsonBody()
+        self.assertEqual(5000, build["score"])
+
+    def assertCanOpenRedirectedUrl(self, browser, url):
+        browser.open(url)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        urlopen(browser.headers["Location"]).close()
+
+    def test_logs(self):
+        # API clients can fetch the build and upload logs.
+        db_build = self.factory.makeCharmRecipeBuild(requester=self.person)
+        db_build.setLog(self.factory.makeLibraryFileAlias("buildlog.txt.gz"))
+        db_build.storeUploadLog("uploaded")
+        build_url = api_url(db_build)
+        logout()
+        build = self.webservice.get(build_url).jsonBody()
+        browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
+        self.assertIsNotNone(build["build_log_url"])
+        self.assertCanOpenRedirectedUrl(browser, build["build_log_url"])
+        self.assertIsNotNone(build["upload_log_url"])
+        self.assertCanOpenRedirectedUrl(browser, build["upload_log_url"])

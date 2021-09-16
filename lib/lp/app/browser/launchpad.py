@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser code for the launchpad application."""
@@ -94,6 +94,7 @@ from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.interfaces.malone import IMaloneApplication
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.errors import (
     CannotHaveLinkedBranch,
     InvalidNamespace,
@@ -854,6 +855,7 @@ class LaunchpadRootNavigation(Navigation):
         'branches': IBranchSet,
         'bugs': IMaloneApplication,
         'builders': IBuilderSet,
+        '+charm-recipes': ICharmRecipeSet,
         '+code-index': IBazaarApplication,
         '+code-imports': ICodeImportSet,
         'codeofconduct': ICodeOfConductSet,

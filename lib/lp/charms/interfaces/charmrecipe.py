@@ -25,6 +25,7 @@ __all__ = [
     "ICharmRecipe",
     "ICharmRecipeBuildRequest",
     "ICharmRecipeSet",
+    "ICharmRecipeView",
     "MissingCharmcraftYaml",
     "NoSourceForCharmRecipe",
     "NoSuchCharmRecipe",
@@ -34,12 +35,28 @@ from lazr.enum import (
     EnumeratedType,
     Item,
     )
-from lazr.restful.declarations import error_status
+from lazr.lifecycle.snapshot import doNotSnapshot
+from lazr.restful.declarations import (
+    call_with,
+    collection_default_content,
+    error_status,
+    export_destructor_operation,
+    export_factory_operation,
+    export_read_operation,
+    exported,
+    exported_as_webservice_collection,
+    exported_as_webservice_entry,
+    operation_for_version,
+    operation_parameters,
+    operation_returns_entry,
+    REQUEST_USER,
+    )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
     ReferenceChoice,
     )
+from lazr.restful.interface import copy_field
 from six.moves import http_client
 from zope.interface import (
     Attribute,
@@ -211,36 +228,40 @@ class CharmRecipeBuildRequestStatus(EnumeratedType):
         """)
 
 
+# XXX cjwatson 2021-09-15 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ICharmRecipeBuildRequest(Interface):
     """A request to build a charm recipe."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_requested = Datetime(
+    date_requested = exported(Datetime(
         title=_("The time when this request was made"),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
-    date_finished = Datetime(
+    date_finished = exported(Datetime(
         title=_("The time when this request finished"),
-        required=False, readonly=True)
+        required=False, readonly=True))
 
-    recipe = Reference(
-        # Really ICharmRecipe.
+    recipe = exported(Reference(
+        # Really ICharmRecipe, patched in lp.charms.interfaces.webservice.
         Interface,
-        title=_("Charm recipe"), required=True, readonly=True)
+        title=_("Charm recipe"), required=True, readonly=True))
 
-    status = Choice(
+    status = exported(Choice(
         title=_("Status"), vocabulary=CharmRecipeBuildRequestStatus,
-        required=True, readonly=True)
+        required=True, readonly=True))
 
-    error_message = TextLine(
-        title=_("Error message"), required=True, readonly=True)
+    error_message = exported(TextLine(
+        title=_("Error message"), required=True, readonly=True))
 
-    builds = CollectionField(
+    builds = exported(CollectionField(
         title=_("Builds produced by this request"),
-        # Really ICharmRecipeBuild.
+        # Really ICharmRecipeBuild, patched in lp.charms.interfaces.webservice.
         value_type=Reference(schema=Interface),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
     requester = Reference(
         title=_("The person requesting the builds."), schema=IPerson,
@@ -260,28 +281,28 @@ class ICharmRecipeView(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_created = Datetime(
-        title=_("Date created"), required=True, readonly=True)
-    date_last_modified = Datetime(
-        title=_("Date last modified"), required=True, readonly=True)
+    date_created = exported(Datetime(
+        title=_("Date created"), required=True, readonly=True))
+    date_last_modified = exported(Datetime(
+        title=_("Date last modified"), required=True, readonly=True))
 
-    registrant = PublicPersonChoice(
+    registrant = exported(PublicPersonChoice(
         title=_("Registrant"), required=True, readonly=True,
         vocabulary="ValidPersonOrTeam",
-        description=_("The person who registered this charm recipe."))
+        description=_("The person who registered this charm recipe.")))
 
     source = Attribute(
         "The source branch for this charm recipe (VCS-agnostic).")
 
-    private = Bool(
+    private = exported(Bool(
         title=_("Private"), required=False, readonly=False,
-        description=_("Whether this charm recipe is private."))
+        description=_("Whether this charm recipe is private.")))
 
-    can_upload_to_store = Bool(
+    can_upload_to_store = exported(Bool(
         title=_("Can upload to Charmhub"), required=True, readonly=True,
         description=_(
             "Whether everything is set up to allow uploading builds of this "
-            "charm recipe to Charmhub."))
+            "charm recipe to Charmhub.")))
 
     def getAllowedInformationTypes(user):
         """Get a list of acceptable `InformationType`s for this charm recipe.
@@ -306,6 +327,17 @@ class ICharmRecipeView(Interface):
         :return: `ICharmRecipeBuild`.
         """
 
+    @call_with(requester=REQUEST_USER)
+    @operation_parameters(
+        channels=Dict(
+            title=_("Source snap channels to use for these builds."),
+            description=_(
+                "A dictionary mapping snap names to channels to use for these "
+                "builds.  Currently only 'charmcraft', 'core', 'core18', "
+                "'core20', and 'core22' keys are supported."),
+            key_type=TextLine(), required=False))
+    @export_factory_operation(ICharmRecipeBuildRequest, [])
+    @operation_for_version("devel")
     def requestBuilds(requester, channels=None, architectures=None):
         """Request that the charm recipe be built.
 
@@ -349,39 +381,39 @@ class ICharmRecipeView(Interface):
         :return: `ICharmRecipeBuildRequest`.
         """
 
-    pending_build_requests = CollectionField(
+    pending_build_requests = exported(doNotSnapshot(CollectionField(
         title=_("Pending build requests for this charm recipe."),
         value_type=Reference(ICharmRecipeBuildRequest),
-        required=True, readonly=True)
+        required=True, readonly=True)))
 
-    failed_build_requests = CollectionField(
+    failed_build_requests = exported(doNotSnapshot(CollectionField(
         title=_("Failed build requests for this charm recipe."),
         value_type=Reference(ICharmRecipeBuildRequest),
-        required=True, readonly=True)
+        required=True, readonly=True)))
 
-    builds = CollectionField(
+    builds = exported(doNotSnapshot(CollectionField(
         title=_("All builds of this charm recipe."),
         description=_(
             "All builds of this charm recipe, sorted in descending order "
             "of finishing (or starting if not completed successfully)."),
-        # Really ICharmRecipeBuild.
-        value_type=Reference(schema=Interface), readonly=True)
+        # Really ICharmRecipeBuild, patched in lp.charms.interfaces.webservice.
+        value_type=Reference(schema=Interface), readonly=True)))
 
-    completed_builds = CollectionField(
+    completed_builds = exported(doNotSnapshot(CollectionField(
         title=_("Completed builds of this charm recipe."),
         description=_(
             "Completed builds of this charm recipe, sorted in descending "
             "order of finishing."),
-        # Really ICharmRecipeBuild.
-        value_type=Reference(schema=Interface), readonly=True)
+        # Really ICharmRecipeBuild, patched in lp.charms.interfaces.webservice.
+        value_type=Reference(schema=Interface), readonly=True)))
 
-    pending_builds = CollectionField(
+    pending_builds = exported(doNotSnapshot(CollectionField(
         title=_("Pending builds of this charm recipe."),
         description=_(
             "Pending builds of this charm recipe, sorted in descending "
             "order of creation."),
-        # Really ICharmRecipeBuild.
-        value_type=Reference(schema=Interface), readonly=True)
+        # Really ICharmRecipeBuild, patched in lp.charms.interfaces.webservice.
+        value_type=Reference(schema=Interface), readonly=True)))
 
 
 class ICharmRecipeEdit(IWebhookTarget):
@@ -411,6 +443,8 @@ class ICharmRecipeEdit(IWebhookTarget):
             properly configured for Charmhub uploads.
         """
 
+    @export_destructor_operation()
+    @operation_for_version("devel")
     def destroySelf():
         """Delete this charm recipe, provided that it has no builds."""
 
@@ -421,24 +455,24 @@ class ICharmRecipeEditableAttributes(Interface):
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
-    owner = PersonChoice(
+    owner = exported(PersonChoice(
         title=_("Owner"), required=True, readonly=False,
         vocabulary="AllUserTeamsParticipationPlusSelf",
-        description=_("The owner of this charm recipe."))
+        description=_("The owner of this charm recipe.")))
 
-    project = ReferenceChoice(
+    project = exported(ReferenceChoice(
         title=_("The project that this charm recipe is associated with"),
         schema=IProduct, vocabulary="Product",
-        required=True, readonly=False)
+        required=True, readonly=False))
 
-    name = TextLine(
+    name = exported(TextLine(
         title=_("Charm recipe name"), required=True, readonly=False,
         constraint=name_validator,
-        description=_("The name of the charm recipe."))
+        description=_("The name of the charm recipe.")))
 
-    description = Text(
+    description = exported(Text(
         title=_("Description"), required=False, readonly=False,
-        description=_("A description of the charm recipe."))
+        description=_("A description of the charm recipe.")))
 
     git_repository = ReferenceChoice(
         title=_("Git repository"),
@@ -451,53 +485,53 @@ class ICharmRecipeEditableAttributes(Interface):
         title=_("Git branch path"), required=False, readonly=True,
         description=_("The path of the Git branch containing a charm recipe."))
 
-    git_ref = Reference(
+    git_ref = exported(Reference(
         IGitRef, title=_("Git branch"), required=False, readonly=False,
-        description=_("The Git branch containing a charm recipe."))
+        description=_("The Git branch containing a charm recipe.")))
 
-    build_path = TextLine(
+    build_path = exported(TextLine(
         title=_("Build path"),
         description=_(
             "Subdirectory within the branch containing metadata.yaml."),
-        constraint=path_does_not_escape, required=False, readonly=False)
+        constraint=path_does_not_escape, required=False, readonly=False))
 
-    information_type = Choice(
+    information_type = exported(Choice(
         title=_("Information type"), vocabulary=InformationType,
         required=True, readonly=False, default=InformationType.PUBLIC,
         description=_(
-            "The type of information contained in this charm recipe."))
+            "The type of information contained in this charm recipe.")))
 
-    auto_build = Bool(
+    auto_build = exported(Bool(
         title=_("Automatically build when branch changes"),
         required=True, readonly=False,
         description=_(
             "Whether this charm recipe is built automatically when its branch "
-            "changes."))
+            "changes.")))
 
-    auto_build_channels = Dict(
+    auto_build_channels = exported(Dict(
         title=_("Source snap channels for automatic builds"),
         key_type=TextLine(), required=False, readonly=False,
         description=_(
             "A dictionary mapping snap names to channels to use when building "
             "this charm recipe.  Currently only 'charmcraft', 'core', "
-            "'core18', 'core20', and 'core22' keys are supported."))
+            "'core18', 'core20', and 'core22' keys are supported.")))
 
-    is_stale = Bool(
+    is_stale = exported(Bool(
         title=_("Charm recipe is stale and is due to be rebuilt."),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
-    store_upload = Bool(
+    store_upload = exported(Bool(
         title=_("Automatically upload to store"),
         required=True, readonly=False,
         description=_(
             "Whether builds of this charm recipe are automatically uploaded "
-            "to the store."))
+            "to the store.")))
 
-    store_name = TextLine(
+    store_name = exported(TextLine(
         title=_("Registered store name"),
         required=False, readonly=False,
         description=_(
-            "The registered name of this charm in the store."))
+            "The registered name of this charm in the store.")))
 
     store_secrets = List(
         value_type=TextLine(), title=_("Store upload tokens"),
@@ -506,7 +540,7 @@ class ICharmRecipeEditableAttributes(Interface):
             "Serialized secrets issued by the store and the login service to "
             "authorize uploads of this charm recipe."))
 
-    store_channels = List(
+    store_channels = exported(List(
         title=_("Store channels"),
         required=False, readonly=False, constraint=channels_validator,
         description=_(
@@ -514,7 +548,7 @@ class ICharmRecipeEditableAttributes(Interface):
             "store. A channel is defined by a combination of an optional "
             "track, a risk, and an optional branch, e.g. "
             "'2.1/stable/fix-123', '2.1/stable', 'stable/fix-123', or "
-            "'stable'."))
+            "'stable'.")))
 
 
 class ICharmRecipeAdminAttributes(Interface):
@@ -523,20 +557,36 @@ class ICharmRecipeAdminAttributes(Interface):
     These attributes need launchpad.View to see, and launchpad.Admin to change.
     """
 
-    require_virtualized = Bool(
+    require_virtualized = exported(Bool(
         title=_("Require virtualized builders"), required=True, readonly=False,
-        description=_("Only build this charm recipe on virtual builders."))
+        description=_("Only build this charm recipe on virtual builders.")))
 
 
+# XXX cjwatson 2021-09-15 bug=760849: "beta" is a lie to get WADL
+# generation working.  Individual attributes must set their version to
+# "devel".
+@exported_as_webservice_entry(as_of="beta")
 class ICharmRecipe(
         ICharmRecipeView, ICharmRecipeEdit, ICharmRecipeEditableAttributes,
         ICharmRecipeAdminAttributes, IPrivacy, IInformationType):
     """A buildable charm recipe."""
 
 
+@exported_as_webservice_collection(ICharmRecipe)
 class ICharmRecipeSet(Interface):
     """A utility to create and access charm recipes."""
 
+    @call_with(registrant=REQUEST_USER)
+    @operation_parameters(
+        information_type=copy_field(
+            ICharmRecipe["information_type"], required=False))
+    @export_factory_operation(
+        ICharmRecipe, [
+            "owner", "project", "name", "description", "git_ref", "build_path",
+            "auto_build", "auto_build_channels", "store_upload", "store_name",
+            "store_channels",
+            ])
+    @operation_for_version("devel")
     def new(registrant, owner, project, name, description=None, git_ref=None,
             build_path=None, require_virtualized=True,
             information_type=InformationType.PUBLIC, auto_build=False,
@@ -544,6 +594,13 @@ class ICharmRecipeSet(Interface):
             store_secrets=None, store_channels=None, date_created=None):
         """Create an `ICharmRecipe`."""
 
+    @operation_parameters(
+        owner=Reference(IPerson, title=_("Owner"), required=True),
+        project=Reference(IProduct, title=_("Project"), required=True),
+        name=TextLine(title=_("Recipe name"), required=True))
+    @operation_returns_entry(ICharmRecipe)
+    @export_read_operation()
+    @operation_for_version("devel")
     def getByName(owner, project, name):
         """Returns the appropriate `ICharmRecipe` for the given objects."""
 
@@ -621,4 +678,11 @@ class ICharmRecipeSet(Interface):
 
         After this, any charm recipes that previously used this repository
         will have no source and so cannot dispatch new builds.
+        """
+
+    @collection_default_content()
+    def empty_list():
+        """Return an empty collection of charm recipes.
+
+        This only exists to keep lazr.restful happy.
         """
