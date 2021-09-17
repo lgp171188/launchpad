@@ -531,6 +531,8 @@ class ISnapView(Interface):
     @operation_parameters(
         store_upload_revision=Int(title="Store revision",
                                   required=True))
+    # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
+    @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("devel")
     def getBuildByStoreRevision(store_upload_revision, user=None):
