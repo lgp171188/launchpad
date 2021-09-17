@@ -59,6 +59,7 @@ patch_entry_return_type(ISnapView, 'requestBuild', ISnapBuild)
 patch_collection_property(ISnapView, 'builds', ISnapBuild)
 patch_collection_property(ISnapView, 'completed_builds', ISnapBuild)
 patch_collection_property(ISnapView, 'pending_builds', ISnapBuild)
+patch_entry_return_type(ISnapView, 'getBuildByStoreRevision', ISnapBuild)
 
 # ISnapEdit
 patch_collection_return_type(ISnapEdit, 'requestAutoBuilds', ISnapBuild)
