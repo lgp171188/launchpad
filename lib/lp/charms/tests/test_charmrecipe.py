@@ -6,7 +6,10 @@
 __metaclass__ = type
 
 import base64
-from datetime import timedelta
+from datetime import (
+    datetime,
+    timedelta,
+    )
 import json
 from textwrap import dedent
 
@@ -15,6 +18,7 @@ import iso8601
 from nacl.public import PrivateKey
 from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
+import pytz
 import responses
 from storm.exceptions import LostObjectError
 from storm.locals import Store
@@ -74,6 +78,7 @@ from lp.charms.interfaces.charmrecipebuild import (
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
+from lp.charms.model.charmrecipe import CharmRecipeSet
 from lp.charms.model.charmrecipebuild import CharmFile
 from lp.charms.model.charmrecipejob import CharmRecipeJob
 from lp.code.errors import GitRepositoryBlobNotFound
@@ -97,6 +102,7 @@ from lp.services.database.sqlbase import (
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
+from lp.services.log.logger import BufferLogger
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
@@ -671,6 +677,54 @@ class TestCharmRecipe(TestCaseWithFactory):
                     (hook, "charm-recipe:build:0.1", payload_matcher)
                     for payload_matcher in payload_matchers]))
 
+    def test_requestAutoBuilds(self):
+        # requestAutoBuilds creates a new build request with appropriate
+        # parameters.
+        recipe = self.factory.makeCharmRecipe()
+        now = get_transaction_timestamp(IStore(recipe))
+        with person_logged_in(recipe.owner.teamowner):
+            request = recipe.requestAutoBuilds()
+        self.assertThat(request, MatchesStructure(
+            date_requested=Equals(now),
+            date_finished=Is(None),
+            recipe=Equals(recipe),
+            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+            error_message=Is(None),
+            channels=Is(None),
+            architectures=Is(None)))
+        [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
+        self.assertThat(job, MatchesStructure(
+            job_id=Equals(request.id),
+            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+            recipe=Equals(recipe),
+            requester=Equals(recipe.owner),
+            channels=Is(None),
+            architectures=Is(None)))
+
+    def test_requestAutoBuilds_channels(self):
+        # requestAutoBuilds honours CharmRecipe.auto_build_channels.
+        recipe = self.factory.makeCharmRecipe(
+            auto_build_channels={"charmcraft": "edge"})
+        now = get_transaction_timestamp(IStore(recipe))
+        with person_logged_in(recipe.owner.teamowner):
+            request = recipe.requestAutoBuilds()
+        self.assertThat(request, MatchesStructure(
+            date_requested=Equals(now),
+            date_finished=Is(None),
+            recipe=Equals(recipe),
+            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+            error_message=Is(None),
+            channels=Equals({"charmcraft": "edge"}),
+            architectures=Is(None)))
+        [job] = getUtility(ICharmRecipeRequestBuildsJobSource).iterReady()
+        self.assertThat(job, MatchesStructure(
+            job_id=Equals(request.id),
+            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+            recipe=Equals(recipe),
+            requester=Equals(recipe.owner),
+            channels=Equals({"charmcraft": "edge"}),
+            architectures=Is(None)))
+
     def test_delete_without_builds(self):
         # A charm recipe with no builds can be deleted.
         owner = self.factory.makePerson()
@@ -1117,6 +1171,145 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         self.assertRaises(
             BadCharmRecipeSearchContext, recipe_set.findByContext,
             self.factory.makeDistribution())
+
+    def test__findStaleRecipes(self):
+        # Stale; not built automatically.
+        self.factory.makeCharmRecipe(is_stale=True)
+        # Not stale; built automatically.
+        self.factory.makeCharmRecipe(auto_build=True, is_stale=False)
+        # Stale; built automatically.
+        stale_daily = self.factory.makeCharmRecipe(
+            auto_build=True, is_stale=True)
+        self.assertContentEqual(
+            [stale_daily], CharmRecipeSet._findStaleRecipes())
+
+    def test__findStaleRecipes_distinct(self):
+        # If a charm recipe has two build requests, it only returns one
+        # recipe.
+        recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
+        for _ in range(2):
+            build_request = self.factory.makeCharmRecipeBuildRequest(
+                recipe=recipe)
+            removeSecurityProxy(
+                removeSecurityProxy(build_request)._job).job.date_created = (
+                    datetime.now(pytz.UTC) - timedelta(days=2))
+        self.assertContentEqual([recipe], CharmRecipeSet._findStaleRecipes())
+
+    def test_makeAutoBuilds(self):
+        # ICharmRecipeSet.makeAutoBuilds requests builds of
+        # appropriately-configured recipes where possible.
+        self.assertEqual([], getUtility(ICharmRecipeSet).makeAutoBuilds())
+        recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
+        logger = BufferLogger()
+        [build_request] = getUtility(ICharmRecipeSet).makeAutoBuilds(
+            logger=logger)
+        self.assertThat(build_request, MatchesStructure(
+            recipe=Equals(recipe),
+            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+            requester=Equals(recipe.owner), channels=Is(None)))
+        expected_log_entries = [
+            "DEBUG Scheduling builds of charm recipe %s/%s/%s" % (
+                recipe.owner.name, recipe.project.name, recipe.name),
+            ]
+        self.assertEqual(
+            expected_log_entries, logger.getLogBuffer().splitlines())
+        self.assertFalse(recipe.is_stale)
+
+    def test_makeAutoBuilds_skips_if_requested_recently(self):
+        # ICharmRecipeSet.makeAutoBuilds skips recipes that have been built
+        # recently.
+        recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
+        self.factory.makeCharmRecipeBuildRequest(
+            requester=recipe.owner, recipe=recipe)
+        logger = BufferLogger()
+        build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
+            logger=logger)
+        self.assertEqual([], build_requests)
+        self.assertEqual([], logger.getLogBuffer().splitlines())
+
+    def test_makeAutoBuilds_skips_if_requested_recently_matching_channels(
+            self):
+        # ICharmRecipeSet.makeAutoBuilds only considers recent build
+        # requests to match a recipe if they match its auto_build_channels.
+        recipe1 = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
+        recipe2 = self.factory.makeCharmRecipe(
+            auto_build=True, auto_build_channels={"charmcraft": "edge"},
+            is_stale=True)
+        # Create some build requests with mismatched channels.
+        self.factory.makeCharmRecipeBuildRequest(
+            recipe=recipe1, requester=recipe1.owner,
+            channels={"charmcraft": "edge"})
+        self.factory.makeCharmRecipeBuildRequest(
+            recipe=recipe2, requester=recipe2.owner,
+            channels={"charmcraft": "stable"})
+
+        logger = BufferLogger()
+        build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
+            logger=logger)
+        self.assertThat(build_requests, MatchesSetwise(
+            MatchesStructure(
+                recipe=Equals(recipe1),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                requester=Equals(recipe1.owner), channels=Is(None)),
+            MatchesStructure(
+                recipe=Equals(recipe2),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                requester=Equals(recipe2.owner),
+                channels=Equals({"charmcraft": "edge"}))))
+        log_entries = logger.getLogBuffer().splitlines()
+        self.assertEqual(2, len(log_entries))
+        for recipe in recipe1, recipe2:
+            self.assertIn(
+                "DEBUG Scheduling builds of charm recipe %s/%s/%s" % (
+                    recipe.owner.name, recipe.project.name, recipe.name),
+                log_entries)
+            self.assertFalse(recipe.is_stale)
+
+        # Mark the two recipes stale and try again.  There are now matching
+        # build requests so we don't try to request more.
+        for recipe in recipe1, recipe2:
+            removeSecurityProxy(recipe).is_stale = True
+            IStore(recipe).flush()
+        logger = BufferLogger()
+        build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
+            logger=logger)
+        self.assertEqual([], build_requests)
+        self.assertEqual([], logger.getLogBuffer().splitlines())
+
+    def test_makeAutoBuilds_skips_non_stale_recipes(self):
+        # ICharmRecipeSet.makeAutoBuilds skips recipes that are not stale.
+        self.factory.makeCharmRecipe(auto_build=True, is_stale=False)
+        self.assertEqual([], getUtility(ICharmRecipeSet).makeAutoBuilds())
+
+    def test_makeAutoBuilds_with_older_build_request(self):
+        # If a previous build request is not recent and the recipe is stale,
+        # ICharmRecipeSet.makeAutoBuilds requests builds.
+        recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
+        one_day_ago = datetime.now(pytz.UTC) - timedelta(days=1)
+        build_request = self.factory.makeCharmRecipeBuildRequest(
+            recipe=recipe, requester=recipe.owner)
+        removeSecurityProxy(
+            removeSecurityProxy(build_request)._job).job.date_created = (
+                one_day_ago)
+        [build_request] = getUtility(ICharmRecipeSet).makeAutoBuilds()
+        self.assertThat(build_request, MatchesStructure(
+            recipe=Equals(recipe),
+            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+            requester=Equals(recipe.owner), channels=Is(None)))
+
+    def test_makeAutoBuilds_with_older_and_newer_build_requests(self):
+        # If builds of a recipe have been requested twice, and the most recent
+        # request is too recent, ICharmRecipeSet.makeAutoBuilds does not
+        # request builds.
+        recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
+        for timediff in timedelta(days=1), timedelta(minutes=30):
+            date_created = datetime.now(pytz.UTC) - timediff
+            build_request = self.factory.makeCharmRecipeBuildRequest(
+                recipe=recipe, requester=recipe.owner)
+            removeSecurityProxy(
+                removeSecurityProxy(build_request)._job).job.date_created = (
+                    date_created)
+        self.assertEqual([], getUtility(ICharmRecipeSet).makeAutoBuilds())
 
     def test_detachFromGitRepository(self):
         # ICharmRecipeSet.detachFromGitRepository clears the given Git

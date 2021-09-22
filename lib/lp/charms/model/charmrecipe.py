@@ -10,6 +10,10 @@ __all__ = [
     ]
 
 import base64
+from datetime import (
+    datetime,
+    timedelta,
+    )
 from operator import (
     attrgetter,
     itemgetter,
@@ -20,6 +24,11 @@ from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
 import pytz
 from storm.databases.postgres import JSON
+from storm.expr import (
+    Cast,
+    Coalesce,
+    Except,
+    )
 from storm.locals import (
     And,
     Bool,
@@ -81,7 +90,10 @@ from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
 from lp.charms.model.charmrecipebuild import CharmRecipeBuild
-from lp.charms.model.charmrecipejob import CharmRecipeJob
+from lp.charms.model.charmrecipejob import (
+    CharmRecipeJob,
+    CharmRecipeJobType,
+    )
 from lp.code.errors import (
     GitRepositoryBlobNotFound,
     GitRepositoryScanFault,
@@ -124,6 +136,8 @@ from lp.services.database.interfaces import (
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Greatest,
+    IsTrue,
+    JSONExtract,
     NullsLast,
     )
 from lp.services.features import getFeatureFlag
@@ -577,6 +591,16 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
                         das.distroseries.name, das.architecturetag, e)
         return builds
 
+    def requestAutoBuilds(self, logger=None):
+        """See `ICharmRecipe`."""
+        self.is_stale = False
+        if logger is not None:
+            logger.debug(
+                "Scheduling builds of charm recipe %s/%s/%s",
+                self.owner.name, self.project.name, self.name)
+        return self.requestBuilds(
+            self.owner, channels=self.auto_build_channels)
+
     def getBuildRequest(self, job_id):
         """See `ICharmRecipe`."""
         return CharmRecipeBuildRequest(self, job_id)
@@ -972,6 +996,43 @@ class CharmRecipeSet:
                 source.unique_name)
 
         return charmcraft_data
+
+    @staticmethod
+    def _findStaleRecipes():
+        """Find recipes that need to be rebuilt."""
+        threshold_date = (
+            datetime.now(pytz.UTC) -
+            timedelta(minutes=config.charms.auto_build_frequency))
+        stale_clauses = [
+            IsTrue(CharmRecipe.is_stale),
+            IsTrue(CharmRecipe.auto_build),
+            ]
+        recent_clauses = [
+            CharmRecipeJob.recipe_id == CharmRecipe.id,
+            CharmRecipeJob.job_type == CharmRecipeJobType.REQUEST_BUILDS,
+            JSONExtract(CharmRecipeJob.metadata, "channels") == Coalesce(
+                CharmRecipe.auto_build_channels, Cast("null", "jsonb")),
+            CharmRecipeJob.job_id == Job.id,
+            # We only want recipes that haven't had an automatic build
+            # requested for them recently.
+            Job.date_created >= threshold_date,
+            ]
+        return IStore(CharmRecipe).find(
+            CharmRecipe,
+            CharmRecipe.id.is_in(Except(
+                Select(CharmRecipe.id, where=And(*stale_clauses)),
+                Select(
+                    CharmRecipe.id,
+                    where=And(*(stale_clauses + recent_clauses))))))
+
+    @classmethod
+    def makeAutoBuilds(cls, logger=None):
+        """See `ICharmRecipeSet`."""
+        recipes = cls._findStaleRecipes()
+        build_requests = []
+        for recipe in recipes:
+            build_requests.append(recipe.requestAutoBuilds(logger=logger))
+        return build_requests
 
     def detachFromGitRepository(self, repository):
         """See `ICharmRecipeSet`."""
