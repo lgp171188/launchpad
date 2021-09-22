@@ -313,7 +313,8 @@ class ICharmRecipeView(Interface):
     def visibleByUser(user):
         """Can the specified user see this charm recipe?"""
 
-    def requestBuild(build_request, distro_arch_series, channels=None):
+    def requestBuild(build_request, distro_arch_series, charm_base=None,
+                     channels=None):
         """Request a single build of this charm recipe.
 
         This method is for internal use; external callers should use
@@ -322,6 +323,7 @@ class ICharmRecipeView(Interface):
         :param build_request: The `ICharmRecipeBuildRequest` job being
             processed.
         :param distro_arch_series: The architecture to build for.
+        :param charm_base: The `ICharmBase` to use for this build.
         :param channels: A dictionary mapping snap names to channels to use
             for this build.
         :return: `ICharmRecipeBuild`.

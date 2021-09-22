@@ -629,6 +629,59 @@ class TestCharmRecipe(TestCaseWithFactory):
         self.assertRequestedBuildsMatch(
             builds, job, "20.04", ["avr", "riscv64"], job.channels)
 
+    def test_requestBuildsFromJob_charm_base_architectures(self):
+        # requestBuildsFromJob intersects the architectures supported by the
+        # charm base with any other constraints.
+        self.useFixture(GitHostingFixture(blob="name: foo\n"))
+        job = self.makeRequestBuildsJob("20.04", ["sparc", "i386", "avr"])
+        distroseries = getUtility(ILaunchpadCelebrities).ubuntu.getSeries(
+            "20.04")
+        with admin_logged_in():
+            self.factory.makeCharmBase(
+                distro_series=distroseries,
+                build_channels={"charmcraft": "stable/launchpad-buildd"},
+                processors=[
+                    distroseries[arch_tag].processor
+                    for arch_tag in ("sparc", "avr")])
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels))
+        self.assertRequestedBuildsMatch(
+            builds, job, "20.04", ["sparc", "avr"], job.channels)
+
+    def test_requestBuildsFromJob_charm_base_build_channels_by_arch(self):
+        # If the charm base declares different build channels for specific
+        # architectures, then requestBuildsFromJob uses those when
+        # requesting builds for those architectures.
+        self.useFixture(GitHostingFixture(blob="name: foo\n"))
+        job = self.makeRequestBuildsJob("20.04", ["avr", "riscv64"])
+        distroseries = getUtility(ILaunchpadCelebrities).ubuntu.getSeries(
+            "20.04")
+        with admin_logged_in():
+            self.factory.makeCharmBase(
+                distro_series=distroseries,
+                build_channels={
+                    "core20": "stable",
+                    "_byarch": {"riscv64": {"core20": "candidate"}},
+                    })
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels))
+        self.assertThat(builds, MatchesSetwise(
+            *(MatchesStructure(
+                requester=Equals(job.requester),
+                recipe=Equals(job.recipe),
+                distro_arch_series=MatchesStructure(
+                    distroseries=MatchesStructure.byEquality(version="20.04"),
+                    architecturetag=Equals(arch_tag)),
+                channels=Equals(channels))
+              for arch_tag, channels in (
+                  ("avr", {"charmcraft": "edge", "core20": "stable"}),
+                  ("riscv64", {"charmcraft": "edge", "core20": "candidate"}),
+                  ))))
+
     def test_requestBuildsFromJob_triggers_webhooks(self):
         # requestBuildsFromJob triggers webhooks, and the payload includes a
         # link to the build request.

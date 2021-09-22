@@ -94,6 +94,7 @@ from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.interfaces.malone import IMaloneApplication
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.charms.interfaces.charmbase import ICharmBaseSet
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.errors import (
     CannotHaveLinkedBranch,
@@ -855,6 +856,7 @@ class LaunchpadRootNavigation(Navigation):
         'branches': IBranchSet,
         'bugs': IMaloneApplication,
         'builders': IBuilderSet,
+        '+charm-bases': ICharmBaseSet,
         '+charm-recipes': ICharmRecipeSet,
         '+code-index': IBazaarApplication,
         '+code-imports': ICodeImportSet,

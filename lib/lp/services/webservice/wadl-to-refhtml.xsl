@@ -277,6 +277,10 @@
                 <xsl:text>/builders/</xsl:text>
                 <var>&lt;builder.name&gt;</var>
             </xsl:when>
+            <xsl:when test="@id = 'charm_base'">
+                <xsl:text>/+charm-bases/</xsl:text>
+                <var>&lt;name&gt;</var>
+            </xsl:when>
             <xsl:when test="@id = 'charm_recipe'">
                 <xsl:text>/~</xsl:text>
                 <var>&lt;person.name&gt;</var>
@@ -772,6 +776,9 @@
     <xsl:template name="find-root-object-uri">
         <xsl:value-of select="$base"/>
         <xsl:choose>
+            <xsl:when test="@id = 'charm_bases'">
+                <xsl:text>/+charm-bases</xsl:text>
+            </xsl:when>
             <xsl:when test="@id = 'charm_recipes'">
                 <xsl:text>/+charm-recipes</xsl:text>
             </xsl:when>

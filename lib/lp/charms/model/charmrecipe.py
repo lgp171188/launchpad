@@ -52,6 +52,10 @@ from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.charms.adapters.buildarch import determine_instances_to_build
+from lp.charms.interfaces.charmbase import (
+    ICharmBaseSet,
+    NoSuchCharmBase,
+    )
 from lp.charms.interfaces.charmhubclient import ICharmhubClient
 from lp.charms.interfaces.charmrecipe import (
     BadCharmRecipeSearchContext,
@@ -80,6 +84,7 @@ from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
     )
+from lp.charms.model.charmbase import CharmBase
 from lp.charms.model.charmrecipebuild import CharmRecipeBuild
 from lp.charms.model.charmrecipejob import CharmRecipeJob
 from lp.code.errors import (
@@ -424,7 +429,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
             CharmRecipe.id == self.id,
             get_charm_recipe_privacy_filter(user)).is_empty()
 
-    def _isBuildableArchitectureAllowed(self, das):
+    def _isBuildableArchitectureAllowed(self, das, charm_base=None):
         """Check whether we may build for a buildable `DistroArchSeries`.
 
         The caller is assumed to have already checked that a suitable chroot
@@ -435,13 +440,15 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
             das.enabled
             and (
                 das.processor.supports_virtualized
-                or not self.require_virtualized))
+                or not self.require_virtualized)
+            and (charm_base is None or das.processor in charm_base.processors))
 
-    def _isArchitectureAllowed(self, das):
+    def _isArchitectureAllowed(self, das, charm_base=None):
         """Check whether we may build for a `DistroArchSeries`."""
         return (
             das.getChroot() is not None
-            and self._isBuildableArchitectureAllowed(das))
+            and self._isBuildableArchitectureAllowed(
+                das, charm_base=charm_base))
 
     def getAllowedArchitectures(self):
         """See `ICharmRecipe`."""
@@ -462,9 +469,16 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
             (DistroArchSeries, DistroSeries, Distribution),
             DistroSeries.status.is_in(ACTIVE_STATUSES)).config(distinct=True)
         all_buildable_dases = DecoratedResultSet(results, itemgetter(0))
+        charm_bases = {
+            charm_base.distro_series_id: charm_base
+            for charm_base in store.find(
+                CharmBase,
+                CharmBase.distro_series_id.is_in(
+                    set(das.distroseriesID for das in all_buildable_dases)))}
         return [
             das for das in all_buildable_dases
-            if self._isBuildableArchitectureAllowed(das)]
+            if self._isBuildableArchitectureAllowed(
+                das, charm_base=charm_bases.get(das.id))]
 
     def _checkRequestBuild(self, requester):
         """May `requester` request builds of this charm recipe?"""
@@ -473,7 +487,8 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
                 "%s cannot create charm recipe builds owned by %s." %
                 (requester.display_name, self.owner.display_name))
 
-    def requestBuild(self, build_request, distro_arch_series, channels=None):
+    def requestBuild(self, build_request, distro_arch_series, charm_base=None,
+                     channels=None):
         """Request a single build of this charm recipe.
 
         This method is for internal use; external callers should use
@@ -487,7 +502,8 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         :return: `ICharmRecipeBuild`.
         """
         self._checkRequestBuild(build_request.requester)
-        if not self._isArchitectureAllowed(distro_arch_series):
+        if not self._isArchitectureAllowed(
+                distro_arch_series, charm_base=charm_base):
             raise CharmRecipeBuildDisallowedArchitecture(distro_arch_series)
 
         if not channels:
@@ -555,8 +571,22 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         builds = []
         for das in instances_to_build:
             try:
+                charm_base = getUtility(ICharmBaseSet).getByDistroSeries(
+                    das.distroseries)
+            except NoSuchCharmBase:
+                charm_base = None
+            if charm_base is not None:
+                arch_channels = dict(charm_base.build_channels)
+                channels_by_arch = arch_channels.pop("_byarch", {})
+                if das.architecturetag in channels_by_arch:
+                    arch_channels.update(channels_by_arch[das.architecturetag])
+                if channels is not None:
+                    arch_channels.update(channels)
+            else:
+                arch_channels = channels
+            try:
                 build = self.requestBuild(
-                    build_request, das, channels=channels)
+                    build_request, das, channels=arch_channels)
                 if logger is not None:
                     logger.debug(
                         " - %s/%s/%s %s/%s/%s: Build requested.",

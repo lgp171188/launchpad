@@ -10,12 +10,18 @@ which tells `lazr.restful` that it should look for webservice exports here.
 """
 
 __all__ = [
+    "ICharmBase",
+    "ICharmBaseSet",
     "ICharmRecipe",
     "ICharmRecipeBuild",
     "ICharmRecipeBuildRequest",
     "ICharmRecipeSet",
     ]
 
+from lp.charms.interfaces.charmbase import (
+    ICharmBase,
+    ICharmBaseSet,
+    )
 from lp.charms.interfaces.charmrecipe import (
     ICharmRecipe,
     ICharmRecipeBuildRequest,

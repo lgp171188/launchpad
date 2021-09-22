@@ -103,6 +103,26 @@
         factory="lp.charms.model.charmrecipebuildbehaviour.CharmRecipeBuildBehaviour"
         permission="zope.Public" />
 
+    <!-- Bases for charms -->
+    <class class="lp.charms.model.charmbase.CharmBase">
+        <allow
+            interface="lp.charms.interfaces.charmbase.ICharmBaseView
+                       lp.charms.interfaces.charmbase.ICharmBaseEditableAttributes" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.charms.interfaces.charmbase.ICharmBaseEdit"
+            set_schema="lp.charms.interfaces.charmbase.ICharmBaseEditableAttributes" />
+    </class>
+    <securedutility
+        class="lp.charms.model.charmbase.CharmBaseSet"
+        provides="lp.charms.interfaces.charmbase.ICharmBaseSet">
+        <allow
+            interface="lp.charms.interfaces.charmbase.ICharmBaseSet" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.charms.interfaces.charmbase.ICharmBaseSetEdit" />
+    </securedutility>
+
     <!-- Charmhub interaction -->
     <securedutility
         class="lp.charms.model.charmhubclient.CharmhubClient"
