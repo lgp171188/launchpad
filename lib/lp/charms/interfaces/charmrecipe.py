@@ -374,6 +374,13 @@ class ICharmRecipeView(Interface):
         :return: A sequence of `ICharmRecipeBuild` instances.
         """
 
+    def requestAutoBuilds(logger=None):
+        """Request automatic builds for this charm recipe.
+
+        :param logger: An optional logger.
+        :return: A sequence of `ICharmRecipeBuildRequest` instances.
+        """
+
     def getBuildRequest(job_id):
         """Get an asynchronous build request by ID.
 
@@ -671,6 +678,13 @@ class ICharmRecipeSet(Interface):
             reason.
         :raises CannotParseCharmcraftYaml: if the fetched charmcraft.yaml
             cannot be parsed.
+        """
+
+    def makeAutoBuilds(logger=None):
+        """Request automatic builds for stale charm recipes.
+
+        :param logger: An optional logger.
+        :return: A sequence of `ICharmRecipeBuildRequest` instances.
         """
 
     def detachFromGitRepository(repository):

@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -S
 #
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Request builds for stale daily build recipes and snap packages."""
@@ -12,6 +12,7 @@ import _pythonpath  # noqa: F401
 import transaction
 from zope.component import getUtility
 
+from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuildSource,
     )
@@ -40,6 +41,11 @@ class RequestDailyBuilds(LaunchpadCronScript):
         builds = getUtility(ISnapSet).makeAutoBuilds(self.logger)
         self.logger.info(
             'Requested %d automatic snap package builds.' % len(builds))
+        build_requests = getUtility(ICharmRecipeSet).makeAutoBuilds(
+            self.logger)
+        self.logger.info(
+            'Requested %d sets of automatic charm recipe builds.' %
+            len(build_requests))
         transaction.commit()
 
 

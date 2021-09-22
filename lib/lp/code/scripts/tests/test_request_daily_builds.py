@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the request_daily_builds script."""
@@ -14,6 +14,10 @@ from wsgiref.simple_server import (
 
 import transaction
 
+from lp.charms.interfaces.charmrecipe import (
+    CHARM_RECIPE_ALLOW_CREATE,
+    ICharmRecipe,
+    )
 from lp.code.interfaces.codehosting import BRANCH_ID_ALIAS_PREFIX
 from lp.services.config import config
 from lp.services.config.fixture import (
@@ -183,7 +187,9 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
 
     def setUp(self):
         super(TestRequestDailyBuilds, self).setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
+        features = dict(SNAP_TESTING_FLAGS)
+        features[CHARM_RECIPE_ALLOW_CREATE] = "on"
+        self.useFixture(FeatureFixture(features))
 
     def makeLoggerheadServer(self):
         loggerhead_server = FakeLoggerheadServer()
@@ -238,6 +244,8 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
             distroseries=distroarchseries.distroseries,
             processors=[distroarchseries.processor],
             auto_build=True, is_stale=True, git_ref=prod_ref)
+        git_prod_charm_recipe = self.factory.makeCharmRecipe(
+            auto_build=True, is_stale=True, git_ref=prod_ref)
         package = self.factory.makeSourcePackage()
         pack_branch = self.factory.makeBranch(sourcepackage=package)
         [pack_ref] = self.factory.makeGitRefs(
@@ -254,9 +262,12 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
             distroseries=distroarchseries.distroseries,
             processors=[distroarchseries.processor],
             auto_build=True, is_stale=True, git_ref=pack_ref)
+        git_pack_charm_recipe = self.factory.makeCharmRecipe(
+            auto_build=True, is_stale=True, git_ref=pack_ref)
         items = [
             bzr_prod_recipe, git_prod_recipe, bzr_prod_snap, git_prod_snap,
             bzr_pack_recipe, git_pack_recipe, bzr_pack_snap, git_pack_snap,
+            git_prod_charm_recipe, git_pack_charm_recipe,
             ]
         for item in items:
             self.assertEqual(0, item.pending_builds.count())
@@ -277,12 +288,21 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
             prod_ref.repository, 'snap/snapcraft.yaml', b'name: prod-snap')
         turnip_server.addBlob(
             pack_ref.repository, 'snap/snapcraft.yaml', b'name: pack-snap')
+        turnip_server.addBlob(
+            prod_ref.repository, 'charmcraft.yaml', b'name: prod-charm')
+        turnip_server.addBlob(
+            pack_ref.repository, 'charmcraft.yaml', b'name: pack-charm')
         retcode, stdout, stderr = run_script(
             'cronscripts/request_daily_builds.py', [])
         self.assertIn('Requested 4 daily recipe builds.', stderr)
         self.assertIn('Requested 4 automatic snap package builds.', stderr)
+        self.assertIn(
+            'Requested 2 sets of automatic charm recipe builds.', stderr)
         for item in items:
-            self.assertEqual(1, item.pending_builds.count())
+            if ICharmRecipe.providedBy(item):
+                self.assertEqual(1, item.pending_build_requests.count())
+            else:
+                self.assertEqual(1, item.pending_builds.count())
             self.assertFalse(item.is_stale)
 
     def test_request_daily_builds_oops(self):
@@ -296,6 +316,8 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
         self.assertEqual(0, recipe.pending_builds.count())
         self.assertIn('Requested 0 daily recipe builds.', stderr)
         self.assertIn('Requested 0 automatic snap package builds.', stderr)
+        self.assertIn(
+            'Requested 0 sets of automatic charm recipe builds.', stderr)
         self.oops_capture.sync()
         self.assertEqual('NonPPABuildRequest', self.oopses[0]['type'])
         self.assertEqual(
