@@ -1,4 +1,4 @@
-# Copyright 2011-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -18,6 +18,7 @@ __all__ = [
     'IsDistinctFrom',
     'IsFalse',
     'IsTrue',
+    'JSONExtract',
     'NullCount',
     'NullsFirst',
     'NullsLast',
@@ -255,6 +256,11 @@ class NullsLast(SuffixExpr):
 class RegexpMatch(BinaryOper):
     __slots__ = ()
     oper = " ~ "
+
+
+class JSONExtract(BinaryOper):
+    __slots__ = ()
+    oper = "->"
 
 
 compile.set_precedence(compile.get_precedence(Like), RegexpMatch)
