@@ -230,6 +230,7 @@ part of the indirect subscribers list.
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> english = getUtility(ILanguageSet)['en']
+    >>> login('no-priv@canonical.com')
     >>> no_priv.addLanguage(english)
     >>> firefox.addAnswerContact(no_priv, no_priv)
     True
@@ -255,6 +256,7 @@ are part of the indirect subscribers list.
     >>> list(evolution_in_ubuntu.answer_contacts)
     []
     >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
+    >>> login(ubuntu_team.teamowner.preferredemail.email)
     >>> ubuntu_team.addLanguage(english)
     >>> ubuntu.addAnswerContact(ubuntu_team, ubuntu_team.teamowner)
     True

@@ -16,6 +16,7 @@ concrete language.
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> spanish = getUtility(ILanguageSet).getLanguageByCode('es')
+    >>> login('foo.bar@canonical.com')
     >>> foo_bar.addLanguage(spanish)
     >>> for translator in spanish.translators:
     ...     karma = 0

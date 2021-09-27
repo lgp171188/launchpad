@@ -283,8 +283,8 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
         question = self.factory.makeQuestion()
         contact = self.factory.makePerson(
             name='user', displayname='Contact Name')
-        contact.addLanguage(getUtility(ILanguageSet)['en'])
         with person_logged_in(contact):
+            contact.addLanguage(getUtility(ILanguageSet)['en'])
             question.target.addAnswerContact(contact, contact)
         view = create_view(question.target, '+portlet-answercontacts-details')
         api_request = IWebServiceClientRequest(view.request)
@@ -310,8 +310,8 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
             name="team-owner", displayname="Team Owner")
         contact = self.factory.makeTeam(
             name='team', displayname='Team Name', owner=teamowner)
-        contact.addLanguage(getUtility(ILanguageSet)['en'])
         with person_logged_in(contact.teamowner):
+            contact.addLanguage(getUtility(ILanguageSet)['en'])
             question.target.addAnswerContact(contact, contact)
         view = create_view(question.target, '+portlet-answercontacts-details')
         api_request = IWebServiceClientRequest(view.request)
@@ -337,8 +337,8 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
             name="team-owner", displayname="Team Owner")
         contact = self.factory.makeTeam(
             name='team', displayname='Team Name', owner=teamowner)
-        contact.addLanguage(getUtility(ILanguageSet)['en'])
         with person_logged_in(contact.teamowner):
+            contact.addLanguage(getUtility(ILanguageSet)['en'])
             question.target.addAnswerContact(contact, contact.teamowner)
         view = create_view(question.target, '+portlet-answercontacts-details')
         api_request = IWebServiceClientRequest(view.request)
@@ -367,8 +367,8 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
         contact = self.factory.makeTeam(
             name='team', displayname='Team Name', owner=teamowner,
             members=[member])
-        contact.addLanguage(getUtility(ILanguageSet)['en'])
         with person_logged_in(contact.teamowner):
+            contact.addLanguage(getUtility(ILanguageSet)['en'])
             question.target.addAnswerContact(contact, contact.teamowner)
         view = create_view(question.target, '+portlet-answercontacts-details')
         api_request = IWebServiceClientRequest(view.request)
@@ -393,8 +393,8 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
         question = self.factory.makeQuestion(target=distro)
         contact = self.factory.makePerson(
             name='user', displayname='Contact Name')
-        contact.addLanguage(getUtility(ILanguageSet)['en'])
         with person_logged_in(contact):
+            contact.addLanguage(getUtility(ILanguageSet)['en'])
             question.target.addAnswerContact(contact, contact)
         view = create_view(question.target, '+portlet-answercontacts-details')
         api_request = IWebServiceClientRequest(view.request)
@@ -420,7 +420,8 @@ class QuestionTargetPortletAnswerContactsWithDetailsTests(
         member = self.factory.makePerson()
         contact = self.factory.makePerson(
             name='user', displayname='Contact Name')
-        contact.addLanguage(getUtility(ILanguageSet)['en'])
+        with person_logged_in(contact):
+            contact.addLanguage(getUtility(ILanguageSet)['en'])
         with person_logged_in(member):
             question.target.addAnswerContact(contact, contact)
         view = create_view(question.target, '+portlet-answercontacts-details')

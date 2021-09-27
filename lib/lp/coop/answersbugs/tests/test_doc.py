@@ -22,6 +22,7 @@ from lp.soyuz.tests.test_doc import (
 from lp.testing import (
     ANONYMOUS,
     login,
+    person_logged_in,
     )
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import (
@@ -48,7 +49,8 @@ def _createUbuntuBugTaskLinkedToQuestion():
     login('test@canonical.com')
     sample_person = getUtility(IPersonSet).getByEmail('test@canonical.com')
     ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
-    ubuntu_team.addLanguage(getUtility(ILanguageSet)['en'])
+    with person_logged_in(ubuntu_team.teamowner):
+        ubuntu_team.addLanguage(getUtility(ILanguageSet)['en'])
     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     ubuntu.addAnswerContact(ubuntu_team, ubuntu_team.teamowner)
     ubuntu_question = ubuntu.newQuestion(

@@ -237,7 +237,7 @@ The nag message links to the languages editing page.
 Once Noi has set one or more preferred languages, the nag message goes
 away.
 
-    >>> login(ANONYMOUS)
+    >>> login('noi@example.com')
     >>> from lp.services.worlddata.model.language import LanguageSet
     >>> noi.addLanguage(LanguageSet().getLanguageByCode('lo'))
     >>> logout()
