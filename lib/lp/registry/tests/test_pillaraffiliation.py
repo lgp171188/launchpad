@@ -516,9 +516,9 @@ class TestQuestionPillarAffiliation(TestCaseWithFactory):
         # target.
         answer_contact = self.factory.makePerson()
         english = getUtility(ILanguageSet)['en']
-        answer_contact.addLanguage(english)
         product = self.factory.makeProduct()
         with person_logged_in(answer_contact):
+            answer_contact.addLanguage(english)
             product.addAnswerContact(answer_contact, answer_contact)
         question = self.factory.makeQuestion(target=product)
         [badges] = (
