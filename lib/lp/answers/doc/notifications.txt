@@ -67,6 +67,7 @@ notified about the changes as well:
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
+    >>> login(ubuntu_team.teamowner.preferredemail.email)
     >>> ubuntu_team.addLanguage(getUtility(ILanguageSet)['en'])
     >>> ubuntu.addAnswerContact(ubuntu_team, ubuntu_team.teamowner)
     True

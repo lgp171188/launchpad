@@ -114,4 +114,3 @@ class TestSnapBuildUploads(TestUploadProcessorBase):
         self.assertTrue(self.build.verifySuccessfulUpload())
         self.assertEqual(1, len(list(self.build.store_upload_jobs)))
         self.assertEqual(2, len(list(self.build.getFiles())))
-

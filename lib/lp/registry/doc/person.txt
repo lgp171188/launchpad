@@ -1171,6 +1171,7 @@ To add new languages we use Person.addLanguage().
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> languageset = getUtility(ILanguageSet)
+    >>> login('carlos@test.com')
     >>> carlos.addLanguage(languageset['pt_BR'])
     >>> for lang in carlos.languages:
     ...     print(lang.code)

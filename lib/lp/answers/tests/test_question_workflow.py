@@ -865,7 +865,8 @@ class RejectTestCase(BaseAnswerTrackerWorkflowTestCase):
                           if status.name != 'INVALID']
         # Reject user must be an answer contact, (or admin, or product owner).
         # Answer contacts must speak a language
-        self.answerer.addLanguage(getUtility(ILanguageSet)['en'])
+        with person_logged_in(self.answerer):
+            self.answerer.addLanguage(getUtility(ILanguageSet)['en'])
         self.ubuntu.addAnswerContact(self.answerer, self.answerer)
         login_person(self.answerer)
         self._testInvalidTransition(
