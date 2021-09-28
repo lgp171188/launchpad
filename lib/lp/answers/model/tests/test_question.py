@@ -74,7 +74,8 @@ class TestQuestionInDirectSubscribers(TestCaseWithFactory):
     def test_answerContactIsIndirectSubscriber(self):
         # Question answer contacts are indirect subscribers to questions.
         person = self.factory.makePerson()
-        person.addLanguage(getUtility(ILanguageSet)['en'])
+        with person_logged_in(person):
+            person.addLanguage(getUtility(ILanguageSet)['en'])
         question = self.factory.makeQuestion()
         with person_logged_in(question.owner):
             question.target.addAnswerContact(person, person)
@@ -96,10 +97,12 @@ class TestQuestionInDirectSubscribers(TestCaseWithFactory):
         # Question answer contacts are indirect subscribers to questions and
         # are filtered according to the question's language.
         english_person = self.factory.makePerson()
-        english_person.addLanguage(getUtility(ILanguageSet)['en'])
+        with person_logged_in(english_person):
+            english_person.addLanguage(getUtility(ILanguageSet)['en'])
         spanish = getUtility(ILanguageSet)['es']
         spanish_person = self.factory.makePerson()
-        spanish_person.addLanguage(spanish)
+        with person_logged_in((spanish_person)):
+            spanish_person.addLanguage(spanish)
         question = self.factory.makeQuestion(language=spanish)
         with person_logged_in(question.owner):
             question.target.addAnswerContact(english_person, english_person)

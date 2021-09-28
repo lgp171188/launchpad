@@ -11,6 +11,7 @@ from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     BrowserTestCase,
+    person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import (
@@ -392,7 +393,8 @@ class TestPersonTranslationViewPermissions(BrowserTestCase):
         super(TestPersonTranslationViewPermissions, self).setUp()
         self.context = self.factory.makePerson()
         self.language = self.factory.makeLanguage()
-        self.context.addLanguage(self.language)
+        with person_logged_in(self.context):
+            self.context.addLanguage(self.language)
         owner = self.factory.makePerson()
         self.translationgroup = self.factory.makeTranslationGroup(owner=owner)
         TranslatorSet().new(

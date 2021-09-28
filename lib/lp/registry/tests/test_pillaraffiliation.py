@@ -443,9 +443,9 @@ class TestQuestionPillarAffiliation(TestCaseWithFactory):
         # target.
         answer_contact = self.factory.makePerson()
         english = getUtility(ILanguageSet)['en']
-        answer_contact.addLanguage(english)
         distro = self.factory.makeDistribution(owner=answer_contact)
         with person_logged_in(answer_contact):
+            answer_contact.addLanguage(english)
             distro.addAnswerContact(answer_contact, answer_contact)
         question = self.factory.makeQuestion(target=distro)
         [badges] = (
@@ -465,11 +465,11 @@ class TestQuestionPillarAffiliation(TestCaseWithFactory):
         # target.
         answer_contact = self.factory.makePerson()
         english = getUtility(ILanguageSet)['en']
-        answer_contact.addLanguage(english)
         distribution = self.factory.makeDistribution(owner=answer_contact)
         distro_sourcepackage = self.factory.makeDistributionSourcePackage(
             distribution=distribution)
         with person_logged_in(answer_contact):
+            answer_contact.addLanguage(english)
             distro_sourcepackage.addAnswerContact(
                 answer_contact, answer_contact)
         question = self.factory.makeQuestion(
@@ -491,11 +491,11 @@ class TestQuestionPillarAffiliation(TestCaseWithFactory):
         # target's distro.
         answer_contact = self.factory.makePerson()
         english = getUtility(ILanguageSet)['en']
-        answer_contact.addLanguage(english)
         distribution = self.factory.makeDistribution(owner=answer_contact)
         distro_sourcepackage = self.factory.makeDistributionSourcePackage(
             distribution=distribution)
         with person_logged_in(answer_contact):
+            answer_contact.addLanguage(english)
             distribution.addAnswerContact(answer_contact, answer_contact)
         question = self.factory.makeQuestion(
             target=distro_sourcepackage, owner=answer_contact)
@@ -516,9 +516,9 @@ class TestQuestionPillarAffiliation(TestCaseWithFactory):
         # target.
         answer_contact = self.factory.makePerson()
         english = getUtility(ILanguageSet)['en']
-        answer_contact.addLanguage(english)
         product = self.factory.makeProduct()
         with person_logged_in(answer_contact):
+            answer_contact.addLanguage(english)
             product.addAnswerContact(answer_contact, answer_contact)
         question = self.factory.makeQuestion(target=product)
         [badges] = (

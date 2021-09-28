@@ -332,6 +332,7 @@ IQuestionTargets.
     >>> no_priv_raw.hasParticipationEntryFor(translator_team)
     True
     >>> evolution_package = ubuntu.getSourcePackage('evolution')
+    >>> login('carlos@test.com')
     >>> translator_team.addLanguage(english)
     >>> evolution_package.addAnswerContact(
     ...     translator_team, translator_team.teamowner)

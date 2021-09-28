@@ -52,6 +52,7 @@ Ubuntu Team owning the distribution.
 
     >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
     >>> english = getUtility(ILanguageSet)['en']
+    >>> login('test@canonical.com')
     >>> sample_person.addLanguage(english)
     >>> ubuntu.addAnswerContact(sample_person, sample_person)
     True

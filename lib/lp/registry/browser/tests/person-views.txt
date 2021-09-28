@@ -197,9 +197,11 @@ correction. The list of languages is alphabetized.
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
 
     >>> languageset = getUtility(ILanguageSet)
+    >>> login('test@canonical.com')
     >>> sample_person.addLanguage(languageset.getLanguageByCode('so'))
     >>> sample_person.addLanguage(languageset.getLanguageByCode('fr'))
 
+    >>> login(ANONYMOUS)
     >>> view = create_view(sample_person, '+portlet-contact-details')
     >>> print(view.languages)
     French, Somali
@@ -217,13 +219,12 @@ set a language.
 Teams most often set just one language that is used for the Answers
 application. If the language is a variant, the variation is shown in
 parenthesis.
-
+    >>> login('test@canonical.com')
     >>> landscape_developers.addLanguage(
     ...     languageset.getLanguageByCode('pt_BR'))
     >>> view = create_view(landscape_developers, '+portlet-contact-details')
     >>> print(view.languages)
     Portuguese (Brazil)
-
 
 Things a person is working on
 -----------------------------
