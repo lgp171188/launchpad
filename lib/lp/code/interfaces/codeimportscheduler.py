@@ -23,12 +23,12 @@ class ICodeImportScheduler(Interface):
     """The code import scheduler.
 
     The code import scheduler is responsible for allocating import jobs to
-    machines.  Code import slave machines call the getJobForMachine() method
-    when they need more work to do.
+    machines.  Code import worker machines call the getJobForMachine()
+    method when they need more work to do.
     """
 
     def getJobForMachine(hostname, worker_limit):
-        """Get a job to run on the slave 'hostname'.
+        """Get a job to run on the worker 'hostname'.
 
         This method selects the most appropriate job for the machine,
         mark it as having started on said machine and return its id,
