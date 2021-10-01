@@ -10,6 +10,7 @@ from storm.store import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.interfaces.branchcollection import (
     IAllBranches,
     IBranchCollection,
@@ -727,6 +728,24 @@ def _mergeOCIRecipeSubscription(cur, from_id, to_id):
         ''' % vars())
 
 
+def _mergeCharmRecipe(cur, from_person, to_person):
+    # This shouldn't use removeSecurityProxy.
+    recipes = getUtility(ICharmRecipeSet).findByOwner(from_person)
+    existing_names = [
+        r.name for r in getUtility(ICharmRecipeSet).findByOwner(to_person)]
+    for recipe in recipes:
+        naked_recipe = removeSecurityProxy(recipe)
+        new_name = naked_recipe.name
+        count = 1
+        while new_name in existing_names:
+            new_name = '%s-%s' % (recipe.name, count)
+            count += 1
+        naked_recipe.owner = to_person
+        naked_recipe.name = new_name
+    if not recipes.is_empty():
+        IStore(recipes[0]).flush()
+
+
 def _purgeUnmergableTeamArtifacts(from_team, to_team, reviewer):
     """Purge team artifacts that cannot be merged, but can be removed."""
     # A team cannot have more than one mailing list.
@@ -824,10 +843,6 @@ def merge_people(from_person, to_person, reviewer, delete=False):
         ('latestpersonsourcepackagereleasecache', 'maintainer'),
         # Obsolete table.
         ('branchmergequeue', 'owner'),
-        # XXX cjwatson 2021-05-24: This needs handling before we deploy the
-        # charm recipe code, but can be ignored for the purpose of deploying
-        # the database tables.
-        ('charmrecipe', 'owner'),
         ]
 
     references = list(postgresql.listReferences(cur, 'person', 'id'))
@@ -962,6 +977,9 @@ def merge_people(from_person, to_person, reviewer, delete=False):
 
     _mergeOCIRecipeSubscription(cur, from_id, to_id)
     skip.append(('ocirecipesubscription', 'person'))
+
+    _mergeCharmRecipe(cur, from_id, to_id)
+    skip.append(('charmrecipe', 'owner'))
 
     # Sanity check. If we have a reference that participates in a
     # UNIQUE index, it must have already been handled by this point.

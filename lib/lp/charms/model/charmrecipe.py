@@ -837,6 +837,10 @@ class CharmRecipeSet:
         expressions.append(get_charm_recipe_privacy_filter(visible_by_user))
         return IStore(CharmRecipe).find(CharmRecipe, *expressions)
 
+    def findByOwner(self, owner):
+        """See `ICharmRecipeSet`."""
+        return IStore(CharmRecipe).find(CharmRecipe, owner=owner)
+
     def findByPerson(self, person, visible_by_user=None):
         """See `ICharmRecipeSet`."""
         def _getRecipes(collection):
