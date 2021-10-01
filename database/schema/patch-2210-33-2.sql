@@ -8,7 +8,7 @@ CREATE TABLE CharmBase (
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
     registrant integer NOT NULL REFERENCES person,
     distro_series integer NOT NULL REFERENCES distroseries,
-    build_snap_channels text NOT NULL
+    build_snap_channels jsonb NOT NULL
 );
 
 CREATE INDEX charmbase__registrant__idx ON CharmBase (registrant);
