@@ -14,9 +14,9 @@ request is querying the master or slave database.
     >>> from textwrap import dedent
     >>> config_overlay = dedent("""
     ...     [database]
-    ...     rw_main_slave: dbname=launchpad_empty
+    ...     rw_main_standby: dbname=launchpad_empty
     ...     """)
-    >>> config.push('empty_slave', config_overlay)
+    >>> config.push('empty_standby', config_overlay)
 
     >>> from lp.registry.model.person import Person
     >>> from lp.services.database.interfaces import IMasterStore, ISlaveStore
@@ -172,4 +172,4 @@ returning a 404 error to the user.
 
 Reset our config to avoid affecting other tests.
 
-    >>> ignored = config.pop('empty_slave')
+    >>> ignored = config.pop('empty_standby')
