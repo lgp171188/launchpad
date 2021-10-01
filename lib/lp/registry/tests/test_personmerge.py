@@ -9,6 +9,7 @@ from operator import attrgetter
 import pytz
 from testtools.matchers import (
     Equals,
+    MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
     )
@@ -18,6 +19,10 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.charms.interfaces.charmrecipe import (
+    CHARM_RECIPE_ALLOW_CREATE,
+    ICharmRecipeSet,
+    )
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipeSet,
@@ -740,6 +745,47 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         self.assertEqual(ref.repository, oci_recipes[1].git_repository)
         self.assertEqual(ref.path, oci_recipes[1].git_path)
         self.assertEqual(u'foo-1', oci_recipes[1].name)
+
+    def test_merge_moves_charm_recipes(self):
+        # When person/teams are merged, charm recipes owned by the from
+        # person are moved.
+        self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: 'on'}))
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        self.factory.makeCharmRecipe(registrant=duplicate, owner=duplicate)
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        self.assertEqual(
+            1, getUtility(ICharmRecipeSet).findByOwner(mergee).count())
+
+    def test_merge_with_duplicated_charm_recipes(self):
+        # If both the from and to people have charm recipes with the same
+        # name, merging renames the duplicate from the from person's side.
+        self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: 'on'}))
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        [ref] = self.factory.makeGitRefs()
+        [ref2] = self.factory.makeGitRefs()
+        self.factory.makeCharmRecipe(
+            registrant=duplicate, owner=duplicate, name='foo', git_ref=ref)
+        self.factory.makeCharmRecipe(
+            registrant=mergee, owner=mergee, name='foo', git_ref=ref2)
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        recipes = sorted(
+            getUtility(ICharmRecipeSet).findByOwner(mergee),
+            key=attrgetter('name'))
+        self.assertEqual(2, len(recipes))
+        self.assertThat(recipes, MatchesListwise([
+            MatchesStructure.byEquality(
+                git_repository=ref2.repository, git_path=ref2.path,
+                name='foo'),
+            MatchesStructure.byEquality(
+                git_repository=ref.repository, git_path=ref.path,
+                name='foo-1'),
+            ]))
 
 
 class TestMergeMailingListSubscriptions(TestCaseWithFactory):

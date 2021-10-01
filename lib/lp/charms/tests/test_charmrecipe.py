@@ -1052,6 +1052,19 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             getUtility(ICharmRecipeSet).getByName(
                 owner, project, "proj-charm"))
 
+    def test_findByOwner(self):
+        # ICharmRecipeSet.findByOwner returns all charm recipes with the
+        # given owner.
+        owners = [self.factory.makePerson() for i in range(2)]
+        recipes = []
+        for owner in owners:
+            for i in range(2):
+                recipes.append(self.factory.makeCharmRecipe(
+                    registrant=owner, owner=owner))
+        recipe_set = getUtility(ICharmRecipeSet)
+        self.assertContentEqual(recipes[:2], recipe_set.findByOwner(owners[0]))
+        self.assertContentEqual(recipes[2:], recipe_set.findByOwner(owners[1]))
+
     def test_findByPerson(self):
         # ICharmRecipeSet.findByPerson returns all charm recipes with the
         # given owner or based on repositories with the given owner.
