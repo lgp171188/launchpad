@@ -37,14 +37,6 @@ class LaunchpadFault(xmlrpc_client.Fault):
         msg = self.msg_template % kw
         xmlrpc_client.Fault.__init__(self, self.error_code, msg)
 
-    def __repr__(self):
-        # Use the more informative version from Python >= 3.5, even if we're
-        # running on an earlier version.
-        # XXX cjwatson 2020-10-22: Remove this once we're using Python >=
-        # 3.5 everywhere.
-        return "<%s %s: %r>" % (
-            self.__class__.__name__, self.faultCode, self.faultString)
-
     def __eq__(self, other):
         if not isinstance(other, LaunchpadFault):
             return False
