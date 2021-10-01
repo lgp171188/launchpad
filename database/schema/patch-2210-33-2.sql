@@ -8,7 +8,7 @@ CREATE TABLE CharmBase (
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
     registrant integer NOT NULL REFERENCES person,
     distro_series integer NOT NULL REFERENCES distroseries,
-    build_channels text NOT NULL
+    build_snap_channels text NOT NULL
 );
 
 CREATE INDEX charmbase__registrant__idx ON CharmBase (registrant);
@@ -18,7 +18,7 @@ COMMENT ON TABLE CharmBase IS 'A base for charms.';
 COMMENT ON COLUMN CharmBase.date_created IS 'The date on which this base was created in Launchpad.';
 COMMENT ON COLUMN CharmBase.registrant IS 'The user who registered this base.';
 COMMENT ON COLUMN CharmBase.distro_series IS 'The distro series for this base.';
-COMMENT ON COLUMN CharmBase.build_channels IS 'A dictionary mapping snap names to channels to use when building charm recipes that specify this base.';
+COMMENT ON COLUMN CharmBase.build_snap_channels IS 'A dictionary mapping snap names to channels to use when building charm recipes that specify this base.';
 
 CREATE TABLE CharmBaseArch (
     charm_base integer NOT NULL REFERENCES charmbase,
