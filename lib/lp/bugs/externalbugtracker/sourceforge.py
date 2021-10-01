@@ -3,7 +3,6 @@
 
 """Sourceforge ExternalBugTracker utility."""
 
-__metaclass__ = type
 __all__ = ['SourceForge']
 
 import re

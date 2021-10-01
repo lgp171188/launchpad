@@ -6,8 +6,6 @@
 Classes to handle and create entries on launchpad db.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'ImporterHandler',
     'BinaryPackageHandler',

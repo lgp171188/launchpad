@@ -3,7 +3,6 @@
 
 """Charm recipe build views."""
 
-__metaclass__ = type
 __all__ = [
     "CharmRecipeBuildContextMenu",
     "CharmRecipeBuildNavigation",

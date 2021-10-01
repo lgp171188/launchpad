@@ -3,8 +3,6 @@
 
 """Tests for the BugSummary class and underlying database triggers."""
 
-__metaclass__ = type
-
 from datetime import datetime
 
 from pytz import utc

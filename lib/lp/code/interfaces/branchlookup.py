@@ -3,7 +3,6 @@
 
 """Utility for looking up branches by name."""
 
-__metaclass__ = type
 __all__ = [
     'get_first_path_result',
     'IBranchLookup',

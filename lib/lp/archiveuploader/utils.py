@@ -3,8 +3,6 @@
 
 """Archive uploader utilities."""
 
-__metaclass__ = type
-
 __all__ = [
     'determine_binary_file_type',
     'determine_source_file_type',

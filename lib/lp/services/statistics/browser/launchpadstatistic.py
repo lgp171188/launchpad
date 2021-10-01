@@ -3,8 +3,6 @@
 
 """Browser views for LaunchpadStatisticSet."""
 
-__metaclass__ = type
-
 __all__ = [
     'LaunchpadStatisticSet',
     ]

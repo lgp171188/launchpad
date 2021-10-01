@@ -10,7 +10,6 @@ provides a simple and fast alternative to the full Librarian in unit
 tests.
 """
 
-__metaclass__ = type
 __all__ = [
     'FakeLibrarian',
     ]

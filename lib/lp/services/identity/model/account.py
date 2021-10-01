@@ -3,7 +3,6 @@
 
 """Implementation classes for Account and associates."""
 
-__metaclass__ = type
 __all__ = [
     'Account',
     'AccountSet',

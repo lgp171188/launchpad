@@ -3,8 +3,6 @@
 
 """Bug subscription interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBugSubscription',
     ]

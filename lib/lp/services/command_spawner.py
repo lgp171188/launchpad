@@ -3,7 +3,6 @@
 
 """Execute commands in parallel sub-processes."""
 
-__metaclass__ = type
 __all__ = [
     'CommandSpawner',
     'OutputLineHandler',

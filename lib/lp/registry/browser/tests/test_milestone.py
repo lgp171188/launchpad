@@ -3,8 +3,6 @@
 
 """Test milestone views."""
 
-__metaclass__ = type
-
 import soupmatchers
 from storm.store import Store
 from testtools.matchers import LessThan

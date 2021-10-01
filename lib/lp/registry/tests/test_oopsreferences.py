@@ -3,8 +3,6 @@
 
 """Tests of the oopsreferences core."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

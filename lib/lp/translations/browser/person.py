@@ -3,8 +3,6 @@
 
 """Person-related translations view classes."""
 
-__metaclass__ = type
-
 __all__ = [
     'PersonTranslationView',
     'PersonTranslationRelicensingView',

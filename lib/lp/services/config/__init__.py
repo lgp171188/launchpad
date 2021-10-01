@@ -8,9 +8,6 @@ The configuration section used is specified using the LPCONFIG
 environment variable, and defaults to 'development'
 '''
 
-__metaclass__ = type
-
-
 import glob
 import os
 import random

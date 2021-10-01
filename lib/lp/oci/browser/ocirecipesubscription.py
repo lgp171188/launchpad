@@ -3,7 +3,6 @@
 
 """OCI recipe subscription views."""
 
-__metaclass__ = type
 __all__ = [
     'OCIRecipePortletSubscribersContent'
 ]

@@ -3,7 +3,6 @@
 
 """Twisted resources implementing a fake signing service."""
 
-__metaclass__ = type
 __all__ = [
     'SigningServiceResource',
     ]

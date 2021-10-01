@@ -3,7 +3,6 @@
 
 """TALES formatter for strings."""
 
-__metaclass__ = type
 __all__ = [
     'add_word_breaks',
     'break_long_words',

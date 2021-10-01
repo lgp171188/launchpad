@@ -3,8 +3,6 @@
 
 """Base class view for branch merge proposal listings."""
 
-__metaclass__ = type
-
 __all__ = [
     'ActiveReviewsView',
     'BranchActiveReviewsView',

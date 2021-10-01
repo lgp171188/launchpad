@@ -3,8 +3,6 @@
 
 """Tests for snap build jobs."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 
 from fixtures import FakeLogger

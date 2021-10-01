@@ -6,7 +6,6 @@
 This module implements classes to walk HTTP and FTP sites to find files.
 """
 
-__metaclass__ = type
 __all__ = [
     'walk',
     'combine_url',

@@ -6,7 +6,6 @@ that is to do with aspects such as security, menus, zcml, tales and so on.
 
 This module also has an API for use by the application.
 """
-__metaclass__ = type
 
 __all__ = [
     'ApplicationMenu',

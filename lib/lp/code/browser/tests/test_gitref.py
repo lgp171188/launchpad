@@ -3,8 +3,6 @@
 
 """Unit tests for GitRefView."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import hashlib
 import re

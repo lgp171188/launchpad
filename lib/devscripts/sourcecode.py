@@ -9,7 +9,6 @@ from __future__ import (
     )
 
 
-__metaclass__ = type
 __all__ = [
     'interpret_config',
     'parse_config_file',

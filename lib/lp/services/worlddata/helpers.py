@@ -3,7 +3,6 @@
 
 """Worlddata helper functions."""
 
-__metaclass__ = type
 __all__ = [
     'browser_languages',
     'is_english_variant',

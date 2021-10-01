@@ -3,8 +3,6 @@
 
 """Components related to accounts."""
 
-__metaclass__ = type
-
 from zope.component.interfaces import ComponentLookupError
 
 from lp.services.webapp.interfaces import ILaunchpadPrincipal

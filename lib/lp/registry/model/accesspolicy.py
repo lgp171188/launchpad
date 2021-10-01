@@ -3,7 +3,6 @@
 
 """Model classes for pillar and artifact access policies."""
 
-__metaclass__ = type
 __all__ = [
     'AccessArtifact',
     'AccessArtifactGrant',

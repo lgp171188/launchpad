@@ -3,7 +3,6 @@
 
 """Interface for references from binary packages to source packages."""
 
-__metaclass__ = type
 __all__ = [
     'IBinarySourceReference',
     'IBinarySourceReferenceSet',

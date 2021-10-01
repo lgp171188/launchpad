@@ -3,8 +3,6 @@
 
 """Testing the CodeHandler."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 from lazr.lifecycle.event import (

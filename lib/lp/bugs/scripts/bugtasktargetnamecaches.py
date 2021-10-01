@@ -3,7 +3,6 @@
 
 """A utility module for the update-bugtasktargetnamecaches.py cronscript."""
 
-__metaclass__ = type
 __all__ = ['BugTaskTargetNameCacheUpdater']
 
 from collections import defaultdict

@@ -14,8 +14,6 @@ we may need to add a hack (store._cache.clear()) to clear the cache after
 updating the counts of every LFA, in order to get through the backlog.
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from storm.sqlobject import SQLObjectNotFound

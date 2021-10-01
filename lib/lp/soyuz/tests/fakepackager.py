@@ -7,7 +7,6 @@ It builds small and fully functional packages to be used in launchpad test
 suite.
 """
 
-__metaclass__ = type
 __all__ = ['FakePackager']
 
 import atexit

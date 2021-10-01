@@ -3,8 +3,6 @@
 
 """Sprint Attendance interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISprintAttendance',
     ]

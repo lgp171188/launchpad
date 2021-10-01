@@ -3,7 +3,6 @@
 
 """Database implementation of the Git repository lookup utility."""
 
-__metaclass__ = type
 # This module doesn't export anything. If you want to look up Git
 # repositories by name, then get the IGitLookup utility.
 __all__ = []

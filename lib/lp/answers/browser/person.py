@@ -3,7 +3,6 @@
 
 """Person-related answer listing classes."""
 
-__metaclass__ = type
 __all__ = [
     'PersonAnswerContactForView',
     'PersonAnswersMenu',

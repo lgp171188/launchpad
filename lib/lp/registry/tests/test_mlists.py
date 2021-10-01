@@ -3,9 +3,6 @@
 
 """Test mailing list stuff."""
 
-__metaclass__ = type
-
-
 import errno
 import os
 from subprocess import (

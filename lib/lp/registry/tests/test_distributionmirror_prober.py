@@ -3,8 +3,6 @@
 
 """distributionmirror-prober tests."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import logging
 import os

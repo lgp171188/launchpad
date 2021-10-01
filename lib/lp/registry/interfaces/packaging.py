@@ -3,8 +3,6 @@
 
 """Packaging interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IPackaging',
     'IPackagingUtil',

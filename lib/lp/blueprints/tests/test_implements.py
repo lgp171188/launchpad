@@ -3,8 +3,6 @@
 
 """Tests that various objects implement specification-related interfaces."""
 
-__metaclass__ = type
-
 from lp.blueprints.interfaces.specificationtarget import (
     IHasSpecifications,
     ISpecificationTarget,

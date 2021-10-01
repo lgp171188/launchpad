@@ -7,8 +7,6 @@ __all__ = [
     'ChangeLog',
     ]
 
-__metaclass__ = type
-
 from storm.locals import Desc
 
 from lp.services.features.model import (

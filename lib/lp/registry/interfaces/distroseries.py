@@ -3,8 +3,6 @@
 
 """Interfaces including and related to IDistroSeries."""
 
-__metaclass__ = type
-
 __all__ = [
     'DerivationError',
     'DistroSeriesNameField',

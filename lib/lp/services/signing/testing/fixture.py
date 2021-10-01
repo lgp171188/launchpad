@@ -3,7 +3,6 @@
 
 """Fake signing service fixture."""
 
-__metaclass__ = type
 __all__ = [
     "SigningServiceFixture",
     ]

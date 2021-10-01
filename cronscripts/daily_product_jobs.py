@@ -4,8 +4,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Request jobs to update products and send emails."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 import transaction

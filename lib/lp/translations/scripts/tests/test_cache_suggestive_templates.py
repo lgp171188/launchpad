@@ -3,8 +3,6 @@
 
 """Test script that refreshes the suggestive-POTemplates cache."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.app.enums import ServiceUsage

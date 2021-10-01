@@ -3,7 +3,6 @@
 
 """SSH session implementations for the codehosting SSH server."""
 
-__metaclass__ = type
 __all__ = [
     'launch_smart_server',
     ]

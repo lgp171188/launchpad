@@ -3,8 +3,6 @@
 
 """Browser view for bug supervisor."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugSupervisorEditView',
     ]

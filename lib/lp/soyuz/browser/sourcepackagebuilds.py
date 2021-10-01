@@ -3,8 +3,6 @@
 
 """Browser views for source package builds."""
 
-__metaclass__ = type
-
 __all__ = [
     'SourcePackageBuildsView',
     ]

@@ -3,7 +3,6 @@
 
 """Tests for the feature flags test helpers."""
 
-__metaclass__ = type
 __all__ = []
 
 from lp.services.features import (

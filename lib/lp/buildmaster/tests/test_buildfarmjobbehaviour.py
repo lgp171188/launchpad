@@ -3,8 +3,6 @@
 
 """Unit tests for BuildFarmJobBehaviourBase."""
 
-__metaclass__ = type
-
 from collections import OrderedDict
 from datetime import datetime
 import hashlib

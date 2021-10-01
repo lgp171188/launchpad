@@ -3,8 +3,6 @@
 
 """Subscriber functions to update IBug.date_last_updated."""
 
-__metaclass__ = type
-
 from datetime import datetime
 
 from lazr.lifecycle.interfaces import IObjectModifiedEvent

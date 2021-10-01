@@ -3,8 +3,6 @@
 
 """Test UEFI custom uploads."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import os
 import re

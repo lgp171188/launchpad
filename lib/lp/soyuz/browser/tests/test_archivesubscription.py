@@ -3,8 +3,6 @@
 
 """Unit tests for ArchiveSubscribersView."""
 
-__metaclass__ = type
-
 from soupmatchers import (
     HTMLContains,
     Tag,

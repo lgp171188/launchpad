@@ -3,8 +3,6 @@
 
 """Tests for lp.services.daemons.tachandler"""
 
-__metaclass__ = type
-
 from os.path import (
     dirname,
     exists,

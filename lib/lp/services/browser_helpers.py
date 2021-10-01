@@ -3,7 +3,6 @@
 
 """Helpers for examining the browser user_agent header."""
 
-__metaclass__ = type
 __all__ = [
     'get_user_agent_distroseries',
     'get_plural_text',

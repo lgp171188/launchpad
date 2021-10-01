@@ -3,7 +3,6 @@
 
 """Views, menus and traversal related to PersonProducts."""
 
-__metaclass__ = type
 __all__ = [
     'PersonProductBreadcrumb',
     'PersonProductFacets',

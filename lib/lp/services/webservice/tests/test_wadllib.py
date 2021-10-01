@@ -3,7 +3,6 @@
 
 """Run the standalone wadllib tests."""
 
-__metaclass__ = type
 __all__ = ['test_suite']
 
 import os

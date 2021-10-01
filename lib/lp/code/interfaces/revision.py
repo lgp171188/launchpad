@@ -3,7 +3,6 @@
 
 """Revision interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'IRevision', 'IRevisionAuthor', 'IRevisionParent', 'IRevisionProperty',
     'IRevisionSet']

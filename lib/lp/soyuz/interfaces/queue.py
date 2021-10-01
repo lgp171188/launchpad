@@ -3,8 +3,6 @@
 
 """Queue interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'CustomUploadError',
     'ICustomUploadHandler',

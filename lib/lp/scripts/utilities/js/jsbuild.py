@@ -3,7 +3,6 @@
 
 """build.py - Minifies and creates the JS build directory."""
 
-__metaclass__ = type
 __all__ = [
     'CSSComboFile',
     ]

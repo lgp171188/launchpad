@@ -3,7 +3,6 @@
 
 """Git repository activity logs."""
 
-__metaclass__ = type
 __all__ = [
     'IGitActivity',
     'IGitActivitySet',

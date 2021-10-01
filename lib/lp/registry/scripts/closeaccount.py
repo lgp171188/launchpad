@@ -3,7 +3,6 @@
 
 """Remove personal details of a user from the database, leaving a stub."""
 
-__metaclass__ = type
 __all__ = [
     'close_account',
     'CloseAccountScript',

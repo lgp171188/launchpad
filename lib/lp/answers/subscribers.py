@@ -3,7 +3,6 @@
 
 """Subscribers for `IFAQ`."""
 
-__metaclass__ = type
 __all__ = ['update_last_updated']
 
 

@@ -3,8 +3,6 @@
 
 """Module docstring goes here."""
 
-__metaclass__ = type
-
 import datetime
 import io
 import time

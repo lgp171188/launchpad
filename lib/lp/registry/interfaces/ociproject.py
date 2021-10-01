@@ -3,7 +3,6 @@
 
 """OCI Project interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'CannotDeleteOCIProject',
     'IOCIProject',

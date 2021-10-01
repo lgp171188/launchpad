@@ -3,7 +3,6 @@
 
 """Code import scheduler interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'ICodeImportScheduler',
     'ICodeImportSchedulerApplication',

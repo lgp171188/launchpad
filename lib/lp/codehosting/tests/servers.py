@@ -3,8 +3,6 @@
 
 """Server used in codehosting acceptance tests."""
 
-__metaclass__ = type
-
 __all__ = [
     'CodeHostingTac',
     'SSHCodeHostingServer',

@@ -3,7 +3,6 @@
 
 """Bug domain vocabularies"""
 
-__metaclass__ = type
 __all__ = [
     'UsesBugsDistributionVocabulary',
     'BugNominatableDistroSeriesVocabulary',

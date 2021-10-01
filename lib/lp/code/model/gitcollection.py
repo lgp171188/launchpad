@@ -3,7 +3,6 @@
 
 """Implementations of `IGitCollection`."""
 
-__metaclass__ = type
 __all__ = [
     'GenericGitCollection',
     ]

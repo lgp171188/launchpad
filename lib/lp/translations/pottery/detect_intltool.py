@@ -7,7 +7,6 @@ package in the current directory."""
 from contextlib import contextmanager
 
 
-__metaclass__ = type
 __all__ = [
     'is_intltool_structure',
     ]

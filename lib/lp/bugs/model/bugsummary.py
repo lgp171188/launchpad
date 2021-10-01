@@ -3,7 +3,6 @@
 
 """BugSummary Storm database classes."""
 
-__metaclass__ = type
 __all__ = [
     'BugSummary',
     'CombineBugSummaryConstraint',

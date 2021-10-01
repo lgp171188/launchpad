@@ -7,8 +7,6 @@ Classes representing Changes and DSC files, which encapsulate collections of
 files uploaded.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'CannotDetermineFileTypeError',
     'ChangesFile',

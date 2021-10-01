@@ -3,7 +3,6 @@
 
 """A container for data encrypted at rest using configured keys."""
 
-__metaclass__ = type
 __all__ = [
     'NaClEncryptedContainerBase',
     ]

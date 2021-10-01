@@ -3,8 +3,6 @@
 
 """Soyuz vocabularies."""
 
-__metaclass__ = type
-
 __all__ = [
     'ProcessorVocabulary',
     ]

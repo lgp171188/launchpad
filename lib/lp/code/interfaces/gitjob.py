@@ -3,8 +3,6 @@
 
 """GitJob interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IGitJob',
     'IGitRefScanJob',

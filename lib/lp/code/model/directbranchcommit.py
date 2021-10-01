@@ -3,7 +3,6 @@
 
 """Commit files straight to bzr branch."""
 
-__metaclass__ = type
 __all__ = [
     'ConcurrentUpdateError',
     'DirectBranchCommit',

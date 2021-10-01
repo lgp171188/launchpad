@@ -3,8 +3,6 @@
 
 """Tests for the archive uploader."""
 
-__metaclass__ = type
-
 __all__ = [
     'datadir',
     'getPolicy',

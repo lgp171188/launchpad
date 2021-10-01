@@ -5,8 +5,6 @@
 
 """Move files from Librarian disk storage into Swift."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 import os

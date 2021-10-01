@@ -3,8 +3,6 @@
 
 """XML-RPC API to the application roots."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISelfTest',
     'PrivateApplication',

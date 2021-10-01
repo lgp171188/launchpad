@@ -3,8 +3,6 @@
 
 """Tests for the GitHub Issues BugTracker."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import json
 

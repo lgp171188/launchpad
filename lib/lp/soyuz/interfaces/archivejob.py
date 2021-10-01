@@ -3,8 +3,6 @@
 
 """ArchiveJob interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IArchiveJob',
     'IArchiveJobSource',

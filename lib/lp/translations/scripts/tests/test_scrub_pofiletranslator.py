@@ -3,8 +3,6 @@
 
 """Test scrubbing of `POFileTranslator`."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

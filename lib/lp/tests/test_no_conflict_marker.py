@@ -3,8 +3,6 @@
 
 """Test that no files in the tree has spurious conflicts markers."""
 
-__metaclass__ = type
-
 import os
 import subprocess
 import unittest

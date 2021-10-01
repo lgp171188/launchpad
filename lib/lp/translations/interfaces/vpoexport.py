@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Interfaces for efficient translation file exports."""
 
-__metaclass__ = type
-
 __all__ = [
     'IVPOExportSet',
     'IVPOExport',

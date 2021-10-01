@@ -3,7 +3,6 @@
 
 """Enumerations and related utilities used in the lp/app modules."""
 
-__metaclass__ = type
 __all__ = [
     'FREE_INFORMATION_TYPES',
     'FREE_PRIVATE_INFORMATION_TYPES',

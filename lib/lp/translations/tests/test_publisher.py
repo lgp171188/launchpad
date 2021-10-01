@@ -3,8 +3,6 @@
 
 """Tests for translations's custom publications."""
 
-__metaclass__ = type
-
 import io
 
 from lp.layers import WebServiceLayer

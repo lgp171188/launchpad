@@ -3,8 +3,6 @@
 
 """Test the script to show version information."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 from fixtures import MockPatch

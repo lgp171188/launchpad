@@ -3,8 +3,6 @@
 
 """Fixtures related to configs."""
 
-__metaclass__ = type
-
 __all__ = [
     'ConfigFixture',
     'ConfigMismatchError',

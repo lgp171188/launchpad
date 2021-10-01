@@ -3,7 +3,6 @@
 
 """Fiter bugtasks based on context."""
 
-__metaclass__ = type
 __all__ = [
     'filter_bugtasks_by_context',
     'OrderedBugTask',

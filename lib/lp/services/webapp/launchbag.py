@@ -6,7 +6,6 @@ LaunchBag
 
 The collection of stuff we have traversed.
 """
-__metaclass__ = type
 
 import threading
 

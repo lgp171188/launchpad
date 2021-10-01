@@ -3,7 +3,6 @@
 
 """Components related to branches."""
 
-__metaclass__ = type
 __all__ = [
     "BranchDelta",
     "BranchMergeProposalDelta",

@@ -3,8 +3,6 @@
 
 """Test harness for running the no-anonymous-session-cookies.txt tests."""
 
-__metaclass__ = type
-
 __all__ = []
 
 import unittest

@@ -3,8 +3,6 @@
 
 """Tests for lp.bugs.interfaces.bugtaskfilter."""
 
-__metaclass__ = type
-
 from testtools.matchers import Equals
 
 from lp.bugs.interfaces.bugtaskfilter import filter_bugtasks_by_context

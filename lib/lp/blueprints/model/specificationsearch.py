@@ -3,7 +3,6 @@
 
 """Helper methods to search specifications."""
 
-__metaclass__ = type
 __all__ = [
     'get_specification_filters',
     'get_specification_active_product_filter',

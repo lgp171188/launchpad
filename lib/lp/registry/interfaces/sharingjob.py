@@ -3,8 +3,6 @@
 
 """Interfaces for sharing jobs."""
 
-__metaclass__ = type
-
 __all__ = [
     'IRemoveArtifactSubscriptionsJob',
     'IRemoveArtifactSubscriptionsJobSource',

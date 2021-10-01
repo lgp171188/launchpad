@@ -3,7 +3,6 @@
 
 """Launchpad test fixtures that have no better home."""
 
-__metaclass__ = type
 __all__ = [
     'CapturedOutput',
     'CaptureOops',

@@ -3,7 +3,6 @@
 
 """Database garbage collection."""
 
-__metaclass__ = type
 __all__ = [
     'DailyDatabaseGarbageCollector',
     'FrequentDatabaseGarbageCollector',

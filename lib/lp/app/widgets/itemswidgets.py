@@ -3,8 +3,6 @@
 
 """Widgets dealing with a choice of options."""
 
-__metaclass__ = type
-
 __all__ = [
     'CheckBoxMatrixWidget',
     'LabeledMultiCheckBoxWidget',

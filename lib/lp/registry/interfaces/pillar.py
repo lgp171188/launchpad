@@ -6,8 +6,6 @@
 Pillars are currently Product, ProjectGroup and Distribution.
 """
 
-__metaclass__ = type
-
 from lazr.restful.declarations import (
     call_with,
     export_read_operation,

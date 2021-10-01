@@ -3,8 +3,6 @@
 
 """Export module for gettext's .mo file format."""
 
-__metaclass__ = type
-
 __all__ = [
     'GettextMOExporter',
     'POCompiler',

@@ -3,8 +3,6 @@
 
 """Bug tracker interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugTrackerType',
     'IBugTracker',

@@ -3,8 +3,6 @@
 
 """Tests for `CharmRecipeUpload`."""
 
-__metaclass__ = type
-
 import os
 
 from pymacaroons import Macaroon

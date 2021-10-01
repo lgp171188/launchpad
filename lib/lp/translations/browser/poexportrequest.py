@@ -3,7 +3,6 @@
 
 """View class for requesting translation exports."""
 
-__metaclass__ = type
 __all__ = ['BaseExportView']
 
 

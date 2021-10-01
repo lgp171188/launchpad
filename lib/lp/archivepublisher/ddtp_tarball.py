@@ -10,8 +10,6 @@ DDTP-TARBALL is a custom format upload supported by Launchpad infrastructure
 to enable developers to publish indexes of DDTP contents.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'DdtpTarballUpload',
     ]

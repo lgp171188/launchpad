@@ -3,8 +3,6 @@
 
 """Browser view classes related to bug nominations."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugNominationContextMenu',
     'BugNominationView',

@@ -3,8 +3,6 @@
 
 """Event subscribers for branch merge proposals."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 

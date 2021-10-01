@@ -3,8 +3,6 @@
 
 """Interface for things that can host IFAQ."""
 
-__metaclass__ = type
-
 __all__ = [
     'IFAQTarget',
     ]

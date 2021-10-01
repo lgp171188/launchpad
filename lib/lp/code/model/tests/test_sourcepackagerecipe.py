@@ -3,8 +3,6 @@
 
 """Tests for the SourcePackageRecipe content type."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

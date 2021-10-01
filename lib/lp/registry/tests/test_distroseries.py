@@ -3,8 +3,6 @@
 
 """Tests for distroseries."""
 
-__metaclass__ = type
-
 __all__ = [
     'CurrentSourceReleasesMixin',
     ]

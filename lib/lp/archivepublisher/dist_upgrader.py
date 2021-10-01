@@ -3,8 +3,6 @@
 
 """The processing of dist-upgrader tarballs."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistUpgraderUpload',
     ]

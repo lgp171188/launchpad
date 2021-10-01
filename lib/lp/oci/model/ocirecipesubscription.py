@@ -3,7 +3,6 @@
 
 """OCIRecipe subscription model."""
 
-__metaclass__ = type
 __all__ = [
     'OCIRecipeSubscription'
 ]

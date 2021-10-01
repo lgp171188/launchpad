@@ -3,8 +3,6 @@
 
 """Test bases for snaps."""
 
-__metaclass__ = type
-
 from testtools.matchers import (
     ContainsDict,
     Equals,

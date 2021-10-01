@@ -3,8 +3,6 @@
 
 """Interfaces for objects that can be linked to bugs."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBugLinkForm',
     'IBugLinkTarget',

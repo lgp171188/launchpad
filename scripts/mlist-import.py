@@ -10,7 +10,6 @@
 #
 # - Import archives.
 
-__metaclass__ = type
 __all__ = [
     'MailingListImport',
     ]

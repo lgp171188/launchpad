@@ -3,7 +3,6 @@
 
 """XMLRPC APIs for mailing lists."""
 
-__metaclass__ = type
 __all__ = [
     'MailingListAPIView',
     ]

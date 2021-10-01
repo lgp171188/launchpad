@@ -3,8 +3,6 @@
 
 """Packageset interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'DuplicatePackagesetName',
     'IPackageset',

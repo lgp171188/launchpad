@@ -3,7 +3,6 @@
 
 """`SQLObject` implementation of `IPOFile` interface."""
 
-__metaclass__ = type
 __all__ = [
     'POFile',
     'DummyPOFile',

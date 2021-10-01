@@ -3,9 +3,6 @@
 
 """Tests related to ILaunchpadRoot."""
 
-__metaclass__ = type
-
-
 from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.checker import selectChecker

@@ -3,8 +3,6 @@
 
 """Functional tests for request_country"""
 
-__metaclass__ = type
-
 from lp.bugs.adapters.bugchange import (
     BUG_CHANGE_LOOKUP,
     BugDescriptionChange,

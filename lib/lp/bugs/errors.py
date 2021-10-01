@@ -3,7 +3,6 @@
 
 """Errors used in the lp/bugs modules."""
 
-__metaclass__ = type
 __all__ = [
     'InvalidDuplicateValue',
     'InvalidSearchParameters',

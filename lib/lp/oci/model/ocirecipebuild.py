@@ -3,7 +3,6 @@
 
 """A build record for OCI Recipes."""
 
-__metaclass__ = type
 __all__ = [
     'OCIFile',
     'OCIRecipeBuild',

@@ -3,8 +3,6 @@
 
 """A fake server that can lie about Content-Length."""
 
-__metaclass__ = type
-
 import os
 
 from twisted.application import (

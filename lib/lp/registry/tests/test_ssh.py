@@ -3,8 +3,6 @@
 
 """Tests for SSHKey."""
 
-__metaclass__ = type
-
 from testtools.matchers import StartsWith
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy

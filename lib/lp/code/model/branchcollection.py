@@ -3,7 +3,6 @@
 
 """Implementations of `IBranchCollection`."""
 
-__metaclass__ = type
 __all__ = [
     'GenericBranchCollection',
     ]

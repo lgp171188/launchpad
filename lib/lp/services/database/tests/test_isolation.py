@@ -3,8 +3,6 @@
 
 """Tests of the isolation module."""
 
-__metaclass__ = type
-
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 import six
 from storm.zope.interfaces import IZStorm

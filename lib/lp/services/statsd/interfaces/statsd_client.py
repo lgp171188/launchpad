@@ -3,7 +3,6 @@
 
 """Interfaces for configuring and retrieving a statsd client."""
 
-__metaclass__ = type
 __all__ = ['IStatsdClient']
 
 

@@ -7,8 +7,6 @@ This would normally be done in a doctest but TestCaseWithFactory has all the
 provisions to handle Bazaar branches.
 """
 
-__metaclass__ = type
-
 from breezy.revision import NULL_REVISION
 import six
 import transaction

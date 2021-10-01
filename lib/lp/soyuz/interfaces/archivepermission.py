@@ -3,8 +3,6 @@
 
 """ArchivePermission interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'IArchivePermission',
     'IArchivePermissionSet',

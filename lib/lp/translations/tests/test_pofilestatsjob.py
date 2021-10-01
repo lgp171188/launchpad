@@ -3,9 +3,6 @@
 
 """Tests for merging translations."""
 
-__metaclass__ = type
-
-
 import transaction
 
 from lp.app.enums import ServiceUsage

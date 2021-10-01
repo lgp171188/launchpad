@@ -3,7 +3,6 @@
 
 """Simple memoization decorator for functions and methods"""
 
-__metaclass__ = type
 __all__ = [
     'memoize',
     ]

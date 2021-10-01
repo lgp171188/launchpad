@@ -3,8 +3,6 @@
 
 """View tests for TranslationGroup."""
 
-__metaclass__ = type
-
 import transaction
 from zope.component import getUtility
 

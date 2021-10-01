@@ -3,8 +3,6 @@
 
 """Tests for the Mantis BugTracker."""
 
-__metaclass__ = type
-
 import responses
 from six.moves.urllib_parse import urljoin
 from testtools.matchers import (

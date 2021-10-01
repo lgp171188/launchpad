@@ -3,8 +3,6 @@
 
 """Tests for the GitSubscription model object."""
 
-__metaclass__ = type
-
 from lp.app.enums import InformationType
 from lp.app.errors import (
     SubscriptionPrivacyViolation,

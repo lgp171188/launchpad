@@ -3,9 +3,6 @@
 
 """Tests for the lp.testing.yuixhr."""
 
-__metaclass__ = type
-
-
 import os
 import re
 from shutil import rmtree

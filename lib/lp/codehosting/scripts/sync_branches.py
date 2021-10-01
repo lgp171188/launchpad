@@ -3,7 +3,6 @@
 
 """Sync branches from production to a staging environment."""
 
-__metaclass__ = type
 __all__ = ['SyncBranchesScript']
 
 import os.path

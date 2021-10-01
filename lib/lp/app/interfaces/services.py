@@ -3,9 +3,6 @@
 
 """Interfaces used for named services."""
 
-
-__metaclass__ = type
-
 __all__ = [
     'IService',
     'IServiceFactory',

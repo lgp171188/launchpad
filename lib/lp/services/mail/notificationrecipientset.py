@@ -3,7 +3,6 @@
 
 """The implementation of the Notification Rec."""
 
-__metaclass__ = type
 __all__ = [
     'NotificationRecipientSet',
     'StubPerson',

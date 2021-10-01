@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from lp.registry.interfaces.person import PersonVisibility
 from lp.services.mail.notificationrecipientset import NotificationRecipientSet
 from lp.testing import (

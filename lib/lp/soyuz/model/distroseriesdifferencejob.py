@@ -3,7 +3,6 @@
 
 """Job class to request generation or update of `DistroSeriesDifference`s."""
 
-__metaclass__ = type
 __all__ = [
     'DistroSeriesDifferenceJob',
     ]

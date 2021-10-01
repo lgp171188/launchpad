@@ -3,8 +3,6 @@
 
 """Test `TranslationTemplatesCollection`."""
 
-__metaclass__ = type
-
 from zope.security.proxy import removeSecurityProxy
 
 from lp.testing import TestCaseWithFactory

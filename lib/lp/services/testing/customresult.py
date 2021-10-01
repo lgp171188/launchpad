@@ -3,7 +3,6 @@
 
 """Support code for using a custom test result in test.py."""
 
-__metaclass__ = type
 __all__ = [
     'filter_tests',
     'patch_find_tests',

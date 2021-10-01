@@ -3,8 +3,6 @@
 
 """Test ChangesFile functionality."""
 
-__metaclass__ = type
-
 import os
 
 from debian.deb822 import Changes

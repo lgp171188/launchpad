@@ -3,7 +3,6 @@
 
 """The vocabularies relating to sprints."""
 
-__metaclass__ = type
 __all__ = [
     'FutureSprintVocabulary',
     'SprintVocabulary',

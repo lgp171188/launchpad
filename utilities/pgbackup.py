@@ -9,7 +9,6 @@ Backup one or more PostgreSQL databases.
 Suitable for use in crontab for daily backups.
 """
 
-__metaclass__ = type
 __all__ = []
 
 from datetime import datetime

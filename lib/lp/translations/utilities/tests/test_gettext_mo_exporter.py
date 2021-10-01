@@ -3,8 +3,6 @@
 
 """Unit tests for the MO exporter."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 from lp.testing import TestCaseWithFactory

@@ -3,8 +3,6 @@
 
 """Tests for `lp.services.webapp.authorization`."""
 
-__metaclass__ = type
-
 import io
 from itertools import count
 from random import getrandbits

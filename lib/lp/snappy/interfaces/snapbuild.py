@@ -3,8 +3,6 @@
 
 """Snap package build interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'CannotScheduleStoreUpload',
     'ISnapBuild',

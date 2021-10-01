@@ -12,7 +12,6 @@ importing this script, so we want the test to imitate mod_wsgi's behaviour
 as closely as possible.
 """
 
-__metaclass__ = type
 __all__ = [
     'check_password',
     ]

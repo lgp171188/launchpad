@@ -3,8 +3,6 @@
 
 """Views to generate CVE reports (as in distro & distroseries/+cve pages)."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugTaskCve',
     'CVEReportView',

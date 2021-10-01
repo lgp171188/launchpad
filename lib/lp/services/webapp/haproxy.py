@@ -3,8 +3,6 @@
 
 """Implementation of the HAProxy probe URL."""
 
-
-__metaclass__ = type
 __all__ = [
     'HAProxyStatusView',
     'set_going_down_flag',

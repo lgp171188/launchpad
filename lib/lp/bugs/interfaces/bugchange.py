@@ -3,7 +3,6 @@
 
 """Interfaces for bug changes."""
 
-__metaclass__ = type
 __all__ = [
     'IBugChange',
     ]

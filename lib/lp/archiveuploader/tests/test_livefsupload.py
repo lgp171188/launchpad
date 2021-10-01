@@ -3,8 +3,6 @@
 
 """Test uploads of LiveFSBuilds."""
 
-__metaclass__ = type
-
 import os
 
 from storm.store import Store

@@ -1,9 +1,6 @@
 # Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
-
 from lazr.restful.interfaces import IWebBrowserOriginatingRequest
 from lazr.restful.utils import get_current_web_service_request
 import six

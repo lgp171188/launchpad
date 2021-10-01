@@ -3,8 +3,6 @@
 
 """Tests for bug-branch linking from the bugs side."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 

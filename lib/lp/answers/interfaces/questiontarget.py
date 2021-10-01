@@ -3,8 +3,6 @@
 
 """Interfaces for things which have Questions."""
 
-__metaclass__ = type
-
 __all__ = [
     'IAnswersFrontPageSearchForm',
     'IQuestionTarget',

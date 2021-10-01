@@ -3,8 +3,6 @@
 
 """ProjectGroup-related View Classes"""
 
-__metaclass__ = type
-
 __all__ = [
     'ProjectSettingsView',
     'ProjectTranslationsMenu',

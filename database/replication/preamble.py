@@ -6,7 +6,6 @@
 """Generate a preamble for slonik(1) scripts based on the current LPCONFIG.
 """
 
-__metaclass__ = type
 __all__ = []
 
 import _pythonpath  # noqa: F401

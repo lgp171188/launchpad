@@ -3,7 +3,6 @@
 
 """Code to build recipes on the buildfarm."""
 
-__metaclass__ = type
 __all__ = [
     'RecipeBuildBehaviour',
     ]

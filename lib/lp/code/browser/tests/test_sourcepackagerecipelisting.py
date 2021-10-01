@@ -3,8 +3,6 @@
 
 """Tests for sourcepackagerecipe listings."""
 
-__metaclass__ = type
-
 from lp.testing import (
     BrowserTestCase,
     person_logged_in,

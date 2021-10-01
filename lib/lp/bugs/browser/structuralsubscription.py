@@ -1,8 +1,6 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 __all__ = [
     'expose_enum_to_js',
     'expose_structural_subscription_data_to_js',

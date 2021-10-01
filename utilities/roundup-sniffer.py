@@ -33,8 +33,6 @@ populate the class-level "fields" variable. See MplayerStatusSniffer
 for an example.
 """
 
-__metaclass__ = type
-
 from base64 import urlsafe_b64encode
 import csv
 import optparse

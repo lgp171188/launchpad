@@ -3,7 +3,6 @@
 
 """End-to-end tests for the branch puller."""
 
-__metaclass__ = type
 __all__ = []
 
 

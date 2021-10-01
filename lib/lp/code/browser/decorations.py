@@ -3,7 +3,6 @@
 
 """Decorated model objects used in the browser code."""
 
-__metaclass__ = type
 __all__ = [
     'DecoratedBranch',
     ]

@@ -3,7 +3,6 @@
 
 """This module contains sorting utility functions."""
 
-__metaclass__ = type
 __all__ = ['expand_numbers',
            'sorted_version_numbers',
            'sorted_dotted_numbers']

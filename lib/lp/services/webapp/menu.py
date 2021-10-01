@@ -3,7 +3,6 @@
 
 """Menus and facets."""
 
-__metaclass__ = type
 __all__ = [
     'ALL_LINKS',
     'enabled_with_permission',

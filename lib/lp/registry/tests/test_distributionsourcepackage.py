@@ -3,8 +3,6 @@
 
 """Tests for DistributionSourcePackage."""
 
-__metaclass__ = type
-
 from storm.store import Store
 from testtools.matchers import (
     Equals,

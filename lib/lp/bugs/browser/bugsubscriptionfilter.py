@@ -3,7 +3,6 @@
 
 """View classes for bug subscription filters."""
 
-__metaclass__ = type
 __all__ = [
     "BugSubscriptionFilterView",
     ]

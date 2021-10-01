@@ -1,8 +1,6 @@
 # Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized

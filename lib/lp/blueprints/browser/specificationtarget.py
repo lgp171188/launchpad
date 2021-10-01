@@ -3,8 +3,6 @@
 
 """ISpecificationTarget browser views."""
 
-__metaclass__ = type
-
 __all__ = [
     'HasSpecificationsMenuMixin',
     'HasSpecificationsView',

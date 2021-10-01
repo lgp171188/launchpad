@@ -3,7 +3,6 @@
 
 """Snap views."""
 
-__metaclass__ = type
 __all__ = [
     'SnapAddView',
     'SnapAuthorizeView',

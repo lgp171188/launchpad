@@ -3,7 +3,6 @@
 
 """Bug notification building code."""
 
-__metaclass__ = type
 __all__ = [
     'BugNotificationBuilder',
     'format_rfc2822_date',

@@ -3,8 +3,6 @@
 
 """Test live filesystem views."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

@@ -9,8 +9,6 @@ This script sends out all the pending person notifications, and sets
 date_emailed to the current date.
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.personnotification import PersonNotificationManager

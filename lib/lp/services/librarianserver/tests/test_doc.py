@@ -5,8 +5,6 @@
 Run the doctests and pagetests.
 """
 
-__metaclass__ = type
-
 import os
 
 import six

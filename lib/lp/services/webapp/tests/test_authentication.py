@@ -3,9 +3,6 @@
 
 """Tests authentication.py"""
 
-__metaclass__ = type
-
-
 import unittest
 
 from lp.services.webapp.authentication import (

@@ -3,8 +3,6 @@
 
 """Tests for `lp.registry.browser.distroseriesdifferencecomment`."""
 
-__metaclass__ = type
-
 from lxml import html
 from zope.component import getUtility
 

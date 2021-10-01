@@ -11,8 +11,6 @@ of the page. Any page can use these layout options by including
 in the root element. The template provides common layout to Launchpad.
 """
 
-__metaclass__ = type
-
 from zope.browserpage import ViewPageTemplateFile
 
 from lp.registry.interfaces.person import PersonVisibility

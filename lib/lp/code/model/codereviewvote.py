@@ -3,7 +3,6 @@
 
 """CodeReviewVoteReference database class."""
 
-__metaclass__ = type
 __all__ = [
     'CodeReviewVoteReference',
     ]

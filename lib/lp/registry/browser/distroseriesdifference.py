@@ -3,7 +3,6 @@
 
 """Browser views for DistroSeriesDifferences."""
 
-__metaclass__ = type
 __all__ = [
     'CommentXHTMLRepresentation',
     'DistroSeriesDifferenceView',

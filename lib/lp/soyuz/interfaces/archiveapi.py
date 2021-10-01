@@ -3,7 +3,6 @@
 
 """Interfaces for internal archive APIs."""
 
-__metaclass__ = type
 __all__ = [
     'IArchiveAPI',
     'IArchiveApplication',

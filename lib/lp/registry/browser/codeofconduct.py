@@ -3,8 +3,6 @@
 
 """View classes to handle signed Codes of Conduct."""
 
-__metaclass__ = type
-
 __all__ = [
     'AffirmCodeOfConductView',
     'SignedCodeOfConductSetNavigation',

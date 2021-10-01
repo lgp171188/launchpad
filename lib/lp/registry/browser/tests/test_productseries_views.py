@@ -3,9 +3,6 @@
 
 """View tests for ProductSeries pages."""
 
-__metaclass__ = type
-
-
 import soupmatchers
 from testtools.matchers import Not
 from zope.security.proxy import removeSecurityProxy

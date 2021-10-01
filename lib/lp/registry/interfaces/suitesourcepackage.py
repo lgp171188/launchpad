@@ -3,7 +3,6 @@
 
 """A pocket of a source package."""
 
-__metaclass__ = type
 __all__ = [
     'ISuiteSourcePackage',
     ]

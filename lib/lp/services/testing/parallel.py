@@ -3,7 +3,6 @@
 
 """Parallel test glue."""
 
-__metaclass__ = type
 __all__ = ["main"]
 
 import itertools

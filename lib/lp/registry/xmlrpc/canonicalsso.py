@@ -3,7 +3,6 @@
 
 """XMLRPC APIs for Canonical SSO to retrieve person details."""
 
-__metaclass__ = type
 __all__ = [
     'CanonicalSSOAPI',
     'CanonicalSSOApplication',

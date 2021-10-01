@@ -9,7 +9,6 @@ child process.  The Zope testing browser fakes its connections in-process, so
 that's not good enough.
 """
 
-__metaclass__ = type
 __all__ = [
     'setUp',
     ]

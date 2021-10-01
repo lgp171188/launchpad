@@ -3,7 +3,6 @@
 
 """Database access layer for the Librarian."""
 
-__metaclass__ = type
 __all__ = [
     'Library',
     ]

@@ -3,7 +3,6 @@
 
 """OpenID Consumer related database classes."""
 
-__metaclass__ = type
 __all__ = ['OpenIDConsumerNonce']
 
 from zope.interface import implementer

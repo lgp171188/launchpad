@@ -3,7 +3,6 @@
 
 """Provides a context manager to run parts of a test as a different dbuser."""
 
-__metaclass__ = type
 __all__ = [
     'dbuser',
     'lp_dbuser',

@@ -5,7 +5,6 @@
 
 """Block until the replication cluster synchronizes."""
 
-__metaclass__ = type
 __all__ = []
 
 import _pythonpath  # noqa: F401

@@ -3,8 +3,6 @@
 
 """Tests for our Sphinx documentation."""
 
-__metaclass__ = type
-
 import os
 
 from sphinx.cmd.build import main as sphinx_main

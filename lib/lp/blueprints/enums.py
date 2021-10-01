@@ -3,7 +3,6 @@
 
 """Enumerations used in the lp/blueprints modules."""
 
-__metaclass__ = type
 __all__ = [
     'NewSpecificationDefinitionStatus',
     'SpecificationDefinitionStatus',

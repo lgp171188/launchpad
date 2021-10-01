@@ -3,8 +3,6 @@
 
 """Tests for the internal Git API."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import hashlib
 import uuid

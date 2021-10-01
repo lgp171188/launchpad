@@ -3,8 +3,6 @@
 
 """Tests for distroseries vocabularies in `lp.registry.vocabularies`."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

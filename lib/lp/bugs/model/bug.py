@@ -3,8 +3,6 @@
 
 """Launchpad bug-related database table classes."""
 
-__metaclass__ = type
-
 __all__ = [
     'Bug',
     'BugAffectsPerson',

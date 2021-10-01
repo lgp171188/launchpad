@@ -22,8 +22,6 @@ from lp.translations.interfaces.translationfileformat import (
     )
 
 
-__metaclass__ = type
-
 __all__ = [
     'ITranslationFileData',
     'ITranslationHeaderData',

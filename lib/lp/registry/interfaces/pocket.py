@@ -8,7 +8,6 @@ Any given package in a `IDistroSeries` may be published in more than one
 is.
 """
 
-__metaclass__ = type
 __all__ = [
     'PackagePublishingPocket',
     'pocketsuffix',

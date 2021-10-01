@@ -3,8 +3,6 @@
 
 """Tests for the source package recipe view classes and templates."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

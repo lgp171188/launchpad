@@ -3,7 +3,6 @@
 
 """Charm recipe builds."""
 
-__metaclass__ = type
 __all__ = [
     "CharmFile",
     "CharmRecipeBuild",

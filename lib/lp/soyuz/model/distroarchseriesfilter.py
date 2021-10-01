@@ -3,7 +3,6 @@
 
 """Distro arch series filters."""
 
-__metaclass__ = type
 __all__ = [
     'DistroArchSeriesFilter',
     ]

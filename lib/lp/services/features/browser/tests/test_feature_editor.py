@@ -3,8 +3,6 @@
 
 """Tests for feature rule editor"""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 from fixtures import FakeLogger

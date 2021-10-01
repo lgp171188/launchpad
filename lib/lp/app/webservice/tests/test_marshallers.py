@@ -3,8 +3,6 @@
 
 """Tests for the webservice marshallers."""
 
-__metaclass__ = type
-
 from testtools.matchers import (
     Equals,
     MatchesDict,

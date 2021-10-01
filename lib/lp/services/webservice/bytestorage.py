@@ -3,7 +3,6 @@
 
 """Base classes for HTTP resources."""
 
-__metaclass__ = type
 __all__ = [
     'LibraryBackedByteStorage',
 ]

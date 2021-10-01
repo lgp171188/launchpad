@@ -3,8 +3,6 @@
 
 """Tests for the `IOpenIDConsumerStore` utility."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.services.openid.interfaces.openidconsumer import IOpenIDConsumerStore

@@ -23,7 +23,6 @@
 
 """A Web browser that can be driven by an application."""
 
-__metaclass__ = type
 __all__ = [
     'Browser',
     'Command',

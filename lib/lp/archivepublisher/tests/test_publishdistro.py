@@ -3,8 +3,6 @@
 
 """Functional tests for publish-distro.py script."""
 
-__metaclass__ = type
-
 from optparse import OptionValueError
 import os
 import shutil

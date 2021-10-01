@@ -3,7 +3,6 @@
 
 """Browser code for Language table."""
 
-__metaclass__ = type
 __all__ = [
     'LanguageAddView',
     'LanguageAdminView',

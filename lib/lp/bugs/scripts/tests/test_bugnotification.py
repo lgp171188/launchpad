@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Tests for constructing bug notification emails for sending."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

@@ -3,7 +3,6 @@
 
 """Tests for `Account` objects."""
 
-__metaclass__ = type
 __all__ = []
 
 from lp.services.identity.interfaces.account import (

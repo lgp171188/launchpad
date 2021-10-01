@@ -3,7 +3,6 @@
 
 """OCI Project Name interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'IOCIProjectName',
     'IOCIProjectNameSet',

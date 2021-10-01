@@ -3,7 +3,6 @@
 
 """The database implementation class for CodeReviewComment."""
 
-__metaclass__ = type
 __all__ = [
     'CodeReviewComment',
     ]

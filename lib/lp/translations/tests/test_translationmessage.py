@@ -3,8 +3,6 @@
 
 """Unit tests for `TranslationMessage`."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

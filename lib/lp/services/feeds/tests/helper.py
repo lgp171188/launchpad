@@ -3,7 +3,6 @@
 
 """Helper functions for testing feeds."""
 
-__metaclass__ = type
 __all__ = [
     'IThing',
     'parse_entries',

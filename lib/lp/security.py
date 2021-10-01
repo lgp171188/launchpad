@@ -3,7 +3,6 @@
 
 """Security policies for using content objects."""
 
-__metaclass__ = type
 __all__ = [
     'BugTargetOwnerOrBugSupervisorOrAdmins',
     'ModerateByRegistryExpertsOrAdmins',

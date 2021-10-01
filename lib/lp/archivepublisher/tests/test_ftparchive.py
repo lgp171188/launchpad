@@ -3,8 +3,6 @@
 
 """Tests for ftparchive.py"""
 
-__metaclass__ = type
-
 import difflib
 from functools import partial
 import gzip

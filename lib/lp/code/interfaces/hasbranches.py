@@ -3,7 +3,6 @@
 
 """Interface definitions for IHas<code related bits>."""
 
-__metaclass__ = type
 __all__ = [
     'IHasBranches',
     'IHasCodeImports',

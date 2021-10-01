@@ -3,7 +3,6 @@
 
 """Generic code for XML-RPC in Launchpad."""
 
-__metaclass__ = type
 __all__ = [
     'LaunchpadFault',
     'Transport',

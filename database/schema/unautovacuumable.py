@@ -13,7 +13,6 @@ disabled, autovacuum processes sometimes run and break our scripts.
 Don't run this on any production systems.
 """
 
-__metaclass__ = type
 __all__ = []
 
 import _pythonpath  # noqa: F401

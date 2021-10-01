@@ -3,7 +3,6 @@
 
 """Webhook testing helpers."""
 
-__metaclass__ = type
 __all__ = [
     'LogsScheduledWebhooks',
     ]

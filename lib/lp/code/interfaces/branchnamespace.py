@@ -3,7 +3,6 @@
 
 """Interface for a branch namespace."""
 
-__metaclass__ = type
 __all__ = [
     'get_branch_namespace',
     'IBranchNamespace',

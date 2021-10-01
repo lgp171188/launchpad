@@ -3,7 +3,6 @@
 
 """GitLab ExternalBugTracker utility."""
 
-__metaclass__ = type
 __all__ = [
     'BadGitLabURL',
     'GitLab',

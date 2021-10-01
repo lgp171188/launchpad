@@ -3,8 +3,6 @@
 
 """Builder behaviour for binary package builds."""
 
-__metaclass__ = type
-
 __all__ = [
     'BinaryPackageBuildBehaviour',
     ]

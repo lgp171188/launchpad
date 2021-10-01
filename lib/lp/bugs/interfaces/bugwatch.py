@@ -3,8 +3,6 @@
 
 """Bug watch interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'BUG_WATCH_ACTIVITY_SUCCESS_STATUSES',
     'BugWatchActivityStatus',

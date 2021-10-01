@@ -3,8 +3,6 @@
 
 """Test cron script for processing jobs from any job source class."""
 
-__metaclass__ = type
-
 import os.path
 from textwrap import dedent
 

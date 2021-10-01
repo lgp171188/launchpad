@@ -10,7 +10,6 @@ authenticated proxy; we provide builds with the necessary authentication
 token if and only if they are allowed general internet access.
 """
 
-__metaclass__ = type
 __all__ = [
     "BuilderProxyMixin",
     ]

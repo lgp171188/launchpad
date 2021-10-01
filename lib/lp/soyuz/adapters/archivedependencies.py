@@ -24,8 +24,6 @@ Auxiliary functions exposed for testing purposes:
 
 """
 
-__metaclass__ = type
-
 __all__ = [
     'default_component_dependency_name',
     'default_pocket_dependency',

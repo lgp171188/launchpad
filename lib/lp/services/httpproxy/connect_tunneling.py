@@ -6,8 +6,6 @@
 See https://twistedmatrix.com/trac/ticket/8806 (and reference
 implementation at https://github.com/scrapy/scrapy/pull/397/files)."""
 
-__metaclass__ = type
-
 __all__ = [
     'TunnelingAgent',
     ]

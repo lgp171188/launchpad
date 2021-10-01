@@ -3,8 +3,6 @@
 
 """Unit tests for the LinkCheckerAPI."""
 
-__metaclass__ = type
-
 from random import shuffle
 
 import simplejson

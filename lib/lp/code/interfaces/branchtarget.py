@@ -9,7 +9,6 @@ package branches. A branch target is the product or package that a branch is
 on. If the branch is a junk branch, then the target is the branch owner.
 """
 
-__metaclass__ = type
 __all__ = [
     'check_default_stacked_on',
     'IBranchTarget',

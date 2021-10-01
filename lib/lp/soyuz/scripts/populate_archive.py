@@ -3,8 +3,6 @@
 
 """Create a copy archive (if needed) and populate it with packages."""
 
-
-__metaclass__ = type
 __all__ = [
     'ArchivePopulator',
     ]

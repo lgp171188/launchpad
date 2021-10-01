@@ -3,8 +3,6 @@
 
 """Test the initialize_distroseries script machinery."""
 
-__metaclass__ = type
-
 from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,

@@ -3,8 +3,6 @@
 
 """Browser view for IHasTranslationImports."""
 
-__metaclass__ = type
-
 __all__ = [
     'HasTranslationImportsView',
     ]

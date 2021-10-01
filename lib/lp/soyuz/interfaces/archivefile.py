@@ -3,7 +3,6 @@
 
 """Interface for a file in an archive."""
 
-__metaclass__ = type
 __all__ = [
     'IArchiveFile',
     'IArchiveFileSet',

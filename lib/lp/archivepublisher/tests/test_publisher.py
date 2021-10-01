@@ -3,8 +3,6 @@
 
 """Tests for publisher class."""
 
-__metaclass__ = type
-
 import bz2
 from collections import (
     defaultdict,

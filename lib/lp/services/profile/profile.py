@@ -8,8 +8,6 @@ __all__ = ['profiling',
            'stop',
           ]
 
-__metaclass__ = type
-
 import contextlib
 from cProfile import Profile
 from datetime import datetime

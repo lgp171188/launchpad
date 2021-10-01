@@ -3,7 +3,6 @@
 
 """Adapters for different objects to a revision cache."""
 
-__metaclass__ = type
 __all__ = [
     'revision_cache_for_distribution',
     'revision_cache_for_distro_series',

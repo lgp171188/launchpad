@@ -3,8 +3,6 @@
 
 """Test for the methods of `ICodeImportScheduler`."""
 
-__metaclass__ = type
-
 from six.moves import xmlrpc_client
 import transaction
 from zope.component import getUtility

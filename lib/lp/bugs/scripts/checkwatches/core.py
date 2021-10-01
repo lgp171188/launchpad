@@ -3,7 +3,6 @@
 
 """Classes and logic for the checkwatches cronscript."""
 
-__metaclass__ = type
 __all__ = [
     'BaseScheduler',
     'CheckwatchesMaster',

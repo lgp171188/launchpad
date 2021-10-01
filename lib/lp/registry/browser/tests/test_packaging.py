@@ -3,8 +3,6 @@
 
 """Browser tests for Packaging actions."""
 
-__metaclass__ = type
-
 from testscenarios import (
     load_tests_apply_scenarios,
     WithScenarios,

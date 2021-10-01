@@ -3,8 +3,6 @@
 
 """Database class for `ICustomLanguageCode`."""
 
-__metaclass__ = type
-
 __all__ = [
     'CustomLanguageCode',
     'HasCustomLanguageCodesMixin',

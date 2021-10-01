@@ -10,7 +10,6 @@
 This module should not contain tests (but it should be tested).
 """
 
-__metaclass__ = type
 __all__ = [
     'GPGSigningContext',
     'is_security_proxied_or_harmless',

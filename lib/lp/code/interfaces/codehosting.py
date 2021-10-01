@@ -3,7 +3,6 @@
 
 """Internal Codehosting API interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'BRANCH_ALIAS_PREFIX',
     'branch_id_alias',

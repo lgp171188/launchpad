@@ -3,7 +3,6 @@
 
 """Optimized bulk operations against the database."""
 
-__metaclass__ = type
 __all__ = [
     'create',
     'dbify_value',

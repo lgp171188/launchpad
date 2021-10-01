@@ -3,7 +3,6 @@
 
 """Browser view classes for BugBranch-related objects."""
 
-__metaclass__ = type
 __all__ = [
     'BranchLinkToBugView',
     'BugBranchAddView',

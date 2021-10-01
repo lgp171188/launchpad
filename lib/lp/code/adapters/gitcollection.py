@@ -3,7 +3,6 @@
 
 """Adapters for different objects to Git repository collections."""
 
-__metaclass__ = type
 __all__ = [
     'git_collection_for_distribution',
     'git_collection_for_distro_source_package',

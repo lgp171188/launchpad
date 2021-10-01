@@ -3,8 +3,6 @@
 
 """PublisherConfig interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'IPublisherConfig',
     'IPublisherConfigSet',

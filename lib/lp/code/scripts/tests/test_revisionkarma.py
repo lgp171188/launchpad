@@ -3,8 +3,6 @@
 
 """Tests for the cron script that updates revision karma."""
 
-__metaclass__ = type
-
 from storm.store import Store
 import transaction
 

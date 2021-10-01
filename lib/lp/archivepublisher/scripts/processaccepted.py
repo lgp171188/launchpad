@@ -3,7 +3,6 @@
 
 """Helper functions for the process-accepted.py script."""
 
-__metaclass__ = type
 __all__ = [
     'ProcessAccepted',
     ]

@@ -3,7 +3,6 @@
 
 """Mixins for browser classes for objects that have charm recipes."""
 
-__metaclass__ = type
 __all__ = [
     "HasCharmRecipesMenuMixin",
     "HasCharmRecipesViewMixin",

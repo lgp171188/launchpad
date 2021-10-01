@@ -7,8 +7,6 @@
 
 """Functional tests for uploadprocessor.py."""
 
-__metaclass__ = type
-
 from operator import itemgetter
 import os
 import shutil

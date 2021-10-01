@@ -3,8 +3,6 @@
 
 """Browser views for CodeImportMachines."""
 
-__metaclass__ = type
-
 __all__ = [
     'CodeImportMachineBreadcrumb',
     'CodeImportMachineSetBreadcrumb',

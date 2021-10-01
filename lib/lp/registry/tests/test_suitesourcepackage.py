@@ -3,8 +3,6 @@
 
 """Tests for ISuiteSourcePackage."""
 
-__metaclass__ = type
-
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.suitesourcepackage import SuiteSourcePackage
 from lp.testing import TestCaseWithFactory

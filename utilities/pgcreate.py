@@ -8,8 +8,6 @@
 Like createdb, except will retry on failure.
 ."""
 
-__metaclass__ = type
-
 import sys
 import time
 

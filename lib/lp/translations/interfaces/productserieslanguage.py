@@ -14,8 +14,6 @@ from lp.translations.interfaces.rosettastats import IRosettaStats
 from lp.translations.interfaces.translatedlanguage import ITranslatedLanguage
 
 
-__metaclass__ = type
-
 __all__ = [
     'IProductSeriesLanguage',
     'IProductSeriesLanguageSet',

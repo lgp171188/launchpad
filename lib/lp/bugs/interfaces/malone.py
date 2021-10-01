@@ -3,8 +3,6 @@
 
 """Interfaces pertaining to the launchpad Malone application."""
 
-__metaclass__ = type
-
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,

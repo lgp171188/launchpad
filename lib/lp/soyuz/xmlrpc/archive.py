@@ -3,7 +3,6 @@
 
 """Implementations of the XML-RPC APIs for Soyuz archives."""
 
-__metaclass__ = type
 __all__ = [
     'ArchiveAPI',
     ]

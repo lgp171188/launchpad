@@ -9,8 +9,6 @@ from zope.interface import (
 from lp.translations.interfaces.rosettastats import IRosettaStats
 
 
-__metaclass__ = type
-
 __all__ = [
     'IDistroSeriesLanguage',
     'IDistroSeriesLanguageSet',

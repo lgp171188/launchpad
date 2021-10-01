@@ -3,8 +3,6 @@
 
 """Session tests."""
 
-__metaclass__ = type
-
 from lp.services.database.interfaces import (
     IMasterStore,
     ISlaveStore,

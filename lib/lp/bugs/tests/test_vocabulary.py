@@ -3,8 +3,6 @@
 
 """Test the bug domain vocabularies."""
 
-__metaclass__ = type
-
 from lp.bugs.vocabularies import (
     BugTaskMilestoneVocabulary,
     UsesBugsDistributionVocabulary,

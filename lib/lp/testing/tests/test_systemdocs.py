@@ -3,8 +3,6 @@
 
 """Tests for lp.testing.systemdocs module."""
 
-__metaclass__ = type
-
 import doctest
 import logging
 import os

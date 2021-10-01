@@ -3,8 +3,6 @@
 
 """Process a live filesystem upload."""
 
-__metaclass__ = type
-
 import os
 
 from zope.component import getUtility

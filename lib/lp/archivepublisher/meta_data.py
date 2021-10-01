@@ -3,7 +3,6 @@
 
 """Processing of archive meta-data uploads."""
 
-__metaclass__ = type
 __all__ = [
     "MetaDataUpload",
     ]

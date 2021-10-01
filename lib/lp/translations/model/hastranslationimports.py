@@ -3,7 +3,6 @@
 
 """Model code for `IHasTranslationImports."""
 
-__metaclass__ = type
 __all__ = [
     'HasTranslationImportsMixin',
     ]

@@ -14,8 +14,6 @@ __all__ = [
     'TestOpenIDApplication',
     ]
 
-__metaclass__ = type
-
 import codecs
 import os
 

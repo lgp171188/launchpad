@@ -3,8 +3,6 @@
 
 """SQLBase implementation of IQuestionReopening."""
 
-__metaclass__ = type
-
 __all__ = ['QuestionReopening',
            'create_questionreopening']
 

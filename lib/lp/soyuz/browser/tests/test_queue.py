@@ -3,8 +3,6 @@
 
 """Unit tests for QueueItemsView."""
 
-__metaclass__ = type
-
 from lxml import html
 import soupmatchers
 from storm.store import Store

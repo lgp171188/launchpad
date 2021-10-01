@@ -3,8 +3,6 @@
 
 """Base class to implement the Launchpad security policy."""
 
-__metaclass__ = type
-
 __all__ = [
     'AnonymousAuthorization',
     'AuthorizationBase',

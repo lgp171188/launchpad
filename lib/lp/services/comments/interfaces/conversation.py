@@ -3,7 +3,6 @@
 
 """Interfaces to do with conversations on Launchpad entities."""
 
-__metaclass__ = type
 __all__ = [
     'IComment',
     'IConversation',

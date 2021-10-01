@@ -3,8 +3,6 @@
 
 """Bug attachment interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugAttachmentType',
     'IBugAttachment',

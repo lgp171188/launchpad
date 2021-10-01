@@ -3,7 +3,6 @@
 
 """Resources having to do with Launchpad bugs."""
 
-__metaclass__ = type
 __all__ = [
     'bugcomment_to_entry',
     'bugtask_to_privacy',

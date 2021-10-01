@@ -3,8 +3,6 @@
 
 """Tests for classes that implement IHasBranches."""
 
-__metaclass__ = type
-
 from functools import partial
 
 from lp.app.enums import InformationType

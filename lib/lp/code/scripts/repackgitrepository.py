@@ -3,8 +3,6 @@
 
 """Functions used with the repack Git repositories script."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 
 from psycopg2.extensions import TransactionRollbackError

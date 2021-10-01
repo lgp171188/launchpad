@@ -3,7 +3,6 @@
 
 """Answers's custom publication."""
 
-__metaclass__ = type
 __all__ = [
     'AnswersBrowserRequest',
     'AnswersFacet',

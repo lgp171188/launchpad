@@ -3,7 +3,6 @@
 
 """Git repository access rules."""
 
-__metaclass__ = type
 __all__ = [
     'describe_git_permissions',
     'IGitNascentRule',

@@ -3,8 +3,6 @@
 
 """Tests for `IPackageBuild`."""
 
-__metaclass__ = type
-
 import hashlib
 
 from storm.store import Store

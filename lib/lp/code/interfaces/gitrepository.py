@@ -3,8 +3,6 @@
 
 """Git repository interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ContributorGitIdentity',
     'GitIdentityMixin',

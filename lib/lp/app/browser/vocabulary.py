@@ -3,8 +3,6 @@
 
 """Views which export vocabularies as JSON for widgets."""
 
-__metaclass__ = type
-
 __all__ = [
     'HugeVocabularyJSONView',
     'IPickerEntrySource',

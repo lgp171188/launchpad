@@ -3,9 +3,6 @@
 
 """Tests for feature flags."""
 
-
-__metaclass__ = type
-
 import os
 
 from lp.services.features import (

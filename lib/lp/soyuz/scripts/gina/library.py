@@ -3,9 +3,6 @@
 
 """Library access methods to gina."""
 
-__metaclass__ = type
-
-
 import hashlib
 import os
 

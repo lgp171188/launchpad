@@ -6,8 +6,6 @@
 Not all functionality is provided; just enough to test the client.
 """
 
-__metaclass__ = type
-
 import base64
 from datetime import (
     datetime,

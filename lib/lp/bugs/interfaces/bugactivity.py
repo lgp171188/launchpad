@@ -3,8 +3,6 @@
 
 """Bug activity interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBugActivity',
     'IBugActivitySet',

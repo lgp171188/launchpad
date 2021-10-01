@@ -3,7 +3,6 @@
 
 """Handle incoming Bugs email."""
 
-__metaclass__ = type
 __all__ = [
     "MaloneHandler",
     ]

@@ -3,7 +3,6 @@
 
 """A person's view on an OCI project."""
 
-__metaclass__ = type
 __all__ = []
 
 from zope.interface import (

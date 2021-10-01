@@ -3,8 +3,6 @@
 
 """Browser views for packagesets."""
 
-__metaclass__ = type
-
 __all__ = [
     'PackagesetSetNavigation',
     ]

@@ -3,7 +3,6 @@
 
 """Import mailing list information."""
 
-__metaclass__ = type
 __all__ = [
     'Importer',
     ]

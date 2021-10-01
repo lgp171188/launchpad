@@ -3,8 +3,6 @@
 
 """Specification interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'GoalProposeError',
     'ISpecification',

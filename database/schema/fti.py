@@ -8,8 +8,6 @@
 Add full text indexes to the launchpad database
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from optparse import OptionParser

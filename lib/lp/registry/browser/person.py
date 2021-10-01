@@ -3,7 +3,6 @@
 
 """Person-related view classes."""
 
-__metaclass__ = type
 __all__ = [
     'BeginTeamClaimView',
     'CommonMenuLinks',

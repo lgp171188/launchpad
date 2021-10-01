@@ -3,7 +3,6 @@
 
 """Milestonetag model class."""
 
-__metaclass__ = type
 __all__ = [
     'MilestoneTag',
     'ProjectGroupMilestoneTag',

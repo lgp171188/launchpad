@@ -22,8 +22,6 @@ from lp import _
 from lp.translations.interfaces.pomsgid import IPOMsgID
 
 
-__metaclass__ = type
-
 __all__ = [
     'IPOTMsgSet',
     'POTMsgSetInIncompatibleTemplatesError',

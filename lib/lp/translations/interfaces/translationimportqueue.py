@@ -58,8 +58,6 @@ from lp.translations.interfaces.translationfileformat import (
     )
 
 
-__metaclass__ = type
-
 __all__ = [
     'TranslationImportQueueConflictError',
     'ITranslationImportQueueEntry',

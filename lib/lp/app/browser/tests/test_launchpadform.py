@@ -3,8 +3,6 @@
 
 """Tests for the lp.app.browser.launchpadform module."""
 
-__metaclass__ = type
-
 from os.path import (
     dirname,
     join,

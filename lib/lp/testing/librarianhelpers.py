@@ -3,7 +3,6 @@
 
 """Various helper functions for using the librarian in testing.."""
 
-__metaclass__ = type
 __all__ = [
     'get_newest_librarian_file',
 ]

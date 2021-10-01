@@ -3,8 +3,6 @@
 
 """Tests for the branch filesystem."""
 
-__metaclass__ = type
-
 import os
 import re
 import sys

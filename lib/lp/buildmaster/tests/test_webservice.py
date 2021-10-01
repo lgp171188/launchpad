@@ -3,8 +3,6 @@
 
 """Tests for the builders webservice ."""
 
-__metaclass__ = type
-
 from json import dumps
 
 from testtools.matchers import Equals

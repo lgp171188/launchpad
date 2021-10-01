@@ -3,8 +3,6 @@
 
 """Mock Build objects for tests soyuz buildd-system."""
 
-__metaclass__ = type
-
 __all__ = [
     'AbortingSlave',
     'BrokenSlave',

@@ -3,9 +3,6 @@
 
 """Tests for the translations views on a distroseries."""
 
-__metaclass__ = type
-
-
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,

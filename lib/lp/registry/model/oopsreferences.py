@@ -3,8 +3,6 @@
 
 """Find OOPS References within the LP database."""
 
-__metaclass__ = type
-
 __all__ = [
     'referenced_oops',
     ]

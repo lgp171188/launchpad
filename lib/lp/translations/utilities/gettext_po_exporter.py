@@ -7,8 +7,6 @@ Find more about this file format at:
 http://www.gnu.org/software/gettext/manual/html_node/PO-Files.html
 """
 
-__metaclass__ = type
-
 __all__ = [
     'GettextPOChangedExporter',
     'GettextPOExporter',

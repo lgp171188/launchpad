@@ -3,8 +3,6 @@
 
 """Tests for the scanner's merge detection."""
 
-__metaclass__ = type
-
 import logging
 
 from breezy.revision import NULL_REVISION

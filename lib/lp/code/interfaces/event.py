@@ -3,7 +3,6 @@
 
 """Interfaces for events used in the launchpad code application."""
 
-__metaclass__ = type
 __all__ = [
     'IBranchMergeProposalNeedsReviewEvent',
     'IGitRefsUpdatedEvent',

@@ -7,8 +7,6 @@
 
 """Unit tests for BranchMergeProposals."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

@@ -3,8 +3,6 @@
 
 """Test the Person/DistributionSourcePackage non-database class."""
 
-__metaclass__ = type
-
 from lp.registry.model.persondistributionsourcepackage import (
     PersonDistributionSourcePackage,
     )

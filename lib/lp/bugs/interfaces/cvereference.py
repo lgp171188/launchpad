@@ -7,8 +7,6 @@ describes a link between the CVE and another vulnerability tracking system.
 It is to CVE what a Watch is to Launchpad Bugs.
 """
 
-__metaclass__ = type
-
 __all__ = ['ICveReference']
 
 from zope.interface import Interface

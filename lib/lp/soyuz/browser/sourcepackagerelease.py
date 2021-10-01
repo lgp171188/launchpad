@@ -3,8 +3,6 @@
 
 """Browser view for a sourcepackagerelease"""
 
-__metaclass__ = type
-
 __all__ = [
     'linkify_changelog',
     'SourcePackageReleaseView',

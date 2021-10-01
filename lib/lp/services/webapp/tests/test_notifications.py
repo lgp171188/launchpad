@@ -3,8 +3,6 @@
 
 """Module docstring goes here."""
 
-__metaclass__ = type
-
 from doctest import DocTestSuite
 import unittest
 

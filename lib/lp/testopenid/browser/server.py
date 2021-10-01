@@ -3,7 +3,6 @@
 
 """Test OpenID server."""
 
-__metaclass__ = type
 __all__ = [
     'PersistentIdentityView',
     'TestOpenIDApplicationNavigation',

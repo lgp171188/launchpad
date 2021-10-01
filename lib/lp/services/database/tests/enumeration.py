@@ -3,7 +3,6 @@
 
 """Test enumerations used for enumcol doctests."""
 
-__metaclass__ = type
 __all__ = [
     'DBTestEnumeration',
     'InheritedTestEnumeration',

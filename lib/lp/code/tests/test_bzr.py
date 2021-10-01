@@ -3,8 +3,6 @@
 
 """Tests for lp.code.bzr."""
 
-__metaclass__ = type
-
 from breezy.errors import NoSuchRevision
 from breezy.revision import NULL_REVISION
 from breezy.tests import (

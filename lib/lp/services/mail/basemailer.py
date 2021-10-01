@@ -3,8 +3,6 @@
 
 """Base class for sending out emails."""
 
-__metaclass__ = type
-
 __all__ = ['BaseMailer', 'RecipientReason']
 
 from collections import OrderedDict

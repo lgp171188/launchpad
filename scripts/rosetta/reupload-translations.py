@@ -4,8 +4,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Re-upload translations from given packages."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from lp.translations.scripts.reupload_translations import (

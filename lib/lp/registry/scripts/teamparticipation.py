@@ -3,7 +3,6 @@
 
 """Script code relating to team participations."""
 
-__metaclass__ = type
 __all__ = [
     "check_teamparticipation_circular",
     "check_teamparticipation_consistency",

@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Code for the BugWatch scheduler."""
 
-__metaclass__ = type
 __all__ = [
     'BugWatchScheduler',
     'MAX_SAMPLE_SIZE',

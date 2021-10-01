@@ -3,8 +3,6 @@
 
 """Common code for the puller tests."""
 
-__metaclass__ = type
-
 import io
 import os
 import shutil

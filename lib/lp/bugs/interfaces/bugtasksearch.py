@@ -3,8 +3,6 @@
 
 """Interfaces for searching bug tasks. Mostly used with IBugTaskSet."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugBlueprintSearch',
     'BugBranchSearch',

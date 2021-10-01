@@ -4,7 +4,6 @@
 
 """Test OCI project views."""
 
-__metaclass__ = type
 __all__ = []
 
 from datetime import datetime

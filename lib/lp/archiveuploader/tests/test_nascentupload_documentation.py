@@ -3,8 +3,6 @@
 
 """Runs the doctests for archiveuploader module."""
 
-__metaclass__ = type
-
 import os
 import unittest
 

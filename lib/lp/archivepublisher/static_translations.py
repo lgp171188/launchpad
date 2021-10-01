@@ -3,7 +3,6 @@
 
 """Processing of static translations uploads."""
 
-__metaclass__ = type
 __all__ = [
     "StaticTranslationsUpload",
     ]

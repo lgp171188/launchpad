@@ -6,7 +6,6 @@
 Dispatches snap package build jobs to build-farm slaves.
 """
 
-__metaclass__ = type
 __all__ = [
     'SnapBuildBehaviour',
     ]

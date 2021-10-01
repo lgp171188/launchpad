@@ -10,8 +10,6 @@ remove expired files from the file system and clean up unreachable
 rows in the database.
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 import logging

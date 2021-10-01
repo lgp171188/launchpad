@@ -3,8 +3,6 @@
 
 """Tests for `lp.registry.browser.distroseries`."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 import difflib
 import re

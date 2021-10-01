@@ -3,8 +3,6 @@
 
 """Tests for the JSON serializer."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 
 from lazr.restful.interfaces import IJSONPublishable

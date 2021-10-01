@@ -3,7 +3,6 @@
 
 """Interface to a policy for issuing and verifying macaroons."""
 
-__metaclass__ = type
 __all__ = [
     'BadMacaroonContext',
     'IMacaroonIssuer',

@@ -3,7 +3,6 @@
 
 """Translations's custom publication."""
 
-__metaclass__ = type
 __all__ = [
     'TranslationsBrowserRequest',
     'TranslationsLayer',

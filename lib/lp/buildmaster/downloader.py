@@ -7,7 +7,6 @@ To minimise subprocess memory use, this intentionally avoids importing
 anything from the rest of Launchpad.
 """
 
-__metaclass__ = type
 __all__ = [
     'DownloadCommand',
     'RequestProcess',

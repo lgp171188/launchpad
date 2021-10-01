@@ -9,8 +9,6 @@ but testing all the possible transitions makes the documentation more heavy
 than necessary. This is tested here.
 """
 
-__metaclass__ = type
-
 __all__ = []
 
 from datetime import (

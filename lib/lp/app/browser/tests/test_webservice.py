@@ -3,9 +3,6 @@
 
 """Tests for webservice features across Launchpad."""
 
-__metaclass__ = type
-
-
 from lazr.restful.interfaces import IFieldHTMLRenderer
 from lazr.restful.utils import get_current_web_service_request
 from zope.component import getMultiAdapter

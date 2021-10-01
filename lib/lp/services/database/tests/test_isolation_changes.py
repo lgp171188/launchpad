@@ -3,7 +3,6 @@
 
 """Tests confirming that changing isolation levels does what we expect."""
 
-__metaclass__ = type
 __all__ = []
 
 import os.path

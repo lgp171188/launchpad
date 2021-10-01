@@ -3,7 +3,6 @@
 
 """Translation access and sharing policy."""
 
-__metaclass__ = type
 __all__ = [
     'ITranslationPolicy',
     ]

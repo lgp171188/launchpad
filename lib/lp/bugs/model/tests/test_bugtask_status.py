@@ -3,8 +3,6 @@
 
 """Tests for bug task status transitions."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 

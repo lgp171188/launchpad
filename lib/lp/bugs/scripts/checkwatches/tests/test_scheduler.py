@@ -3,8 +3,6 @@
 
 """XXX: Module docstring goes here."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

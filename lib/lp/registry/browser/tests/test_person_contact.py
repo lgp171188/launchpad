@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Test views and helpers related to the contact person feature."""
 
-__metaclass__ = type
-
 from testtools.matchers import LessThan
 
 from lp.app.browser.tales import DateTimeFormatterAPI

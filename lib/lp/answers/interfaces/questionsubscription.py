@@ -3,8 +3,6 @@
 
 """Question subscription interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'IQuestionSubscription',
     ]

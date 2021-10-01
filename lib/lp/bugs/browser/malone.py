@@ -3,7 +3,6 @@
 
 """Browser code for the malone application."""
 
-__metaclass__ = type
 __all__ = [
     'MaloneApplicationNavigation',
     'MaloneRelatedPages',

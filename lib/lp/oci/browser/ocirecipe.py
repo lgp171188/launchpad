@@ -3,7 +3,6 @@
 
 """OCI recipe views."""
 
-__metaclass__ = type
 __all__ = [
     'OCIRecipeAddView',
     'OCIRecipeAdminView',

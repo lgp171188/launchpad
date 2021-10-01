@@ -3,8 +3,6 @@
 
 """Base and idle BuildFarmJobBehaviour classes."""
 
-__metaclass__ = type
-
 __all__ = [
     'BuildFarmJobBehaviourBase',
     ]

@@ -3,7 +3,6 @@
 
 """Interface for communication with the Loggerhead API."""
 
-__metaclass__ = type
 __all__ = [
     'IBranchHostingClient',
     ]

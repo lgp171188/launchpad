@@ -3,7 +3,6 @@
 
 """Browser code used to implement virtual '.bzr' directories."""
 
-__metaclass__ = type
 __all__ = [
     'BranchRef'
     ]

@@ -3,8 +3,6 @@
 
 """Test NascentUpload functionality."""
 
-__metaclass__ = type
-
 from testtools import TestCase
 from testtools.matchers import MatchesStructure
 

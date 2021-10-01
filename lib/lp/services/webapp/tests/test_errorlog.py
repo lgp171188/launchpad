@@ -3,8 +3,6 @@
 
 """Tests for error logging & OOPS reporting."""
 
-__metaclass__ = type
-
 import sys
 from textwrap import dedent
 import traceback

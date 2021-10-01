@@ -2,9 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Tests for the BaseMailer class."""
 
-
-__metaclass__ = type
-
 from smtplib import SMTPException
 
 from testtools.matchers import EndsWith

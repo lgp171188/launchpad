@@ -6,8 +6,6 @@
 Implemented by any object that can have `IPackageBuild` records related to it.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'IHasBuildRecords',
     ]

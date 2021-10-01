@@ -3,8 +3,6 @@
 
 """Tests for BranchJobs."""
 
-__metaclass__ = type
-
 import datetime
 import os
 import shutil

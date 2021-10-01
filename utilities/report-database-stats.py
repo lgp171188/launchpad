@@ -4,8 +4,6 @@
 
 """Generate the database statistics report."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from datetime import datetime

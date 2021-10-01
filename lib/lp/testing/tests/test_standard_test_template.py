@@ -3,8 +3,6 @@
 
 """XXX: Module docstring goes here."""
 
-__metaclass__ = type
-
 # or TestCaseWithFactory
 from lp.testing import TestCase
 from lp.testing.layers import DatabaseFunctionalLayer

@@ -3,8 +3,6 @@
 
 """Tests for the OCI Registry client."""
 
-__metaclass__ = type
-
 import base64
 from datetime import timedelta
 from functools import partial

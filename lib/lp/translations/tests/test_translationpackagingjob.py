@@ -3,8 +3,6 @@
 
 """Tests for merging translations."""
 
-__metaclass__ = type
-
 from storm.expr import Desc
 import transaction
 from zope.component import getUtility

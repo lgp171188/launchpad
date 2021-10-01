@@ -3,7 +3,6 @@
 
 """Email code for the branch scanner."""
 
-__metaclass__ = type
 __all__ = [
     'send_removed_revision_emails',
     'queue_tip_changed_email_jobs',

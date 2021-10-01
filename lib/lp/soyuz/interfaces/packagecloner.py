@@ -3,8 +3,6 @@
 
 """Interfaces related to bulk copying of publishing history data."""
 
-__metaclass__ = type
-
 __all__ = [
     'IPackageCloner'
     ]

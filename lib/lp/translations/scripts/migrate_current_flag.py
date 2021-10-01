@@ -3,7 +3,6 @@
 
 """Set 'is_imported' flag from 'is_current' for upstream projects."""
 
-__metaclass__ = type
 __all__ = ['MigrateCurrentFlagProcess']
 
 import logging

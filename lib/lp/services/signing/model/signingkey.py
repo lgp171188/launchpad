@@ -3,9 +3,6 @@
 
 """Database classes to manage signing keys stored at the signing service."""
 
-
-__metaclass__ = type
-
 __all__ = [
     'ArchiveSigningKey',
     'ArchiveSigningKeySet',

@@ -3,8 +3,6 @@
 
 """Tests for the internal codehosting API."""
 
-__metaclass__ = type
-
 import datetime
 import os
 

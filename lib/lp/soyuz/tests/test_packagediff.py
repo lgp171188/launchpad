@@ -3,8 +3,6 @@
 
 """Test source package diffs."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import errno
 import os.path

@@ -3,8 +3,6 @@
 
 """Translation-related formatting functions."""
 
-__metaclass__ = type
-
 __all__ = [
     'contract_rosetta_escapes',
     'convert_newlines_to_web_form',

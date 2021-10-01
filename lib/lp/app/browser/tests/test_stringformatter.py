@@ -3,8 +3,6 @@
 
 """Unit tests for the string TALES formatter."""
 
-__metaclass__ = type
-
 from doctest import DocTestSuite
 from textwrap import dedent
 import unittest

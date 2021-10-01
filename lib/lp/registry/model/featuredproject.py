@@ -3,7 +3,6 @@
 
 """Database class for Featured Projects."""
 
-__metaclass__ = type
 __all__ = [
     'FeaturedProject',
     ]

@@ -3,8 +3,6 @@
 
 """Database classes for linking specifications and branches."""
 
-__metaclass__ = type
-
 __all__ = [
     "SpecificationBranch",
     "SpecificationBranchSet",

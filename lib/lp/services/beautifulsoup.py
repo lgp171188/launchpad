@@ -3,7 +3,6 @@
 
 """Beautiful Soup wrapper for Launchpad."""
 
-__metaclass__ = type
 __all__ = [
     'BeautifulSoup',
     'SoupStrainer',

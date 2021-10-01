@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Event handlers that send email notifications."""
 
-__metaclass__ = type
-
 from lp.blueprints.interfaces.specification import ISpecification
 from lp.registry.interfaces.person import IPerson
 from lp.services.database.sqlbase import block_implicit_flushes

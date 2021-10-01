@@ -3,7 +3,6 @@
 
 """__init__ module for the externalbugtracker package."""
 
-__metaclass__ = type
 __all__ = [
     'BATCH_SIZE_UNLIMITED',
     'BugNotFound',

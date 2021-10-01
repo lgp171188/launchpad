@@ -3,8 +3,6 @@
 
 """Tests for BranchURIField."""
 
-__metaclass__ = type
-
 from lp.app.validators import LaunchpadValidationError
 from lp.code.interfaces.branch import (
     BranchURIField,

@@ -4,7 +4,6 @@
 
 """Publisher script class."""
 
-__metaclass__ = type
 __all__ = [
     'PublisherScript',
     ]

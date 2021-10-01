@@ -3,8 +3,6 @@
 
 """Tests for launchpad classes."""
 
-__metaclass__ = type
-
 from zope.security.interfaces import (
     Forbidden,
     ForbiddenAttribute,

@@ -3,7 +3,6 @@
 
 """Database classes related to and including CodeImportEvent."""
 
-__metaclass__ = type
 __all__ = [
     'CodeImportEvent',
     'CodeImportEventSet',

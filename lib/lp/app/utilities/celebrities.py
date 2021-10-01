@@ -3,7 +3,6 @@
 
 """Classes that implement ICelebrity interfaces."""
 
-__metaclass__ = type
 __all__ = ['LaunchpadCelebrities']
 
 from zope.component import getUtility

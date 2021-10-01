@@ -3,8 +3,6 @@
 
 """Database class for ArchiveDependency."""
 
-__metaclass__ = type
-
 __all__ = ['ArchiveDependency']
 
 import pytz

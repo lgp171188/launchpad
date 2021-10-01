@@ -3,7 +3,6 @@
 
 """Enums for the Registry app."""
 
-__metaclass__ = type
 __all__ = [
     'BranchSharingPolicy',
     'BugSharingPolicy',

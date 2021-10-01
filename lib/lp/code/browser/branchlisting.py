@@ -3,8 +3,6 @@
 
 """Base class view for branch listings."""
 
-__metaclass__ = type
-
 __all__ = [
     'BranchBadges',
     'BranchListingView',

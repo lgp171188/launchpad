@@ -19,8 +19,6 @@ from lp.translations.interfaces.hastranslationtemplates import (
     )
 
 
-__metaclass__ = type
-
 __all__ = [
     'IPOFilesByPOTemplates',
     'ITranslatedLanguage',

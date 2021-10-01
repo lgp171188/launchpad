@@ -3,8 +3,6 @@
 
 """Tests for ProductJobs."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

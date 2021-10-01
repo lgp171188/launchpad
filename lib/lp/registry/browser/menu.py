@@ -3,7 +3,6 @@
 
 """Shared menus."""
 
-__metaclass__ = type
 __all__ = [
     'IRegistryCollectionNavigationMenu',
     'RegistryCollectionActionMenuBase',

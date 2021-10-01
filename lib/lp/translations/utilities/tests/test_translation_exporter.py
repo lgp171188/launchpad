@@ -3,8 +3,6 @@
 
 """Translation Exporter tests."""
 
-__metaclass__ = type
-
 import io
 from operator import attrgetter
 import unittest

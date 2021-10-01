@@ -3,7 +3,6 @@
 
 """FeatureFlagApplication allows access to information about feature flags."""
 
-__metaclass__ = type
 __all__ = [
     'IFeatureFlagApplication',
     'FeatureFlagApplication',

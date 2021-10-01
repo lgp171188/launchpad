@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """A parser for FileBug data BLOBs"""
 
-__metaclass__ = type
 __all__ = [
     'FileBugData',
     'FileBugDataParser',

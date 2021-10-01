@@ -7,8 +7,6 @@ Note that many tests are performed at run time in the layers themselves
 to confirm that the environment hasn't been corrupted by tests
 """
 
-__metaclass__ = type
-
 import io
 import os
 import signal

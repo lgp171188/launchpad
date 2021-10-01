@@ -3,8 +3,6 @@
 
 """Test dscfile.py"""
 
-__metaclass__ = type
-
 from collections import namedtuple
 import os
 

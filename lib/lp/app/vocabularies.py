@@ -21,8 +21,6 @@ class IFoo(Interface):
 The binding of name -> class is done in the configure.zcml
 """
 
-__metaclass__ = type
-
 __all__ = [
     'InformationTypeVocabulary',
     ]

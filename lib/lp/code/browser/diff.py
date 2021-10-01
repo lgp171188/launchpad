@@ -3,7 +3,6 @@
 
 """Display classes relating to diff objects of one sort or another."""
 
-__metaclass__ = type
 __all__ = [
     'PreviewDiffFormatterAPI',
     ]

@@ -3,8 +3,6 @@
 
 """Tests relating to the Launchpad TestCase classes here."""
 
-__metaclass__ = type
-
 import io
 import logging
 import sys

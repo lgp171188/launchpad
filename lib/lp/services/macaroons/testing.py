@@ -3,7 +3,6 @@
 
 """Macaroon testing helpers."""
 
-__metaclass__ = type
 __all__ = [
     'find_caveats_by_name',
     'MacaroonTestMixin',

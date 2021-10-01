@@ -3,8 +3,6 @@
 
 """APIs to generate the web service WADL and documentation HTML."""
 
-__metaclass__ = type
-
 try:
     from importlib import resources
 except ImportError:

@@ -3,7 +3,6 @@
 
 """Utilities for the sfremoteproductfinder cronscript"""
 
-__metaclass__ = type
 __all__ = [
     'SourceForgeRemoteProductFinder',
     ]

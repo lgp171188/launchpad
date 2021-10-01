@@ -3,7 +3,6 @@
 
 """Mail for new bugs."""
 
-__metaclass__ = type
 __all__ = [
     'generate_bug_add_email',
     ]

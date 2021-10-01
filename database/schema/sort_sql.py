@@ -24,8 +24,6 @@ groups of statements separated by empty lines. This works because the dumps
 happen by table, with one block of statements for each table.
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 import sys

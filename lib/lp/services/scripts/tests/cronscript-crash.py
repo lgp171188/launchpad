@@ -4,7 +4,6 @@
 
 """Cronscript that raises an unhandled exception."""
 
-__metaclass__ = type
 __all__ = []
 
 import _pythonpath  # noqa: F401

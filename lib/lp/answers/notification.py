@@ -3,7 +3,6 @@
 
 """Notifications for the Answers system."""
 
-__metaclass__ = type
 __all__ = [
     'QuestionNotification',
     ]

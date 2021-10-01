@@ -3,8 +3,6 @@
 
 """Interfaces declarations for external bugtrackers."""
 
-__metaclass__ = type
-
 __all__ = [
     'IExternalBugTracker',
     'IExternalBugTrackerTokenAPI',

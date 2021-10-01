@@ -3,8 +3,6 @@
 
 """Test notification behaviour for cross-distro package syncs."""
 
-__metaclass__ = type
-
 import os.path
 
 from zope.component import getUtility

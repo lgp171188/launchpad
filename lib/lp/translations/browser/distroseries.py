@@ -3,8 +3,6 @@
 
 """Translations view classes related to `IDistroSeries`."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistroSeriesLanguagePackView',
     'DistroSeriesTemplatesView',

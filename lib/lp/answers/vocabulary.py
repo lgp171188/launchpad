@@ -3,7 +3,6 @@
 
 """Named vocabularies defined by the Answers application."""
 
-__metaclass__ = type
 __all__ = [
     'FAQVocabulary',
     'UsesAnswersDistributionVocabulary',

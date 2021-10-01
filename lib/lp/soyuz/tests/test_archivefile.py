@@ -3,8 +3,6 @@
 
 """ArchiveFile tests."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 import os
 

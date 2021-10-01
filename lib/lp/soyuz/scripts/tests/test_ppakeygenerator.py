@@ -3,8 +3,6 @@
 
 """`PPAKeyGenerator` script class tests."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet

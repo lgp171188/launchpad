@@ -3,8 +3,6 @@
 
 """Database class for table ArchiveSubscriber."""
 
-__metaclass__ = type
-
 __all__ = [
     'ArchiveSubscriber',
     ]

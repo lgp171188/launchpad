@@ -3,7 +3,6 @@
 
 """Display `TranslationTemplateBuild`s."""
 
-__metaclass__ = type
 __all__ = [
     'TranslationTemplatesBuildView',
     ]

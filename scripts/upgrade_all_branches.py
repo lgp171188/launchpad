@@ -1,7 +1,5 @@
 #!/usr/bin/python3 -S
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from lp.codehosting.bzrutils import server

@@ -3,8 +3,6 @@
 
 """Tests for product views."""
 
-__metaclass__ = type
-
 __all__ = ['make_product_form']
 
 import re

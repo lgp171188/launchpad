@@ -3,8 +3,6 @@
 
 """Interfaces that define common roles associated with objects."""
 
-__metaclass__ = type
-
 __all__ = [
     'IHasAppointedDriver',
     'IHasDrivers',

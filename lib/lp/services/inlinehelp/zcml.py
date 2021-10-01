@@ -3,7 +3,6 @@
 
 """ZCML directive for help folder registrations."""
 
-__metaclass__ = type
 __all__ = []
 
 from zope.component.zcml import handler

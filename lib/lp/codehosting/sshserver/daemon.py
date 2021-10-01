@@ -3,7 +3,6 @@
 
 """Glues the codehosting SSH daemon together."""
 
-__metaclass__ = type
 __all__ = [
     'ACCESS_LOG_NAME',
     'CodehostingAvatar',

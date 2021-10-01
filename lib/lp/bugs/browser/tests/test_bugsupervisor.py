@@ -3,8 +3,6 @@
 
 """Unit tests for bug supervisor views."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.bugs.browser.bugsupervisor import BugSupervisorEditSchema

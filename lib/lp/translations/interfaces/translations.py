@@ -10,8 +10,6 @@ from zope.interface import Attribute
 from lp.services.webapp.interfaces import ILaunchpadApplication
 
 
-__metaclass__ = type
-
 __all__ = [
     'IRosettaApplication',
     'TranslationConstants',

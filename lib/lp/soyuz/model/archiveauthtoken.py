@@ -3,8 +3,6 @@
 
 """Database class for table ArchiveAuthToken."""
 
-__metaclass__ = type
-
 __all__ = [
     'ArchiveAuthToken',
     ]

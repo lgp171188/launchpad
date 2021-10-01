@@ -3,7 +3,6 @@
 
 """The interface for branch merge proposals."""
 
-__metaclass__ = type
 __all__ = [
     'BRANCH_MERGE_PROPOSAL_FINAL_STATES',
     'BRANCH_MERGE_PROPOSAL_OBSOLETE_STATES',

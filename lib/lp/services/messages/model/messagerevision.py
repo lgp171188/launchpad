@@ -3,7 +3,6 @@
 
 """Message revision history."""
 
-__metaclass__ = type
 __all__ = [
     'MessageRevision',
     'MessageRevisionChunk',

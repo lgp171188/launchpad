@@ -3,7 +3,6 @@
 
 """A generic collection of database objects."""
 
-__metaclass__ = type
 __all__ = [
     'Collection',
     ]

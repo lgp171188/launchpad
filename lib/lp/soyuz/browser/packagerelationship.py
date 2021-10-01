@@ -3,7 +3,6 @@
 
 """Package relationships."""
 
-__metaclass__ = type
 __all__ = [
     'relationship_builder',
     'PackageRelationship',

@@ -3,8 +3,6 @@
 
 """Tests for the webhook webservice objects."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import json
 

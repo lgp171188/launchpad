@@ -3,8 +3,6 @@
 
 """Interfaces for Script activity records"""
 
-__metaclass__ = type
-
 __all__ = [
     'IScriptActivity',
     'IScriptActivitySet',

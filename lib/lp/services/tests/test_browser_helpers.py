@@ -3,7 +3,6 @@
 
 """Unit tests for browser helper functions."""
 
-__metaclass__ = type
 __all__ = ['TestGetUserAgentDistroSeries']
 
 import unittest

@@ -5,8 +5,6 @@
 
 Database outages happen by accident and during fastdowntime deployments."""
 
-__metaclass__ = type
-
 import io
 
 from fixtures import Fixture

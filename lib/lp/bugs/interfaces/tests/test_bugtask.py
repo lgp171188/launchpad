@@ -3,8 +3,6 @@
 
 """Tests for BugTask interfaces."""
 
-__metaclass__ = type
-
 from lp.bugs.interfaces.bugtask import (
     BugTaskStatus,
     BugTaskStatusSearch,

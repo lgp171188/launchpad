@@ -3,7 +3,6 @@
 
 """Interface for linking source packages in distroseries to branches."""
 
-__metaclass__ = type
 __all__ = [
     'IFindOfficialBranchLinks',
     'ISeriesSourcePackageBranch',

@@ -3,8 +3,6 @@
 
 """Interfaces including and related to ICommercialSubscription."""
 
-__metaclass__ = type
-
 __all__ = [
     'ICommercialSubscription',
     ]

@@ -3,7 +3,6 @@
 
 """Tests for the DBPolicy."""
 
-__metaclass__ = type
 __all__ = []
 
 from textwrap import dedent

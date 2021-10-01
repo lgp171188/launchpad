@@ -3,8 +3,6 @@
 
 """Browser file for LibraryFileAlias."""
 
-__metaclass__ = type
-
 __all__ = [
     'DeletedProxiedLibraryFileAlias',
     'FileNavigationMixin',

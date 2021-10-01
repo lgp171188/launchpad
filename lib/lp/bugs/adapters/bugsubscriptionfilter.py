@@ -3,7 +3,6 @@
 
 """Adapt IStructuralSubscription to other types."""
 
-__metaclass__ = type
 __all__ = [
     'bugsubscriptionfilter_to_distribution',
     'bugsubscriptionfilter_to_product',

@@ -3,8 +3,6 @@
 
 """Views and mixins to use for translation sharing."""
 
-__metaclass__ = type
-
 __all__ = [
     'TranslationSharingDetailsMixin',
     ]

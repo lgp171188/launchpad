@@ -3,8 +3,6 @@
 
 """Test the information type vocabulary."""
 
-__metaclass__ = type
-
 from testtools.matchers import MatchesStructure
 
 from lp.app.enums import InformationType

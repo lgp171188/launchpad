@@ -10,8 +10,6 @@ fail if any part of the process of importing the plugin installs a default
 reactor.
 """
 
-__metaclass__ = type
-
 from twisted.plugin import (
     getPlugins,
     IPlugin,

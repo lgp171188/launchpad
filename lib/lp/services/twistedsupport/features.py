@@ -6,7 +6,6 @@
 Flags are refreshed asynchronously at regular intervals.
 """
 
-__metaclass__ = type
 __all__ = ['setup_feature_controller']
 
 from twisted.internet import (

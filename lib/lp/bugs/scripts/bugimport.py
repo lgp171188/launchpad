@@ -7,8 +7,6 @@ This code can import an XML bug dump into Launchpad.  The XML format
 is described in the RELAX-NG schema 'doc/bug-export.rnc'.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'BugXMLSyntaxError',
     'BugImporter',

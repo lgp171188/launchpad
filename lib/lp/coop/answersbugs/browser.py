@@ -3,7 +3,6 @@
 
 """Views for linking bugs and questions."""
 
-__metaclass__ = type
 __all__ = []
 
 from lp import _

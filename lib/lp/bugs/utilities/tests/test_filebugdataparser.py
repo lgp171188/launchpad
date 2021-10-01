@@ -9,8 +9,6 @@ information is uploaded as a MIME multipart message, where the different
 headers tells Launchpad what kind of information it is.
 """
 
-__metaclass__ = type
-
 import base64
 import io
 from textwrap import dedent

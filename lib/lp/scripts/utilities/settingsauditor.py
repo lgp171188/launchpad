@@ -3,8 +3,6 @@
 
 """Contains the seting auditor used to clean up security.cfg."""
 
-__metaclass__ = type
-
 __all__ = [
     "SettingsAuditor",
     ]

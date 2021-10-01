@@ -3,8 +3,6 @@
 
 """DistroSeriesParent interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'IDistroSeriesParent',
     'IDistroSeriesParentSet',

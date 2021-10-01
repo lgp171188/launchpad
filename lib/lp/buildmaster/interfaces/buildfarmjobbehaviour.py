@@ -3,8 +3,6 @@
 
 """Interface for build farm job behaviours."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBuildFarmJobBehaviour',
     ]

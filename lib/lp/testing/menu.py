@@ -3,7 +3,6 @@
 
 """Helpers for testing menus."""
 
-__metaclass__ = type
 __all__ = [
     'summarise_tal_links',
     'make_fake_request',

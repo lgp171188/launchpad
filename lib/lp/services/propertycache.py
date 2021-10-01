@@ -8,7 +8,6 @@ returned each time it is asked for.
 See `doc/propertycache.txt` for documentation.
 """
 
-__metaclass__ = type
 __all__ = [
     'cachedproperty',
     'clear_property_cache',

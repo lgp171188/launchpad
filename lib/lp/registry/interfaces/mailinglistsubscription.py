@@ -3,8 +3,6 @@
 
 """Mailing list interfaces related to list subscriptions."""
 
-__metaclass__ = type
-
 __all__ = ['MailingListAutoSubscribePolicy']
 
 

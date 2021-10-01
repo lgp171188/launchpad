@@ -3,8 +3,6 @@
 
 """Test syncing branches from production to a staging environment."""
 
-__metaclass__ = type
-
 import os.path
 import subprocess
 from textwrap import dedent

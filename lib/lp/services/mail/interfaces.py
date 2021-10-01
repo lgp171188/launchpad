@@ -3,7 +3,6 @@
 
 """Interfaces specific to mail handling."""
 
-__metaclass__ = type
 __all__ = [
     'BugTargetNotFound',
     'EmailProcessingError',

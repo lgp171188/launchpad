@@ -3,7 +3,6 @@
 
 """The lp.services.database package."""
 
-__metaclass__ = type
 __all__ = [
     'activity_cols',
     'read_transaction',

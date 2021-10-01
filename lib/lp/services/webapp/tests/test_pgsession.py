@@ -3,8 +3,6 @@
 
 """Test pgsession.py."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import hashlib
 

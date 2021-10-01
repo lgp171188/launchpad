@@ -3,8 +3,6 @@
 
 """Webservice unit tests related to Launchpad Bugs."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.app.enums import InformationType

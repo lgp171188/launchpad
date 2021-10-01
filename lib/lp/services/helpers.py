@@ -8,8 +8,6 @@ Do not simply dump stuff in here.  Think carefully as to whether it would
 be better as a method on an existing content object or IFooSet object.
 """
 
-__metaclass__ = type
-
 from collections import OrderedDict
 from difflib import unified_diff
 from io import BytesIO

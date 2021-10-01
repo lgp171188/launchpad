@@ -3,7 +3,6 @@
 
 """In-process authserver fixture."""
 
-__metaclass__ = type
 __all__ = [
     'InProcessAuthServerFixture',
     ]

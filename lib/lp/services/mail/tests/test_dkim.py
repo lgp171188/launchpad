@@ -3,8 +3,6 @@
 
 """Test DKIM-signed messages"""
 
-__metaclass__ = type
-
 import logging
 
 import dkim

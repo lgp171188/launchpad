@@ -3,8 +3,6 @@
 
 """Unit tests for field validators"""
 
-__metaclass__ = type
-
 from lp.app.validators.validation import validate_oci_branch_name
 from lp.testing import TestCase
 from lp.testing.layers import BaseLayer

@@ -3,7 +3,6 @@
 
 """Debbugs ExternalBugTracker utility."""
 
-__metaclass__ = type
 __all__ = [
     'DebBugs',
     'DebBugsDatabaseNotFound'

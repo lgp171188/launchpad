@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-__metaclass__ = type
-
 import subprocess
 import sys
 

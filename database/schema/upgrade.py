@@ -7,8 +7,6 @@
 Apply all outstanding schema patches to an existing launchpad database
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 import glob

@@ -3,8 +3,6 @@
 
 """Interfaces for efficient POT file exports."""
 
-__metaclass__ = type
-
 __all__ = ['IVPOTExport']
 
 from zope.interface import Interface

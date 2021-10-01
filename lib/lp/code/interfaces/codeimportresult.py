@@ -3,7 +3,6 @@
 
 """Interface classes for CodeImportResult, i.e. completed code import jobs."""
 
-__metaclass__ = type
 __all__ = [
     'ICodeImportResult',
     'ICodeImportResultSet',

@@ -3,8 +3,6 @@
 
 """Common views for objects that implement `IPillar`."""
 
-__metaclass__ = type
-
 __all__ = [
     'InvolvedMenu',
     'PillarBugsMenu',

@@ -3,7 +3,6 @@
 
 """Widgets related to `IPOTemplate`."""
 
-__metaclass__ = type
 __all__ = [
     "POTemplateAdminSourcePackageNameWidget",
     "POTemplateEditSourcePackageNameWidget",

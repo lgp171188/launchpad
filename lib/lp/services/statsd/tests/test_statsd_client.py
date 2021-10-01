@@ -3,8 +3,6 @@
 
 """Tests for the Launchpad statsd client"""
 
-__metaclass__ = type
-
 from statsd import StatsClient
 from zope.component import getUtility
 

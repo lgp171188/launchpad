@@ -3,7 +3,6 @@
 
 """Fake transaction manager."""
 
-__metaclass__ = type
 __all__ = ['FakeTransaction']
 
 

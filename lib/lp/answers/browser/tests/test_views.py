@@ -3,8 +3,6 @@
 
 """Test harness for Answer Tracker related unit tests."""
 
-__metaclass__ = type
-
 __all__ = []
 
 import unittest

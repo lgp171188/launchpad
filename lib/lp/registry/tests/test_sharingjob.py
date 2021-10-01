@@ -3,8 +3,6 @@
 
 """Tests for SharingJobs."""
 
-__metaclass__ = type
-
 from testtools.content import text_content
 import transaction
 from zope.component import getUtility

@@ -3,7 +3,6 @@
 
 """Adapters for different objects to branch collections."""
 
-__metaclass__ = type
 __all__ = [
     'branch_collection_for_distribution',
     'branch_collection_for_distro_series',

@@ -3,8 +3,6 @@
 
 """Tests for `OCIRecipeBuildBehaviour`."""
 
-__metaclass__ = type
-
 import base64
 from datetime import datetime
 import json

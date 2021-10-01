@@ -3,7 +3,6 @@
 
 """The code import scheduler XML-RPC API."""
 
-__metaclass__ = type
 __all__ = [
     'CodeImportSchedulerAPI',
     ]

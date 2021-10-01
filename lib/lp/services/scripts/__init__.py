@@ -4,7 +4,6 @@
 """Library functions for use in all scripts.
 
 """
-__metaclass__ = type
 
 __all__ = [
     'db_options',

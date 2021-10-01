@@ -3,8 +3,6 @@
 
 """Test the source package name vocabularies."""
 
-__metaclass__ = type
-
 from testtools.matchers import (
     Matcher,
     MatchesListwise,

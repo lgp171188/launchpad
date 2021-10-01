@@ -3,8 +3,6 @@
 
 """Base class view for snap listings."""
 
-__metaclass__ = type
-
 __all__ = [
     'BranchSnapListingView',
     'GitSnapListingView',

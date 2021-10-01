@@ -3,7 +3,6 @@
 
 """Snap subscription views."""
 
-__metaclass__ = type
 __all__ = [
     'SnapPortletSubscribersContent'
 ]

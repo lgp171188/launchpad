@@ -10,8 +10,6 @@ __all__ = [
     'getPublisher',
     ]
 
-__metaclass__ = type
-
 import bz2
 from collections import defaultdict
 from datetime import (

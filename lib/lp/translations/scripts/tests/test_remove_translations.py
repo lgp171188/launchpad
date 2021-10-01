@@ -5,8 +5,6 @@
 
 """Test `remove_translations` and the `RemoveTranslations` script."""
 
-__metaclass__ = type
-
 import logging
 from optparse import (
     OptionParser,

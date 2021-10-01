@@ -3,8 +3,6 @@
 
 """Tests for SourcePackage view code."""
 
-__metaclass__ = type
-
 from six.moves.urllib.parse import (
     parse_qsl,
     splitquery,

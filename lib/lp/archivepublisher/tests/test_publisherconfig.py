@@ -3,9 +3,6 @@
 
 """Tests for publisherConfig model class."""
 
-__metaclass__ = type
-
-
 from storm.exceptions import IntegrityError
 from zope.component import getUtility
 from zope.interface.verify import verifyObject

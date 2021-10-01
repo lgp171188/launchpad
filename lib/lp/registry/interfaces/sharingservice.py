@@ -3,9 +3,6 @@
 
 """Interfaces for sharing service."""
 
-
-__metaclass__ = type
-
 __all__ = [
     'ISharingService',
     ]

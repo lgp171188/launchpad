@@ -3,8 +3,6 @@
 
 """Widgets related to IProjectGroup."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 from zope.formlib.interfaces import (

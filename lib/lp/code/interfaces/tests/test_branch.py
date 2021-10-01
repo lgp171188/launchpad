@@ -3,8 +3,6 @@
 
 """Tests of the branch interface."""
 
-__metaclass__ = type
-
 from breezy.branch import format_registry as branch_format_registry
 from breezy.bzr import BzrProber
 from breezy.repository import format_registry as repo_format_registry

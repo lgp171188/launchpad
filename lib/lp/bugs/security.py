@@ -3,7 +3,6 @@
 
 """Security adapters for the bugs module."""
 
-__metaclass__ = type
 __all__ = []
 
 from lp.app.security import (

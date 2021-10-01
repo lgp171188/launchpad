@@ -3,8 +3,6 @@
 
 """Test live filesystem build views."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 import soupmatchers
 from storm.locals import Store

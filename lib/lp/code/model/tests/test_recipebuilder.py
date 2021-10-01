@@ -3,8 +3,6 @@
 
 """Test RecipeBuildBehaviour."""
 
-__metaclass__ = type
-
 import os.path
 import shutil
 import tempfile

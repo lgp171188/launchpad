@@ -3,7 +3,6 @@
 
 """Widgets related to IBugTask."""
 
-__metaclass__ = type
 __all__ = [
     "AssigneeDisplayWidget",
     "BugTaskAlsoAffectsSourcePackageNameWidget",

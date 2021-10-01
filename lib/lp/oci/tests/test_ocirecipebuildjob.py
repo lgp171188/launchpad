@@ -3,8 +3,6 @@
 
 """OCIRecipeBuildJob tests"""
 
-__metaclass__ = type
-
 import os
 import signal
 from unittest import mock

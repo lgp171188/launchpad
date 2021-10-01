@@ -3,7 +3,6 @@
 
 """Interface for communication with the Git hosting service."""
 
-__metaclass__ = type
 __all__ = [
     'IGitHostingClient',
     ]

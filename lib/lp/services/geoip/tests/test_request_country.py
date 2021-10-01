@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functional tests for request_country"""
-__metaclass__ = type
 
 import unittest
 

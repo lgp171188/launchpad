@@ -3,7 +3,6 @@
 
 """Security adapters for the buildmaster package."""
 
-__metaclass__ = type
 __all__ = [
     'ViewBuilder',
     'ViewProcessor',

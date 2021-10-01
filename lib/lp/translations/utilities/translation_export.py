@@ -3,8 +3,6 @@
 
 """Components for exporting translation files."""
 
-__metaclass__ = type
-
 __all__ = [
     'ExportedTranslationFile',
     'ExportFileStorage',

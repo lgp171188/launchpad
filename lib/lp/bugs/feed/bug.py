@@ -3,8 +3,6 @@
 
 """Bug feed (syndication) views."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugFeed',
     'BugTargetBugsFeed',

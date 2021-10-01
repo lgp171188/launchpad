@@ -3,8 +3,6 @@
 
 """Source package format interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISourcePackageFormatSelection',
     'ISourcePackageFormatSelectionSet',

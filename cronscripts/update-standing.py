@@ -5,7 +5,6 @@
 
 """A cron script for updating personal standings."""
 
-__metaclass__ = type
 __all__ = []
 
 

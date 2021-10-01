@@ -3,8 +3,6 @@
 
 """Tests for the PersonalArchiveSubscription components and view."""
 
-__metaclass__ = type
-
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.soyuz.browser.archivesubscription import PersonalArchiveSubscription
 from lp.testing import (

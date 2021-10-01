@@ -3,8 +3,6 @@
 
 """Snappy vocabularies."""
 
-__metaclass__ = type
-
 __all__ = [
     'SnapDistroArchSeriesVocabulary',
     'SnappyDistroSeriesVocabulary',

@@ -3,7 +3,6 @@
 
 """ILaunchpadContainer adapters."""
 
-__metaclass__ = type
 __all__ = [
     'LaunchpadProductContainer',
     ]

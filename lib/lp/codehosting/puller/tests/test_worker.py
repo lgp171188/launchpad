@@ -3,8 +3,6 @@
 
 """Unit tests for worker.py."""
 
-__metaclass__ = type
-
 import gc
 import io
 

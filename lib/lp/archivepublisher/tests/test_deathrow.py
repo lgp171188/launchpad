@@ -3,9 +3,6 @@
 
 """Tests for deathrow class."""
 
-__metaclass__ = type
-
-
 import os
 import shutil
 import tempfile

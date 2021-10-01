@@ -3,8 +3,6 @@
 
 """Test vocabularies related to Git access rules."""
 
-__metaclass__ = type
-
 from lp.code.enums import GitPermissionType
 from lp.code.vocabularies.gitrule import GitPermissionsVocabulary
 from lp.testing import TestCaseWithFactory

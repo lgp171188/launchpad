@@ -3,7 +3,6 @@
 
 """Interface definitions for IHasRecipes."""
 
-__metaclass__ = type
 __all__ = [
     'IHasRecipes',
     ]

@@ -7,8 +7,6 @@ You probably don't want to use these classes directly - see the
 docstring in __init__.py for details.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'BatchedCountableIterator',
     'CountableIterator',

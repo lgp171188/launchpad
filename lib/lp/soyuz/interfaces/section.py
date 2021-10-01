@@ -3,8 +3,6 @@
 
 """Section interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISection',
     'ISectionSelection',

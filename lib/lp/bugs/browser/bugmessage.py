@@ -3,7 +3,6 @@
 
 """IBugMessage-related browser view classes."""
 
-__metaclass__ = type
 __all__ = [
     'BugMessageAddFormView',
     ]

@@ -3,7 +3,6 @@
 
 """Views, menus and traversal related to PersonDistributionSourcePackages."""
 
-__metaclass__ = type
 __all__ = [
     'PersonDistributionSourcePackageBreadcrumb',
     'PersonDistributionSourcePackageFacets',

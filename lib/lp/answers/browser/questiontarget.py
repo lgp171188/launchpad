@@ -3,8 +3,6 @@
 
 """IQuestionTarget browser views."""
 
-__metaclass__ = type
-
 __all__ = [
     'AskAQuestionButtonPortlet',
     'ManageAnswerContactView',

@@ -3,8 +3,6 @@
 
 """Database classes that implement SourcePackage items."""
 
-__metaclass__ = type
-
 __all__ = [
     'SourcePackage',
     'SourcePackageQuestionTargetMixin',

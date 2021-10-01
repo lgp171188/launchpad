@@ -3,8 +3,6 @@
 
 """Test the modified branches script."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import os
 

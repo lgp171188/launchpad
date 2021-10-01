@@ -3,7 +3,6 @@
 
 """An example cronscript. If it runs, it returns 42 as its return code."""
 
-__metaclass__ = type
 __all__ = []
 
 import sys

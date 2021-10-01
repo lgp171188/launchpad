@@ -3,7 +3,6 @@
 
 """The MailWrapper class."""
 
-__metaclass__ = type
 __all__ = [
     'MailWrapper',
     ]

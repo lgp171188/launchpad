@@ -3,8 +3,6 @@
 
 """Interfaces for the Launchpad application."""
 
-__metaclass__ = type
-
 __all__ = [
     'IPrivateApplication',
     ]

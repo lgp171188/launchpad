@@ -3,8 +3,6 @@
 
 """Unit tests for linking bug tracker components to source packages."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet

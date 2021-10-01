@@ -3,9 +3,6 @@
 
 """Test the person_sort_key stored procedure."""
 
-__metaclass__ = type
-
-
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
 

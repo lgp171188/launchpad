@@ -3,7 +3,6 @@
 
 """Database classes for project news and announcement."""
 
-__metaclass__ = type
 __all__ = [
     'Announcement',
     'AnnouncementSet',

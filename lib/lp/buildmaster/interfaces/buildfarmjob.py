@@ -3,8 +3,6 @@
 
 """Interface for Soyuz build farm jobs."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBuildFarmJob',
     'IBuildFarmJobDB',

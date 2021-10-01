@@ -33,7 +33,6 @@ will be provided:
     A serialised discharge macaroon for the provided root macaroon.
 """
 
-__metaclass__ = type
 __all__ = [
     'MacaroonRequest',
     'MacaroonResponse',

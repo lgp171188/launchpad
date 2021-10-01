@@ -3,8 +3,6 @@
 
 """Unit tests for ISourcePackage implementations."""
 
-__metaclass__ = type
-
 from lazr.lifecycle.event import (
     ObjectCreatedEvent,
     ObjectDeletedEvent,

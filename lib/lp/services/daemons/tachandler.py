@@ -3,8 +3,6 @@
 
 """Test harness for TAC (Twisted Application Configuration) files."""
 
-__metaclass__ = type
-
 __all__ = [
     'TacTestSetup',
     'TacException',

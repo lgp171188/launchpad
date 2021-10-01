@@ -3,8 +3,6 @@
 
 """Webservice unit tests related to Launchpad Bugs."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

@@ -3,7 +3,6 @@
 
 """Bug notifications."""
 
-__metaclass__ = type
 __all__ = [
     'BugNotification',
     'BugNotificationFilter',

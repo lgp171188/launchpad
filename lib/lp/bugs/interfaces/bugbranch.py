@@ -3,8 +3,6 @@
 
 """Interfaces for linking BugTasks and Branches."""
 
-__metaclass__ = type
-
 __all__ = [
     "IBugBranch",
     "IBugBranchSet",

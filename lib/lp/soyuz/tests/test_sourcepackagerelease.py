@@ -7,8 +7,6 @@
 
 """Test SourcePackageRelease."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 import transaction

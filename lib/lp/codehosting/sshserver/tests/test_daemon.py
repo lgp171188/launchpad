@@ -3,8 +3,6 @@
 
 """Tests for the codehosting SSH server glue."""
 
-__metaclass__ = type
-
 from lazr.sshserver.auth import (
     NoSuchPersonWithName,
     SSHUserAuthServer,

@@ -3,7 +3,6 @@
 
 """Source Package Recipe vocabularies used in the lp/code modules."""
 
-__metaclass__ = type
 __all__ = [
     'BuildableDistroSeries',
     'target_ppas_vocabulary',

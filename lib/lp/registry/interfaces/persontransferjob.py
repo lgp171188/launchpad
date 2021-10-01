@@ -3,7 +3,6 @@
 
 """Interface for the Jobs system to change memberships or merge persons."""
 
-__metaclass__ = type
 __all__ = [
     'IExpiringMembershipNotificationJob',
     'IExpiringMembershipNotificationJobSource',

@@ -40,7 +40,6 @@ hooks into operations like `mkdir` and ask the `LaunchpadServer` to make a
 branch if appropriate.
 """
 
-__metaclass__ = type
 __all__ = [
     'AsyncLaunchpadTransport',
     'branch_id_to_path',

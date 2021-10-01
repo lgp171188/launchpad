@@ -5,7 +5,6 @@
 
 """Report a breakdown of Librarian disk space usage."""
 
-__metaclass__ = type
 __all__ = []
 
 import _pythonpath  # noqa: F401

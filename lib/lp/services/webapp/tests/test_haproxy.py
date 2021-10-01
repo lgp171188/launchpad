@@ -3,7 +3,6 @@
 
 """Test the haproxy integration view."""
 
-__metaclass__ = type
 __all__ = []
 
 from textwrap import dedent

@@ -5,8 +5,6 @@
 
 from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 
-
-__metaclass__ = type
 __all__ = [
     'get_ocirecipe_privacy_filter',
     'OCIRecipe',

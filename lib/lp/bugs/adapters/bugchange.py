@@ -3,7 +3,6 @@
 
 """Implementations for bug changes."""
 
-__metaclass__ = type
 __all__ = [
     'ATTACHMENT_ADDED',
     'ATTACHMENT_REMOVED',

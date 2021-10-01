@@ -3,7 +3,6 @@
 
 """Model classes for inline comments for preview diffs."""
 
-__metaclass__ = type
 __all__ = [
     'CodeReviewInlineComment',
     'CodeReviewInlineCommentDraft',

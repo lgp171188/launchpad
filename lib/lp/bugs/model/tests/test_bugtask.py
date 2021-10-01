@@ -1,8 +1,6 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from collections import namedtuple
 from datetime import datetime
 from operator import attrgetter

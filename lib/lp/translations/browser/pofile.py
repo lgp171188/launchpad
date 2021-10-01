@@ -3,8 +3,6 @@
 
 """Browser code for Translation files."""
 
-__metaclass__ = type
-
 __all__ = [
     'POExportView',
     'POFileFilteredView',

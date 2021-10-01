@@ -3,8 +3,6 @@
 
 """Test MaloneHandler."""
 
-__metaclass__ = type
-
 import transaction
 from zope.component import getUtility
 from zope.security.management import (

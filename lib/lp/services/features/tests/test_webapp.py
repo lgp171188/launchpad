@@ -3,8 +3,6 @@
 
 """Tests for webapp glue."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 from lp.services.config import config

@@ -3,8 +3,6 @@
 
 """Integration-test POFile statistics verification script."""
 
-__metaclass__ = type
-
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer

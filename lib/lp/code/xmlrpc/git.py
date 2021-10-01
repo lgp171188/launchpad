@@ -3,7 +3,6 @@
 
 """Implementations of the XML-RPC APIs for Git."""
 
-__metaclass__ = type
 __all__ = [
     'GitAPI',
     ]

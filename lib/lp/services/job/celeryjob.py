@@ -7,8 +7,6 @@ Because celery sets up configuration at import time, code that is not designed
 to use Celery may break if this is used.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'celery_app',
     'celery_run_job',

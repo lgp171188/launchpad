@@ -3,7 +3,6 @@
 
 """XML-RPC interface for extracting real time stats from the appserver."""
 
-__metaclass__ = type
 __all__ = ["OpStats"]
 
 from time import time

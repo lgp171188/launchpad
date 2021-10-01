@@ -3,7 +3,6 @@
 
 """Person notifications."""
 
-__metaclass__ = type
 __all__ = [
     'IPersonNotification',
     'IPersonNotificationSet',

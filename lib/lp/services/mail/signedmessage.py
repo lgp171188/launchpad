@@ -3,8 +3,6 @@
 
 """Classes for simpler handling of PGP signed email messages."""
 
-__metaclass__ = type
-
 __all__ = [
     'SignedMessage',
     'signed_message_from_bytes',

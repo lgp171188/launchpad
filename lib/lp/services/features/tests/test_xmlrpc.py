@@ -3,8 +3,6 @@
 
 """Tests for FeatureFlagApplication."""
 
-__metaclass__ = type
-
 from six.moves import xmlrpc_client
 
 from lp.services import features

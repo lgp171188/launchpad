@@ -3,8 +3,6 @@
 
 """Views for Specification Goal Setting."""
 
-__metaclass__ = type
-
 __all__ = [
     'GoalDecideView',
     ]

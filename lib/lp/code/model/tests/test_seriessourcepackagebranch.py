@@ -3,8 +3,6 @@
 
 """Model tests for distro series source package branch links."""
 
-__metaclass__ = type
-
 from lp.code.model.seriessourcepackagebranch import (
     SeriesSourcePackageBranchSet,
     )

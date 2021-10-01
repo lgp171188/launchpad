@@ -3,8 +3,6 @@
 
 """Interfaces for the Launchpad security policy."""
 
-__metaclass__ = type
-
 __all__ = [
     'IAuthorization',
     ]

@@ -3,8 +3,6 @@
 
 """View classes for `IProductSeries`."""
 
-__metaclass__ = type
-
 __all__ = [
     'LinkTranslationsBranchView',
     'ProductSeriesTemplatesView',

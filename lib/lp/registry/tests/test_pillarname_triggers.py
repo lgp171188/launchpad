@@ -4,8 +4,6 @@
 """Tests that the PillarName materialized view is being maintained correctly.
 """
 
-__metaclass__ = type
-
 import unittest
 
 from lp.services.database.sqlbase import cursor

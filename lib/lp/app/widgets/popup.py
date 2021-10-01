@@ -3,7 +3,6 @@
 
 """Single selection widget using a popup to select one item from many."""
 
-__metaclass__ = type
 __all__ = [
     "BugTrackerPickerWidget",
     "DistributionSourcePackagePickerWidget",

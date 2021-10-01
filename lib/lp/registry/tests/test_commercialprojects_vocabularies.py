@@ -3,8 +3,6 @@
 
 """Test the commercial projects vocabularies."""
 
-__metaclass__ = type
-
 from lp.registry.interfaces.product import License
 from lp.registry.vocabularies import CommercialProjectsVocabulary
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus

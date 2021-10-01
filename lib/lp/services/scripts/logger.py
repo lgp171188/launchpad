@@ -6,8 +6,6 @@
 Don't import from this module. Import it from lp.services.scripts.
 """
 
-__metaclass__ = type
-
 # Don't import stuff from this module. Import it from lp.services.scripts
 __all__ = [
     'DEBUG2',

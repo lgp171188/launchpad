@@ -3,7 +3,6 @@
 
 """Database classes for the CodeImportResult table."""
 
-__metaclass__ = type
 __all__ = ['CodeImportResult', 'CodeImportResultSet']
 
 import pytz

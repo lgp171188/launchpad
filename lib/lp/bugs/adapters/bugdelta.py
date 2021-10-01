@@ -3,8 +3,6 @@
 
 """Components related to bugs."""
 
-__metaclass__ = type
-
 from zope.interface import implementer
 
 from lp.bugs.interfaces.bug import IBugDelta

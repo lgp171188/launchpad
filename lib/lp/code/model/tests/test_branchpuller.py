@@ -3,8 +3,6 @@
 
 """Tests for the branch puller model code."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

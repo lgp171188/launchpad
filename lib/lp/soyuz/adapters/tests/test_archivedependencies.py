@@ -3,8 +3,6 @@
 
 """Test archive dependencies."""
 
-__metaclass__ = type
-
 import os.path
 
 from testtools.matchers import (

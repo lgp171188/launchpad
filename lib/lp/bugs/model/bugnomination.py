@@ -8,7 +8,6 @@ particular distro series or product series. A bug may have zero, one,
 or more nominations.
 """
 
-__metaclass__ = type
 __all__ = [
     'BugNomination',
     'BugNominationSet']

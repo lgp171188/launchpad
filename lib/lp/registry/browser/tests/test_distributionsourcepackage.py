@@ -3,8 +3,6 @@
 
 """Test distributionsourcepackage views."""
 
-__metaclass__ = type
-
 import re
 
 import soupmatchers

@@ -6,8 +6,6 @@
 There is also a doctest in specificationdepcandidates.txt.
 """
 
-__metaclass__ = type
-
 from zope.schema.vocabulary import getVocabularyRegistry
 
 from lp.services.webapp import canonical_url

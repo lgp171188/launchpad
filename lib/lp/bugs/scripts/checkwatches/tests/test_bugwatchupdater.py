@@ -3,8 +3,6 @@
 
 """Tests for the checkwatches.bugwatchupdater module."""
 
-__metaclass__ = type
-
 from datetime import datetime
 
 import transaction

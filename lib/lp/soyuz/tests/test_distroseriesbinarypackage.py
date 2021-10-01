@@ -3,7 +3,6 @@
 
 """Tests for `DistroSeriesBinaryPackage`."""
 
-__metaclass__ = type
 __all__ = [
     'TestDistroSeriesBinaryPackage',
     ]
