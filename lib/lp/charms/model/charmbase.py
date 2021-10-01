@@ -9,10 +9,10 @@ __all__ = [
     ]
 
 import pytz
+from storm.databases.postgres import JSON
 from storm.locals import (
     DateTime,
     Int,
-    JSON,
     Reference,
     Store,
     Storm,
