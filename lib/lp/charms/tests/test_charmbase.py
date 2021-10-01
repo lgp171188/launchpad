@@ -86,14 +86,14 @@ class TestCharmBaseProcessors(TestCaseWithFactory):
         # Processor for the corresponding series.
         charm_base = getUtility(ICharmBaseSet).new(
             registrant=self.factory.makePerson(),
-            distro_series=self.distroseries, build_channels={})
+            distro_series=self.distroseries, build_snap_channels={})
         self.assertContentEqual(self.procs, charm_base.processors)
 
     def test_new_override_processors(self):
         # CharmBaseSet.new can be given a custom set of processors.
         charm_base = getUtility(ICharmBaseSet).new(
             registrant=self.factory.makePerson(),
-            distro_series=self.distroseries, build_channels={},
+            distro_series=self.distroseries, build_snap_channels={},
             processors=self.procs[:2])
         self.assertContentEqual(self.procs[:2], charm_base.processors)
 
@@ -143,7 +143,7 @@ class TestCharmBaseWebservice(TestCaseWithFactory):
         webservice.default_api_version = "devel"
         response = webservice.named_post(
             "/+charm-bases", "new", distro_series=distroseries_url,
-            build_channels={"charmcraft": "stable"})
+            build_snap_channels={"charmcraft": "stable"})
         self.assertEqual(401, response.status)
 
     def test_new(self):
@@ -157,7 +157,7 @@ class TestCharmBaseWebservice(TestCaseWithFactory):
         logout()
         response = webservice.named_post(
             "/+charm-bases", "new", distro_series=distroseries_url,
-            build_channels={"charmcraft": "stable"})
+            build_snap_channels={"charmcraft": "stable"})
         self.assertEqual(201, response.status)
         charm_base = webservice.get(response.getHeader("Location")).jsonBody()
         with person_logged_in(person):
@@ -166,7 +166,7 @@ class TestCharmBaseWebservice(TestCaseWithFactory):
                     webservice.getAbsoluteUrl(api_url(person))),
                 "distro_series_link": Equals(
                     webservice.getAbsoluteUrl(distroseries_url)),
-                "build_channels": Equals({"charmcraft": "stable"}),
+                "build_snap_channels": Equals({"charmcraft": "stable"}),
                 }))
 
     def test_new_duplicate_distro_series(self):
@@ -182,11 +182,11 @@ class TestCharmBaseWebservice(TestCaseWithFactory):
         logout()
         response = webservice.named_post(
             "/+charm-bases", "new", distro_series=distroseries_url,
-            build_channels={"charmcraft": "stable"})
+            build_snap_channels={"charmcraft": "stable"})
         self.assertEqual(201, response.status)
         response = webservice.named_post(
             "/+charm-bases", "new", distro_series=distroseries_url,
-            build_channels={"charmcraft": "stable"})
+            build_snap_channels={"charmcraft": "stable"})
         self.assertEqual(400, response.status)
         self.assertEqual(
             ("%s is already in use by another base." %

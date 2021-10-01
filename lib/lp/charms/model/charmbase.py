@@ -50,14 +50,14 @@ class CharmBase(Storm):
     distro_series_id = Int(name="distro_series", allow_none=False)
     distro_series = Reference(distro_series_id, "DistroSeries.id")
 
-    build_channels = JSON(name="build_channels", allow_none=False)
+    build_snap_channels = JSON(name="build_snap_channels", allow_none=False)
 
-    def __init__(self, registrant, distro_series, build_channels,
+    def __init__(self, registrant, distro_series, build_snap_channels,
                  date_created=DEFAULT):
         super().__init__()
         self.registrant = registrant
         self.distro_series = distro_series
-        self.build_channels = build_channels
+        self.build_snap_channels = build_snap_channels
         self.date_created = date_created
 
     def _getProcessors(self):
@@ -106,8 +106,8 @@ class CharmBaseArch(Storm):
 class CharmBaseSet:
     """See `ICharmBaseSet`."""
 
-    def new(self, registrant, distro_series, build_channels, processors=None,
-            date_created=DEFAULT):
+    def new(self, registrant, distro_series, build_snap_channels,
+            processors=None, date_created=DEFAULT):
         """See `ICharmBaseSet`."""
         try:
             self.getByDistroSeries(distro_series)
@@ -117,7 +117,7 @@ class CharmBaseSet:
             raise DuplicateCharmBase(distro_series)
         store = IMasterStore(CharmBase)
         charm_base = CharmBase(
-            registrant, distro_series, build_channels,
+            registrant, distro_series, build_snap_channels,
             date_created=date_created)
         store.add(charm_base)
         if processors is None:

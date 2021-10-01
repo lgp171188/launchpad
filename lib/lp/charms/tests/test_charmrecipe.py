@@ -639,7 +639,7 @@ class TestCharmRecipe(TestCaseWithFactory):
         with admin_logged_in():
             self.factory.makeCharmBase(
                 distro_series=distroseries,
-                build_channels={"charmcraft": "stable/launchpad-buildd"},
+                build_snap_channels={"charmcraft": "stable/launchpad-buildd"},
                 processors=[
                     distroseries[arch_tag].processor
                     for arch_tag in ("sparc", "avr")])
@@ -661,7 +661,7 @@ class TestCharmRecipe(TestCaseWithFactory):
         with admin_logged_in():
             self.factory.makeCharmBase(
                 distro_series=distroseries,
-                build_channels={
+                build_snap_channels={
                     "core20": "stable",
                     "_byarch": {"riscv64": {"core20": "candidate"}},
                     })

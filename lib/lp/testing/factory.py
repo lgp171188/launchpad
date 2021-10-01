@@ -5207,18 +5207,18 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return ProxyFactory(CharmFile(build=build, library_file=library_file))
 
     def makeCharmBase(self, registrant=None, distro_series=None,
-                      build_channels=None, processors=None,
+                      build_snap_channels=None, processors=None,
                       date_created=DEFAULT):
         """Make a new CharmBase."""
         if registrant is None:
             registrant = self.makePerson()
         if distro_series is None:
             distro_series = self.makeDistroSeries()
-        if build_channels is None:
-            build_channels = {u"charmcraft": u"stable"}
+        if build_snap_channels is None:
+            build_snap_channels = {"charmcraft": "stable"}
         return getUtility(ICharmBaseSet).new(
-            registrant, distro_series, build_channels, processors=processors,
-            date_created=date_created)
+            registrant, distro_series, build_snap_channels,
+            processors=processors, date_created=date_created)
 
 
 # Some factory methods return simple Python types. We don't add

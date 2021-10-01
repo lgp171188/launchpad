@@ -576,7 +576,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
             except NoSuchCharmBase:
                 charm_base = None
             if charm_base is not None:
-                arch_channels = dict(charm_base.build_channels)
+                arch_channels = dict(charm_base.build_snap_channels)
                 channels_by_arch = arch_channels.pop("_byarch", {})
                 if das.architecturetag in channels_by_arch:
                     arch_channels.update(channels_by_arch[das.architecturetag])

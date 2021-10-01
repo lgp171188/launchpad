@@ -99,7 +99,7 @@ class ICharmBaseEditableAttributes(Interface):
     Anyone can view these attributes, but they need launchpad.Edit to change.
     """
 
-    build_channels = exported(Dict(
+    build_snap_channels = exported(Dict(
         title=_("Source snap channels for builds"),
         key_type=TextLine(), required=True, readonly=False,
         description=_(
@@ -143,9 +143,10 @@ class ICharmBaseSetEdit(Interface):
     @operation_parameters(
         processors=List(
             value_type=Reference(schema=IProcessor), required=False))
-    @export_factory_operation(ICharmBase, ["distro_series", "build_channels"])
+    @export_factory_operation(
+        ICharmBase, ["distro_series", "build_snap_channels"])
     @operation_for_version("devel")
-    def new(registrant, distro_series, build_channels, processors=None,
+    def new(registrant, distro_series, build_snap_channels, processors=None,
             date_created=None):
         """Create an `ICharmBase`."""
 
