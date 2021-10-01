@@ -130,6 +130,18 @@
             factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
             permission="zope.Public" />
 
+        <browser:url
+            for="lp.charms.interfaces.charmbase.ICharmBase"
+            path_expression="string:${id}"
+            parent_utility="lp.charms.interfaces.charmbase.ICharmBaseSet" />
+        <browser:url
+            for="lp.charms.interfaces.charmbase.ICharmBaseSet"
+            path_expression="string:+charm-bases"
+            parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
+        <browser:navigation
+            module="lp.charms.browser.charmbase"
+            classes="CharmBaseSetNavigation" />
+
         <browser:page
             for="*"
             class="lp.app.browser.launchpad.Macro"

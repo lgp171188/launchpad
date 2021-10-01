@@ -109,6 +109,7 @@ from lp.buildmaster.enums import (
     )
 from lp.buildmaster.interfaces.builder import IBuilderSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.charms.interfaces.charmbase import ICharmBaseSet
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
 from lp.charms.model.charmrecipebuild import CharmFile
@@ -5204,6 +5205,20 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if library_file is None:
             library_file = self.makeLibraryFileAlias()
         return ProxyFactory(CharmFile(build=build, library_file=library_file))
+
+    def makeCharmBase(self, registrant=None, distro_series=None,
+                      build_snap_channels=None, processors=None,
+                      date_created=DEFAULT):
+        """Make a new CharmBase."""
+        if registrant is None:
+            registrant = self.makePerson()
+        if distro_series is None:
+            distro_series = self.makeDistroSeries()
+        if build_snap_channels is None:
+            build_snap_channels = {"charmcraft": "stable"}
+        return getUtility(ICharmBaseSet).new(
+            registrant, distro_series, build_snap_channels,
+            processors=processors, date_created=date_created)
 
 
 # Some factory methods return simple Python types. We don't add

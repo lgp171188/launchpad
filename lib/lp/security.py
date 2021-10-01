@@ -65,6 +65,10 @@ from lp.buildmaster.interfaces.builder import (
     )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.charms.interfaces.charmbase import (
+    ICharmBase,
+    ICharmBaseSet,
+    )
 from lp.charms.interfaces.charmrecipe import (
     ICharmRecipe,
     ICharmRecipeBuildRequest,
@@ -3701,3 +3705,16 @@ class EditCharmRecipeBuild(AdminByBuilddAdmin):
 
 class AdminCharmRecipeBuild(AdminByBuilddAdmin):
     usedfor = ICharmRecipeBuild
+
+
+class ViewCharmBase(AnonymousAuthorization):
+    """Anyone can view an `ICharmBase`."""
+    usedfor = ICharmBase
+
+
+class EditCharmBase(EditByRegistryExpertsOrAdmins):
+    usedfor = ICharmBase
+
+
+class EditCharmBaseSet(EditByRegistryExpertsOrAdmins):
+    usedfor = ICharmBaseSet
