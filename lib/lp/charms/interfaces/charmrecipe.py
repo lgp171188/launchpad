@@ -48,6 +48,7 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
+    operation_returns_collection_of,
     operation_returns_entry,
     REQUEST_USER,
     )
@@ -613,6 +614,14 @@ class ICharmRecipeSet(Interface):
 
     def exists(owner, project, name):
         """Check to see if a matching charm recipe exists."""
+
+    @operation_parameters(
+        owner=Reference(IPerson, title=_("Owner"), required=True))
+    @operation_returns_collection_of(ICharmRecipe)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def findByOwner(owner):
+        """Return all charm recipes with the given `owner`."""
 
     def findByPerson(person, visible_by_user=None):
         """Return all charm recipes relevant to `person`.
