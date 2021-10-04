@@ -5,7 +5,6 @@ import io
 import logging
 
 from lazr.delegates import delegate_to
-import six
 from storm.expr import And
 from storm.locals import (
     Int,
@@ -76,8 +75,7 @@ class ArchiveJob(StormBase):
 
 @delegate_to(IArchiveJob)
 @provider(IArchiveJobSource)
-class ArchiveJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class ArchiveJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     """Intermediate class for deriving from ArchiveJob."""
 
     def __init__(self, job):

@@ -429,8 +429,7 @@ class GPGSigningContext:
         self.mode = mode
 
 
-class ObjectFactory(
-        six.with_metaclass(AutoDecorate(default_master_store)), object):
+class ObjectFactory(metaclass=AutoDecorate(default_master_store)):
     """Factory methods for creating basic Python objects."""
 
     # This allocates process-wide unique integers.  We count on Python doing
@@ -673,7 +672,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             account = IMasterStore(Account).get(
                 Account, person.accountID)
             account.status = AccountStatus.ACTIVE
-            person.validateAndEnsurePreferredEmail(email)
+            person.setPreferredEmail(email)
 
         removeSecurityProxy(email).status = email_address_status
 

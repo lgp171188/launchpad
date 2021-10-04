@@ -14,7 +14,6 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-import six
 from storm.databases.postgres import JSON
 from storm.locals import (
     Desc,
@@ -110,8 +109,7 @@ class CharmRecipeJob(StormBase):
 
 
 @delegate_to(ICharmRecipeJob)
-class CharmRecipeJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class CharmRecipeJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def __init__(self, recipe_job):
         self.context = recipe_job

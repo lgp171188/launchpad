@@ -135,8 +135,7 @@ class PersonTransferJob(StormBase):
 
 @delegate_to(IPersonTransferJob)
 @provider(IPersonTransferJobSource)
-class PersonTransferJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class PersonTransferJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     """Intermediate class for deriving from PersonTransferJob.
 
     Storm classes can't simply be subclassed or you can end up with
