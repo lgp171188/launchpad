@@ -7,7 +7,6 @@ __all__ = [
 ]
 
 from lazr.delegates import delegate_to
-import six
 from storm.locals import (
     And,
     Int,
@@ -67,8 +66,7 @@ class DistributionJob(StormBase):
 
 
 @delegate_to(IDistributionJob)
-class DistributionJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class DistributionJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     """Abstract class for deriving from DistributionJob."""
 
     def __init__(self, job):

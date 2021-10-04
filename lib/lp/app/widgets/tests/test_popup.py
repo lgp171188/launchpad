@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import simplejson
-import six
 from zope.interface import Interface
 from zope.interface.interface import InterfaceClass
 from zope.schema import Choice
@@ -33,7 +32,7 @@ class TestMetaClass(InterfaceClass):
             __module__=__module__)
 
 
-class ITest(six.with_metaclass(TestMetaClass, Interface)):
+class ITest(Interface, metaclass=TestMetaClass):
     # The schema class for the widget we will test.
     pass
 

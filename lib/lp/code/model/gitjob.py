@@ -16,7 +16,6 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-import six
 from storm.exceptions import LostObjectError
 from storm.locals import (
     Int,
@@ -139,7 +138,7 @@ class GitJob(StormBase):
 
 
 @delegate_to(IGitJob)
-class GitJobDerived(six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class GitJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def __init__(self, git_job):
         self.context = git_job

@@ -11,7 +11,6 @@ import os
 
 from fixtures import TempDir
 from pytz import UTC
-import six
 from testtools.matchers import (
     Equals,
     GreaterThan,
@@ -64,8 +63,7 @@ class TestAutoDecorate(TestCase):
         # All of the decorators passed to AutoDecorate are applied as
         # decorators in reverse order.
         class AutoDecoratedClass(
-            six.with_metaclass(
-                AutoDecorate(self.decorator_1, self.decorator_2), object)):
+                metaclass=AutoDecorate(self.decorator_1, self.decorator_2)):
 
             def method_a(s):
                 self.log.append('a')

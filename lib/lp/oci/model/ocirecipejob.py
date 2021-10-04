@@ -3,9 +3,6 @@
 
 """A build job for OCI Recipe."""
 
-from lp.buildmaster.model.processor import Processor
-from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
-
 __all__ = [
     'OCIRecipeJob',
     ]
@@ -15,7 +12,6 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-import six
 from storm.databases.postgres import JSON
 from storm.expr import Desc
 from storm.properties import Int
@@ -30,6 +26,8 @@ from zope.interface import (
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
+from lp.buildmaster.model.processor import Processor
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import (
     OCIRecipeBuildRegistryUploadStatus,
     OCIRecipeBuildSetRegistryUploadStatus,
@@ -109,8 +107,7 @@ class OCIRecipeJob(StormBase):
 
 
 @delegate_to(IOCIRecipeJob)
-class OCIRecipeJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class OCIRecipeJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def __init__(self, recipe_job):
         self.context = recipe_job
