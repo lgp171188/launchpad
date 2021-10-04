@@ -673,7 +673,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             account = IMasterStore(Account).get(
                 Account, person.accountID)
             account.status = AccountStatus.ACTIVE
-            person.validateAndEnsurePreferredEmail(email)
+            person.setPreferredEmail(email)
 
         removeSecurityProxy(email).status = email_address_status
 
