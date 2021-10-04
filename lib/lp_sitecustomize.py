@@ -6,9 +6,11 @@
 
 from collections import defaultdict
 import itertools
+import linecache
 import logging
 import os
 import sys
+import traceback
 import warnings
 
 from twisted.internet.defer import (
@@ -166,6 +168,23 @@ def customize_logger():
     silence_swiftclient_logger()
 
 
+def speed_up_traceback():
+    # The traceback module calls linecache.checkcache for each traceback to
+    # make sure line numbers of source files are up to date.  We generate
+    # tracebacks rather frequently in timelines; source files are unlikely
+    # to change over the course of a Launchpad process, especially since
+    # gunicorn auto-reloads in development configurations; and a couple of
+    # milliseconds per timeline action adds up.  Suppress these checks.
+    class UncheckedLinecache:
+        def checkcache(self, filename=None):
+            pass
+
+        def __getattr__(self, name):
+            return getattr(linecache, name)
+
+    traceback.linecache = UncheckedLinecache()
+
+
 def main(instance_name=None):
     # This is called by _pythonpath.py and by the standard Launchpad script
     # preamble (see LPScriptWriter in setup.py).  The instance name is sent
@@ -184,6 +203,7 @@ def main(instance_name=None):
     silence_warnings()
     customize_logger()
     set_default_openid_fetcher()
+    speed_up_traceback()
     checker.BasicTypes.update({defaultdict: checker.NoProxy})
     checker.BasicTypes.update({Deferred: checker.NoProxy})
     checker.BasicTypes.update({DeferredList: checker.NoProxy})
