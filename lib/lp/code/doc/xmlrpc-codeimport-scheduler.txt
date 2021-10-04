@@ -2,7 +2,7 @@ The CodeImportScheduler
 =======================
 
 The code import scheduler is an XMLRPC service that provides (ids of)
-CodeImportJobs for code import slaves to run.  It is available as the
+CodeImportJobs for code import workers to run.  It is available as the
 codeimportscheduler attribute of our private XMLRPC instance.
 
     >>> from lp.code.interfaces.codeimportscheduler import (
@@ -31,7 +31,7 @@ XML-RPC API:
 
 The ICodeImportScheduler interface defines a single method,
 getJobForMachine(), that returns the id of the job that the code
-import slave should next run.
+import worker should next run.
 
     >>> codeimportscheduler_api.getJobForMachine('bazaar-importer', 2)
     1
