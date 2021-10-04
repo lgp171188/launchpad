@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Interfaces for using the Jobs system for Apport BLOB processing."""
 
-__metaclass__ = type
 __all__ = [
     'ApportJobType',
     'IApportJob',

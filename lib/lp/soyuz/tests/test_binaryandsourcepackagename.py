@@ -3,8 +3,6 @@
 
 """Test the binary and source package name vocabularies."""
 
-__metaclass__ = type
-
 from storm.store import Store
 
 from lp.soyuz.model.binaryandsourcepackagename import (

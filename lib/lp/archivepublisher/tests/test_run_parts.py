@@ -3,8 +3,6 @@
 
 """Test publisher run-parts handling."""
 
-__metaclass__ = type
-
 import os.path
 
 from fixtures import MonkeyPatch

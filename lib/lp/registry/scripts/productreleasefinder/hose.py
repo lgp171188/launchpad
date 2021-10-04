@@ -7,7 +7,6 @@ This module uses the walker and filter modules to identify files for
 download.
 """
 
-__metaclass__ = type
 __all__ = [
     'Hose',
     ]

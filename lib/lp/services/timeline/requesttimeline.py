@@ -8,8 +8,6 @@ __all__ = [
     'set_request_timeline',
     ]
 
-__metaclass__ = type
-
 from timeline import Timeline
 
 # XXX RobertCollins 2010-09-01 bug=623199: Undesirable but pragmatic.

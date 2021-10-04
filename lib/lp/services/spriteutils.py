@@ -6,8 +6,6 @@
 
 """Library to create sprites."""
 
-__metaclass__ = type
-
 __all__ = [
     'SpriteUtil',
     ]

@@ -3,7 +3,6 @@
 
 """Messaging interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'IMessageConsumer',
     'IMessageProducer',

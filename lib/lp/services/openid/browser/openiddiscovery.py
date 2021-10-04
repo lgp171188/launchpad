@@ -3,7 +3,6 @@
 
 """Classes related to OpenID discovery."""
 
-__metaclass__ = type
 __all__ = [
     'XRDSContentNegotiationMixin',
     ]

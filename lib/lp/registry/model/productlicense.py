@@ -3,7 +3,6 @@
 
 """Database classes including and related to ProductLicense."""
 
-__metaclass__ = type
 __all__ = [
     'ProductLicense',
     ]

@@ -3,7 +3,6 @@
 
 """Milestone model classes."""
 
-__metaclass__ = type
 __all__ = [
     'HasMilestonesMixin',
     'Milestone',

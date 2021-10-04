@@ -3,8 +3,6 @@
 
 """Common implementations for IHasDrivers."""
 
-__metaclass__ = type
-
 __all__ = [
     'HasDriversMixin',
     ]

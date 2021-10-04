@@ -6,7 +6,6 @@
 Dispatches translation template build jobs to build-farm slaves.
 """
 
-__metaclass__ = type
 __all__ = [
     'TranslationTemplatesBuildBehaviour',
     ]

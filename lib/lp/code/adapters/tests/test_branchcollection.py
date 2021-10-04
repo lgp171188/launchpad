@@ -3,9 +3,6 @@
 
 """Functional tests for BranchCollection adapters."""
 
-__metaclass__ = type
-
-
 from lp.code.interfaces.branchcollection import IBranchCollection
 from lp.registry.model.personproduct import PersonProduct
 from lp.testing import TestCaseWithFactory

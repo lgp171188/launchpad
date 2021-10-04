@@ -3,8 +3,6 @@
 
 """Tests for the LaunchpadStatementTracer."""
 
-__metaclass__ = type
-
 from contextlib import contextmanager
 import sys
 

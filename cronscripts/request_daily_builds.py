@@ -5,8 +5,6 @@
 
 """Request builds for stale daily build recipes and snap packages."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 import transaction

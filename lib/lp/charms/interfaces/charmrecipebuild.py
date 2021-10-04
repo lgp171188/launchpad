@@ -3,7 +3,6 @@
 
 """Charm recipe build interfaces."""
 
-__metaclass__ = type
 __all__ = [
     "CannotScheduleStoreUpload",
     "CharmRecipeBuildStoreUploadStatus",

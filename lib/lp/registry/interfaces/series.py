@@ -3,8 +3,6 @@
 
 """Interfaces including common IDistroSeries and IProductSeries classes."""
 
-__metaclass__ = type
-
 __all__ = [
     'SeriesStatus',
     'ISeriesMixin',

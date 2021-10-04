@@ -3,8 +3,6 @@
 
 """Milestone interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IAbstractMilestone',
     'ICanGetMilestonesDirectly',

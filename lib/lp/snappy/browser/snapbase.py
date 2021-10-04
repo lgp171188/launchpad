@@ -3,7 +3,6 @@
 
 """Views of bases for snaps."""
 
-__metaclass__ = type
 __all__ = [
     "SnapBaseNavigation",
     "SnapBaseSetNavigation",

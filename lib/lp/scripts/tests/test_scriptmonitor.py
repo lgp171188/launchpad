@@ -3,8 +3,6 @@
 
 """Test scriptmonitor.py."""
 
-__metaclass__ = type
-
 from unittest import TestCase
 
 from lp.scripts.scriptmonitor import check_script

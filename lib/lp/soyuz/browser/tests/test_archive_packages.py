@@ -3,7 +3,6 @@
 
 """Unit tests for TestP3APackages."""
 
-__metaclass__ = type
 __all__ = [
     'TestP3APackages',
     'TestPPAPackages',

@@ -3,8 +3,6 @@
 
 """Error logging facilities."""
 
-__metaclass__ = type
-
 import contextlib
 from itertools import repeat
 import operator

@@ -3,8 +3,6 @@
 
 """Question expiration logic."""
 
-__metaclass__ = type
-
 from logging import getLogger
 
 from zope.component import getUtility

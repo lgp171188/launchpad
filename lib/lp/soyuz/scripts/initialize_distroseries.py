@@ -3,7 +3,6 @@
 
 """Initialize a distroseries from its parent distroseries."""
 
-__metaclass__ = type
 __all__ = [
     'InitializationError',
     'InitializeDistroSeries',

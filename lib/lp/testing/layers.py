@@ -18,7 +18,6 @@ of one, forcing us to attempt to make some sort of layer tree.
 -- StuartBishop 20060619
 """
 
-__metaclass__ = type
 __all__ = [
     'AppServerLayer',
     'BaseLayer',

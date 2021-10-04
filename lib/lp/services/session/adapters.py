@@ -3,7 +3,6 @@
 
 """Session adapters."""
 
-__metaclass__ = type
 __all__ = []
 
 

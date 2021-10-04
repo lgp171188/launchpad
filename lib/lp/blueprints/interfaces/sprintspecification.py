@@ -3,8 +3,6 @@
 
 """Interfaces for linking between Sprint and a Specification."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISprintSpecification',
     ]

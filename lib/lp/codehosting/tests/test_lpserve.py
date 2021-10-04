@@ -3,8 +3,6 @@
 
 """Tests for the lp-serve plugin."""
 
-__metaclass__ = type
-
 from breezy import errors
 from breezy.bzr.smart import medium
 from breezy.plugins.lpserve.test_lpserve import TestCaseWithSubprocess

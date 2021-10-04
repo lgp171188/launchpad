@@ -3,7 +3,6 @@
 
 """An XMLRPC transport which uses requests."""
 
-__metaclass__ = type
 __all__ = [
     'RequestsTransport',
     ]

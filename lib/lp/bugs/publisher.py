@@ -3,7 +3,6 @@
 
 """Bugs' custom publication."""
 
-__metaclass__ = type
 __all__ = [
     'BugsBrowserRequest',
     'BugsLayer',

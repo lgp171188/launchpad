@@ -13,7 +13,6 @@ database, to let the branch scanner know that the branches' contents
 have been updated.  For the rest, the script talks to the slave store.
 """
 
-__metaclass__ = type
 __all__ = []
 
 import _pythonpath  # noqa: F401

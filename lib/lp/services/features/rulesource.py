@@ -11,8 +11,6 @@ __all__ = [
     'StormFeatureRuleSource',
     ]
 
-__metaclass__ = type
-
 from collections import (
     defaultdict,
     namedtuple,

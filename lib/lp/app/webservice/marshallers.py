@@ -3,8 +3,6 @@
 
 """Launchpad-specific field marshallers for the web service."""
 
-__metaclass__ = type
-
 __all__ = [
     'TextFieldMarshaller',
     ]

@@ -6,8 +6,6 @@
 This module is obsolete.
 """
 
-__metaclass__ = type
-
 from zope.security.management import (
     endInteraction,
     newInteraction,

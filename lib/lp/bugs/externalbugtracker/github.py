@@ -3,7 +3,6 @@
 
 """GitHub ExternalBugTracker utility."""
 
-__metaclass__ = type
 __all__ = [
     'BadGitHubURL',
     'GitHub',

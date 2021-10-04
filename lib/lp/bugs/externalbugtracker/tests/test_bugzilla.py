@@ -3,8 +3,6 @@
 
 """Tests for the Bugzilla BugTracker."""
 
-__metaclass__ = type
-
 from xml.parsers.expat import ExpatError
 
 import responses

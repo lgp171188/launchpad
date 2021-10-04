@@ -3,8 +3,6 @@
 
 """Database classes for a distribution series."""
 
-__metaclass__ = type
-
 __all__ = [
     'ACTIVE_RELEASED_STATUSES',
     'ACTIVE_UNRELEASED_STATUSES',

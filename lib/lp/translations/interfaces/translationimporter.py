@@ -3,8 +3,6 @@
 
 """Interfaces to handle translation files imports."""
 
-__metaclass__ = type
-
 __all__ = [
     'ITranslationFormatImporter',
     'ITranslationImporter',

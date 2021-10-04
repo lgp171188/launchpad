@@ -3,7 +3,6 @@
 
 """SQLBase implementation of  IAnswerContact."""
 
-__metaclass__ = type
 __all__ = ['AnswerContact']
 
 

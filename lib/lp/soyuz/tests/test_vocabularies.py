@@ -3,8 +3,6 @@
 
 """Test Soyuz vocabularies."""
 
-__metaclass__ = type
-
 from testtools.matchers import MatchesStructure
 
 from lp.soyuz.vocabularies import PPAVocabulary

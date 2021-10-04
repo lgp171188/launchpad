@@ -3,8 +3,6 @@
 
 """Launchpad specific tests of Storm behaviour."""
 
-__metaclass__ = type
-
 import storm
 
 from lp.testing import TestCase

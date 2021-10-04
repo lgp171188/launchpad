@@ -1,9 +1,6 @@
 # Copyright 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
-
 from lp.bugs.browser.buglisting import (
     BugListingPortletStatsView,
     DISPLAY_BUG_STATUS_FOR_PATCHES,

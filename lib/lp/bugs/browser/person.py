@@ -3,8 +3,6 @@
 
 """IPerson browser views related to bugs."""
 
-__metaclass__ = type
-
 __all__ = [
     'PersonBugsMenu',
     'PersonCommentedBugTaskSearchListingView',

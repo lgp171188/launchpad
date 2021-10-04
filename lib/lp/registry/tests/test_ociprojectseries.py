@@ -3,8 +3,6 @@
 
 """Test OCIProjectSeries."""
 
-__metaclass__ = type
-
 from six import string_types
 from testtools.matchers import (
     ContainsDict,

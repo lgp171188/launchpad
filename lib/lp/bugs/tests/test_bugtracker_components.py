@@ -3,8 +3,6 @@
 
 """Test for components and component groups (products) in bug trackers."""
 
-__metaclass__ = type
-
 __all__ = []
 
 import transaction

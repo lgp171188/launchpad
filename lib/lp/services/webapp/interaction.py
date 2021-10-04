@@ -32,8 +32,6 @@ There are test helpers in `lp.testing._login`.
 See also lib/canonical/launchpad/doc/webapp-authorization.txt.
 """
 
-__metaclass__ = type
-
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import getUtility
 from zope.interface import implementer

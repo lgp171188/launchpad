@@ -3,8 +3,6 @@
 
 """Acceptance tests for the codehosting server."""
 
-__metaclass__ = type
-
 import os
 import re
 

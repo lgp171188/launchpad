@@ -6,7 +6,6 @@
 Custom log levels are registered in lp_sitecustomize.py.
 """
 
-__metaclass__ = type
 __all__ = [
     'CRITICAL',
     'DEBUG',

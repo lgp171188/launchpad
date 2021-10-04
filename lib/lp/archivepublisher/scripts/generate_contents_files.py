@@ -3,7 +3,6 @@
 
 """Archive Contents files generator."""
 
-__metaclass__ = type
 __all__ = [
     'GenerateContentsFiles',
     ]

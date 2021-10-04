@@ -3,8 +3,6 @@
 
 """Tests for the bugsubscription module."""
 
-__metaclass__ = type
-
 from storm.store import Store
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import ProxyFactory

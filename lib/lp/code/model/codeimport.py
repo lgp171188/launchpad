@@ -3,8 +3,6 @@
 
 """Database classes including and related to CodeImport."""
 
-__metaclass__ = type
-
 __all__ = [
     'CodeImport',
     'CodeImportSet',

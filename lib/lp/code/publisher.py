@@ -3,7 +3,6 @@
 
 """Code's custom publication."""
 
-__metaclass__ = type
 __all__ = [
     'BranchesFacet',
     'CodeBrowserRequest',

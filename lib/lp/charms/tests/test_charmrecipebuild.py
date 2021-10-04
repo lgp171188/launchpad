@@ -3,8 +3,6 @@
 
 """Test charm package build features."""
 
-__metaclass__ = type
-
 import base64
 from datetime import (
     datetime,

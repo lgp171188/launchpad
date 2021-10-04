@@ -3,7 +3,6 @@
 
 """Views for QuestionSubscription."""
 
-__metaclass__ = type
 __all__ = [
     'QuestionPortletSubscribersWithDetails',
     ]

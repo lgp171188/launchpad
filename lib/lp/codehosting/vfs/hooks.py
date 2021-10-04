@@ -4,7 +4,6 @@
 """Implementations for the `seen_new_branch_hook` of `BranchFileSystemClient`.
 """
 
-__metaclass__ = type
 __all__ = ['SetProcTitleHook']
 
 import setproctitle

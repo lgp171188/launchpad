@@ -3,8 +3,6 @@
 
 """Browser views for items that can be displayed as images."""
 
-__metaclass__ = type
-
 __all__ = [
     'BrandingChangeView',
     ]

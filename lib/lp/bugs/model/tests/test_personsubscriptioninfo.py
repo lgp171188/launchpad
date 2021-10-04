@@ -3,8 +3,6 @@
 
 """Tests for the personsubscriptioninfo module."""
 
-__metaclass__ = type
-
 from testtools.matchers import LessThan
 from zope.security.proxy import removeSecurityProxy
 

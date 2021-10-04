@@ -8,8 +8,6 @@
 references needed to present them properly in the PPA pages.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'ArchiveSourcePublications',
     ]

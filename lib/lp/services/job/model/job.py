@@ -3,7 +3,6 @@
 
 """ORM object representing jobs."""
 
-__metaclass__ = type
 __all__ = [
     'EnumeratedSubclass',
     'InvalidTransition',

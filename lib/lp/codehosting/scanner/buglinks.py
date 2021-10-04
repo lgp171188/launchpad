@@ -3,7 +3,6 @@
 
 """Bugs support for the scanner."""
 
-__metaclass__ = type
 __all__ = [
     'BugBranchLinker',
     ]

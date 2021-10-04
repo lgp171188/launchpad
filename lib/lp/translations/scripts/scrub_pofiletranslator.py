@@ -3,7 +3,6 @@
 
 """Keep `POFileTranslator` more or less consistent with the real data."""
 
-__metaclass__ = type
 __all__ = [
     'ScrubPOFileTranslator',
     ]

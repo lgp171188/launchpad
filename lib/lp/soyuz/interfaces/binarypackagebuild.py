@@ -3,8 +3,6 @@
 
 """BinaryPackageBuild interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'BuildSetStatus',
     'CannotBeRescored',

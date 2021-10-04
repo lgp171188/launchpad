@@ -3,8 +3,6 @@
 
 """Tests for DistroSeriesParent model class."""
 
-__metaclass__ = type
-
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
 from zope.interface.verify import verifyObject

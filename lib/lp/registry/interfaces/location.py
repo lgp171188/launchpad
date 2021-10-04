@@ -7,8 +7,6 @@ An object can have a location, which includes geographic coordinates and a
 time zone.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'IHasLocation',
     'ILocationRecord',

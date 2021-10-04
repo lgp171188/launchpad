@@ -3,9 +3,6 @@
 
 """Tests for feature rule editor"""
 
-__metaclass__ = type
-
-
 from testtools.matchers import Not
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized

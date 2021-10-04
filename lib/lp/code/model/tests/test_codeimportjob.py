@@ -3,8 +3,6 @@
 
 """Unit tests for CodeImportJob and CodeImportJobWorkflow."""
 
-__metaclass__ = type
-
 __all__ = [
     'NewEvents',
     ]

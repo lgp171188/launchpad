@@ -8,7 +8,6 @@ SourcePackageRecipeBuild.manifest, the classes in this file have no public
 interfaces.
 """
 
-__metaclass__ = type
 __all__ = ['SourcePackageRecipeData']
 
 import re

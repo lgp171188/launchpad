@@ -3,8 +3,6 @@
 
 """Unit test for sprints."""
 
-__metaclass__ = type
-
 import datetime
 
 from pytz import utc

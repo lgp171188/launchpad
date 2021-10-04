@@ -3,7 +3,6 @@
 
 """Mock Swift test fixture."""
 
-__metaclass__ = type
 __all__ = ['SwiftFixture']
 
 import os.path

@@ -3,8 +3,6 @@
 
 """Tests for the translations views on a distroseries."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from zope.security.interfaces import Unauthorized
 

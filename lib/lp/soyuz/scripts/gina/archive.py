@@ -7,8 +7,6 @@ This module has the classes resposable for locate and extract the package
 information from an archive pool.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'ArchiveFilesystemInfo',
     'ArchiveComponentItems',

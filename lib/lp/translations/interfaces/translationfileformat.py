@@ -3,7 +3,6 @@
 
 """Enumeration type for translation file formats."""
 
-__metaclass__ = type
 __all__ = ['TranslationFileFormat']
 
 

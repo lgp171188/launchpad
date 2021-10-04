@@ -3,8 +3,6 @@
 
 """Tests for `lp.bugs.externalbugtracker.xmlrpc`."""
 
-__metaclass__ = type
-
 import socket
 from xml.parsers.expat import ExpatError
 

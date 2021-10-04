@@ -6,8 +6,6 @@ This TAC is used for the TacTestSetupTestCase.test_couldNotListenTac test case
 in test_tachandler.py.  It fails with a CannotListenError.
 """
 
-__metaclass__ = type
-
 from twisted.application import (
     internet,
     service,

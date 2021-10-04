@@ -3,8 +3,6 @@
 
 """Tests for Code of Conduct views."""
 
-__metaclass__ = type
-
 from testtools.matchers import MatchesRegex
 from zope.component import getUtility
 

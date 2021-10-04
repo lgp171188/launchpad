@@ -3,8 +3,6 @@
 
 """Base class view for sourcepackagerecipe listings."""
 
-__metaclass__ = type
-
 __all__ = [
     'BranchRecipeListingView',
     'HasRecipesMenuMixin',

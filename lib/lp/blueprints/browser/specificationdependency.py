@@ -3,8 +3,6 @@
 
 """Views for SpecificationDependency."""
 
-__metaclass__ = type
-
 __all__ = [
     'SpecificationDependencyAddView',
     'SpecificationDependencyRemoveView',

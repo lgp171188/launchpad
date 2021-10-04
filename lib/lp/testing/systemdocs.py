@@ -3,7 +3,6 @@
 
 """Infrastructure for setting up doctests."""
 
-__metaclass__ = type
 __all__ = [
     'default_optionflags',
     'LayeredDocFileSuite',

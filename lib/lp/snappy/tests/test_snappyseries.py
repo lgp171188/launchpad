@@ -3,8 +3,6 @@
 
 """Test snappy series."""
 
-__metaclass__ = type
-
 from testtools.matchers import MatchesStructure
 from zope.component import (
     getAdapter,

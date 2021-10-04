@@ -3,7 +3,6 @@
 
 """View classes for branch summaries."""
 
-__metaclass__ = type
 __all__ = [
     'BranchCountSummaryView',
     ]

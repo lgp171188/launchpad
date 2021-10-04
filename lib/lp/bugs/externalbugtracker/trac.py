@@ -3,7 +3,6 @@
 
 """Trac ExternalBugTracker implementation."""
 
-__metaclass__ = type
 __all__ = ['Trac', 'TracLPPlugin']
 
 import csv

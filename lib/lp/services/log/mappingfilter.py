@@ -3,7 +3,6 @@
 
 """A logging.Filter to alter log levels of log records."""
 
-__metaclass__ = type
 __all__ = ['MappingFilter']
 
 

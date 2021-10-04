@@ -3,7 +3,6 @@
 
 """A class for the top-level link to the authenticated user's account."""
 
-__metaclass__ = type
 __all__ = [
     'IMeLink',
     'MeLink',

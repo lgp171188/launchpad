@@ -3,8 +3,6 @@
 
 """Tests for IPoll views."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

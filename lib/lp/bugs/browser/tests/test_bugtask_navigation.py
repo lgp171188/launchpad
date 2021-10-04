@@ -3,8 +3,6 @@
 
 """Test `BugTargetTraversalMixin`."""
 
-__metaclass__ = type
-
 from zope.publisher.interfaces import NotFound
 from zope.security.proxy import removeSecurityProxy
 

@@ -3,8 +3,6 @@
 
 """Translation File Importer tests."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 import six

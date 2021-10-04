@@ -3,8 +3,6 @@
 
 """Test BinaryPackageRelease."""
 
-__metaclass__ = type
-
 from lp.soyuz.enums import BinaryPackageFormat
 from lp.soyuz.interfaces.binarypackagerelease import IBinaryPackageRelease
 from lp.soyuz.interfaces.publishing import PackagePublishingPriority

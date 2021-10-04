@@ -3,8 +3,6 @@
 
 """Tests for the dynamic RewriteMap used to serve branches over HTTP."""
 
-__metaclass__ = type
-
 import os
 import re
 import signal

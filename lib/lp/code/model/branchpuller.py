@@ -3,7 +3,6 @@
 
 """The way the branch puller talks to the database."""
 
-__metaclass__ = type
 # Export nothing. This code should be obtained via utilities.
 __all__ = []
 

@@ -3,8 +3,6 @@
 
 """Database class for table DistroSeriesParent."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistroSeriesParent',
     'DistroSeriesParentSet',

@@ -3,8 +3,6 @@
 
 """Test the populate-distroseriesdiff script."""
 
-__metaclass__ = type
-
 import six
 from storm.store import Store
 import transaction

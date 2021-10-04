@@ -3,9 +3,6 @@
 
 """View tests for ProductRelease pages."""
 
-__metaclass__ = type
-
-
 from lp.app.enums import InformationType
 from lp.services.webapp.escaping import html_escape
 from lp.testing import (

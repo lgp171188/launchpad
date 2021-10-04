@@ -3,8 +3,6 @@
 
 """In-process keyserver fixture tests."""
 
-__metaclass__ = type
-
 from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
     )

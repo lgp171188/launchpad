@@ -3,7 +3,6 @@
 
 """Snappy series."""
 
-__metaclass__ = type
 __all__ = [
     'SnappyDistroSeries',
     'SnappyDistroSeriesMixin',

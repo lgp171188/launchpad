@@ -8,8 +8,6 @@ This script runs a simple HTTP server. The server returns JSON files
 when given certain user-configurable URLs.
 """
 
-__metaclass__ = type
-
 import logging
 import os
 

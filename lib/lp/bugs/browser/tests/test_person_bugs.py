@@ -3,8 +3,6 @@
 
 """Unit tests for person bug views."""
 
-__metaclass__ = type
-
 from lp.app.browser.tales import MenuAPI
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer

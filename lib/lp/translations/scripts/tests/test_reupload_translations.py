@@ -5,8 +5,6 @@
 
 """Test `reupload_translations` and `ReuploadPackageTranslations`."""
 
-__metaclass__ = type
-
 import io
 import re
 import tarfile

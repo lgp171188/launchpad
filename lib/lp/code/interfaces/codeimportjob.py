@@ -6,7 +6,6 @@
 CodeImportJobs represent pending and running updates of a code import.
 """
 
-__metaclass__ = type
 __all__ = [
     'ICodeImportJob',
     'ICodeImportJobSet',

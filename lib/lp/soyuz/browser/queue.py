@@ -3,8 +3,6 @@
 
 """Browser views for package queue."""
 
-__metaclass__ = type
-
 __all__ = [
     'PackageUploadNavigation',
     'QueueItemsView',

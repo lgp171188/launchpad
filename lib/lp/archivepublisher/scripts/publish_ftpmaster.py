@@ -3,7 +3,6 @@
 
 """Master distro publishing script."""
 
-__metaclass__ = type
 __all__ = [
     'PublishFTPMaster',
     ]

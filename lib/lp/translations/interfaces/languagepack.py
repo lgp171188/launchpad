@@ -3,8 +3,6 @@
 
 """Language pack store."""
 
-__metaclass__ = type
-
 __all__ = [
     'ILanguagePack',
     'ILanguagePackSet',

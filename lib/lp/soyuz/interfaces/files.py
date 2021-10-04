@@ -3,8 +3,6 @@
 
 """Package file interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBinaryPackageFile',
     'ISourcePackageReleaseFile',

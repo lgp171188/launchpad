@@ -3,8 +3,6 @@
 
 """Build information file tests."""
 
-__metaclass__ = type
-
 from debian.deb822 import Changes
 
 from lp.archiveuploader.buildinfofile import BuildInfoFile

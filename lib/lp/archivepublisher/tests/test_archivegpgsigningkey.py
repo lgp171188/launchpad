@@ -3,8 +3,6 @@
 
 """Test ArchiveGPGSigningKey."""
 
-__metaclass__ = type
-
 import os
 from textwrap import dedent
 from unittest import mock

@@ -3,7 +3,6 @@
 
 """Implementation classes for a CommercialSubscription."""
 
-__metaclass__ = type
 __all__ = ['CommercialSubscription']
 
 import datetime

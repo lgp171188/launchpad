@@ -3,7 +3,6 @@
 
 """Multiple step views."""
 
-__metaclass__ = type
 __all__ = [
     'MultiStepView',
     'StepView',

@@ -3,7 +3,6 @@
 
 """Security adapters for the code module."""
 
-__metaclass__ = type
 __all__ = [
     'BranchSubscriptionEdit',
     'BranchSubscriptionView',

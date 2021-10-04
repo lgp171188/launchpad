@@ -16,9 +16,6 @@ Secret keys are also imported into the local key ring, they are used for
 decrypt data in pagetests.
 """
 
-
-__metaclass__ = type
-
 from io import BytesIO
 import os
 

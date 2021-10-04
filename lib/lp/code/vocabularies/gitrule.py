@@ -3,7 +3,6 @@
 
 """Vocabularies related to Git access rules."""
 
-__metaclass__ = type
 __all__ = [
     'GitPermissionsVocabulary',
     ]

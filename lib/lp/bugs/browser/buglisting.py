@@ -3,8 +3,6 @@
 
 """IBugTask-related browser views."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugNominationsView',
     'BugListingBatchNavigator',

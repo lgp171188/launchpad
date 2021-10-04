@@ -3,8 +3,6 @@
 
 """Test the Distribution Source Package vocabulary."""
 
-__metaclass__ = type
-
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.vocabularies import DistributionSourcePackageVocabulary
 from lp.services.webapp.vocabulary import IHugeVocabulary

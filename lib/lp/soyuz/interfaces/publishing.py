@@ -3,8 +3,6 @@
 
 """Publishing interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'DeletionError',
     'IArchiveSafePublisher',

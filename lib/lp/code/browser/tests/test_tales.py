@@ -3,8 +3,6 @@
 
 """Tests for the tales formatters."""
 
-__metaclass__ = type
-
 from difflib import unified_diff
 
 from storm.store import Store

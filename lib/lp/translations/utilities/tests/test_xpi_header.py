@@ -3,8 +3,6 @@
 
 """Unit tests for XPI headers (i.e. install.rdf files)."""
 
-__metaclass__ = type
-
 import unittest
 
 from lp.services.webapp.escaping import html_escape

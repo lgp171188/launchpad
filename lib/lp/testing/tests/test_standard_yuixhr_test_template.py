@@ -4,7 +4,6 @@
 """{Describe your test suite here}.
 """
 
-__metaclass__ = type
 __all__ = []
 
 from lp.testing import person_logged_in

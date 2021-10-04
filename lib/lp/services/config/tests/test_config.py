@@ -4,9 +4,6 @@
 # We know we are not using root and handlers.
 """Test lp.services.config."""
 
-
-__metaclass__ = type
-
 from doctest import (
     DocTestSuite,
     ELLIPSIS,

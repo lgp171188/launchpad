@@ -14,8 +14,6 @@ The callstack is essentially:
                 -> import_binarypackages -> do_one_binarypackage
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 import sys

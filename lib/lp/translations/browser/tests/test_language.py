@@ -3,9 +3,6 @@
 
 """Tests for the language views."""
 
-__metaclass__ = type
-
-
 from lp.testing import (
     login_celebrity,
     TestCaseWithFactory,

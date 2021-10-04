@@ -14,8 +14,6 @@ they are running in the correct process - the parent or the child.
 Recording of the PIDs is handled using the `record_pid` decorator.
 """
 
-__metaclass__ = type
-
 import functools
 import os
 

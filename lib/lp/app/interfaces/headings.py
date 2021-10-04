@@ -3,7 +3,6 @@
 
 """Marker interfaces that define how to generate headings for a view."""
 
-__metaclass__ = type
 __all__ = [
     'IHeadingBreadcrumb',
     'IMajorHeadingView',

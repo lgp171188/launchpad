@@ -3,8 +3,6 @@
 
 """Tests for GPG key on the web."""
 
-__metaclass__ = type
-
 from lp.services.webapp import canonical_url
 from lp.testing import (
     login_person,

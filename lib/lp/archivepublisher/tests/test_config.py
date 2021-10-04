@@ -6,8 +6,6 @@
 Publisher configuration provides archive-dependent filesystem paths.
 """
 
-__metaclass__ = type
-
 import os
 
 from zope.component import getUtility

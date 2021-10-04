@@ -3,7 +3,6 @@
 
 """Components related to IBugTarget."""
 
-__metaclass__ = type
 __all__ = [
     'BugTargetBase',
     'HasBugsBase',

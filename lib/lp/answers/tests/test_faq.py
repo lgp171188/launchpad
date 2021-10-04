@@ -3,8 +3,6 @@
 
 """Tests for IFAQ"""
 
-__metaclass__ = type
-
 import transaction
 from zope.component import getUtility
 

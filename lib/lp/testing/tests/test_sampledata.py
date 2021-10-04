@@ -8,7 +8,6 @@ silently switching off some of our constraints. We can detect this by
 doing a dump and restore - this will fail if the data is corrupt.
 """
 
-__metaclass__ = type
 __all__ = []
 
 import subprocess

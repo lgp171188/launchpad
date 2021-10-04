@@ -3,7 +3,6 @@
 
 """OCI vocabularies."""
 
-__metaclass__ = type
 __all__ = []
 
 from six.moves.urllib.parse import (

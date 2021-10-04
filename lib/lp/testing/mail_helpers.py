@@ -3,8 +3,6 @@
 
 """Helper functions dealing with emails in tests."""
 
-__metaclass__ = type
-
 import email
 import operator
 

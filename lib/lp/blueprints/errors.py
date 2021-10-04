@@ -3,8 +3,6 @@
 
 """Specification views."""
 
-__metaclass__ = type
-
 __all__ = [
     'TargetAlreadyHasSpecification',
     ]

@@ -3,8 +3,6 @@
 
 """Tests for TestSubscriptionView."""
 
-__metaclass__ = type
-
 from lp.bugs.browser.bugtarget import TargetSubscriptionView
 from lp.testing import (
     person_logged_in,

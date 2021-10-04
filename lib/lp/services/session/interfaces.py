@@ -3,7 +3,6 @@
 
 """Session interfaces."""
 
-__metaclass__ = type
 __all__ = ['IUseSessionStore']
 
 

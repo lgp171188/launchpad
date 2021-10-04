@@ -3,7 +3,6 @@
 
 """Mark translation credits messages as translated."""
 
-__metaclass__ = type
 __all__ = [
     'FixTranslationCreditsProcess',
     ]

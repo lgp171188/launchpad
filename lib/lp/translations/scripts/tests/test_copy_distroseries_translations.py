@@ -3,9 +3,6 @@
 
 """Test distroseries translations copying."""
 
-__metaclass__ = type
-
-
 import logging
 
 from zope.component import getUtility

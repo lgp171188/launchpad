@@ -6,7 +6,6 @@
 Used by test_logger.txt.
 """
 
-__metaclass__ = type
 __all__ = []
 
 from optparse import OptionParser

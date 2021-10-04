@@ -3,8 +3,6 @@
 
 """Event subscribers for snap builds."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.buildmaster.enums import BuildStatus

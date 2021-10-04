@@ -3,8 +3,6 @@
 
 """StormBase tests."""
 
-__metaclass__ = type
-
 from storm.locals import Int
 import transaction
 from zope.component import getUtility

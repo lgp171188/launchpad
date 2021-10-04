@@ -3,8 +3,6 @@
 
 """Test team membership changes."""
 
-__metaclass__ = type
-
 from lp.registry.interfaces.teammembership import CyclicalTeamMembershipError
 from lp.testing import (
     person_logged_in,

@@ -3,8 +3,6 @@
 
 """Test references from binary packages to source packages."""
 
-__metaclass__ = type
-
 import re
 
 from testtools.matchers import (

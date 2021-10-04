@@ -3,8 +3,6 @@
 
 """Test the script to generate a NaCl key pair."""
 
-__metaclass__ = type
-
 import base64
 
 from fixtures import MockPatch

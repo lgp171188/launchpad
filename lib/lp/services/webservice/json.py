@@ -3,7 +3,6 @@
 
 """Additional JSON serializer for the web service."""
 
-__metaclass__ = type
 __all__ = [
     'StrJSONSerializer',
     ]

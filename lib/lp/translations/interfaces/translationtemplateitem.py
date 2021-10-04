@@ -12,7 +12,6 @@ from lp.translations.interfaces.potemplate import IPOTemplate
 from lp.translations.interfaces.potmsgset import IPOTMsgSet
 
 
-__metaclass__ = type
 __all__ = [
     'ITranslationTemplateItem',
     ]

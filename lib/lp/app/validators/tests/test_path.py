@@ -3,8 +3,6 @@
 
 """Tests for path validators."""
 
-__metaclass__ = type
-
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.path import path_does_not_escape
 from lp.testing import TestCase

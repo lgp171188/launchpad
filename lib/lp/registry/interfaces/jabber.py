@@ -3,8 +3,6 @@
 
 """Jabber interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IJabberID',
     'IJabberIDSet',

@@ -3,8 +3,6 @@
 
 """Git repository views."""
 
-__metaclass__ = type
-
 __all__ = [
     'GitRefBatchNavigator',
     'GitRepositoriesBreadcrumb',

@@ -3,8 +3,6 @@
 
 """Tests for linked branch implementations."""
 
-__metaclass__ = type
-
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.interfaces.linkedbranch import (

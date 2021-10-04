@@ -3,8 +3,6 @@
 
 """Test the IPerson.createPPA() method."""
 
-__metaclass__ = type
-
 from zope.security.interfaces import Unauthorized
 
 from lp.registry.enums import (

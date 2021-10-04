@@ -3,8 +3,6 @@
 
 """Bug task interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'BUG_SUPERVISOR_BUGTASK_STATUSES',
     'BugTaskImportance',

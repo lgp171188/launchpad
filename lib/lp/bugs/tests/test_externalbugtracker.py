@@ -3,8 +3,6 @@
 
 """Test related to ExternalBugtracker test infrastructure."""
 
-__metaclass__ = type
-
 __all__ = []
 
 import unittest

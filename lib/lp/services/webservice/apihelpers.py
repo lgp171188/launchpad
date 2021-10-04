@@ -11,8 +11,6 @@ The only current option is to later patch the types to the correct value.
 The helper functions in this file make that easy.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'patch_choice_parameter_type',
     'patch_choice_property',

@@ -18,9 +18,6 @@ from lp.services.features.rulesource import (
     )
 
 
-__metaclass__ = type
-
-
 logger = logging.getLogger('lp.services.features')
 
 value_domain_info = sorted([

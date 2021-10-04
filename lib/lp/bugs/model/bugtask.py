@@ -3,8 +3,6 @@
 
 """Classes that implement IBugTask and its related interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugTaskDelta',
     'BugTaskToBugAdapter',

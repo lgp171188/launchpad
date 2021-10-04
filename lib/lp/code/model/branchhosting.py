@@ -3,7 +3,6 @@
 
 """Communication with the Loggerhead API for Bazaar code hosting."""
 
-__metaclass__ = type
 __all__ = [
     'BranchHostingClient',
     ]

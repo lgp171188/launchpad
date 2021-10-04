@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Test the peoplemerge browser module."""
 
-__metaclass__ = type
-
 import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy

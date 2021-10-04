@@ -3,7 +3,6 @@
 
 """Widgets related to IBranch."""
 
-__metaclass__ = type
 __all__ = [
     'RecipeOwnerWidget',
     'TargetBranchWidget',

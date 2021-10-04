@@ -30,7 +30,6 @@ conveniences. This makes the generation of lookup trees quite pleasant
 on the eye, makes debugging easier, and means they can be customised.
 """
 
-__metaclass__ = type
 __all__ = [
     'LookupBranch',
     'LookupTree',

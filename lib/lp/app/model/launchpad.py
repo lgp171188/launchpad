@@ -3,8 +3,6 @@
 
 """Common implementation of interfaces.launchpad interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ExceptionPrivacy',
     'InformationTypeMixin',

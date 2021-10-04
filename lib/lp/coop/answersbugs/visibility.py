@@ -3,8 +3,6 @@
 
 """Provides mixins for visibility tests in messages."""
 
-__metaclass__ = type
-
 __all__ = [
     'TestHideMessageControlMixin',
     'TestMessageVisibilityMixin',

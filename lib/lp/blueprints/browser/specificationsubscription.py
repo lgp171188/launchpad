@@ -3,7 +3,6 @@
 
 """Views for SpecificationSubscription."""
 
-__metaclass__ = type
 __all__ = [
     'SpecificationSubscriptionAddView',
     'SpecificationSubscriptionAddSubscriberView',

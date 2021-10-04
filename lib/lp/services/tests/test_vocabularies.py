@@ -3,7 +3,6 @@
 
 """Test registered vocabularies."""
 
-__metaclass__ = type
 __all__ = []
 
 from zope.component import getUtilitiesFor

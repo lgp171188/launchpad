@@ -3,8 +3,6 @@
 
 """Test views for objects that have snap packages."""
 
-__metaclass__ = type
-
 import soupmatchers
 from testscenarios import (
     load_tests_apply_scenarios,

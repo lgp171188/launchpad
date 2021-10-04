@@ -3,7 +3,6 @@
 
 """Factory used to get named services."""
 
-__metaclass__ = type
 __all__ = [
     'ServiceFactory',
     ]

@@ -3,7 +3,6 @@
 
 """Implementation classes for a Person."""
 
-__metaclass__ = type
 __all__ = [
     'get_person_visibility_terms',
     'get_recipients',

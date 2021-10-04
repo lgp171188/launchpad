@@ -3,7 +3,6 @@
 
 """Fixture for the librarians."""
 
-__metaclass__ = type
 __all__ = [
     'fillLibrarianFile',
     'LibrarianServerFixture',

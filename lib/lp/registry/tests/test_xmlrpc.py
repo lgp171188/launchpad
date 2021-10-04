@@ -3,8 +3,6 @@
 
 """Testing registry-related xmlrpc calls."""
 
-__metaclass__ = type
-
 from email import message_from_string
 from textwrap import dedent
 

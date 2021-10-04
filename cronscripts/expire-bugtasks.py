@@ -9,8 +9,6 @@ Only bug task for project that use Malone may be expired. The expiration
 period is configured through config.malone.days_before_expiration.
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from zope.component import getUtility

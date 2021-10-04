@@ -7,7 +7,6 @@ This view needs to be refactored to use the Launchpad form infrastructure.
 See bug 151161.
 """
 
-__metaclass__ = type
 __all__ = ["ObjectReassignmentView"]
 
 

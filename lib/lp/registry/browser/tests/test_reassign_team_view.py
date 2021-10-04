@@ -3,8 +3,6 @@
 
 """Tests for TeamReassignmentView view code."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized

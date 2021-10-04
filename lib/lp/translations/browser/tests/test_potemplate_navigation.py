@@ -3,8 +3,6 @@
 
 """Test `POTemplateNavigation`."""
 
-__metaclass__ = type
-
 from lp.app.errors import NotFoundError
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCaseWithFactory

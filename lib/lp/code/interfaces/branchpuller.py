@@ -3,7 +3,6 @@
 
 """The public interface to the model of the branch puller."""
 
-__metaclass__ = type
 __all__ = [
     'IBranchPuller',
     ]

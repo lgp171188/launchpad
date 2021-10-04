@@ -3,8 +3,6 @@
 
 """Person interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'AlreadyConvertedException',
     'IAdminPeopleMergeSchema',

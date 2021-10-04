@@ -3,8 +3,6 @@
 
 """Unit tests for BranchView."""
 
-__metaclass__ = type
-
 from datetime import datetime
 from textwrap import dedent
 

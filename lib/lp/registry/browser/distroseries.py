@@ -3,8 +3,6 @@
 
 """View classes related to `IDistroSeries`."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistroSeriesAddView',
     'DistroSeriesAdminView',

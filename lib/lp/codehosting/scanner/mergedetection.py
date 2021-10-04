@@ -3,7 +3,6 @@
 
 """The way the branch scanner handles merges."""
 
-__metaclass__ = type
 __all__ = [
     'auto_merge_branches',
     'auto_merge_proposals',

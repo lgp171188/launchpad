@@ -3,8 +3,6 @@
 
 """Test for the `generate-contents-files` script."""
 
-__metaclass__ = type
-
 import hashlib
 from optparse import OptionValueError
 import os

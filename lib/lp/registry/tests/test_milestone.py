@@ -3,8 +3,6 @@
 
 """Milestone related test helper."""
 
-__metaclass__ = type
-
 from operator import attrgetter
 import unittest
 

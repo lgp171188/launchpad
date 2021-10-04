@@ -3,8 +3,6 @@
 
 """Test the suspend-bot-account script."""
 
-__metaclass__ = type
-
 from lp.registry.scripts.suspendbotaccount import SuspendBotAccountScript
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.log.logger import DevNullLogger

@@ -3,7 +3,6 @@
 
 """Helper functions for testing XML-RPC services."""
 
-__metaclass__ = type
 __all__ = [
     'fault_catcher',
     'mailman',

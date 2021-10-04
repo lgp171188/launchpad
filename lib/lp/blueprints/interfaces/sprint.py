@@ -7,8 +7,6 @@ A Sprint basically consists of a bunch of people getting together to discuss
 some specific issues.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'ISprint',
     'IHasSprints',

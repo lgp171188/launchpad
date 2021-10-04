@@ -3,8 +3,6 @@
 
 """Test projectmilestone tag views."""
 
-__metaclass__ = type
-
 from lp.services.webapp import canonical_url
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer

@@ -3,8 +3,6 @@
 
 """Models for `IProductSeries`."""
 
-__metaclass__ = type
-
 __all__ = [
     'ProductSeries',
     'ProductSeriesSet',

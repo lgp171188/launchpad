@@ -3,8 +3,6 @@
 
 """News item interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IAnnouncement',
     'IHasAnnouncements',

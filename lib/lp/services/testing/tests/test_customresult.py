@@ -3,8 +3,6 @@
 
 """Parallel test glue."""
 
-__metaclass__ = type
-
 import string
 import tempfile
 import unittest

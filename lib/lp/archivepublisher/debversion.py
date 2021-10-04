@@ -8,8 +8,6 @@ naturally and represent a Debian version string.  It implements various
 special methods to make dealing with them sweet.
 """
 
-__metaclass__ = type
-
 # This code came from sourcerer but has been heavily modified since.
 
 import re

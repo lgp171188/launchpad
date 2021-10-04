@@ -3,8 +3,6 @@
 
 """Interfaces including and related to IDiff."""
 
-__metaclass__ = type
-
 __all__ = [
     'IDiff',
     'IIncrementalDiff',

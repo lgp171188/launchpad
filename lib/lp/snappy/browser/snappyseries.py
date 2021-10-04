@@ -3,7 +3,6 @@
 
 """SnappySeries views."""
 
-__metaclass__ = type
 __all__ = [
     'SnappySeriesSetNavigation',
     ]

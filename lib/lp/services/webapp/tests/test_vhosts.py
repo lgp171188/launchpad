@@ -3,8 +3,6 @@
 
 """Test for virtual host setup."""
 
-__metaclass__ = type
-
 from doctest import (
     DocTestSuite,
     ELLIPSIS,

@@ -3,7 +3,6 @@
 
 """CodeReviewComment interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'ICodeReviewComment',
     'ICodeReviewCommentDeletion',

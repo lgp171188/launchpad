@@ -3,8 +3,6 @@
 
 """Test the answers domain vocabularies."""
 
-__metaclass__ = type
-
 from lp.answers.vocabulary import (
     UsesAnswersDistributionVocabulary,
     UsesAnswersProductVocabulary,

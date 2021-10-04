@@ -3,8 +3,6 @@
 
 """Test the bug tracker vocabularies."""
 
-__metaclass__ = type
-
 from zope.schema.vocabulary import getVocabularyRegistry
 
 from lp.bugs.interfaces.bugtracker import BugTrackerType

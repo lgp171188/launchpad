@@ -3,8 +3,6 @@
 
 """Browser views for builders."""
 
-__metaclass__ = type
-
 __all__ = [
     'BuilderOverviewMenu',
     'BuilderNavigation',

@@ -9,8 +9,6 @@ PostgreSQL as stored procedures.
 See README.txt for discussion
 """
 
-__metaclass__ = type
-
 from zope.formlib.exception import (
     WidgetInputErrorView as Z3WidgetInputErrorView,
     )

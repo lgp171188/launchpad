@@ -7,8 +7,6 @@ We don't currently do integration testing against a real hosting service,
 but we at least check that we're sending the right requests.
 """
 
-__metaclass__ = type
-
 from contextlib import contextmanager
 import re
 

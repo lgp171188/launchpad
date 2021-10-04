@@ -3,8 +3,6 @@
 
 """Utility methods for random token generation."""
 
-__metaclass__ = type
-
 __all__ = [
     'create_token',
     ]

@@ -3,8 +3,6 @@
 
 """Test the bulk database functions."""
 
-__metaclass__ = type
-
 import datetime
 
 from pytz import UTC

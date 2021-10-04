@@ -10,8 +10,6 @@ The expiration period is configured through
 config.answertracker.days_before_expiration
 """
 
-__metaclass__ = type
-
 __all__ = ['ExpireQuestions']
 
 

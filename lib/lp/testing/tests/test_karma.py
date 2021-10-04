@@ -3,8 +3,6 @@
 
 """Test the KarmaRecorder."""
 
-__metaclass__ = type
-
 from lp.testing import TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import DatabaseFunctionalLayer

@@ -3,8 +3,6 @@
 
 """Code import machine interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ICodeImportMachine',
     'ICodeImportMachineSet',

@@ -3,8 +3,6 @@
 
 """Tests for OCICredentialsWidget"""
 
-__metaclass__ = type
-
 from lazr.restful.fields import Reference
 from zope.formlib.interfaces import (
     IBrowserWidget,

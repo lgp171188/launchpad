@@ -3,8 +3,6 @@
 
 """Test updates to Distroseries stats."""
 
-__metaclass__ = type
-
 import os
 import subprocess
 import unittest

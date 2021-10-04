@@ -1,8 +1,6 @@
 # Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from testtools.content import text_content
 from testtools.matchers import MatchesRegex
 import transaction

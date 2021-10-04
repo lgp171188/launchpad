@@ -9,7 +9,6 @@ combination of one of those with an owner to represent that owner's default
 repository for that target.
 """
 
-__metaclass__ = type
 __all__ = [
     'ICanHasDefaultGitRepository',
     ]

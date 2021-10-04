@@ -7,9 +7,6 @@ This classes are responsable for fetch and hold the information inside
 the sources and binarypackages.
 """
 
-__metaclass__ = type
-
-
 __all__ = [
     'BinaryPackageData',
     'DisplayNameDecodingError',

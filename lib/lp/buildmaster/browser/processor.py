@@ -3,8 +3,6 @@
 
 """Navigation views for processors."""
 
-__metaclass__ = type
-
 __all__ = [
     'ProcessorSetNavigation',
     ]

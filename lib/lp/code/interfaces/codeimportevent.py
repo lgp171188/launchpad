@@ -3,7 +3,6 @@
 
 """Code import audit trail interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'ICodeImportEvent',
     'ICodeImportEventSet',

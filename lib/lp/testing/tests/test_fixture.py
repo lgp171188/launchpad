@@ -3,8 +3,6 @@
 
 """Tests for lp.testing.fixture."""
 
-__metaclass__ = type
-
 import sys
 
 import oops_amqp

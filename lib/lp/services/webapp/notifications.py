@@ -12,8 +12,6 @@ to do this correctly is by passing a token in the URL to identify the
 browser window the request came from.
 """
 
-__metaclass__ = type
-
 from datetime import datetime
 
 from zope.interface import implementer

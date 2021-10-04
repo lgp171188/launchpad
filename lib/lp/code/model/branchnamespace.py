@@ -3,7 +3,6 @@
 
 """Implementations of `IBranchNamespace`."""
 
-__metaclass__ = type
 __all__ = [
     'BranchNamespaceSet',
     'BRANCH_POLICY_ALLOWED_TYPES',

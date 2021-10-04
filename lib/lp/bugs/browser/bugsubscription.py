@@ -3,7 +3,6 @@
 
 """Views for BugSubscription."""
 
-__metaclass__ = type
 __all__ = [
     'AdvancedSubscriptionMixin',
     'BugMuteSelfView',

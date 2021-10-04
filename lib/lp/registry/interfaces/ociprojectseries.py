@@ -3,7 +3,6 @@
 
 """Interfaces to allow bug filing on multiple versions of an OCI Project."""
 
-__metaclass__ = type
 __all__ = [
     'IOCIProjectSeries',
     'IOCIProjectSeriesEditableAttributes',

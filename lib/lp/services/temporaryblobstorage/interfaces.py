@@ -3,8 +3,6 @@
 
 """Temporary blob storage interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ITemporaryBlobStorage',
     'ITemporaryStorageManager',

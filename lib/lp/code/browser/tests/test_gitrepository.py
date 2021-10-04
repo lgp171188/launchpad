@@ -3,8 +3,6 @@
 
 """Unit tests for GitRepositoryView."""
 
-__metaclass__ = type
-
 import base64
 from datetime import datetime
 import doctest

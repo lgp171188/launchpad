@@ -6,7 +6,6 @@
 Dispatches live filesystem build jobs to build-farm slaves.
 """
 
-__metaclass__ = type
 __all__ = [
     'LiveFSBuildBehaviour',
     ]

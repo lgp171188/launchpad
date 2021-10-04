@@ -3,7 +3,6 @@
 
 """Helper methods for branch tests and pagetest."""
 
-__metaclass__ = type
 __all__ = [
     'reset_all_branch_last_modified',
     ]

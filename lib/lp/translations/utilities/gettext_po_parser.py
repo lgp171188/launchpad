@@ -6,8 +6,6 @@
 # Heimes.  The code is no longer recognizably similar though, so don't
 # blame these people for any mistakes.
 
-__metaclass__ = type
-
 __all__ = [
     'POHeader',
     'POParser',

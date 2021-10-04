@@ -3,9 +3,6 @@
 
 """Views, navigation and actions for CodeReviewVotes."""
 
-__metaclass__ = type
-
-
 from zope.interface import Interface
 
 from lp import _

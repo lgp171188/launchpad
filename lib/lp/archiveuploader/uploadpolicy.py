@@ -3,8 +3,6 @@
 
 """Policy management for the upload handler."""
 
-__metaclass__ = type
-
 __all__ = [
     "AbstractUploadPolicy",
     "ArchiveUploadType",

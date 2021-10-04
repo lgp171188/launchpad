@@ -3,8 +3,6 @@
 
 """Tests for encrypted data containers."""
 
-__metaclass__ = type
-
 from nacl.public import PrivateKey
 
 from lp.services.crypto.interfaces import CryptoError

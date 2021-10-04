@@ -3,7 +3,6 @@
 
 """Move files from Librarian disk storage into Swift."""
 
-__metaclass__ = type
 __all__ = [
     'SWIFT_CONTAINER_PREFIX',
     'connection',

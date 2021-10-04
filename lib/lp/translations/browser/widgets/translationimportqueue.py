@@ -3,7 +3,6 @@
 
 """Widgets related to `TranslationImportQueueEntry`."""
 
-__metaclass__ = type
 __all__ = [
     "TranslationImportQueueEntrySourcePackageNameWidget",
     ]

@@ -3,7 +3,6 @@
 
 """Helpers for running a child process and communicating things about it."""
 
-__metaclass__ = type
 __all__ = [
     'ProcessMonitorProtocol',
     'ProcessMonitorProtocolWithTimeout',

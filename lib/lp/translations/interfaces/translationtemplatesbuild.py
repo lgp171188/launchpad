@@ -3,7 +3,6 @@
 
 """Interface and utility for `TranslationTemplatesBuild`."""
 
-__metaclass__ = type
 __all__ = [
     'ITranslationTemplatesBuild',
     'ITranslationTemplatesBuildSource',

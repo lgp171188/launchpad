@@ -3,8 +3,6 @@
 
 """EmailAdress validator"""
 
-__metaclass__ = type
-
 import re
 
 from lp import _

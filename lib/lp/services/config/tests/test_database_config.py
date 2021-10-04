@@ -1,8 +1,6 @@
 # Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from lp.services.config import DatabaseConfig
 from lp.services.propertycache import get_property_cache
 from lp.testing import TestCase

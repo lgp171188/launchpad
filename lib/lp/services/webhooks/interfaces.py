@@ -3,8 +3,6 @@
 
 """Webhook interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'AnyWebhookEventTypeVocabulary',
     'IWebhook',

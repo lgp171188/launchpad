@@ -3,8 +3,6 @@
 
 """Tests for project group views."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from lazr.restful.interfaces import IJSONRequestCache
 from testtools.matchers import Not

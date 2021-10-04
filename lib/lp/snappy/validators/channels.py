@@ -3,8 +3,6 @@
 
 """Validators for the .store_channels attribute."""
 
-__metaclass__ = type
-
 from zope.schema.vocabulary import getVocabularyRegistry
 
 from lp import _

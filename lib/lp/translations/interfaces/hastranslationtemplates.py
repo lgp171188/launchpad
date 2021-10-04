@@ -3,7 +3,6 @@
 
 """Interface for objects that translation templates can belong to."""
 
-__metaclass__ = type
 __all__ = [
     'IHasTranslationTemplates',
     ]

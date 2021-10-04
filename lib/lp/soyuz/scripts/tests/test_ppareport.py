@@ -3,8 +3,6 @@
 
 """Tests for `PPAReportScript.` """
 
-__metaclass__ = type
-
 import os
 import shutil
 import tempfile

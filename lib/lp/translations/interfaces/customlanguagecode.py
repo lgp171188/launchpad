@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Custom language code."""
 
-__metaclass__ = type
-
 __all__ = [
     'ICustomLanguageCode',
     'IHasCustomLanguageCodes',

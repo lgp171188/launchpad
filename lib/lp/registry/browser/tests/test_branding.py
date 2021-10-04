@@ -3,8 +3,6 @@
 
 """Tests for Branding."""
 
-__metaclass__ = type
-
 from lp.registry.browser.branding import BrandingChangeView
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCaseWithFactory

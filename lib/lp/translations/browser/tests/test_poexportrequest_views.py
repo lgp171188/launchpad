@@ -1,8 +1,6 @@
 # Copyright 2010-2014 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.database.interfaces import IStore

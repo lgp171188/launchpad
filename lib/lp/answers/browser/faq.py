@@ -3,8 +3,6 @@
 
 """`IFAQ` browser views."""
 
-__metaclass__ = type
-
 __all__ = [
     'FAQBreadcrumb',
     'FAQNavigationMenu',

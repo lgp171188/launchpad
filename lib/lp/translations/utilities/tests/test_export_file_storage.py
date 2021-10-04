@@ -3,8 +3,6 @@
 
 """Tests for `ExportFileStorage`."""
 
-__metaclass__ = type
-
 import io
 from tarfile import TarFile
 import unittest

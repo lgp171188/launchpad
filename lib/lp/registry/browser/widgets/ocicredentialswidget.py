@@ -3,7 +3,6 @@
 
 """Browser widget for handling a single `IOCICredentials`."""
 
-__metaclass__ = type
 __all__ = [
     'OCICredentialsWidget',
     ]

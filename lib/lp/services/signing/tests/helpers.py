@@ -3,7 +3,6 @@
 
 """Helper functions for code testing live here."""
 
-__metaclass__ = type
 __all__ = [
     'SigningServiceClientFixture',
     ]

@@ -3,7 +3,6 @@
 
 """Package relationship interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'IPackageRelationship',
     'IPackageRelationshipSet',

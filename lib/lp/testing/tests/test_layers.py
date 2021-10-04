@@ -3,7 +3,6 @@
 
 """Tests for test layers."""
 
-__metaclass__ = type
 __all__ = []
 
 import threading

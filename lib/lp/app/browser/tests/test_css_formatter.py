@@ -3,8 +3,6 @@
 
 """Tests for the CSS TALES formatter."""
 
-__metaclass__ = type
-
 from testtools.matchers import Equals
 
 from lp.testing import (

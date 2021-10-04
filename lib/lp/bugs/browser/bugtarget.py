@@ -3,8 +3,6 @@
 
 """IBugTarget-related browser views."""
 
-__metaclass__ = type
-
 __all__ = [
     "BugsPatchesView",
     "BugTargetBugListingView",

@@ -3,7 +3,6 @@
 
 """Bug message interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'IBugComment',
     'IBugMessage',

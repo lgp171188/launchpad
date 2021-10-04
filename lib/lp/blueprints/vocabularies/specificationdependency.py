@@ -3,7 +3,6 @@
 
 """The vocabularies relating to dependencies of specifications."""
 
-__metaclass__ = type
 __all__ = [
     'SpecificationDepCandidatesVocabulary',
     'SpecificationDependenciesVocabulary',

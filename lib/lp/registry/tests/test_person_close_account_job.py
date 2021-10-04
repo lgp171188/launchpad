@@ -3,8 +3,6 @@
 
 """Tests for `PersonCloseAccountJob`."""
 
-__metaclass__ = type
-
 from testtools.matchers import (
     Not,
     StartsWith,

@@ -3,8 +3,6 @@
 
 """Tests for `PackageCopyingMixin`."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 

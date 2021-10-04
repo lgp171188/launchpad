@@ -1,8 +1,6 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.soyuz.browser.archive import ArchiveAdminView
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher

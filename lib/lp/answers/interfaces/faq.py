@@ -3,8 +3,6 @@
 
 """Interface for FAQ document."""
 
-__metaclass__ = type
-
 __all__ = [
     'CannotDeleteFAQ',
     'IFAQ',

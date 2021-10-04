@@ -3,7 +3,6 @@
 
 """Common helpers for replication scripts."""
 
-__metaclass__ = type
 __all__ = []
 
 import subprocess

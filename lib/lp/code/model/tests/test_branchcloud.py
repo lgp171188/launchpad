@@ -3,8 +3,6 @@
 
 """Tests for IBranchCloud provider."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

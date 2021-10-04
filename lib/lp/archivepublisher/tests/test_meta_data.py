@@ -3,8 +3,6 @@
 
 """Test meta-data custom uploads."""
 
-__metaclass__ = type
-
 import os
 
 from testtools.matchers import (

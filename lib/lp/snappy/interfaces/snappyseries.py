@@ -3,7 +3,6 @@
 
 """Snappy series interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'ISnappyDistroSeries',
     'ISnappyDistroSeriesSet',

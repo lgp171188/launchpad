@@ -8,8 +8,6 @@ of the module functionality; here we just aim to test that the script
 processes its arguments and handles dry-run correctly.
 """
 
-__metaclass__ = type
-
 import datetime
 import os
 import shutil

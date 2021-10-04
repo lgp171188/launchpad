@@ -3,7 +3,6 @@
 
 """RT ExternalBugTracker Utility."""
 
-__metaclass__ = type
 __all__ = ['RequestTracker']
 
 import email

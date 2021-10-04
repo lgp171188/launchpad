@@ -3,8 +3,6 @@
 
 """Tests for communication with the snap store."""
 
-__metaclass__ = type
-
 import base64
 from cgi import FieldStorage
 import hashlib

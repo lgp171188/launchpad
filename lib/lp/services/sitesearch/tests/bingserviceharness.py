@@ -5,8 +5,6 @@
 Fixtures for running the Bing test webservice.
 """
 
-__metaclass__ = type
-
 __all__ = ['BingServiceTestSetup']
 
 

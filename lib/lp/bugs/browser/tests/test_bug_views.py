@@ -3,8 +3,6 @@
 
 """Tests for Bug Views."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

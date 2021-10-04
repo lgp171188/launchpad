@@ -3,8 +3,6 @@
 
 """Tests for the logintoken module."""
 
-__metaclass__ = type
-
 import doctest
 from textwrap import dedent
 

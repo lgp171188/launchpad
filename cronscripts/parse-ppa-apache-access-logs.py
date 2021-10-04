@@ -5,8 +5,6 @@
 
 """Parse PPA apache logs to find out download counts for each file."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 import functools

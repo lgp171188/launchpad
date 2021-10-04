@@ -5,10 +5,6 @@
 
 This script removes obsolete files from the selected archive(s) pool.
 """
-# Disable warning on catching bare 'Exception', it's needed as a
-# production artifact for continuing processing data that doesn't
-# have problems.
-__metaclass__ = type
 
 __all__ = [
     'DeathRowProcessor',

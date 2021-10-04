@@ -3,7 +3,6 @@
 
 """Question models."""
 
-__metaclass__ = type
 __all__ = [
     'SimilarQuestionsSearch',
     'Question',

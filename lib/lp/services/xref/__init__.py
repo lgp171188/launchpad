@@ -7,5 +7,4 @@ Provides infrastructure for generic information references between
 artifacts, easing weak coupling of apps.
 """
 
-__metaclass__ = type
 __all__ = []

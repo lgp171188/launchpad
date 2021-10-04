@@ -3,7 +3,6 @@
 
 """Health check view for Talisker."""
 
-__metaclass__ = type
 __all__ = [
     "StatusCheckView",
     ]

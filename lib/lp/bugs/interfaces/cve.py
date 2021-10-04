@@ -3,8 +3,6 @@
 
 """CVE interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'CveStatus',
     'ICve',

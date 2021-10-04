@@ -9,8 +9,6 @@ This cannot be done on the build daemons because they are insufficiently
 secure to hold signing keys, so we sign them as a custom upload instead.
 """
 
-__metaclass__ = type
-
 __all__ = [
     "SigningUpload",
     "UefiUpload",

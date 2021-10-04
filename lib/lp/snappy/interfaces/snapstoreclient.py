@@ -3,7 +3,6 @@
 
 """Interface for communication with the snap store."""
 
-__metaclass__ = type
 __all__ = [
     'BadRefreshResponse',
     'BadRequestPackageUploadResponse',

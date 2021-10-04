@@ -3,8 +3,6 @@
 
 """Binary package name interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBinaryPackageName',
     'IBinaryAndSourcePackageName',

@@ -3,7 +3,6 @@
 
 """Round ExternalBugTracker utility."""
 
-__metaclass__ = type
 __all__ = ['Roundup']
 
 import csv

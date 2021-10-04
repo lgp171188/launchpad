@@ -3,8 +3,6 @@
 
 """Tests for code's custom publications."""
 
-__metaclass__ = type
-
 from lp.code.publisher import CodeLayer
 from lp.layers import WebServiceLayer
 from lp.services.config import config

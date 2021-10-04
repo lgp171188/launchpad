@@ -3,8 +3,6 @@
 
 """PostgreSQL server side session storage for Zope3."""
 
-__metaclass__ = type
-
 from collections import MutableMapping
 from datetime import datetime
 import hashlib

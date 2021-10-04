@@ -3,7 +3,6 @@
 
 """Runn test_logger.txt."""
 
-__metaclass__ = type
 __all__ = []
 
 import doctest

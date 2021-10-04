@@ -3,8 +3,6 @@
 
 """Tests for lp.bugs.model.Bug."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 
 from lazr.lifecycle.snapshot import Snapshot

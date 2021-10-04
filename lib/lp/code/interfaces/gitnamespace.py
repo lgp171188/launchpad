@@ -3,7 +3,6 @@
 
 """Interface for a Git repository namespace."""
 
-__metaclass__ = type
 __all__ = [
     'get_git_namespace',
     'IGitNamespace',

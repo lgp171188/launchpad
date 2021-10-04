@@ -3,10 +3,6 @@
 
 """BranchJob interfaces."""
 
-
-__metaclass__ = type
-
-
 __all__ = [
     'IBranchJob',
     'IBranchModifiedMailJob',

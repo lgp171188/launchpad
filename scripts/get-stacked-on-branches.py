@@ -21,8 +21,6 @@ format:
 This script is intended to be used in conjunction with "update-stacked-on.py".
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from optparse import OptionParser

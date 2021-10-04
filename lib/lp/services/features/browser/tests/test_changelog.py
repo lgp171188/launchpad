@@ -3,9 +3,6 @@
 
 """Tests for feature flag change log views."""
 
-
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.services.features.changelog import ChangeLog

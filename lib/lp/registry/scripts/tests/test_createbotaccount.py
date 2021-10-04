@@ -3,8 +3,6 @@
 
 """Test the create-bot-account script."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.registry.interfaces.person import IPersonSet

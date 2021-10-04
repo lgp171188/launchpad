@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Tools for managing long-running or difficult tasks with Twisted."""
 
-__metaclass__ = type
 __all__ = [
     'AlreadyRunningError',
     'ITaskConsumer',

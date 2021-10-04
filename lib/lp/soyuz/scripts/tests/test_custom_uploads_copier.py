@@ -3,8 +3,6 @@
 
 """Test copying of custom package uploads for a new `DistroSeries`."""
 
-__metaclass__ = type
-
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.soyuz.enums import (

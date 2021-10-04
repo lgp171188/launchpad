@@ -3,9 +3,6 @@
 
 """Tests for the user requested oops using ++oops++ traversal."""
 
-__metaclass__ = type
-
-
 from lazr.restful.utils import get_current_browser_request
 
 from lp.services.webapp.errorlog import (

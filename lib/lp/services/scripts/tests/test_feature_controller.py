@@ -3,8 +3,6 @@
 
 """Test feature controller in scripts."""
 
-__metaclass__ = type
-
 from lp.services.features import (
     get_relevant_feature_controller,
     install_feature_controller,

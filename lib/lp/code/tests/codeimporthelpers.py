@@ -3,7 +3,6 @@
 
 """Helpers for Code Import page tests."""
 
-__metaclass__ = type
 __all__ = [
     'get_import_for_branch_name',
     'make_finished_import',

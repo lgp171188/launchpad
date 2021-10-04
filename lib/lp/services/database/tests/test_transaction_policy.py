@@ -3,8 +3,6 @@
 
 """Test `TransactionPolicy`."""
 
-__metaclass__ = type
-
 from psycopg2 import InternalError
 import transaction
 

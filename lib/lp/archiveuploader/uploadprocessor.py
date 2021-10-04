@@ -45,8 +45,6 @@ above, failed being worst).
 
 """
 
-__metaclass__ = type
-
 import os
 import shutil
 import sys

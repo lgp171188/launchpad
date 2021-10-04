@@ -3,8 +3,6 @@
 
 """Preferred charsets."""
 
-__metaclass__ = type
-
 __all__ = ['Utf8PreferredCharsets']
 
 from zope.component import adapter

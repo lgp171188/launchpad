@@ -3,7 +3,6 @@
 
 """Views, menus, and traversal related to `PersonOCIProject`s."""
 
-__metaclass__ = type
 __all__ = [
     'PersonOCIProjectNavigation',
     ]

@@ -6,8 +6,6 @@
 PackageLocation and SoyuzScript.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'SoyuzScriptError',
     'SoyuzScript',

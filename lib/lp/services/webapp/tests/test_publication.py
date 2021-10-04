@@ -3,8 +3,6 @@
 
 """Tests publication.py"""
 
-__metaclass__ = type
-
 import sys
 
 from fixtures import FakeLogger

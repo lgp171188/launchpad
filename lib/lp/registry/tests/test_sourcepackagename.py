@@ -3,8 +3,6 @@
 
 """Tests for SourcePackageName"""
 
-__metaclass__ = type
-
 from testtools.testcase import ExpectedException
 
 from lp.registry.errors import InvalidName

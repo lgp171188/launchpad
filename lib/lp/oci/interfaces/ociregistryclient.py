@@ -3,7 +3,6 @@
 
 """Interface for communication with an OCI registry."""
 
-__metaclass__ = type
 __all__ = [
     'BlobUploadFailed',
     'IOCIRegistryClient',

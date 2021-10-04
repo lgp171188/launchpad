@@ -3,8 +3,6 @@
 
 """Tests for bug subscription filter browser code."""
 
-__metaclass__ = type
-
 import json
 
 from lxml import html

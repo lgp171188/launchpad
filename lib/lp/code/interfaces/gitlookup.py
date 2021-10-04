@@ -3,7 +3,6 @@
 
 """Utility for looking up Git repositories by name."""
 
-__metaclass__ = type
 __all__ = [
     'IGitLookup',
     'IGitTraversable',

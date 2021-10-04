@@ -3,8 +3,6 @@
 
 """Unit tests for the DistroSeriesDifference views."""
 
-__metaclass__ = type
-
 import re
 
 import soupmatchers

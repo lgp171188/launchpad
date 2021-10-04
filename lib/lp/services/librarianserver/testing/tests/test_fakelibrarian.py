@@ -3,8 +3,6 @@
 
 """Test the fake librarian."""
 
-__metaclass__ = type
-
 import io
 
 import six

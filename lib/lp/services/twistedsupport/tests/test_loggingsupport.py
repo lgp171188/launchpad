@@ -3,8 +3,6 @@
 
 """Tests for the integration between Twisted's logging and Launchpad's."""
 
-__metaclass__ = type
-
 import os
 
 from fixtures import TempDir

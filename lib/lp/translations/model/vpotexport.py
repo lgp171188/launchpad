@@ -3,8 +3,6 @@
 
 """Database class to handle translation template export view."""
 
-__metaclass__ = type
-
 __all__ = [
     'VPOTExport',
     ]

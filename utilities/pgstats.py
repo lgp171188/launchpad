@@ -8,8 +8,6 @@ Generate some statistics about a PostgreSQL database suitable for
 emailing via cron
 """
 
-__metaclass__ = type
-
 import sys
 
 import psycopg2

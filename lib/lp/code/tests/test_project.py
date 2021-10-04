@@ -3,8 +3,6 @@
 
 """Tests for product views."""
 
-__metaclass__ = type
-
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 

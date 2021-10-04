@@ -3,8 +3,6 @@
 
 """Unit tests for the error presentation in worker.py."""
 
-__metaclass__ = type
-
 import os
 import socket
 import tempfile

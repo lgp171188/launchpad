@@ -3,8 +3,6 @@
 
 """Test the generic and/or shared xmlrpc code that Launchpad provides."""
 
-__metaclass__ = type
-
 from six.moves import http_client
 
 from lp.services.xmlrpc import Transport

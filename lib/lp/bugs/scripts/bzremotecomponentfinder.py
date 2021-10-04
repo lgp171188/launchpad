@@ -3,7 +3,6 @@
 
 """Utilities for the update-bugzilla-remote-components cronscript"""
 
-__metaclass__ = type
 __all__ = [
     'BugzillaRemoteComponentFinder',
     'BugzillaRemoteComponentScraper',

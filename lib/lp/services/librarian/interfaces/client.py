@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # PyLint doesn't grok Zope interfaces.
-__metaclass__ = type
 __all__ = [
     'DownloadFailed',
     'IFileUploadClient',

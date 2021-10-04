@@ -3,8 +3,6 @@
 
 """Unit tests for TranslationsPerson."""
 
-__metaclass__ = type
-
 from lp.testing import (
     TestCaseWithFactory,
     verifyObject,

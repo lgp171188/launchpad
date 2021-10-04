@@ -8,8 +8,6 @@ any Launchpad code, and any new external dependencies need coordination
 with the launchpad-buildd deployment.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'ReadyService',
     ]

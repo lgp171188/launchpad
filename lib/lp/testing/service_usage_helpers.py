@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper functions dealing with IServiceUsage."""
-__metaclass__ = type
 
 from zope.component import getUtility
 

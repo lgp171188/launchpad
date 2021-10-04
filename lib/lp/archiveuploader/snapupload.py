@@ -3,8 +3,6 @@
 
 """Process a snap package upload."""
 
-__metaclass__ = type
-
 import os
 
 from zope.component import getUtility

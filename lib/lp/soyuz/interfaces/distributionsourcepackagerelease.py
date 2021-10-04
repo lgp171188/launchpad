@@ -3,8 +3,6 @@
 
 """Source package release in Distribution interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IDistributionSourcePackageRelease',
     ]

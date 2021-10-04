@@ -3,7 +3,6 @@
 
 """Implementation of `ISuiteSourcePackage`."""
 
-__metaclass__ = type
 __all__ = [
     'SuiteSourcePackage',
     ]

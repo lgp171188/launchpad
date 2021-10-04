@@ -3,7 +3,6 @@
 
 """Tests for the OAuth database classes."""
 
-__metaclass__ = type
 __all__ = []
 
 import unittest

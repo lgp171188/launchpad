@@ -3,8 +3,6 @@
 
 """Tests for things found directly in `lp.services.twistedsupport`."""
 
-__metaclass__ = type
-
 from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,

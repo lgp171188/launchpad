@@ -3,8 +3,6 @@
 
 """Librarian interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ILibraryFileAlias',
     'ILibraryFileAliasWithParent',

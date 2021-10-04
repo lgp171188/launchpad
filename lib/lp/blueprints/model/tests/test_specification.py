@@ -3,8 +3,6 @@
 
 """Unit tests for blueprints here."""
 
-__metaclass__ = type
-
 from testtools.matchers import (
     Equals,
     MatchesStructure,

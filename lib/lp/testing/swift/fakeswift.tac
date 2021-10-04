@@ -4,7 +4,6 @@
 
 '''Launch a mock Swift service.'''
 
-__metaclass__ = type
 __all__ = []
 
 import logging

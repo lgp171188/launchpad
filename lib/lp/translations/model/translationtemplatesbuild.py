@@ -3,7 +3,6 @@
 
 """`TranslationTemplatesBuild` class."""
 
-__metaclass__ = type
 __all__ = [
     'HARDCODED_TRANSLATIONTEMPLATESBUILD_SCORE',
     'TranslationTemplatesBuild',

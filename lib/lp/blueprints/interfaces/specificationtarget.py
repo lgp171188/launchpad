@@ -3,8 +3,6 @@
 
 """Interfaces for things which have Specifications."""
 
-__metaclass__ = type
-
 __all__ = [
     'IHasSpecifications',
     'ISpecificationTarget',

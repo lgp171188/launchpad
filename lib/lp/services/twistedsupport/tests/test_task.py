@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Tests for our task support."""
 
-__metaclass__ = type
-
 from functools import partial
 
 from twisted.internet.defer import (

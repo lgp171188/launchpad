@@ -3,8 +3,6 @@
 
 """Tests for the puller's support for various Bazaar formats."""
 
-__metaclass__ = type
-
 from breezy.branch import Branch
 from breezy.bzr.bzrdir import BzrDirMetaFormat1
 from breezy.bzr.knitpack_repo import RepositoryFormatKnitPack5

@@ -3,7 +3,6 @@
 
 """Notifications related to linking bugs and questions."""
 
-__metaclass__ = type
 __all__ = []
 
 from lazr.lifecycle.interfaces import IObjectModifiedEvent

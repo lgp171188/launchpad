@@ -3,8 +3,6 @@
 
 """Unit tests for CodeReviewVoteReferences."""
 
-__metaclass__ = type
-
 from lp.services.webapp import canonical_url
 from lp.testing import (
     person_logged_in,

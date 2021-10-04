@@ -3,8 +3,6 @@
 
 """Tests for the various rules around question comment visibility."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 

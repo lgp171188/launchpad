@@ -6,8 +6,6 @@
 Pillars are currently Product, ProjectGroup and Distribution.
 """
 
-__metaclass__ = type
-
 from operator import attrgetter
 import warnings
 

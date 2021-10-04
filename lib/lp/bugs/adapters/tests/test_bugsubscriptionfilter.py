@@ -3,8 +3,6 @@
 
 """Test IBugSubscriptionFilter adapters"""
 
-__metaclass__ = type
-
 from lp.bugs.adapters.bugsubscriptionfilter import (
     bugsubscriptionfilter_to_distribution,
     bugsubscriptionfilter_to_product,

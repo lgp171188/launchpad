@@ -3,9 +3,6 @@
 
 """Functions used with the Rosetta PO import script."""
 
-__metaclass__ = type
-
-
 __all__ = [
     'TranslationsImport',
     ]

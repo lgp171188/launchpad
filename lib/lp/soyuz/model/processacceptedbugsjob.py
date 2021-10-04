@@ -1,8 +1,6 @@
 # Copyright 2012-2014 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 __all__ = [
     'close_bugs_for_queue_item',
     'close_bugs_for_sourcepublication',

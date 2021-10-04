@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test that creating page test stories from files and directories work."""
-__metaclass__ = type
 
 from operator import methodcaller
 import os

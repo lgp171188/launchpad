@@ -3,8 +3,6 @@
 
 """Test the cronscript_enabled function in scripts/base.py."""
 
-__metaclass__ = type
-
 import os.path
 import subprocess
 import sys

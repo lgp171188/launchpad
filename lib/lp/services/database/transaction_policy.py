@@ -3,7 +3,6 @@
 
 """Policy for database transactions."""
 
-__metaclass__ = type
 __all__ = [
     'DatabaseTransactionPolicy',
     ]

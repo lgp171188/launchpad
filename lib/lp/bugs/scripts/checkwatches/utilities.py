@@ -3,7 +3,6 @@
 
 """Utility functions for checkwatches."""
 
-__metaclass__ = type
 __all__ = [
     'get_bugwatcherrortype_for_error',
     'get_remote_system_oops_properties',

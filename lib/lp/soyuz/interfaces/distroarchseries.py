@@ -3,8 +3,6 @@
 
 """Distribution architecture series interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ChrootNotPublic',
     'FilterSeriesMismatch',

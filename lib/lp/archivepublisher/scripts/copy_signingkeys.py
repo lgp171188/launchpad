@@ -3,8 +3,6 @@
 
 """Script to copy signing keys between archives."""
 
-__metaclass__ = type
-
 __all__ = [
     'CopySigningKeysScript',
     ]

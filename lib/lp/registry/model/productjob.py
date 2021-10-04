@@ -3,7 +3,6 @@
 
 """Jobs classes to update products and send notifications."""
 
-__metaclass__ = type
 __all__ = [
     'ProductJob',
     'ProductJobManager',

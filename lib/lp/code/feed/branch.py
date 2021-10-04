@@ -3,8 +3,6 @@
 
 """Branch feed (syndication) views."""
 
-__metaclass__ = type
-
 __all__ = [
     'BranchFeed',
     'PersonBranchFeed',

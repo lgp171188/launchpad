@@ -3,8 +3,6 @@
 
 """Tests for the LibraryFileAlias."""
 
-__metaclass__ = type
-
 import io
 import unittest
 

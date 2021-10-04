@@ -3,8 +3,6 @@
 
 """Test the health check view for Talisker."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from zope.publisher.interfaces.http import IHTTPRequest
 

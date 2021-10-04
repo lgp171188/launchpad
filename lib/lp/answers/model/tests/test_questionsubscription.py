@@ -3,8 +3,6 @@
 
 """Tests for the QuestionSubscrption model object.."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.app.errors import UserCannotUnsubscribePerson

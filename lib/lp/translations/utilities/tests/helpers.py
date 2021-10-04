@@ -3,8 +3,6 @@
 
 """Helper module reused in different tests."""
 
-__metaclass__ = type
-
 __all__ = [
     'import_pofile_or_potemplate',
     'is_valid_mofile',

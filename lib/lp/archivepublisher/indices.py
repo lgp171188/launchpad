@@ -8,8 +8,6 @@ __all__ = [
     'build_translations_stanza_fields',
     ]
 
-__metaclass__ = type
-
 from collections import OrderedDict
 import hashlib
 import os.path

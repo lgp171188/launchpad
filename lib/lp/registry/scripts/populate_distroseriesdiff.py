@@ -11,7 +11,6 @@ out the exact differences.  Any pre-existing `DistroSeriesDifference`
 entries remain untouched.
 """
 
-__metaclass__ = type
 __all__ = [
     'PopulateDistroSeriesDiff',
     ]

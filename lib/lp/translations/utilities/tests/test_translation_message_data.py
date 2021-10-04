@@ -3,8 +3,6 @@
 
 """Tests for `TranslationMessageData`."""
 
-__metaclass__ = type
-
 from unittest import TestCase
 
 from lp.translations.interfaces.translationimporter import (

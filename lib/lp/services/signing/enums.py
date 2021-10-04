@@ -3,8 +3,6 @@
 
 """Enums for signing keys management."""
 
-__metaclass__ = type
-
 __all__ = [
     'OpenPGPKeyAlgorithm',
     'SigningKeyType',

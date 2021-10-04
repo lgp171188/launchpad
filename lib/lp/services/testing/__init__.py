@@ -10,7 +10,6 @@ Assumes the following layout beneath base_dir:
  doc/ - Contains doctests
 """
 
-__metaclass__ = type
 __all__ = [
     'build_doctest_suite',
     'build_test_suite',

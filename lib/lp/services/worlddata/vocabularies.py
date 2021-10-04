@@ -7,8 +7,6 @@ __all__ = [
     'TimezoneNameVocabulary',
     ]
 
-__metaclass__ = type
-
 import pytz
 import six
 from zope.component import getUtility

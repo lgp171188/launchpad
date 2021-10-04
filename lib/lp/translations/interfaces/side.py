@@ -3,7 +3,6 @@
 
 """Traits of the two "sides" of translation: Ubuntu and upstream."""
 
-__metaclass__ = type
 __all__ = [
     'ITranslationSideTraits',
     'ITranslationSideTraitsSet',

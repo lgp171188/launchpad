@@ -3,7 +3,6 @@
 
 """Upload OCI build artifacts to the librarian."""
 
-__metaclass__ = type
 __all__ = ['OCIRecipeUpload']
 
 

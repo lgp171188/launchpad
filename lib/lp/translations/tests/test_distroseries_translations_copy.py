@@ -3,8 +3,6 @@
 
 """Unit tests for distroseries translations initialization."""
 
-__metaclass__ = type
-
 from itertools import chain
 
 from testtools.matchers import ContainsAll

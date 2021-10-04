@@ -3,7 +3,6 @@
 
 """Interfaces for source package builds."""
 
-__metaclass__ = type
 __all__ = [
     'ISourcePackageRecipeBuild',
     'ISourcePackageRecipeBuildSource',

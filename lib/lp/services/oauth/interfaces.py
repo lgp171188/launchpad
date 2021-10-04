@@ -3,8 +3,6 @@
 
 """OAuth interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'OAUTH_REALM',
     'OAUTH_CHALLENGE',

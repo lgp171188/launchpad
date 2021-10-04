@@ -3,8 +3,6 @@
 
 """Functions for language pack creation script."""
 
-__metaclass__ = type
-
 __all__ = [
     'export_language_pack',
     ]

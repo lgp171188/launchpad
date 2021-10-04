@@ -3,8 +3,6 @@
 
 """Webservice unit tests related to Launchpad Bug messages."""
 
-__metaclass__ = type
-
 from testtools.matchers import HasLength
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy

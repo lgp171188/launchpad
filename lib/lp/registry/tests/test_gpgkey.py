@@ -3,8 +3,6 @@
 
 """Tests for GPGKeySet model."""
 
-__metaclass__ = type
-
 from testtools.matchers import (
     Contains,
     Equals,

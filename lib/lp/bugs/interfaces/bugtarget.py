@@ -3,8 +3,6 @@
 
 """Interfaces related to bugs."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBugTarget',
     'IHasBugs',

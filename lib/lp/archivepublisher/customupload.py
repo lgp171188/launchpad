@@ -11,8 +11,6 @@ Custom uploads include Debian installer packages, dist upgraders and
 DDTP (Debian Description Translation Project) tarballs.
 """
 
-__metaclass__ = type
-
 __all__ = ['CustomUpload']
 
 import os

@@ -3,7 +3,6 @@
 
 """Unit tests for TestSourcePackageReleaseFiles."""
 
-__metaclass__ = type
 __all__ = [
     'TestDistributionSourcePackageReleaseFiles',
     ]

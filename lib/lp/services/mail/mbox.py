@@ -3,8 +3,6 @@
 
 """An IMailer that stores messages in a specified mbox file."""
 
-__metaclass__ = type
-
 from contextlib import closing
 import email
 from email.utils import make_msgid

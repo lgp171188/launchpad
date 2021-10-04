@@ -3,7 +3,6 @@
 
 """Bug attachment views."""
 
-__metaclass__ = type
 __all__ = [
     'BugAttachmentContentCheck',
     'BugAttachmentFileNavigation',

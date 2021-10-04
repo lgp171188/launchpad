@@ -3,8 +3,6 @@
 
 """Tests for BinaryPackageBuildBehaviour."""
 
-__metaclass__ = type
-
 import gzip
 import os
 import shutil

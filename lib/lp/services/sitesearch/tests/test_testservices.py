@@ -3,9 +3,6 @@
 
 """Unit tests for sitesearch test service stubs."""
 
-__metaclass__ = type
-
-
 import os
 import unittest
 

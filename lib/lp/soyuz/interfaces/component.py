@@ -3,8 +3,6 @@
 
 """Component interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IComponent',
     'IComponentSelection',

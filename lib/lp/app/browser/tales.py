@@ -3,8 +3,6 @@
 
 """Implementation of the lp: htmlform: fmt: namespaces in TALES."""
 
-__metaclass__ = type
-
 from bisect import bisect
 from datetime import (
     datetime,

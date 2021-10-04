@@ -3,7 +3,6 @@
 
 """Browser code for the launchpad application."""
 
-__metaclass__ = type
 __all__ = [
     'AppFrontPageSearchView',
     'ExceptionHierarchy',

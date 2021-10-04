@@ -3,8 +3,6 @@
 
 """Test the bing search service."""
 
-__metaclass__ = type
-
 import json
 import os.path
 import re

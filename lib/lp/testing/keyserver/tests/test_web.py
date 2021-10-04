@@ -3,8 +3,6 @@
 
 """Tests for the web resources of the testkeyserver."""
 
-__metaclass__ = type
-
 import os
 import shutil
 

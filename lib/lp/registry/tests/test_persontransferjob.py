@@ -3,8 +3,6 @@
 
 """Tests for PersonTransferJobs."""
 
-__metaclass__ = type
-
 from lp.registry.enums import PersonTransferJobType
 from lp.registry.model.persontransferjob import (
     PersonTransferJob,

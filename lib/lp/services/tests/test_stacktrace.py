@@ -3,8 +3,6 @@
 
 """Test the stacktrace module."""
 
-__metaclass__ = type
-
 import sys
 
 from fixtures import MonkeyPatch

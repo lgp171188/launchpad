@@ -3,8 +3,6 @@
 
 """Handle jobs for a specified job source class."""
 
-__metaclass__ = type
-
 from collections import defaultdict
 import logging
 import sys

@@ -3,8 +3,6 @@
 
 """Interfaces for searching and working with results."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISearchResult',
     'ISearchResults',

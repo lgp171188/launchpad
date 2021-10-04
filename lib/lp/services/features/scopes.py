@@ -21,8 +21,6 @@ __all__ = [
     'undocumented_scopes',
     ]
 
-__metaclass__ = type
-
 import re
 
 from six.moves import zip_longest as izip_longest

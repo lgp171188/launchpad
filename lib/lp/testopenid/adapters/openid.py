@@ -3,8 +3,6 @@
 
 """TestOpenID adapters and helpers."""
 
-__metaclass__ = type
-
 __all__ = [
     'TestOpenIDPersistentIdentity',
     ]

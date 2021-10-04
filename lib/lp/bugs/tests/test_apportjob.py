@@ -3,8 +3,6 @@
 
 """Tests for ApportJobs."""
 
-__metaclass__ = type
-
 import os
 
 import transaction

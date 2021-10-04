@@ -3,8 +3,6 @@
 
 """Test the SIGDUMPMEM signal handler."""
 
-__metaclass__ = type
-
 import os
 import time
 

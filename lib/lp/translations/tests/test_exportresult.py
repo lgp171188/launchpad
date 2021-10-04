@@ -3,8 +3,6 @@
 
 """Tests for `ExportResult`."""
 
-__metaclass__ = type
-
 import hashlib
 import io
 import os.path

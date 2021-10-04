@@ -3,8 +3,6 @@
 
 """Tests for the `base` module."""
 
-__metaclass__ = type
-
 from contextlib import contextmanager
 
 import transaction

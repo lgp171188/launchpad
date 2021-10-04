@@ -3,7 +3,6 @@
 
 """Snap package jobs."""
 
-__metaclass__ = type
 __all__ = [
     'SnapJob',
     'SnapJobType',

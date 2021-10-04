@@ -3,8 +3,6 @@
 
 """Interfaces to handle translation files exports."""
 
-__metaclass__ = type
-
 __all__ = [
     'IExportedTranslationFile',
     'ITranslationExporter',

@@ -3,8 +3,6 @@
 
 """Interfaces for linking Specifications and Branches."""
 
-__metaclass__ = type
-
 __all__ = [
     "ISpecificationBranch",
     "ISpecificationBranchSet",

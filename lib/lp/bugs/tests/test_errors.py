@@ -3,10 +3,6 @@
 
 """Tests for bugs errors."""
 
-
-__metaclass__ = type
-
-
 from six.moves.http_client import EXPECTATION_FAILED
 
 from lp.bugs.errors import InvalidDuplicateValue

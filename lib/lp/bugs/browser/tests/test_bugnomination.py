@@ -3,8 +3,6 @@
 
 """Tests for bug nomination views."""
 
-__metaclass__ = type
-
 import re
 
 import soupmatchers

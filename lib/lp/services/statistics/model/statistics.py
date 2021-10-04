@@ -3,8 +3,6 @@
 
 """Classes that implement LaunchpadStatistics."""
 
-__metaclass__ = type
-
 __all__ = [
     'LaunchpadStatistic',
     'LaunchpadStatisticSet',

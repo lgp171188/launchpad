@@ -3,8 +3,6 @@
 
 """Unit tests for CodeReviewComments."""
 
-__metaclass__ = type
-
 import re
 
 import six

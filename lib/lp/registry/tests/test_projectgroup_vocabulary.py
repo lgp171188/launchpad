@@ -3,8 +3,6 @@
 
 """Test the ProjectGroup vocabulary."""
 
-__metaclass__ = type
-
 from lp.registry.vocabularies import ProjectGroupVocabulary
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer

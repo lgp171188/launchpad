@@ -3,8 +3,6 @@
 
 """Parallel test glue."""
 
-__metaclass__ = type
-
 import io
 import subprocess
 import tempfile

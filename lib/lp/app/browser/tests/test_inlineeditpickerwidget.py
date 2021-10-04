@@ -3,8 +3,6 @@
 
 """Tests for the InlineEditPickerWidget."""
 
-__metaclass__ = type
-
 from zope.interface import (
     implementer,
     Interface,

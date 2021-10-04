@@ -3,8 +3,6 @@
 
 """Test distro arch series filters."""
 
-__metaclass__ = type
-
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized

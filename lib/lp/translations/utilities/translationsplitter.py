@@ -1,9 +1,6 @@
 # Copyright 2011-2014 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
-
 import logging
 
 from storm.expr import Not

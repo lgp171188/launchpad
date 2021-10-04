@@ -48,8 +48,6 @@ it is performed for each suite using:
 
 """
 
-__metaclass__ = type
-
 __all__ = ['Dominator']
 
 from collections import defaultdict

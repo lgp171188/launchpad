@@ -3,8 +3,6 @@
 
 """Common file format classes shared across all formats."""
 
-__metaclass__ = type
-
 __all__ = [
     'TranslationFileData',
     'TranslationMessageData',

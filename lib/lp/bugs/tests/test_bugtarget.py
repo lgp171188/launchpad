@@ -7,7 +7,6 @@ This module runs the interface test against the Product, ProductSeries
 ProjectGroup, DistributionSourcePackage, and DistroSeries implementations
 IBugTarget. It runs the bugtarget-questiontarget.txt test.
 """
-__metaclass__ = type
 
 __all__ = []
 

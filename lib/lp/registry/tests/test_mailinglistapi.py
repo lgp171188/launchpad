@@ -3,7 +3,6 @@
 
 """Unit tests for the private MailingList API."""
 
-__metaclass__ = type
 __all__ = []
 
 import email

@@ -3,7 +3,6 @@
 
 """Communication with webhook delivery endpoints."""
 
-__metaclass__ = type
 __all__ = [
     'WebhookClient',
     ]

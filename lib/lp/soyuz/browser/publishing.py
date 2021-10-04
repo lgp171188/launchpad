@@ -3,8 +3,6 @@
 
 """Browser views for Soyuz publishing records."""
 
-__metaclass__ = type
-
 __all__ = [
     'BinaryPublishingRecordView',
     'SourcePublicationURL',

@@ -3,7 +3,6 @@
 
 """Functions to help with the testing of views."""
 
-__metaclass__ = type
 __all__ = [
     'create_view',
     'create_initialized_view',

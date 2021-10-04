@@ -6,7 +6,6 @@
 Use this for things that six doesn't provide.
 """
 
-__metaclass__ = type
 __all__ = [
     'escape',
     'message_as_bytes',

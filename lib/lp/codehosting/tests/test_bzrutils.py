@@ -3,8 +3,6 @@
 
 """Tests for bzrutils."""
 
-__metaclass__ = type
-
 import gc
 import sys
 

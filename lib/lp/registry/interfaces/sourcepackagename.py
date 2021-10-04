@@ -3,8 +3,6 @@
 
 """Source package name interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISourcePackageName',
     'ISourcePackageNameSet',

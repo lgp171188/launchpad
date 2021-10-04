@@ -3,8 +3,6 @@
 
 """Tests for answers's custom publications."""
 
-__metaclass__ = type
-
 import io
 
 from lp.answers.publisher import (

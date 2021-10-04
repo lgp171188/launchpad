@@ -3,8 +3,6 @@
 
 """Tests for the question module."""
 
-__metaclass__ = type
-
 __all__ = []
 
 from zope.security.proxy import removeSecurityProxy

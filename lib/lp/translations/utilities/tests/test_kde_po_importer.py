@@ -3,8 +3,6 @@
 
 """KDE PO importer tests."""
 
-__metaclass__ = type
-
 from io import BytesIO
 import unittest
 

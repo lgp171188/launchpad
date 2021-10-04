@@ -3,8 +3,6 @@
 
 """Fixtures for dealing with the build time HTTP proxy."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import json
 from textwrap import dedent

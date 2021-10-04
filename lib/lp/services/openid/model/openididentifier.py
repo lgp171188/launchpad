@@ -3,7 +3,6 @@
 
 """OpenIdIdentifier database class."""
 
-__metaclass__ = type
 __all__ = ['OpenIdIdentifier']
 
 from storm.locals import (

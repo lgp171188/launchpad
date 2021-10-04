@@ -3,7 +3,6 @@
 
 """Wrappers for lazr-js widgets."""
 
-__metaclass__ = type
 __all__ = [
     'BooleanChoiceWidget',
     'EnumChoiceWidget',

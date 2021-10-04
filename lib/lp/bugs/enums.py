@@ -3,7 +3,6 @@
 
 """Enums for the Bugs app."""
 
-__metaclass__ = type
 __all__ = [
     'BugNotificationLevel',
     'BugNotificationStatus',

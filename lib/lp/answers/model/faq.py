@@ -3,8 +3,6 @@
 
 """FAQ document models."""
 
-__metaclass__ = type
-
 __all__ = [
     'FAQ',
     'FAQSearch',

@@ -3,8 +3,6 @@
 
 """Tests for nickname generation"""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.registry.interfaces.person import IPersonSet

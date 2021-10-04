@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Browser code for PO templates."""
 
-__metaclass__ = type
-
 __all__ = [
     'POTemplateAdminView',
     'POTemplateBreadcrumb',

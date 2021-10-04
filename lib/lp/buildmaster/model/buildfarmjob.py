@@ -2,7 +2,6 @@
 # the GNU Affero General Public License version 3 (see the file
 # LICENSE).
 
-__metaclass__ = type
 __all__ = [
     'BuildFarmJob',
     'BuildFarmJobMixin',

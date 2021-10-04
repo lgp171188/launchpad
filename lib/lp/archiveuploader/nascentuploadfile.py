@@ -3,8 +3,6 @@
 
 """Specific models for uploaded files"""
 
-__metaclass__ = type
-
 __all__ = [
     'BaseBinaryUploadFile',
     'CustomUploadFile',

@@ -3,8 +3,6 @@
 
 """Test the Git reference vocabularies."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

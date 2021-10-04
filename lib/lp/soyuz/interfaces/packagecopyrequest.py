@@ -3,8 +3,6 @@
 
 """PackageCopyRequest interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IPackageCopyRequest',
     'IPackageCopyRequestSet',

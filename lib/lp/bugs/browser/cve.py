@@ -3,8 +3,6 @@
 
 """CVE views."""
 
-__metaclass__ = type
-
 __all__ = [
     'CveContextMenu',
     'CveIndexView',

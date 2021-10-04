@@ -8,7 +8,6 @@ together. As such, it can import from any modules, but nothing should import
 from it.
 """
 
-__metaclass__ = type
 __all__ = []
 
 # Zope recently changed the behaviour of items widgets with regards to missing

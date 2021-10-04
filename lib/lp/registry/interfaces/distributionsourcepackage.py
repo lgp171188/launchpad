@@ -3,8 +3,6 @@
 
 """Source package in Distribution interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IDistributionSourcePackage',
     ]

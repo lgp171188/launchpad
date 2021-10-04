@@ -3,8 +3,6 @@
 
 """Launchpad statistic storage interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ILaunchpadStatistic',
     'ILaunchpadStatisticSet',

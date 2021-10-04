@@ -3,8 +3,6 @@
 
 """Unit tests for BranchMergeProposal listing views."""
 
-__metaclass__ = type
-
 from datetime import datetime
 
 import pytz

@@ -3,8 +3,6 @@
 
 """Test LibraryFileAliasView."""
 
-__metaclass__ = type
-
 from zope.component import getMultiAdapter
 from zope.security.proxy import removeSecurityProxy
 

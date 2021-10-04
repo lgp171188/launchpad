@@ -3,8 +3,6 @@
 
 """Translation File Auto Approver tests."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities

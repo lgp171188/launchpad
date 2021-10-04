@@ -3,8 +3,6 @@
 
 """Featured Project views."""
 
-__metaclass__ = type
-
 __all__ = [
     'FeaturedProjectsView',
     ]

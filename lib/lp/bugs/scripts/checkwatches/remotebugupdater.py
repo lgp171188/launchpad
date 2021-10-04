@@ -3,7 +3,6 @@
 
 """Classes and logic for the remote bug updater."""
 
-__metaclass__ = type
 __all__ = [
     'RemoteBugUpdater',
     ]

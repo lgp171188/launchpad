@@ -3,8 +3,6 @@
 
 """Git reference ("ref") interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IGitRef',
     'IGitRefBatchNavigator',

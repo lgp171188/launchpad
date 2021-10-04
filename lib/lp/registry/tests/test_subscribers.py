@@ -3,8 +3,6 @@
 
 """Test subscruber classes and functions."""
 
-__metaclass__ = type
-
 from datetime import datetime
 
 from lazr.restful.utils import get_current_browser_request

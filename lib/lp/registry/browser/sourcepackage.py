@@ -3,8 +3,6 @@
 
 """Browser views for sourcepackages."""
 
-__metaclass__ = type
-
 __all__ = [
     'PackageUpstreamTracking',
     'SourcePackageAssociationPortletView',

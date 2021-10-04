@@ -3,8 +3,6 @@
 
 """Test harness for running decoratedresultset.txt."""
 
-__metaclass__ = type
-
 __all__ = []
 
 import unittest

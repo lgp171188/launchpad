@@ -7,8 +7,6 @@
 Run a command and suppress output unless it returns a non-zero exit status.
 """
 
-__metaclass__ = type
-
 import os
 from subprocess import (
     PIPE,

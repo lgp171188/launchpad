@@ -6,7 +6,6 @@
 See `IBranchCollection` for more details.
 """
 
-__metaclass__ = type
 __all__ = [
     'IAllBranches',
     'IBranchCollection',

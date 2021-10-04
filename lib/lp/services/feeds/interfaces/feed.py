@@ -3,8 +3,6 @@
 
 """Interfaces for feeds generation."""
 
-__metaclass__ = type
-
 __all__ = [
     'IFeed',
     'IFeedEntry',

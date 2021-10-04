@@ -3,7 +3,6 @@
 
 """`TranslationSideTraits` implementations."""
 
-__metaclass__ = type
 __all__ = [
     'TranslationSideTraits',
     'TranslationSideTraitsSet',

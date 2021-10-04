@@ -3,8 +3,6 @@
 
 """Tests for the internal Soyuz archive API."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy

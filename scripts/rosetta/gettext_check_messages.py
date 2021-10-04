@@ -16,8 +16,6 @@ disabled; if there is an imported alternative that does pass, it is
 enabled instead.
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from lp.translations.scripts.gettext_check_messages import (

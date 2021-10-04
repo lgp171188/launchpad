@@ -3,8 +3,6 @@
 
 """Webservice unit tests related to Launchpad blueprints."""
 
-__metaclass__ = type
-
 import json
 
 import iso8601

@@ -3,8 +3,6 @@
 
 """Test uploads of SourcePackageRecipeBuilds."""
 
-__metaclass__ = type
-
 import os
 
 from storm.store import Store

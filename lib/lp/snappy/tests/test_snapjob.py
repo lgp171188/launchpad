@@ -3,8 +3,6 @@
 
 """Tests for snap package jobs."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 import six

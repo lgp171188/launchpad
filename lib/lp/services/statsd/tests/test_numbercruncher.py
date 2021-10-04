@@ -3,8 +3,6 @@
 
 """Tests for the stats number cruncher daemon."""
 
-__metaclass__ = type
-
 from datetime import datetime
 
 import pytz

@@ -3,7 +3,6 @@
 
 """Distro arch series filter interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'IDistroArchSeriesFilter',
     'IDistroArchSeriesFilterSet',

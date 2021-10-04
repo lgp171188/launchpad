@@ -3,8 +3,6 @@
 
 """Browser views for archive."""
 
-__metaclass__ = type
-
 __all__ = [
     'ArchiveAdminView',
     'ArchiveActivateView',

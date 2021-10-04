@@ -3,8 +3,6 @@
 
 """Soyuz buildd slave manager logic."""
 
-__metaclass__ = type
-
 __all__ = [
     'BuilddManager',
     'BUILDD_MANAGER_LOG_NAME',

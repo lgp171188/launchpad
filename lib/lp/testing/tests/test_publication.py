@@ -3,8 +3,6 @@
 
 """Tests for the helpers in `lp.testing.publication`."""
 
-__metaclass__ = type
-
 from lazr.restful import EntryResource
 from lazr.restful.utils import get_current_browser_request
 from six.moves.urllib_parse import quote

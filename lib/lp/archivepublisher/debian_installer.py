@@ -6,8 +6,6 @@
 # This code is mostly owned by Colin Watson and is partly refactored by
 # Daniel Silverstone who should be the first point of contact for it.
 
-__metaclass__ = type
-
 __all__ = [
     'DebianInstallerUpload',
     ]

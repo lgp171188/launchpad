@@ -3,8 +3,6 @@
 
 """Test feature-flag scopes."""
 
-__metaclass__ = type
-
 from lp.services.features import getFeatureFlag
 from lp.services.features.scopes import (
     BaseScope,

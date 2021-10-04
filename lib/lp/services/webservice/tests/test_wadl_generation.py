@@ -3,8 +3,6 @@
 
 """Tests for the web service WADL and HTML generation APIs."""
 
-__metaclass__ = type
-
 from lazr.restful.interfaces import IWebServiceConfiguration
 from testtools.matchers import StartsWith
 from zope.component import getUtility

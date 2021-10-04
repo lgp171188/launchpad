@@ -3,8 +3,6 @@
 
 """Tests for traversal from the root branch object."""
 
-__metaclass__ = type
-
 from zope.publisher.interfaces import NotFound
 
 from lp.testing import TestCaseWithFactory

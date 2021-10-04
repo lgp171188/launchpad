@@ -3,8 +3,6 @@
 
 """Tests for lp.services.rabbit.RabbitServer."""
 
-__metaclass__ = type
-
 from configparser import ConfigParser
 import io
 

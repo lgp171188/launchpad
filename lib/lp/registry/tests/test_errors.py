@@ -3,10 +3,6 @@
 
 """Tests for registry errors."""
 
-
-__metaclass__ = type
-
-
 from six.moves.http_client import (
     BAD_REQUEST,
     CONFLICT,

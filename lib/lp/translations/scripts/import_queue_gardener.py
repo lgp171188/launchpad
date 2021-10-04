@@ -3,8 +3,6 @@
 
 """Translations auto-approval script."""
 
-__metaclass__ = type
-
 __all__ = [
     'ImportQueueGardener',
     ]

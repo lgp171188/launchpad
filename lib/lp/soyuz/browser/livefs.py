@@ -3,7 +3,6 @@
 
 """LiveFS views."""
 
-__metaclass__ = type
 __all__ = [
     'LiveFSAddView',
     'LiveFSDeleteView',

@@ -3,7 +3,6 @@
 
 """Mixins for browser classes for objects that implement IHasSnaps."""
 
-__metaclass__ = type
 __all__ = [
     'HasSnapsMenuMixin',
     'HasSnapsViewMixin',

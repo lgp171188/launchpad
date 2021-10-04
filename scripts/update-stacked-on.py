@@ -17,8 +17,6 @@ updating stacked branches when their stacked-on branch has been moved or
 renamed.
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from collections import namedtuple

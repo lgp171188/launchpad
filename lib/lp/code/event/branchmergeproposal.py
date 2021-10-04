@@ -3,7 +3,6 @@
 
 """Event implementation classes for branch merge proposal events."""
 
-__metaclass__ = type
 __all__ = [
     'BranchMergeProposalNeedsReviewEvent',
     'ReviewerNominatedEvent',

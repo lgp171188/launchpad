@@ -5,8 +5,6 @@
 Test harness for tests needing a PostgreSQL backend.
 '''
 
-__metaclass__ = type
-
 import atexit
 import os
 import random

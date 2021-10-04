@@ -10,8 +10,6 @@ from zope.schema import (
 from lp import _
 
 
-__metaclass__ = type
-
 __all__ = ('IPOMsgID', )
 
 

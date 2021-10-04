@@ -3,8 +3,6 @@
 
 """Tests for the IMemcacheClient utility."""
 
-__metaclass__ = type
-
 from lazr.restful.utils import get_current_browser_request
 from zope.component import getUtility
 

@@ -3,8 +3,6 @@
 
 """Unit tests for `TranslationGroup` and related classes."""
 
-__metaclass__ = type
-
 from lazr.restfulclient.errors import Unauthorized
 import transaction
 from zope.component import getUtility

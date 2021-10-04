@@ -6,8 +6,6 @@ dependency is a second specification, so this is really a way of storing the
 order in which specs must be implemented. No attempt is made to prevent
 circular dependencies at present."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISpecificationDependency',
     'ISpecificationDependencyRemoval',

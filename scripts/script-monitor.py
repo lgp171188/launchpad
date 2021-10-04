@@ -5,7 +5,6 @@
 
 """Monitor scripts."""
 
-__metaclass__ = type
 __all__ = ['check_script']
 
 import _pythonpath  # noqa: F401

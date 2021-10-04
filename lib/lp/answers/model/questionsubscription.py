@@ -3,8 +3,6 @@
 
 """StormBase implementation of IQuestionSubscription."""
 
-__metaclass__ = type
-
 __all__ = ['QuestionSubscription']
 
 import pytz

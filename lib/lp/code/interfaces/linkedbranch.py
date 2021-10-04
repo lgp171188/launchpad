@@ -8,7 +8,6 @@ might be the main branch of a series, the trunk branch of a project, the
 backports branch for a source package or something else.
 """
 
-__metaclass__ = type
 __all__ = [
     'get_linked_to_branch',
     'ICanHasLinkedBranch',

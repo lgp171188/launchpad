@@ -3,8 +3,6 @@
 
 """Test codes of conduct."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 from testtools.matchers import (

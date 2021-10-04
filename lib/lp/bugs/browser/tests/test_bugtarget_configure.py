@@ -3,8 +3,6 @@
 
 """Unit tests for bug configuration views."""
 
-__metaclass__ = type
-
 from lp.app.enums import ServiceUsage
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.testing import (

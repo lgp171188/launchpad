@@ -3,7 +3,6 @@
 
 """Bug comment browser view classes."""
 
-__metaclass__ = type
 __all__ = [
     'BugComment',
     'BugCommentBoxExpandedReplyView',

@@ -3,8 +3,6 @@
 
 """Tests for the virtual filesystem presented by Launchpad codehosting."""
 
-__metaclass__ = type
-
 import stat
 
 from breezy import errors

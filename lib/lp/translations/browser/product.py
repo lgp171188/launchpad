@@ -3,8 +3,6 @@
 
 """Translations browser views for products."""
 
-__metaclass__ = type
-
 __all__ = [
     'ProductSettingsView',
     'ProductTranslationsMenu',

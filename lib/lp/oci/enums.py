@@ -3,7 +3,6 @@
 
 """Enums for the OCI app."""
 
-__metaclass__ = type
 __all__ = [
     'OCIRecipeBuildRequestStatus',
     ]

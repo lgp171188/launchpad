@@ -3,8 +3,6 @@
 
 """Email notifications related to code imports."""
 
-__metaclass__ = type
-
 import textwrap
 
 from zope.authentication.interfaces import IUnauthenticatedPrincipal

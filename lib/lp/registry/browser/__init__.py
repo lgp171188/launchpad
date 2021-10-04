@@ -3,8 +3,6 @@
 
 """Common registry browser helpers and mixins."""
 
-__metaclass__ = type
-
 __all__ = [
     'add_subscribe_link',
     'BaseRdfView',

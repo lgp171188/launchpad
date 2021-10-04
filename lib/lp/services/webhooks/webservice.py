@@ -3,8 +3,6 @@
 
 """Webhook webservice registrations."""
 
-__metaclass__ = type
-
 __all__ = [
     'IWebhook',
     'IWebhookDeliveryJob',

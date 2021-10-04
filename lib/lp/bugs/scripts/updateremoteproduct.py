@@ -8,7 +8,6 @@ from the upstream bug tracker.  It only updates multi-product bug
 trackers, not single-product bug trackers or email-only bug trackers.
 """
 
-__metaclass__ = type
 __all__ = ['RemoteProductUpdater']
 
 from zope.component import getUtility

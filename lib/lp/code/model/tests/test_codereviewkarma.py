@@ -3,8 +3,6 @@
 
 """Tests for karma allocated for code reviews."""
 
-__metaclass__ = type
-
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.registry.interfaces.karma import IKarmaAssignedEvent
 from lp.registry.interfaces.person import IPerson

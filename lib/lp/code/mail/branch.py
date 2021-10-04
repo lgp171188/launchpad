@@ -3,8 +3,6 @@
 
 """Email notifications related to branches."""
 
-__metaclass__ = type
-
 from zope.component import (
     getAdapter,
     getUtility,

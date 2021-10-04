@@ -3,8 +3,6 @@
 
 """Account interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'AccountDeceasedError',
     'AccountStatus',

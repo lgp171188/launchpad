@@ -3,7 +3,6 @@
 
 """Blueprints' custom publication."""
 
-__metaclass__ = type
 __all__ = [
     'BlueprintsBrowserRequest',
     'BlueprintsLayer',

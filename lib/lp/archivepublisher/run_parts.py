@@ -3,7 +3,6 @@
 
 """Publisher support for running programs from a plug-in directory."""
 
-__metaclass__ = type
 __all__ = [
     'execute_subprocess',
     'find_run_parts_dir',

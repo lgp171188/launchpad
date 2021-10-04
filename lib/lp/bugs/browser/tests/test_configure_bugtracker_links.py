@@ -3,8 +3,6 @@
 
 """Unit tests for bug tracker configuration link visibility."""
 
-__metaclass__ = type
-
 from lp.registry.browser.distribution import DistributionBugsMenu
 from lp.registry.browser.distributionsourcepackage import (
     DistributionSourcePackageBugsMenu,

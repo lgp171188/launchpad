@@ -3,8 +3,6 @@
 
 """Branch interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'BRANCH_NAME_VALIDATION_ERROR_MESSAGE',
     'branch_name_validator',

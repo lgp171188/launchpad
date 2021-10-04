@@ -3,7 +3,6 @@
 
 """Methods required to customize the mimetypes library."""
 
-__metaclass__ = type
 __all__ = [
     'customizeMimetypes',
     ]

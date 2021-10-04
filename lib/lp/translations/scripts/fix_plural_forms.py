@@ -3,8 +3,6 @@
 
 """Functions for fixing mismatched plural form translations."""
 
-__metaclass__ = type
-
 __all__ = [
     'fix_plurals_in_all_pofiles',
     ]

@@ -3,8 +3,6 @@
 
 """Interfaces for a Binary Package in a DistroSeries."""
 
-__metaclass__ = type
-
 __all__ = [
     'IDistroSeriesBinaryPackage',
     ]

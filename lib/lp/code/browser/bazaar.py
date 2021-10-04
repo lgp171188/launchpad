@@ -3,8 +3,6 @@
 
 """View support classes for the bazaar application."""
 
-__metaclass__ = type
-
 __all__ = [
     'BazaarApplicationView',
     'BazaarProductView',

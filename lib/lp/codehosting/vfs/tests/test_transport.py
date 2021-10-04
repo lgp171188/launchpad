@@ -3,8 +3,6 @@
 
 """Tests for the Launchpad code hosting Bazaar transport."""
 
-__metaclass__ = type
-
 from breezy.tests import per_transport
 from breezy.transport import (
     chroot,

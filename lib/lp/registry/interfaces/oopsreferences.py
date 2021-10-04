@@ -3,8 +3,6 @@
 
 """Interfaces for querying OOPS references."""
 
-__metaclass__ = type
-
 __all__ = [
     'IHasOOPSReferences',
     ]

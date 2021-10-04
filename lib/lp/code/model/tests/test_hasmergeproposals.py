@@ -3,8 +3,6 @@
 
 """Tests for classes that implement IHasMergeProposals."""
 
-__metaclass__ = type
-
 from zope.interface.verify import verifyObject
 
 from lp.code.interfaces.hasbranches import IHasMergeProposals

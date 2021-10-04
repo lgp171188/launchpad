@@ -3,7 +3,6 @@
 
 """Tests for runlaunchpad.py"""
 
-__metaclass__ = type
 __all__ = [
     'CommandLineArgumentProcessing',
     'ServersToStart',
