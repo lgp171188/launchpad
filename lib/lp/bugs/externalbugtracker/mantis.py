@@ -3,7 +3,6 @@
 
 """Mantis ExternalBugTracker utility."""
 
-__metaclass__ = type
 __all__ = [
     'Mantis',
     'mantis_login_hook',

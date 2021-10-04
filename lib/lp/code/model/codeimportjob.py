@@ -3,7 +3,6 @@
 
 """Database classes for the CodeImportJob table."""
 
-__metaclass__ = type
 __all__ = [
     'CodeImportJob',
     'CodeImportJobSet',

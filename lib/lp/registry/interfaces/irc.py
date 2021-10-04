@@ -3,8 +3,6 @@
 
 """IRC interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IIrcID',
     'IIrcIDSet',

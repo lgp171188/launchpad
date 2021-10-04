@@ -3,7 +3,6 @@
 
 """XML-RPC APIs for Malone."""
 
-__metaclass__ = type
 __all__ = [
     "ExternalBugTrackerTokenAPI",
     "FileBugAPI",

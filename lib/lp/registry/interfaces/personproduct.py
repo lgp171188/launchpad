@@ -3,7 +3,6 @@
 
 """A person's view on a product."""
 
-__metaclass__ = type
 __all__ = [
     'IPersonProduct',
     'IPersonProductFactory',

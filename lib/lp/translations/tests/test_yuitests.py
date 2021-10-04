@@ -3,7 +3,6 @@
 
 """Run YUI.test tests."""
 
-__metaclass__ = type
 __all__ = []
 
 from lp.testing import (

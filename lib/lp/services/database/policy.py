@@ -3,7 +3,6 @@
 
 """Launchpad database policies."""
 
-__metaclass__ = type
 __all__ = [
     'BaseDatabasePolicy',
     'DatabaseBlockedPolicy',

@@ -3,7 +3,6 @@
 
 """Remove specific translation messages from the database."""
 
-__metaclass__ = type
 __all__ = [
     'process_options',
     'RemoveTranslations',

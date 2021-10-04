@@ -3,8 +3,6 @@
 
 """Tests for branchfsclient."""
 
-__metaclass__ = type
-
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 

@@ -3,8 +3,6 @@
 
 """Views for IBugLinkTarget."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugLinkView',
     'BugLinksListingView',

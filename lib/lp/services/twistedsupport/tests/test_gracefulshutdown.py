@@ -3,8 +3,6 @@
 
 """Tests for our graceful daemon shutdown support."""
 
-__metaclass__ = type
-
 import io
 
 from twisted.application import service

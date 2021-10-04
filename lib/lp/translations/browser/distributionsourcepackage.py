@@ -3,8 +3,6 @@
 
 """Translations browser views for DistributionSourcePackages."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistributionSourcePackageView',
     ]

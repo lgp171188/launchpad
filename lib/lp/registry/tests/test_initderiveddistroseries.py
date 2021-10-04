@@ -4,8 +4,6 @@
 """Test initializing a distroseries using
 IDistroSeries.initDerivedDistroSeries."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy

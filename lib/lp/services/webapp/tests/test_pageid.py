@@ -2,9 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Test page ID generation."""
 
-__metaclass__ = type
-
-
 from lazr.restful.interfaces import ICollectionResource
 from zope.interface import implementer
 

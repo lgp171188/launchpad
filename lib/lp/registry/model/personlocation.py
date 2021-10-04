@@ -9,7 +9,6 @@ people who have provided it, so we put it in a separate table which
 decorates Person.
 """
 
-__metaclass__ = type
 __all__ = [
     'PersonLocation',
     ]

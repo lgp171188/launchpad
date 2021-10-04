@@ -3,9 +3,6 @@
 
 """Tests for feature settings coming from the database"""
 
-
-__metaclass__ = type
-
 from lp.services.features.model import (
     FeatureFlag,
     getFeatureStore,

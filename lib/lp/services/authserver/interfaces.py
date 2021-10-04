@@ -3,7 +3,6 @@
 
 """Interface for the XML-RPC authentication server."""
 
-__metaclass__ = type
 __all__ = [
     'IAuthServer',
     'IAuthServerApplication',

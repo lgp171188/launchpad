@@ -3,8 +3,6 @@
 
 """Browser views for builds."""
 
-__metaclass__ = type
-
 __all__ = [
     'BuildBreadcrumb',
     'BuildCancelView',

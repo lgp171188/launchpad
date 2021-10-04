@@ -3,8 +3,6 @@
 
 """Unit tests for objects implementing IHasSpecifications."""
 
-__metaclass__ = type
-
 from lp.blueprints.enums import SpecificationDefinitionStatus
 from lp.blueprints.interfaces.specificationtarget import IHasSpecifications
 from lp.testing import TestCaseWithFactory

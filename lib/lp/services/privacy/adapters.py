@@ -3,7 +3,6 @@
 
 """Adapters related to object privacy."""
 
-__metaclass__ = type
 __all__ = []
 
 from zope.security.proxy import removeSecurityProxy

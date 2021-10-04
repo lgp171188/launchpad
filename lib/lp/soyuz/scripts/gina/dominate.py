@@ -3,7 +3,6 @@
 
 """Retirement of packages that are removed upstream."""
 
-__metaclass__ = type
 __all__ = [
     'dominate_imported_source_packages',
     ]

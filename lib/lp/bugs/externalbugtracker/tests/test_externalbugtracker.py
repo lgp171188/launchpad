@@ -3,8 +3,6 @@
 
 """Test the externalbugtracker package."""
 
-__metaclass__ = type
-
 import responses
 from testtools.matchers import (
     ContainsDict,

@@ -4,7 +4,6 @@
 """Support for the lp.registry.javascript.milestoneoverlay YUIXHR tests.
 """
 
-__metaclass__ = type
 __all__ = []
 
 from lp.services.webapp.publisher import canonical_url

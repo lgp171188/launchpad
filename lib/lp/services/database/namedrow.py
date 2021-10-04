@@ -3,7 +3,6 @@
 
 """Convert the tuples returned by Cursor.fetchall() into namedtuples."""
 
-__metaclass__ = type
 __all__ = []
 
 from collections import namedtuple

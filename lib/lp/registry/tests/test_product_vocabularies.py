@@ -3,8 +3,6 @@
 
 """Test the product vocabularies."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.app.enums import InformationType

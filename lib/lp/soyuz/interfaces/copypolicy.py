@@ -3,7 +3,6 @@
 
 """Package copy policies."""
 
-__metaclass__ = type
 __all__ = [
     'ICopyPolicy',
     ]

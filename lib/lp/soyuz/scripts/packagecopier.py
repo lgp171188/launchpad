@@ -3,8 +3,6 @@
 
 """Package copying utilities."""
 
-__metaclass__ = type
-
 __all__ = [
     'CopyChecker',
     'check_copy_permissions',

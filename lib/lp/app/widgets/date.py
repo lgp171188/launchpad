@@ -11,8 +11,6 @@ templates/archive-subscribers.pt for an example.
 We should investigate zc.datewidget available from the Z3 SVN repository.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'DateTimeWidget',
     'DateWidget',

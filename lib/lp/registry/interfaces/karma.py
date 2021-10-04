@@ -3,8 +3,6 @@
 
 """Karma interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IKarma',
     'IKarmaAction',

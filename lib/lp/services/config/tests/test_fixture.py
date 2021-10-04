@@ -3,8 +3,6 @@
 
 """Tests of the config fixtures."""
 
-__metaclass__ = type
-
 import os.path
 from textwrap import dedent
 

@@ -3,7 +3,6 @@
 
 """Timeline-friendly Launchpad Memcache client."""
 
-__metaclass__ = type
 __all__ = [
     'TimelineRecordingClient',
     ]

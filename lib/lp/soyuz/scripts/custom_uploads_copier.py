@@ -7,7 +7,6 @@ Use this when initializing the installer and dist upgrader for a new release
 series based on the latest uploads from its preceding series.
 """
 
-__metaclass__ = type
 __all__ = [
     'CustomUploadsCopier',
     ]

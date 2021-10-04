@@ -3,8 +3,6 @@
 
 """Bug tracker views."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugTrackerAddView',
     'BugTrackerComponentGroupNavigation',

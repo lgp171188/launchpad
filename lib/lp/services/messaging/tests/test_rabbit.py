@@ -3,8 +3,6 @@
 
 """Messaging utility tests."""
 
-__metaclass__ = type
-
 from functools import partial
 from itertools import count
 import socket

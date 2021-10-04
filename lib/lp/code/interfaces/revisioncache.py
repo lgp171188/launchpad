@@ -6,7 +6,6 @@
 See `IRevisionCollection` for more details.
 """
 
-__metaclass__ = type
 __all__ = [
     'IRevisionCache',
     'IRevisionCollection',

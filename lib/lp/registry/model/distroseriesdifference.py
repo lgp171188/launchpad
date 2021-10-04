@@ -3,8 +3,6 @@
 
 """Database classes for a difference between two distribution series."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistroSeriesDifference',
     ]

@@ -3,8 +3,6 @@
 
 """TacHandler for `buildd-manager` daemon."""
 
-__metaclass__ = type
-
 __all__ = [
     'BuilddManagerTestSetup',
     ]

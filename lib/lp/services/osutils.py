@@ -3,7 +3,6 @@
 
 """Utilities for doing the sort of thing the os module does."""
 
-__metaclass__ = type
 __all__ = [
     'ensure_directory_exists',
     'find_on_path',

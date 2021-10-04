@@ -3,8 +3,6 @@
 
 """Tests for lp.services.osutils."""
 
-__metaclass__ = type
-
 import errno
 import os
 import tempfile

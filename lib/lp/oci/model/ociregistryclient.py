@@ -3,7 +3,6 @@
 
 """Client for talking to an OCI registry."""
 
-__metaclass__ = type
 __all__ = [
     'OCIRegistryClient'
 ]

@@ -3,8 +3,6 @@
 
 """Test for dbuser helper."""
 
-__metaclass__ = type
-
 from lp.registry.model.person import Person
 from lp.services.config import config
 from lp.services.database.interfaces import IStore

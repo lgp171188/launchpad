@@ -3,7 +3,6 @@
 
 """Enumerations used in the lp/translations modules."""
 
-__metaclass__ = type
 __all__ = [
     'LanguagePackType',
     'RosettaImportStatus',

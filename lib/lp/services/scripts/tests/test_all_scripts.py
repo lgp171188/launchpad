@@ -3,8 +3,6 @@
 
 """Check the integrity of the /scripts and /cronscripts."""
 
-__metaclass__ = type
-
 import doctest
 import os
 

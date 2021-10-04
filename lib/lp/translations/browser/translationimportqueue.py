@@ -3,8 +3,6 @@
 
 """Browser views for `ITranslationImportQueue`."""
 
-__metaclass__ = type
-
 __all__ = [
     'escape_js_string',
     'TranslationImportQueueEntryNavigation',

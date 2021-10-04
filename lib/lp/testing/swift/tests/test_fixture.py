@@ -3,7 +3,6 @@
 
 """Testing the mock Swift test fixture."""
 
-__metaclass__ = type
 __all__ = []
 
 from datetime import datetime

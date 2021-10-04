@@ -3,8 +3,6 @@
 
 """Tests for pool.py."""
 
-__metaclass__ = type
-
 import hashlib
 import os
 import shutil

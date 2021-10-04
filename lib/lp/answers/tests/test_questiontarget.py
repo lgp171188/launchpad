@@ -3,8 +3,6 @@
 
 """Tests related to IQuestionTarget."""
 
-__metaclass__ = type
-
 __all__ = []
 
 from zope.component import getUtility

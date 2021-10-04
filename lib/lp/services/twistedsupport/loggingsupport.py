@@ -3,7 +3,6 @@
 
 """Integration between the normal Launchpad logging and Twisted's."""
 
-__metaclass__ = type
 __all__ = [
     'LaunchpadLogFile',
     'set_up_logging_for_script',

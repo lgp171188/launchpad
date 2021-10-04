@@ -3,8 +3,6 @@
 
 """Test charm recipe build behaviour."""
 
-__metaclass__ = type
-
 import base64
 from datetime import datetime
 import os.path

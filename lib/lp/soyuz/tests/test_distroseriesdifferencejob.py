@@ -3,8 +3,6 @@
 
 """Test `DistroSeriesDifferenceJob` and utility."""
 
-__metaclass__ = type
-
 from psycopg2 import ProgrammingError
 from testtools.matchers import MatchesStructure
 import transaction

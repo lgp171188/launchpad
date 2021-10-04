@@ -3,7 +3,6 @@
 
 """Common classes and functions for the checkwatches system."""
 
-__metaclass__ = type
 __all__ = [
     'WorkingBase',
     'commit_before',

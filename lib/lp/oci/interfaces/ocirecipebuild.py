@@ -3,7 +3,6 @@
 
 """Interfaces for a build record for OCI recipes."""
 
-__metaclass__ = type
 __all__ = [
     'CannotScheduleRegistryUpload',
     'IOCIFile',

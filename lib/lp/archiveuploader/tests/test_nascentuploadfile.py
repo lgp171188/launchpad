@@ -3,8 +3,6 @@
 
 """Test NascentUploadFile functionality."""
 
-__metaclass__ = type
-
 from functools import partial
 import gzip
 import hashlib

@@ -3,7 +3,6 @@
 
 """Implementation of the `SourcePackageRecipe` content type."""
 
-__metaclass__ = type
 __all__ = [
     'SourcePackageRecipe',
     ]

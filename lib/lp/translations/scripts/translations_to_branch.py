@@ -3,7 +3,6 @@
 
 """Export translation snapshots to bzr branches where requested."""
 
-__metaclass__ = type
 __all__ = ['ExportTranslationsToBranch']
 
 

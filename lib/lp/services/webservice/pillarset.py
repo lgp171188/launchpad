@@ -3,7 +3,6 @@
 
 """A class for the top-level link to the pillar set."""
 
-__metaclass__ = type
 __all__ = [
     'IPillarSetLink',
     'PillarSetLink',

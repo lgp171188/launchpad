@@ -3,8 +3,6 @@
 
 """Unit tests for comparing Bazaar formats."""
 
-__metaclass__ = type
-
 import unittest
 
 from lp.codehosting.bzrutils import identical_formats

@@ -3,8 +3,6 @@
 
 """Test the snappy vocabularies."""
 
-__metaclass__ = type
-
 from lp.registry.interfaces.series import SeriesStatus
 from lp.snappy.vocabularies import SnappyDistroSeriesVocabulary
 from lp.testing import TestCaseWithFactory

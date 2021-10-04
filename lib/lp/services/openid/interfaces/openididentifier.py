@@ -3,7 +3,6 @@
 
 """OpenIdIdentifier interface"""
 
-__metaclass__ = type
 __all__ = ['IOpenIdIdentifier']
 
 from zope.interface import Interface

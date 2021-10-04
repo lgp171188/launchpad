@@ -3,8 +3,6 @@
 
 """Interfaces related to bug nomination."""
 
-__metaclass__ = type
-
 __all__ = [
     'BugNominationStatusError',
     'NominationError',

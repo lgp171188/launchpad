@@ -3,8 +3,6 @@
 
 """Tests for Twisted XML-RPC support."""
 
-__metaclass__ = type
-
 from twisted.python.failure import Failure
 
 from lp.services.twistedsupport import extract_result

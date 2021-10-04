@@ -5,7 +5,6 @@
 
 """Feed stdin to stdout, blocking if there are too many unshipped WAL files."""
 
-__metaclass__ = type
 __all__ = []
 
 from glob import glob

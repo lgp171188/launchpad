@@ -3,8 +3,6 @@
 
 """Auth-Server XML-RPC API ."""
 
-__metaclass__ = type
-
 __all__ = [
     'AuthServerApplication',
     'AuthServerAPIView',

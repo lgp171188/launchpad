@@ -3,7 +3,6 @@
 
 """Utility mixins for testing statsd handling"""
 
-__metaclass__ = type
 __all__ = ['StatsMixin']
 
 from unittest import mock

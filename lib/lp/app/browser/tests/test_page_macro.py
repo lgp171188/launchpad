@@ -3,8 +3,6 @@
 
 """Tests for Launchpad's 'view/macro:page' TALES adapter."""
 
-__metaclass__ = type
-
 import os
 
 from zope.interface import implementer

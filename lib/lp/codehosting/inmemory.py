@@ -3,7 +3,6 @@
 
 """In-memory doubles of core codehosting objects."""
 
-__metaclass__ = type
 __all__ = [
     'InMemoryFrontend',
     'XMLRPCWrapper',

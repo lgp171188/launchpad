@@ -3,8 +3,6 @@
 
 """Tests for the IGitLookup implementation."""
 
-__metaclass__ = type
-
 from lazr.uri import URI
 from zope.component import getUtility
 

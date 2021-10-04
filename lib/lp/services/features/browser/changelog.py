@@ -7,8 +7,6 @@ __all__ = [
     'ChangeLog',
     ]
 
-__metaclass__ = type
-
 from lp.services.features.changelog import ChangeLog
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.publisher import LaunchpadView

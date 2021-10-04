@@ -5,8 +5,6 @@
 
 """A cron script that generate missing PPA signing keys."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from lp.services.config import config

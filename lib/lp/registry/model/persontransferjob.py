@@ -3,7 +3,6 @@
 
 """Job classes related to PersonTransferJob."""
 
-__metaclass__ = type
 __all__ = [
     'MembershipNotificationJob',
     'PersonCloseAccountJob',

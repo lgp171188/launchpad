@@ -3,8 +3,6 @@
 
 """SpecificationWorkItem interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISpecificationWorkItem',
     'ISpecificationWorkItemSet',

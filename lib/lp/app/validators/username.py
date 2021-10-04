@@ -3,8 +3,6 @@
 
 """Validators for the clean-username (`Person.name`) attribute."""
 
-__metaclass__ = type
-
 import re
 from textwrap import dedent
 

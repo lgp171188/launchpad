@@ -3,8 +3,6 @@
 
 """Test questiontarget views."""
 
-__metaclass__ = type
-
 import json
 import os
 

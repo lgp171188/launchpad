@@ -3,8 +3,6 @@
 
 """Proxy calls to lp-signing service"""
 
-__metaclass__ = type
-
 import base64
 import json
 

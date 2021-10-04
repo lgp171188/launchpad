@@ -3,7 +3,6 @@
 
 """Validators for paths and path functions."""
 
-__metaclass__ = type
 __all__ = [
     'path_does_not_escape'
 ]

@@ -3,8 +3,6 @@
 
 """Archive interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ALLOW_RELEASE_BUILDS',
     'AlreadySubscribed',

@@ -3,8 +3,6 @@
 
 """OpenPGP key interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IGPGKey',
     'IGPGKeySet',

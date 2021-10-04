@@ -3,8 +3,6 @@
 
 """Interfaces for groups of translators."""
 
-__metaclass__ = type
-
 __all__ = [
     'ITranslationGroup',
     'ITranslationGroupSet',

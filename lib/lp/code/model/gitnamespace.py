@@ -3,7 +3,6 @@
 
 """Implementations of `IGitNamespace`."""
 
-__metaclass__ = type
 __all__ = [
     'GitNamespaceSet',
     'OCIProjectGitNamespace',

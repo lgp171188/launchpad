@@ -3,7 +3,6 @@
 
 """Charm recipe jobs."""
 
-__metaclass__ = type
 __all__ = [
     "CharmRecipeJob",
     "CharmRecipeJobType",

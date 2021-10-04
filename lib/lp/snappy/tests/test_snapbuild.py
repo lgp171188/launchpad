@@ -3,8 +3,6 @@
 
 """Test snap package build features."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

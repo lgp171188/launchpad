@@ -3,8 +3,6 @@
 
 """An implementation of `DistroSeriesLanguage` objects."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistroSeriesLanguage',
     'DistroSeriesLanguageSet',

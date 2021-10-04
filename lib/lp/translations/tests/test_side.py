@@ -3,8 +3,6 @@
 
 """Test `TranslationSide` and friends."""
 
-__metaclass__ = type
-
 import six
 from zope.component import getUtility
 from zope.interface.verify import verifyObject

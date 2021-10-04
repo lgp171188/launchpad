@@ -3,8 +3,6 @@
 
 """Runs the archivepublisher doctests."""
 
-__metaclass__ = type
-
 import logging
 import os
 import unittest

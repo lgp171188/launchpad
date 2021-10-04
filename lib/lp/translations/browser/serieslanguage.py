@@ -3,8 +3,6 @@
 
 """Browser code for Distro Series Languages."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistroSeriesLanguageNavigation',
     'DistroSeriesLanguageView',

@@ -3,7 +3,6 @@
 
 """Helpers for writing tests that use feature flags."""
 
-__metaclass__ = type
 __all__ = [
     'FeatureFixture',
     'MemoryFeatureFixture',

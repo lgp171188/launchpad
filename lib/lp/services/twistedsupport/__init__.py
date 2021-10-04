@@ -3,7 +3,6 @@
 
 """Useful tools for interacting with Twisted."""
 
-__metaclass__ = type
 __all__ = [
     'cancel_on_timeout',
     'extract_result',

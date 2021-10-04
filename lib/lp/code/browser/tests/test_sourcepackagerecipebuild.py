@@ -3,8 +3,6 @@
 
 """Tests for the source package recipe view classes and templates."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from storm.locals import Store
 from testtools.matchers import StartsWith

@@ -3,7 +3,6 @@
 
 """Cross application type errors for launchpad."""
 
-__metaclass__ = type
 __all__ = [
     'GoneError',
     'IncompatibleArguments',

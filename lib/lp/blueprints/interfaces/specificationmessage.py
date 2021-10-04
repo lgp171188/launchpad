@@ -3,7 +3,6 @@
 
 """Specification message interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'ISpecificationMessage',
     'ISpecificationMessageSet',

@@ -3,8 +3,6 @@
 
 """Tests for charm recipe jobs."""
 
-__metaclass__ = type
-
 from textwrap import dedent
 
 import six

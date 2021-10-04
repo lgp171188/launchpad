@@ -3,7 +3,6 @@
 
 """OpenIDStore implementation for the SSO server's OpenID provider."""
 
-__metaclass__ = type
 __all__ = [
     'BaseStormOpenIDStore',
     'BaseStormOpenIDAssociation',

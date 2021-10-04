@@ -3,7 +3,6 @@
 
 """Charm recipe interfaces."""
 
-__metaclass__ = type
 __all__ = [
     "BadCharmRecipeSource",
     "BadCharmRecipeSearchContext",

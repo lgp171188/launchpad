@@ -3,8 +3,6 @@
 
 """Tests for TimeLimitedToken."""
 
-__metaclass__ = type
-
 import testtools
 
 from lp.services.database.sqlbase import session_store

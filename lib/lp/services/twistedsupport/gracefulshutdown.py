@@ -3,7 +3,6 @@
 
 """Utilities for graceful shutdown of Twisted services."""
 
-__metaclass__ = type
 __all__ = [
     'ConnTrackingFactoryWrapper',
     'ShutdownCleanlyService',

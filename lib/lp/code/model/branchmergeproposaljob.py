@@ -7,8 +7,6 @@ This includes both jobs for the proposals themselves, or jobs that are
 creating proposals, or diffs relating to the proposals.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'BranchMergeProposalJob',
     'BranchMergeProposalJobSource',

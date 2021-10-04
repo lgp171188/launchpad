@@ -3,8 +3,6 @@
 
 """Test charm recipe listings."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

@@ -3,8 +3,6 @@
 
 """Interfaces relating to targets of Git repositories."""
 
-__metaclass__ = type
-
 __all__ = [
     'IHasGitRepositories',
     ]

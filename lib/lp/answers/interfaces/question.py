@@ -3,8 +3,6 @@
 
 """Interfaces for a Question."""
 
-__metaclass__ = type
-
 __all__ = [
     'IQuestion',
     'IQuestionAddMessageForm',

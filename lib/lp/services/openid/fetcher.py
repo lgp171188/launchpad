@@ -3,8 +3,6 @@
 
 """OpenID consumer configuration."""
 
-__metaclass__ = type
-
 __all__ = [
     'set_default_openid_fetcher',
     ]

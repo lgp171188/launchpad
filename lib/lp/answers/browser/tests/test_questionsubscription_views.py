@@ -3,8 +3,6 @@
 
 """Tests for QuestionSubscription views."""
 
-__metaclass__ = type
-
 import json
 
 from lazr.restful.interfaces import IWebServiceClientRequest

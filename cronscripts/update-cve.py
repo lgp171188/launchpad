@@ -6,8 +6,6 @@
 """A cron script that fetches the latest database of CVE details and ensures
 that all of the known CVE's are fully registered in Launchpad."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from lp.bugs.scripts.cveimport import CVEUpdater

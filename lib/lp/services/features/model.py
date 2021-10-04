@@ -7,8 +7,6 @@ __all__ = [
     'getFeatureStore',
     ]
 
-__metaclass__ = type
-
 from datetime import datetime
 
 import pytz

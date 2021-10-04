@@ -12,8 +12,6 @@ This script resets all of these sequences to the correct value based on the
 maximum value currently found in the corresponding table.
 """
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from optparse import OptionParser

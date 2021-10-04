@@ -3,8 +3,6 @@
 
 """View classes for `IProductSeries`."""
 
-__metaclass__ = type
-
 __all__ = [
     'get_series_branch_error',
     'ProductSeriesBreadcrumb',

@@ -3,8 +3,6 @@
 
 """Tests related to bug nominations for an object with a bug supervisor."""
 
-__metaclass__ = type
-
 from lp.bugs.interfaces.bugnomination import (
     NominationError,
     NominationSeriesObsoleteError,

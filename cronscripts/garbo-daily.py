@@ -9,7 +9,6 @@ Remove or archive unwanted data. Detect, warn and possibly repair data
 corruption.
 """
 
-__metaclass__ = type
 __all__ = []
 
 import _pythonpath  # noqa: F401

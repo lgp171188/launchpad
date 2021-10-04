@@ -3,8 +3,6 @@
 
 """Test the person_sort_key stored procedure and its in-app twin."""
 
-__metaclass__ = type
-
 from lp.registry.model.person import person_sort_key
 from lp.testing import TestCase
 from lp.testing.layers import DatabaseLayer

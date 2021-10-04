@@ -3,8 +3,6 @@
 
 """Git repository subscription interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IGitSubscription',
     ]

@@ -3,7 +3,6 @@
 
 """Statsd client wrapper with Launchpad configuration"""
 
-__metaclass__ = type
 __all__ = ['StatsdClient']
 
 import re

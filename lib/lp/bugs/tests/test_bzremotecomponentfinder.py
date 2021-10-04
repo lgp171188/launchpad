@@ -3,8 +3,6 @@
 
 """Tests cronscript for retriving components from remote Bugzillas"""
 
-__metaclass__ = type
-
 __all__ = []
 
 import os

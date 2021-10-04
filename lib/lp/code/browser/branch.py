@@ -3,8 +3,6 @@
 
 """Branch views."""
 
-__metaclass__ = type
-
 __all__ = [
     'BranchBreadcrumb',
     'BranchContextMenu',

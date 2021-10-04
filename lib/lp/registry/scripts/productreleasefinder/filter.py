@@ -7,7 +7,6 @@ This module implements the URL filtering to identify which glob each
 filename matches, or whether it is a file outside of any known pattern.
 """
 
-__metaclass__ = type
 __all__ = [
     'Filter',
     'FilterPattern',

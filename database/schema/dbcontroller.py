@@ -3,7 +3,6 @@
 
 """Connect to and control our pgbouncer instance."""
 
-__metaclass__ = type
 __all__ = ['DBController', 'streaming_sync']
 
 import time

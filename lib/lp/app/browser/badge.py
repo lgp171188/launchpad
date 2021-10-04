@@ -8,7 +8,6 @@ Badges are shown in two main places:
  * main content pages.
 """
 
-__metaclass__ = type
 __all__ = [
     'Badge',
     'HasBadgeBase',

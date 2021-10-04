@@ -3,8 +3,6 @@
 
 """Snap package interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'BadMacaroon',
     'BadSnapSearchContext',

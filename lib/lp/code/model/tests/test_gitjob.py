@@ -3,8 +3,6 @@
 
 """Tests for `GitJob`s."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

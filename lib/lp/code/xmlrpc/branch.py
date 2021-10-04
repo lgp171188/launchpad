@@ -3,7 +3,6 @@
 
 """Branch XMLRPC API."""
 
-__metaclass__ = type
 __all__ = [
     'IPublicCodehostingAPI',
     'PublicCodehostingAPI',

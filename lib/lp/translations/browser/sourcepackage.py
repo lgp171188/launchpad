@@ -3,8 +3,6 @@
 
 """Browser views for translation pages for sourcepackages."""
 
-__metaclass__ = type
-
 __all__ = [
     'SourcePackageTranslationsExportView',
     'SourcePackageTranslationsView',

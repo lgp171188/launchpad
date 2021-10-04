@@ -3,7 +3,6 @@
 
 """A file in an archive."""
 
-__metaclass__ = type
 __all__ = [
     'ArchiveFile',
     'ArchiveFileSet',

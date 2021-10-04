@@ -3,8 +3,6 @@
 
 """SQLBase implementation of IQuestionMessage."""
 
-__metaclass__ = type
-
 __all__ = [
     'QuestionMessage',
     ]

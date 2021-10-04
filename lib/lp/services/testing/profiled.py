@@ -3,7 +3,6 @@
 
 """Profile the test layers."""
 
-__metaclass__ = type
 __all__ = ['profiled', 'setup_profiling']
 
 import atexit

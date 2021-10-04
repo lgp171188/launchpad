@@ -3,8 +3,6 @@
 
 """`IFAQTarget` browser views."""
 
-__metaclass__ = type
-
 __all__ = [
     'FAQTargetNavigationMixin',
     'FAQCreateView',

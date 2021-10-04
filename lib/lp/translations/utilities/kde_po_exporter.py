@@ -11,8 +11,6 @@ You can read more about this file format from:
  * http://websvn.kde.org/branches/KDE/3.5/kdelibs/kdecore/klocale.cpp
 """
 
-__metaclass__ = type
-
 __all__ = [
     'KdePOExporter',
     ]

@@ -4,9 +4,6 @@
 """Job for merging translations."""
 
 
-__metaclass__ = type
-
-
 __all__ = [
     'POFileStatsJob',
     ]

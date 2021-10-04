@@ -7,8 +7,6 @@ from zope.interface import (
     )
 
 
-__metaclass__ = type
-
 __all__ = ('IPOTranslation', )
 
 

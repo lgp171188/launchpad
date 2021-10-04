@@ -3,8 +3,6 @@
 
 """Packageset Group interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'IPackagesetGroup',
     ]

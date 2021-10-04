@@ -3,7 +3,6 @@
 
 """Common helpers for codehosting tests."""
 
-__metaclass__ = type
 __all__ = [
     'AvatarTestCase',
     'create_branch_with_one_revision',

@@ -9,9 +9,6 @@ schema is initially set to `Interface`, but this needs to be updated once the
 types are defined.
 """
 
-__metaclass__ = type
-
-
 __all__ = []
 
 

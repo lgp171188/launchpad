@@ -6,7 +6,6 @@
 This table associates `Packageset`s with `SourcePackageName`s.
 """
 
-__metaclass__ = type
 __all__ = [
     'PackagesetSources',
     ]

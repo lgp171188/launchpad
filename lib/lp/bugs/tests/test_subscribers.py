@@ -3,8 +3,6 @@
 
 """Tests for the BugActivity code."""
 
-__metaclass__ = type
-
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 

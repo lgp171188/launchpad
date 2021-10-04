@@ -3,8 +3,6 @@
 
 """Test the bugtask widgets."""
 
-__metaclass__ = type
-
 from lp.bugs.browser.widgets.bugtask import BugTaskTargetWidget
 from lp.bugs.interfaces.bugtask import IBugTask
 from lp.services.webapp.servers import LaunchpadTestRequest

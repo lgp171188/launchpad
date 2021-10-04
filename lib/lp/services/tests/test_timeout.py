@@ -4,8 +4,6 @@
 """timeout.py tests.
 """
 
-__metaclass__ = type
-
 import socket
 from textwrap import dedent
 import threading

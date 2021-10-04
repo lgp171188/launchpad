@@ -3,7 +3,6 @@
 
 """The implementation of the branch cloud."""
 
-__metaclass__ = type
 __all__ = [
     'BranchCloud',
     ]

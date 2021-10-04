@@ -3,8 +3,6 @@
 
 """Tests for the IBranchLookup implementation."""
 
-__metaclass__ = type
-
 from lazr.uri import URI
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy

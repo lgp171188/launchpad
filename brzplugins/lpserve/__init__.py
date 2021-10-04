@@ -6,8 +6,6 @@
 Cribbed from bzrlib.builtins.cmd_serve from Bazaar 0.16.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'cmd_launchpad_server',
     ]

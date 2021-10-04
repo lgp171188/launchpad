@@ -3,7 +3,6 @@
 
 """Interface for the Jobs system for questions."""
 
-__metaclass__ = type
 __all__ = [
     'IQuestionJob',
     'IQuestionEmailJob',

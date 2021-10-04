@@ -6,8 +6,6 @@
 These are the edge test cases that don't belong in the doctest.
 """
 
-__metaclass__ = type
-
 import six
 from zope.interface import implementer
 

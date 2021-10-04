@@ -3,8 +3,6 @@
 
 """Vocabularies that contain Git repositories."""
 
-__metaclass__ = type
-
 __all__ = [
     'GitRepositoryRestrictedOnProductVocabulary',
     'GitRepositoryVocabulary',

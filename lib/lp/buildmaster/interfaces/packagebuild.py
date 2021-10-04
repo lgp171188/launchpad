@@ -2,7 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for package-specific builds."""
-__metaclass__ = type
+
 __all__ = [
     'IPackageBuild',
     ]

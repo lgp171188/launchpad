@@ -6,7 +6,6 @@
 This is as lightweight as possible, as it runs on PPA frontends.
 """
 
-__metaclass__ = type
 __all__ = [
     'check_password',
     ]

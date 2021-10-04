@@ -3,8 +3,6 @@
 
 """Classes for creating navigation breadcrumbs."""
 
-__metaclass__ = type
-
 __all__ = [
     'Breadcrumb',
     'DisplaynameBreadcrumb',

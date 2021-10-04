@@ -3,8 +3,6 @@
 
 """Tests for `DirectBranchCommit`."""
 
-__metaclass__ = type
-
 import six
 from testtools.testcase import ExpectedException
 from zope.security.proxy import removeSecurityProxy

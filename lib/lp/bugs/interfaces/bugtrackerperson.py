@@ -3,7 +3,6 @@
 
 """BugTrackerPerson interface."""
 
-__metaclass__ = type
 __all__ = [
     'IBugTrackerPerson',
     'BugTrackerPersonAlreadyExists',

@@ -3,8 +3,6 @@
 
 """Functions dealing with mails coming into Launchpad."""
 
-__metaclass__ = type
-
 import email.errors
 from email.utils import (
     getaddresses,

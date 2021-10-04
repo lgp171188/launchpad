@@ -3,8 +3,6 @@
 
 """Tests for classes that implement IHasGitRepositories."""
 
-__metaclass__ = type
-
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.testing import (
     TestCaseWithFactory,

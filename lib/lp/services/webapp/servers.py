@@ -3,8 +3,6 @@
 
 """Definition of the internet servers that Launchpad uses."""
 
-__metaclass__ = type
-
 import threading
 
 from lazr.restful.interfaces import (

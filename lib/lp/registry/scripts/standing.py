@@ -3,7 +3,6 @@
 
 """Core implementation of the script to update personal standing."""
 
-__metaclass__ = type
 __all__ = [
     'UpdatePersonalStanding',
     ]

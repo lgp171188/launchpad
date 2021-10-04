@@ -3,8 +3,6 @@
 
 """Miscellaneous functions for publisher."""
 
-__metaclass__ = type
-
 __all__ = [
     'RepositoryIndexFile',
     'get_ppa_reference',

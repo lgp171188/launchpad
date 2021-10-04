@@ -3,7 +3,6 @@
 
 """Test the database garbage collector."""
 
-__metaclass__ = type
 __all__ = []
 
 from datetime import (

@@ -3,8 +3,6 @@
 
 """Unit tests for the public codehosting API."""
 
-__metaclass__ = type
-
 import os
 
 from breezy import urlutils

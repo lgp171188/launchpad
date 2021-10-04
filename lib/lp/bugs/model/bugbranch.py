@@ -3,8 +3,6 @@
 
 """Database classes for linking bugtasks and branches."""
 
-__metaclass__ = type
-
 __all__ = [
     "BugBranch",
     "BugBranchSet",

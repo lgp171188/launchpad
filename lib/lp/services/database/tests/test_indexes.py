@@ -3,8 +3,6 @@
 
 """Test database index correctness."""
 
-__metaclass__ = type
-
 from testscenarios import (
     load_tests_apply_scenarios,
     WithScenarios,

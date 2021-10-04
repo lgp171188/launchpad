@@ -9,7 +9,6 @@ launchpad_dev or the database specified on the command line.
 One uses Python, the other iPython.
 """
 
-__metaclass__ = type
 __all__ = ['python', 'ipython']
 
 # This has entry points with corresponding scripts installed by setup.py.

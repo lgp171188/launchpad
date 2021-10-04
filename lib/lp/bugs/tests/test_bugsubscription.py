@@ -3,8 +3,6 @@
 
 """Tests for BugSubscriptions."""
 
-__metaclass__ = type
-
 import json
 
 from testtools.matchers import LessThan

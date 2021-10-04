@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Functions and classes that are subscribed to registry events."""
 
-__metaclass__ = type
-
 __all__ = [
     'product_licenses_modified',
     ]

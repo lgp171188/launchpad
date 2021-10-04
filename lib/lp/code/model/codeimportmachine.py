@@ -3,8 +3,6 @@
 
 """Database classes including and related to CodeImportMachine."""
 
-__metaclass__ = type
-
 __all__ = [
     'CodeImportMachine',
     'CodeImportMachineSet',

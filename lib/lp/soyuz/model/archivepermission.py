@@ -3,8 +3,6 @@
 
 """Database class for table ArchivePermission."""
 
-__metaclass__ = type
-
 __all__ = [
     'ArchivePermission',
     'ArchivePermissionSet',

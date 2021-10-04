@@ -3,7 +3,6 @@
 
 """A widget for selecting source snap channels for builds."""
 
-__metaclass__ = type
 __all__ = [
     'SnapBuildChannelsWidget',
     ]

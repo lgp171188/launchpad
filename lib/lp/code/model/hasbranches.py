@@ -3,7 +3,6 @@
 
 """Mixin classes to implement methods for IHas<code related bits>."""
 
-__metaclass__ = type
 __all__ = [
     'HasBranchesMixin',
     'HasCodeImportsMixin',

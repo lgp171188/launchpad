@@ -3,8 +3,6 @@
 
 """Country interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ICountry',
     'ICountrySet',

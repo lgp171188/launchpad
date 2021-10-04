@@ -3,7 +3,6 @@
 
 """Classes for managing the NameBlacklist table."""
 
-__metaclass__ = type
 __all__ = [
     'NameBlacklist',
     'NameBlacklistSet',

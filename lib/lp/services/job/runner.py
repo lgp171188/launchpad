@@ -3,8 +3,6 @@
 
 """Facilities for running Jobs."""
 
-__metaclass__ = type
-
 __all__ = [
     'BaseJobRunner',
     'BaseRunnableJob',

@@ -3,8 +3,6 @@
 
 """Test cases for copying signing keys between archives."""
 
-__metaclass__ = type
-
 from testtools.content import text_content
 from testtools.matchers import (
     MatchesSetwise,

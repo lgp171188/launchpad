@@ -3,7 +3,6 @@
 
 """Registry credentials for use by an `OCIPushRule`."""
 
-__metaclass__ = type
 __all__ = [
     'OCIDistributionPushRule',
     'OCIPushRule',

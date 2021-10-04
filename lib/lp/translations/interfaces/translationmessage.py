@@ -27,7 +27,6 @@ from lp.translations.interfaces.potmsgset import IPOTMsgSet
 from lp.translations.interfaces.potranslation import IPOTranslation
 
 
-__metaclass__ = type
 __all__ = [
     'ITranslationMessage',
     'ITranslationMessageSet',

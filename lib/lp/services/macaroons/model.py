@@ -3,7 +3,6 @@
 
 """Policies for issuing and verifying macaroons."""
 
-__metaclass__ = type
 __all__ = [
     "MacaroonIssuerBase",
     ]

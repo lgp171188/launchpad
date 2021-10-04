@@ -3,7 +3,6 @@
 
 """Helpers for command line tools."""
 
-__metaclass__ = type
 __all__ = ["LPOptionParser", "TransactionFreeOperation", ]
 
 import contextlib

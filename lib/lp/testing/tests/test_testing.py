@@ -3,8 +3,6 @@
 
 """Tests for the testing module."""
 
-__metaclass__ = type
-
 import os
 
 from lp.services.config import config

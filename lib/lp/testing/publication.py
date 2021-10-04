@@ -3,7 +3,6 @@
 
 """Helpers for testing out publication related code."""
 
-__metaclass__ = type
 __all__ = [
     'get_request_and_publication',
     'print_request_and_publication',

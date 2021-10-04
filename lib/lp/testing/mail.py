@@ -3,8 +3,6 @@
 
 """Useful helper functions used for testing."""
 
-__metaclass__ = type
-
 from email.utils import formatdate
 import os
 

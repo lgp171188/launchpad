@@ -3,8 +3,6 @@
 
 """Test the close-account script."""
 
-__metaclass__ = type
-
 import six
 from storm.store import Store
 from testtools.matchers import (

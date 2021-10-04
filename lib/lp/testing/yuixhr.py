@@ -3,7 +3,6 @@
 
 """Fixture code for YUITest + XHR integration testing."""
 
-__metaclass__ = type
 __all__ = [
     'login_as_person',
     'make_suite',

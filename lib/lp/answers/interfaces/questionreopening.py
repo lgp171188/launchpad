@@ -3,8 +3,6 @@
 
 """Interface for a QuestionReopening."""
 
-__metaclass__ = type
-
 __all__ = [
     'IQuestionReopening',
     ]

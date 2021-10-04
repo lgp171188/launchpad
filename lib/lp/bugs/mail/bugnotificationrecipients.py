@@ -3,7 +3,6 @@
 
 """Code for handling bug notification recipients in bug mail."""
 
-__metaclass__ = type
 __all__ = [
     'BugNotificationRecipients',
     ]

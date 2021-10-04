@@ -3,8 +3,6 @@
 
 """Bazaar branch subscription interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBranchSubscription',
     ]

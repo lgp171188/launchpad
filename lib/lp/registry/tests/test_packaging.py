@@ -3,8 +3,6 @@
 
 """Tests for the Packaging content class."""
 
-__metaclass__ = type
-
 from lazr.lifecycle.event import (
     ObjectCreatedEvent,
     ObjectDeletedEvent,

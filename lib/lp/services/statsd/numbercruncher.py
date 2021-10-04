@@ -3,7 +3,6 @@
 
 """Out of process statsd reporting."""
 
-__metaclass__ = type
 __all__ = ['NumberCruncher']
 
 from datetime import datetime

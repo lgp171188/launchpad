@@ -3,8 +3,6 @@
 
 """Tests for `PersonDeactivateJob`."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
 

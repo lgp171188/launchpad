@@ -3,7 +3,6 @@
 
 """Views, navigation and actions for BranchMergeProposals."""
 
-__metaclass__ = type
 __all__ = [
     'BranchMergeCandidateView',
     'BranchMergeProposalActionNavigationMenu',

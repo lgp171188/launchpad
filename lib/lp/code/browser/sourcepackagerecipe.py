@@ -3,8 +3,6 @@
 
 """SourcePackageRecipe views."""
 
-__metaclass__ = type
-
 __all__ = [
     'SourcePackageRecipeAddView',
     'SourcePackageRecipeContextMenu',

@@ -5,7 +5,6 @@
 settings work. Note we need to use a non-default isolation level to
 confirm that the changes are actually being made by the API calls."""
 
-__metaclass__ = type
 __all__ = []
 
 import transaction

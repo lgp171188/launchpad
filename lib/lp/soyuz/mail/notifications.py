@@ -3,8 +3,6 @@
 
 """Event handlers that send email notifications."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.services.config import config

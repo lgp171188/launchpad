@@ -3,8 +3,6 @@
 
 """Tests for the POTemplate recipe view classes and templates."""
 
-__metaclass__ = type
-
 from lp.app.enums import ServiceUsage
 from lp.testing import (
     BrowserTestCase,

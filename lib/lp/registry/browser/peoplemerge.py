@@ -3,8 +3,6 @@
 
 """People Merge related wiew classes."""
 
-__metaclass__ = type
-
 __all__ = [
     'AdminPeopleMergeView',
     'AdminTeamMergeView',

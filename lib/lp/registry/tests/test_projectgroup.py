@@ -1,8 +1,6 @@
 # Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from lazr.restfulclient.errors import ClientError
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized

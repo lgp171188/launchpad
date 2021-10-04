@@ -3,8 +3,6 @@
 
 """Generic Override Policy classes."""
 
-__metaclass__ = type
-
 __all__ = [
     'BinaryOverride',
     'ConstantOverridePolicy',

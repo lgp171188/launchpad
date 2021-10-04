@@ -9,7 +9,6 @@ There is a declaration in ZCML somewhere that looks like:
 which tells `lazr.restful` that it should look for webservice exports here.
 """
 
-__metaclass__ = type
 __all__ = [
     'IEmailAddress',
     ]

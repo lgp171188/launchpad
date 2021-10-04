@@ -3,8 +3,6 @@
 
 """Build interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IBuildQueue',
     'IBuildQueueSet',

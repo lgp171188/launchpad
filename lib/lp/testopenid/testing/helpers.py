@@ -3,7 +3,6 @@
 
 """Helpers for TestOpenID page tests."""
 
-__metaclass__ = type
 __all__ = [
     'complete_from_browser',
     'EchoView',

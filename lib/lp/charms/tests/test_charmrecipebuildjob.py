@@ -3,8 +3,6 @@
 
 """Tests for charm recipe build jobs."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 
 from fixtures import FakeLogger

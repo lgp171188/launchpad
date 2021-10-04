@@ -3,7 +3,6 @@
 
 """Classes for pillar and artifact sharing service."""
 
-__metaclass__ = type
 __all__ = [
     'SharingService',
     ]

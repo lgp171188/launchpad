@@ -3,8 +3,6 @@
 
 """Tests for the scanner's email generation."""
 
-__metaclass__ = type
-
 import email
 import os
 

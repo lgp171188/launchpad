@@ -3,7 +3,6 @@
 
 """Interfaces for OpenID consumer functions."""
 
-__metaclass__ = type
 __all__ = ['IOpenIDConsumerStore']
 
 from zope.interface import Interface

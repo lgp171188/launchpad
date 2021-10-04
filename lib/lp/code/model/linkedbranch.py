@@ -3,7 +3,6 @@
 
 """Implementation of `ICanHasLinkedBranch`."""
 
-__metaclass__ = type
 # Don't export anything -- anything you need from this module you can get by
 # adapting another object.
 __all__ = []

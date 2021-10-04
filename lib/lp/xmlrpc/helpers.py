@@ -3,7 +3,6 @@
 
 """Generic XML-RPC helpers."""
 
-__metaclass__ = type
 __all__ = [
     'return_fault',
     ]

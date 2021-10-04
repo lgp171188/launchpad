@@ -6,7 +6,6 @@
 This is useful in deployment scripts.
 """
 
-__metaclass__ = type
 __all__ = ['main']
 
 import argparse

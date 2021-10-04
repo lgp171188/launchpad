@@ -3,7 +3,6 @@
 
 """Implementation of the Launchpad script to list modified branches."""
 
-__metaclass__ = type
 __all__ = ['ModifiedBranchesScript']
 
 

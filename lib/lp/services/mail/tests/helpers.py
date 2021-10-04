@@ -5,8 +5,6 @@
 
 __all__ = ['read_test_message']
 
-__metaclass__ = type
-
 import os.path
 
 from lp.services.mail.signedmessage import signed_message_from_bytes

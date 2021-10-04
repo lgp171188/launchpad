@@ -3,8 +3,6 @@
 
 """Binary package in a distroarchseries interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IDistroArchSeriesBinaryPackage',
     ]

@@ -3,8 +3,6 @@
 
 """Tests for the InlineMultiCheckboxWidget."""
 
-__metaclass__ = type
-
 from lazr.enum import (
     EnumeratedType,
     Item,

@@ -7,9 +7,6 @@ This module contains a utility function for creating trees of logging
 instances for objects.
 """
 
-__metaclass__ = type
-
-
 import logging
 
 

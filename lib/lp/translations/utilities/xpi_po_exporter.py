@@ -3,8 +3,6 @@
 
 """Export module for XPI files using .po file format."""
 
-__metaclass__ = type
-
 __all__ = [
     'XPIPOExporter',
     ]

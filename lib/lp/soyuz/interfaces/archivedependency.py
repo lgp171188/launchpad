@@ -3,8 +3,6 @@
 
 """ArchiveDependency interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'IArchiveDependency',
     ]

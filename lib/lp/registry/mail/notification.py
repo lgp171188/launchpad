@@ -3,8 +3,6 @@
 
 """Event handlers that send email notifications."""
 
-__metaclass__ = type
-
 from email.header import Header
 from email.mime.text import MIMEText
 from email.utils import (

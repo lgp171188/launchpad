@@ -3,8 +3,6 @@
 
 """Test the code test helpers found in helpers.py."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

@@ -3,8 +3,6 @@
 
 """Tests for +announcement views."""
 
-__metaclass__ = type
-
 from datetime import datetime
 
 from lxml import html

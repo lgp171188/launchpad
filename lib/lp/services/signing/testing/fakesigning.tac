@@ -3,8 +3,6 @@
 
 """Twisted application configuration file for a fake signing service."""
 
-__metaclass__ = type
-
 import os
 
 from twisted.application import (

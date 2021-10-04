@@ -3,7 +3,6 @@
 
 """List all team members: name, preferred email address."""
 
-__metaclass__ = type
 __all__ = ['process_team']
 
 import re

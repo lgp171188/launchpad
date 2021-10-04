@@ -3,8 +3,6 @@
 
 """Message related view classes."""
 
-__metaclass__ = type
-
 from zope.interface import implementer
 
 from lp.bugs.interfaces.bugmessage import IBugMessage

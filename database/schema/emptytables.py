@@ -5,8 +5,6 @@
 
 """List empty database tables."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from optparse import OptionParser

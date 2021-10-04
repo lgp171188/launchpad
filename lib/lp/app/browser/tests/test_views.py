@@ -3,8 +3,6 @@
 
 """Run the view tests."""
 
-__metaclass__ = type
-
 import logging
 import os
 

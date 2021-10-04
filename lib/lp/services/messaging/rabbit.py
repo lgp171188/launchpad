@@ -3,7 +3,6 @@
 
 """An API for messaging systems in Launchpad, e.g. RabbitMQ."""
 
-__metaclass__ = type
 __all__ = [
     "connect",
     "is_configured",

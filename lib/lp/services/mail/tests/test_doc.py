@@ -3,8 +3,6 @@
 
 """Test mail documentation."""
 
-__metaclass__ = type
-
 import os
 
 from zope.security.management import setSecurityPolicy

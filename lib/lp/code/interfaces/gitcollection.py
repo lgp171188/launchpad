@@ -6,7 +6,6 @@
 See `IGitCollection` for more details.
 """
 
-__metaclass__ = type
 __all__ = [
     'IAllGitRepositories',
     'IGitCollection',

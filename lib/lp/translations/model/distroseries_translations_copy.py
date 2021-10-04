@@ -3,8 +3,6 @@
 
 """Functions to copy translations from one distroseries to another."""
 
-__metaclass__ = type
-
 __all__ = [
     'copy_active_translations',
     ]

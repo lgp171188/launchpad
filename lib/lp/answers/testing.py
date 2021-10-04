@@ -3,7 +3,6 @@
 
 """Helper functions for Answer Tracker tests."""
 
-__metaclass__ = type
 __all__ = [
     'QuestionFactory',
     ]

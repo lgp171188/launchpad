@@ -4,7 +4,6 @@
 """Test harness for running tests against IStructuralsubscriptionTarget
 implementations.
 """
-__metaclass__ = type
 
 import unittest
 

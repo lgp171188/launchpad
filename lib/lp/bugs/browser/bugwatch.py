@@ -3,7 +3,6 @@
 
 """IBugWatch-related browser views."""
 
-__metaclass__ = type
 __all__ = [
     'BugWatchSetNavigation',
     'BugWatchActivityPortletView',

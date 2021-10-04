@@ -3,8 +3,6 @@
 
 """Browser views for archivepermission."""
 
-__metaclass__ = type
-
 __all__ = [
     'ArchivePermissionURL',
     ]

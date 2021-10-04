@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Event handlers that send email notifications."""
 
-__metaclass__ = type
 __all__ = [
     'send_process_error_notification',
     'get_unified_diff',

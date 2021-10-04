@@ -3,7 +3,6 @@
 
 """Errors used in the lp/code modules."""
 
-__metaclass__ = type
 __all__ = [
     'AlreadyLatestFormat',
     'BadBranchMergeProposalSearchContext',

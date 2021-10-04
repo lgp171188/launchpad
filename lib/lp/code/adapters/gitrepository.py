@@ -3,7 +3,6 @@
 
 """Components and adapters related to Git repositories."""
 
-__metaclass__ = type
 __all__ = [
     "GitRepositoryDelta",
     ]

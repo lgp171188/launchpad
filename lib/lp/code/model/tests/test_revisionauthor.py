@@ -3,8 +3,6 @@
 
 """Tests for RevisionAuthors."""
 
-__metaclass__ = type
-
 import transaction
 from zope.component import getUtility
 

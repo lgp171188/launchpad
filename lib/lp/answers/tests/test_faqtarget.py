@@ -3,8 +3,6 @@
 
 """Tests for IFAQTarget"""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.answers.interfaces.faqtarget import IFAQTarget

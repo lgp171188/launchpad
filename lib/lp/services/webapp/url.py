@@ -3,7 +3,6 @@
 
 """Functions for working with URLs."""
 
-__metaclass__ = type
 __all__ = ['urlappend', 'urlparse', 'urlsplit']
 
 import six.moves.urllib.parse as urlparse_module

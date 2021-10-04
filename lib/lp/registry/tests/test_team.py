@@ -3,8 +3,6 @@
 
 """Tests for PersonSet."""
 
-__metaclass__ = type
-
 from email.mime.text import MIMEText
 from email.utils import (
     formatdate,

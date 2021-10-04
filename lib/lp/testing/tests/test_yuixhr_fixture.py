@@ -4,7 +4,6 @@
 """These are yui appserver fixtures for the yui appserver test code's tests.
 """
 
-__metaclass__ = type
 __all__ = []
 
 from zope.security.proxy import removeSecurityProxy

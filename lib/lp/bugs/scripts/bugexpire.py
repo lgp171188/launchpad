@@ -3,8 +3,6 @@
 
 """BugTask expiration rules."""
 
-__metaclass__ = type
-
 __all__ = ['BugJanitor']
 
 

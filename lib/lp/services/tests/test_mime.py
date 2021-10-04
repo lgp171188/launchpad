@@ -3,8 +3,6 @@
 
 """Tests for mime module."""
 
-__metaclass__ = type
-
 import mimetypes
 
 from lp.testing import TestCase

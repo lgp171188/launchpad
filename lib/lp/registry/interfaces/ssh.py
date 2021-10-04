@@ -3,8 +3,6 @@
 
 """SSH key interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISSHKey',
     'ISSHKeySet',

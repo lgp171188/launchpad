@@ -3,8 +3,6 @@
 
 """Test GEOIP documentation."""
 
-__metaclass__ = type
-
 from doctest import DocTestSuite
 import os
 

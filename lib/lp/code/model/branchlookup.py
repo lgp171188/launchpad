@@ -3,7 +3,6 @@
 
 """Database implementation of the branch lookup utility."""
 
-__metaclass__ = type
 # This module doesn't export anything. If you want to lookup branches by name,
 # then get the IBranchLookup utility.
 __all__ = []

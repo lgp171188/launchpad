@@ -3,8 +3,6 @@
 
 """View classes for Git repository listings."""
 
-__metaclass__ = type
-
 __all__ = [
     'PersonTargetGitListingView',
     'TargetGitListingView',

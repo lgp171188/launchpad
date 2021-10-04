@@ -3,8 +3,6 @@
 
 """Tests for branch listing."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 import os
 from pprint import pformat

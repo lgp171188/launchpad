@@ -3,8 +3,6 @@
 
 """Tests for `OCIProject` and `OCIProjectSet`."""
 
-__metaclass__ = type
-
 import json
 
 from six import text_type

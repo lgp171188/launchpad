@@ -3,8 +3,6 @@
 
 """Tests for the WSGI archive authorisation provider."""
 
-__metaclass__ = type
-
 import crypt
 import os.path
 import subprocess

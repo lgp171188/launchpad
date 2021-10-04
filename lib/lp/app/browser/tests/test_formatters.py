@@ -3,8 +3,6 @@
 
 """Tests for the TALES formatters."""
 
-__metaclass__ = type
-
 from lp.app.browser.tales import (
     ObjectFormatterAPI,
     PillarFormatterAPI,

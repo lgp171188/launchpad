@@ -5,8 +5,6 @@
 
 """Script to generate SQL to add MD5 sums for existing librarian files."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 import os

@@ -3,8 +3,6 @@
 
 """Test `BugSubscriptionInfo`."""
 
-__metaclass__ = type
-
 from contextlib import contextmanager
 
 import six

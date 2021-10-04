@@ -7,7 +7,6 @@ This package contains a base Help Folder implementation along a ZCML directive
 for registering help folders.
 """
 
-__metaclass__ = type
 __all__ = [
     'HelpFolder',
     ]

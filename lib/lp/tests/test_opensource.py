@@ -12,7 +12,6 @@ suites so that they can be run on their own outside the Launchpad development
 environment.
 """
 
-__metaclass__ = type
 __all__ = ['test_suite']
 
 

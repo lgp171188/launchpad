@@ -4,7 +4,6 @@
 """Test the ability to specify a facet for the yuixhr tests.
 """
 
-__metaclass__ = type
 __all__ = []
 
 from lp.testing.yuixhr import make_suite

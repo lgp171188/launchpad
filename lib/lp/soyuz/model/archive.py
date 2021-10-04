@@ -3,8 +3,6 @@
 
 """Database class for table Archive."""
 
-__metaclass__ = type
-
 __all__ = [
     'Archive',
     'ArchiveSet',

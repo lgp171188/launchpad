@@ -3,8 +3,6 @@
 
 """Test publish-ftpmaster cron script."""
 
-__metaclass__ = type
-
 import logging
 import os
 import stat

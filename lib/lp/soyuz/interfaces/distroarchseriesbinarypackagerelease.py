@@ -3,8 +3,6 @@
 
 """Binary package release in Distribution Architecture Release interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IDistroArchSeriesBinaryPackageRelease',
     ]

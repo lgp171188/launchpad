@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Test harness for running the new-login.txt tests."""
 
-__metaclass__ = type
-
 __all__ = [
     'FakeOpenIDConsumer',
     'FakeOpenIDResponse',

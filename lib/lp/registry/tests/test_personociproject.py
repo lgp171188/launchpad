@@ -3,8 +3,6 @@
 
 """Test the Person/OCIProject non-database class."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory

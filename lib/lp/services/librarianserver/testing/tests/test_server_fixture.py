@@ -3,8 +3,6 @@
 
 """Test the LibrarianServerFixture."""
 
-__metaclass__ = type
-
 import os
 import socket
 from textwrap import dedent

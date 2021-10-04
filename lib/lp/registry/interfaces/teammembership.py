@@ -3,8 +3,6 @@
 
 """Team membership interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ACTIVE_STATES',
     'CyclicalTeamMembershipError',

@@ -3,8 +3,6 @@
 
 """Tests the security.cfg auditor."""
 
-__metaclass__ = type
-
 from lp.scripts.utilities.settingsauditor import SettingsAuditor
 from lp.testing import TestCase
 from lp.testing.layers import BaseLayer

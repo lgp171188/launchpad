@@ -3,8 +3,6 @@
 
 """Milestone related test helper."""
 
-__metaclass__ = type
-
 import datetime
 
 from lazr.restfulclient.errors import BadRequest

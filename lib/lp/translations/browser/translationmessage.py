@@ -3,8 +3,6 @@
 
 """View classes for ITranslationMessage interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'BaseTranslationView',
     'contains_translations',

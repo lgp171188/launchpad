@@ -6,8 +6,6 @@
 There are also tests in lp/blueprints/stories/blueprints/xx-dependencies.txt.
 """
 
-__metaclass__ = type
-
 from lp.app.enums import InformationType
 from lp.registry.enums import SpecificationSharingPolicy
 from lp.services.webapp import canonical_url

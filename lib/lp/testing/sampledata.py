@@ -7,7 +7,6 @@ If ever you use a literal in a test that refers to sample data, even if it's
 just a small number, then you should define it as a constant here.
 """
 
-__metaclass__ = type
 __all__ = [
     'ADMIN_EMAIL',
     'BOB_THE_BUILDER_NAME',

@@ -3,8 +3,6 @@
 
 """Test the user vocabularies."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.schema.vocabulary import getVocabularyRegistry
 

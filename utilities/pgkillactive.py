@@ -6,7 +6,6 @@
 """Kill transaction that have hung around for too long.
 """
 
-__metaclass__ = type
 __all__ = []
 
 import _pythonpath  # noqa: F401

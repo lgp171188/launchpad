@@ -5,8 +5,6 @@
 
 """Import version control metadata from a Bazaar branch into the database."""
 
-__metaclass__ = type
-
 __all__ = [
     "BzrSync",
     'schedule_diff_updates',

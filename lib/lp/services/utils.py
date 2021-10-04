@@ -7,7 +7,6 @@ Functions, lists and so forth. Nothing here that does system calls or network
 stuff.
 """
 
-__metaclass__ = type
 __all__ = [
     'AutoDecorate',
     'CachingIterator',

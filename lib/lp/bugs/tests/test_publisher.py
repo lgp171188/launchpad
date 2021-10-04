@@ -3,8 +3,6 @@
 
 """Tests for bugs' custom publications."""
 
-__metaclass__ = type
-
 from lp.bugs.publisher import BugsLayer
 from lp.layers import WebServiceLayer
 from lp.services.config import config

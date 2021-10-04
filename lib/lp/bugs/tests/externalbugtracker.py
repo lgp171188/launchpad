@@ -3,8 +3,6 @@
 
 """Helper classes for testing ExternalSystem."""
 
-__metaclass__ = type
-
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import (

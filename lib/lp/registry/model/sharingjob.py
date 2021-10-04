@@ -3,9 +3,6 @@
 
 """Job classes related to the sharing feature are in here."""
 
-__metaclass__ = type
-
-
 __all__ = [
     'RemoveArtifactSubscriptionsJob',
     ]

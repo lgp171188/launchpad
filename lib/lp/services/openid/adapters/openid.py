@@ -3,8 +3,6 @@
 
 """OpenID adapters and helpers."""
 
-__metaclass__ = type
-
 __all__ = [
     'CurrentOpenIDEndPoint',
     'OpenIDPersistentIdentity',

@@ -3,8 +3,6 @@
 
 """Login token interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ILoginToken',
     'ILoginTokenSet',

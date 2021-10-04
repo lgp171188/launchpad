@@ -3,7 +3,6 @@
 
 """Proxied source files."""
 
-__metaclass__ = type
 __all__ = [
     'ProxiedSourceLibraryFileAlias',
     ]

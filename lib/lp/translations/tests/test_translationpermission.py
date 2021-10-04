@@ -3,8 +3,6 @@
 
 """Test the translation permissions model."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.testing import TestCaseWithFactory

@@ -3,8 +3,6 @@
 
 """Milestone views."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISearchMilestoneTagsForm',
     'MilestoneAddView',

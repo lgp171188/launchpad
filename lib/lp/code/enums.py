@@ -3,7 +3,6 @@
 
 """Enumerations used in the lp/code modules."""
 
-__metaclass__ = type
 __all__ = [
     'BranchLifecycleStatus',
     'BranchLifecycleStatusFilter',

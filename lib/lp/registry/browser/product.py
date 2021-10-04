@@ -3,8 +3,6 @@
 
 """Browser views for products."""
 
-__metaclass__ = type
-
 __all__ = [
     'ProductAddSeriesView',
     'ProductAddView',

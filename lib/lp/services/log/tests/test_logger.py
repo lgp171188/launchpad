@@ -3,8 +3,6 @@
 
 """Tests for `lp.services.log.logger`."""
 
-__metaclass__ = type
-
 from lp.services.log.logger import BufferLogger
 from lp.testing import TestCase
 

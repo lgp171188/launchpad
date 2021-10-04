@@ -3,8 +3,6 @@
 
 """NameBlacklist interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'INameBlacklist',
     'INameBlacklistSet',

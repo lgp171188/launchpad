@@ -3,8 +3,6 @@
 
 """Live filesystem interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'CannotDeleteLiveFS',
     'DuplicateLiveFSName',

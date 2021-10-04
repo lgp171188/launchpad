@@ -3,8 +3,6 @@
 
 """Tests for ProcessMonitorProtocol and ProcessMonitorProtocolWithTimeout."""
 
-__metaclass__ = type
-
 from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,

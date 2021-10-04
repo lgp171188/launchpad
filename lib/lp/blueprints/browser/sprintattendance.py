@@ -3,7 +3,6 @@
 
 """Views for SprintAttendance."""
 
-__metaclass__ = type
 __all__ = [
     'SprintAttendanceAttendView',
     'SprintAttendanceRegisterView',

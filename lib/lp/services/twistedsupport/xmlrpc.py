@@ -3,7 +3,6 @@
 
 """Support for XML-RPC stuff with Twisted."""
 
-__metaclass__ = type
 __all__ = [
     'BlockingProxy',
     'DeferredBlockingProxy',

@@ -7,7 +7,6 @@ NOTE: Importing this package will load any system Breezy plugins, as well as
 all plugins in the brzplugins/ directory underneath the rocketfuel checkout.
 """
 
-__metaclass__ = type
 __all__ = [
     'get_brz_path',
     ]

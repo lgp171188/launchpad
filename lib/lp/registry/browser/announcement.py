@@ -3,8 +3,6 @@
 
 """Announcement views."""
 
-__metaclass__ = type
-
 __all__ = [
     'AnnouncementAddView',
     'AnnouncementRetargetView',

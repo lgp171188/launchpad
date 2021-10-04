@@ -3,8 +3,6 @@
 
 """Librarian garbage collection tests"""
 
-__metaclass__ = type
-
 import calendar
 from contextlib import contextmanager
 from datetime import (

@@ -3,7 +3,6 @@
 
 """Enumerations relating to Bazaar formats."""
 
-__metaclass__ = type
 __all__ = [
     'branch_changed',
     'BranchFormat',

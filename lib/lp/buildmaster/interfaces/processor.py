@@ -3,8 +3,6 @@
 
 """Processor interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IProcessor',
     'IProcessorSet',

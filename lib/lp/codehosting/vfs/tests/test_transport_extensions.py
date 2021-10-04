@@ -3,8 +3,6 @@
 
 """Tests for extensions in codehosting.vfs.transport."""
 
-__metaclass__ = type
-
 from breezy.transport.memory import MemoryTransport
 
 from lp.codehosting.vfs.transport import get_readonly_transport

@@ -3,7 +3,6 @@
 
 """Browser views for handling mailing lists."""
 
-__metaclass__ = type
 __all__ = [
     'HeldMessageView',
     'enabled_with_active_mailing_list',

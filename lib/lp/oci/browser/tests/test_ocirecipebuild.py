@@ -3,8 +3,6 @@
 
 """Test OCI recipe build views."""
 
-__metaclass__ = type
-
 import re
 
 from fixtures import FakeLogger

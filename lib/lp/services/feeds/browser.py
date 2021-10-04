@@ -3,8 +3,6 @@
 
 """View support classes for feeds."""
 
-__metaclass__ = type
-
 __all__ = [
     'AnnouncementsFeedLink',
     'BranchFeedLink',

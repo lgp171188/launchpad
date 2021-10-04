@@ -5,8 +5,6 @@
 
 """Script to export a tarball of translations for a distro series."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from lp.services.scripts.base import (

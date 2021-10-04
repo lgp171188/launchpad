@@ -3,8 +3,6 @@
 
 """Model tests for the DistroSeriesDifferenceComment class."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 from random import random
 

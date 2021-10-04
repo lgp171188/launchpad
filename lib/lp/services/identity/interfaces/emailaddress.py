@@ -3,7 +3,6 @@
 
 """EmailAddress interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'EmailAddressAlreadyTaken',
     'EmailAddressStatus',

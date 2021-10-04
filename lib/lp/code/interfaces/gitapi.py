@@ -3,7 +3,6 @@
 
 """Interfaces for internal Git APIs."""
 
-__metaclass__ = type
 __all__ = [
     'IGitAPI',
     'IGitApplication',

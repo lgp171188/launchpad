@@ -3,8 +3,6 @@
 
 """Tests for the lp.soyuz.browser.builder module."""
 
-__metaclass__ = type
-
 from datetime import timedelta
 
 from zope.component import getUtility

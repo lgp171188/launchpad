@@ -3,7 +3,6 @@
 
 """Adapters for registry objects for the webservice."""
 
-__metaclass__ = type
 __all__ = []
 
 from lazr.restful.interfaces import (

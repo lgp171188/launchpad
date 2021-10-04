@@ -3,8 +3,6 @@
 
 """Components related to specifications."""
 
-__metaclass__ = type
-
 from zope.interface import implementer
 
 from lp.blueprints.interfaces.specification import ISpecificationDelta

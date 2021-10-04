@@ -3,8 +3,6 @@
 
 """Classes to represent source package releases in a distribution."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistributionSourcePackageRelease',
     ]

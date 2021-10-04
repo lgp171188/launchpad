@@ -3,8 +3,6 @@
 
 """Tests relating to the revision cache."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

@@ -3,7 +3,6 @@
 
 """Mixins for browser classes for objects related to OCI recipe."""
 
-__metaclass__ = type
 __all__ = [
     'HasOCIRecipesMenuMixin',
     ]

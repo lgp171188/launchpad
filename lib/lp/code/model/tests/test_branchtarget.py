@@ -3,8 +3,6 @@
 
 """Tests for branch contexts."""
 
-__metaclass__ = type
-
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType

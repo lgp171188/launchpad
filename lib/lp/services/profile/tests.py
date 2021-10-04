@@ -6,8 +6,6 @@
 See doc.txt for an end-user description of the functionality.
 """
 
-__metaclass__ = type
-
 import glob
 import logging
 import os

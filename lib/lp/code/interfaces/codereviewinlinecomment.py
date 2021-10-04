@@ -3,7 +3,6 @@
 
 """Interfaces for inline comments with preview diffs."""
 
-__metaclass__ = type
 __all__ = [
     'ICodeReviewInlineComment',
     'ICodeReviewInlineCommentSet',

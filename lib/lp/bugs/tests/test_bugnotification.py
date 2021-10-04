@@ -3,8 +3,6 @@
 
 """Tests related to bug notifications."""
 
-__metaclass__ = type
-
 from datetime import datetime
 
 import pytz

@@ -3,7 +3,6 @@
 
 """Implementation class for objects that `POTemplate`s can belong to."""
 
-__metaclass__ = type
 __all__ = [
     'HasTranslationTemplatesMixin',
     ]

@@ -3,9 +3,6 @@
 
 """Tests for `CustomUploads`."""
 
-__metaclass__ = type
-
-
 import io
 import os
 import shutil

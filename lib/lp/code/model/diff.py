@@ -3,7 +3,6 @@
 
 """Implementation classes for IDiff, etc."""
 
-__metaclass__ = type
 __all__ = [
     'Diff',
     'IncrementalDiff',

@@ -3,9 +3,6 @@
 
 """Script to inject archive keys into signing service."""
 
-__metaclass__ = type
-
-
 __all__ = [
     'SyncSigningKeysScript',
     ]

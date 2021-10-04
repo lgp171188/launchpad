@@ -3,7 +3,6 @@
 
 """Class that implements the IPersonRoles interface."""
 
-__metaclass__ = type
 __all__ = ['PersonRoles']
 
 from zope.component import (

@@ -4,8 +4,6 @@
 
 """Tests for Distribution page."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from lazr.restful.fields import Reference
 from lazr.restful.interfaces import (

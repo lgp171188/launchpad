@@ -3,7 +3,6 @@
 
 """SnapBuild views."""
 
-__metaclass__ = type
 __all__ = [
     'SnapBuildContextMenu',
     'SnapBuildNavigation',

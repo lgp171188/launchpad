@@ -6,7 +6,6 @@
 These honor traceback supplements as defined in zope.exceptions.
 """
 
-__metaclass__ = type
 __all__ = [
     'extract_stack',
     'extract_tb',

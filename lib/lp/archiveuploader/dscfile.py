@@ -7,8 +7,6 @@ Class representing a DSC file, which encapsulates collections of
 files representing a source uploaded.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'DSCFile',
     'DSCUploadedFile',

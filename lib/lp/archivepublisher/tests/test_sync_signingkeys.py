@@ -7,7 +7,6 @@
 
 """Test cases for the script that injects signing keys into signing service."""
 
-__metaclass__ = type
 __all__ = [
     'SyncSigningKeysScript',
     ]

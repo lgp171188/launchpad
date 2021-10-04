@@ -3,8 +3,6 @@
 
 """Live filesystem build interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ILiveFSBuild',
     'ILiveFSBuildSet',

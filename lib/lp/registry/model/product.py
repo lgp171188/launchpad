@@ -3,7 +3,6 @@
 
 """Database classes including and related to Product."""
 
-__metaclass__ = type
 __all__ = [
     'get_precached_products',
     'LicensesModifiedEvent',

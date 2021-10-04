@@ -3,7 +3,6 @@
 
 """Utilities for HTTP request handling with Twisted and treq."""
 
-__metaclass__ = type
 __all__ = [
     'check_status',
     ]

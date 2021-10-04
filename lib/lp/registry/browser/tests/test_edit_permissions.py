@@ -3,8 +3,6 @@
 
 """Test harness for edit view permissions unit tests."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities

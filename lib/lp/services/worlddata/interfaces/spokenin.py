@@ -5,8 +5,6 @@
 countries..
 """
 
-__metaclass__ = type
-
 __all__ = ['ISpokenIn']
 
 from zope.interface import Interface

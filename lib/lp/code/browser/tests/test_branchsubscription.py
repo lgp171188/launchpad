@@ -3,8 +3,6 @@
 
 """Unit tests for BranchSubscriptions."""
 
-__metaclass__ = type
-
 from lp.app.enums import InformationType
 from lp.testing import (
     person_logged_in,

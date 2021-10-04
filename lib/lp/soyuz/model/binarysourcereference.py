@@ -3,7 +3,6 @@
 
 """References from binary packages to source packages."""
 
-__metaclass__ = type
 __all__ = [
     'BinarySourceReference',
     'BinarySourceReferenceSet',

@@ -3,8 +3,6 @@
 
 """Tests for BugTargets."""
 
-__metaclass__ = type
-
 from zope.security.interfaces import ForbiddenAttribute
 
 from lp.bugs.interfaces.bugtarget import ISeriesBugTarget

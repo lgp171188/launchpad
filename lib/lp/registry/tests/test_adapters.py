@@ -3,8 +3,6 @@
 
 """Tests for adapters."""
 
-__metaclass__ = type
-
 from lp.registry.adapters import (
     distroseries_to_distribution,
     information_type_from_product,

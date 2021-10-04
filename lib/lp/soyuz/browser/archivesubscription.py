@@ -3,8 +3,6 @@
 
 """Browser views related to archive subscriptions."""
 
-__metaclass__ = type
-
 __all__ = [
     'ArchiveSubscribersView',
     'PersonalArchiveSubscription',

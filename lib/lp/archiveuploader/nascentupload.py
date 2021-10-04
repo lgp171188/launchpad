@@ -16,8 +16,6 @@ Documentation on general design
     prepares the email message
 """
 
-__metaclass__ = type
-
 import os
 
 import apt_pkg

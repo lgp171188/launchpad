@@ -7,8 +7,6 @@ This module will run the interface test against the CVE, Specification,
 Question, and BranchMergeProposal implementations of that interface.
 """
 
-__metaclass__ = type
-
 __all__ = []
 
 import unittest

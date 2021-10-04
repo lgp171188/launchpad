@@ -3,8 +3,6 @@
 
 """Test for the exclude_conjoined_tasks param for BugTaskSearchParams."""
 
-__metaclass__ = type
-
 __all__ = []
 
 from storm.store import Store

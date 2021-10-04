@@ -4,8 +4,6 @@
 """Classes to represent binary package releases in a
 distributionarchitecture release."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistroArchSeriesBinaryPackageRelease',
     ]

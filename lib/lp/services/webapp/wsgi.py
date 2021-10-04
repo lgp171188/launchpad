@@ -3,7 +3,6 @@
 
 """Main Launchpad WSGI application."""
 
-__metaclass__ = type
 __all__ = [
     "get_wsgi_application",
     ]

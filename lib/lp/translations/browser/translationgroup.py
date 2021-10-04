@@ -3,7 +3,6 @@
 
 """Browser code for translation groups."""
 
-__metaclass__ = type
 __all__ = [
     'TranslationGroupAddTranslatorView',
     'TranslationGroupAddView',

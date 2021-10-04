@@ -3,8 +3,6 @@
 
 """Test the search result PageMatch class."""
 
-__metaclass__ = type
-
 from testtools.matchers import MatchesStructure
 
 from lp.services.sitesearch import (

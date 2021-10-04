@@ -3,7 +3,6 @@
 
 """Test-specific Twisted utilities."""
 
-__metaclass__ = type
 __all__ = [
     'TReqFixture',
     ]

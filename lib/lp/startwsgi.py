@@ -3,7 +3,6 @@
 
 """WSGI script to start web server."""
 
-__metaclass__ = type
 __all__ = []
 
 from zope.event import notify

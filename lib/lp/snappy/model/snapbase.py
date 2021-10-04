@@ -3,7 +3,6 @@
 
 """Bases for snaps."""
 
-__metaclass__ = type
 __all__ = [
     "SnapBase",
     ]

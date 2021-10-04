@@ -3,8 +3,6 @@
 
 """Tests for lp.services.utils."""
 
-__metaclass__ = type
-
 from contextlib import contextmanager
 from datetime import datetime
 from functools import partial

@@ -3,8 +3,6 @@
 
 """Expose the Storm SQLObject compatibility layer."""
 
-__metaclass__ = type
-
 # SKIP this file when reformatting, due to the sys mangling.
 import datetime
 import sys

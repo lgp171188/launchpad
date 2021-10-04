@@ -3,9 +3,6 @@
 
 """Webservice unit tests related to Launchpad Bugs."""
 
-__metaclass__ = type
-
-
 from lp.app.enums import InformationType
 from lp.bugs.interfaces.bugtask import BugTaskStatusSearch
 from lp.testing import (

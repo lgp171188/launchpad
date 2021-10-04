@@ -6,8 +6,6 @@
 Note that these are not interfaces to application content objects.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'IHasIcon',
     'IHasLogo',

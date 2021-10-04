@@ -3,8 +3,6 @@
 
 """Email notifications for code review comments."""
 
-
-__metaclass__ = type
 __all__ = [
     'build_inline_comments_section',
     'CodeReviewCommentMailer',

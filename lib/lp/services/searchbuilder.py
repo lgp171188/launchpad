@@ -7,8 +7,6 @@ See lib/canonical/launchpad/doc/bugtask.txt for example usages of
 searchbuilder helpers.
 """
 
-__metaclass__ = type
-
 # constants for use in search criteria
 NULL = "NULL"
 

@@ -3,8 +3,6 @@
 
 """Translations vocabularies."""
 
-__metaclass__ = type
-
 __all__ = [
     'FilteredDeltaLanguagePackVocabulary',
     'FilteredFullLanguagePackVocabulary',

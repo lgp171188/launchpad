@@ -3,9 +3,6 @@
 
 """Email notifications related to branch merge proposals."""
 
-__metaclass__ = type
-
-
 from lp.code.enums import CodeReviewNotificationLevel
 from lp.code.mail.branch import BranchMailer
 from lp.services.mail.basemailer import BaseMailer

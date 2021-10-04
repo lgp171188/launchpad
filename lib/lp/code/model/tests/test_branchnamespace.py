@@ -3,8 +3,6 @@
 
 """Tests for `IBranchNamespace` implementations."""
 
-__metaclass__ = type
-
 import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy

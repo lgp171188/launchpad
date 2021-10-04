@@ -3,7 +3,6 @@
 
 """Browser view class for drivers."""
 
-__metaclass__ = type
 __all__ = ["AppointDriverView"]
 
 from zope.interface import providedBy

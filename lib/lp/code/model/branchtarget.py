@@ -3,7 +3,6 @@
 
 """Branch targets."""
 
-__metaclass__ = type
 __all__ = [
     'PackageBranchTarget',
     'PersonBranchTarget',

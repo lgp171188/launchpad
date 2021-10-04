@@ -1,8 +1,6 @@
 # Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from lazr.enum import BaseItem
 import six
 from zope.component import getUtility

@@ -3,8 +3,6 @@
 
 """Specification subscription interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ISpecificationSubscription',
     ]

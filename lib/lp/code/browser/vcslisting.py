@@ -3,8 +3,6 @@
 
 """VCS-agnostic view aliases that show the default VCS."""
 
-__metaclass__ = type
-
 from zope.component import queryMultiAdapter
 
 from lp.registry.enums import VCSType

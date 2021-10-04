@@ -3,8 +3,6 @@
 
 """Test the script that does a smoke-test of the librarian."""
 
-__metaclass__ = type
-
 from functools import partial
 import io
 

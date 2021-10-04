@@ -3,8 +3,6 @@
 
 """Language interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'ILanguage',
     'ILanguageSet',

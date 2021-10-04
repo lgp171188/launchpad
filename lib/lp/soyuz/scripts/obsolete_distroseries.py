@@ -3,8 +3,6 @@
 
 """Make a distroseries obsolete."""
 
-__metaclass__ = type
-
 __all__ = ['ObsoleteDistroseries']
 
 from itertools import chain

@@ -5,8 +5,6 @@
 
 """Handle jobs for multiple job source classes."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from optparse import IndentedHelpFormatter

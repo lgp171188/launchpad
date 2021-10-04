@@ -3,5 +3,4 @@
 
 """The lp.services.database.tests package."""
 
-__metaclass__ = type
 __all__ = []

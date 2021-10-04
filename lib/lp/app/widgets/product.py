@@ -3,7 +3,6 @@
 
 """Widgets related to IProduct."""
 
-__metaclass__ = type
 __all__ = [
     'GhostCheckBoxWidget',
     'GhostWidget',

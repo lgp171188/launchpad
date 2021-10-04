@@ -3,7 +3,6 @@
 
 """Views for TemporaryBlobStorage."""
 
-__metaclass__ = type
 __all__ = [
     'TemporaryBlobStorageAddView',
     'TemporaryBlobStorageNavigation',

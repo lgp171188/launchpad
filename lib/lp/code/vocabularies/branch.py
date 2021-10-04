@@ -3,8 +3,6 @@
 
 """Vocabularies that contain branches."""
 
-__metaclass__ = type
-
 __all__ = [
     'BranchRestrictedOnProductVocabulary',
     'BranchVocabulary',

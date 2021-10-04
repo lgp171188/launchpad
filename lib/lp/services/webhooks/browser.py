@@ -3,8 +3,6 @@
 
 """Webhook browser and API classes."""
 
-__metaclass__ = type
-
 __all__ = [
     'WebhookNavigation',
     'WebhookTargetNavigationMixin',

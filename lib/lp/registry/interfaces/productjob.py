@@ -3,7 +3,6 @@
 
 """Interfaces for the Jobs system to update products and send notifications."""
 
-__metaclass__ = type
 __all__ = [
     'IProductJob',
     'IProductJobSource',

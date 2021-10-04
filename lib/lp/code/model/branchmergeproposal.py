@@ -3,7 +3,6 @@
 
 """Database class for branch merge proposals."""
 
-__metaclass__ = type
 __all__ = [
     'BranchMergeProposal',
     'BranchMergeProposalGetter',

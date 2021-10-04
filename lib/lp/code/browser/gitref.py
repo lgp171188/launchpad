@@ -3,8 +3,6 @@
 
 """Git reference views."""
 
-__metaclass__ = type
-
 __all__ = [
     'GitRefContextMenu',
     'GitRefRegisterMergeProposalView',

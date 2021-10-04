@@ -3,8 +3,6 @@
 
 """Launchpad-specific tests of Breezy behaviour."""
 
-__metaclass__ = type
-
 from lp.testing import TestCase
 
 

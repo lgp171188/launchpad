@@ -3,7 +3,6 @@
 
 """Helper functions for running external commands."""
 
-__metaclass__ = type
 __all__ = [
     'run_command',
     'run_script',

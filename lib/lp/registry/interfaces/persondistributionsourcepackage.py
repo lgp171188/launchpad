@@ -3,7 +3,6 @@
 
 """A person's view on a source package in a distribution."""
 
-__metaclass__ = type
 __all__ = [
     'IPersonDistributionSourcePackage',
     'IPersonDistributionSourcePackageFactory',

@@ -3,7 +3,6 @@
 
 """The `IHasTranslationImports` interface."""
 
-__metaclass__ = type
 __all__ = [
     'IHasTranslationImports',
     ]

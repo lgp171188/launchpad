@@ -3,8 +3,6 @@
 
 """Test live filesystem build behaviour."""
 
-__metaclass__ = type
-
 from datetime import datetime
 import os.path
 

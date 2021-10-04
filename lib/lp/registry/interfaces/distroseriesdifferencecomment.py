@@ -3,7 +3,6 @@
 
 """Distribution series difference messages."""
 
-__metaclass__ = type
 __all__ = [
     'IDistroSeriesDifferenceComment',
     'IDistroSeriesDifferenceCommentSource',

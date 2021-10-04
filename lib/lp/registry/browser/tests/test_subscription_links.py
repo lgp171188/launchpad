@@ -3,8 +3,6 @@
 
 """Tests for subscription links."""
 
-__metaclass__ = type
-
 import unittest
 
 from fixtures import FakeLogger

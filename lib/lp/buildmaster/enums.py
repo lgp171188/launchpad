@@ -3,8 +3,6 @@
 
 """Common build interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'BuildBaseImageType',
     'BuilderCleanStatus',

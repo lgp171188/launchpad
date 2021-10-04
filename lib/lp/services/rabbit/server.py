@@ -3,7 +3,6 @@
 
 """RabbitMQ server fixture."""
 
-__metaclass__ = type
 __all__ = [
     'RabbitServer',
     ]

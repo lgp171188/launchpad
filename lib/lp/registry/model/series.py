@@ -3,8 +3,6 @@
 
 """Common implementations for a series."""
 
-__metaclass__ = type
-
 __all__ = [
     'ACTIVE_STATUSES',
     'SeriesMixin',

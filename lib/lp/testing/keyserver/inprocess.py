@@ -3,7 +3,6 @@
 
 """In-process keyserver fixture."""
 
-__metaclass__ = type
 __all__ = [
     'InProcessKeyServerFixture',
     ]

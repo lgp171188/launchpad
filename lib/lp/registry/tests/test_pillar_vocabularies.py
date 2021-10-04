@@ -3,8 +3,6 @@
 
 """Test the pillar vocabularies."""
 
-__metaclass__ = type
-
 from lp.app.enums import InformationType
 from lp.registry.vocabularies import (
     DistributionOrProductOrProjectGroupVocabulary,

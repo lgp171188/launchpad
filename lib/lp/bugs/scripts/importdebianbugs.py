@@ -3,8 +3,6 @@
 
 """Helper class and functions for the import-debian-bugs.py script."""
 
-__metaclass__ = type
-
 import transaction
 from zope.component import getUtility
 

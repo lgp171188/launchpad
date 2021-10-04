@@ -3,7 +3,6 @@
 
 """Helpers to time out external operations."""
 
-__metaclass__ = type
 __all__ = [
     "default_timeout",
     "get_default_timeout_function",

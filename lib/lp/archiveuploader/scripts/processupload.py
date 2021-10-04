@@ -3,7 +3,6 @@
 
 """Upload processor for Soyuz."""
 
-__metaclass__ = type
 __all__ = ['ProcessUpload']
 
 import os

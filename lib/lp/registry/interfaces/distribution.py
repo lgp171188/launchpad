@@ -3,8 +3,6 @@
 
 """Interfaces including and related to IDistribution."""
 
-__metaclass__ = type
-
 __all__ = [
     'IDistribution',
     'IDistributionDriverRestricted',

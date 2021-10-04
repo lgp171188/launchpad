@@ -3,8 +3,6 @@
 
 """Test the Git repository vocabularies."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.code.vocabularies.gitrepository import (

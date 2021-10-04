@@ -3,8 +3,6 @@
 
 """Test the milestone vocabularies."""
 
-__metaclass__ = type
-
 from operator import attrgetter
 
 from lp.app.enums import InformationType

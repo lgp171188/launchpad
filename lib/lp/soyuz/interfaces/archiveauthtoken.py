@@ -3,8 +3,6 @@
 
 """ArchiveAuthToken interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'IArchiveAuthToken',
     'IArchiveAuthTokenSet',

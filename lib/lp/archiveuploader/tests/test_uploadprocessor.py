@@ -3,7 +3,6 @@
 
 """Functional tests for uploadprocessor.py."""
 
-__metaclass__ = type
 __all__ = [
     "MockOptions",
     "TestUploadProcessorBase",

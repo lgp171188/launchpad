@@ -5,7 +5,6 @@
 
 """
 
-__metaclass__ = type
 __all__ = [
     'DataDownloadView',
     'get_raw_form_value_from_current_request',

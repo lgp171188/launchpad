@@ -3,7 +3,6 @@
 
 """Validators for attachments."""
 
-__metaclass__ = type
 __all__ = ['attachment_size_constraint']
 
 from lp.app.validators import LaunchpadValidationError

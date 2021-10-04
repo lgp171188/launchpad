@@ -3,7 +3,6 @@
 
 """Person/team merger implementation."""
 
-__metaclass__ = type
 __all__ = ['merge_people']
 
 from storm.store import Store

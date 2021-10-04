@@ -3,7 +3,6 @@
 
 """Interfaces related to OCI recipe jobs."""
 
-__metaclass__ = type
 __all__ = [
     'IOCIRecipeJob',
     'IOCIRecipeRequestBuildsJob',

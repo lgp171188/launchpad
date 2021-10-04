@@ -3,7 +3,6 @@
 
 """Implementation of the BranchListingQueryOptimiser utility."""
 
-__metaclass__ = type
 __all__ = [
     'BranchListingQueryOptimiser',
     ]

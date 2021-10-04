@@ -3,9 +3,6 @@
 
 """Test OCI recipe subscription views."""
 
-__metaclass__ = type
-
-
 from fixtures import FakeLogger
 from zope.security.interfaces import Unauthorized
 

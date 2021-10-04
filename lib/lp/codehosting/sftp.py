@@ -12,7 +12,6 @@ The Bazaar Transport is special in two ways:
 We call such a transport a "Twisted Transport".
 """
 
-__metaclass__ = type
 __all__ = [
     'avatar_to_sftp_server',
     'TransportSFTPServer',

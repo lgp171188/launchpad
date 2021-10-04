@@ -3,8 +3,6 @@
 
 """Tests for the checkwatches remotebugupdater module."""
 
-__metaclass__ = type
-
 import transaction
 
 from lp.bugs.externalbugtracker.base import (

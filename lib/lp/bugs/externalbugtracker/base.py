@@ -3,7 +3,6 @@
 
 """External bugtrackers."""
 
-__metaclass__ = type
 __all__ = [
     'BATCH_SIZE_UNLIMITED',
     'BugNotFound',

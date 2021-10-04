@@ -3,8 +3,6 @@
 
 """Tests for Diff, etc."""
 
-__metaclass__ = type
-
 from difflib import unified_diff
 from io import BytesIO
 import logging

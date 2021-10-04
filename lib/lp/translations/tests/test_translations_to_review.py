@@ -3,8 +3,6 @@
 
 """Test the choice of "translations to review" for a user."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

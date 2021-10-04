@@ -3,7 +3,6 @@
 
 """Widgets related to `IArchive`."""
 
-__metaclass__ = type
 __all__ = [
     'PPANameWidget',
     ]

@@ -3,8 +3,6 @@
 
 """Helper functions/classes for Soyuz tests."""
 
-__metaclass__ = type
-
 __all__ = [
     'Base64KeyMatches',
     ]

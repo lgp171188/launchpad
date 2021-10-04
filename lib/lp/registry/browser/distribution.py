@@ -3,8 +3,6 @@
 
 """Browser views for distributions."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistributionAddView',
     'DistributionAdminView',

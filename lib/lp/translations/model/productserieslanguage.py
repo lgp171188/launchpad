@@ -3,8 +3,6 @@
 
 """Implementation for `IProductSeriesLanguage`."""
 
-__metaclass__ = type
-
 __all__ = [
     'ProductSeriesLanguage',
     'ProductSeriesLanguageSet',

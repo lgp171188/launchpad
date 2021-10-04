@@ -3,8 +3,6 @@
 
 """Test views that manage sharing."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import get_current_web_service_request

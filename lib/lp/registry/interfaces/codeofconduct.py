@@ -6,8 +6,6 @@
 https://launchpad.canonical.com/CodeOfConduct
 """
 
-__metaclass__ = type
-
 __all__ = [
     'ICodeOfConduct',
     'ISignedCodeOfConduct',

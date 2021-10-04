@@ -3,8 +3,6 @@
 
 """Interfaces including and related to IJob."""
 
-__metaclass__ = type
-
 __all__ = [
     'IJob',
     'IJobSource',

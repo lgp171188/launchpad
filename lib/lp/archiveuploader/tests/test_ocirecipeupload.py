@@ -3,8 +3,6 @@
 
 """Tests for `OCIRecipeUpload`."""
 
-__metaclass__ = type
-
 import json
 import os
 

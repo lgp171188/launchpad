@@ -3,7 +3,6 @@
 
 """Ensure that some operations happen outside of transactions."""
 
-__metaclass__ = type
 __all__ = [
     'check_no_transaction',
     'ensure_no_transaction',

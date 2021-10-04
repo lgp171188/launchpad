@@ -3,8 +3,6 @@
 
 """Interface for things that contains a collection of FAQs."""
 
-__metaclass__ = type
-
 __all__ = [
     'FAQSort',
     'IFAQCollection',

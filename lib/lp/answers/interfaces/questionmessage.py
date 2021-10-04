@@ -3,8 +3,6 @@
 
 """Question message interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'IQuestionMessage',
     ]

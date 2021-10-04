@@ -3,8 +3,6 @@
 
 """Model tests for the DistroSeriesDifference class."""
 
-__metaclass__ = type
-
 from storm.exceptions import IntegrityError
 from storm.store import Store
 from testtools.matchers import MatchesStructure

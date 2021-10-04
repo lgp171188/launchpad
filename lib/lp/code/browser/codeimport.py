@@ -3,8 +3,6 @@
 
 """Browser views for CodeImports."""
 
-__metaclass__ = type
-
 __all__ = [
     'CodeImportEditView',
     'CodeImportMachineView',

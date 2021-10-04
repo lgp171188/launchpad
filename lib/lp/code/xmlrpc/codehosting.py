@@ -3,7 +3,6 @@
 
 """Implementations of the XML-RPC APIs for codehosting."""
 
-__metaclass__ = type
 __all__ = [
     'CodehostingAPI',
     'datetime_from_tuple',

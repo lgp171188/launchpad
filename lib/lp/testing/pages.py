@@ -3,8 +3,6 @@
 
 """Testing infrastructure for page tests."""
 
-__metaclass__ = type
-
 from contextlib import contextmanager
 from datetime import datetime
 import doctest

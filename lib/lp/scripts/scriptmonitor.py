@@ -3,7 +3,6 @@
 
 """Monitor whether scripts have run between specified time periods."""
 
-__metaclass__ = type
 __all__ = ['check_script']
 
 from lp.services.database.sqlbase import sqlvalues

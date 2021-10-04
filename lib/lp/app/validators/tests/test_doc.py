@@ -3,8 +3,6 @@
 
 """Tests for the validators."""
 
-__metaclass__ = type
-
 import unittest
 
 from lp.testing.layers import LaunchpadFunctionalLayer

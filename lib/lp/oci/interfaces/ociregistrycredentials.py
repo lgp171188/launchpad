@@ -3,7 +3,6 @@
 
 """Interfaces for handling credentials for OCI registry actions."""
 
-__metaclass__ = type
 __all__ = [
     'IOCIRegistryCredentials',
     'IOCIRegistryCredentialsSet',

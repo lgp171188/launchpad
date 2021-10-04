@@ -5,8 +5,6 @@
 full text index.
 """
 
-__metaclass__ = type
-
 __all__ = ['nl_phrase_search']
 
 import re

@@ -3,7 +3,6 @@
 
 """BugTrackerPerson database class."""
 
-__metaclass__ = type
 __all__ = [
     'BugTrackerPerson',
     ]

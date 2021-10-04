@@ -4,8 +4,6 @@
 """Launchpad Form View Classes
 """
 
-__metaclass__ = type
-
 __all__ = [
     'action',
     'has_structured_doc',

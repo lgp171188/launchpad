@@ -3,8 +3,6 @@
 
 """Tests for the hooks in lp.codehosting.vfs.hooks."""
 
-__metaclass__ = type
-
 from lp.codehosting.vfs.hooks import SetProcTitleHook
 from lp.testing import TestCase
 

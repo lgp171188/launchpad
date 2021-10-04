@@ -3,8 +3,6 @@
 
 """Tests for creating BugBranch items based on Breezy revisions."""
 
-__metaclass__ = type
-
 from breezy.revision import Revision
 from zope.component import getUtility
 from zope.event import notify

@@ -3,7 +3,6 @@
 
 """Copy `DistroSeries` translations from its parent series."""
 
-__metaclass__ = type
 __all__ = ['copy_distroseries_translations']
 
 from zope.component import getUtility

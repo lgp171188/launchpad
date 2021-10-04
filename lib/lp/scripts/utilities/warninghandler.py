@@ -3,8 +3,6 @@
 
 """Handlers for warnings, to be installed when testing."""
 
-__metaclass__ = type
-
 import inspect
 import sys
 import warnings

@@ -3,8 +3,6 @@
 
 """Tests for mail boxes."""
 
-__metaclass__ = type
-
 import os
 from shutil import rmtree
 import tempfile

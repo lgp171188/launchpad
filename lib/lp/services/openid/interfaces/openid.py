@@ -3,7 +3,6 @@
 
 """Miscelaneous OpenID-related interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'IOpenIDPersistentIdentity',
     ]

@@ -3,8 +3,6 @@
 
 """Librarian garbage collection routines"""
 
-__metaclass__ = type
-
 from contextlib import ExitStack
 from datetime import (
     datetime,

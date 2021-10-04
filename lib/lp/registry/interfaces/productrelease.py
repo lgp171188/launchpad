@@ -3,8 +3,6 @@
 
 """Product release interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IProductRelease',
     'IProductReleaseEditRestricted',

@@ -3,7 +3,6 @@
 
 """Bugzilla ExternalBugTracker utility."""
 
-__metaclass__ = type
 __all__ = [
     'Bugzilla',
     'BugzillaAPI',

@@ -18,7 +18,6 @@ As such, it was felt more appropriate to separate out the scripts,
 even though there is some code duplication.
 """
 
-__metaclass__ = type
 __all__ = ['check_script']
 
 import _pythonpath  # noqa: F401

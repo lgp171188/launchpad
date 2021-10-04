@@ -3,8 +3,6 @@
 
 """Test the helpers."""
 
-__metaclass__ = type
-
 from testtools.testcase import ExpectedException
 import transaction
 

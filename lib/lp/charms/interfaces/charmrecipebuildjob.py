@@ -3,7 +3,6 @@
 
 """Charm recipe build job interfaces."""
 
-__metaclass__ = type
 __all__ = [
     'ICharmRecipeBuildJob',
     'ICharmhubUploadJob',

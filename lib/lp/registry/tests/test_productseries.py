@@ -3,8 +3,6 @@
 
 """Tests for ProductSeries and ProductSeriesSet."""
 
-__metaclass__ = type
-
 from storm.exceptions import NoneError
 from testtools.testcase import ExpectedException
 import transaction

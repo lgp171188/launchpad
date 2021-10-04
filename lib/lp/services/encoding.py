@@ -7,7 +7,6 @@
 
 """Character encoding utilities"""
 
-__metaclass__ = type
 __all__ = [
     'escape_nonascii_uniquely',
     'guess',

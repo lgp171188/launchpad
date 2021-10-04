@@ -3,8 +3,6 @@
 
 """Tests for read-only users."""
 
-__metaclass__ = type
-
 import unittest
 
 import psycopg2

@@ -3,7 +3,6 @@
 
 """Classes and logic for the checkwatches BugWatchUpdater."""
 
-__metaclass__ = type
 __all__ = [
     'BugWatchUpdater',
     ]

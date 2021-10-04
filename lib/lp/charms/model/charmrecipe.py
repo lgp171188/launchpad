@@ -3,7 +3,6 @@
 
 """Charm recipes."""
 
-__metaclass__ = type
 __all__ = [
     "CharmRecipe",
     "get_charm_recipe_privacy_filter",

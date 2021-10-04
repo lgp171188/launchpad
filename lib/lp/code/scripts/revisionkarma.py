@@ -3,7 +3,6 @@
 
 """The actual script class to allocate revisions."""
 
-__metaclass__ = type
 __all__ = ['RevisionKarmaAllocator']
 
 import transaction

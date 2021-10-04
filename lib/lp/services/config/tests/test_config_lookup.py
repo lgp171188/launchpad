@@ -3,7 +3,6 @@
 
 """Test our mechanisms for locating which config file to use."""
 
-__metaclass__ = type
 __all__ = []
 
 import os

@@ -3,8 +3,6 @@
 
 """Tests for SSH session support on the codehosting SSH server."""
 
-__metaclass__ = type
-
 from twisted.conch.interfaces import ISession
 from twisted.conch.ssh import connection
 from twisted.internet.process import ProcessExitedAlready

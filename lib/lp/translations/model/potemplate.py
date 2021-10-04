@@ -3,7 +3,6 @@
 
 """`SQLObject` implementation of `IPOTemplate` interface."""
 
-__metaclass__ = type
 __all__ = [
     'get_pofiles_for',
     'POTemplate',

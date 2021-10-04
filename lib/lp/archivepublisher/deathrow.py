@@ -4,7 +4,6 @@
 """
 Processes removals of packages that are scheduled for deletion.
 """
-__metaclass__ = type
 
 import datetime
 import logging

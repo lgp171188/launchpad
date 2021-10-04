@@ -3,7 +3,6 @@
 
 """Verify (and refresh) `POFile`s' cached statistics."""
 
-__metaclass__ = type
 __all__ = [
     'VerifyPOFileStatsProcess',
     ]

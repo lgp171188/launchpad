@@ -3,8 +3,6 @@
 
 """Test snap packages."""
 
-__metaclass__ = type
-
 import base64
 from datetime import (
     datetime,

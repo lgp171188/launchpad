@@ -3,8 +3,6 @@
 
 """Test harness for running the cookie-authentication.txt tests."""
 
-__metaclass__ = type
-
 __all__ = []
 
 import unittest

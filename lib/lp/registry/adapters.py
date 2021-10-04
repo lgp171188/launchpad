@@ -3,8 +3,6 @@
 
 """Adapters for registry objects."""
 
-__metaclass__ = type
-
 __all__ = [
     'distroseries_to_distribution',
     'PollSubset',

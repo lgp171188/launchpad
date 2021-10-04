@@ -3,8 +3,6 @@
 
 """Tests for `RepositoryIndexFile`."""
 
-__metaclass__ = type
-
 import bz2
 import gzip
 import lzma

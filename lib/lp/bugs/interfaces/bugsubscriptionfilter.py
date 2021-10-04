@@ -3,7 +3,6 @@
 
 """Bug subscription filter interfaces."""
 
-__metaclass__ = type
 __all__ = [
     "IBugSubscriptionFilter",
     "IBugSubscriptionFilterMute",

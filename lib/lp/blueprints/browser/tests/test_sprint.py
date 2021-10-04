@@ -3,8 +3,6 @@
 
 """Tests for Sprint pages and views."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from testtools.matchers import Equals
 from zope.publisher.interfaces import NotFound

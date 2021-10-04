@@ -3,8 +3,6 @@
 
 """ArchiveGPGSigningKey implementation."""
 
-__metaclass__ = type
-
 __all__ = [
     'ArchiveGPGSigningKey',
     'SignableArchive',

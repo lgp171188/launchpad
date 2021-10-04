@@ -3,8 +3,6 @@
 
 """Tests for classes in the lp.code.browser.bazaar module."""
 
-__metaclass__ = type
-
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType

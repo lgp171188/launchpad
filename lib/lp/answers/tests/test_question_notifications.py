@@ -3,8 +3,6 @@
 
 """Unit tests for the Answer Tracker Mail Notifications."""
 
-__metaclass__ = type
-
 __all__ = [
     'pop_questionemailjobs',
     ]

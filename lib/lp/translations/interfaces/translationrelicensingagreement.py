@@ -19,7 +19,6 @@ from lp import _
 from lp.registry.interfaces.person import IPerson
 
 
-__metaclass__ = type
 __all__ = [
     'ITranslationRelicensingAgreement',
     'ITranslationRelicensingAgreementEdit',

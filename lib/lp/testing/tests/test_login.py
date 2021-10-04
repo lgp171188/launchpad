@@ -3,8 +3,6 @@
 
 """Tests for the login helpers."""
 
-__metaclass__ = type
-
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import getUtility
 from zope.security.management import getInteraction

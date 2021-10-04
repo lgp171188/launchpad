@@ -3,8 +3,6 @@
 
 """Tests for choosing the preferred charsets."""
 
-__metaclass__ = type
-
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setGlobs,

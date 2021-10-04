@@ -3,7 +3,6 @@
 
 """Job classes related to ApportJobs are in here."""
 
-__metaclass__ = type
 __all__ = [
     'ApportJob',
     'ApportJobDerived',

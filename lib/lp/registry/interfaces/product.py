@@ -3,8 +3,6 @@
 
 """Interfaces including and related to IProduct."""
 
-__metaclass__ = type
-
 __all__ = [
     'ILicensesModifiedEvent',
     'InvalidProductName',

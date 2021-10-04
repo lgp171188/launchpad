@@ -4,8 +4,6 @@
 
 """Populate the DatabaseTableStats and DatabaseCpuStats tables."""
 
-__metaclass__ = type
-
 import _pythonpath  # noqa: F401
 
 from lp.registry.model.person import Person

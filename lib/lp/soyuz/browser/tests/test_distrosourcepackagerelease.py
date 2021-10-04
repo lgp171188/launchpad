@@ -3,8 +3,6 @@
 
 """Unit tests for DistroSourcePackageRelease pages."""
 
-__metaclass__ = type
-
 from zope.security.proxy import removeSecurityProxy
 
 from lp.soyuz.model.distributionsourcepackagerelease import (

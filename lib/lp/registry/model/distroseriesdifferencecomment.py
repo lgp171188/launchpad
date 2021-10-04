@@ -3,8 +3,6 @@
 
 """A comment/message for a difference between two distribution series."""
 
-__metaclass__ = type
-
 __all__ = [
     'DistroSeriesDifferenceComment',
     ]

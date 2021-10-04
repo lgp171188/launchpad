@@ -3,7 +3,6 @@
 
 """Tests for `BaseStormOpenIDStore`."""
 
-__metaclass__ = type
 __all__ = [
     'BaseStormOpenIDStoreTestsMixin',
     ]

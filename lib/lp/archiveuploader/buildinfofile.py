@@ -3,8 +3,6 @@
 
 """Build information files."""
 
-__metaclass__ = type
-
 __all__ = [
     'BuildInfoFile',
     ]

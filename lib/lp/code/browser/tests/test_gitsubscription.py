@@ -3,8 +3,6 @@
 
 """Unit tests for GitSubscriptions."""
 
-__metaclass__ = type
-
 from fixtures import FakeLogger
 from six.moves.urllib.parse import urlencode
 from testtools.matchers import MatchesStructure

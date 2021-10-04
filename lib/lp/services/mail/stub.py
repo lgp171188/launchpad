@@ -3,8 +3,6 @@
 
 """A stub IMailer for use in development and unittests."""
 
-__metaclass__ = type
-
 import email
 from logging import getLogger
 

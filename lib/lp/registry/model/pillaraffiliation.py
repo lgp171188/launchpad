@@ -14,8 +14,6 @@ person, the relevant affiliation details may be determined.
 
 """
 
-__metaclass__ = type
-
 __all__ = [
     'IHasAffiliation',
     ]

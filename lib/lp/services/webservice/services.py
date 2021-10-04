@@ -3,7 +3,6 @@
 
 """A class for the top-level link to the services factory."""
 
-__metaclass__ = type
 __all__ = [
     'IServicesLink',
     'ServicesLink',

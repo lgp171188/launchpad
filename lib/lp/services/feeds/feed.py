@@ -7,8 +7,6 @@ Supported feeds include Atom, Javascript, and HTML-snippets.
 Future support may include feeds such as sparklines.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'FeedBase',
     'FeedEntry',

@@ -3,8 +3,6 @@
 
 """Interface for objects which have a bug Supervisor."""
 
-__metaclass__ = type
-
 __all__ = [
     'IHasBugSupervisor',
     ]

@@ -3,7 +3,6 @@
 
 """Unit tests for SourceListEntriesView."""
 
-__metaclass__ = type
 __all__ = [
     'TestDefaultSelectedSeries',
     'TestOneDistroSeriesOnly',

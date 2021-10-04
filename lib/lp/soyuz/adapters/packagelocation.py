@@ -3,8 +3,6 @@
 
 """Logic for bulk copying of source/binary publishing history data."""
 
-__metaclass__ = type
-
 __all__ = [
     'build_package_location',
     'PackageLocation',

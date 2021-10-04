@@ -5,8 +5,6 @@
 
 __all__ = []
 
-__metaclass__ = type
-
 from lp.services.features import install_feature_controller
 from lp.services.features.flags import FeatureController
 from lp.services.features.rulesource import StormFeatureRuleSource

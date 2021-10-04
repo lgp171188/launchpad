@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Browser code for the Launchpad root page."""
 
-__metaclass__ = type
 __all__ = [
     'LaunchpadRootIndexView',
     'LaunchpadSearchView',

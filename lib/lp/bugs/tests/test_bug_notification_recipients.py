@@ -3,8 +3,6 @@
 
 """Tests related to bug notification recipients."""
 
-__metaclass__ = type
-
 from testtools.matchers import (
     Equals,
     GreaterThan,

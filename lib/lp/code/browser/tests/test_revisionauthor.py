@@ -3,8 +3,6 @@
 
 """Tests related to `RevisionAuthor`."""
 
-__metaclass__ = type
-
 from lp.app.browser.tales import (
     PersonFormatterAPI,
     RevisionAuthorFormatterAPI,

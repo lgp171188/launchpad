@@ -3,8 +3,6 @@
 
 """Database class for table PublisherConfig."""
 
-__metaclass__ = type
-
 __all__ = [
     'PublisherConfig',
     'PublisherConfigSet',

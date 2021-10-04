@@ -3,8 +3,6 @@
 
 """Tests for source package publication listing."""
 
-__metaclass__ = type
-
 import soupmatchers
 from testtools.matchers import (
     Contains,

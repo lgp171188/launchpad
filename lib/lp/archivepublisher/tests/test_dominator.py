@@ -3,8 +3,6 @@
 
 """Tests for domination.py."""
 
-__metaclass__ = type
-
 import datetime
 from functools import cmp_to_key
 from operator import attrgetter

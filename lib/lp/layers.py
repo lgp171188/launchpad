@@ -6,8 +6,6 @@
 Also define utilities that manipulate layers.
 """
 
-__metaclass__ = type
-
 from lazr.restful.interfaces import IWebServiceLayer
 from zope.interface import (
     alsoProvides,

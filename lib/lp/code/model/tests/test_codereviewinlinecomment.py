@@ -3,8 +3,6 @@
 
 """Tests for CodeReviewInlineComment{,Draft,Set}"""
 
-__metaclass__ = type
-
 from datetime import datetime
 
 from pytz import UTC

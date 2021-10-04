@@ -3,7 +3,6 @@
 
 """The content classes for links from source packages to branches.."""
 
-__metaclass__ = type
 __all__ = [
     'SeriesSourcePackageBranch',
     'SeriesSourcePackageBranchSet',

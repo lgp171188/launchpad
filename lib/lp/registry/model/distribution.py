@@ -3,7 +3,6 @@
 
 """Database classes for implementing distribution items."""
 
-__metaclass__ = type
 __all__ = [
     'Distribution',
     'DistributionSet',

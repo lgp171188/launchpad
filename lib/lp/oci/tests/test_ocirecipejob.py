@@ -3,8 +3,6 @@
 
 """Tests for classes in OCIRecipeJob."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 

@@ -3,7 +3,6 @@
 
 """LiveFSBuild views."""
 
-__metaclass__ = type
 __all__ = [
     'LiveFSBuildContextMenu',
     'LiveFSBuildNavigation',

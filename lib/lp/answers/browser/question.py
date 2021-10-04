@@ -3,8 +3,6 @@
 
 """Question views."""
 
-__metaclass__ = type
-
 __all__ = [
     'SearchAllQuestionsView',
     'QuestionAddView',

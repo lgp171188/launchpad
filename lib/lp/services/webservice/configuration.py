@@ -3,7 +3,6 @@
 
 """A configuration class describing the Launchpad web service."""
 
-__metaclass__ = type
 __all__ = [
     'LaunchpadWebServiceConfiguration',
 ]

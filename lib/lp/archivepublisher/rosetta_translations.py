@@ -7,8 +7,6 @@ ROSETTA-TRANSLATIONS is a custom format upload supported by Launchpad
 infrastructure to enable developers to publish translations.
 """
 
-__metaclass__ = type
-
 __all__ = [
     'RosettaTranslationsUpload',
     ]

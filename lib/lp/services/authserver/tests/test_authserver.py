@@ -3,8 +3,6 @@
 
 """Tests for the internal codehosting API."""
 
-__metaclass__ = type
-
 from pymacaroons import Macaroon
 from six.moves import xmlrpc_client
 from storm.sqlobject import SQLObjectNotFound

@@ -3,8 +3,6 @@
 
 """Tests for `BaseSeriesTemplatesView` and descendants."""
 
-__metaclass__ = type
-
 import re
 
 from zope.security.proxy import removeSecurityProxy

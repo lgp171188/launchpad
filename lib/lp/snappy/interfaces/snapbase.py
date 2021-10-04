@@ -3,7 +3,6 @@
 
 """Interfaces for bases for snaps."""
 
-__metaclass__ = type
 __all__ = [
     "CannotDeleteSnapBase",
     "ISnapBase",

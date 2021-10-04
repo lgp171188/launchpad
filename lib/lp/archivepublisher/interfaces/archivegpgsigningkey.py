@@ -3,8 +3,6 @@
 
 """ArchiveGPGSigningKey interface."""
 
-__metaclass__ = type
-
 __all__ = [
     'CannotSignArchive',
     'IArchiveGPGSigningKey',

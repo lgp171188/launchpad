@@ -3,8 +3,6 @@
 
 """Tests for the code import browser code."""
 
-__metaclass__ = type
-
 import re
 
 from testtools.matchers import StartsWith

@@ -3,8 +3,6 @@
 
 """Tests for `StructuralSubscription`."""
 
-__metaclass__ = type
-
 from storm.store import (
     EmptyResultSet,
     ResultSet,

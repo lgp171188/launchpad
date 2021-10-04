@@ -5,7 +5,6 @@
 Useful functions for dealing with Zope adapters.
 """
 
-__metaclass__ = type
 __all__ = [
     'nearest_adapter',
     'nearest_context_with_adapter',

@@ -3,8 +3,6 @@
 
 """Tests for `Collection`."""
 
-__metaclass__ = type
-
 from storm.locals import Int
 
 from lp.registry.model.person import Person

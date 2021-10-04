@@ -3,7 +3,6 @@
 
 """Interfaces related to recipes for OCI Images."""
 
-__metaclass__ = type
 __all__ = [
     'CannotModifyOCIRecipeProcessor',
     'DuplicateOCIRecipeName',

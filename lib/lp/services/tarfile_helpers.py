@@ -3,8 +3,6 @@
 
 """Helpers to work with tar files more easily."""
 
-__metaclass__ = type
-
 __all__ = [
     'LaunchpadWriteTarFile',
     ]

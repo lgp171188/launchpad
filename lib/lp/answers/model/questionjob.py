@@ -3,7 +3,6 @@
 
 """Job classes related to QuestionJob."""
 
-__metaclass__ = type
 __all__ = [
     'QuestionJob',
     ]

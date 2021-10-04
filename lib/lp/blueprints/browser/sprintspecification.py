@@ -3,8 +3,6 @@
 
 """Views for SprintSpecification."""
 
-__metaclass__ = type
-
 __all__ = [
     'SprintSpecificationDecideView',
     ]

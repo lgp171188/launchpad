@@ -3,7 +3,6 @@
 
 """Helper methods and mixins for OCI tests."""
 
-__metaclass__ = type
 __all__ = []
 
 import base64

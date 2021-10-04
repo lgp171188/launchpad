@@ -3,7 +3,6 @@
 
 """Vocabularies that contain Git references."""
 
-__metaclass__ = type
 __all__ = [
     "GitBranchVocabulary",
     "GitRefVocabulary",

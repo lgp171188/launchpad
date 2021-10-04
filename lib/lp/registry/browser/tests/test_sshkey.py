@@ -3,8 +3,6 @@
 
 """Tests for GPG key on the web."""
 
-__metaclass__ = type
-
 from zope.component import getUtility
 
 from lp.registry.interfaces.ssh import ISSHKeySet

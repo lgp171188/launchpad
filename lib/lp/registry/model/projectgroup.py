@@ -3,7 +3,6 @@
 
 """Launchpad ProjectGroup-related Database Table Objects."""
 
-__metaclass__ = type
 __all__ = [
     'ProjectGroup',
     'ProjectGroupSeries',

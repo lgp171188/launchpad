@@ -3,8 +3,6 @@
 
 """Tests for classes that implement IHasRecipes."""
 
-__metaclass__ = type
-
 from lp.code.interfaces.hasrecipes import IHasRecipes
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer

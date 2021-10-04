@@ -26,8 +26,6 @@ note: remove the lines containing 'sub' or 'secret' keys
 $ gpg --export -a cprov > 0x681B6469.get
 """
 
-__metaclass__ = type
-
 __all__ = [
     'KeyServerResource',
     ]

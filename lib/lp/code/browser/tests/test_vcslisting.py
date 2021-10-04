@@ -3,8 +3,6 @@
 
 """Tests for the product view classes and templates."""
 
-__metaclass__ = type
-
 from zope.publisher.interfaces import NotFound
 
 from lp.code.browser.branchlisting import (

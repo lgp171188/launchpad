@@ -3,7 +3,6 @@
 
 """Model implementing `IOCIProjectSeries`."""
 
-__metaclass__ = type
 __all__ = [
     'OCIProjectSeries',
     ]

@@ -3,8 +3,6 @@
 
 """Tests for Git repository activity logs."""
 
-__metaclass__ = type
-
 from storm.store import Store
 from testtools.matchers import MatchesStructure
 

@@ -3,7 +3,6 @@
 
 """Communication with the snap store."""
 
-__metaclass__ = type
 __all__ = [
     'SnapStoreClient',
     ]

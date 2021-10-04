@@ -3,8 +3,6 @@
 
 """Tests for Distribution."""
 
-__metaclass__ = type
-
 import datetime
 
 from fixtures import FakeLogger

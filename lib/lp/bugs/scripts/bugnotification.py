@@ -3,8 +3,6 @@
 
 """Functions related to sending bug notifications."""
 
-__metaclass__ = type
-
 __all__ = [
     "construct_email_notifications",
     "get_email_notifications",

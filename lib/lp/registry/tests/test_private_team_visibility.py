@@ -15,8 +15,6 @@ private team's existence, and basic properties like name, displayname etc, by
 being granted launchpad.limitedView permission.
 """
 
-__metaclass__ = type
-
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 

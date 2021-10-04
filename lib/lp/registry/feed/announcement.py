@@ -9,8 +9,6 @@
 # clearly demonstrate the concepts required to implement a feed rather than
 # simply referencing the interfaces.
 
-__metaclass__ = type
-
 __all__ = [
     'LaunchpadAnnouncementsFeed',
     'TargetAnnouncementsFeed',

@@ -3,8 +3,6 @@
 
 """Product licence interface."""
 
-__metaclass__ = type
-
 __all__ = ['IProductLicense']
 
 from zope.interface import (

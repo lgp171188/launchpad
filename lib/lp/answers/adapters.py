@@ -3,7 +3,6 @@
 
 """Adapters used in the Answer Tracker."""
 
-__metaclass__ = type
 __all__ = []
 
 

@@ -3,8 +3,6 @@
 
 """Interfaces related to package-diff system."""
 
-__metaclass__ = type
-
 __all__ = [
     'IPackageDiff',
     'IPackageDiffSet',

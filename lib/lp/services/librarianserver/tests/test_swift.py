@@ -3,8 +3,6 @@
 
 """Librarian disk to Swift storage tests."""
 
-__metaclass__ = type
-
 import hashlib
 import io
 import os.path

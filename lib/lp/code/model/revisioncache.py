@@ -3,7 +3,6 @@
 
 """Implementation for the IRevisionCache and IRevisionCollection."""
 
-__metaclass__ = type
 __all__ = [
     'GenericRevisionCollection',
     ]

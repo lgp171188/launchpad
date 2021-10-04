@@ -3,8 +3,6 @@
 
 """Cache of Binary Package in DistroSeries details interfaces."""
 
-__metaclass__ = type
-
 __all__ = [
     'IDistroSeriesPackageCache',
     ]
