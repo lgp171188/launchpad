@@ -492,7 +492,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         return [
             das for das in all_buildable_dases
             if self._isBuildableArchitectureAllowed(
-                das, charm_base=charm_bases.get(das.id))]
+                das, charm_base=charm_bases.get(das.distroseriesID))]
 
     def _checkRequestBuild(self, requester):
         """May `requester` request builds of this charm recipe?"""
