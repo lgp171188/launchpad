@@ -221,7 +221,7 @@ class BranchMergeProposalJob(StormBase):
 
 @delegate_to(IBranchMergeProposalJob)
 class BranchMergeProposalJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+        BaseRunnableJob, metaclass=EnumeratedSubclass):
     """Intermediate class for deriving from BranchMergeProposalJob."""
 
     def __init__(self, job):

@@ -243,8 +243,7 @@ class BranchJob(StormBase):
 
 
 @delegate_to(IBranchJob)
-class BranchJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class BranchJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def __init__(self, branch_job):
         self.context = branch_job

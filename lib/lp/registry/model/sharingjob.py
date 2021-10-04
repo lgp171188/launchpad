@@ -182,8 +182,7 @@ class SharingJob(StormBase):
 
 @delegate_to(ISharingJob)
 @provider(ISharingJobSource)
-class SharingJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class SharingJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     """Intermediate class for deriving from SharingJob."""
 
     def __init__(self, job):

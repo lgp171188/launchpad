@@ -113,8 +113,7 @@ class ApportJob(StormBase):
 
 @delegate_to(IApportJob)
 @provider(IApportJobSource)
-class ApportJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class ApportJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     """Intermediate class for deriving from ApportJob."""
 
     def __init__(self, job):

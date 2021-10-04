@@ -181,8 +181,7 @@ class PackageCopyJob(StormBase):
 
 
 @delegate_to(IPackageCopyJob)
-class PackageCopyJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class PackageCopyJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     """Abstract class for deriving from PackageCopyJob."""
 
     def __init__(self, job):

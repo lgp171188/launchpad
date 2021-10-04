@@ -382,8 +382,7 @@ class WebhookJob(StormBase):
 
 
 @delegate_to(IWebhookJob)
-class WebhookJobDerived(
-        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
+class WebhookJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def __init__(self, webhook_job):
         self.context = webhook_job

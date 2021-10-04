@@ -113,8 +113,7 @@ class TranslationSharingJob(StormBase):
 
 
 @delegate_to(ITranslationSharingJob)
-class TranslationSharingJobDerived(
-        six.with_metaclass(EnumeratedSubclass, object)):
+class TranslationSharingJobDerived(metaclass=EnumeratedSubclass):
     """Base class for specialized TranslationTemplate Job types."""
 
     def getDBClass(self):
