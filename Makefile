@@ -25,7 +25,7 @@ PIP_NO_INDEX := 1
 PIP_ENV += PIP_NO_INDEX=$(PIP_NO_INDEX)
 PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheels/ file://$(WD)/download-cache/dist/"
 
-VIRTUALENV := $(PIP_ENV) virtualenv
+VIRTUALENV := $(PIP_ENV) /usr/bin/virtualenv
 PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
 
 VENV_PYTHON := env/bin/$(PYTHON)
