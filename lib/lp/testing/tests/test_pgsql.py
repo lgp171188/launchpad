@@ -59,11 +59,11 @@ class TestPgTestSetup(testtools.TestCase, TestWithFixtures):
         self.addCleanup(fixture.dropDb)
         self.addCleanup(fixture.tearDown)
         expected_value = 'dbname=%s' % fixture.dbname
-        self.assertEqual(expected_value, dbconfig.rw_main_master)
-        self.assertEqual(expected_value, dbconfig.rw_main_slave)
+        self.assertEqual(expected_value, dbconfig.rw_main_primary)
+        self.assertEqual(expected_value, dbconfig.rw_main_standby)
         with ConfigUseFixture(BaseLayer.appserver_config_name):
-            self.assertEqual(expected_value, dbconfig.rw_main_master)
-            self.assertEqual(expected_value, dbconfig.rw_main_slave)
+            self.assertEqual(expected_value, dbconfig.rw_main_primary)
+            self.assertEqual(expected_value, dbconfig.rw_main_standby)
 
 
 class TestPgTestSetupTuning(testtools.TestCase, TestWithFixtures):

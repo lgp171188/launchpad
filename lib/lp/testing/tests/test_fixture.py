@@ -224,7 +224,7 @@ class TestPGBouncerFixtureWithoutCA(TestCase):
 
     def is_db_available(self):
         # Direct connection to the DB.
-        con_str = dbconfig.rw_main_master + ' user=launchpad_main'
+        con_str = dbconfig.rw_main_primary + ' user=launchpad_main'
         try:
             con = psycopg2.connect(con_str)
             cur = con.cursor()
@@ -333,7 +333,7 @@ class TestDisableTriggerFixture(TestCase):
 
     def setUp(self):
         super(TestDisableTriggerFixture, self).setUp()
-        con_str = dbconfig.rw_main_master + ' user=launchpad_main'
+        con_str = dbconfig.rw_main_primary + ' user=launchpad_main'
         con = psycopg2.connect(con_str)
         con.set_isolation_level(0)
         self.cursor = con.cursor()
