@@ -572,10 +572,10 @@ def connect_string(user=None, dbname=None):
     Allows you to pass the generated connection details to external
     programs like pg_dump or embed in slonik scripts.
     """
-    # We must connect to the read-write DB here, so we use rw_main_master
+    # We must connect to the read-write DB here, so we use rw_main_primary
     # directly.
     from lp.services.database.postgresql import ConnectionString
-    con_str = ConnectionString(dbconfig.rw_main_master)
+    con_str = ConnectionString(dbconfig.rw_main_primary)
     if user is not None:
         con_str.user = user
     if dbname is not None:

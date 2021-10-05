@@ -18,7 +18,7 @@ configuration).
     >>> from lp.services.config import config
     >>> from lp.testing.layers import DatabaseLayer
     >>> expected = 'dbname=%s' % DatabaseLayer._db_fixture.dbname
-    >>> expected == config.database.rw_main_master
+    >>> expected == config.database.rw_main_primary
     True
 
     >>> config.database.db_statement_timeout is None

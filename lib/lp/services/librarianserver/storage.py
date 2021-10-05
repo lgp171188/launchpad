@@ -248,7 +248,7 @@ class LibraryFileUpload(object):
                 # due to pgbouncer database aliases. Lets check both,
                 # and succeed if either matches.
                 config_dbname = ConnectionString(
-                    dbconfig.rw_main_master).dbname
+                    dbconfig.rw_main_primary).dbname
 
                 store = getUtility(IStoreSelector).get(
                     MAIN_STORE, DEFAULT_FLAVOR)

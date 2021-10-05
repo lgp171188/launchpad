@@ -104,7 +104,7 @@ Number of 404s
 --------------
 
 Note that retries is incremented too. As per the standard Launchpad
-database policy, this request first uses the slave DB. The requested
+database policy, this request first uses the standby DB. The requested
 information is not found in there, so a retry is attempted against the
 master DB in case the information is missing due to replication lag.
 
@@ -309,8 +309,8 @@ to somewhere that doesn't exist.
 
     >>> no_db_overrides = """
     ...     [database]
-    ...     rw_main_master: dbname=nonexistant
-    ...     rw_main_slave: dbname=nonexistant
+    ...     rw_main_primary: dbname=nonexistant
+    ...     rw_main_standby: dbname=nonexistant
     ...
     ...     [launchpad_session]
     ...     dbname: nonexistant

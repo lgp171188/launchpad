@@ -297,23 +297,33 @@ class DatabaseConfig:
     _config_section = None
     _db_config_attrs = frozenset([
         'dbuser',
-        'rw_main_master', 'rw_main_slave',
+        'rw_main_primary', 'rw_main_standby',
         'db_statement_timeout', 'db_statement_timeout_precision',
         'isolation_level', 'soft_request_timeout',
         'storm_cache', 'storm_cache_size'])
     _db_config_required_attrs = frozenset([
-        'dbuser', 'rw_main_master', 'rw_main_slave'])
+        'dbuser', 'rw_main_primary', 'rw_main_standby'])
 
     def __init__(self):
         self.reset()
 
     @property
-    def main_master(self):
-        return self.rw_main_master
+    def main_primary(self):
+        return self.rw_main_primary
 
     @cachedproperty
+    def main_standby(self):
+        return random.choice(self.rw_main_standby.split(','))
+
+    # XXX cjwatson 2021-10-01: Remove these once Launchpad's store flavors
+    # have been renamed.
+    @property
+    def main_master(self):
+        return self.main_primary
+
+    @property
     def main_slave(self):
-        return random.choice(self.rw_main_slave.split(','))
+        return self.main_standby
 
     def override(self, **kwargs):
         """Override one or more config attributes.
@@ -328,12 +338,12 @@ class DatabaseConfig:
                     delattr(self.overrides, attr)
             else:
                 setattr(self.overrides, attr, value)
-                if attr == 'rw_main_slave':
-                    del get_property_cache(self).main_slave
+                if attr == 'rw_main_standby':
+                    del get_property_cache(self).main_standby
 
     def reset(self):
         self.overrides = DatabaseConfigOverrides()
-        del get_property_cache(self).main_slave
+        del get_property_cache(self).main_standby
 
     def _getConfigSections(self):
         """Returns a list of sections to search for database configuration.
@@ -351,6 +361,16 @@ class DatabaseConfig:
             raise AttributeError(name)
         value = None
         for section in sections:
+            # XXX cjwatson 2021-10-01: Remove this once production configs
+            # have been updated to the new name.
+            if name == 'rw_main_primary':
+                value = getattr(section, 'rw_main_master', None)
+                if value is not None:
+                    break
+            elif name == 'rw_main_standby':
+                value = getattr(section, 'rw_main_slave', None)
+                if value is not None:
+                    break
             value = getattr(section, name, None)
             if value is not None:
                 break

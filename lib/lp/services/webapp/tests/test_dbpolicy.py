@@ -252,13 +252,13 @@ class MasterFallbackTestCase(TestCase):
         # Generate a db connection string that will go via pgbouncer.
         conn_str_pgbouncer = 'dbname=%s host=localhost' % dbname
 
-        # Configure slave connections via pgbouncer, so we can shut them
-        # down. Master connections direct so they are unaffected.
-        config_key = 'master-slave-separation'
+        # Configure standby connections via pgbouncer, so we can shut them
+        # down. Primary connections direct so they are unaffected.
+        config_key = 'primary-standby-separation'
         config.push(config_key, dedent('''\
             [database]
-            rw_main_master: %s
-            rw_main_slave: %s
+            rw_main_primary: %s
+            rw_main_standby: %s
             ''' % (conn_str_direct, conn_str_pgbouncer)))
         self.addCleanup(lambda: config.pop(config_key))
 
@@ -358,21 +358,21 @@ class TestFastDowntimeRollout(TestCase):
     def setUp(self):
         super(TestFastDowntimeRollout, self).setUp()
 
-        self.master_dbname = DatabaseLayer._db_fixture.dbname
-        self.slave_dbname = self.master_dbname + '_slave'
+        self.primary_dbname = DatabaseLayer._db_fixture.dbname
+        self.standby_dbname = self.primary_dbname + '_standby'
 
         self.pgbouncer_fixture = PGBouncerFixture()
-        self.pgbouncer_fixture.databases[self.slave_dbname] = (
-            self.pgbouncer_fixture.databases[self.master_dbname])
+        self.pgbouncer_fixture.databases[self.standby_dbname] = (
+            self.pgbouncer_fixture.databases[self.primary_dbname])
 
-        # Configure master and slave connections to go via different
+        # Configure primary and standby connections to go via different
         # pgbouncer aliases.
-        config_key = 'master-slave-separation'
+        config_key = 'primary-standby-separation'
         config.push(config_key, dedent('''\
             [database]
-            rw_main_master: dbname=%s host=localhost
-            rw_main_slave: dbname=%s host=localhost
-            ''' % (self.master_dbname, self.slave_dbname)))
+            rw_main_primary: dbname=%s host=localhost
+            rw_main_standby: dbname=%s host=localhost
+            ''' % (self.primary_dbname, self.standby_dbname)))
         self.addCleanup(lambda: config.pop(config_key))
 
         self.useFixture(self.pgbouncer_fixture)
@@ -413,21 +413,21 @@ class TestFastDowntimeRollout(TestCase):
 
         # All connections to the master are killed so database schema
         # updates can be applied.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.master_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.master_dbname)
+        self.pgbouncer_cur.execute('DISABLE %s' % self.primary_dbname)
+        self.pgbouncer_cur.execute('KILL %s' % self.primary_dbname)
 
         # Of course, slave connections are unaffected.
         self.assertTrue(self.store_is_working(store))
 
         # After schema updates have been made to the master, it is
         # reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.master_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.master_dbname)
+        self.pgbouncer_cur.execute('RESUME %s' % self.primary_dbname)
+        self.pgbouncer_cur.execute('ENABLE %s' % self.primary_dbname)
 
         # And the slaves taken down, and replication reenabled so the
         # schema updates can replicate.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.slave_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.slave_dbname)
+        self.pgbouncer_cur.execute('DISABLE %s' % self.standby_dbname)
+        self.pgbouncer_cur.execute('KILL %s' % self.standby_dbname)
 
         # The next attempt at accessing the slave store will fail
         # with a DisconnectionError.
@@ -460,8 +460,8 @@ class TestFastDowntimeRollout(TestCase):
         transaction.abort()
 
         # Once replication has caught up, the slave is reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.slave_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.slave_dbname)
+        self.pgbouncer_cur.execute('RESUME %s' % self.standby_dbname)
+        self.pgbouncer_cur.execute('ENABLE %s' % self.standby_dbname)
 
         # And next transaction, we are back to normal.
         store = ISlaveStore(Person)
@@ -488,8 +488,8 @@ class TestFastDowntimeRollout(TestCase):
 
         # All connections to the master are killed so database schema
         # updates can be applied.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.master_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.master_dbname)
+        self.pgbouncer_cur.execute('DISABLE %s' % self.primary_dbname)
+        self.pgbouncer_cur.execute('KILL %s' % self.primary_dbname)
 
         # Of course, slave connections are unaffected.
         self.assertTrue(self.store_is_working(slave_store))
@@ -500,13 +500,13 @@ class TestFastDowntimeRollout(TestCase):
 
         # After schema updates have been made to the master, it is
         # reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.master_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.master_dbname)
+        self.pgbouncer_cur.execute('RESUME %s' % self.primary_dbname)
+        self.pgbouncer_cur.execute('ENABLE %s' % self.primary_dbname)
 
         # And the slaves taken down, and replication reenabled so the
         # schema updates can replicate.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.slave_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.slave_dbname)
+        self.pgbouncer_cur.execute('DISABLE %s' % self.standby_dbname)
+        self.pgbouncer_cur.execute('KILL %s' % self.standby_dbname)
 
         # The master store is working again.
         master_store = IMasterStore(Person)
@@ -529,8 +529,8 @@ class TestFastDowntimeRollout(TestCase):
         self.assertTrue(self.store_is_working(slave_store))
 
         # Once replication has caught up, the slave is reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.slave_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.slave_dbname)
+        self.pgbouncer_cur.execute('RESUME %s' % self.standby_dbname)
+        self.pgbouncer_cur.execute('ENABLE %s' % self.standby_dbname)
 
         # And next transaction, we are back to normal.
         transaction.abort()
