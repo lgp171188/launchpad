@@ -189,6 +189,7 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.registry.interfaces.wikiname import IWikiName
 from lp.registry.model.person import Person
+from lp.services.auth.interfaces import IAccessToken
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.identity.interfaces.account import IAccount
@@ -494,6 +495,24 @@ class EditOAuthAccessToken(AuthorizationBase):
 class EditOAuthRequestToken(EditOAuthAccessToken):
     permission = 'launchpad.Edit'
     usedfor = IOAuthRequestToken
+
+
+class EditAccessToken(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IAccessToken
+
+    def checkAuthenticated(self, user):
+        if user.inTeam(self.obj.owner):
+            return True
+        # Being able to edit the token doesn't allow extracting the secret,
+        # so it's OK to allow the owner of the context to do so too.  This
+        # allows context owners to exercise some control over access to
+        # their object.
+        adapter = queryAdapter(
+            self.obj.context, IAuthorization, 'launchpad.Edit')
+        if adapter is not None and adapter.checkAuthenticated(user):
+            return True
+        return False
 
 
 class EditByOwnersOrAdmins(AuthorizationBase):

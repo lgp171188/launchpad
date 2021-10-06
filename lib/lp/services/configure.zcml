@@ -4,6 +4,7 @@
 
 <configure xmlns="http://namespaces.zope.org/zope">
   <include package=".webapp" />
+  <include package=".auth" />
   <include package=".authserver" />
   <include package=".comments" />
   <include package=".database" />
