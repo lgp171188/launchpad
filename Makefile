@@ -25,7 +25,7 @@ PIP_NO_INDEX := 1
 PIP_ENV += PIP_NO_INDEX=$(PIP_NO_INDEX)
 PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheels/ file://$(WD)/download-cache/dist/"
 
-VIRTUALENV := $(PIP_ENV) virtualenv
+VIRTUALENV := $(PIP_ENV) /usr/bin/virtualenv
 PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
 
 VENV_PYTHON := env/bin/$(PYTHON)
@@ -474,7 +474,7 @@ copy-certificates:
 copy-apache-config: codehosting-dir
 	# Byte-compile scripts/_pythonpath.py first, otherwise Apache may do
 	# so as root and cause permission problems.
-	$(PY) -m py_compile scripts/_pythonpath.py
+	$(PYTHON) -m py_compile scripts/_pythonpath.py
 	# We insert the absolute path to the branch-rewrite script
 	# into the Apache config as we copy the file into position.
 	set -e; \
