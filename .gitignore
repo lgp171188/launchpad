@@ -3,7 +3,6 @@
 version-info.py
 logs/*
 +*
-sourcecode/*
 /botmaster
 /tags
 database/replication/lpslon_*.log
