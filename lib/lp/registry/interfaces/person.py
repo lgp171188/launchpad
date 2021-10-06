@@ -1648,7 +1648,7 @@ class IPersonEditRestricted(Interface):
             team.
 
         :param comment: String that will be assigned to the
-            proponent_comment, reviwer_comment, or acknowledger comment.
+            proponent_comment, reviewer_comment, or acknowledger comment.
 
         :param status: `TeamMembershipStatus` value must be either
             Approved, Proposed or Admin.
