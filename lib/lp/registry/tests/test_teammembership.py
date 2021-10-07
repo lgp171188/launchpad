@@ -224,7 +224,13 @@ class TestTeamMembershipSet(TestCaseWithFactory):
             sample_person_on_ubuntu_dev.status, TeamMembershipStatus.APPROVED)
         self.assertEqual(
             sample_person_on_motu.status, TeamMembershipStatus.APPROVED)
-        self.membershipset.handleMembershipsExpiringToday(foobar)
+        logger = BufferLogger()
+        self.membershipset.handleMembershipsExpiringToday(foobar, logger)
+        self.assertEqual(
+            'INFO The membership for name12 in team ubuntu-dev has expired.\n'
+            'INFO The membership for name12 in team motu has expired.\n',
+            logger.getLogBuffer()
+        )
         flush_database_caches()
 
         # Now Sample Person is not direct nor indirect member of ubuntu-dev
