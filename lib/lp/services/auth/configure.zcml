@@ -1,0 +1,26 @@
+<!-- Copyright 2021 Canonical Ltd.  This software is licensed under the
+     GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="launchpad">
+
+    <class class="lp.services.auth.model.AccessToken">
+        <require
+            permission="launchpad.Edit"
+            interface="lp.services.auth.interfaces.IAccessToken"
+            set_schema="lp.services.auth.interfaces.IAccessToken" />
+    </class>
+
+    <class class="lp.services.auth.model.AccessTokenSet">
+        <allow interface="lp.services.auth.interfaces.IAccessTokenSet" />
+    </class>
+
+    <securedutility
+        class="lp.services.auth.model.AccessTokenSet"
+        provides="lp.services.auth.interfaces.IAccessTokenSet">
+        <allow interface="lp.services.auth.interfaces.IAccessTokenSet" />
+    </securedutility>
+</configure>

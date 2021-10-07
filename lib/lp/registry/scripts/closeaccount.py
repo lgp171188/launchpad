@@ -98,6 +98,8 @@ def close_account(username, log):
         # we no longer identify the actor.
         ('accessartifactgrant', 'grantor'),
         ('accesspolicygrant', 'grantor'),
+        ('accesstoken', 'owner'),
+        ('accesstoken', 'revoked_by'),
         ('binarypackagepublishinghistory', 'removed_by'),
         ('branch', 'registrant'),
         ('branchmergeproposal', 'merge_reporter'),

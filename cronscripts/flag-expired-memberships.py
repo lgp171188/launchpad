@@ -39,7 +39,7 @@ class ExpireMemberships(LaunchpadCronScript):
         membershipset = getUtility(ITeamMembershipSet)
         self.txn.begin()
         reviewer = getUtility(ILaunchpadCelebrities).janitor
-        membershipset.handleMembershipsExpiringToday(reviewer)
+        membershipset.handleMembershipsExpiringToday(reviewer, self.logger)
         self.txn.commit()
 
         min_date_for_warning = datetime.now(pytz.timezone('UTC')) + timedelta(

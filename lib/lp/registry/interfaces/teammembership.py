@@ -258,7 +258,7 @@ class ITeamMembership(Interface):
 class ITeamMembershipSet(Interface):
     """A Set for TeamMembership objects."""
 
-    def handleMembershipsExpiringToday(reviewer):
+    def handleMembershipsExpiringToday(reviewer, logger=None):
         """Expire or renew the memberships flagged to expire today.
 
         If the team's renewal policy is AUTOMATIC, renew the membership

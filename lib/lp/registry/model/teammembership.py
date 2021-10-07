@@ -315,11 +315,16 @@ class TeamMembershipSet:
 
         return tm
 
-    def handleMembershipsExpiringToday(self, reviewer):
+    def handleMembershipsExpiringToday(self, reviewer, logger=None):
         """See `ITeamMembershipSet`."""
         memberships = self.getMembershipsToExpire()
         for membership in memberships:
             membership.setStatus(TeamMembershipStatus.EXPIRED, reviewer)
+            if logger is not None:
+                logger.info(
+                    'The membership for %s in team %s has expired.' %
+                    (membership.person.name, membership.team.name)
+                )
 
     def getByPersonAndTeam(self, person, team):
         """See `ITeamMembershipSet`."""

@@ -242,6 +242,8 @@ from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.karma import KarmaTotalCache
 from lp.registry.model.milestone import Milestone
 from lp.registry.model.suitesourcepackage import SuiteSourcePackage
+from lp.services.auth.interfaces import IAccessTokenSet
+from lp.services.auth.utils import create_access_token_secret
 from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.database.constants import (
@@ -4515,6 +4517,27 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         request_token = self.makeOAuthRequestToken(
             consumer, reviewed_by=owner, access_level=access_level)
         return request_token.createAccessToken()
+
+    def makeAccessToken(self, secret=None, owner=None, description=None,
+                        context=None, scopes=None):
+        """Create a personal access token.
+
+        :return: A tuple of the secret for the new token and the token
+            itself.
+        """
+        if secret is None:
+            secret = create_access_token_secret()
+        if owner is None:
+            owner = self.makePerson()
+        if description is None:
+            description = self.getUniqueUnicode()
+        if context is None:
+            context = self.makeGitRepository()
+        if scopes is None:
+            scopes = []
+        token = getUtility(IAccessTokenSet).new(
+            secret, owner, description, context, scopes)
+        return secret, token
 
     def makeCVE(self, sequence, description=None,
                 cvestate=CveStatus.CANDIDATE):
