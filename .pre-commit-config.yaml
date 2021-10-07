@@ -19,6 +19,8 @@ repos:
             lib/lp/bugs/tests/testfiles/unescaped_control_character.xml
           )$
     -   id: check-yaml
+    -   id: debug-statements
+        exclude: systemdocs\.py
     -   id: no-commit-to-branch
         args: [--branch, master, --branch, db-devel]
 -   repo: https://github.com/PyCQA/flake8
