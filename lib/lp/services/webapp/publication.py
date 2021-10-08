@@ -70,6 +70,7 @@ from lp.registry.interfaces.person import (
     ITeam,
     )
 from lp.services import features
+from lp.services.auth.interfaces import IAccessTokenVerifiedRequest
 from lp.services.config import config
 from lp.services.database.interfaces import (
     IDatabasePolicy,
@@ -117,13 +118,13 @@ def maybe_block_offsite_form_post(request):
     if request.method != 'POST':
         return
     if (IOAuthSignedRequest.providedBy(request)
-        or not IBrowserRequest.providedBy(request)):
-        # We only want to check for the referrer header if we are
-        # in the middle of a request initiated by a web browser. A
-        # request to the web service (which is necessarily
-        # OAuth-signed) or a request that does not implement
-        # IBrowserRequest (such as an XML-RPC request) can do
-        # without a Referer.
+            or IAccessTokenVerifiedRequest.providedBy(request)
+            or not IBrowserRequest.providedBy(request)):
+        # We only want to check for the referrer header if we are in the
+        # middle of a request initiated by a web browser. A request to the
+        # web service (which is necessarily OAuth-signed or verified by an
+        # access token) or a request that does not implement IBrowserRequest
+        # (such as an XML-RPC request) can do without a Referer.
         return
     if request['PATH_INFO'] in OFFSITE_POST_WHITELIST:
         # XXX: jamesh 2007-11-23 bug=124421:

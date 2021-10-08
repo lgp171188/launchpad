@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests publication.py"""
@@ -28,6 +28,7 @@ from zope.security.management import (
     thread_local as zope_security_thread_local,
     )
 
+from lp.services.auth.interfaces import IAccessTokenVerifiedRequest
 from lp.services.database.interfaces import IMasterStore
 from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.oauth.interfaces import (
@@ -124,7 +125,7 @@ class TestWebServicePublication(TestCaseWithFactory):
         person = self.factory.makePerson()
         self.assertNotEqual(person.id, person.account.id)
 
-        # Create an access token for our new person.
+        # Create an OAuth access token for our new person.
         consumer = getUtility(IOAuthConsumerSet).new(u'test-consumer')
         request_token, _ = consumer.newRequestToken()
         request_token.review(
@@ -241,6 +242,14 @@ class TestBlockingOffsitePosts(TestCase):
         request = LaunchpadTestRequest(
             method='POST', environ=dict(PATH_INFO='/'))
         directlyProvides(request, IOAuthSignedRequest)
+        # this call shouldn't raise an exception
+        maybe_block_offsite_form_post(request)
+
+    def test_access_token_verified_requests(self):
+        # Requests that are verified with an access token are allowed.
+        request = LaunchpadTestRequest(
+            method='POST', environ=dict(PATH_INFO='/'))
+        directlyProvides(request, IAccessTokenVerifiedRequest)
         # this call shouldn't raise an exception
         maybe_block_offsite_form_post(request)
 

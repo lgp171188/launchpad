@@ -57,6 +57,10 @@ from zope.session.interfaces import ISession
 from lp.app import versioninfo
 from lp.app.errors import UnexpectedFormData
 import lp.layers
+from lp.services.auth.interfaces import (
+    IAccessTokenSet,
+    IAccessTokenVerifiedRequest,
+    )
 from lp.services.config import config
 from lp.services.encoding import wsgi_native_string
 from lp.services.features import get_relevant_feature_controller
@@ -80,6 +84,7 @@ from lp.services.webapp.authorization import (
     LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY,
     )
 from lp.services.webapp.errorlog import ErrorReportRequest
+from lp.services.webapp.interaction import get_interaction_extras
 from lp.services.webapp.interfaces import (
     IBasicLaunchpadRequest,
     IBrowserFormNG,
@@ -1190,6 +1195,29 @@ class WebServicePublication(WebServicePublicationMixin,
         web_service_config = getUtility(IWebServiceConfiguration)
         if request_path.startswith("/%s" % web_service_config.path_override):
             return super(WebServicePublication, self).getPrincipal(request)
+
+        if request._auth is not None and request._auth.startswith("Token "):
+            access_token = removeSecurityProxy(
+                getUtility(IAccessTokenSet).getBySecret(
+                    request._auth[len("Token "):]))
+            if access_token is None:
+                raise TokenException("Unknown access token.")
+            elif access_token.is_expired:
+                raise TokenException("Expired access token.")
+            elif access_token.owner.account_status != AccountStatus.ACTIVE:
+                raise TokenException("Inactive account.")
+            access_token.updateLastUsed()
+            # GET requests will be rolled back, as will unsuccessful ones.
+            # Commit so that the last-used date is updated anyway.
+            transaction.commit()
+            logging_context.push(
+                access_token_id=access_token.id,
+                access_token_scopes=" ".join(
+                    scope.title for scope in access_token.scopes))
+            alsoProvides(request, IAccessTokenVerifiedRequest)
+            get_interaction_extras().access_token = access_token
+            return getUtility(IPlacelessLoginSource).getPrincipal(
+                access_token.owner.accountID)
 
         # Fetch OAuth authorization information from the request.
         try:

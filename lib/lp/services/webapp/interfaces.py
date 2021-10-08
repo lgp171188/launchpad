@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import logging
@@ -349,6 +349,9 @@ class IInteractionExtras(Interface):
         because this can trigger nested db lookups.  See the docstring of
         `lp.services.webapp.servers.set_permit_timeout_from_features`
         for more.""")
+
+    access_token = Attribute(
+        "The `IAccessToken` used to authenticate this interaction, if any.")
 
 
 #

@@ -1,6 +1,10 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from datetime import (
+    datetime,
+    timedelta,
+    )
 from doctest import (
     DocTestSuite,
     ELLIPSIS,
@@ -19,8 +23,14 @@ from lazr.restful.testing.webservice import (
     IGenericEntry,
     WebServiceTestCase,
     )
+import pytz
 from talisker.context import Context
 from talisker.logs import logging_context
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    )
+import transaction
 from zope.component import (
     getGlobalSiteManager,
     getUtility,
@@ -29,8 +39,15 @@ from zope.interface import (
     implementer,
     Interface,
     )
+from zope.security.interfaces import Unauthorized
+from zope.security.management import newInteraction
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app import versioninfo
+from lp.services.auth.enums import AccessTokenScope
+from lp.services.identity.interfaces.account import AccountStatus
+from lp.services.oauth.interfaces import TokenException
+from lp.services.webapp.interaction import get_interaction_extras
 from lp.services.webapp.interfaces import IFinishReadOnlyRequestEvent
 from lp.services.webapp.publication import LaunchpadBrowserPublication
 from lp.services.webapp.servers import (
@@ -50,9 +67,16 @@ from lp.services.webapp.servers import (
     )
 from lp.testing import (
     EventRecorder,
+    logout,
+    person_logged_in,
     TestCase,
+    TestCaseWithFactory,
     )
-from lp.testing.layers import FunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    FunctionalLayer,
+    )
+from lp.testing.publication import get_request_and_publication
 
 
 class SetInWSGIEnvironmentTestCase(TestCase):
@@ -779,6 +803,138 @@ class TestFinishReadOnlyRequest(TestCase):
         # IFinishReadOnlyRequestEvent and aborts the transaction.
         publication = LaunchpadBrowserPublication(None)
         self._test_publication(publication, ["ABORT"])
+
+
+class TestWebServiceAccessTokens(TestCaseWithFactory):
+    """Test personal access tokens for the webservice.
+
+    These are bearer tokens with an owner, a context, and some scopes.  We
+    can authenticate using one of these, and it will be recorded in the
+    interaction extras.
+    """
+
+    layer = DatabaseFunctionalLayer
+
+    def test_valid(self):
+        owner = self.factory.makePerson()
+        secret, token = self.factory.makeAccessToken(
+            owner=owner, scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+        self.assertIsNone(removeSecurityProxy(token).date_last_used)
+        transaction.commit()
+        logout()
+
+        request, publication = get_request_and_publication(
+            "api.launchpad.test", "POST",
+            extra_environment={"HTTP_AUTHORIZATION": "Token %s" % secret})
+        newInteraction(request)
+        principal = publication.getPrincipal(request)
+        request.setPrincipal(principal)
+        self.assertEqual(owner, principal.person)
+        self.assertEqual(token, get_interaction_extras().access_token)
+        self.assertIsNotNone(token.date_last_used)
+        self.assertThat(logging_context.flat, ContainsDict({
+            "access_token_id": Equals(removeSecurityProxy(token).id),
+            "access_token_scopes": Equals("repository:build_status"),
+            }))
+
+        # token.date_last_used is still up to date even if the transaction
+        # is rolled back.
+        date_last_used = token.date_last_used
+        transaction.abort()
+        self.assertEqual(date_last_used, token.date_last_used)
+
+    def test_expired(self):
+        owner = self.factory.makePerson()
+        secret, token = self.factory.makeAccessToken(owner=owner)
+        with person_logged_in(owner):
+            token.date_expires = datetime.now(pytz.UTC) - timedelta(days=1)
+        transaction.commit()
+
+        request, publication = get_request_and_publication(
+            "api.launchpad.test", "POST",
+            extra_environment={"HTTP_AUTHORIZATION": "Token %s" % secret})
+        self.assertRaisesWithContent(
+            TokenException, "Expired access token.",
+            publication.getPrincipal, request)
+
+    def test_unknown(self):
+        request, publication = get_request_and_publication(
+            "api.launchpad.test", "POST",
+            extra_environment={"HTTP_AUTHORIZATION": "Token nonexistent"})
+        self.assertRaisesWithContent(
+            TokenException, "Unknown access token.",
+            publication.getPrincipal, request)
+
+    def test_inactive_account(self):
+        owner = self.factory.makePerson(account_status=AccountStatus.SUSPENDED)
+        secret, token = self.factory.makeAccessToken(owner=owner)
+        transaction.commit()
+
+        request, publication = get_request_and_publication(
+            "api.launchpad.test", "POST",
+            extra_environment={"HTTP_AUTHORIZATION": "Token %s" % secret})
+        self.assertRaisesWithContent(
+            TokenException, "Inactive account.",
+            publication.getPrincipal, request)
+
+    def _makeAccessTokenVerifiedRequest(self, **kwargs):
+        secret, token = self.factory.makeAccessToken(**kwargs)
+        transaction.commit()
+        logout()
+
+        request, publication = get_request_and_publication(
+            "api.launchpad.test", "POST",
+            extra_environment={"HTTP_AUTHORIZATION": "Token %s" % secret})
+        newInteraction(request)
+        principal = publication.getPrincipal(request)
+        request.setPrincipal(principal)
+
+    def test_checkRequest_valid(self):
+        repository = self.factory.makeGitRepository()
+        self._makeAccessTokenVerifiedRequest(
+            context=repository,
+            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+        getUtility(IWebServiceConfiguration).checkRequest(
+            repository,
+            ["repository:build_status", "repository:another_scope"])
+
+    def test_checkRequest_bad_context(self):
+        repository = self.factory.makeGitRepository()
+        self._makeAccessTokenVerifiedRequest(
+            context=repository,
+            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+        self.assertRaisesWithContent(
+            Unauthorized,
+            "Current authentication does not allow access to this object.",
+            getUtility(IWebServiceConfiguration).checkRequest,
+            self.factory.makeGitRepository(), ["repository:build_status"])
+
+    def test_checkRequest_unscoped_method(self):
+        repository = self.factory.makeGitRepository()
+        self._makeAccessTokenVerifiedRequest(
+            context=repository,
+            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+        self.assertRaisesWithContent(
+            Unauthorized,
+            "Current authentication only allows calling scoped methods.",
+            getUtility(IWebServiceConfiguration).checkRequest,
+            repository, None)
+
+    def test_checkRequest_wrong_scope(self):
+        repository = self.factory.makeGitRepository()
+        self._makeAccessTokenVerifiedRequest(
+            context=repository,
+            scopes=[
+                AccessTokenScope.REPOSITORY_BUILD_STATUS,
+                AccessTokenScope.REPOSITORY_PUSH,
+                ])
+        self.assertRaisesWithContent(
+            Unauthorized,
+            "Current authentication does not allow calling this method "
+            "(one of these scopes is required: "
+            "'repository:scope_1', 'repository:scope_2').",
+            getUtility(IWebServiceConfiguration).checkRequest,
+            repository, ["repository:scope_1", "repository:scope_2"])
 
 
 def test_suite():

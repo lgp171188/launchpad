@@ -1129,7 +1129,7 @@ The feeds implementation always returns the anonymous user.
     True
 
 The webservice implementation returns the principal for the person
-associated with the access token specified in the request.  The
+associated with the OAuth access token specified in the request.  The
 principal's access_level and scope will match what was specified in the
 token.
 
