@@ -105,9 +105,9 @@ class BuildFarmJobBehaviourBase:
     def composeBuildRequest(self, logger):
         args = yield self.extraBuildArgs(logger=logger)
         filemap = yield self.determineFilesToSend()
-        defer.returnValue(
-            (self.builder_type, self.distro_arch_series, self.pocket,
-             filemap, args))
+        return (
+            self.builder_type, self.distro_arch_series, self.pocket,
+            filemap, args)
 
     def verifyBuildRequest(self, logger):
         """The default behaviour is a no-op."""
@@ -347,7 +347,7 @@ class BuildFarmJobBehaviourBase:
         if build.job_type == BuildFarmJobType.PACKAGEBUILD:
             build = build.buildqueue_record.specific_build
             if not build.current_source_publication:
-                defer.returnValue(BuildStatus.SUPERSEDED)
+                return BuildStatus.SUPERSEDED
 
         self.verifySuccessfulBuild()
 
@@ -383,4 +383,4 @@ class BuildFarmJobBehaviourBase:
             os.mkdir(target_dir)
         os.rename(grab_dir, os.path.join(target_dir, upload_leaf))
 
-        defer.returnValue(BuildStatus.UPLOADING)
+        return BuildStatus.UPLOADING

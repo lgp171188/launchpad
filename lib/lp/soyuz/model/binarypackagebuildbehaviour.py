@@ -89,7 +89,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
                     'url': urlappend(pool_url, lfa.filename),
                     'username': 'buildd',
                     'password': macaroon_raw}
-        defer.returnValue(filemap)
+        return filemap
 
     def verifyBuildRequest(self, logger):
         """Assert some pre-build checks.
@@ -180,4 +180,4 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
                 self, das, build.source_package_release.name, logger=logger))
         args['build_debug_symbols'] = build.archive.build_debug_symbols
 
-        defer.returnValue(args)
+        return args

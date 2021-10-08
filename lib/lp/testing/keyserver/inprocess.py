@@ -67,8 +67,7 @@ class InProcessKeyServerFixture(Fixture):
         # fixtures.callmany.CallMany doesn't support cleanup functions that
         # return Deferred, so we have to do this manually.
         yield self._port.stopListening()
-        defer.returnValue(
-            super(InProcessKeyServerFixture, self).cleanUp(*args, **kwargs))
+        return super(InProcessKeyServerFixture, self).cleanUp(*args, **kwargs)
 
     @property
     def url(self):

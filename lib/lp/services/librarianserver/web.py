@@ -172,7 +172,7 @@ class LibraryFileAliasResource(resource.Resource):
             log.msg(
                 "404: dbfilename.encode('utf-8') != filename: %r != %r"
                 % (dbfilename.encode('utf-8'), filename))
-            defer.returnValue(fourOhFour)
+            return fourOhFour
 
         stream = yield self.storage.open(dbcontentID)
         if stream is not None:
@@ -186,11 +186,10 @@ class LibraryFileAliasResource(resource.Resource):
                 'Cache-Control',
                 'max-age=31536000, public'
                 if not restricted else 'max-age=0, private')
-            defer.returnValue(file)
+            return file
         elif self.upstreamHost is not None:
-            defer.returnValue(
-                proxy.ReverseProxyResource(
-                    self.upstreamHost, self.upstreamPort, request.path))
+            return proxy.ReverseProxyResource(
+                self.upstreamHost, self.upstreamPort, request.path)
         else:
             raise AssertionError(
                 "Content %d missing from storage." % dbcontentID)

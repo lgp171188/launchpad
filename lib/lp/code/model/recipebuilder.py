@@ -94,7 +94,7 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
         args['distroseries_name'] = self.build.distroseries.name
         if self.build.recipe.base_git_repository is not None:
             args['git'] = True
-        defer.returnValue(args)
+        return args
 
     def verifyBuildRequest(self, logger):
         """Assert some pre-build checks.

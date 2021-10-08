@@ -178,7 +178,7 @@ class TestSourcesList(TestCaseWithFactory):
         if publish_binary:
             self.publisher.getPubBinaries(
                 archive=archive, status=PackagePublishingStatus.PUBLISHED)
-        defer.returnValue(archive)
+        return archive
 
     def makeBuild(self, **kwargs):
         pub_source = self.publisher.getPubSource(**kwargs)
