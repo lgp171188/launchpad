@@ -38,6 +38,7 @@ from lp.testing import (
     verifyObject,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.mail_helpers import pop_notifications
 
 
 class TestOAuth(TestCaseWithFactory):
@@ -378,6 +379,18 @@ class TestAccessTokens(TestOAuth):
         login_person(access_token.person)
         access_token.date_expires = self.a_long_time_ago
         self.assertEqual(person.oauth_access_tokens.count(), 0)
+
+    def test_email_notification_message_for_generated_tokens(self):
+        token = self.factory.makeOAuthRequestToken(
+            reviewed_by=self.person,
+        )
+        token.createAccessToken()
+        notifications = pop_notifications()
+
+        expected = (
+            'OAuth token generated for %s in Launchpad' % self.person.name
+        )
+        self.assertEqual(expected, notifications[0]['subject'])
 
 
 class TestHelperFunctions(TestOAuth):
