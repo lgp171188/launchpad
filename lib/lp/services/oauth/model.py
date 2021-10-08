@@ -394,9 +394,12 @@ class OAuthRequestToken(OAuthBase, StormBase):
 
         # We want to notify the user that this oauth token has been generated
         # for them for security reasons.
+        subject = (
+            'OAuth token generated for %s in Launchpad' % self.person.name
+        )
         self.person.security_field_changed(
-            "OAuth token generated in Launchpad",
-            "A new OAuth token consumer was enabled in Launchpad.")
+            subject, 'A new OAuth token consumer was enabled in Launchpad.'
+        )
 
         self._getStore().remove(self)
         return access_token, secret
