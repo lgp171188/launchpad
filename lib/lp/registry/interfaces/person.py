@@ -1742,7 +1742,7 @@ class IPersonEditRestricted(Interface):
         distribution=Reference(schema=Interface, required=False),
         name=TextLine(required=True, constraint=name_validator),
         displayname=TextLine(required=False),
-        description=TextLine(required=False),
+        description=Text(required=False),
         private=Bool(required=False),
         suppress_subscription_notifications=Bool(required=False),
         )

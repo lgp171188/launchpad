@@ -11,12 +11,15 @@ from lp.registry.enums import (
     )
 from lp.registry.errors import PPACreationError
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    api_url,
     celebrity_logged_in,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.pages import webservice_for_person
 
 
 class TestCreatePPA(TestCaseWithFactory):
@@ -68,3 +71,18 @@ class TestCreatePPA(TestCaseWithFactory):
             ppa = private_team.createPPA(private=True)
             self.assertEqual(True, ppa.private)
             self.assertEqual(20480, ppa.authorized_size)
+
+    def test_webservice_accepts_multiline_description(self):
+        user = self.factory.makePerson()
+        endpoint = api_url(user)
+        webservice = webservice_for_person(
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version='devel'
+        )
+
+        response = webservice.named_post(
+            endpoint, 'createPPA', description='a\nb'
+        )
+
+        self.assertEqual(201, response.status)
