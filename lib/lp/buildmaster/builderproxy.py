@@ -74,4 +74,4 @@ class BuilderProxyMixin:
             RequestProxyTokenCommand,
             url=url, auth_header=auth_header,
             proxy_username=proxy_username)
-        defer.returnValue(token)
+        return token

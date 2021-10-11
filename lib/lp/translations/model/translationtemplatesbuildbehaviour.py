@@ -133,4 +133,4 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
             finally:
                 tarball_file.close()
                 os.remove(filename)
-        defer.returnValue(BuildStatus.FULLYBUILT)
+        return BuildStatus.FULLYBUILT

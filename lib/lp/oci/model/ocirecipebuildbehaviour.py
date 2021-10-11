@@ -169,7 +169,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         if build.recipe.git_path != "HEAD":
             args["git_path"] = build.recipe.git_ref.name
 
-        defer.returnValue(args)
+        return args
 
     def _ensureFilePath(self, file_name, file_path, upload_path):
         # If the evaluated output file name is not within our
@@ -187,8 +187,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         yield self._slave.getFile(file_hash, file_path)
 
         with open(file_path, 'r') as file_fp:
-            contents = json.load(file_fp)
-        defer.returnValue(contents)
+            return json.load(file_fp)
 
     def _extractLayerFiles(self, upload_path, section, config, digests, files):
         # These are different sets of ids, in the same order

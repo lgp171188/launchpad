@@ -165,10 +165,9 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         build_log = [
             ('build', build.build_cookie, 'binarypackage',
              chroot.content.sha1, filemap_names, extra_args)]
-        result = MatchesListwise([
+        return MatchesListwise([
             item if hasattr(item, 'match') else Equals(item)
             for item in upload_logs + build_log])
-        defer.returnValue(result)
 
     @defer.inlineCallbacks
     def test_non_virtual_ppa_dispatch(self):
