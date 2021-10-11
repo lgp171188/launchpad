@@ -130,9 +130,8 @@ class LibrarianStorage:
                     headers, chunks = yield deferToThread(
                         swift.quiet_swiftclient, swift_connection.get_object,
                         container, name, resp_chunk_size=self.CHUNK_SIZE)
-                    swift_stream = TxSwiftStream(
+                    return TxSwiftStream(
                         connection_pool, swift_connection, chunks)
-                    defer.returnValue(swift_stream)
                 except swiftclient.ClientException as x:
                     if x.http_status == 404:
                         connection_pool.put(swift_connection)
@@ -151,7 +150,7 @@ class LibrarianStorage:
 
         path = self._fileLocation(fileid)
         if os.path.exists(path):
-            defer.returnValue(open(path, 'rb'))
+            return open(path, 'rb')
 
     def _fileLocation(self, fileid):
         return os.path.join(self.directory, _relFileLocation(str(fileid)))
@@ -170,10 +169,10 @@ class TxSwiftStream(swift.SwiftStream):
             raise ValueError('I/O operation on closed file')
 
         if self._swift_connection is None:
-            defer.returnValue(b'')  # EOF already reached, connection returned.
+            return b''  # EOF already reached, connection returned.
 
         if size == 0:
-            defer.returnValue(b'')
+            return b''
 
         if not self._chunk:
             self._chunk = yield deferToThread(self._next_chunk)
@@ -185,12 +184,12 @@ class TxSwiftStream(swift.SwiftStream):
                     self._connection_pool.put(self._swift_connection)
                     self._swift_connection = None
                 self._chunks = None
-                defer.returnValue(b'')
+                return b''
         return_chunk = self._chunk[:size]
         self._chunk = self._chunk[size:]
 
         self._offset += len(return_chunk)
-        defer.returnValue(return_chunk)
+        return return_chunk
 
 
 class LibraryFileUpload(object):

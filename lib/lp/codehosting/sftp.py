@@ -194,7 +194,7 @@ class TransportSFTPFile:
             # past the end of files, so we don't need to worry too much
             # about performance here.
             chunk = yield self.readChunk(e.offset, e.actual)
-        defer.returnValue(chunk)
+        return chunk
 
     def setAttrs(self, attrs):
         """See `ISFTPFile`.
@@ -314,7 +314,7 @@ class TransportSFTPServer:
         file_list = yield self.transport.list_dir(escaped_path)
         stat_results = yield self._stat_files_in_list(file_list, escaped_path)
         entries = self._format_directory_entries(stat_results, file_list)
-        defer.returnValue(DirectoryListing(entries))
+        return DirectoryListing(entries)
 
     @with_sftp_error
     @defer.inlineCallbacks
@@ -324,8 +324,7 @@ class TransportSFTPServer:
         directory = os.path.dirname(path)
         stat_result = yield self.transport.stat(directory)
         if stat.S_ISDIR(stat_result.st_mode):
-            defer.returnValue(
-                TransportSFTPFile(self.transport, path, flags, self))
+            return TransportSFTPFile(self.transport, path, flags, self)
         else:
             raise filetransfer.SFTPError(
                 filetransfer.FX_NO_SUCH_FILE, directory)
@@ -340,7 +339,7 @@ class TransportSFTPServer:
         relpath = self._decodePath(relpath)
         path = yield self.transport.local_realPath(urlutils.escape(relpath))
         unescaped_path = urlutils.unescape(path)
-        defer.returnValue(unescaped_path.encode('utf-8'))
+        return unescaped_path.encode('utf-8')
 
     def setAttrs(self, path, attrs):
         """See `ISFTPServer`.
@@ -374,7 +373,7 @@ class TransportSFTPServer:
         """
         path = self._decodePath(path)
         stat_result = yield self.transport.stat(urlutils.escape(path))
-        defer.returnValue(self._translate_stat(stat_result))
+        return self._translate_stat(stat_result)
 
     def gotVersion(self, otherVersion, extensionData):
         """See `ISFTPServer`."""

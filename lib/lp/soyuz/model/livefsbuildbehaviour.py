@@ -107,7 +107,7 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         args["archives"], args["trusted_keys"] = (
             yield get_sources_list_for_building(
                 self, build.distro_arch_series, None, logger=logger))
-        defer.returnValue(args)
+        return args
 
     def verifySuccessfulBuild(self):
         """See `IBuildFarmJobBehaviour`."""

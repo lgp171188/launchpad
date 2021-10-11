@@ -325,9 +325,9 @@ def get_sources_list_for_building(behaviour, distroarchseries,
     # binaries that need to override primary binaries of the same
     # version), we want the external dependency lines to show up second:
     # after the archive itself, but before any other dependencies.
-    defer.returnValue(
-        ([sources_list_lines[0]] + external_dep_lines + sources_list_lines[1:],
-         trusted_keys))
+    return (
+        [sources_list_lines[0]] + external_dep_lines + sources_list_lines[1:],
+        trusted_keys)
 
 
 def _has_published_binaries(archive, distroarchseries, pocket):
@@ -358,7 +358,7 @@ def _get_binary_sources_list_line(behaviour, archive, distroarchseries, pocket,
         url = archive.archive_url
 
     suite = distroarchseries.distroseries.name + pocketsuffix[pocket]
-    defer.returnValue('deb %s %s %s' % (url, suite, ' '.join(components)))
+    return 'deb %s %s %s' % (url, suite, ' '.join(components))
 
 
 @defer.inlineCallbacks
@@ -423,8 +423,7 @@ def _get_sources_list_for_dependencies(behaviour, dependencies, logger=None):
                 trusted_keys[fingerprint] = (
                     base64.b64encode(key.export()).decode("ASCII"))
 
-    defer.returnValue(
-        (sources_list_lines, [v for k, v in sorted(trusted_keys.items())]))
+    return (sources_list_lines, [v for k, v in sorted(trusted_keys.items())])
 
 
 def _get_default_primary_dependencies(archive, distro_arch_series, component,

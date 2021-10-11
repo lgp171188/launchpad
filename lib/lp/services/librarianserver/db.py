@@ -76,10 +76,10 @@ class Library:
                     "verifyMacaroon", macaroon.serialize(), "LibraryFileAlias",
                     aliasid),
                 config.librarian.authentication_timeout)
-            defer.returnValue(True)
+            return True
         except Fault as fault:
             if fault.faultCode == faults.Unauthorized.error_code:
-                defer.returnValue(False)
+                return False
             else:
                 raise
 

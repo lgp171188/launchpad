@@ -424,7 +424,7 @@ class BuilderInteractor(object):
                 # apparent reason.  This could be a quirk of the Xen
                 # guest, we're not sure. See bug 586359.
                 yield slave.echo("ping")
-                defer.returnValue(True)
+                return True
             elif vitals.vm_reset_protocol == BuilderResetProtocol.PROTO_2_0:
                 # In protocol 2.0 the reset trigger is asynchronous.
                 # If the trigger succeeds we'll leave the slave in
@@ -437,7 +437,7 @@ class BuilderInteractor(object):
                     transaction.commit()
                     logger = cls._getSlaveScannerLogger()
                     logger.info("%s is being cleaned.", vitals.name)
-                defer.returnValue(False)
+                return False
             raise CannotResumeHost(
                 "Invalid vm_reset_protocol: %r" % vitals.vm_reset_protocol)
         else:
@@ -445,18 +445,18 @@ class BuilderInteractor(object):
             status = slave_status.get('builder_status', None)
             if status == 'BuilderStatus.IDLE':
                 # This is as clean as we can get it.
-                defer.returnValue(True)
+                return True
             elif status == 'BuilderStatus.BUILDING':
                 # Asynchronously abort() the slave and wait until WAITING.
                 yield slave.abort()
-                defer.returnValue(False)
+                return False
             elif status == 'BuilderStatus.ABORTING':
                 # Wait it out until WAITING.
-                defer.returnValue(False)
+                return False
             elif status == 'BuilderStatus.WAITING':
                 # Just a synchronous clean() call and we'll be idle.
                 yield slave.clean()
-                defer.returnValue(True)
+                return True
             raise BuildDaemonError(
                 "Invalid status during clean: %r" % status)
 
@@ -512,7 +512,7 @@ class BuilderInteractor(object):
                     break
         else:
             logger.debug("No build candidates available for builder.")
-            defer.returnValue(None)
+            return None
 
         new_behaviour = cls.getBuildBehaviour(candidate, builder, slave)
         needed_bfjb = type(removeSecurityProxy(
@@ -523,7 +523,7 @@ class BuilderInteractor(object):
                 (new_behaviour, needed_bfjb))
         yield cls._startBuild(
             candidate, vitals, builder, slave, new_behaviour, logger)
-        defer.returnValue(candidate)
+        return candidate
 
     @staticmethod
     def extractBuildStatus(slave_status):

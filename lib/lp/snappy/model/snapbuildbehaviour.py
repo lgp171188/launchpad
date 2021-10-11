@@ -166,7 +166,7 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             # (matching snapd, SAS and snapcraft representation)
             timestamp = format_as_rfc3339(build_request.date_requested)
             args["build_request_timestamp"] = timestamp
-        defer.returnValue(args)
+        return args
 
     def verifySuccessfulBuild(self):
         """See `IBuildFarmJobBehaviour`."""

@@ -4,7 +4,7 @@
 # This file works if the Python has been started with -S, or if bin/py
 # has been used.
 
-import imp
+from importlib.util import find_spec
 import os.path
 import sys
 
@@ -15,7 +15,7 @@ if __name__ == '__main__':
 else:
     # If this is an imported module, we want the location of the .py
     # file, not the .pyc, because the .py file may have been symlinked.
-    filename = imp.find_module(__name__)[1]
+    filename = find_spec(__name__).origin
 # Get the full, non-symbolic-link directory for this file.  This is the
 # project root.
 top = os.path.dirname(os.path.abspath(os.path.realpath(filename)))

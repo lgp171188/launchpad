@@ -98,7 +98,7 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                     build.recipe.owner.name, build.recipe.project.name,
                     build.recipe.name))
         args["private"] = build.is_private
-        defer.returnValue(args)
+        return args
 
     def verifySuccessfulBuild(self):
         """See `IBuildFarmJobBehaviour`."""

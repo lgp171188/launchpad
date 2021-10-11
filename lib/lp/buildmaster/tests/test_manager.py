@@ -321,7 +321,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
                 status = yield super(BrokenUTF8Slave, self).status()
                 status["logtail"] = xmlrpc_client.Binary(
                     u"───".encode("UTF-8")[1:])
-                defer.returnValue(status)
+                return status
 
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         login('foo.bar@canonical.com')
@@ -350,7 +350,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
             def status(self):
                 status = yield super(NULSlave, self).status()
                 status["logtail"] = xmlrpc_client.Binary(b"foo\0bar\0baz")
-                defer.returnValue(status)
+                return status
 
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         login('foo.bar@canonical.com')
@@ -431,7 +431,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
             def status(self):
                 status = yield super(SnapBuildingSlave, self).status()
                 status["revision_id"] = self.revision_id
-                defer.returnValue(status)
+                return status
 
         build = self.factory.makeSnapBuild(
             distroarchseries=self.test_publisher.distroseries.architectures[0])
