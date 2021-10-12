@@ -1176,49 +1176,32 @@ class WebServicePublication(WebServicePublicationMixin,
         else:
             return super(WebServicePublication, self).getResource(request, ob)
 
-    def getPrincipal(self, request):
-        """See `LaunchpadBrowserPublication`.
+    def _getPrincipalFromAccessToken(self, request):
+        """Authenticate a request using a personal access token."""
+        access_token = removeSecurityProxy(
+            getUtility(IAccessTokenSet).getBySecret(
+                request._auth[len("Token "):]))
+        if access_token is None:
+            raise TokenException("Unknown access token.")
+        elif access_token.is_expired:
+            raise TokenException("Expired access token.")
+        elif access_token.owner.account_status != AccountStatus.ACTIVE:
+            raise TokenException("Inactive account.")
+        access_token.updateLastUsed()
+        # GET requests will be rolled back, as will unsuccessful ones.
+        # Commit so that the last-used date is updated anyway.
+        transaction.commit()
+        logging_context.push(
+            access_token_id=access_token.id,
+            access_token_scopes=" ".join(
+                scope.title for scope in access_token.scopes))
+        alsoProvides(request, IAccessTokenVerifiedRequest)
+        get_interaction_extras().access_token = access_token
+        return getUtility(IPlacelessLoginSource).getPrincipal(
+            access_token.owner.accountID)
 
-        Web service requests are authenticated using OAuth, except for the
-        one made using (presumably) JavaScript on the /api override path.
-
-        Raises TokenException which has a webservice error status of
-        Unauthorized - 401.
-
-        Raises Unauthorized directly in the case where the consumer is None
-        for a non-anonymous request as it may represent a server error.
-        """
-        # Use the regular HTTP authentication, when the request is not
-        # on the API virtual host but comes through the path_override on
-        # the other regular virtual hosts.
-        request_path = request.get('PATH_INFO', '')
-        web_service_config = getUtility(IWebServiceConfiguration)
-        if request_path.startswith("/%s" % web_service_config.path_override):
-            return super(WebServicePublication, self).getPrincipal(request)
-
-        if request._auth is not None and request._auth.startswith("Token "):
-            access_token = removeSecurityProxy(
-                getUtility(IAccessTokenSet).getBySecret(
-                    request._auth[len("Token "):]))
-            if access_token is None:
-                raise TokenException("Unknown access token.")
-            elif access_token.is_expired:
-                raise TokenException("Expired access token.")
-            elif access_token.owner.account_status != AccountStatus.ACTIVE:
-                raise TokenException("Inactive account.")
-            access_token.updateLastUsed()
-            # GET requests will be rolled back, as will unsuccessful ones.
-            # Commit so that the last-used date is updated anyway.
-            transaction.commit()
-            logging_context.push(
-                access_token_id=access_token.id,
-                access_token_scopes=" ".join(
-                    scope.title for scope in access_token.scopes))
-            alsoProvides(request, IAccessTokenVerifiedRequest)
-            get_interaction_extras().access_token = access_token
-            return getUtility(IPlacelessLoginSource).getPrincipal(
-                access_token.owner.accountID)
-
+    def _getPrincipalFromOAuth(self, request):
+        """Authenticate a request using OAuth."""
         # Fetch OAuth authorization information from the request.
         try:
             form = get_oauth_authorization(request)
@@ -1287,11 +1270,35 @@ class WebServicePublication(WebServicePublicationMixin,
             scope_url = canonical_url(token.context, force_local_path=True)
         else:
             scope_url = None
-        principal = getUtility(IPlacelessLoginSource).getPrincipal(
+        return getUtility(IPlacelessLoginSource).getPrincipal(
             token.person.account.id, access_level=token.permission,
             scope_url=scope_url)
 
-        return principal
+    def getPrincipal(self, request):
+        """See `LaunchpadBrowserPublication`.
+
+        Web service requests are authenticated using OAuth or personal
+        access tokens, except for the one made using (presumably) JavaScript
+        on the /api override path.
+
+        Raises TokenException which has a webservice error status of
+        Unauthorized - 401.
+
+        Raises Unauthorized directly in the case where the consumer is None
+        for a non-anonymous request as it may represent a server error.
+        """
+        # Use the regular HTTP authentication, when the request is not
+        # on the API virtual host but comes through the path_override on
+        # the other regular virtual hosts.
+        request_path = request.get('PATH_INFO', '')
+        web_service_config = getUtility(IWebServiceConfiguration)
+        if request_path.startswith("/%s" % web_service_config.path_override):
+            return super(WebServicePublication, self).getPrincipal(request)
+
+        if request._auth is not None and request._auth.startswith("Token "):
+            return self._getPrincipalFromAccessToken(request)
+        else:
+            return self._getPrincipalFromOAuth(request)
 
 
 @implementer(lp.layers.WebServiceLayer)
