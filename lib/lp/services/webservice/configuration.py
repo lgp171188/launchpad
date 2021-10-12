@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A configuration class describing the Launchpad web service."""
@@ -10,9 +10,12 @@ __all__ = [
 from lazr.restful.simple import BaseWebServiceConfiguration
 import six
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 
 from lp.app import versioninfo
 from lp.services.config import config
+from lp.services.database.sqlbase import block_implicit_flushes
+from lp.services.webapp.interaction import get_interaction_extras
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.servers import (
     WebServiceClientRequest,
@@ -92,3 +95,23 @@ class LaunchpadWebServiceConfiguration(BaseWebServiceConfiguration):
     def get_request_user(self):
         """See `IWebServiceConfiguration`."""
         return getUtility(ILaunchBag).user
+
+    @block_implicit_flushes
+    def checkRequest(self, context, required_scopes):
+        """See `IWebServiceConfiguration`."""
+        access_token = get_interaction_extras().access_token
+        if access_token is None:
+            return
+        if access_token.context != context:
+            raise Unauthorized(
+                "Current authentication does not allow access to this object.")
+        if not required_scopes:
+            raise Unauthorized(
+                "Current authentication only allows calling scoped methods.")
+        elif not any(
+                scope.title in required_scopes
+                for scope in access_token.scopes):
+            raise Unauthorized(
+                "Current authentication does not allow calling this method "
+                "(one of these scopes is required: %s)."
+                % ", ".join("'%s'" % scope for scope in required_scopes))
