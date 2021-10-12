@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Methods dealing with interactions.
@@ -179,6 +179,7 @@ class InteractionExtras:
     """Extra data attached to all interactions.  See `IInteractionExtras`."""
 
     permit_timeout_from_features = False
+    access_token = None
 
 
 def get_interaction_extras():
