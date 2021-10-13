@@ -166,7 +166,8 @@
             <xsl:with-param name="url">
                 <xsl:choose>
                     <xsl:when test="
-                        @id = 'bug_link_target'
+                        @id = 'access_token_target'
+                        or @id = 'bug_link_target'
                         or @id = 'bug_target'
                         or @id = 'faq_target'
                         or @id = 'git_target'
@@ -190,6 +191,10 @@
     <xsl:template name="find-entry-uri">
         <xsl:value-of select="$base"/>
         <xsl:choose>
+            <xsl:when test="@id = 'access_token'">
+                <xsl:text>/[target URL]/+access-token/</xsl:text>
+                <var>&lt;id&gt;</var>
+            </xsl:when>
             <xsl:when test="@id = 'archive'">
                 <xsl:text>/</xsl:text>
                 <var>&lt;distribution&gt;</var>
