@@ -102,7 +102,7 @@ class LaunchpadWebServiceConfiguration(BaseWebServiceConfiguration):
         access_token = get_interaction_extras().access_token
         if access_token is None:
             return
-        if access_token.context != context:
+        if access_token.target != context:
             raise Unauthorized(
                 "Current authentication does not allow access to this object.")
         if not required_scopes:

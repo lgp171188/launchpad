@@ -78,20 +78,20 @@ class AccessToken(StormBase):
 
     resolution = timedelta(minutes=10)
 
-    def __init__(self, secret, owner, description, context, scopes):
+    def __init__(self, secret, owner, description, target, scopes):
         """Construct an `AccessToken`."""
         self._token_sha256 = hashlib.sha256(secret.encode()).hexdigest()
         self.owner = owner
         self.description = description
-        if IGitRepository.providedBy(context):
-            self.git_repository = context
+        if IGitRepository.providedBy(target):
+            self.git_repository = target
         else:
-            raise TypeError("Unsupported context: {!r}".format(context))
+            raise TypeError("Unsupported target: {!r}".format(target))
         self.scopes = scopes
         self.date_created = UTC_NOW
 
     @property
-    def context(self):
+    def target(self):
         """See `IAccessToken`."""
         return self.git_repository
 
@@ -139,10 +139,10 @@ class AccessToken(StormBase):
 @implementer(IAccessTokenSet)
 class AccessTokenSet:
 
-    def new(self, secret, owner, description, context, scopes):
+    def new(self, secret, owner, description, target, scopes):
         """See `IAccessTokenSet`."""
         store = IStore(AccessToken)
-        token = AccessToken(secret, owner, description, context, scopes)
+        token = AccessToken(secret, owner, description, target, scopes)
         store.add(token)
         return token
 
@@ -156,11 +156,11 @@ class AccessTokenSet:
         """See `IAccessTokenSet`."""
         return IStore(AccessToken).find(AccessToken, owner=owner)
 
-    def findByContext(self, context):
+    def findByTarget(self, target):
         """See `IAccessTokenSet`."""
         kwargs = {}
-        if IGitRepository.providedBy(context):
-            kwargs["git_repository"] = context
+        if IGitRepository.providedBy(target):
+            kwargs["git_repository"] = target
         else:
-            raise TypeError("Unsupported context: {!r}".format(context))
+            raise TypeError("Unsupported target: {!r}".format(target))
         return IStore(AccessToken).find(AccessToken, **kwargs)

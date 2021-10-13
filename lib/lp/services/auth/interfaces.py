@@ -77,13 +77,13 @@ class IAccessToken(Interface):
 class IAccessTokenSet(Interface):
     """The set of all personal access tokens."""
 
-    def new(secret, owner, description, context, scopes):
+    def new(secret, owner, description, target, scopes):
         """Return a new access token with a given secret.
 
         :param secret: A text string.
         :param owner: An `IPerson` who is creating the token.
         :param description: A short description of the token.
-        :param context: An `IGitRepository` for which the token is being
+        :param target: An `IAccessTokenTarget` for which the token is being
             issued.
         :param scopes: A list of `AccessTokenScope`s to be granted by the
             token.
@@ -101,10 +101,10 @@ class IAccessTokenSet(Interface):
         :param owner: An `IPerson`.
         """
 
-    def findByContext(context):
-        """Return all access tokens for this context.
+    def findByTarget(target):
+        """Return all access tokens for this target.
 
-        :param context: An `IGitRepository`.
+        :param target: An `IGitRepository`.
         """
 
 

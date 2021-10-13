@@ -49,11 +49,11 @@ class TestAccessToken(TestCaseWithFactory):
         login_person(owner)
         self.assertTrue(check_permission("launchpad.Edit", token))
 
-    def test_context_owner_can_edit(self):
-        context_owner = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=context_owner)
-        _, token = self.factory.makeAccessToken(context=repository)
-        login_person(context_owner)
+    def test_target_owner_can_edit(self):
+        target_owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=target_owner)
+        _, token = self.factory.makeAccessToken(target=repository)
+        login_person(target_owner)
         self.assertTrue(check_permission("launchpad.Edit", token))
 
     def test_other_user_cannot_edit(self):
@@ -173,15 +173,15 @@ class TestAccessTokenSet(TestCaseWithFactory):
         self.assertEqual(64, len(secret))
         owner = self.factory.makePerson()
         description = "Test token"
-        context = self.factory.makeGitRepository()
+        target = self.factory.makeGitRepository()
         scopes = [AccessTokenScope.REPOSITORY_BUILD_STATUS]
         _, token = self.factory.makeAccessToken(
-            secret=secret, owner=owner, description=description,
-            context=context, scopes=scopes)
+            secret=secret, owner=owner, description=description, target=target,
+            scopes=scopes)
         self.assertThat(
             removeSecurityProxy(token), MatchesStructure.byEquality(
                 _token_sha256=hashlib.sha256(secret.encode()).hexdigest(),
-                owner=owner, description=description, context=context,
+                owner=owner, description=description, target=target,
                 scopes=scopes))
 
     def test_getBySecret(self):
@@ -206,17 +206,16 @@ class TestAccessTokenSet(TestCaseWithFactory):
         self.assertContentEqual(
             [], getUtility(IAccessTokenSet).findByOwner(owners[2]))
 
-    def test_findByContext(self):
-        contexts = [self.factory.makeGitRepository() for _ in range(3)]
+    def test_findByTarget(self):
+        targets = [self.factory.makeGitRepository() for _ in range(3)]
         tokens = [
-            self.factory.makeAccessToken(context=contexts[0])[1],
-            self.factory.makeAccessToken(context=contexts[0])[1],
-            self.factory.makeAccessToken(context=contexts[1])[1],
+            self.factory.makeAccessToken(target=targets[0])[1],
+            self.factory.makeAccessToken(target=targets[0])[1],
+            self.factory.makeAccessToken(target=targets[1])[1],
             ]
         self.assertContentEqual(
-            tokens[:2], getUtility(IAccessTokenSet).findByContext(contexts[0]))
+            tokens[:2], getUtility(IAccessTokenSet).findByTarget(targets[0]))
         self.assertContentEqual(
-            [tokens[2]],
-            getUtility(IAccessTokenSet).findByContext(contexts[1]))
+            [tokens[2]], getUtility(IAccessTokenSet).findByTarget(targets[1]))
         self.assertContentEqual(
-            [], getUtility(IAccessTokenSet).findByContext(contexts[2]))
+            [], getUtility(IAccessTokenSet).findByTarget(targets[2]))
