@@ -892,7 +892,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
     def test_checkRequest_valid(self):
         repository = self.factory.makeGitRepository()
         self._makeAccessTokenVerifiedRequest(
-            context=repository,
+            target=repository,
             scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
         getUtility(IWebServiceConfiguration).checkRequest(
             repository,
@@ -901,7 +901,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
     def test_checkRequest_bad_context(self):
         repository = self.factory.makeGitRepository()
         self._makeAccessTokenVerifiedRequest(
-            context=repository,
+            target=repository,
             scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
         self.assertRaisesWithContent(
             Unauthorized,
@@ -912,7 +912,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
     def test_checkRequest_unscoped_method(self):
         repository = self.factory.makeGitRepository()
         self._makeAccessTokenVerifiedRequest(
-            context=repository,
+            target=repository,
             scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
         self.assertRaisesWithContent(
             Unauthorized,
@@ -923,7 +923,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
     def test_checkRequest_wrong_scope(self):
         repository = self.factory.makeGitRepository()
         self._makeAccessTokenVerifiedRequest(
-            context=repository,
+            target=repository,
             scopes=[
                 AccessTokenScope.REPOSITORY_BUILD_STATUS,
                 AccessTokenScope.REPOSITORY_PUSH,
