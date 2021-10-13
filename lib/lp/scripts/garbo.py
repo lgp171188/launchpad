@@ -1358,7 +1358,7 @@ class UnusedPOTMsgSetPruner(TunableLoop):
         return self._get_msgset_ids_to_remove()
 
     def _get_msgset_ids_to_remove(self, ids=None):
-        """Return a distrinct list IDs of the POTMsgSets to remove.
+        """Return a distinct list of IDs of the POTMsgSets to remove.
 
         :param ids: a list of POTMsgSet ids to filter. If ids is None,
             all unused POTMsgSet in the database are returned.
