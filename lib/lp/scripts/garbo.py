@@ -1974,7 +1974,7 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
                 try:
                     tunable_loop.run()
                     loop_logger.debug(
-                        "%s completed sucessfully.", loop_name)
+                        "%s completed successfully.", loop_name)
                 except Exception:
                     loop_logger.exception("Unhandled exception")
                     self.failure_count += 1
@@ -2014,7 +2014,7 @@ class FrequentDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
 class HourlyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     """Run every hour.
 
-    Jobs we want to run fairly often but have noticable overhead go here.
+    Jobs we want to run fairly often but have noticeable overhead go here.
     """
     script_name = 'garbo-hourly'
     tunable_loops = [
