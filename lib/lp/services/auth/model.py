@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = [
     "AccessToken",
+    "AccessTokenTargetMixin",
     ]
 
 from datetime import (
@@ -20,6 +21,7 @@ from storm.expr import (
     And,
     Cast,
     Or,
+    Select,
     SQL,
     Update,
     )
@@ -29,9 +31,13 @@ from storm.locals import (
     Reference,
     Unicode,
     )
+from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
+from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.registry.model.teammembership import TeamParticipation
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.auth.interfaces import (
     IAccessToken,
@@ -78,20 +84,22 @@ class AccessToken(StormBase):
 
     resolution = timedelta(minutes=10)
 
-    def __init__(self, secret, owner, description, context, scopes):
+    def __init__(self, secret, owner, description, target, scopes,
+                 date_expires=None):
         """Construct an `AccessToken`."""
         self._token_sha256 = hashlib.sha256(secret.encode()).hexdigest()
         self.owner = owner
         self.description = description
-        if IGitRepository.providedBy(context):
-            self.git_repository = context
+        if IGitRepository.providedBy(target):
+            self.git_repository = target
         else:
-            raise TypeError("Unsupported context: {!r}".format(context))
+            raise TypeError("Unsupported target: {!r}".format(target))
         self.scopes = scopes
         self.date_created = UTC_NOW
+        self.date_expires = date_expires
 
     @property
-    def context(self):
+    def target(self):
         """See `IAccessToken`."""
         return self.git_repository
 
@@ -109,7 +117,8 @@ class AccessToken(StormBase):
 
     def updateLastUsed(self):
         """See `IAccessToken`."""
-        IMasterStore(AccessToken).execute(Update(
+        store = IMasterStore(AccessToken)
+        store.execute(Update(
             {AccessToken.date_last_used: UTC_NOW},
             where=And(
                 # Skip the update if the AccessToken row is already locked,
@@ -124,6 +133,7 @@ class AccessToken(StormBase):
                     AccessToken.date_last_used <
                         UTC_NOW - Cast(self.resolution, 'interval'))),
             table=AccessToken))
+        store.invalidate(self)
 
     @property
     def is_expired(self):
@@ -139,10 +149,13 @@ class AccessToken(StormBase):
 @implementer(IAccessTokenSet)
 class AccessTokenSet:
 
-    def new(self, secret, owner, description, context, scopes):
+    def new(self, secret, owner, description, target, scopes,
+            date_expires=None):
         """See `IAccessTokenSet`."""
         store = IStore(AccessToken)
-        token = AccessToken(secret, owner, description, context, scopes)
+        token = AccessToken(
+            secret, owner, description, target, scopes,
+            date_expires=date_expires)
         store.add(token)
         return token
 
@@ -156,11 +169,30 @@ class AccessTokenSet:
         """See `IAccessTokenSet`."""
         return IStore(AccessToken).find(AccessToken, owner=owner)
 
-    def findByContext(self, context):
+    def findByTarget(self, target, visible_by_user=None):
         """See `IAccessTokenSet`."""
-        kwargs = {}
-        if IGitRepository.providedBy(context):
-            kwargs["git_repository"] = context
+        clauses = []
+        if IGitRepository.providedBy(target):
+            clauses.append(AccessToken.git_repository == target)
+            if visible_by_user is not None:
+                collection = getUtility(IAllGitRepositories).visibleByUser(
+                    visible_by_user).ownedByTeamMember(visible_by_user)
+                ids = collection.getRepositoryIds()
+                clauses.append(Or(
+                    AccessToken.owner_id.is_in(Select(
+                        TeamParticipation.teamID,
+                        where=TeamParticipation.person == visible_by_user.id)),
+                    AccessToken.git_repository_id.is_in(
+                        removeSecurityProxy(ids)._get_select())))
         else:
-            raise TypeError("Unsupported context: {!r}".format(context))
-        return IStore(AccessToken).find(AccessToken, **kwargs)
+            raise TypeError("Unsupported target: {!r}".format(target))
+        return IStore(AccessToken).find(AccessToken, *clauses)
+
+
+class AccessTokenTargetMixin:
+    """Mix this into classes that implement `IAccessTokenTarget`."""
+
+    def getAccessTokens(self, visible_by_user=None):
+        """See `IAccessTokenTarget`."""
+        return getUtility(IAccessTokenSet).findByTarget(
+            self, visible_by_user=visible_by_user)

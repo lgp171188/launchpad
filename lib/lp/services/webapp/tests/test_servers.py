@@ -68,7 +68,6 @@ from lp.services.webapp.servers import (
 from lp.testing import (
     EventRecorder,
     logout,
-    person_logged_in,
     TestCase,
     TestCaseWithFactory,
     )
@@ -845,9 +844,9 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
 
     def test_expired(self):
         owner = self.factory.makePerson()
-        secret, token = self.factory.makeAccessToken(owner=owner)
-        with person_logged_in(owner):
-            token.date_expires = datetime.now(pytz.UTC) - timedelta(days=1)
+        secret, token = self.factory.makeAccessToken(
+            owner=owner,
+            date_expires=datetime.now(pytz.UTC) - timedelta(days=1))
         transaction.commit()
 
         request, publication = get_request_and_publication(
@@ -892,7 +891,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
     def test_checkRequest_valid(self):
         repository = self.factory.makeGitRepository()
         self._makeAccessTokenVerifiedRequest(
-            context=repository,
+            target=repository,
             scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
         getUtility(IWebServiceConfiguration).checkRequest(
             repository,
@@ -901,7 +900,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
     def test_checkRequest_bad_context(self):
         repository = self.factory.makeGitRepository()
         self._makeAccessTokenVerifiedRequest(
-            context=repository,
+            target=repository,
             scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
         self.assertRaisesWithContent(
             Unauthorized,
@@ -912,7 +911,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
     def test_checkRequest_unscoped_method(self):
         repository = self.factory.makeGitRepository()
         self._makeAccessTokenVerifiedRequest(
-            context=repository,
+            target=repository,
             scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
         self.assertRaisesWithContent(
             Unauthorized,
@@ -923,7 +922,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
     def test_checkRequest_wrong_scope(self):
         repository = self.factory.makeGitRepository()
         self._makeAccessTokenVerifiedRequest(
-            context=repository,
+            target=repository,
             scopes=[
                 AccessTokenScope.REPOSITORY_BUILD_STATUS,
                 AccessTokenScope.REPOSITORY_PUSH,

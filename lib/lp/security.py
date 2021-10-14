@@ -505,11 +505,11 @@ class EditAccessToken(AuthorizationBase):
         if user.inTeam(self.obj.owner):
             return True
         # Being able to edit the token doesn't allow extracting the secret,
-        # so it's OK to allow the owner of the context to do so too.  This
-        # allows context owners to exercise some control over access to
-        # their object.
+        # so it's OK to allow the owner of the target to do so too.  This
+        # allows target owners to exercise some control over access to their
+        # object.
         adapter = queryAdapter(
-            self.obj.context, IAuthorization, 'launchpad.Edit')
+            self.obj.target, IAuthorization, 'launchpad.Edit')
         if adapter is not None and adapter.checkAuthenticated(user):
             return True
         return False

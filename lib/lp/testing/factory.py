@@ -4519,7 +4519,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return request_token.createAccessToken()
 
     def makeAccessToken(self, secret=None, owner=None, description=None,
-                        context=None, scopes=None):
+                        target=None, scopes=None, date_expires=None):
         """Create a personal access token.
 
         :return: A tuple of the secret for the new token and the token
@@ -4531,12 +4531,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner = self.makePerson()
         if description is None:
             description = self.getUniqueUnicode()
-        if context is None:
-            context = self.makeGitRepository()
+        if target is None:
+            target = self.makeGitRepository()
         if scopes is None:
             scopes = []
         token = getUtility(IAccessTokenSet).new(
-            secret, owner, description, context, scopes)
+            secret, owner, description, target, scopes,
+            date_expires=date_expires)
         return secret, token
 
     def makeCVE(self, sequence, description=None,

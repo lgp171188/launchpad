@@ -788,6 +788,28 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
         self.assertThat(
             recorder2, HasQueryCount(Equals(recorder1.count + 3), recorder1))
 
+    def test_getPublishedBinaries_filter_by_component(self):
+        # self.archive cannot be used, as this is a PPA, which only
+        # supports a single "main" component
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
+        archive_url = api_url(archive)
+        for component in ("main", "main", "universe"):
+            self.factory.makeBinaryPackagePublishingHistory(
+                archive=archive, component=component)
+        ws = webservice_for_person(self.person, default_api_version="devel")
+
+        for component, expected_count in (
+            ("main", 2), ("universe", 1), ("restricted", 0)):
+            response = ws.named_get(
+                archive_url, "getPublishedBinaries",
+                component_name=component)
+
+            self.assertEqual(200, response.status)
+            self.assertEqual(
+                expected_count, response.jsonBody()["total_size"])
+            for entry in response.jsonBody()["entries"]:
+                self.assertEqual(component, entry["component_name"])
+
 
 class TestRemoveCopyNotification(TestCaseWithFactory):
     """Test removeCopyNotification."""

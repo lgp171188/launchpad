@@ -31,12 +31,18 @@ from lp.services.database.sqlbase import (
     get_transaction_timestamp,
     )
 from lp.services.webapp.authorization import check_permission
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    api_url,
     login,
     login_person,
+    person_logged_in,
+    record_two_runs,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.matchers import HasQueryCount
+from lp.testing.pages import webservice_for_person
 
 
 class TestAccessToken(TestCaseWithFactory):
@@ -49,11 +55,11 @@ class TestAccessToken(TestCaseWithFactory):
         login_person(owner)
         self.assertTrue(check_permission("launchpad.Edit", token))
 
-    def test_context_owner_can_edit(self):
-        context_owner = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=context_owner)
-        _, token = self.factory.makeAccessToken(context=repository)
-        login_person(context_owner)
+    def test_target_owner_can_edit(self):
+        target_owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=target_owner)
+        _, token = self.factory.makeAccessToken(target=repository)
+        login_person(target_owner)
         self.assertTrue(check_permission("launchpad.Edit", token))
 
     def test_other_user_cannot_edit(self):
@@ -79,7 +85,7 @@ class TestAccessToken(TestCaseWithFactory):
         _, token = self.factory.makeAccessToken(owner=owner)
         login_person(owner)
         recent = datetime.now(pytz.UTC) - timedelta(minutes=1)
-        token.date_last_used = recent
+        removeSecurityProxy(token).date_last_used = recent
         transaction.commit()
         token.updateLastUsed()
         self.assertEqual(recent, token.date_last_used)
@@ -91,7 +97,7 @@ class TestAccessToken(TestCaseWithFactory):
         _, token = self.factory.makeAccessToken(owner=owner)
         login_person(owner)
         recent = datetime.now(pytz.UTC) - timedelta(hours=1)
-        token.date_last_used = recent
+        removeSecurityProxy(token).date_last_used = recent
         transaction.commit()
         token.updateLastUsed()
         now = get_transaction_timestamp(Store.of(token))
@@ -145,9 +151,9 @@ class TestAccessToken(TestCaseWithFactory):
         owner = self.factory.makePerson()
         login_person(owner)
         _, current_token = self.factory.makeAccessToken(owner=owner)
-        _, expired_token = self.factory.makeAccessToken(owner=owner)
-        expired_token.date_expires = (
-            datetime.now(pytz.UTC) - timedelta(minutes=1))
+        _, expired_token = self.factory.makeAccessToken(
+            owner=owner,
+            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1))
         self.assertFalse(current_token.is_expired)
         self.assertTrue(expired_token.is_expired)
 
@@ -173,15 +179,15 @@ class TestAccessTokenSet(TestCaseWithFactory):
         self.assertEqual(64, len(secret))
         owner = self.factory.makePerson()
         description = "Test token"
-        context = self.factory.makeGitRepository()
+        target = self.factory.makeGitRepository()
         scopes = [AccessTokenScope.REPOSITORY_BUILD_STATUS]
         _, token = self.factory.makeAccessToken(
-            secret=secret, owner=owner, description=description,
-            context=context, scopes=scopes)
+            secret=secret, owner=owner, description=description, target=target,
+            scopes=scopes)
         self.assertThat(
             removeSecurityProxy(token), MatchesStructure.byEquality(
                 _token_sha256=hashlib.sha256(secret.encode()).hexdigest(),
-                owner=owner, description=description, context=context,
+                owner=owner, description=description, target=target,
                 scopes=scopes))
 
     def test_getBySecret(self):
@@ -206,17 +212,97 @@ class TestAccessTokenSet(TestCaseWithFactory):
         self.assertContentEqual(
             [], getUtility(IAccessTokenSet).findByOwner(owners[2]))
 
-    def test_findByContext(self):
-        contexts = [self.factory.makeGitRepository() for _ in range(3)]
+    def test_findByTarget(self):
+        targets = [self.factory.makeGitRepository() for _ in range(3)]
         tokens = [
-            self.factory.makeAccessToken(context=contexts[0])[1],
-            self.factory.makeAccessToken(context=contexts[0])[1],
-            self.factory.makeAccessToken(context=contexts[1])[1],
+            self.factory.makeAccessToken(target=targets[0])[1],
+            self.factory.makeAccessToken(target=targets[0])[1],
+            self.factory.makeAccessToken(target=targets[1])[1],
             ]
         self.assertContentEqual(
-            tokens[:2], getUtility(IAccessTokenSet).findByContext(contexts[0]))
+            tokens[:2], getUtility(IAccessTokenSet).findByTarget(targets[0]))
         self.assertContentEqual(
-            [tokens[2]],
-            getUtility(IAccessTokenSet).findByContext(contexts[1]))
+            [tokens[2]], getUtility(IAccessTokenSet).findByTarget(targets[1]))
         self.assertContentEqual(
-            [], getUtility(IAccessTokenSet).findByContext(contexts[2]))
+            [], getUtility(IAccessTokenSet).findByTarget(targets[2]))
+
+    def test_findByTarget_visible_by_user(self):
+        targets = [self.factory.makeGitRepository() for _ in range(3)]
+        owners = [self.factory.makePerson() for _ in range(3)]
+        tokens = [
+            self.factory.makeAccessToken(
+                owner=owners[owner_index], target=targets[target_index])[1]
+            for owner_index, target_index in (
+                (0, 0), (0, 0), (1, 0), (1, 1), (2, 1))]
+        for owner_index, target_index, expected_tokens in (
+                (0, 0, tokens[:2]),
+                (0, 1, []),
+                (0, 2, []),
+                (1, 0, [tokens[2]]),
+                (1, 1, [tokens[3]]),
+                (1, 2, []),
+                (2, 0, []),
+                (2, 1, [tokens[4]]),
+                (2, 2, []),
+                ):
+            self.assertContentEqual(
+                expected_tokens,
+                getUtility(IAccessTokenSet).findByTarget(
+                    targets[target_index],
+                    visible_by_user=owners[owner_index]))
+
+
+class TestAccessTokenTargetBase:
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.target = self.makeTarget()
+        self.owner = self.target.owner
+        self.target_url = api_url(self.target)
+        self.webservice = webservice_for_person(
+            self.owner, permission=OAuthPermission.WRITE_PRIVATE)
+
+    def test_getAccessTokens(self):
+        with person_logged_in(self.owner):
+            for description in ("Test token 1", "Test token 2"):
+                self.factory.makeAccessToken(
+                    owner=self.owner, description=description,
+                    target=self.target)
+        response = self.webservice.named_get(
+            self.target_url, "getAccessTokens", api_version="devel")
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(
+            ["Test token 1", "Test token 2"],
+            [entry["description"] for entry in response.jsonBody()["entries"]])
+
+    def test_getAccessTokens_permissions(self):
+        webservice = webservice_for_person(None)
+        response = webservice.named_get(
+            self.target_url, "getAccessTokens", api_version="devel")
+        self.assertEqual(401, response.status)
+        self.assertIn(b"launchpad.Edit", response.body)
+
+    def test_getAccessTokens_query_count(self):
+        def get_tokens():
+            response = self.webservice.named_get(
+                self.target_url, "getAccessTokens", api_version="devel")
+            self.assertEqual(200, response.status)
+            self.assertIn(len(response.jsonBody()["entries"]), {0, 2, 4})
+
+        def create_token():
+            with person_logged_in(self.owner):
+                self.factory.makeAccessToken(
+                    owner=self.owner, target=self.target)
+
+        get_tokens()
+        recorder1, recorder2 = record_two_runs(get_tokens, create_token, 2)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+
+class TestAccessTokenTargetGitRepository(
+        TestAccessTokenTargetBase, TestCaseWithFactory):
+
+    def makeTarget(self):
+        return self.factory.makeGitRepository()

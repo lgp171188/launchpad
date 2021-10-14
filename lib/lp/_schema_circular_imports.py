@@ -139,6 +139,7 @@ from lp.registry.interfaces.sourcepackage import (
 from lp.registry.interfaces.ssh import ISSHKey
 from lp.registry.interfaces.teammembership import ITeamMembership
 from lp.registry.interfaces.wikiname import IWikiName
+from lp.services.auth.interfaces import IAccessToken
 from lp.services.comments.interfaces.conversation import IComment
 from lp.services.fields import InlineObject
 from lp.services.messages.interfaces.message import (
@@ -690,6 +691,9 @@ patch_collection_property(
     IHasSpecifications, 'visible_specifications', ISpecification)
 patch_collection_property(
     IHasSpecifications, 'api_valid_specifications', ISpecification)
+
+# IAccessToken
+patch_reference_property(IAccessToken, 'git_repository', IGitRepository)
 
 
 ###
