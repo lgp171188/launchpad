@@ -790,7 +790,7 @@ class Archive(SQLBase):
         self, name=None, version=None, status=None, distroarchseries=None,
         pocket=None, exact_match=False, created_since_date=None,
         ordered=True, order_by_date=False, include_removed=True,
-        only_unpublished=False, need_bpr=False):
+        only_unpublished=False, need_bpr=False, component_name=None):
         """Base clauses for binary publishing queries.
 
         Returns a list of 'clauses' (to be joined in the callsite).
@@ -873,6 +873,13 @@ class Archive(SQLBase):
             clauses.append(
                 BinaryPackagePublishingHistory.datepublished == None)
 
+        if component_name is not None:
+            clauses.extend(
+                [BinaryPackagePublishingHistory.componentID == Component.id,
+                 Component.name == component_name,
+                 ]
+            )
+
         return clauses, order_by
 
     def getAllPublishedBinaries(self, name=None, version=None, status=None,
@@ -880,18 +887,17 @@ class Archive(SQLBase):
                                 exact_match=False, created_since_date=None,
                                 ordered=True, order_by_date=False,
                                 include_removed=True, only_unpublished=False,
-                                eager_load=False):
+                                eager_load=False, component_name=None):
         """See `IArchive`."""
         # Circular imports.
         from lp.registry.model.distroseries import DistroSeries
         from lp.soyuz.model.distroarchseries import DistroArchSeries
-
         clauses, order_by = self._getBinaryPublishingBaseClauses(
             name=name, version=version, status=status, pocket=pocket,
             distroarchseries=distroarchseries, exact_match=exact_match,
             created_since_date=created_since_date, ordered=ordered,
             order_by_date=order_by_date, include_removed=include_removed,
-            only_unpublished=only_unpublished)
+            only_unpublished=only_unpublished, component_name=component_name)
 
         result = Store.of(self).find(
             BinaryPackagePublishingHistory, *clauses).order_by(*order_by)

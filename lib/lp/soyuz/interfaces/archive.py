@@ -628,7 +628,8 @@ class IArchiveSubscriberView(Interface):
                           "for applications that need to catch up with "
                           "publications since their last run."),
             required=False),
-        )
+        component_name=TextLine(title=_("Component name"), required=False),
+    )
     # Really returns IBinaryPackagePublishingHistory, see below for
     # patch to avoid circular import.
     @operation_returns_collection_of(Interface)
@@ -639,7 +640,7 @@ class IArchiveSubscriberView(Interface):
                                 exact_match=False, created_since_date=None,
                                 ordered=True, order_by_date=False,
                                 include_removed=True, only_unpublished=False,
-                                eager_load=False):
+                                eager_load=False, component_name=None):
         """All `IBinaryPackagePublishingHistory` target to this archive.
 
         :param name: binary name filter (exact match or SQL LIKE controlled
@@ -664,6 +665,8 @@ class IArchiveSubscriberView(Interface):
             removed from disk as well as those that have not.
         :param only_unpublished: If True, only include publications that
             have never been published to disk.
+        :param component_name: component filter. Only return binaries that are
+            in this component.
 
         :return: A collection containing `BinaryPackagePublishingHistory`.
         """
