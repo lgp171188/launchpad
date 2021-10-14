@@ -177,6 +177,9 @@ from lp.registry.model.accesspolicy import (
     )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
+from lp.services.auth.interfaces import IAccessTokenSet
+from lp.services.auth.model import AccessTokenTargetMixin
+from lp.services.auth.utils import create_access_token_secret
 from lp.services.config import config
 from lp.services.database import bulk
 from lp.services.database.constants import (
@@ -290,7 +293,8 @@ def git_repository_modified(repository, event):
 
 
 @implementer(IGitRepository, IHasOwner, IPrivacy, IInformationType)
-class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
+class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
+                    GitIdentityMixin):
     """See `IGitRepository`."""
 
     __storm_table__ = 'GitRepository'
@@ -1580,19 +1584,43 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         return DecoratedResultSet(
             results, pre_iter_hook=preloadDataForActivities)
 
-    def issueAccessToken(self):
-        """See `IGitRepository`."""
+    def _issuePersonalAccessToken(self, user, description, scopes,
+                                  date_expires=None):
+        """Issue a personal access token for this repository."""
+        if user is None:
+            raise Unauthorized(
+                "Personal access tokens may only be issued for a logged-in "
+                "user.")
+        secret = create_access_token_secret()
+        getUtility(IAccessTokenSet).new(
+            secret, owner=user, description=description, target=self,
+            scopes=scopes, date_expires=date_expires)
+        return secret
+
+    # XXX cjwatson 2021-10-13: Remove this once lp.code.xmlrpc.git accepts
+    # pushes using personal access tokens.
+    def _issueMacaroon(self, user):
+        """Issue a macaroon for this repository."""
         issuer = getUtility(IMacaroonIssuer, "git-repository")
+        # Our security adapter has already done the checks we need, apart
+        # from forbidding anonymous users which is done by the issuer.
+        return removeSecurityProxy(issuer).issueMacaroon(
+            self, user=user).serialize()
+
+    def issueAccessToken(self, owner=None, description=None, scopes=None,
+                         date_expires=None):
+        """See `IGitRepository`."""
         # It's more usual in model code to pass the user as an argument,
         # e.g. using @call_with(user=REQUEST_USER) in the webservice
         # interface.  However, in this case that would allow anyone who
         # constructs a way to call this method not via the webservice to
         # issue a token for any user, which seems like a bad idea.
         user = getUtility(ILaunchBag).user
-        # Our security adapter has already done the checks we need, apart
-        # from forbidding anonymous users which is done by the issuer.
-        return removeSecurityProxy(issuer).issueMacaroon(
-            self, user=user).serialize()
+        if description is not None and scopes is not None:
+            return self._issuePersonalAccessToken(
+                user, description, scopes, date_expires=date_expires)
+        else:
+            return self._issueMacaroon(user)
 
     def canBeDeleted(self):
         """See `IGitRepository`."""

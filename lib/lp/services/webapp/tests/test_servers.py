@@ -68,7 +68,6 @@ from lp.services.webapp.servers import (
 from lp.testing import (
     EventRecorder,
     logout,
-    person_logged_in,
     TestCase,
     TestCaseWithFactory,
     )
@@ -845,9 +844,9 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
 
     def test_expired(self):
         owner = self.factory.makePerson()
-        secret, token = self.factory.makeAccessToken(owner=owner)
-        with person_logged_in(owner):
-            token.date_expires = datetime.now(pytz.UTC) - timedelta(days=1)
+        secret, token = self.factory.makeAccessToken(
+            owner=owner,
+            date_expires=datetime.now(pytz.UTC) - timedelta(days=1))
         transaction.commit()
 
         request, publication = get_request_and_publication(

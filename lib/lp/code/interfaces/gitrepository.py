@@ -85,6 +85,8 @@ from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IPersonRoles
+from lp.services.auth.enums import AccessTokenScope
+from lp.services.auth.interfaces import IAccessTokenTarget
 from lp.services.fields import (
     InlineObject,
     PersonChoice,
@@ -690,20 +692,41 @@ class IGitRepositoryView(IHasRecipes):
         :return: A `ResultSet` of `IGitActivity`.
         """
 
+    # XXX cjwatson 2021-10-13: This should move to IAccessTokenTarget, but
+    # currently has rather too much backward-compatibility code for that.
+    @operation_parameters(
+        description=TextLine(
+            title=_("A short description of the token."), required=False),
+        scopes=List(
+            title=_("A list of scopes to be granted by this token."),
+            value_type=Choice(vocabulary=AccessTokenScope), required=False),
+        date_expires=Datetime(
+            title=_("When the token should expire."), required=False))
     @export_write_operation()
     @operation_for_version("devel")
-    def issueAccessToken():
+    def issueAccessToken(description=None, scopes=None, date_expires=None):
         """Issue an access token for this repository.
 
         Access tokens can be used to push to this repository over HTTPS.
         They are only valid for a single repository, and have a short expiry
-        period (currently one week), so at the moment they are only suitable
-        in some limited situations.
+        period (currently fixed at one week), so at the moment they are only
+        suitable in some limited situations.  By default they are currently
+        implemented as macaroons.
+
+        If `description` and `scopes` are both given, then issue a personal
+        access token instead, either non-expiring or with an expiry time
+        given by `date_expires`.  These may be used in webservice API
+        requests for certain methods on this repository.
 
         This interface is experimental, and may be changed or removed
         without notice.
 
-        :return: A serialised macaroon.
+        :return: If `description` and `scopes` are both given, the secret
+            for a new personal access token (Launchpad only records the hash
+            of this secret and not the secret itself, so the caller must be
+            careful to save this; personal access tokens are in development
+            and may not entirely work yet).  Otherwise, a serialised
+            macaroon.
         """
 
 
@@ -782,7 +805,7 @@ class IGitRepositoryExpensiveRequest(Interface):
         that is not an admin or a registry expert."""
 
 
-class IGitRepositoryEdit(IWebhookTarget):
+class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
     """IGitRepository methods that require launchpad.Edit permission."""
 
     @mutator_for(IGitRepositoryView["name"])
