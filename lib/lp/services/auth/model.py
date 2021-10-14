@@ -117,7 +117,8 @@ class AccessToken(StormBase):
 
     def updateLastUsed(self):
         """See `IAccessToken`."""
-        IMasterStore(AccessToken).execute(Update(
+        store = IMasterStore(AccessToken)
+        store.execute(Update(
             {AccessToken.date_last_used: UTC_NOW},
             where=And(
                 # Skip the update if the AccessToken row is already locked,
@@ -132,6 +133,7 @@ class AccessToken(StormBase):
                     AccessToken.date_last_used <
                         UTC_NOW - Cast(self.resolution, 'interval'))),
             table=AccessToken))
+        store.invalidate(self)
 
     @property
     def is_expired(self):

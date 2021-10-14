@@ -74,11 +74,11 @@ class IAccessToken(Interface):
 
     date_last_used = exported(Datetime(
         title=_("When the token was last used."),
-        required=False, readonly=False))
+        required=False, readonly=True))
 
     date_expires = exported(Datetime(
         title=_("When the token should expire or was revoked."),
-        required=False, readonly=False))
+        required=False, readonly=True))
 
     is_expired = Bool(
         title=_("Whether this token has expired."),
@@ -86,7 +86,7 @@ class IAccessToken(Interface):
 
     revoked_by = exported(PublicPersonChoice(
         title=_("The person who revoked the token, if any."),
-        vocabulary="ValidPersonOrTeam", required=False, readonly=False))
+        vocabulary="ValidPersonOrTeam", required=False, readonly=True))
 
     def updateLastUsed():
         """Update this token's last-used date, if possible."""

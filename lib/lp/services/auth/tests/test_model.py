@@ -85,7 +85,7 @@ class TestAccessToken(TestCaseWithFactory):
         _, token = self.factory.makeAccessToken(owner=owner)
         login_person(owner)
         recent = datetime.now(pytz.UTC) - timedelta(minutes=1)
-        token.date_last_used = recent
+        removeSecurityProxy(token).date_last_used = recent
         transaction.commit()
         token.updateLastUsed()
         self.assertEqual(recent, token.date_last_used)
@@ -97,7 +97,7 @@ class TestAccessToken(TestCaseWithFactory):
         _, token = self.factory.makeAccessToken(owner=owner)
         login_person(owner)
         recent = datetime.now(pytz.UTC) - timedelta(hours=1)
-        token.date_last_used = recent
+        removeSecurityProxy(token).date_last_used = recent
         transaction.commit()
         token.updateLastUsed()
         now = get_transaction_timestamp(Store.of(token))
@@ -151,9 +151,9 @@ class TestAccessToken(TestCaseWithFactory):
         owner = self.factory.makePerson()
         login_person(owner)
         _, current_token = self.factory.makeAccessToken(owner=owner)
-        _, expired_token = self.factory.makeAccessToken(owner=owner)
-        expired_token.date_expires = (
-            datetime.now(pytz.UTC) - timedelta(minutes=1))
+        _, expired_token = self.factory.makeAccessToken(
+            owner=owner,
+            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1))
         self.assertFalse(current_token.is_expired)
         self.assertTrue(expired_token.is_expired)
 
