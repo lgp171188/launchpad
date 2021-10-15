@@ -75,6 +75,7 @@ from lp.code.model.revision import (
     )
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.model.codeofconduct import SignedCodeOfConduct
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -1764,6 +1765,29 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
         transaction.commit()
 
 
+class PopulateSignedCodeOfConductAffirmed(TunableLoop):
+    """Populates SignedCodeOfConduct.affirmed if not set"""
+
+    maximum_chunk_size = 5000
+
+    def __init__(self, log, abort_time=None):
+        super().__init__(log, abort_time)
+        self.store = IMasterStore(SignedCodeOfConduct)
+
+    def findSignedCodeOfConducts(self):
+        return self.store.find(
+            SignedCodeOfConduct,
+            SignedCodeOfConduct.affirmed == None
+        )
+
+    def isDone(self):
+        return self.findSignedCodeOfConducts().is_empty()
+
+    def __call__(self, chunk_size):
+        self.findSignedCodeOfConducts()[:chunk_size].set(affirmed=False)
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
     script_name = None  # Script name for locking and database user. Override.
@@ -2024,6 +2048,7 @@ class HourlyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         GitRepositoryPruner,
         RevisionCachePruner,
         UnusedSessionPruner,
+        PopulateSignedCodeOfConductAffirmed,
         ]
     experimental_tunable_loops = []
 
