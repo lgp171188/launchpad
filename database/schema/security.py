@@ -24,7 +24,7 @@ from lp.services.scripts import (
 
 
 # The 'read' group does not get given select permission on the following
-# tables. This is to stop the ro user being given access to secrurity
+# tables. This is to stop the ro user being given access to security
 # sensitive information that interactive sessions don't need.
 SECURE_TABLES = set((
     'public.oauthnonce',
