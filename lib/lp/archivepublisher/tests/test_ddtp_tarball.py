@@ -1,4 +1,4 @@
-# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test ddtp-tarball custom uploads.
@@ -15,6 +15,7 @@ from zope.component import getUtility
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.ddtp_tarball import DdtpTarballUpload
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
+from lp.services.features.testing import FeatureFixture
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
@@ -34,7 +35,9 @@ class TestDdtpTarball(TestCaseWithFactory):
         db_pubconf.root_dir = six.ensure_text(self.temp_dir)
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
-        self.suite = "distroseries"
+        self.distroseries = self.factory.makeDistroSeries(
+            distribution=self.distro)
+        self.suite = self.distroseries.name
         # CustomUpload.installFiles requires a umask of 0o022.
         old_umask = os.umask(0o022)
         self.addCleanup(os.umask, old_umask)
@@ -58,10 +61,14 @@ class TestDdtpTarball(TestCaseWithFactory):
     def test_basic(self):
         # Processing a simple correct tar file works.
         self.openArchive("20060728")
-        self.tarfile.add_file("i18n/Translation-de", b"")
+        names = (
+            "Translation-en", "Translation-en.xz",
+            "Translation-de", "Translation-de.xz")
+        for name in names:
+            self.tarfile.add_file(os.path.join("i18n", name), b"")
         self.process()
-        self.assertTrue(os.path.exists(
-            self.getTranslationsPath("Translation-de")))
+        for name in names:
+            self.assertTrue(os.path.exists(self.getTranslationsPath(name)))
 
     def test_ignores_empty_directories(self):
         # Empty directories in the tarball are not extracted.
@@ -91,6 +98,43 @@ class TestDdtpTarball(TestCaseWithFactory):
             self.assertEqual("new bn", bn_file.read())
         with open(self.getTranslationsPath("Translation-ca")) as ca_file:
             self.assertEqual("ca", ca_file.read())
+
+    def test_does_not_collide_with_publisher_primary(self):
+        # If the publisher is configured to generate its own Translations-en
+        # file (for the apt-ftparchive case), then colliding entries in DDTP
+        # tarballs are not extracted.
+        self.distroseries.include_long_descriptions = False
+        self.openArchive("20060728")
+        en_names = ("Translation-en", "Translation-en.xz")
+        de_names = ("Translation-de", "Translation-de.xz")
+        for name in en_names + de_names:
+            self.tarfile.add_file(os.path.join("i18n", name), b"")
+        self.process()
+        for name in en_names:
+            self.assertFalse(os.path.exists(self.getTranslationsPath(name)))
+        for name in de_names:
+            self.assertTrue(os.path.exists(self.getTranslationsPath(name)))
+
+    def test_does_not_collide_with_publisher_ppa(self):
+        # If the publisher is configured to generate its own Translations-en
+        # file (for the PPA case), then colliding entries in DDTP
+        # tarballs are not extracted.
+        self.archive = self.factory.makeArchive(
+            distribution=self.distro, purpose=ArchivePurpose.PPA)
+        self.useFixture(FeatureFixture({
+            "soyuz.ppa.separate_long_descriptions": "on",
+            }))
+        self.distroseries.include_long_descriptions = False
+        self.openArchive("20060728")
+        en_names = ("Translation-en", "Translation-en.xz")
+        de_names = ("Translation-de", "Translation-de.xz")
+        for name in en_names + de_names:
+            self.tarfile.add_file(os.path.join("i18n", name), b"")
+        self.process()
+        for name in en_names:
+            self.assertFalse(os.path.exists(self.getTranslationsPath(name)))
+        for name in de_names:
+            self.assertTrue(os.path.exists(self.getTranslationsPath(name)))
 
     def test_breaks_hard_links(self):
         # Our archive uses dsync to replace identical files with hard links
@@ -133,6 +177,8 @@ class TestDdtpTarball(TestCaseWithFactory):
         # getSeriesKey extracts the component from an upload's filename.
         self.openArchive("20060728")
         self.assertEqual("main", DdtpTarballUpload.getSeriesKey(self.path))
+        self.tarfile.close()
+        self.buffer.close()
 
     def test_getSeriesKey_returns_None_on_mismatch(self):
         # getSeriesKey returns None if the filename does not match the

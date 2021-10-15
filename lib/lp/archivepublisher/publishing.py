@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -893,6 +893,7 @@ class Publisher(object):
         self.log.debug("Generating Sources")
 
         separate_long_descriptions = False
+        # Must match DdtpTarballUpload.shouldInstall.
         if (not distroseries.include_long_descriptions and
                 getFeatureFlag("soyuz.ppa.separate_long_descriptions")):
             # If include_long_descriptions is False and the feature flag is
