@@ -406,7 +406,7 @@ class SignedCodeOfConductSet:
         # entries. If it is it should be part of FTI queries,
         # isn't it ?
 
-        # the name shoudl work like a filter, if you don't enter anything
+        # the name should work like a filter, if you don't enter anything
         # you get everything.
         if displayname:
             clauses.append(fti_search(Person, displayname))
