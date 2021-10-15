@@ -860,7 +860,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                        license=True, language=None):
         """Create a new, arbitrary `Translator`."""
         assert language_code is None or language is None, (
-            "Please specifiy only one of language_code and language.")
+            "Please specify only one of language_code and language.")
         if language_code is None:
             if language is None:
                 language = self.makeLanguage()
@@ -3209,7 +3209,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                    create_sharing=False, language=None, side=None):
         """Make a new translation file."""
         assert language_code is None or language is None, (
-            "Please specifiy only one of language_code and language.")
+            "Please specify only one of language_code and language.")
         if language_code is None:
             if language is None:
                 language = self.makeLanguage()
