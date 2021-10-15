@@ -270,7 +270,7 @@ class TestBulkPruner(TestCase):
         self.assertEqual(self.store.find(BulkFoo, BulkFoo.id < 5).count(), 0)
 
         # Confirm we have the expected number of remaining rows.
-        # With the previous check, this means no untargetted rows
+        # With the previous check, this means no untargeted rows
         # where removed.
         self.assertEqual(
             self.store.find(BulkFoo, BulkFoo.id >= 5).count(), num_to_leave)
@@ -763,7 +763,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertIs(personset.getByName('test-unlinked-person-old'), None)
 
     def test_TeamMembershipPruner(self):
-        # Garbo should remove team memberships for meregd users and teams.
+        # Garbo should remove team memberships for merged users and teams.
         switch_dbuser('testadmin')
         merged_user = self.factory.makePerson()
         team = self.factory.makeTeam(members=[merged_user])
@@ -1292,7 +1292,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertEqual(4, obsolete_msgsets.count())
         pruner = UnusedPOTMsgSetPruner(self.log)
         pruner(2)
-        # A potmsgeset is set to a sequence > 0 between batches/commits.
+        # A potmsgset is set to a sequence > 0 between batches/commits.
         last_id = pruner.msgset_ids_to_remove[-1]
         used_potmsgset = store.find(POTMsgSet, POTMsgSet.id == last_id).one()
         used_pofile = store.find(
