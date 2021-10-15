@@ -269,7 +269,7 @@ class InitializeDistroSeries:
             parent, statuses, list(INIT_POCKETS), spns)
         if not items.is_empty():
             raise InitializationError(
-                "The parent series has sources waiting in its upload "
+                "The parent series has builds waiting in its upload "
                 "queues that match your selection.")
 
     def _checkSeries(self):
