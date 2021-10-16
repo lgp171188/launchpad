@@ -524,7 +524,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
 
             self.assertRaisesWithContent(
                 InitializationError,
-                ("The parent series has sources waiting in its upload "
+                ("The parent series has builds waiting in its upload "
                  "queues that match your selection."),
                 ids.check)
 
@@ -549,7 +549,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
 
             self.assertRaisesWithContent(
                 InitializationError,
-                ("The parent series has sources waiting in its upload "
+                ("The parent series has builds waiting in its upload "
                  "queues that match your selection."),
                 ids.check)
 
@@ -638,7 +638,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
 
         self.assertRaisesWithContent(
             InitializationError,
-            ("The parent series has sources waiting in its upload "
+            ("The parent series has builds waiting in its upload "
              "queues that match your selection."),
             ids.check)
 
