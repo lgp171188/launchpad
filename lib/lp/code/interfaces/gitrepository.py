@@ -37,7 +37,7 @@ from lazr.restful.declarations import (
     operation_returns_collection_of,
     operation_returns_entry,
     REQUEST_USER, scoped,
-)
+    )
 from lazr.restful.fields import (
     CollectionField,
     Reference,

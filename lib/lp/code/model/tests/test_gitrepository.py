@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from datetime import (
     datetime,
     timedelta,
-)
+    )
 import email
 from functools import partial
 import hashlib
@@ -46,14 +46,14 @@ from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,
     StartsWith,
-)
+    )
 import transaction
 from zope.component import getUtility
 from zope.publisher.xmlrpc import TestRequest
 from zope.security.interfaces import (
     ForbiddenAttribute,
     Unauthorized,
-)
+    )
 from zope.security.proxy import removeSecurityProxy
 
 from lp import _
@@ -61,7 +61,7 @@ from lp.app.enums import (
     InformationType,
     PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
-)
+    )
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
@@ -76,7 +76,7 @@ from lp.code.enums import (
     GitRepositoryStatus,
     GitRepositoryType,
     TargetRevisionControlSystems,
-)
+    )
 from lp.code.errors import (
     CannotDeleteGitRepository,
     CannotModifyNonHostedGitRepository,
@@ -85,38 +85,38 @@ from lp.code.errors import (
     GitRepositoryExists,
     GitTargetError,
     NoSuchGitReference,
-)
+    )
 from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES as FINAL_STATES,
-)
+    )
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
 from lp.code.interfaces.gitjob import (
     IGitRefScanJobSource,
     IGitRepositoryModifiedMailJobSource,
-)
+    )
 from lp.code.interfaces.gitlookup import IGitLookup
 from lp.code.interfaces.gitnamespace import (
     IGitNamespacePolicy,
     IGitNamespaceSet,
-)
+    )
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
     IGitRepositoryView,
-)
+    )
 from lp.code.interfaces.gitrule import (
     IGitNascentRule,
     IGitNascentRuleGrant,
-)
+    )
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.branchmergeproposal import BranchMergeProposal
 from lp.code.model.branchmergeproposaljob import (
     BranchMergeProposalJob,
     BranchMergeProposalJobType,
     UpdatePreviewDiffJob,
-)
+    )
 from lp.code.model.codereviewcomment import CodeReviewComment
 from lp.code.model.gitactivity import GitActivity
 from lp.code.model.gitjob import (
@@ -124,30 +124,30 @@ from lp.code.model.gitjob import (
     GitJobType,
     GitRefScanJob,
     ReclaimGitRepositorySpaceJob,
-)
+    )
 from lp.code.model.gitrepository import (
     ClearPrerequisiteRepository,
     DeleteCodeImport,
     DeletionCallable,
     DeletionOperation,
     GitRepository,
-)
+    )
 from lp.code.tests.helpers import GitHostingFixture
 from lp.code.xmlrpc.git import GitAPI
 from lp.registry.enums import (
     BranchSharingPolicy,
     PersonVisibility,
     TeamMembershipPolicy,
-)
+    )
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactSource,
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
-)
+    )
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
-)
+    )
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
@@ -167,7 +167,7 @@ from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.services.macaroons.testing import (
     find_caveats_by_name,
     MacaroonTestMixin,
-)
+    )
 from lp.services.mail import stub
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
 from lp.services.propertycache import clear_property_cache
@@ -186,19 +186,19 @@ from lp.testing import (
     record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
-    verifyObject, logout,
-)
+    verifyObject,
+    )
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
     ZopelessDatabaseLayer,
-)
+    )
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import (
     DoesNotSnapshot,
     HasQueryCount,
-)
+    )
 from lp.testing.pages import webservice_for_person
 from lp.xmlrpc import faults
 from lp.xmlrpc.interfaces import IPrivateApplication
@@ -220,7 +220,7 @@ class TestGitRepository(TestCaseWithFactory):
             '_api_landing_targets',
             '_api_landing_candidates',
             'dependent_landings',
-        ]
+            ]
         self.assertThat(
             self.factory.makeGitRepository(),
             DoesNotSnapshot(large_properties, IGitRepositoryView))
@@ -858,7 +858,7 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
         merge_source.addLandingTarget(self.user, self.ref)
         self.assertFalse(
             self.repository.canBeDeleted(),
-            "A repository with a landing candidate is not deletable.")
+             "A repository with a landing candidate is not deletable.")
         self.assertRaises(
             CannotDeleteGitRepository, self.repository.destroySelf)
 
@@ -879,8 +879,8 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
         # A repository with an associated job will delete those jobs.
         with person_logged_in(self.repository.owner):
             GitAPI(None, None).notify(self.repository.getInternalPath(),
-                                      {'loose_object_count': 5, 'pack_count': 2},
-                                      {'uid': self.repository.owner.id})
+                                  {'loose_object_count': 5, 'pack_count': 2},
+                                  {'uid': self.repository.owner.id})
         store = Store.of(self.repository)
         self.repository.destroySelf()
         # Need to commit the transaction to fire off the constraint checks.
@@ -1028,40 +1028,40 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         self.assertEqual(
             {
                 merge_proposal1:
-                    ("delete",
-                     _("This repository is the source repository of this merge "
-                       "proposal.")),
+                ("delete",
+                 _("This repository is the source repository of this merge "
+                   "proposal.")),
                 merge_proposal2:
-                    ("delete",
-                     _("This repository is the source repository of this merge "
-                       "proposal.")),
-            },
+                ("delete",
+                 _("This repository is the source repository of this merge "
+                   "proposal.")),
+                },
             self.repository.getDeletionRequirements())
         target = merge_proposal1.target_git_repository
         self.assertEqual(
             {
                 merge_proposal1:
-                    ("delete",
-                     _("This repository is the target repository of this merge "
-                       "proposal.")),
+                ("delete",
+                 _("This repository is the target repository of this merge "
+                   "proposal.")),
                 merge_proposal2:
-                    ("delete",
-                     _("This repository is the target repository of this merge "
-                       "proposal.")),
-            },
+                ("delete",
+                 _("This repository is the target repository of this merge "
+                   "proposal.")),
+                },
             target.getDeletionRequirements())
         prerequisite = merge_proposal1.prerequisite_git_repository
         self.assertEqual(
             {
                 merge_proposal1:
-                    ("alter",
-                     _("This repository is the prerequisite repository of this "
-                       "merge proposal.")),
+                ("alter",
+                 _("This repository is the prerequisite repository of this "
+                   "merge proposal.")),
                 merge_proposal2:
-                    ("alter",
-                     _("This repository is the prerequisite repository of this "
-                       "merge proposal.")),
-            },
+                ("alter",
+                 _("This repository is the prerequisite repository of this "
+                   "merge proposal.")),
+                },
             prerequisite.getDeletionRequirements())
 
     def test_delete_merge_proposal_source(self):
@@ -1083,7 +1083,7 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         merge_proposal1.target_git_repository.destroySelf(
             break_references=True)
         self.assertRaises(SQLObjectNotFound,
-                          BranchMergeProposal.get, merge_proposal1_id)
+            BranchMergeProposal.get, merge_proposal1_id)
 
     def test_delete_merge_proposal_prerequisite(self):
         # Merge proposal prerequisite repositories can be deleted with
@@ -1153,7 +1153,7 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         self.factory.makeSnap(git_ref=ref)
         self.assertEqual(
             {None:
-                 ("alter", _("Some snap packages build from this repository."))},
+             ("alter", _("Some snap packages build from this repository."))},
             ref.repository.getDeletionRequirements())
 
     def test_snap_deletion(self):
@@ -1178,7 +1178,7 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         self.factory.makeCharmRecipe(git_ref=ref)
         self.assertEqual(
             {None:
-                 ("alter", _("Some charm recipes build from this repository."))},
+             ("alter", _("Some charm recipes build from this repository."))},
             ref.repository.getDeletionRequirements())
 
     def test_charm_recipe_deletion(self):
@@ -1269,8 +1269,8 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
             ref.path: {
                 "sha1": "0000000000000000000000000000000000000000",
                 "type": ref.object_type,
-            },
-        }
+                },
+            }
         repository.createOrUpdateRefs(new_refs_info)
         self.assertSqlAttributeEqualsDate(
             repository, "date_last_modified", UTC_NOW)
@@ -1283,8 +1283,8 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
             "refs/heads/new": {
                 "sha1": ref.commit_sha1,
                 "type": ref.object_type,
-            },
-        }
+                },
+            }
         repository.createOrUpdateRefs(new_refs_info)
         self.assertSqlAttributeEqualsDate(
             repository, "date_last_modified", UTC_NOW)
@@ -1601,7 +1601,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
     def test__convertRefInfo_requires_object_type(self):
         info = {
             "object": {"sha1": "0000000000000000000000000000000000000000"},
-        }
+            }
         self.assertRaisesWithContent(
             ValueError, 'ref info object does not contain "type" key',
             GitRepository._convertRefInfo, info)
@@ -1617,8 +1617,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             "object": {
                 "sha1": "0000000000000000000000000000000000000000",
                 "type": "nonsense",
-            },
-        }
+                },
+            }
         self.assertRaisesWithContent(
             ValueError, 'ref info type is not a recognised object type',
             GitRepository._convertRefInfo, info)
@@ -1645,8 +1645,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             "refs/tags/1.1": {
                 "sha1": master_ref.commit_sha1,
                 "type": master_ref.object_type,
-            },
-        }
+                },
+            }
         repository.createOrUpdateRefs(new_refs_info)
         self.assertRefsMatch(
             [ref for ref in repository.refs if ref.path != "refs/tags/1.1"],
@@ -1658,7 +1658,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 path="refs/tags/1.1",
                 commit_sha1=master_ref.commit_sha1,
                 object_type=master_ref.object_type,
-            ))
+                ))
 
     def test_remove(self):
         repository = self.factory.makeGitRepository()
@@ -1677,7 +1677,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         new_info = {
             "sha1": "0000000000000000000000000000000000000000",
             "type": GitObjectType.BLOB,
-        }
+            }
         repository.createOrUpdateRefs({"refs/tags/1.0": new_info})
         self.assertRefsMatch(
             [ref for ref in repository.refs if ref.path != "refs/tags/1.0"],
@@ -1689,13 +1689,13 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 path="refs/tags/1.0",
                 commit_sha1="0000000000000000000000000000000000000000",
                 object_type=GitObjectType.BLOB,
-            ))
+                ))
 
     def _getWaitingUpdatePreviewDiffJobs(self, repository):
         jobs = Store.of(repository).find(
             BranchMergeProposalJob,
             BranchMergeProposalJob.job_type ==
-            BranchMergeProposalJobType.UPDATE_PREVIEW_DIFF,
+                BranchMergeProposalJobType.UPDATE_PREVIEW_DIFF,
             BranchMergeProposalJob.job == Job.id,
             Job._status == JobStatus.WAITING)
         return [UpdatePreviewDiffJob(job) for job in jobs]
@@ -1710,7 +1710,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         new_info = {
             "sha1": "0000000000000000000000000000000000000000",
             "type": GitObjectType.BLOB,
-        }
+            }
         repository.createOrUpdateRefs({ref.path: new_info})
         jobs = self._getWaitingUpdatePreviewDiffJobs(repository)
         self.assertEqual(
@@ -1754,39 +1754,39 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "object": {
                     "sha1": "1111111111111111111111111111111111111111",
                     "type": "commit",
+                    },
                 },
-            },
             "refs/heads/foo": {
                 "object": {
                     "sha1": foo_sha1,
                     "type": "commit",
+                    },
                 },
-            },
             "refs/tags/1.0": {
                 "object": {
                     "sha1": master_sha1,
                     "type": "commit",
+                    },
                 },
-            },
-        }))
+            }))
         refs_to_upsert, refs_to_remove = repository.planRefChanges("dummy")
 
         expected_upsert = {
             "refs/heads/master": {
                 "sha1": "1111111111111111111111111111111111111111",
                 "type": GitObjectType.COMMIT,
-            },
+                },
             "refs/heads/foo": {
                 "sha1": six.ensure_text(
                     hashlib.sha1(b"refs/heads/foo").hexdigest()),
                 "type": GitObjectType.COMMIT,
-            },
+                },
             "refs/tags/1.0": {
                 "sha1": six.ensure_text(
                     hashlib.sha1(b"refs/heads/master").hexdigest()),
                 "type": GitObjectType.COMMIT,
-            },
-        }
+                },
+            }
         self.assertEqual(expected_upsert, refs_to_upsert)
         self.assertEqual(set(["refs/heads/bar"]), refs_to_remove)
 
@@ -1800,17 +1800,17 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             "refs/heads/blob": {
                 "sha1": blob_sha1,
                 "type": GitObjectType.BLOB,
-            },
-        }
+                },
+            }
         repository.createOrUpdateRefs(refs_info)
         self.useFixture(GitHostingFixture(refs={
             "refs/heads/blob": {
                 "object": {
                     "sha1": blob_sha1,
                     "type": "blob",
+                    },
                 },
-            },
-        }))
+            }))
         self.assertEqual(({}, set()), repository.planRefChanges("dummy"))
 
     def test_planRefChanges_includes_unfetched_commits(self):
@@ -1834,8 +1834,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "object": {
                     "sha1": repository.getRefByPath(path).commit_sha1,
                     "type": "commit",
-                },
-            }
+                    },
+                }
             for path in paths}))
         refs_to_upsert, refs_to_remove = repository.planRefChanges("dummy")
 
@@ -1843,8 +1843,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             "refs/heads/foo": {
                 "sha1": repository.getRefByPath("refs/heads/foo").commit_sha1,
                 "type": GitObjectType.COMMIT,
-            },
-        }
+                },
+            }
         self.assertEqual(expected_upsert, refs_to_upsert)
         self.assertEqual(set(), refs_to_remove)
 
@@ -1884,25 +1884,25 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                     "name": author.displayname,
                     "email": author_email,
                     "time": int(seconds_since_epoch(author_date)),
-                },
+                    },
                 "committer": {
                     "name": "New Person",
                     "email": "new-person@example.org",
                     "time": int(seconds_since_epoch(committer_date)),
-                },
+                    },
                 "parents": [],
                 "tree": six.ensure_text(hashlib.sha1(b"").hexdigest()),
-            }]))
+                }]))
         refs = {
             "refs/heads/master": {
                 "sha1": master_sha1,
                 "type": GitObjectType.COMMIT,
-            },
+                },
             "refs/heads/foo": {
                 "sha1": foo_sha1,
                 "type": GitObjectType.COMMIT,
-            },
-        }
+                },
+            }
         GitRepository.fetchRefCommits("dummy", refs)
 
         expected_oids = [master_sha1, foo_sha1]
@@ -1925,12 +1925,12 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "committer_addr": expected_committer_addr,
                 "committer_date": committer_date,
                 "commit_message": "tip of master",
-            },
+                },
             "refs/heads/foo": {
                 "sha1": foo_sha1,
                 "type": GitObjectType.COMMIT,
-            },
-        }
+                },
+            }
         self.assertEqual(expected_refs, refs)
 
     def test_fetchRefCommits_empty(self):
@@ -1951,17 +1951,17 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             "refs/heads/master": {
                 "sha1": "1111111111111111111111111111111111111111",
                 "type": GitObjectType.COMMIT,
-            },
+                },
             "refs/heads/foo": {
                 "sha1": repository.getRefByPath("refs/heads/foo").commit_sha1,
                 "type": GitObjectType.COMMIT,
-            },
+                },
             "refs/tags/1.0": {
                 "sha1": repository.getRefByPath(
                     "refs/heads/master").commit_sha1,
                 "type": GitObjectType.COMMIT,
-            },
-        }
+                },
+            }
         refs_to_remove = set(["refs/heads/bar"])
         repository.synchroniseRefs(refs_to_upsert, refs_to_remove)
         expected_sha1s = [
@@ -1970,14 +1970,14 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
              six.ensure_text(hashlib.sha1(b"refs/heads/foo").hexdigest())),
             ("refs/tags/1.0",
              six.ensure_text(hashlib.sha1(b"refs/heads/master").hexdigest())),
-        ]
+            ]
         matchers = [
             MatchesStructure.byEquality(
                 repository=repository,
                 path=path,
                 commit_sha1=sha1,
                 object_type=GitObjectType.COMMIT,
-            ) for path, sha1 in expected_sha1s]
+                ) for path, sha1 in expected_sha1s]
         self.assertThat(repository.refs, MatchesSetwise(*matchers))
 
     def test_set_default_branch(self):
@@ -1991,7 +1991,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             repository.default_branch = "new"
         self.assertEqual(
             [((repository.getInternalPath(),),
-              {"default_branch": "refs/heads/new"})],
+             {"default_branch": "refs/heads/new"})],
             hosting_fixture.setProperties.calls)
         self.assertEqual("refs/heads/new", repository.default_branch)
 
@@ -2018,7 +2018,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
             self.assertRaisesWithContent(
                 CannotModifyNonHostedGitRepository,
                 "Cannot modify non-hosted Git repository %s." %
-                repository.display_name,
+                    repository.display_name,
                 setattr, repository, "default_branch", "new")
         self.assertEqual([], hosting_fixture.setProperties.calls)
         self.assertEqual("refs/heads/master", repository.default_branch)
@@ -2032,7 +2032,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 NoSuchGitReference,
                 "The repository at %s does not contain "
                 "a reference named 'None'." %
-                repository.display_name,
+                    repository.display_name,
                 setattr, repository, "default_branch", None)
 
     def test_exception_set_default_branch_nonexistent_ref(self):
@@ -2049,7 +2049,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 NoSuchGitReference,
                 "The repository at %s does not contain "
                 "a reference named 'refs/heads/nonexistent'." %
-                repository.display_name,
+                    repository.display_name,
                 setattr, repository,
                 "default_branch", "refs/heads/nonexistent")
         self.assertEqual("refs/heads/master", repository.default_branch)
@@ -2183,7 +2183,7 @@ class TestGitRepositoryIsPersonTrustedReviewer(TestCaseWithFactory):
 
     def test_repository_owner_not_review_team_member_is_trusted(self):
         # If the owner of the repository is not in the review team,
-        # they are still trusted.
+        #they are still trusted.
         team = self.factory.makeTeam()
         repository = self.factory.makeGitRepository(reviewer=team)
         self.assertFalse(repository.owner.inTeam(team))
@@ -2524,6 +2524,7 @@ class TestGitRepositorySetTarget(TestCaseWithFactory):
 
 
 class TestGitRepositoryRescan(TestCaseWithFactory):
+
     layer = DatabaseFunctionalLayer
 
     def test_rescan(self):
@@ -2577,6 +2578,7 @@ class TestGitRepositoryRescan(TestCaseWithFactory):
 
 
 class TestGitRepositoryUpdateMergeCommitIDs(TestCaseWithFactory):
+
     layer = DatabaseFunctionalLayer
 
     def test_updates_proposals(self):
@@ -2636,6 +2638,7 @@ class TestGitRepositoryUpdateMergeCommitIDs(TestCaseWithFactory):
 
 
 class TestGitRepositoryUpdateLandingTargets(TestCaseWithFactory):
+
     layer = DatabaseFunctionalLayer
 
     def test_schedules_diff_updates(self):
@@ -2666,6 +2669,7 @@ class TestGitRepositoryUpdateLandingTargets(TestCaseWithFactory):
 
 
 class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
+
     layer = ZopelessDatabaseLayer
 
     def test_base_repository_recipe(self):
@@ -2757,6 +2761,7 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
 
 
 class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
+
     layer = ZopelessDatabaseLayer
 
     def test_same_repository(self):
@@ -2800,6 +2805,7 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
 
 
 class TestGitRepositoryFork(TestCaseWithFactory):
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -2901,6 +2907,7 @@ class TestGitRepositoryFork(TestCaseWithFactory):
 
 
 class TestGitRepositoryDetectMerges(TestCaseWithFactory):
+
     layer = ZopelessDatabaseLayer
 
     def test_markProposalMerged(self):
@@ -2940,7 +2947,7 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
                 "refs/heads/target-2",
                 "refs/heads/source-1",
                 "refs/heads/source-2",
-            ])
+                ])
         bmp1 = self.factory.makeBranchMergeProposalForGit(
             target_ref=target_1, source_ref=source_1)
         bmp2 = self.factory.makeBranchMergeProposalForGit(
@@ -2953,12 +2960,12 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
             "refs/heads/target-1": {
                 "sha1": "0" * 40,
                 "type": GitObjectType.COMMIT,
-            },
+                },
             "refs/heads/target-2": {
                 "sha1": "1" * 40,
                 "type": GitObjectType.COMMIT,
-            },
-        }
+                },
+            }
         expected_events = [
             ObjectModifiedEvent, ObjectModifiedEvent, GitRefsUpdatedEvent]
         _, events = self.assertNotifies(
@@ -2968,7 +2975,7 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
              set([source_1.commit_sha1, source_2.commit_sha1])),
             (repository.getInternalPath(), target_2.commit_sha1,
              set([source_1.commit_sha1])),
-        ]
+            ]
         self.assertContentEqual(
             expected_args, hosting_fixture.detectMerges.extract_args())
         self.assertEqual(BranchMergeProposalStatus.MERGED, bmp1.queue_status)
@@ -3007,6 +3014,7 @@ class TestGitRepositoryGetBlob(TestCaseWithFactory):
 
 
 class TestGitRepositoryRules(TestCaseWithFactory):
+
     layer = DatabaseFunctionalLayer
 
     def test_rules(self):
@@ -3025,7 +3033,7 @@ class TestGitRepositoryRules(TestCaseWithFactory):
             MatchesStructure.byEquality(
                 repository=repository,
                 ref_pattern="refs/heads/stable/*"),
-        ]))
+            ]))
 
     def test_getRule(self):
         repository = self.factory.makeGitRepository()
@@ -3061,7 +3069,7 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                 repository=repository, ref_pattern="refs/heads/protected/*"),
             self.factory.makeGitRule(
                 repository=repository, ref_pattern="refs/heads/another/*"),
-        ]
+            ]
         self.assertEqual([0, 1, 2], [rule.position for rule in initial_rules])
         with person_logged_in(repository.owner):
             new_rule = repository.addRule(
@@ -3079,7 +3087,7 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                 repository=repository, ref_pattern="refs/heads/exact"),
             self.factory.makeGitRule(
                 repository=repository, ref_pattern="refs/heads/*"),
-        ]
+            ]
         self.assertEqual([0, 1], [rule.position for rule in initial_rules])
         with person_logged_in(repository.owner):
             exact_rule = repository.addRule(
@@ -3129,7 +3137,7 @@ class TestGitRepositoryRules(TestCaseWithFactory):
             self.factory.makeGitRuleGrant(
                 rule=rule, grantee=self.factory.makePerson())
             for _ in range(2)
-        ]
+            ]
         self.factory.makeGitRuleGrant(
             rule=other_rule, grantee=self.factory.makePerson())
         self.assertContentEqual(grants, repository.grants)
@@ -3161,12 +3169,12 @@ class TestGitRepositoryRules(TestCaseWithFactory):
             IGitNascentRule({
                 "ref_pattern": "refs/heads/*",
                 "grants": [],
-            }),
+                }),
             IGitNascentRule({
                 "ref_pattern": "refs/heads/stable/*",
                 "grants": [],
-            }),
-        ]
+                }),
+            ]
         removeSecurityProxy(repository)._validateRules(rules)
 
     def test__validateRules_duplicate_ref_pattern(self):
@@ -3175,12 +3183,12 @@ class TestGitRepositoryRules(TestCaseWithFactory):
             IGitNascentRule({
                 "ref_pattern": "refs/heads/*",
                 "grants": [],
-            }),
+                }),
             IGitNascentRule({
                 "ref_pattern": "refs/heads/*",
                 "grants": [],
-            }),
-        ]
+                }),
+            ]
         self.assertRaisesWithContent(
             ValueError,
             "New rules may not contain duplicate ref patterns "
@@ -3201,9 +3209,9 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                             "grantee_type": GitGranteeType.REPOSITORY_OWNER,
                             "can_create": True,
                             "can_force_push": True,
-                        }),
-                    ],
-                }),
+                            }),
+                        ],
+                    }),
                 IGitNascentRule({
                     "ref_pattern": "refs/heads/*",
                     "grants": [
@@ -3211,10 +3219,10 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                             "grantee_type": GitGranteeType.PERSON,
                             "grantee": grantee,
                             "can_push": True,
-                        }),
-                    ],
-                }),
-            ], member)
+                            }),
+                        ],
+                    }),
+                ], member)
         self.assertThat(list(repository.rules), MatchesListwise([
             MatchesStructure(
                 repository=Equals(repository),
@@ -3240,7 +3248,7 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                         can_create=Is(False),
                         can_push=Is(True),
                         can_force_push=Is(False)))),
-        ]))
+            ]))
 
     def test_setRules_move(self):
         owner = self.factory.makeTeam()
@@ -3258,16 +3266,16 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                 IGitNascentRule({
                     "ref_pattern": "refs/heads/*/next",
                     "grants": [],
-                }),
+                    }),
                 IGitNascentRule({
                     "ref_pattern": "refs/heads/stable/*",
                     "grants": [],
-                }),
+                    }),
                 IGitNascentRule({
                     "ref_pattern": "refs/heads/*",
                     "grants": [],
-                }),
-            ], members[1])
+                    }),
+                ], members[1])
             date_modified = get_transaction_timestamp(Store.of(repository))
         self.assertThat(list(repository.rules), MatchesListwise([
             MatchesStructure(
@@ -3288,7 +3296,7 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                 creator=Equals(members[0]),
                 date_created=Equals(date_created),
                 date_last_modified=Equals(date_created)),
-        ]))
+            ]))
 
     def test_setRules_canonicalises_expected_ordering(self):
         repository = self.factory.makeGitRepository()
@@ -3297,12 +3305,12 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                 IGitNascentRule({
                     "ref_pattern": "refs/heads/master-next",
                     "grants": [],
-                }),
+                    }),
                 IGitNascentRule({
                     "ref_pattern": "refs/heads/master",
                     "grants": [],
-                }),
-            ], repository.owner)
+                    }),
+                ], repository.owner)
 
     def test_setRules_modify_grants(self):
         owner = self.factory.makeTeam()
@@ -3329,20 +3337,20 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                         IGitNascentRuleGrant({
                             "grantee_type": GitGranteeType.REPOSITORY_OWNER,
                             "can_create": True,
-                        }),
+                            }),
                         IGitNascentRuleGrant({
                             "grantee_type": GitGranteeType.PERSON,
                             "grantee": grantee,
                             "can_push": True,
                             "can_force_push": True,
-                        }),
-                    ],
-                }),
+                            }),
+                        ],
+                    }),
                 IGitNascentRule({
                     "ref_pattern": "refs/heads/*",
                     "grants": [],
-                }),
-            ], members[1])
+                    }),
+                ], members[1])
             date_modified = get_transaction_timestamp(
                 Store.of(repository))
         self.assertThat(list(repository.rules), MatchesListwise([
@@ -3378,7 +3386,7 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                 date_created=Equals(date_created),
                 date_last_modified=Equals(date_created),
                 grants=MatchesSetwise()),
-        ]))
+            ]))
 
     def test_setRules_remove(self):
         repository = self.factory.makeGitRepository()
@@ -3393,8 +3401,8 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                 IGitNascentRule({
                     "ref_pattern": "refs/heads/*",
                     "grants": [],
-                }),
-            ], repository.owner)
+                    }),
+                ], repository.owner)
         self.assertThat(list(repository.rules), MatchesListwise([
             MatchesStructure(
                 repository=Equals(repository),
@@ -3402,10 +3410,11 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                 date_created=Equals(date_created),
                 date_last_modified=Equals(date_created),
                 grants=MatchesSetwise()),
-        ]))
+            ]))
 
 
 class TestGitRepositorySet(TestCaseWithFactory):
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -3512,7 +3521,7 @@ class TestGitRepositorySet(TestCaseWithFactory):
             datetime(2014, 1, 1, tzinfo=pytz.UTC),
             datetime(2020, 1, 1, tzinfo=pytz.UTC),
             datetime(2019, 1, 1, tzinfo=pytz.UTC),
-        ]
+            ]
         for repository, modified_date in zip(repositories, modified_dates):
             removeSecurityProxy(repository).date_last_modified = modified_date
         removeSecurityProxy(repositories[0]).transitionToInformationType(
@@ -3706,6 +3715,7 @@ class TestGitRepositorySet(TestCaseWithFactory):
 
 
 class TestGitRepositorySetDefaultsMixin:
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -3713,7 +3723,7 @@ class TestGitRepositorySetDefaultsMixin:
         self.repository_set = getUtility(IGitRepositorySet)
         self.get_method = self.repository_set.getDefaultRepository
         self.set_method = (lambda target, repository, user:
-                           self.repository_set.setDefaultRepository(target, repository))
+            self.repository_set.setDefaultRepository(target, repository))
 
     def makeGitRepository(self, target):
         return self.factory.makeGitRepository(target=target)
@@ -3915,7 +3925,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             'pack_count': Is(None),
             'date_last_repacked': Is(None),
             'date_last_scanned': Is(None),
-        }))
+            }))
 
         repository_db = removeSecurityProxy(repository_db)
         repository_db.loose_object_count = 45
@@ -3930,7 +3940,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             'pack_count': Equals(523),
             'date_last_repacked': Equals(UTC_NOW),
             'date_last_scanned': Equals(UTC_NOW),
-        }))
+            }))
 
     def test_git_gc_owner(self):
         # Repository owner cannot request a git GC run
@@ -4019,7 +4029,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             "name": Equals(name),
             "owner_default": Is(False),
             "target_default": Is(False),
-        }))
+            }))
         self.assertEqual(1, hosting_fixture.create.call_count)
 
     def test_new_project(self):
@@ -4330,7 +4340,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                 ("b", ref_urls[1]),
                 ("refs/heads/b", ref_urls[1]),
                 ("HEAD", "%s/+ref/HEAD" % repository_url),
-        ):
+                ):
             response = webservice.named_get(
                 repository_url, "getRefByPath", path=path)
             self.assertEqual(200, response.status)
@@ -4430,7 +4440,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                         BranchSubscriptionNotificationLevel.NOEMAIL),
                     max_diff_lines=BranchSubscriptionDiffSize.WHOLEDIFF,
                     review_level=CodeReviewNotificationLevel.STATUS,
-                ))
+                    ))
         repository = webservice.get(repository_url).jsonBody()
         subscribers = webservice.get(
             repository["subscribers_collection_link"]).jsonBody()
@@ -4561,7 +4571,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                 repository=repository, ref_pattern="refs/heads/stable/*"),
             self.factory.makeGitRule(
                 repository=repository, ref_pattern="refs/heads/*"),
-        ]
+            ]
         self.factory.makeGitRuleGrant(
             rule=rules[0], grantee=GitGranteeType.REPOSITORY_OWNER,
             can_create=True, can_force_push=True)
@@ -4586,9 +4596,9 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                         "can_create": Is(True),
                         "can_push": Is(False),
                         "can_force_push": Is(True),
-                    }),
-                ),
-            }),
+                        }),
+                    ),
+                }),
             MatchesDict({
                 "ref_pattern": Equals("refs/heads/*"),
                 "grants": MatchesSetwise(*(
@@ -4599,10 +4609,10 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                         "can_create": Is(False),
                         "can_push": Is(True),
                         "can_force_push": Is(False),
-                    })
+                        })
                     for grantee_url in grantee_urls)),
-            }),
-        ]))
+                }),
+            ]))
 
     def test_setRules(self):
         repository = self.factory.makeGitRepository()
@@ -4624,9 +4634,9 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                             "grantee_type": "Repository owner",
                             "can_create": True,
                             "can_force_push": True,
-                        },
-                    ],
-                },
+                            },
+                        ],
+                    },
                 {
                     "ref_pattern": "refs/heads/*",
                     "grants": [
@@ -4634,10 +4644,10 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                             "grantee_type": "Person",
                             "grantee_link": grantee_url,
                             "can_push": True,
-                        },
-                    ],
-                },
-            ])
+                            },
+                        ],
+                    },
+                ])
         self.assertEqual(200, response.status)
         with person_logged_in(owner):
             self.assertThat(list(repository.rules), MatchesListwise([
@@ -4666,7 +4676,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                             can_create=Is(False),
                             can_push=Is(True),
                             can_force_push=Is(False)))),
-            ]))
+                ]))
 
     def test_checkRefPermissions(self):
         repository = self.factory.makeGitRepository()
@@ -4695,7 +4705,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             "refs/heads/master": Equals(["create", "push"]),
             "refs/heads/next": Equals(["create", "push"]),
             "refs/other": Equals(["create", "push", "force-push"]),
-        }))
+            }))
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=grantee_urls[0],
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
@@ -4703,7 +4713,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             "refs/heads/master": Equals(["create"]),
             "refs/heads/next": Equals([]),
             "refs/other": Equals([]),
-        }))
+            }))
         response = webservice.named_get(
             repository_url, "checkRefPermissions", person=grantee_urls[1],
             paths=["refs/heads/master", "refs/heads/next", "refs/other"])
@@ -4711,7 +4721,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             "refs/heads/master": Equals(["push"]),
             "refs/heads/next": Equals(["push", "force-push"]),
             "refs/other": Equals([]),
-        }))
+            }))
 
     def test_issueAccessToken(self):
         # A user can request an access token via the webservice API.
@@ -4740,7 +4750,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                         caveat_id=StartsWith(
                             "lp.principal.openid-identifier ")),
                     MatchesStructure(caveat_id=StartsWith("lp.expires ")),
-                ])))
+                    ])))
 
     def test_issueAccessToken_anonymous(self):
         # An anonymous user cannot request an access token via the
@@ -4859,11 +4869,11 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
                     caveat_id="lp.git-repository %s" % repository.id),
                 MatchesStructure.byEquality(
                     caveat_id=(
-                            "lp.principal.openid-identifier %s" % identifier)),
+                        "lp.principal.openid-identifier %s" % identifier)),
                 MatchesStructure.byEquality(
                     caveat_id="lp.expires %s" % (
                         expires.strftime("%Y-%m-%dT%H:%M:%S.%f"))),
-            ])))
+                ])))
 
     def test_issueMacaroon_expiry_feature_flag(self):
         self.useFixture(FeatureFixture(
