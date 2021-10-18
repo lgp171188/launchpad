@@ -418,7 +418,6 @@ class TestCloseAccount(TestCaseWithFactory):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
-
     def test_handles_archive_subscriptions_and_tokens(self):
         person = self.factory.makePerson()
         ppa = self.factory.makeArchive(private=True)
