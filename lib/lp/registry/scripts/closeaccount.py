@@ -142,6 +142,7 @@ def close_account(username, log):
         ('persontransferjob', 'minor_person'),
         ('poexportrequest', 'person'),
         ('pofile', 'lasttranslator'),
+        ('pofile', 'owner'),
         ('pofiletranslator', 'person'),
         ('product', 'registrant'),
         ('question', 'answerer'),
