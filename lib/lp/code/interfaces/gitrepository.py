@@ -36,8 +36,8 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
-    REQUEST_USER,
-    )
+    REQUEST_USER, scoped,
+)
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -68,7 +68,7 @@ from lp.code.enums import (
     CodeReviewNotificationLevel,
     GitListingSort,
     GitRepositoryStatus,
-    GitRepositoryType,
+    GitRepositoryType, RevisionStatus, RevisionStatusResult,
     )
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
@@ -749,6 +749,33 @@ class IGitRepositoryModerateAttributes(Interface):
         description=_("A short description of this repository.")))
 
 
+class IGitRepositoryBuildStatus(Interface):
+
+    @operation_parameters(
+        name=TextLine(title=_("The name of the status report.")),
+        status=List(
+            title=_("A list of report statuses to filter by."),
+            value_type=Choice(vocabulary=RevisionStatus)),
+        description=TextLine(title=_("The description of the status report.")),
+        commit_sha1=TextLine(title=_("The commit sha1 of the status report.")),
+        result=List(
+            title=_("A list of report result statuses to filter by."),
+            value_type=Choice(vocabulary=RevisionStatusResult)))
+    @scoped('repository:build_status')
+    @call_with(user=REQUEST_USER)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def newRevisionStatusReport(name, status, description, commit_sha1, result, user):
+        """Create a New Status Report and return its ID.
+
+        :param name: The name of the new report.
+        :param status: The `RevisionStatus` of the new report.
+        :param description: The description of the new report.
+        :param commit_sha1: The commit sha1 for the report.
+        :param result: The result of the new report.
+        """
+
+
 class IGitRepositoryModerate(Interface):
     """IGitRepository methods that can be called by more than one community."""
 
@@ -1014,7 +1041,8 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
 @exported_as_webservice_entry(plural_name="git_repositories", as_of="beta")
 class IGitRepository(IGitRepositoryView, IGitRepositoryModerateAttributes,
                      IGitRepositoryModerate, IGitRepositoryEditableAttributes,
-                     IGitRepositoryEdit, IGitRepositoryExpensiveRequest):
+                     IGitRepositoryEdit, IGitRepositoryExpensiveRequest,
+                     IGitRepositoryBuildStatus):
     """A Git repository."""
 
     private = exported(Bool(

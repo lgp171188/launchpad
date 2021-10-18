@@ -252,6 +252,32 @@ class GitPermissionType(EnumeratedType):
     CAN_FORCE_PUSH = Item("Can force-push")
 
 
+class RevisionStatus(EnumeratedType):
+    """Revision Status
+
+    The status that a RevisionStatusReport can have.
+    """
+    QUEUED = Item("Queued")
+
+    STARTED = Item("Started")
+
+    COMPLETED = Item("Completed")
+
+    FAILED_TO_START = Item("FailedToStart")
+
+
+class RevisionStatusResult(EnumeratedType):
+    """Revision Status Result"""
+
+    SUCCESS = Item("Success")
+
+    FAILED = Item("Failed")
+
+    SKIPPED = Item("Skipped")
+
+    CANCELLED = Item("Cancelled")
+
+
 class BranchLifecycleStatusFilter(EnumeratedType):
     """Branch Lifecycle Status Filter
 

@@ -30,6 +30,7 @@ from breezy import urlutils
 from lazr.enum import DBItem
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
+from lazr.restful.declarations import scoped
 import pytz
 import six
 from six.moves.urllib.parse import (
@@ -177,6 +178,7 @@ from lp.registry.model.accesspolicy import (
     )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
+from lp.services.auth.enums import AccessTokenScope
 from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.auth.model import AccessTokenTargetMixin
 from lp.services.auth.utils import create_access_token_secret
@@ -500,6 +502,11 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
 
     def collectGarbage(self):
         getUtility(IGitHostingClient).collectGarbage(self.getInternalPath())
+
+    @scoped('repository:build_status')
+    def newRevisionStatusReport(self, name, status, description, commit_sha1, result, user):
+        """See `IGitRepositoryBuildStatus`."""
+        print('test')
 
     @property
     def namespace(self):
