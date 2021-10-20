@@ -186,7 +186,16 @@ class AccessTokenSet:
                         removeSecurityProxy(ids)._get_select())))
         else:
             raise TypeError("Unsupported target: {!r}".format(target))
-        return IStore(AccessToken).find(AccessToken, *clauses)
+        clauses.append(Or(
+            AccessToken.date_expires == None,
+            AccessToken.date_expires > UTC_NOW))
+        return IStore(AccessToken).find(AccessToken, *clauses).order_by(
+            AccessToken.date_created)
+
+    def getByTargetAndID(self, target, token_id, visible_by_user=None):
+        """See `IAccessTokenSet`."""
+        return self.findByTarget(target, visible_by_user=visible_by_user).find(
+            id=token_id).one()
 
 
 class AccessTokenTargetMixin:

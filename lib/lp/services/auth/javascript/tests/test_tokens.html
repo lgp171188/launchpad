@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<!--
+Copyright 2021 Canonical Ltd.  This software is licensed under the
+GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<html>
+  <head>
+    <title>Personal access token widget tests</title>
+
+    <!-- YUI and test setup -->
+    <script type="text/javascript"
+            src="../../../../../../build/js/yui/yui/yui.js">
+    </script>
+    <link rel="stylesheet"
+    href="../../../../../../build/js/yui/console/assets/console-core.css" />
+    <link rel="stylesheet"
+    href="../../../../../../build/js/yui/test-console/assets/skins/sam/test-console.css" />
+    <link rel="stylesheet"
+    href="../../../../../../build/js/yui/test/assets/skins/sam/test.css" />
+
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/testing/testrunner.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/testing/helpers.js"></script>
+
+    <link rel="stylesheet" href="../../../../app/javascript/testing/test.css" />
+
+    <!-- Dependencies -->
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/anim/anim.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/client.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/effects/effects.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/errors.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/expander.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/extras/extras.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/formoverlay/formoverlay.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/lp.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/overlay/overlay.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/testing/mockio.js"></script>
+    <script type="text/javascript"
+            src="../../../../../../build/js/lp/app/ui/ui.js"></script>
+
+    <!-- The module under test. -->
+    <script type="text/javascript" src="../tokens.js"></script>
+
+    <!-- The test suite -->
+    <script type="text/javascript" src="test_tokens.js"></script>
+
+    <script id="fixture-template" type="text/x-template">
+      <div id="create-token">
+        <table class="form">
+          <tr>
+            <td>
+              <label for="field.description">Description:</label>
+              <input class="textType" id="field.description"
+                     name="field.description" size="20" type="text" value="" />
+            </td>
+            <td>
+              <label for="field.scopes">Scopes:</label>
+              <label for="field.scopes.0">
+                <input class="checkboxType" id="field.scopes.0"
+                       name="field.scopes" type="checkbox"
+                       value="REPOSITORY_BUILD_STATUS"
+                       />&nbsp;repository:build_status
+              </label>
+              <br />
+              <label for="field.scopes.1">
+                <input class="checkboxType" id="field.scopes.1"
+                       name="field.scopes" type="checkbox"
+                       value="REPOSITORY_PUSH" />&nbsp;repository:push
+              </label>
+              <input name="field.scopes.empty-marker" type="hidden"
+                     value="1" />
+            </td>
+            <td>
+              <label for="field.date_expires">Expiry date:</label>
+              <input size="19" type="text" class="yui2-calendar withtime"
+                     id="field.date_expires" name="field.date_expires" />
+              in time zone: UTC
+            </td>
+          </tr>
+        </table>
+
+        <p>
+          <input id="create-token-button" class="js-only"
+                 type="button" value="Create token" />
+          <img class="spinner hidden" src="/@@/spinner" alt="Loading..." />
+        </p>
+        <div id="new-token-information" class="hidden">
+          <p>Your new personal access token is:</p>
+          <pre id="new-token-secret" class="subordinate"></pre>
+          <p>
+            Launchpad will not show you this again, so make sure to save it
+            now.
+          </p>
+        </div>
+      </div>
+
+      <table class="listing access-tokens-table">
+        <tbody id="access-tokens-tbody" />
+      </table>
+    </script>
+  </head>
+  <body class="yui3-skin-sam">
+    <ul id="suites">
+        <li>lp.services.auth.tokens.test</li>
+    </ul>
+
+    <div id="fixture" />
+  </body>
+</html>
