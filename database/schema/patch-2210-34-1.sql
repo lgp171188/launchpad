@@ -3,6 +3,8 @@
 
 SET client_min_messages=ERROR;
 
-ALTER TABLE signedcodeofconduct ALTER COLUMN affirmed SET NOT NULL;
+ALTER TABLE signedcodeofconduct
+    ALTER COLUMN affirmed SET DEFAULT false,
+    ALTER COLUMN affirmed SET NOT NULL;
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 34, 1);
