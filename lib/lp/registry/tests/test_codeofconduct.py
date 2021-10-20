@@ -5,6 +5,7 @@
 
 from textwrap import dedent
 
+from storm.exceptions import NoneError
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -16,6 +17,7 @@ from lp.registry.interfaces.codeofconduct import (
     ICodeOfConductSet,
     ISignedCodeOfConductSet,
     )
+from lp.registry.model.codeofconduct import SignedCodeOfConduct
 from lp.services.config import config
 from lp.services.gpg.handler import PymeSignature
 from lp.services.gpg.interfaces import (
@@ -242,3 +244,19 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
             u"You have already affirmed the current Code of Conduct.",
             getUtility(ISignedCodeOfConductSet).affirmAndStore(
                 user, current.content))
+
+
+class TestSignedCodeOfConduct(TestCaseWithFactory):
+    layer = ZopelessDatabaseLayer
+
+    def test_affirmed_cant_be_instantiated_with_none(self):
+        self.assertRaises(
+            NoneError,
+            SignedCodeOfConduct,
+            owner=self.factory.makePerson(),
+            affirmed=None
+        )
+
+    def test_affirmed_cant_be_none(self):
+        coc = SignedCodeOfConduct(owner=self.factory.makePerson())
+        self.assertRaises(NoneError, setattr, coc, "affirmed", None)
