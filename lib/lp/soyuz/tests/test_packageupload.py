@@ -666,6 +666,13 @@ class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
         pu, pcj = self.makeUploadWithPackageCopyJob()
         self.assertIs(None, pu.sourcepackagerelease)
 
+    def test_upload_contains_build_works_with_copy_jobs(self):
+        pu = self.factory.makeCopyJobPackageUpload()
+        self.assertFalse(pu.contains_build)
+
+        pu = self.factory.makeCopyJobPackageUpload(include_binaries=True)
+        self.assertTrue(pu.contains_build)
+
 
 class TestPackageUploadCustom(TestCase):
     """Unit tests for `PackageUploadCustom`."""

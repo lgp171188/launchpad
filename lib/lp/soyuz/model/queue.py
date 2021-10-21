@@ -651,7 +651,14 @@ class PackageUpload(SQLBase):
     @cachedproperty
     def contains_build(self):
         """See `IPackageUpload`."""
-        return bool(self.builds)
+        if self.builds:
+            return True
+        else:
+            # handle case when PackageUpload is a copy
+            copy_job = self.package_copy_job
+            if copy_job is not None:
+                return copy_job.metadata["include_binaries"]
+        return False
 
     @cachedproperty
     def contains_copy(self):
