@@ -31,5 +31,12 @@
         path_expression="string:+access-token/${id}"
         attribute_to_parent="target" />
 
+    <browser:page
+        for="lp.services.auth.interfaces.IAccessTokenTarget"
+        name="+access-tokens"
+        permission="launchpad.Edit"
+        class="lp.services.auth.browser.AccessTokensView"
+        template="templates/accesstokentarget-access-tokens.pt" />
+
     <webservice:register module="lp.services.auth.webservice" />
 </configure>

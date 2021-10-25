@@ -4538,6 +4538,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         token = getUtility(IAccessTokenSet).new(
             secret, owner, description, target, scopes,
             date_expires=date_expires)
+        IStore(token).flush()
         return secret, token
 
     def makeCVE(self, sequence, description=None,

@@ -1,0 +1,151 @@
+# Copyright 2021 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""Test personal access token views."""
+
+import re
+
+import soupmatchers
+from testtools.matchers import (
+    Equals,
+    Is,
+    MatchesAll,
+    MatchesListwise,
+    MatchesStructure,
+    Not,
+    )
+from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
+
+from lp.services.webapp.interfaces import IPlacelessAuthUtility
+from lp.services.webapp.publisher import canonical_url
+from lp.testing import (
+    login_person,
+    TestCaseWithFactory,
+    )
+from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.views import create_view
+
+
+breadcrumbs_tag = soupmatchers.Tag(
+    "breadcrumbs", "ol", attrs={"class": "breadcrumbs"})
+tokens_page_crumb_tag = soupmatchers.Tag(
+    "tokens page breadcrumb", "li", text=re.compile(r"Personal access tokens"))
+token_listing_constants = soupmatchers.HTMLContains(
+    soupmatchers.Within(breadcrumbs_tag, tokens_page_crumb_tag))
+token_listing_tag = soupmatchers.Tag(
+    "tokens table", "table", attrs={"class": "listing"})
+
+
+class TestAccessTokenViewBase:
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.target = self.makeTarget()
+        self.owner = self.target.owner
+        login_person(self.owner)
+
+    def makeView(self, name, **kwargs):
+        # XXX cjwatson 2021-10-19: We need to give the view a
+        # LaunchpadPrincipal rather than just a person, since otherwise bits
+        # of the navigation menu machinery try to use the scope_url
+        # attribute on the principal and fail.  This should probably be done
+        # in create_view instead, but that approach needs care to avoid
+        # adding an extra query to tests that might be sensitive to that.
+        principal = getUtility(IPlacelessAuthUtility).getPrincipal(
+            self.owner.accountID)
+        view = create_view(
+            self.target, name, principal=principal, current_request=True,
+            **kwargs)
+        # To test the breadcrumbs we need a correct traversal stack.
+        view.request.traversed_objects = (
+            self.getTraversalStack(self.target) + [view])
+        # The navigation menu machinery needs this to find the view from the
+        # request.
+        view.request._last_obj_traversed = view
+        view.initialize()
+        return view
+
+    def makeTokensAndMatchers(self, count):
+        tokens = [
+            self.factory.makeAccessToken(target=self.target)[1]
+            for _ in range(count)]
+        # There is a row for each token.
+        matchers = []
+        for token in tokens:
+            row_tag = soupmatchers.Tag(
+                "token row", "tr",
+                attrs={"token-id": removeSecurityProxy(token).id})
+            column_tags = [
+                soupmatchers.Tag(
+                    "description", "td", text=token.description),
+                soupmatchers.Tag(
+                    "scopes", "td",
+                    text=", ".join(scope.title for scope in token.scopes)),
+                ]
+            matchers.extend([
+                soupmatchers.Within(row_tag, column_tag)
+                for column_tag in column_tags])
+        return matchers
+
+    def test_empty(self):
+        self.assertThat(
+            self.makeView("+access-tokens")(),
+            MatchesAll(
+                token_listing_constants,
+                soupmatchers.HTMLContains(token_listing_tag)))
+
+    def test_existing_tokens(self):
+        token_matchers = self.makeTokensAndMatchers(10)
+        self.assertThat(
+            self.makeView("+access-tokens")(),
+            MatchesAll(
+                token_listing_constants,
+                soupmatchers.HTMLContains(token_listing_tag, *token_matchers)))
+
+    def test_revoke(self):
+        tokens = [
+            self.factory.makeAccessToken(target=self.target)[1]
+            for _ in range(3)]
+        token_ids = [token.id for token in tokens]
+        access_tokens_url = canonical_url(
+            self.target, view_name="+access-tokens")
+        browser = self.getUserBrowser(access_tokens_url, user=self.owner)
+        for token_id in token_ids:
+            self.assertThat(
+                browser.getForm(name="revoke-%s" % token_id).controls,
+                MatchesListwise([
+                    MatchesStructure.byEquality(
+                        type="hidden", name="token_id", value=str(token_id)),
+                    MatchesStructure.byEquality(
+                        type="submit", name="field.actions.revoke",
+                        value="Revoke"),
+                    ]))
+        browser.getForm(name="revoke-%s" % token_ids[1]).getControl(
+            "Revoke").click()
+        login_person(self.owner)
+        self.assertEqual(access_tokens_url, browser.url)
+        self.assertThat(tokens[0], MatchesStructure(
+            id=Equals(token_ids[0]),
+            date_expires=Is(None),
+            revoked_by=Is(None)))
+        self.assertThat(tokens[1], MatchesStructure(
+            id=Equals(token_ids[1]),
+            date_expires=Not(Is(None)),
+            revoked_by=Equals(self.owner)))
+        self.assertThat(tokens[2], MatchesStructure(
+            id=Equals(token_ids[2]),
+            date_expires=Is(None),
+            revoked_by=Is(None)))
+
+
+class TestAccessTokenViewGitRepository(
+        TestAccessTokenViewBase, TestCaseWithFactory):
+
+    def makeTarget(self):
+        return self.factory.makeGitRepository()
+
+    def getTraversalStack(self, obj):
+        return [obj.target, obj]

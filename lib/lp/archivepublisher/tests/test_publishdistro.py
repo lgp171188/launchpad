@@ -117,11 +117,11 @@ class TestPublishDistro(TestNativePublishingBase):
         foo_path = "%s/main/f/foo/foo_666.dsc" % self.pool_dir
         self.assertEqual(open(foo_path).read().strip(), 'foo')
 
-    def testDirtyPocketProcessing(self):
-        """Test dirty pocket processing.
+    def testDirtySuiteProcessing(self):
+        """Test dirty suite processing.
 
-        Make a DELETED source to see if the dirty pocket processing
-        works for deletions.
+        Make a DELETED source to see if the dirty suite processing works for
+        deletions.
         """
         pub_source_id = self.getPubSource(filecontent=b'foo').id
         self.layer.txn.commit()
@@ -717,14 +717,13 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         script = self.makeScript(distro)
         self.assertContentEqual([], script.findAllowedSuites(distro))
 
-    def test_findAllowedSuites_finds_series_and_pocket(self):
-        # findAllowedSuites looks up the requested suites.
+    def test_findAllowedSuites_finds_single(self):
+        # findAllowedSuites looks up the requested suite.
         series = self.factory.makeDistroSeries()
         suite = "%s-updates" % series.name
         script = self.makeScript(series.distribution, ['--suite', suite])
         self.assertContentEqual(
-            [(series.name, PackagePublishingPocket.UPDATES)],
-            script.findAllowedSuites(series.distribution))
+            [suite], script.findAllowedSuites(series.distribution))
 
     def test_findAllowedSuites_finds_multiple(self):
         # Multiple suites may be requested; findAllowedSuites looks them
@@ -733,10 +732,7 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         script = self.makeScript(series.distribution, [
             '--suite', '%s-updates' % series.name,
             '--suite', series.name])
-        expected_suites = [
-            (series.name, PackagePublishingPocket.UPDATES),
-            (series.name, PackagePublishingPocket.RELEASE),
-            ]
+        expected_suites = ['%s-updates' % series.name, series.name]
         self.assertContentEqual(
             expected_suites, script.findAllowedSuites(series.distribution))
 
