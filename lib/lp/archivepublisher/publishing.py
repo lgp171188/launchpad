@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -416,15 +416,16 @@ class Publisher(object):
 
         Publishers need the pool root dir and a DiskPool object.
 
-        Optionally we can pass a list of tuples, (distroseries.name, pocket),
-        which will restrict the publisher actions, only suites listed in
-        allowed_suites will be modified.
+        Optionally we can pass a list of suite names which will restrict the
+        publisher actions; only suites listed in allowed_suites will be
+        modified.
         """
         self.log = log
         self._config = config
         self.distro = archive.distribution
         self.archive = archive
-        self.allowed_suites = allowed_suites
+        self.allowed_suites = (
+            None if allowed_suites is None else set(allowed_suites))
 
         self._diskpool = diskpool
 
@@ -433,14 +434,14 @@ class Publisher(object):
         else:
             self._library = library
 
-        # Track which distroseries pockets have been dirtied by a
-        # change, and therefore need domination/apt-ftparchive work.
-        # This is a set of tuples in the form (distroseries.name, pocket)
-        self.dirty_pockets = set()
+        # Track which suites have been dirtied by a change, and therefore
+        # need domination/apt-ftparchive work.  This is a set of suite names
+        # as returned by DistroSeries.getSuite.
+        self.dirty_suites = set()
 
-        # Track which pockets need release files. This will contain more
-        # than dirty_pockets in the case of a careful index run.
-        # This is a set of tuples in the form (distroseries.name, pocket)
+        # Track which suites need release files.  This will contain more
+        # than dirty_suites in the case of a careful index run.
+        # This is a set of suite names as returned by DistroSeries.getSuite.
         self.release_files_needed = set()
 
     def setupArchiveDirs(self):
@@ -449,12 +450,12 @@ class Publisher(object):
 
     def isDirty(self, distroseries, pocket):
         """True if a publication has happened in this release and pocket."""
-        return (distroseries.name, pocket) in self.dirty_pockets
+        return distroseries.getSuite(pocket) in self.dirty_suites
 
-    def markPocketDirty(self, distroseries, pocket):
-        """Mark a pocket dirty only if it's allowed."""
+    def markSuiteDirty(self, distroseries, pocket):
+        """Mark a suite dirty only if it's allowed."""
         if self.isAllowed(distroseries, pocket):
-            self.dirty_pockets.add((distroseries.name, pocket))
+            self.dirty_suites.add(distroseries.getSuite(pocket))
 
     def isAllowed(self, distroseries, pocket):
         """Whether or not the given suite should be considered.
@@ -465,7 +466,7 @@ class Publisher(object):
         Otherwise, return False.
         """
         return (not self.allowed_suites or
-                (distroseries.name, pocket) in self.allowed_suites)
+                distroseries.getSuite(pocket) in self.allowed_suites)
 
     @property
     def subcomponents(self):
@@ -546,7 +547,7 @@ class Publisher(object):
 
         Consider records returned by getPendingSourcePublications.
         """
-        dirty_pockets = set()
+        dirty_suites = set()
         all_spphs = self.getPendingSourcePublications(is_careful)
         for (distroseries, pocket), spphs in groupby(
                 all_spphs, attrgetter("distroseries", "pocket")):
@@ -561,8 +562,8 @@ class Publisher(object):
                             distroseries.status.name))
             else:
                 self.publishSources(distroseries, pocket, spphs)
-                dirty_pockets.add((distroseries.name, pocket))
-        return dirty_pockets
+                dirty_suites.add(distroseries.getSuite(pocket))
+        return dirty_suites
 
     def getPendingBinaryPublications(self, is_careful):
         """Return the specific group of binary records to be published."""
@@ -602,7 +603,7 @@ class Publisher(object):
 
         Consider records returned by getPendingBinaryPublications.
         """
-        dirty_pockets = set()
+        dirty_suites = set()
         all_bpphs = self.getPendingBinaryPublications(is_careful)
         for (distroarchseries, pocket), bpphs in groupby(
                 all_bpphs, attrgetter("distroarchseries", "pocket")):
@@ -618,8 +619,8 @@ class Publisher(object):
                             distroseries.status.name))
             else:
                 self.publishBinaries(distroarchseries, pocket, bpphs)
-                dirty_pockets.add((distroseries.name, pocket))
-        return dirty_pockets
+                dirty_suites.add(distroseries.getSuite(pocket))
+        return dirty_suites
 
     def A_publish(self, force_publishing):
         """First step in publishing: actual package publishing.
@@ -631,9 +632,9 @@ class Publisher(object):
         """
         self.log.debug("* Step A: Publishing packages")
 
-        self.dirty_pockets.update(
+        self.dirty_suites.update(
             self.findAndPublishSources(is_careful=force_publishing))
-        self.dirty_pockets.update(
+        self.dirty_suites.update(
             self.findAndPublishBinaries(is_careful=force_publishing))
 
     def A2_markPocketsWithDeletionsDirty(self):
@@ -654,9 +655,9 @@ class Publisher(object):
                 table.dateremoved == None,
                 ]
 
-        # We need to get a set of (distroseries, pocket) tuples that have
-        # publications that are waiting to be deleted.  Each tuple is
-        # added to the dirty_pockets set.
+        # We need to get a set of suite names that have publications that
+        # are waiting to be deleted.  Each suite name is added to the
+        # dirty_suites set.
 
         # Make the source publications query.
         conditions = base_conditions(SourcePackagePublishingHistory)
@@ -688,7 +689,7 @@ class Publisher(object):
                 # stable distroseries, no matter what other bugs
                 # that precede here have dirtied it.
                 continue
-            self.markPocketDirty(distroseries, pocket)
+            self.markSuiteDirty(distroseries, pocket)
 
     def B_dominate(self, force_domination):
         """Second step in publishing: domination."""
@@ -729,7 +730,7 @@ class Publisher(object):
                         continue
                     self.checkDirtySuiteBeforePublishing(distroseries, pocket)
 
-                self.release_files_needed.add((distroseries.name, pocket))
+                self.release_files_needed.add(distroseries.getSuite(pocket))
 
                 components = self.archive.getComponentsForSeries(distroseries)
                 for component in components:
@@ -739,9 +740,9 @@ class Publisher(object):
     def D_writeReleaseFiles(self, is_careful):
         """Write out the Release files for the provided distribution.
 
-        If is_careful is specified, we include all pockets of all releases.
+        If is_careful is specified, we include all suites.
 
-        Otherwise we include only pockets flagged as true in dirty_pockets.
+        Otherwise we include only suites flagged as true in dirty_suites.
         """
         self.log.debug("* Step D: Generating Release files.")
 
@@ -750,11 +751,10 @@ class Publisher(object):
                 self.archive, container_prefix=u"release:"):
             distroseries, pocket = self.distro.getDistroSeriesAndPocket(
                 container[len(u"release:"):])
-            archive_file_suites.add((distroseries.name, pocket))
+            archive_file_suites.add(distroseries.getSuite(pocket))
 
         for distroseries in self.distro:
             for pocket in self.archive.getPockets():
-                ds_pocket = (distroseries.name, pocket)
                 suite = distroseries.getSuite(pocket)
                 suite_path = os.path.join(self._config.distsroot, suite)
                 release_path = os.path.join(suite_path, "Release")
@@ -768,9 +768,9 @@ class Publisher(object):
                     # suites.  Only force those suites that already have
                     # Release files.
                     if file_exists(release_path):
-                        self.release_files_needed.add(ds_pocket)
+                        self.release_files_needed.add(suite)
 
-                write_release = ds_pocket in self.release_files_needed
+                write_release = suite in self.release_files_needed
                 if not is_careful:
                     if not self.isDirty(distroseries, pocket):
                         self.log.debug("Skipping release files for %s/%s" %
@@ -782,7 +782,7 @@ class Publisher(object):
 
                 if write_release:
                     self._writeSuite(distroseries, pocket)
-                elif (ds_pocket in archive_file_suites and
+                elif (suite in archive_file_suites and
                       distroseries.publish_by_hash):
                     # We aren't publishing a new Release file for this
                     # suite, probably because it's immutable, but we still

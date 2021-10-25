@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for publisher class."""
@@ -720,11 +720,6 @@ class TestByHashes(TestCaseWithFactory):
 class TestPublisher(TestPublisherBase):
     """Testing `Publisher` behaviour."""
 
-    def assertDirtyPocketsContents(self, expected, dirty_pockets):
-        contents = [(str(dr_name), pocket.name) for dr_name, pocket in
-                    dirty_pockets]
-        self.assertEqual(expected, contents)
-
     def assertReleaseContentsMatch(self, release, filename, contents):
         for hash_name, hash_func in (
             ('md5sum', hashlib.md5),
@@ -766,8 +761,7 @@ class TestPublisher(TestPublisherBase):
         self.layer.txn.commit()
 
         pub_source.sync()
-        self.assertDirtyPocketsContents(
-            [('breezy-autotest', 'RELEASE')], publisher.dirty_pockets)
+        self.assertEqual({'breezy-autotest'}, publisher.dirty_suites)
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source.status)
 
         # file got published
@@ -972,8 +966,7 @@ class TestPublisher(TestPublisherBase):
         publisher.A_publish(force_publishing=False)
 
         # The pocket was dirtied:
-        self.assertDirtyPocketsContents(
-            [('breezy-autotest', 'RELEASE')], publisher.dirty_pockets)
+        self.assertEqual({'breezy-autotest'}, publisher.dirty_suites)
         # The file was published:
         foo_path = "%s/main/f/foo/foo_666.dsc" % pub_config.poolroot
         with open(foo_path) as foo_file:
@@ -993,8 +986,7 @@ class TestPublisher(TestPublisherBase):
         """
         publisher = Publisher(
             self.logger, self.config, self.disk_pool,
-            self.ubuntutest.main_archive,
-            allowed_suites=[('hoary-test', PackagePublishingPocket.RELEASE)])
+            self.ubuntutest.main_archive, allowed_suites=['hoary-test'])
 
         pub_source = self.getPubSource(filecontent=b'foo')
         pub_source2 = self.getPubSource(
@@ -1006,8 +998,7 @@ class TestPublisher(TestPublisherBase):
 
         pub_source.sync()
         pub_source2.sync()
-        self.assertDirtyPocketsContents(
-            [('hoary-test', 'RELEASE')], publisher.dirty_pockets)
+        self.assertEqual({'hoary-test'}, publisher.dirty_suites)
         self.assertEqual(
             PackagePublishingStatus.PUBLISHED, pub_source2.status)
         self.assertEqual(PackagePublishingStatus.PENDING, pub_source.status)
@@ -1020,8 +1011,7 @@ class TestPublisher(TestPublisherBase):
         publisher = Publisher(
             self.logger, self.config, self.disk_pool,
             self.ubuntutest.main_archive,
-            allowed_suites=[('breezy-autotest',
-                             PackagePublishingPocket.UPDATES)])
+            allowed_suites=['breezy-autotest-updates'])
 
         self.ubuntutest['breezy-autotest'].status = (
             SeriesStatus.CURRENT)
@@ -1039,8 +1029,7 @@ class TestPublisher(TestPublisherBase):
 
         pub_source.sync()
         pub_source2.sync()
-        self.assertDirtyPocketsContents(
-            [('breezy-autotest', 'UPDATES')], publisher.dirty_pockets)
+        self.assertEqual({'breezy-autotest-updates'}, publisher.dirty_suites)
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source.status)
         self.assertEqual(PackagePublishingStatus.PENDING, pub_source2.status)
 
@@ -1059,7 +1048,7 @@ class TestPublisher(TestPublisherBase):
         # no pockets will be *dirtied*.
         publisher.A_publish(False)
 
-        self.assertDirtyPocketsContents([], publisher.dirty_pockets)
+        self.assertEqual(set(), publisher.dirty_suites)
         # nothing got published
         foo_path = "%s/main/f/foo/foo_666.dsc" % self.pool_dir
         self.assertEqual(False, os.path.exists(foo_path))
@@ -1087,8 +1076,7 @@ class TestPublisher(TestPublisherBase):
         # then we will have a corresponding dirty_pocket entry.
         publisher.A_publish(True)
 
-        self.assertDirtyPocketsContents(
-            [('breezy-autotest', 'RELEASE')], publisher.dirty_pockets)
+        self.assertEqual({'breezy-autotest'}, publisher.dirty_suites)
         # file got published
         foo_path = "%s/main/f/foo/foo_666.dsc" % self.pool_dir
         with open(foo_path) as foo_file:
@@ -1115,7 +1103,7 @@ class TestPublisher(TestPublisherBase):
         publisher.A_publish(False)
         self.layer.txn.commit()
 
-        self.assertDirtyPocketsContents([], publisher.dirty_pockets)
+        self.assertEqual(set(), publisher.dirty_suites)
         self.assertEqual(PackagePublishingStatus.PENDING, pub_source.status)
 
         # nothing got published
@@ -1146,8 +1134,7 @@ class TestPublisher(TestPublisherBase):
         self.layer.txn.commit()
 
         pub_source.sync()
-        self.assertDirtyPocketsContents(
-            [('breezy-autotest', 'RELEASE')], publisher.dirty_pockets)
+        self.assertEqual({'breezy-autotest'}, publisher.dirty_suites)
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source.status)
 
         # nothing got published
@@ -1224,8 +1211,7 @@ class TestPublisher(TestPublisherBase):
         helper function: 'getPublisher'
         """
         # Stub parameters.
-        allowed_suites = [
-            ('breezy-autotest', PackagePublishingPocket.RELEASE)]
+        allowed_suites = ['breezy-autotest']
 
         distro_publisher = getPublisher(
             self.ubuntutest.main_archive, allowed_suites, self.logger)
@@ -1236,9 +1222,7 @@ class TestPublisher(TestPublisherBase):
         self.assertEqual(
             '/var/tmp/archive/ubuntutest/dists',
             distro_publisher._config.distsroot)
-        self.assertEqual(
-            [('breezy-autotest', PackagePublishingPocket.RELEASE)],
-            distro_publisher.allowed_suites)
+        self.assertEqual({'breezy-autotest'}, distro_publisher.allowed_suites)
 
         # Check that the partner archive is built in a different directory
         # to the primary archive.
@@ -1263,9 +1247,7 @@ class TestPublisher(TestPublisherBase):
         self.assertEqual(
             '/var/tmp/ppa.test/cprov/ppa/ubuntutest/dists',
             archive_publisher._config.distsroot)
-        self.assertEqual(
-            [('breezy-autotest', PackagePublishingPocket.RELEASE)],
-            archive_publisher.allowed_suites)
+        self.assertEqual({'breezy-autotest'}, archive_publisher.allowed_suites)
 
     def testPendingArchive(self):
         """Check Pending Archive Lookup.
@@ -1537,9 +1519,8 @@ class TestPublisher(TestPublisherBase):
             index_contents)
 
         # We always regenerate all Releases file for a given suite.
-        self.assertTrue(
-            ('breezy-autotest', PackagePublishingPocket.RELEASE) in
-            archive_publisher.release_files_needed)
+        self.assertIn(
+            'breezy-autotest', archive_publisher.release_files_needed)
 
         # Confirm that i18n files are not created
         i18n_path = os.path.join(archive_publisher._config.distsroot,
@@ -1686,9 +1667,8 @@ class TestPublisher(TestPublisherBase):
             index_contents)
 
         # We always regenerate all Releases file for a given suite.
-        self.assertTrue(
-            ('breezy-autotest', PackagePublishingPocket.RELEASE) in
-            archive_publisher.release_files_needed)
+        self.assertIn(
+            'breezy-autotest', archive_publisher.release_files_needed)
 
         # Various compressed Translation-en files are written; ensure that
         # they are the same after decompression.
@@ -1762,11 +1742,6 @@ class TestPublisher(TestPublisherBase):
             self._checkCompressedFiles(
                 archive_publisher, uncompressed_file_path, ['.xz'])
 
-    def checkDirtyPockets(self, publisher, expected):
-        """Check dirty_pockets contents of a given publisher."""
-        sorted_dirty_pockets = sorted(list(publisher.dirty_pockets))
-        self.assertEqual(expected, sorted_dirty_pockets)
-
     def testDirtyingPocketsWithDeletedPackages(self):
         """Test that dirtying pockets with deleted packages works.
 
@@ -1779,7 +1754,7 @@ class TestPublisher(TestPublisherBase):
             self.ubuntutest.main_archive, allowed_suites, self.logger)
 
         publisher.A2_markPocketsWithDeletionsDirty()
-        self.checkDirtyPockets(publisher, expected=[])
+        self.assertEqual(set(), publisher.dirty_suites)
 
         # Make a published source, a deleted source in the release
         # pocket, a source that's been removed from disk and one that's
@@ -1811,27 +1786,27 @@ class TestPublisher(TestPublisherBase):
         # Run the deletion detection.
         publisher.A2_markPocketsWithDeletionsDirty()
 
-        # Only the pockets with pending deletions are marked as dirty.
-        expected_dirty_pockets = [
-            ('breezy-autotest', PackagePublishingPocket.RELEASE),
-            ('breezy-autotest', PackagePublishingPocket.SECURITY),
-            ('breezy-autotest', PackagePublishingPocket.BACKPORTS),
-            ]
-        self.checkDirtyPockets(publisher, expected=expected_dirty_pockets)
+        # Only the suites with pending deletions are marked as dirty.
+        expected_dirty_suites = {
+            'breezy-autotest',
+            'breezy-autotest-security',
+            'breezy-autotest-backports',
+            }
+        self.assertEqual(expected_dirty_suites, publisher.dirty_suites)
 
         # If the distroseries is CURRENT, then the release pocket is not
         # marked as dirty.
         self.ubuntutest['breezy-autotest'].status = (
             SeriesStatus.CURRENT)
 
-        publisher.dirty_pockets = set()
+        publisher.dirty_suites = set()
         publisher.A2_markPocketsWithDeletionsDirty()
 
-        expected_dirty_pockets = [
-            ('breezy-autotest', PackagePublishingPocket.SECURITY),
-            ('breezy-autotest', PackagePublishingPocket.BACKPORTS),
-            ]
-        self.checkDirtyPockets(publisher, expected=expected_dirty_pockets)
+        expected_dirty_suites = {
+            'breezy-autotest-security',
+            'breezy-autotest-backports',
+            }
+        self.assertEqual(expected_dirty_suites, publisher.dirty_suites)
 
     def testDeletionDetectionRespectsAllowedSuites(self):
         """Check if the deletion detection mechanism respects allowed_suites.
@@ -1845,14 +1820,14 @@ class TestPublisher(TestPublisherBase):
         specified suites should be marked as dirty.
         """
         allowed_suites = [
-            ('breezy-autotest', PackagePublishingPocket.SECURITY),
-            ('breezy-autotest', PackagePublishingPocket.UPDATES),
+            'breezy-autotest-security',
+            'breezy-autotest-updates',
             ]
         publisher = getPublisher(
             self.ubuntutest.main_archive, allowed_suites, self.logger)
 
         publisher.A2_markPocketsWithDeletionsDirty()
-        self.checkDirtyPockets(publisher, expected=[])
+        self.assertEqual(set(), publisher.dirty_suites)
 
         # Create pending deletions in RELEASE, BACKPORTS, SECURITY and
         # UPDATES pockets.
@@ -1873,9 +1848,8 @@ class TestPublisher(TestPublisherBase):
             status=PackagePublishingStatus.DELETED)[0]
 
         publisher.A2_markPocketsWithDeletionsDirty()
-        # Only the pockets with pending deletions in the allowed suites
-        # are marked as dirty.
-        self.checkDirtyPockets(publisher, expected=allowed_suites)
+        # Only the suites with pending deletions are marked as dirty.
+        self.assertEqual(set(allowed_suites), publisher.dirty_suites)
 
     def testReleaseFile(self):
         """Test release file writing.
@@ -1892,9 +1866,7 @@ class TestPublisher(TestPublisherBase):
         publisher.A_publish(False)
         publisher.C_doFTPArchive(False)
 
-        self.assertIn(
-            ('breezy-autotest', PackagePublishingPocket.RELEASE),
-            publisher.release_files_needed)
+        self.assertIn('breezy-autotest', publisher.release_files_needed)
 
         publisher.D_writeReleaseFiles(False)
 
@@ -2140,7 +2112,7 @@ class TestPublisher(TestPublisherBase):
         os.makedirs(os.path.dirname(contents_path))
         with gzip.GzipFile(contents_path, 'wb'):
             pass
-        publisher.markPocketDirty(
+        publisher.markSuiteDirty(
             self.ubuntutest.getSeries('breezy-autotest'),
             PackagePublishingPocket.RELEASE)
 
@@ -2170,7 +2142,7 @@ class TestPublisher(TestPublisherBase):
         for name in dep11_names:
             with gzip.GzipFile(os.path.join(dep11_path, name), 'wb') as f:
                 f.write(six.ensure_binary(name))
-        publisher.markPocketDirty(
+        publisher.markSuiteDirty(
             self.ubuntutest.getSeries('breezy-autotest'),
             PackagePublishingPocket.RELEASE)
 
@@ -2200,7 +2172,7 @@ class TestPublisher(TestPublisherBase):
         for name in cnf_names:
             with lzma.LZMAFile(os.path.join(cnf_path, name), 'wb') as f:
                 f.write(six.ensure_binary(name))
-        publisher.markPocketDirty(
+        publisher.markSuiteDirty(
             self.ubuntutest.getSeries('breezy-autotest'),
             PackagePublishingPocket.RELEASE)
 
@@ -2460,8 +2432,7 @@ class TestArchiveIndices(TestPublisherBase):
         that those in 'absent' are not.
         """
 
-        self.assertTrue(
-            (series.name, pocket) in publisher.release_files_needed)
+        self.assertIn(series.getSuite(pocket), publisher.release_files_needed)
 
         arch_template = os.path.join(
             publisher._config.distsroot, series.getSuite(pocket), '%s/%s')
@@ -2774,7 +2745,7 @@ class TestUpdateByHash(TestPublisherBase):
         # Create the first file.
         with open_for_writing(suite_path('Contents-i386'), 'w') as f:
             f.write('A Contents file\n')
-        publisher.markPocketDirty(
+        publisher.markSuiteDirty(
             self.breezy_autotest, PackagePublishingPocket.RELEASE)
         self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
         flush_database_caches()
@@ -2880,7 +2851,7 @@ class TestUpdateByHash(TestPublisherBase):
         self.setUpMockTime()
 
         # Publish empty index files.
-        publisher.markPocketDirty(
+        publisher.markSuiteDirty(
             self.breezy_autotest, PackagePublishingPocket.RELEASE)
         self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
         suite_path = partial(
@@ -2988,7 +2959,7 @@ class TestUpdateByHash(TestPublisherBase):
             self.ubuntutest.main_archive)
         self.runSteps(publisher, step_a2=True, step_c=True, step_d=True)
         transaction.commit()
-        self.assertEqual(set(), publisher.dirty_pockets)
+        self.assertEqual(set(), publisher.dirty_suites)
         # The condemned index files are removed, and no new Release file is
         # generated.
         expected_suite_files = (
@@ -3021,7 +2992,7 @@ class TestUpdateByHash(TestPublisherBase):
             self.ubuntutest.main_archive)
         self.runSteps(publisher, step_a2=True, step_c=True, step_d=True)
         transaction.commit()
-        self.assertEqual(set(), publisher.dirty_pockets)
+        self.assertEqual(set(), publisher.dirty_suites)
         self.assertEqual(release_mtime, os.stat(release_path).st_mtime)
         # The condemned index files are removed, and no new Release file is
         # generated.

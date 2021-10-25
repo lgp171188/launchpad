@@ -232,7 +232,7 @@ class FTPArchiveHandler:
                         continue
 
                 self.publisher.release_files_needed.add(
-                    (distroseries.name, pocket))
+                    distroseries.getSuite(pocket))
 
                 for comp in components:
                     self.createEmptyPocketRequest(distroseries, pocket, comp)
@@ -768,9 +768,8 @@ class FTPArchiveHandler:
 
         Otherwise, we aim to limit our config to certain distroseries
         and pockets. By default, we will exclude release pockets for
-        released series, and in addition we exclude any pocket not
-        explicitly marked as dirty. dirty_pockets must be a nested
-        dictionary of booleans, keyed by distroseries.name then pocket.
+        released series, and in addition we exclude any suite not
+        explicitly marked as dirty.
         """
         apt_config = six.StringIO()
         apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
