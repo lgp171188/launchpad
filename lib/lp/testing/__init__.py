@@ -268,7 +268,7 @@ class FakeTime:
 
         :param start: The value that will initially be returned by `now()`.
             If None, the current time will be used.
-        :param advance: The value in secounds to advance the clock by by
+        :param advance: The value in seconds to advance the clock by by
             default.
         """
         if start is not None:
