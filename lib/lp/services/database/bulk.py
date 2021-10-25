@@ -161,7 +161,7 @@ def load_referencing(object_type, owning_objects, reference_keys,
         object_type keys. e.g. ['branch_id']
     :param extra_conditions: A list of Storm clauses that will be used in the
         final query.
-    :return: A list of object_type where any of reference_keys refered to the
+    :return: A list of object_type where any of reference_keys referred to the
         primary key of any of owning_objects.
     """
     store = IStore(object_type)
