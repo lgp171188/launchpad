@@ -251,6 +251,87 @@ class TestAccessTokenSet(TestCaseWithFactory):
                     targets[target_index],
                     visible_by_user=owners[owner_index]))
 
+    def test_findByTarget_excludes_expired(self):
+        target = self.factory.makeGitRepository()
+        _, current_token = self.factory.makeAccessToken(target=target)
+        _, expires_soon_token = self.factory.makeAccessToken(
+            target=target,
+            date_expires=datetime.now(pytz.UTC) + timedelta(hours=1))
+        _, expired_token = self.factory.makeAccessToken(
+            target=target,
+            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1))
+        self.assertContentEqual(
+            [current_token, expires_soon_token],
+            getUtility(IAccessTokenSet).findByTarget(target))
+
+    def test_getByTargetAndID(self):
+        targets = [self.factory.makeGitRepository() for _ in range(3)]
+        tokens = [
+            self.factory.makeAccessToken(target=targets[0])[1],
+            self.factory.makeAccessToken(target=targets[0])[1],
+            self.factory.makeAccessToken(target=targets[1])[1],
+            ]
+        self.assertEqual(
+            tokens[0],
+            getUtility(IAccessTokenSet).getByTargetAndID(
+                targets[0], removeSecurityProxy(tokens[0]).id))
+        self.assertEqual(
+            tokens[1],
+            getUtility(IAccessTokenSet).getByTargetAndID(
+                targets[0], removeSecurityProxy(tokens[1]).id))
+        self.assertIsNone(
+            getUtility(IAccessTokenSet).getByTargetAndID(
+                targets[0], removeSecurityProxy(tokens[2]).id))
+
+    def test_getByTargetAndID_visible_by_user(self):
+        targets = [self.factory.makeGitRepository() for _ in range(3)]
+        owners = [self.factory.makePerson() for _ in range(3)]
+        tokens = [
+            self.factory.makeAccessToken(
+                owner=owners[owner_index], target=targets[target_index])[1]
+            for owner_index, target_index in (
+                (0, 0), (0, 0), (1, 0), (1, 1), (2, 1))]
+        for owner_index, target_index, expected_tokens in (
+                (0, 0, tokens[:2]),
+                (0, 1, []),
+                (0, 2, []),
+                (1, 0, [tokens[2]]),
+                (1, 1, [tokens[3]]),
+                (1, 2, []),
+                (2, 0, []),
+                (2, 1, [tokens[4]]),
+                (2, 2, []),
+                ):
+            for token in tokens:
+                fetched_token = getUtility(IAccessTokenSet).getByTargetAndID(
+                    targets[target_index], removeSecurityProxy(token).id,
+                    visible_by_user=owners[owner_index])
+                if token in expected_tokens:
+                    self.assertEqual(token, fetched_token)
+                else:
+                    self.assertIsNone(fetched_token)
+
+    def test_getByTargetAndID_excludes_expired(self):
+        target = self.factory.makeGitRepository()
+        _, current_token = self.factory.makeAccessToken(target=target)
+        _, expires_soon_token = self.factory.makeAccessToken(
+            target=target,
+            date_expires=datetime.now(pytz.UTC) + timedelta(hours=1))
+        _, expired_token = self.factory.makeAccessToken(
+            target=target,
+            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1))
+        self.assertEqual(
+            current_token,
+            getUtility(IAccessTokenSet).getByTargetAndID(
+                target, removeSecurityProxy(current_token).id))
+        self.assertEqual(
+            expires_soon_token,
+            getUtility(IAccessTokenSet).getByTargetAndID(
+                target, removeSecurityProxy(expires_soon_token).id))
+        self.assertIsNone(
+            getUtility(IAccessTokenSet).getByTargetAndID(
+                target, removeSecurityProxy(expired_token).id))
+
 
 class TestAccessTokenTargetBase:
 

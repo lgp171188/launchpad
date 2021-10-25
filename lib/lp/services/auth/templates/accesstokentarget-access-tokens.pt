@@ -1,0 +1,122 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_only"
+  i18n:domain="launchpad"
+>
+<body>
+
+<metal:block fill-slot="head_epilogue">
+  <style type="text/css">
+    .js-only {
+      display: none;
+    }
+    .yui3-js-enabled .js-only {
+      display: inline;
+    }
+  </style>
+
+  <script type="text/javascript">
+    LPJS.use('node', 'lp.services.auth.tokens', function(Y) {
+      Y.on('domready', function() {
+        var ns = Y.lp.services.auth.tokens;
+        var create_token_widget = new ns.CreateTokenWidget({
+          srcNode: Y.one('#create-token'),
+          target_uri: LP.cache.context.self_link
+        });
+        create_token_widget.render();
+      });
+    });
+  </script>
+</metal:block>
+
+<div metal:fill-slot="main">
+  <p>Personal access tokens allow using certain parts of the Launchpad API.</p>
+
+  <h2>Create a token</h2>
+  <div id="create-token">
+    <metal:form use-macro="context/@@launchpad_form/form">
+      <metal:formbody fill-slot="widgets">
+        <table class="form">
+          <tal:widget define="widget nocall:view/widgets/description">
+            <metal:block use-macro="context/@@launchpad_form/widget_row" />
+          </tal:widget>
+          <tal:widget define="widget nocall:view/widgets/scopes">
+            <metal:block use-macro="context/@@launchpad_form/widget_row" />
+          </tal:widget>
+          <tal:widget define="widget nocall:view/widgets/date_expires">
+            <metal:block use-macro="context/@@launchpad_form/widget_row" />
+          </tal:widget>
+        </table>
+      </metal:formbody>
+
+      <metal:buttons fill-slot="buttons">
+        <p>
+          <input id="create-token-button" class="js-only"
+                 type="button" value="Create token" />
+          <img class="spinner hidden" src="/@@/spinner" alt="Loading..." />
+          <noscript><strong>
+            Creating personal access tokens requires JavaScript.
+          </strong></noscript>
+        </p>
+        <div id="new-token-information" class="hidden">
+          <p>Your new personal access token is:</p>
+          <pre id="new-token-secret" class="subordinate"></pre>
+          <p>
+            Launchpad will not show you this again, so make sure to save it
+            now.
+          </p>
+        </div>
+      </metal:buttons>
+    </metal:form>
+  </div>
+
+  <h2>Active tokens</h2>
+  <table class="listing access-tokens-table"
+         style="max-width: 80em;">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Scopes</th>
+        <th>Created</th>
+        <th>Last used</th>
+        <th>Expires</th>
+        <th><tal:comment condition="nothing">Revoke button</tal:comment></th>
+      </tr>
+    </thead>
+    <tbody id="access-tokens-tbody">
+      <tr tal:repeat="token view/access_tokens"
+          tal:attributes="
+            class python: 'yui3-lazr-even' if repeat['token'].even()
+                          else 'yui3-lazr-odd';
+            token-id token/id">
+        <td tal:content="token/description" />
+        <td tal:content="
+          python: ', '.join(scope.title for scope in token.scopes)" />
+        <td tal:content="
+          structure token/date_created/fmt:approximatedatetitle" />
+        <td tal:content="
+          structure token/date_last_used/fmt:approximatedatetitle" />
+        <td>
+          <tal:expires
+            condition="token/date_expires"
+            replace="
+              structure token/date_expires/fmt:approximatedatetitle" />
+          <span tal:condition="not: token/date_expires">Never</span>
+        </td>
+        <td>
+          <form method="post" tal:attributes="name string:revoke-${token/id}">
+            <input type="hidden" name="token_id"
+                   tal:attributes="value token/id" />
+            <input type="submit" name="field.actions.revoke" value="Revoke" />
+          </form>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>
