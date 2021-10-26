@@ -170,7 +170,7 @@ class PullerMonitorProtocol(ProcessMonitorProtocolWithTimeout,
         """Construct an instance of the protocol, for listening to a worker.
 
         :param deferred: A Deferred that will be fired when the worker has
-            finished (either successfully or unsuccesfully).
+            finished (either successfully or unsuccessfully).
         :param listener: A PullerMaster object that is notified when the
             protocol receives events from the worker.
         :param clock: A provider of Twisted's IReactorTime.  This parameter

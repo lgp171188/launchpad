@@ -57,7 +57,7 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
             local_path_from_url(config.launchpad.bzr_imports_root_url))
 
     def assertMirrored(self, db_branch, source_branch):
-        """Assert that 'db_branch' was mirrored succesfully.
+        """Assert that 'db_branch' was mirrored successfully.
 
         This method checks that the fields on db_branch show that the branch
         has been mirrored successfully, and checks that the Bazaar source and

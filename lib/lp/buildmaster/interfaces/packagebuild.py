@@ -70,7 +70,7 @@ class IPackageBuild(IBuildFarmJob):
             description=_("Shortcut for its distribution series.")))
 
     def verifySuccessfulUpload():
-        """Verify that the upload of this build completed succesfully."""
+        """Verify that the upload of this build completed successfully."""
 
     def storeUploadLog(content):
         """Store the given content as the build upload_log.
