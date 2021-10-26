@@ -12,6 +12,8 @@ __all__ = [
     'IGitRepositoryDelta',
     'IGitRepositoryExpensiveRequest',
     'IGitRepositorySet',
+    'IRevisionStatusReport',
+    'IRevisionStatusReportSet',
     'IHasGitRepositoryURL',
     'user_has_special_git_repository_access',
     ]
@@ -36,7 +38,8 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
-    REQUEST_USER, scoped,
+    REQUEST_USER,
+    scoped,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -68,7 +71,8 @@ from lp.code.enums import (
     CodeReviewNotificationLevel,
     GitListingSort,
     GitRepositoryStatus,
-    GitRepositoryType, RevisionStatus, RevisionStatusResult,
+    GitRepositoryType,
+    RevisionStatusResult,
     )
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
@@ -749,33 +753,6 @@ class IGitRepositoryModerateAttributes(Interface):
         description=_("A short description of this repository.")))
 
 
-class IGitRepositoryBuildStatus(Interface):
-
-    @operation_parameters(
-        name=TextLine(title=_("The name of the status report.")),
-        status=List(
-            title=_("A list of report statuses to filter by."),
-            value_type=Choice(vocabulary=RevisionStatus)),
-        description=TextLine(title=_("The description of the status report.")),
-        commit_sha1=TextLine(title=_("The commit sha1 of the status report.")),
-        result=List(
-            title=_("A list of report result statuses to filter by."),
-            value_type=Choice(vocabulary=RevisionStatusResult)))
-    @scoped('repository:build_status')
-    @call_with(user=REQUEST_USER)
-    @export_write_operation()
-    @operation_for_version("devel")
-    def newRevisionStatusReport(name, status, description, commit_sha1, result, user):
-        """Create a New Status Report and return its ID.
-
-        :param name: The name of the new report.
-        :param status: The `RevisionStatus` of the new report.
-        :param description: The description of the new report.
-        :param commit_sha1: The commit sha1 for the report.
-        :param result: The result of the new report.
-        """
-
-
 class IGitRepositoryModerate(Interface):
     """IGitRepository methods that can be called by more than one community."""
 
@@ -1034,6 +1011,91 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         :raise: CannotDeleteGitRepository if the repository cannot be deleted.
         """
 
+    @operation_parameters(
+        name=TextLine(title=_("The name of the status report.")),
+        git_repository=Int(title=_("Reference to a GitRepository")),
+        commit_sha1=TextLine(title=_("The commit sha1 of the status report.")),
+        date_created=Datetime(
+        title=_("The time when this request was made")),
+        url=TextLine(title=_("The external link of the status report.")),
+        description=TextLine(title=_("The description of the status report.")),
+        result=List(
+            title=_("A list of report result statuses to filter by."),
+            value_type=Choice(vocabulary=RevisionStatusResult)),
+        date_started=Datetime(
+            title=_("The time when this report was started.")),
+        date_finished=Datetime(
+            title=_("The time when this report completed.")),
+        log=Int(title=_("Reference to a RevisionStatusArtifact")))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @call_with(user=REQUEST_USER)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def newRevisionStatusReport(user, name, git_repository, commit_sha1,
+                                date_created, url=None, description=None,
+                                result=None, date_started=None,
+                                date_finished=None, log=None):
+        """Create a New Status Report and return its ID.
+
+        :param name: The name of the new report.
+        :param description: The description of the new report.
+        :param commit_sha1: The commit sha1 for the report.
+        :param result: The result of the new report.
+        """
+
+
+class IRevisionStatusReport(Interface):
+    id = Int(title=_("ID"), required=True, readonly=True)
+
+    name = TextLine(
+        title=_("The name of the report."), required=True)
+
+    git_repository = Reference(
+        title=_("The Git repository for which this report is built."),
+        # Really IGitRepository, patched in _schema_circular_imports.py.
+        schema=Interface, required=True, readonly=True)
+
+    commit_sha1 = Reference(
+        title=_("The Git commit for which this report is built."),
+        schema=Interface, required=True, readonly=True)
+
+    url = Attribute("The external url of the report.")
+
+    description = Attribute("A short description of the report.")
+
+    result = Choice(
+        title=_('Result of the report'), vocabulary=RevisionStatusResult)
+
+    date_created = Datetime(
+        title=_("When the report was created."), required=True, readonly=True)
+    date_started = Datetime(
+        title=_("When the report was started."))
+    date_finished = Datetime(
+        title=_("When the report has finished."))
+    log = Reference(
+        title=_("The Git commit for which this report is built."),
+        schema=Interface)
+
+
+class IRevisionStatusReportSet(Interface):
+    """The set of all revision status reports."""
+
+    def new(name, git_repository, commit_sha1, date_created=None,
+                 url=None, description=None, result=None, date_started=None,
+                 date_finished=None, log=None):
+        """Return a new revision status report.
+
+        :param name: A text string.
+        :param git_repository: An `IGitRepository` for which the report
+            is being created.
+        :param commit_sha1: The sha1 of the commit for which the report
+            is being created.
+        :param date_created: The date when the report is being created.
+        """
+
+    def findRevisionStatusReportById(id):
+        """Returns the RevisionStatusReport for a given Id."""
+
 
 # XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
 # generation working.  Individual attributes must set their version to
@@ -1041,8 +1103,7 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
 @exported_as_webservice_entry(plural_name="git_repositories", as_of="beta")
 class IGitRepository(IGitRepositoryView, IGitRepositoryModerateAttributes,
                      IGitRepositoryModerate, IGitRepositoryEditableAttributes,
-                     IGitRepositoryEdit, IGitRepositoryExpensiveRequest,
-                     IGitRepositoryBuildStatus):
+                     IGitRepositoryEdit, IGitRepositoryExpensiveRequest):
     """A Git repository."""
 
     private = exported(Bool(

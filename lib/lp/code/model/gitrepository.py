@@ -30,7 +30,6 @@ from breezy import urlutils
 from lazr.enum import DBItem
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
-from lazr.restful.declarations import scoped
 import pytz
 import six
 from six.moves.urllib.parse import (
@@ -38,6 +37,7 @@ from six.moves.urllib.parse import (
     urlsplit,
     urlunsplit,
     )
+from sqlobject import ForeignKey
 from storm.databases.postgres import Returning
 from storm.expr import (
     And,
@@ -71,6 +71,7 @@ from zope.interface import (
     implementer,
     providedBy,
     )
+from zope.schema import TextLine
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import (
     ProxyFactory,
@@ -103,6 +104,7 @@ from lp.code.enums import (
     GitPermissionType,
     GitRepositoryStatus,
     GitRepositoryType,
+    RevisionStatusResult,
     )
 from lp.code.errors import (
     CannotDeleteGitRepository,
@@ -132,6 +134,8 @@ from lp.code.interfaces.gitrepository import (
     GitIdentityMixin,
     IGitRepository,
     IGitRepositorySet,
+    IRevisionStatusReport,
+    IRevisionStatusReportSet,
     user_has_special_git_repository_access,
     )
 from lp.code.interfaces.gitrule import (
@@ -178,7 +182,6 @@ from lp.registry.model.accesspolicy import (
     )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
-from lp.services.auth.enums import AccessTokenScope
 from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.auth.model import AccessTokenTargetMixin
 from lp.services.auth.utils import create_access_token_secret
@@ -292,6 +295,91 @@ def git_repository_modified(repository, event):
     if event.edited_fields:
         repository.date_last_modified = UTC_NOW
     send_git_repository_modified_notifications(repository, event)
+
+
+@implementer(IRevisionStatusReport)
+class RevisionStatusReport(StormBase):
+    __storm_table__ = 'RevisionStatusReport'
+
+    id = Int(primary=True)
+
+    name = Unicode(name='name', allow_none=False)
+
+    git_repository_id = Int(name='git_repository', allow_none=False)
+    git_repository = Reference(git_repository_id, 'GitRepository.id')
+
+    commit_sha1_id = Unicode(name='commit_sha1', allow_none=False)
+    commit_sha1 = Reference(commit_sha1_id, 'GitRef.commit_sha1')
+
+    url = Unicode(name='url')
+
+    description = TextLine(title=msg("The description of the status report."))
+
+    result = EnumCol(
+        dbName='result', schema=RevisionStatusResult)
+
+    date_created = DateTime(
+        name='date_created', tzinfo=pytz.UTC, allow_none=False)
+    date_started = DateTime(name='date_started', tzinfo=pytz.UTC)
+    date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC)
+
+    log = ForeignKey(
+        dbName='log', foreignKey='Revision')
+
+    def __init__(self, name, git_repository, commit_sha1, date_created,
+                 url=None, description=None, result=None, date_started=None,
+                 date_finished=None, log=None):
+        super(RevisionStatusReport, self).__init__()
+        self.name = name
+        self.git_repository = git_repository
+        self.commit_sha1 = commit_sha1
+        self.date_created = date_created
+        self.url = url
+        self.description = description
+        self.result = result
+        self.date_started = date_started
+        self.date_finished = date_finished
+        self.log = log
+
+
+@implementer(IRevisionStatusReportSet)
+class RevisionStatusReportSet:
+
+    def new(self, name, git_repository, commit_sha1, date_created=None,
+            url=None, description=None, result=None, date_started=None,
+            date_finished=None, log=None):
+        """See `IGitRevisionStatusReportSet`."""
+        store = IStore(RevisionStatusReport)
+        date_created = UTC_NOW
+        report = RevisionStatusReport(name, git_repository, commit_sha1,
+                                      date_created=date_created, url=None,
+                                      description=None, result=None,
+                                      date_started=None, date_finished=None,
+                                      log=None)
+        store.add(report)
+        return report
+
+    def findRevisionStatusReportById(self, id):
+        return IStore(RevisionStatusReport).find(
+            RevisionStatusReport,
+            RevisionStatusReport.id == id)
+
+
+class RevisionStatusArtifact(StormBase):
+    __storm_table__ = 'RevisionStatusArtifact'
+
+    id = Int(primary=True)
+
+    library_file_id = Int(name='library_file', allow_none=False)
+    library_file = Reference(library_file_id, 'LibraryFileAlias.id')
+
+    report_id = Int(name='report', allow_none=False)
+    report = Reference(report_id, 'RevisionStatusReport.id')
+
+    def __init__(self, library_file, report):
+        super(RevisionStatusArtifact, self).__init__()
+        self.library_file = library_file
+        self.report = report
 
 
 @implementer(IGitRepository, IHasOwner, IPrivacy, IInformationType)
@@ -503,10 +591,15 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
     def collectGarbage(self):
         getUtility(IGitHostingClient).collectGarbage(self.getInternalPath())
 
-    @scoped('repository:build_status')
-    def newRevisionStatusReport(self, name, status, description, commit_sha1, result, user):
-        """See `IGitRepositoryBuildStatus`."""
-        print('test')
+    def newRevisionStatusReport(self, user, name, git_repository, commit_sha1,
+                                date_created, url=None, description=None,
+                                result=None, date_started=None,
+                                date_finished=None, log=None):
+
+        report = RevisionStatusReport(user, name, git_repository, commit_sha1,
+                                      date_created, url, description, result,
+                                      date_started, date_finished, log)
+        return report.id
 
     @property
     def namespace(self):

@@ -6,8 +6,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repositories."""
-import re
-from contextlib import contextmanager
 from datetime import (
     datetime,
     timedelta,
@@ -16,8 +14,6 @@ import email
 from functools import partial
 import hashlib
 import json
-from http.client import responses
-from zope.security.management import newInteraction
 
 from breezy import urlutils
 from fixtures import MockPatch
@@ -25,11 +21,6 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from pymacaroons import Macaroon
 import pytz
 import six
-
-from lp.services.auth.enums import AccessTokenScope
-from lp.services.auth.interfaces import IAccessTokenSet
-from lp.services.timeout import get_default_timeout_function, set_default_timeout_function
-from lp.testing.publication import get_request_and_publication
 from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
 from storm.store import Store
@@ -105,6 +96,7 @@ from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
     IGitRepositoryView,
+    IRevisionStatusReportSet,
     )
 from lp.code.interfaces.gitrule import (
     IGitNascentRule,
@@ -579,6 +571,18 @@ class TestGitRepository(TestCaseWithFactory):
 
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
         self.assertEqual(7, recorder1.count)
+
+    def test_findRevisionStatusReport(self):
+        repository = removeSecurityProxy(self.factory.makeGitRepository())
+        name = self.factory.getUniqueUnicode('report-name')
+        commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
+        report = self.factory.makeRevisionStatusReport(
+            name=name, git_repository=repository, commit_sha1=commit_sha1,
+            date_created=self.factory.getUniqueDate())
+
+        results = getUtility(
+            IRevisionStatusReportSet).findRevisionStatusReportById(1)
+        self.assertEqual([report], list(results))
 
 
 class TestGitIdentityMixin(TestCaseWithFactory):
@@ -4211,38 +4215,21 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_newRevisionStatusReport(self):
         repository = self.factory.makeGitRepository()
         requester = repository.owner
+        webservice = webservice_for_person(requester)
         with person_logged_in(requester):
             repository_url = api_url(repository)
-        webservice = webservice_for_person(
-            requester, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
-        response = webservice.named_post(
-            repository_url, "issueAccessToken", description="Test token",
-            scopes=["repository:build_status"])
-        self.assertEqual(200, response.status)
-        secret = response.jsonBody()
-        with person_logged_in(requester):
-            token = getUtility(IAccessTokenSet).getBySecret(secret)
-            self.assertThat(token, MatchesStructure(
-                owner=Equals(requester),
-                description=Equals("Test token"),
-                target=Equals(repository),
-                scopes=Equals([AccessTokenScope.REPOSITORY_BUILD_STATUS]),
-                date_expires=Is(None)))
-        # Use the token to create a new Status Report
-        with person_logged_in(requester):
-            repository_url = api_url(repository)
-        webservice = webservice_for_person(
-            requester, permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel")
 
-        # header = "Authorization: Token %s" % token
-        header = {'Authorization-type': 'Token %s' % token}
-        response = webservice.named_post(
-            repository_url, "newRevisionStatusReport",
-            headers=header, name="CI", status="Queued",
-            description="120/120 tests passed",
-            commit_sha1='823748ur9804376', result='Success')
+            secret, _ = self.factory.makeAccessToken(
+                owner=requester, target=repository,
+                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+            header = {'Authorization': 'Token %s' % secret}
+
+            response = webservice.named_post(
+                repository_url, "newRevisionStatusReport",
+                headers=header, name="CI", git_repository=repository.id,
+                commit_sha1='823748ur9804376',
+                date_created=datetime.now(pytz.UTC).strftime("%Y%m%d-%H%M%S"),
+                description="120/120 tests passed")
 
         self.assertEqual(200, response.status)
 

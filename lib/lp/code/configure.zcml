@@ -947,10 +947,24 @@
         permission="launchpad.Edit"
         interface="lp.code.interfaces.gitref.IGitRefEdit" />
   </class>
+  <class class="lp.code.model.gitrepository.RevisionStatusReport">
+    <require
+        permission="launchpad.Edit"
+        interface="lp.code.interfaces.gitrepository.IRevisionStatusReport"
+        set_schema="lp.code.interfaces.gitrepository.IRevisionStatusReport" />
+  </class>
+  <class class="lp.code.model.gitrepository.RevisionStatusReportSet">
+    <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusReportSet" />
+  </class>
   <securedutility
       component="lp.code.model.gitref.GitRefRemote"
       provides="lp.code.interfaces.gitref.IGitRefRemoteSet">
     <allow interface="lp.code.interfaces.gitref.IGitRefRemoteSet" />
+  </securedutility>
+  <securedutility
+      class="lp.code.model.gitrepository.RevisionStatusReportSet"
+      provides="lp.code.interfaces.gitrepository.IRevisionStatusReportSet">
+     <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusReportSet" />
   </securedutility>
 
   <!-- Git repository access rules -->
