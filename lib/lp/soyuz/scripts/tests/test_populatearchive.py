@@ -214,7 +214,7 @@ class TestPopulateArchiveScript(TestCaseWithFactory):
             ]
 
         # Empty reason string indicates that the '--reason' command line
-        # argument should be ommitted.
+        # argument should be omitted.
         if reason is not None and not reason.isspace():
             script_args.extend(['--reason', reason])
         elif reason is None:

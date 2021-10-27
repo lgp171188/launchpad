@@ -135,7 +135,7 @@ class ProcessMonitorProtocol(ProcessProtocolWithTwoStageKill):
         """Construct an instance of the protocol, for listening to a worker.
 
         :param deferred: A Deferred that will be fired when the subprocess has
-            finished (either successfully or unsuccesfully).
+            finished (either successfully or unsuccessfully).
         """
         ProcessProtocolWithTwoStageKill.__init__(self, clock)
         self._deferred = deferred
