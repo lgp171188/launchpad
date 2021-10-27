@@ -118,7 +118,7 @@ def report_patch_times(con, todays_patches):
         db_time = db_time.total_seconds()
         start_time = start_time.strftime('%Y-%m-%d')
         log.info(
-            "%d-%02d-%d applied %s in %0.1f seconds"
+            "%d-%02d-%d previously applied %s in %0.1f seconds"
             % (major, minor, patch, start_time, db_time))
 
     for major, minor, patch in todays_patches:
