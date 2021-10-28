@@ -37,7 +37,6 @@ from psycopg2.extensions import (
     ISOLATION_LEVEL_SERIALIZABLE,
     )
 import pytz
-from sqlobject.sqlbuilder import sqlrepr
 import storm
 from storm.databases.postgres import compile as postgres_compile
 from storm.expr import (
@@ -66,6 +65,7 @@ from lp.services.database.interfaces import (
     IStoreSelector,
     MAIN_STORE,
     )
+from lp.services.database.sqlobject import sqlrepr
 from lp.services.propertycache import clear_property_cache
 
 

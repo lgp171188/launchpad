@@ -15,7 +15,6 @@ from breezy.revision import NULL_REVISION
 from breezy.url_policy_open import BadUrl
 from pytz import UTC
 import six
-from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
 from storm.locals import Store
 from testtools import ExpectedException
@@ -132,6 +131,7 @@ from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner

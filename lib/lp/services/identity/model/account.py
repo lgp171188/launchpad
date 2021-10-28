@@ -11,7 +11,6 @@ __all__ = [
 import datetime
 
 import six
-from sqlobject import StringCol
 from storm.locals import ReferenceSet
 from zope.interface import implementer
 
@@ -23,6 +22,7 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import StringCol
 from lp.services.helpers import backslashreplace
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,

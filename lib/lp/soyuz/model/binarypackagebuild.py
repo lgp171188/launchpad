@@ -22,7 +22,6 @@ import apt_pkg
 from debian.deb822 import PkgRelation
 import pytz
 import six
-from sqlobject import SQLObjectNotFound
 from storm.expr import (
     And,
     Desc,
@@ -76,6 +75,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.services.librarian.model import (

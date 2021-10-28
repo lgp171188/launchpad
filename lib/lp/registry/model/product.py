@@ -20,13 +20,6 @@ from lazr.restful.declarations import error_status
 from lazr.restful.utils import safe_hasattr
 import pytz
 from six.moves import http_client
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Coalesce,
@@ -191,6 +184,13 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormexpr import (
     ArrayAgg,

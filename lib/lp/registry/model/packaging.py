@@ -7,7 +7,6 @@ from lazr.lifecycle.event import (
     ObjectCreatedEvent,
     ObjectDeletedEvent,
     )
-from sqlobject import ForeignKey
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -29,6 +28,7 @@ from lp.services.database.constants import (
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import ForeignKey
 from lp.services.webapp.interfaces import ILaunchBag
 
 

@@ -8,13 +8,6 @@ __all__ = [
     ]
 
 import six
-from sqlobject import (
-    BoolCol,
-    IntCol,
-    SQLObjectNotFound,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Count,
@@ -37,6 +30,13 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    BoolCol,
+    IntCol,
+    SQLObjectNotFound,
+    SQLRelatedJoin,
+    StringCol,
+    )
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,

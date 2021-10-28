@@ -3,13 +3,13 @@
 
 __all__ = ['SpecificationDependency']
 
-from sqlobject import ForeignKey
 from zope.interface import implementer
 
 from lp.blueprints.interfaces.specificationdependency import (
     ISpecificationDependency,
     )
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import ForeignKey
 
 
 @implementer(ISpecificationDependency)

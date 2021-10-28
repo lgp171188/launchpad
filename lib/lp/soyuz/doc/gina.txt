@@ -489,7 +489,7 @@ Ensure only one Kamion was created (he's an uploader on multiple packages),
 and that we imported exactly 9 people (13 packages with 3 being uploaded by
 Kamion, 2 being uploaded by mdz and 2 by doko).
 
-    >>> from sqlobject import LIKE
+    >>> from lp.services.database.sqlobject import LIKE
     >>> p = Person.selectOne(LIKE(Person.q.name, u"cjwatson%"))
     >>> print(p.name)
     cjwatson

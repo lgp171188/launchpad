@@ -16,7 +16,6 @@ import subprocess
 import tempfile
 
 import six
-from sqlobject import ForeignKey
 from storm.expr import Desc
 from storm.store import EmptyResultSet
 from zope.component import getUtility
@@ -33,6 +32,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.sqlobject import ForeignKey
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import (
     LibraryFileAlias,

@@ -8,13 +8,13 @@ __all__ = [
     ]
 
 
-from sqlobject import ForeignKey
 from zope.interface import implementer
 
 from lp.registry.interfaces.product import License
 from lp.registry.interfaces.productlicense import IProductLicense
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import ForeignKey
 
 
 @implementer(IProductLicense)

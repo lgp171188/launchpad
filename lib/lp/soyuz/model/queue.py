@@ -17,12 +17,6 @@ from operator import attrgetter
 
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import Cast
 from storm.locals import (
     And,
@@ -69,6 +63,12 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (

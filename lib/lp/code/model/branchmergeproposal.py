@@ -19,11 +19,6 @@ from lazr.lifecycle.event import (
     ObjectDeletedEvent,
     )
 import six
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -121,6 +116,11 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     quote,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    StringCol,
     )
 from lp.services.helpers import shortlist
 from lp.services.job.interfaces.job import JobStatus

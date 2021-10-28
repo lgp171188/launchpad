@@ -6,7 +6,6 @@ __all__ = [
     'ProcessorSet',
     ]
 
-from sqlobject import StringCol
 from storm.locals import Bool
 from zope.interface import implementer
 
@@ -17,6 +16,7 @@ from lp.buildmaster.interfaces.processor import (
     )
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import StringCol
 
 
 @implementer(IProcessor)

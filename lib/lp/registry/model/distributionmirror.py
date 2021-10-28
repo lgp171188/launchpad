@@ -19,11 +19,6 @@ from datetime import (
     )
 
 import pytz
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -72,6 +67,11 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    StringCol,
     )
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import (

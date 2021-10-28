@@ -26,11 +26,6 @@ from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
 from lazr.delegates import delegate_to
 import simplejson
 import six
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.locals import (
     Int,
     Reference,
@@ -53,6 +48,11 @@ from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    StringCol,
+    )
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import (
     LIBRARIAN_SERVER_DEFAULT_TIMEOUT,

@@ -22,7 +22,6 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from pymacaroons import Macaroon
 import pytz
 import six
-from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
 from storm.store import Store
 from testtools.matchers import (
@@ -150,6 +149,7 @@ from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.job.interfaces.job import JobStatus

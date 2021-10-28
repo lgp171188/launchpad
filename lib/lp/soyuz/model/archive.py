@@ -16,12 +16,6 @@ import re
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.base import Storm
 from storm.expr import (
     And,
@@ -118,6 +112,12 @@ from lp.services.database.sqlbase import (
     cursor,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    StringCol,
     )
 from lp.services.database.stormexpr import BulkUpdate
 from lp.services.features import getFeatureFlag

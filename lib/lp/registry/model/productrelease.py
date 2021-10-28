@@ -14,11 +14,6 @@ from io import (
     )
 import os
 
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -50,6 +45,11 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLMultipleJoin,
+    StringCol,
     )
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.propertycache import cachedproperty

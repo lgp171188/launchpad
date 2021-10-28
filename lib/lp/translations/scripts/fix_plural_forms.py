@@ -7,10 +7,9 @@ __all__ = [
     'fix_plurals_in_all_pofiles',
     ]
 
-from sqlobject import SQLObjectNotFound
-
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import cursor
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.model.pofile import POFile
 from lp.translations.model.potmsgset import POTMsgSet

@@ -13,12 +13,6 @@ import itertools
 from operator import itemgetter
 
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -157,6 +151,12 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormexpr import (
     fti_search,

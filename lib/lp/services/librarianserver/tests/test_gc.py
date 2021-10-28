@@ -24,7 +24,6 @@ from fixtures import MockPatchObject
 import pytz
 import requests
 from six.moves.urllib.parse import urljoin
-from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from swiftclient import client as swiftclient
 from testtools.matchers import (
@@ -40,6 +39,7 @@ from lp.services.database.sqlbase import (
     cursor,
     ISOLATION_LEVEL_AUTOCOMMIT,
     )
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.client import LibrarianClient
 from lp.services.librarian.model import (

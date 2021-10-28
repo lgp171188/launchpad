@@ -19,13 +19,6 @@ import os
 
 from psycopg2.extensions import TransactionRollbackError
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -62,6 +55,13 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     flush_database_updates,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    StringCol,
     )
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import get_email_template

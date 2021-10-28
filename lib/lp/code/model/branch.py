@@ -20,11 +20,6 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import six
 from six.moves.urllib_parse import urlsplit
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Coalesce,
@@ -178,6 +173,11 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    StringCol,
     )
 from lp.services.database.stormexpr import (
     Array,
