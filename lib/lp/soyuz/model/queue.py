@@ -655,9 +655,9 @@ class PackageUpload(SQLBase):
             return True
         else:
             # handle case when PackageUpload is a copy
-            copy_job = self.package_copy_job
+            copy_job = self.concrete_package_copy_job
             if copy_job is not None:
-                return copy_job.metadata["include_binaries"]
+                return copy_job.include_binaries
         return False
 
     @cachedproperty
