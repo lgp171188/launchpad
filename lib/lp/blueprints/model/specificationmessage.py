@@ -27,7 +27,7 @@ from lp.services.messages.model.message import (
 
 @implementer(ISpecificationMessage)
 class SpecificationMessage(SQLBase):
-    """A table linking specifictions and messages."""
+    """A table linking specifications and messages."""
 
     _table = 'SpecificationMessage'
 
