@@ -10,7 +10,7 @@ initialization.
 BuildQueue should provide all the information needed for dispatching
 and collecting build results.
 
-As soon as a build job is processed succesfully (dispatched &
+As soon as a build job is processed successfully (dispatched &
 collected) the BuildQueue record representing it is removed.
 
     >>> from lp.testing import verifyObject

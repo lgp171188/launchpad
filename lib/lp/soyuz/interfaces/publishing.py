@@ -1006,7 +1006,7 @@ class IPublishingSet(Interface):
             ids.
         :type archive: `IArchive`
         :param build_states: optional list of build states to which the
-            result will be limited. Defaults to all states if ommitted.
+            result will be limited. Defaults to all states if omitted.
         :type build_states: ``list`` or None
         :param need_build_farm_job: whether to include the `PackageBuild`
             and `BuildFarmJob` in the result.

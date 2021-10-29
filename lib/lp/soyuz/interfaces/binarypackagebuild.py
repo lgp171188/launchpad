@@ -412,7 +412,7 @@ class IBinaryPackageBuildSet(ISpecificBuildFarmJobSource):
                            arch_tag=None):
         """Retrieve `IBinaryPackageBuild`s for a given Distribution/DS/DAS.
 
-        Optionally, for a given status and/or pocket, if ommited return all
+        Optionally, for a given status and/or pocket, if omitted return all
         records. If name is passed return only the builds which the
         sourcepackagename matches (SQL LIKE).
         """
