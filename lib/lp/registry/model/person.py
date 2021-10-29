@@ -46,14 +46,6 @@ from lazr.restful.utils import (
 import pytz
 from requests import PreparedRequest
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.base import Storm
 from storm.expr import (
     Alias,
@@ -266,6 +258,14 @@ from lp.services.database.sqlbase import (
     quote,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search

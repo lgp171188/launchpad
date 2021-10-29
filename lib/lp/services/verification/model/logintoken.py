@@ -10,11 +10,6 @@ import hashlib
 
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import And
 from zope.component import getUtility
 from zope.interface import implementer
@@ -34,6 +29,11 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.mail.helpers import get_email_template

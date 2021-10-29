@@ -8,10 +8,6 @@ __all__ = [
     'LaunchpadStatisticSet',
     ]
 
-from sqlobject import (
-    IntCol,
-    StringCol,
-    )
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -31,6 +27,10 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    IntCol,
+    StringCol,
     )
 from lp.services.statistics.interfaces.statistic import (
     ILaunchpadStatistic,

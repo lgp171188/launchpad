@@ -9,14 +9,6 @@ __all__ = [
 import hashlib
 from io import BytesIO
 
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLObjectNotFound,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.locals import (
     Int,
     Join,
@@ -36,6 +28,14 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLObjectNotFound,
+    SQLRelatedJoin,
+    StringCol,
+    )
 from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,

@@ -21,11 +21,6 @@ import sys
 
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Cast,
@@ -61,6 +56,11 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    StringCol,
+    )
 from lp.services.database.stormexpr import IsDistinctFrom
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import (

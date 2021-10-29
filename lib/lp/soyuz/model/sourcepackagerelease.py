@@ -20,11 +20,6 @@ from debian.changelog import (
     )
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    StringCol,
-    )
 from storm.expr import Join
 from storm.locals import (
     Desc,
@@ -52,6 +47,11 @@ from lp.services.database.sqlbase import (
     cursor,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLMultipleJoin,
+    StringCol,
     )
 from lp.services.librarian.model import (
     LibraryFileAlias,

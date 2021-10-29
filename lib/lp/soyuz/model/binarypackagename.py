@@ -7,10 +7,6 @@ __all__ = [
     ]
 
 import six
-from sqlobject import (
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import Join
 from storm.store import EmptyResultSet
 from zope.interface import implementer
@@ -18,6 +14,10 @@ from zope.interface import implementer
 from lp.app.errors import NotFoundError
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    SQLObjectNotFound,
+    StringCol,
+    )
 from lp.soyuz.interfaces.binarypackagename import (
     IBinaryPackageName,
     IBinaryPackageNameSet,

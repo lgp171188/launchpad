@@ -13,10 +13,6 @@ import hashlib
 import operator
 
 import six
-from sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
 from storm.expr import Lower
 from zope.interface import implementer
 
@@ -29,6 +25,10 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    StringCol,
     )
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressAlreadyTaken,

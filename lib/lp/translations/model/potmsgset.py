@@ -14,7 +14,6 @@ import logging
 import re
 
 import six
-from sqlobject import StringCol
 from storm.expr import (
     And,
     Coalesce,
@@ -49,6 +48,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.sqlobject import StringCol
 from lp.services.database.stormexpr import (
     IsTrue,
     NullsFirst,

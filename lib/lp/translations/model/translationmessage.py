@@ -12,12 +12,6 @@ __all__ = [
 from datetime import datetime
 
 import pytz
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import And
 from storm.locals import (
     Int,
@@ -48,6 +42,12 @@ from lp.services.database.sqlbase import (
     quote,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.propertycache import (
     cachedproperty,

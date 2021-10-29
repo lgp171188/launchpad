@@ -33,7 +33,6 @@ from lazr.enum import (
 import pytz
 import simplejson
 import six
-from sqlobject import SQLObjectNotFound
 from storm.expr import (
     And,
     Desc,
@@ -88,6 +87,7 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import (

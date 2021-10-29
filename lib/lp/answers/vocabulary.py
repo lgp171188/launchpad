@@ -9,7 +9,6 @@ __all__ = [
     'UsesAnswersProductVocabulary',
     ]
 
-from sqlobject import OR
 from storm.expr import And
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
@@ -22,6 +21,7 @@ from lp.registry.vocabularies import (
     DistributionVocabulary,
     ProductVocabulary,
     )
+from lp.services.database.sqlobject import OR
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,

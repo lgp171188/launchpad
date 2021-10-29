@@ -18,13 +18,6 @@ import email
 from breezy.revision import NULL_REVISION
 import pytz
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Asc,
@@ -70,6 +63,13 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     quote,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    StringCol,
     )
 from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.emailaddress import (

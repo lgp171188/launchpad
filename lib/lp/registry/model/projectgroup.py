@@ -10,13 +10,6 @@ __all__ = [
     ]
 
 import six
-from sqlobject import (
-    AND,
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     And,
     In,
@@ -99,6 +92,13 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    AND,
+    BoolCol,
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import shortlist

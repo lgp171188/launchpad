@@ -15,12 +15,6 @@ import datetime
 
 import pytz
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Cast,
@@ -61,6 +55,12 @@ from lp.services.database.sqlbase import (
     flush_database_updates,
     quote,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    StringCol,
     )
 from lp.services.mail.helpers import get_email_template
 from lp.services.propertycache import cachedproperty

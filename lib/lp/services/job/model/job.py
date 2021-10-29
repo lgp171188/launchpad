@@ -17,7 +17,6 @@ import time
 
 from lazr.jobrunner.jobrunner import LeaseHeld
 import pytz
-from sqlobject import StringCol
 from storm.expr import (
     And,
     Or,
@@ -37,6 +36,7 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import StringCol
 from lp.services.job.interfaces.job import (
     IJob,
     JobStatus,

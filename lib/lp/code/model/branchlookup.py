@@ -14,7 +14,6 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
-from sqlobject import SQLObjectNotFound
 from storm.expr import (
     And,
     Join,
@@ -68,6 +67,7 @@ from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.webapp.authorization import check_permission
 
 

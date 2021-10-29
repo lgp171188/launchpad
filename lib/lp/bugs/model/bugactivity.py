@@ -5,10 +5,6 @@ __all__ = ['BugActivity', 'BugActivitySet']
 
 import re
 
-from sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
 from storm.store import Store
 from zope.interface import implementer
 
@@ -35,6 +31,10 @@ from lp.bugs.interfaces.bugactivity import (
 from lp.registry.interfaces.person import validate_person
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    StringCol,
+    )
 
 
 @implementer(IBugActivity)

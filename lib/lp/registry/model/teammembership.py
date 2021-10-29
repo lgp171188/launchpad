@@ -14,10 +14,6 @@ from datetime import (
     )
 
 import pytz
-from sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
 from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import getUtility
@@ -60,6 +56,10 @@ from lp.services.database.sqlbase import (
     flush_database_updates,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    StringCol,
     )
 
 

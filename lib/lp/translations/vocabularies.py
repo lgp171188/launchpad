@@ -13,7 +13,6 @@ __all__ = [
     'TranslationTemplateVocabulary',
     ]
 
-from sqlobject import AND
 from storm.locals import (
     Desc,
     Not,
@@ -22,6 +21,7 @@ from storm.locals import (
 from zope.schema.vocabulary import SimpleTerm
 
 from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.services.database.sqlobject import AND
 from lp.services.webapp.vocabulary import (
     NamedSQLObjectVocabulary,
     SQLObjectVocabularyBase,

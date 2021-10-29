@@ -65,11 +65,6 @@ import re
 
 from lazr.restful.interfaces import IReference
 import six
-from sqlobject import (
-    AND,
-    CONTAINSSTRING,
-    OR,
-    )
 from storm.databases.postgres import Case
 from storm.expr import (
     And,
@@ -177,6 +172,11 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    AND,
+    CONTAINSSTRING,
+    OR,
     )
 from lp.services.database.stormexpr import (
     fti_search,
