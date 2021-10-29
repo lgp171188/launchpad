@@ -35,7 +35,6 @@ from six.moves.urllib.parse import (
     urlunparse,
     )
 from six.moves.urllib.request import urlopen
-from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from zope.interface import implementer
 
@@ -45,6 +44,7 @@ from lp.services.config import (
     )
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.postgresql import ConnectionString
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces.client import (
     DownloadFailed,
     ILibrarianClient,

@@ -16,7 +16,6 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.restfulclient.errors import BadRequest
 from pytz import UTC
 import six
-from sqlobject import SQLObjectNotFound
 from storm.locals import Store
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -83,6 +82,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp import canonical_url

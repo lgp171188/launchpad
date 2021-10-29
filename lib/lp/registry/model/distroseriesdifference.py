@@ -18,7 +18,6 @@ from debian.changelog import (
     )
 from lazr.enum import DBItem
 import six
-from sqlobject import StringCol
 from storm.expr import (
     And,
     Cast,
@@ -73,6 +72,7 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.database.sqlobject import StringCol
 from lp.services.database.stormbase import StormBase
 from lp.services.messages.model.message import (
     Message,

@@ -8,9 +8,9 @@ __all__ = [
     "SnapBaseSetNavigation",
     ]
 
-from sqlobject import SQLObjectNotFound
 from zope.component import getUtility
 
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.webapp import (
     GetitemNavigation,
     Navigation,

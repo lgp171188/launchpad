@@ -18,10 +18,6 @@ __all__ = [
     'WebBugTrackerVocabulary',
     ]
 
-from sqlobject import (
-    CONTAINSSTRING,
-    OR,
-    )
 from storm.expr import (
     And,
     Or,
@@ -64,6 +60,10 @@ from lp.registry.model.milestone import milestone_sort_key
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.vocabularies import DistributionVocabulary
 from lp.services.database.interfaces import IStore
+from lp.services.database.sqlobject import (
+    CONTAINSSTRING,
+    OR,
+    )
 from lp.services.helpers import shortlist
 from lp.services.webapp.escaping import (
     html_escape,

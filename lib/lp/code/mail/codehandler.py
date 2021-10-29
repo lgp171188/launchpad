@@ -5,7 +5,6 @@ import operator
 import os
 import re
 
-from sqlobject import SQLObjectNotFound
 import transaction
 from zope.component import getUtility
 from zope.interface import implementer
@@ -16,6 +15,7 @@ from lp.code.enums import CodeReviewVote
 from lp.code.errors import UserNotBranchReviewer
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposalGetter
 from lp.services.config import config
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.mail.commands import (
     EmailCommand,
     EmailCommandCollection,

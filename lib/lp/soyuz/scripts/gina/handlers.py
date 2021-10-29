@@ -23,7 +23,6 @@ import os
 import re
 
 import six
-from sqlobject import SQLObjectNotFound
 from storm.exceptions import NotOneError
 from storm.expr import (
     Cast,
@@ -47,6 +46,7 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import quote
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.scripts import log
 from lp.soyuz.enums import (

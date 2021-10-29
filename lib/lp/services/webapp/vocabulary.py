@@ -25,10 +25,6 @@ from collections import namedtuple
 
 from lazr.restful.utils import safe_hasattr
 import six
-from sqlobject import (
-    AND,
-    CONTAINSSTRING,
-    )
 from storm.base import Storm
 from storm.store import EmptyResultSet
 from zope.interface import (
@@ -48,6 +44,10 @@ from zope.security.proxy import isinstance as zisinstance
 
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    AND,
+    CONTAINSSTRING,
+    )
 
 
 class ForgivingSimpleVocabulary(SimpleVocabulary):

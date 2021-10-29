@@ -3,12 +3,6 @@
 
 __all__ = ['GPGKey', 'GPGKeySet']
 
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -20,6 +14,12 @@ from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    StringCol,
     )
 from lp.services.gpg.interfaces import (
     GPGKeyAlgorithm,

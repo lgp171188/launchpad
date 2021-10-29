@@ -29,14 +29,6 @@ import os.path
 from lazr.config import as_timedelta
 import pytz
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.locals import (
     And,
     DateTime,
@@ -61,6 +53,14 @@ from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    SQLRelatedJoin,
+    StringCol,
+    )
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.messages.interfaces.message import (
     IDirectEmailAuthorization,

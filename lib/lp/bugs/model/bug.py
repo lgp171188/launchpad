@@ -32,14 +32,6 @@ from six.moves.collections_abc import (
     Iterable,
     Set,
     )
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Coalesce,
@@ -206,6 +198,14 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    SQLRelatedJoin,
+    StringCol,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.fields import DuplicateBug

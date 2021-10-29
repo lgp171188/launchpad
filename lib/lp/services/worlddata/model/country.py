@@ -4,17 +4,17 @@
 __all__ = ['Country', 'CountrySet', 'Continent']
 
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLRelatedJoin,
+    StringCol,
+    )
 from lp.services.worlddata.interfaces.country import (
     IContinent,
     ICountry,

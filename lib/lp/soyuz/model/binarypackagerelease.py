@@ -9,12 +9,6 @@ __all__ = [
 from operator import attrgetter
 
 import simplejson
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.locals import (
     Date,
     Int,
@@ -29,6 +23,12 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    StringCol,
+    )
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,

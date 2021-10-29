@@ -6,12 +6,12 @@
 __all__ = ['AnswerContact']
 
 
-from sqlobject import ForeignKey
 from zope.interface import implementer
 
 from lp.answers.interfaces.answercontact import IAnswerContact
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import ForeignKey
 
 
 @implementer(IAnswerContact)

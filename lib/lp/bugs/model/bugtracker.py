@@ -21,14 +21,6 @@ from six.moves.urllib.parse import (
     urlsplit,
     urlunsplit,
     )
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    OR,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     Count,
     Desc,
@@ -79,6 +71,14 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_updates,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    OR,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist

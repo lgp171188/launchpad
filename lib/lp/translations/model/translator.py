@@ -3,10 +3,6 @@
 
 __all__ = ['Translator', 'TranslatorSet']
 
-from sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
 from storm.expr import Join
 from storm.store import Store
 from zope.interface import implementer
@@ -16,6 +12,10 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    StringCol,
+    )
 from lp.translations.interfaces.translator import (
     ITranslator,
     ITranslatorSet,

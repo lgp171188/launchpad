@@ -10,11 +10,6 @@ from operator import attrgetter
 import warnings
 
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    StringCol,
-    )
 from storm.databases.postgres import Case
 from storm.expr import (
     And,
@@ -54,6 +49,11 @@ from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    StringCol,
+    )
 from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,

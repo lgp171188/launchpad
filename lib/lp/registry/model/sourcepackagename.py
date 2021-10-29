@@ -8,11 +8,6 @@ __all__ = [
     ]
 
 import six
-from sqlobject import (
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
@@ -29,6 +24,11 @@ from lp.services.database.sqlbase import (
     cursor,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 
 

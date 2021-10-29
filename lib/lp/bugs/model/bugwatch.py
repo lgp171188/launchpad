@@ -20,11 +20,6 @@ from six.moves.urllib.parse import (
     splitvalue,
     urlunsplit,
     )
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     Desc,
     Not,
@@ -68,6 +63,11 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
+    )
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.messages.model.message import Message

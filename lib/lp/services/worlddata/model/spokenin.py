@@ -3,10 +3,10 @@
 
 __all__ = ['SpokenIn']
 
-from sqlobject import ForeignKey
 from zope.interface import implementer
 
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import ForeignKey
 from lp.services.worlddata.interfaces.spokenin import ISpokenIn
 
 

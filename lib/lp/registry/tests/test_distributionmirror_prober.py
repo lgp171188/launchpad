@@ -14,7 +14,6 @@ from lazr.uri import URI
 import responses
 import six
 from six.moves import http_client
-from sqlobject import SQLObjectNotFound
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -84,6 +83,7 @@ from lp.registry.tests.distributionmirror_http_server import (
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
 from lp.services.database.interfaces import IStore
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.httpproxy.connect_tunneling import TunnelingAgent
 from lp.services.timeout import default_timeout
 from lp.testing import (

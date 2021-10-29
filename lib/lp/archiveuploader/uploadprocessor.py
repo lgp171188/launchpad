@@ -49,7 +49,6 @@ import os
 import shutil
 import sys
 
-from sqlobject import SQLObjectNotFound
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -75,6 +74,7 @@ from lp.code.interfaces.sourcepackagerecipebuild import (
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.log.logger import BufferLogger
 from lp.services.webapp.errorlog import (
     ErrorReportingUtility,

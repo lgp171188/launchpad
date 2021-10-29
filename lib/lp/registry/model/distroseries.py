@@ -20,15 +20,6 @@ from operator import (
 import apt_pkg
 from lazr.delegates import delegate_to
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Column,
@@ -111,6 +102,15 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    SQLRelatedJoin,
+    StringCol,
     )
 from lp.services.database.stormexpr import (
     fti_search,

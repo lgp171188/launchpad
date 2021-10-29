@@ -15,14 +15,6 @@ import operator
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.objectdelta import ObjectDelta
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.locals import (
     Count,
     Desc,
@@ -100,6 +92,14 @@ from lp.services.database.sqlbase import (
     convert_storm_clause_to_string,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    SQLRelatedJoin,
+    StringCol,
     )
 from lp.services.mail.helpers import get_contact_email_addresses
 from lp.services.propertycache import (

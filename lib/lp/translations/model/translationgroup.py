@@ -8,13 +8,6 @@ __all__ = [
 
 import operator
 
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.expr import (
     Desc,
     Join,
@@ -36,6 +29,13 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    SQLRelatedJoin,
+    StringCol,
+    )
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,

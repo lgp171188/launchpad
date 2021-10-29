@@ -17,12 +17,6 @@ from operator import attrgetter
 
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import Cast
 from storm.locals import (
     And,
@@ -69,6 +63,12 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
@@ -651,7 +651,14 @@ class PackageUpload(SQLBase):
     @cachedproperty
     def contains_build(self):
         """See `IPackageUpload`."""
-        return bool(self.builds)
+        if self.builds:
+            return True
+        else:
+            # handle case when PackageUpload is a copy
+            copy_job = self.concrete_package_copy_job
+            if copy_job is not None:
+                return copy_job.include_binaries
+        return False
 
     @cachedproperty
     def contains_copy(self):
@@ -1621,8 +1628,10 @@ class PackageUploadSet:
 
 def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     # Circular imports.
+    from lp.registry.model.distribution import Distribution
     from lp.soyuz.model.archive import Archive
     from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
+    from lp.soyuz.model.packagecopyjob import PackageCopyJob
     from lp.soyuz.model.publishing import SourcePackagePublishingHistory
     from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
@@ -1684,3 +1693,11 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
         spr_cache.published_archives.append(publication.archive)
     for diff in diffs:
         get_property_cache(diff.to_source).package_diffs.append(diff)
+
+    package_copy_jobs = load_related(
+        PackageCopyJob, uploads, ['package_copy_job_id']
+    )
+    archives = load_related(
+        Archive, package_copy_jobs, ['source_archive_id']
+    )
+    load_related(Distribution, archives, ['distributionID'])

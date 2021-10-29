@@ -17,13 +17,6 @@ from operator import itemgetter
 
 from lazr.restful.declarations import error_status
 from six.moves import http_client
-from sqlobject import (
-    AND,
-    BoolCol,
-    DateCol,
-    ForeignKey,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -60,6 +53,13 @@ from lp.registry.model.productrelease import ProductRelease
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    AND,
+    BoolCol,
+    DateCol,
+    ForeignKey,
+    StringCol,
+    )
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp.sorting import expand_numbers
 

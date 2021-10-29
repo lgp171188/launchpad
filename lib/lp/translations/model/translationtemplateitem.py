@@ -5,13 +5,13 @@ __all__ = [
     'TranslationTemplateItem',
     ]
 
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    )
 from zope.interface import implementer
 
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    )
 from lp.translations.interfaces.translationtemplateitem import (
     ITranslationTemplateItem,
     )
