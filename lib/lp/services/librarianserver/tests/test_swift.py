@@ -363,6 +363,15 @@ class TestFeedSwift(TestCase):
             finally:
                 swift_client.close()
 
+    def test_swift_timeout(self):
+        # The librarian's Swift connections honour the configured timeout.
+        self.pushConfig(
+            'librarian_server', os_username='timeout', swift_timeout=0.1)
+        swift_client = self.swift_fixture.connect()
+        self.assertRaises(
+            swiftclient.ClientException,
+            swift_client.get_object, 'container', 'name')
+
 
 class TestHashStream(TestCase):
     layer = BaseLayer

@@ -426,6 +426,7 @@ class ConnectionPool:
             key=self.os_password,
             tenant_name=self.os_tenant_name,
             auth_version=self.os_auth_version,
+            timeout=float(config.librarian_server.swift_timeout),
             )
 
 

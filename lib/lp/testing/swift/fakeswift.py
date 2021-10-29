@@ -135,6 +135,8 @@ class FakeKeystone(resource.Resource):
         if tenant_name not in self.root.tenants:
             request.setResponseCode(http.FORBIDDEN)
             return b""
+        if username == "timeout":
+            time.sleep(60)
         if username not in self.users:
             request.setResponseCode(http.FORBIDDEN)
             return b""
