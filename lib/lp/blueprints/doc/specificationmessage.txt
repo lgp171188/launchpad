@@ -2,7 +2,7 @@ Specification Messages
 ======================
 
 Specification messages are messages associated with blueprints. A
-specifiction message is described by the ISpecificationMessage
+specification message is described by the ISpecificationMessage
 interface.
 
 
