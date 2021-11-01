@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from lazr.enum import (
@@ -12,8 +12,8 @@ from zope.security.proxy import isinstance as zope_isinstance
 
 
 __all__ = [
-'DBEnum',
-'EnumCol',
+    'DBEnum',
+    'EnumCol',
     ]
 
 
@@ -71,6 +71,8 @@ class DBEnum(SimpleProperty):
 
 
 class DBSchemaEnumCol(sqlobject.PropertyAdapter, DBEnum):
+    """Deprecated; a SQLObject property representing a DBEnumeratedType."""
+
     def __init__(self, **kw):
         try:
             enum = kw.pop('enum')
@@ -83,4 +85,5 @@ class DBSchemaEnumCol(sqlobject.PropertyAdapter, DBEnum):
         super(DBSchemaEnumCol, self).__init__(**kw)
 
 
+# Deprecated.  Use DBEnum instead.
 EnumCol = DBSchemaEnumCol
