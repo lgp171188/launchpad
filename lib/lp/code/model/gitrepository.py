@@ -136,7 +136,7 @@ from lp.code.interfaces.gitrepository import (
     IGitRepositorySet,
     IRevisionStatusReport,
     IRevisionStatusReportSet,
-    user_has_special_git_repository_access,
+    user_has_special_git_repository_access, IRevisionStatusArtifactSet,
     )
 from lp.code.interfaces.gitrule import (
     describe_git_permissions,
@@ -218,7 +218,7 @@ from lp.services.propertycache import (
     get_property_cache,
     )
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.interfaces import ILaunchBag, ICanonicalUrlData
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.interfaces.snap import ISnapSet
@@ -323,13 +323,13 @@ class RevisionStatusReport(StormBase):
     date_started = DateTime(name='date_started', tzinfo=pytz.UTC)
     date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC)
 
-    log = ForeignKey(
-        dbName='log', foreignKey='Revision')
+    log_id = Int(name='log', allow_none=True)
+    log = Reference(log_id, 'RevisionStatusArtifact.id')
 
     def __init__(self, name, git_repository, commit_sha1, date_created,
                  url=None, description=None, result=None, date_started=None,
-                 date_finished=None, log=None):
-        super(RevisionStatusReport, self).__init__()
+                 date_finished=None):
+        super()
         self.name = name
         self.git_repository = git_repository
         self.commit_sha1 = commit_sha1
@@ -339,23 +339,24 @@ class RevisionStatusReport(StormBase):
         self.result = result
         self.date_started = date_started
         self.date_finished = date_finished
-        self.log = log
+
+    def setLog(self, artifact):
+        self.log = artifact
+
 
 
 @implementer(IRevisionStatusReportSet)
 class RevisionStatusReportSet:
 
-    def new(self, name, git_repository, commit_sha1, date_created=None,
+    def new(self, name, git_repository, commit_sha1, date_created,
             url=None, description=None, result=None, date_started=None,
             date_finished=None, log=None):
         """See `IGitRevisionStatusReportSet`."""
         store = IStore(RevisionStatusReport)
         date_created = UTC_NOW
         report = RevisionStatusReport(name, git_repository, commit_sha1,
-                                      date_created=date_created, url=None,
-                                      description=None, result=None,
-                                      date_started=None, date_finished=None,
-                                      log=None)
+                                      date_created, url, description, result,
+                                      date_started, date_finished)
         store.add(report)
         return report
 
@@ -380,6 +381,22 @@ class RevisionStatusArtifact(StormBase):
         super(RevisionStatusArtifact, self).__init__()
         self.library_file = library_file
         self.report = report
+
+
+@implementer(IRevisionStatusArtifactSet)
+class RevisionStatusArtifactSet:
+
+    def new(self, lfa, report):
+        """See `IRevisionStatusArtifactSet`."""
+        store = IStore(RevisionStatusArtifact)
+        artifact = RevisionStatusArtifact(lfa, report)
+        store.add(artifact)
+        return artifact
+
+    def findRevisionStatusArtifactById(self, id):
+        return IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            RevisionStatusArtifact.id == id)
 
 
 @implementer(IGitRepository, IHasOwner, IPrivacy, IInformationType)
@@ -591,15 +608,15 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
     def collectGarbage(self):
         getUtility(IGitHostingClient).collectGarbage(self.getInternalPath())
 
-    def newRevisionStatusReport(self, user, name, git_repository, commit_sha1,
+    def newRevisionStatusReport(self, user, name, commit_sha1,
                                 date_created, url=None, description=None,
                                 result=None, date_started=None,
-                                date_finished=None, log=None):
+                                date_finished=None):
 
-        report = RevisionStatusReport(user, name, git_repository, commit_sha1,
+        report = RevisionStatusReport(name, self, commit_sha1,
                                       date_created, url, description, result,
-                                      date_started, date_finished, log)
-        return report.id
+                                      date_started, date_finished)
+        return report
 
     @property
     def namespace(self):

@@ -99,7 +99,7 @@ from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
-    user_has_special_git_repository_access,
+    user_has_special_git_repository_access, IRevisionStatusReport,
     )
 from lp.code.interfaces.gitrule import (
     IGitRule,
@@ -681,6 +681,17 @@ class EditSpecificationByRelatedPeople(AuthorizationBase):
                 user.isDriver(self.obj.target) or
                 user.isOneOf(
                     self.obj, ['owner', 'drafter', 'assignee', 'approver']))
+
+
+class EditRevisionStatusReport(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IRevisionStatusReport
+
+    def checkAuthenticated(self, user):
+        return (
+                user.inTeam(self.obj.git_repository.owner) or
+                user_has_special_git_repository_access(
+                    user.person, self.obj.git_repository))
 
 
 class AdminSpecification(AuthorizationBase):

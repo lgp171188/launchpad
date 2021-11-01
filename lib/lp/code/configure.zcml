@@ -947,24 +947,40 @@
         permission="launchpad.Edit"
         interface="lp.code.interfaces.gitref.IGitRefEdit" />
   </class>
+  <securedutility
+      component="lp.code.model.gitref.GitRefRemote"
+      provides="lp.code.interfaces.gitref.IGitRefRemoteSet">
+    <allow interface="lp.code.interfaces.gitref.IGitRefRemoteSet" />
+  </securedutility>
+
+  <!-- RevisionStatusReport -->
+
   <class class="lp.code.model.gitrepository.RevisionStatusReport">
     <require
         permission="launchpad.Edit"
         interface="lp.code.interfaces.gitrepository.IRevisionStatusReport"
         set_schema="lp.code.interfaces.gitrepository.IRevisionStatusReport" />
   </class>
+  <browser:url
+        for="lp.code.interfaces.gitrepository.IRevisionStatusReport"
+        path_expression="string:+statuses/${id}"
+        attribute_to_parent="git_repository"
+        rootsite="code"/>
   <class class="lp.code.model.gitrepository.RevisionStatusReportSet">
     <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusReportSet" />
   </class>
   <securedutility
-      component="lp.code.model.gitref.GitRefRemote"
-      provides="lp.code.interfaces.gitref.IGitRefRemoteSet">
-    <allow interface="lp.code.interfaces.gitref.IGitRefRemoteSet" />
-  </securedutility>
-  <securedutility
       class="lp.code.model.gitrepository.RevisionStatusReportSet"
       provides="lp.code.interfaces.gitrepository.IRevisionStatusReportSet">
      <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusReportSet" />
+  </securedutility>
+  <class class="lp.code.model.gitrepository.RevisionStatusArtifactSet">
+    <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusArtifactSet" />
+  </class>
+  <securedutility
+      class="lp.code.model.gitrepository.RevisionStatusArtifactSet"
+      provides="lp.code.interfaces.gitrepository.IRevisionStatusArtifactSet">
+     <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusArtifactSet" />
   </securedutility>
 
   <!-- Git repository access rules -->

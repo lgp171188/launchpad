@@ -6,6 +6,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repositories."""
+
 from datetime import (
     datetime,
     timedelta,
@@ -576,13 +577,20 @@ class TestGitRepository(TestCaseWithFactory):
         repository = removeSecurityProxy(self.factory.makeGitRepository())
         name = self.factory.getUniqueUnicode('report-name')
         commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
+
         report = self.factory.makeRevisionStatusReport(
             name=name, git_repository=repository, commit_sha1=commit_sha1,
             date_created=self.factory.getUniqueDate())
+        artifact = self.factory.makeRevisionStatusArtifact(lfa, report)
 
-        results = getUtility(
-            IRevisionStatusReportSet).findRevisionStatusReportById(1)
-        self.assertEqual([report], list(results))
+        with person_logged_in(repository.owner):
+            results = getUtility(
+                IRevisionStatusReportSet).findRevisionStatusReportById(
+                report.id)
+            report.setLog(artifact)
+            self.assertEqual([report], list(results))
+            self.assertEqual(report.log, artifact)
 
 
 class TestGitIdentityMixin(TestCaseWithFactory):
@@ -4215,8 +4223,9 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_newRevisionStatusReport(self):
         repository = self.factory.makeGitRepository()
         requester = repository.owner
-        webservice = webservice_for_person(requester)
+        webservice = webservice_for_person(None, default_api_version="devel")
         with person_logged_in(requester):
+            repository_id = repository.id
             repository_url = api_url(repository)
 
             secret, _ = self.factory.makeAccessToken(
@@ -4224,14 +4233,14 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                 scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
             header = {'Authorization': 'Token %s' % secret}
 
-            response = webservice.named_post(
-                repository_url, "newRevisionStatusReport",
-                headers=header, name="CI", git_repository=repository.id,
-                commit_sha1='823748ur9804376',
-                date_created=datetime.now(pytz.UTC).strftime("%Y%m%d-%H%M%S"),
-                description="120/120 tests passed")
+        response = webservice.named_post(
+            repository_url, "newRevisionStatusReport",
+            headers=header, name="CI",
+            commit_sha1=hashlib.sha1(self.factory.getUniqueBytes()).hexdigest(),
+            date_created=datetime.now(pytz.UTC).isoformat(),
+            description="120/120 tests passed")
 
-        self.assertEqual(200, response.status)
+        self.assertEqual(201, response.status)
 
     def test_set_target(self):
         # The repository owner can move the repository to another target;

@@ -64,7 +64,7 @@ from lp.code.interfaces.codereviewcomment import ICodeReviewComment
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.code.interfaces.diff import IPreviewDiff
 from lp.code.interfaces.gitref import IGitRef
-from lp.code.interfaces.gitrepository import IGitRepository
+from lp.code.interfaces.gitrepository import IGitRepository, IRevisionStatusReport
 from lp.code.interfaces.gitrule import (
     IGitNascentRule,
     IGitNascentRuleGrant,
@@ -695,6 +695,8 @@ patch_collection_property(
 # IAccessToken
 patch_reference_property(IAccessToken, 'git_repository', IGitRepository)
 
+# IRevisionStatusReport
+patch_reference_property(IRevisionStatusReport, 'git_repository', IGitRepository)
 
 ###
 #
