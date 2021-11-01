@@ -12,6 +12,7 @@ __all__ = [
     'IGitRepositoryDelta',
     'IGitRepositoryExpensiveRequest',
     'IRevisionStatusArtifactSet',
+    'IRevisionStatusReportSet',
     'IGitRepositorySet',
     'IRevisionStatusReport',
     'IRevisionStatusReportSet',
@@ -41,7 +42,7 @@ from lazr.restful.declarations import (
     operation_returns_entry,
     REQUEST_USER,
     scoped,
-)
+    )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -95,9 +96,9 @@ from lp.services.auth.interfaces import IAccessTokenTarget
 from lp.services.fields import (
     InlineObject,
     PersonChoice,
-    PublicPersonChoice, URIField,
+    PublicPersonChoice,
+    URIField,
     )
-from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.services.webhooks.interfaces import IWebhookTarget
 
 
@@ -843,7 +844,8 @@ class IRevisionStatusReport(Interface):
     date_finished = exported(Datetime(
         title=_("When the report has finished.")))
     log = exported(Reference(
-        title=_("The `RevisionStatusArtifact` for which this report is built."),
+        title=_("The `RevisionStatusArtifact` for which "
+                "this report is built."),
         schema=Interface))
 
     def setLog(id, artifact):

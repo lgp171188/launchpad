@@ -99,7 +99,8 @@ from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
-    user_has_special_git_repository_access, IRevisionStatusReport,
+    IRevisionStatusReport,
+    user_has_special_git_repository_access,
     )
 from lp.code.interfaces.gitrule import (
     IGitRule,

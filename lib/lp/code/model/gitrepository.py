@@ -37,7 +37,6 @@ from six.moves.urllib.parse import (
     urlsplit,
     urlunsplit,
     )
-from sqlobject import ForeignKey
 from storm.databases.postgres import Returning
 from storm.expr import (
     And,
@@ -134,9 +133,10 @@ from lp.code.interfaces.gitrepository import (
     GitIdentityMixin,
     IGitRepository,
     IGitRepositorySet,
+    IRevisionStatusArtifactSet,
     IRevisionStatusReport,
     IRevisionStatusReportSet,
-    user_has_special_git_repository_access, IRevisionStatusArtifactSet,
+    user_has_special_git_repository_access,
     )
 from lp.code.interfaces.gitrule import (
     describe_git_permissions,
@@ -218,7 +218,7 @@ from lp.services.propertycache import (
     get_property_cache,
     )
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.interfaces import ILaunchBag, ICanonicalUrlData
+from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.interfaces.snap import ISnapSet
@@ -342,7 +342,6 @@ class RevisionStatusReport(StormBase):
 
     def setLog(self, artifact):
         self.log = artifact
-
 
 
 @implementer(IRevisionStatusReportSet)

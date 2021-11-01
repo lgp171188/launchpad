@@ -4225,7 +4225,6 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         requester = repository.owner
         webservice = webservice_for_person(None, default_api_version="devel")
         with person_logged_in(requester):
-            repository_id = repository.id
             repository_url = api_url(repository)
 
             secret, _ = self.factory.makeAccessToken(
@@ -4236,11 +4235,16 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_post(
             repository_url, "newRevisionStatusReport",
             headers=header, name="CI",
-            commit_sha1=hashlib.sha1(self.factory.getUniqueBytes()).hexdigest(),
+            commit_sha1=hashlib.sha1(
+                self.factory.getUniqueBytes()).hexdigest(),
             date_created=datetime.now(pytz.UTC).isoformat(),
             description="120/120 tests passed")
 
         self.assertEqual(201, response.status)
+        with person_logged_in(requester):
+            self.assertEqual(
+                webservice.getAbsoluteUrl(api_url(repository))+'/+status/1',
+                response.getHeader("Location"))
 
     def test_set_target(self):
         # The repository owner can move the repository to another target;
