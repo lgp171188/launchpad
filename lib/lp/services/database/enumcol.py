@@ -1,6 +1,8 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import warnings
+
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -70,10 +72,12 @@ class DBEnum(SimpleProperty):
     variable_class = DBEnumVariable
 
 
-class DBSchemaEnumCol(sqlobject.PropertyAdapter, DBEnum):
-    """Deprecated; a SQLObject property representing a DBEnumeratedType."""
-
+class EnumCol(sqlobject.PropertyAdapter, DBEnum):
     def __init__(self, **kw):
+        warnings.warn(
+            "The SQLObject property EnumCol is deprecated; use the Storm "
+            "property DBEnum instead.",
+            DeprecationWarning, stacklevel=2)
         try:
             enum = kw.pop('enum')
         except KeyError:
@@ -82,8 +86,4 @@ class DBSchemaEnumCol(sqlobject.PropertyAdapter, DBEnum):
         self._kwargs = {
             'enum': enum,
             }
-        super(DBSchemaEnumCol, self).__init__(**kw)
-
-
-# Deprecated.  Use DBEnum instead.
-EnumCol = DBSchemaEnumCol
+        super().__init__(**kw)
