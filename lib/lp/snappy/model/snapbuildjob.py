@@ -33,7 +33,7 @@ from zope.interface import (
 
 from lp.app.errors import NotFoundError
 from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -86,7 +86,7 @@ class SnapBuildJob(StormBase):
     snapbuild_id = Int(name='snapbuild', allow_none=False)
     snapbuild = Reference(snapbuild_id, 'SnapBuild.id')
 
-    job_type = EnumCol(enum=SnapBuildJobType, notNull=True)
+    job_type = DBEnum(enum=SnapBuildJobType, allow_none=False)
 
     metadata = JSON('json_data', allow_none=False)
 

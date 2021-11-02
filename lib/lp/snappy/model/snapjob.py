@@ -37,7 +37,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -91,7 +91,7 @@ class SnapJob(StormBase):
     snap_id = Int(name='snap', allow_none=False)
     snap = Reference(snap_id, 'Snap.id')
 
-    job_type = EnumCol(enum=SnapJobType, notNull=True)
+    job_type = DBEnum(enum=SnapJobType, allow_none=False)
 
     metadata = JSON('json_data', allow_none=False)
 
