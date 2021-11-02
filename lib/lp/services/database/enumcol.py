@@ -74,6 +74,8 @@ class DBEnum(SimpleProperty):
 
 class EnumCol(sqlobject.PropertyAdapter, DBEnum):
     def __init__(self, **kw):
+        # We want to end up using only the Storm style, not a mix of
+        # SQLObject and Storm.
         warnings.warn(
             "The SQLObject property EnumCol is deprecated; use the Storm "
             "property DBEnum instead.",
