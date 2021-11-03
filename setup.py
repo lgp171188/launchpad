@@ -165,7 +165,6 @@ setup(
         'geoip2',
         'gunicorn',
         'importlib-resources; python_version < "3.7"',
-        'ipaddress; python_version < "3.3"',
         'ipython',
         'jsautobuild',
         'launchpad-buildd',
