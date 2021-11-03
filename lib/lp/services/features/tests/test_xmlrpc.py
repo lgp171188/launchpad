@@ -3,7 +3,7 @@
 
 """Tests for FeatureFlagApplication."""
 
-from six.moves import xmlrpc_client
+import xmlrpc.client
 
 from lp.services import features
 from lp.services.config import config
@@ -82,13 +82,13 @@ class TestGetFeatureFlag(TestCaseWithFactory):
                     flag_name, ['user:' + person.name]))
 
     def test_xmlrpc_interface_unset(self):
-        sp = xmlrpc_client.ServerProxy(
+        sp = xmlrpc.client.ServerProxy(
             config.launchpad.feature_flags_endpoint,
             transport=XMLRPCTestTransport(), allow_none=True)
         self.assertEqual(None, sp.getFeatureFlag(u'flag'))
 
     def test_xmlrpc_interface_set(self):
-        sp = xmlrpc_client.ServerProxy(
+        sp = xmlrpc.client.ServerProxy(
             config.launchpad.feature_flags_endpoint,
             transport=XMLRPCTestTransport(), allow_none=True)
         flag_name = u'flag'

@@ -9,13 +9,13 @@ __all__ = [
     ]
 
 import operator
+from xmlrpc.client import Fault
 
 from breezy.urlutils import (
     escape,
     unescape,
     )
 import six
-from six.moves.xmlrpc_client import Fault
 from twisted.internet import defer
 from zope.component import (
     adapter,

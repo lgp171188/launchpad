@@ -3,8 +3,9 @@
 
 """Tests for the internal codehosting API."""
 
+import xmlrpc.client
+
 from pymacaroons import Macaroon
-from six.moves import xmlrpc_client
 from storm.sqlobject import SQLObjectNotFound
 from testtools.matchers import (
     Equals,
@@ -122,7 +123,7 @@ class GetUserAndSSHKeysTests(TestCaseWithFactory):
         new_person = self.factory.makePerson()
         with person_logged_in(new_person):
             key = self.factory.makeSSHKey(person=new_person)
-        authserver = xmlrpc_client.ServerProxy(
+        authserver = xmlrpc.client.ServerProxy(
             'http://xmlrpc-private.launchpad.test:8087/authserver',
             transport=XMLRPCTestTransport())
         self.assertEqual(

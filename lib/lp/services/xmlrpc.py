@@ -9,16 +9,16 @@ __all__ = [
     ]
 
 import socket
+import xmlrpc.client
 
 from defusedxml.xmlrpc import monkey_patch
-from six.moves import xmlrpc_client
 
 
 # Protect against various XML parsing vulnerabilities.
 monkey_patch()
 
 
-class LaunchpadFault(xmlrpc_client.Fault):
+class LaunchpadFault(xmlrpc.client.Fault):
     """Base class for a Launchpad XMLRPC fault.
 
     Subclasses should define a unique error_code and a msg_template,
@@ -34,7 +34,7 @@ class LaunchpadFault(xmlrpc_client.Fault):
         assert self.msg_template is not None, (
             "Subclasses must define msg_template.")
         msg = self.msg_template % kw
-        xmlrpc_client.Fault.__init__(self, self.error_code, msg)
+        xmlrpc.client.Fault.__init__(self, self.error_code, msg)
 
     def __eq__(self, other):
         if not isinstance(other, LaunchpadFault):
@@ -47,19 +47,19 @@ class LaunchpadFault(xmlrpc_client.Fault):
         return not (self == other)
 
 
-class Transport(xmlrpc_client.Transport):
-    """An xmlrpc_client transport that supports a timeout argument.
+class Transport(xmlrpc.client.Transport):
+    """An xmlrpc.client transport that supports a timeout argument.
 
     Use by passing into the "transport" argument of the
-    xmlrpc_client.ServerProxy initialization.
+    xmlrpc.client.ServerProxy initialization.
     """
 
     def __init__(self,
                  use_datetime=0, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
-        xmlrpc_client.Transport.__init__(self, use_datetime)
+        xmlrpc.client.Transport.__init__(self, use_datetime)
         self.timeout = timeout
 
     def make_connection(self, host):
-        conn = xmlrpc_client.Transport.make_connection(self, host)
+        conn = xmlrpc.client.Transport.make_connection(self, host)
         conn.timeout = self.timeout
         return conn

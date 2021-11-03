@@ -7,6 +7,7 @@
 import socket
 from textwrap import dedent
 import threading
+import xmlrpc.client
 
 from fixtures import (
     MonkeyPatch,
@@ -17,10 +18,7 @@ from requests.exceptions import (
     ConnectionError,
     InvalidSchema,
     )
-from six.moves import (
-    xmlrpc_client,
-    xmlrpc_server,
-    )
+from six.moves import xmlrpc_server
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -505,7 +503,7 @@ class TestTimeout(TestCase):
             logRequests=False)
         server_thread = threading.Thread(target=server.serve_2_requests)
         server_thread.start()
-        proxy = xmlrpc_client.ServerProxy(
+        proxy = xmlrpc.client.ServerProxy(
             http_server_url, transport=TransportWithTimeout())
         self.assertEqual('Successful test message.',
                          proxy.echo('Successful test message.'))

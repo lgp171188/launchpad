@@ -10,10 +10,10 @@ __all__ = [
 import logging
 import sys
 import uuid
+import xmlrpc.client
 
 from pymacaroons import Macaroon
 import six
-from six.moves import xmlrpc_client
 from six.moves.urllib.parse import quote
 import transaction
 from zope.component import (
@@ -454,7 +454,7 @@ class GitAPI(LaunchpadXMLRPCView):
             requester_id, self._translatePath,
             six.ensure_text(path).strip("/"), permission, auth_params)
         try:
-            if isinstance(result, xmlrpc_client.Fault):
+            if isinstance(result, xmlrpc.client.Fault):
                 logger.error("translatePath failed: %r", result)
             else:
                 # The results of path translation are not sensitive for
@@ -502,7 +502,7 @@ class GitAPI(LaunchpadXMLRPCView):
             requester_id, self._notify,
             translated_path, statistics, auth_params)
         try:
-            if isinstance(result, xmlrpc_client.Fault):
+            if isinstance(result, xmlrpc.client.Fault):
                 logger.error("notify failed: %r", result)
             else:
                 logger.info("notify succeeded: %s" % result)
@@ -544,7 +544,7 @@ class GitAPI(LaunchpadXMLRPCView):
             requester_id, self._getMergeProposalURL,
             translated_path, branch, auth_params)
         try:
-            if isinstance(result, xmlrpc_client.Fault):
+            if isinstance(result, xmlrpc.client.Fault):
                 logger.error("getMergeProposalURL failed: %r", result)
             else:
                 # The result of getMergeProposalURL is not sensitive for
@@ -586,7 +586,7 @@ class GitAPI(LaunchpadXMLRPCView):
             "Request received: authenticateWithPassword('%s')", username)
         result = self._authenticateWithPassword(username, password)
         try:
-            if isinstance(result, xmlrpc_client.Fault):
+            if isinstance(result, xmlrpc.client.Fault):
                 logger.error("authenticateWithPassword failed: %r", result)
             else:
                 # The results of authentication may be sensitive, but we can
@@ -640,7 +640,7 @@ class GitAPI(LaunchpadXMLRPCView):
             # the moment.  It's possible to reach this by being very unlucky
             # about the timing of a push.
             return [
-                (xmlrpc_client.Binary(ref_path.data), [])
+                (xmlrpc.client.Binary(ref_path.data), [])
                 for ref_path in ref_paths]
 
         # Caller sends paths as bytes; Launchpad returns a list of (path,
@@ -648,7 +648,7 @@ class GitAPI(LaunchpadXMLRPCView):
         # bytes.)
         ref_paths = [ref_path.data for ref_path in ref_paths]
         return [
-            (xmlrpc_client.Binary(ref_path),
+            (xmlrpc.client.Binary(ref_path),
              self._renderPermissions(permissions))
             for ref_path, permissions in repository.checkRefPermissions(
                 requester, ref_paths).items()
@@ -666,7 +666,7 @@ class GitAPI(LaunchpadXMLRPCView):
             requester_id, self._checkRefPermissions,
             translated_path, ref_paths, auth_params)
         try:
-            if isinstance(result, xmlrpc_client.Fault):
+            if isinstance(result, xmlrpc.client.Fault):
                 logger.error("checkRefPermissions failed: %r", result)
             else:
                 # The results of ref permission checks are not sensitive for
@@ -736,7 +736,7 @@ class GitAPI(LaunchpadXMLRPCView):
         except Exception as e:
             result = e
         try:
-            if isinstance(result, xmlrpc_client.Fault):
+            if isinstance(result, xmlrpc.client.Fault):
                 logger.error("confirmRepoCreation failed: %r", result)
             else:
                 logger.info("confirmRepoCreation succeeded: %s" % result)
@@ -767,7 +767,7 @@ class GitAPI(LaunchpadXMLRPCView):
         except Exception as e:
             result = e
         try:
-            if isinstance(result, xmlrpc_client.Fault):
+            if isinstance(result, xmlrpc.client.Fault):
                 logger.error("abortRepoCreation failed: %r", result)
             else:
                 logger.info("abortRepoCreation succeeded: %s" % result)

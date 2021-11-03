@@ -4,9 +4,9 @@ Operational Statistics and Metrics
 We make Zope 3 give us real time statistics about Launchpad's operation.
 We can access them via XML-RPC:
 
-    >>> from six.moves import xmlrpc_client
+    >>> import xmlrpc.client
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
-    >>> lp_xmlrpc = xmlrpc_client.ServerProxy(
+    >>> lp_xmlrpc = xmlrpc.client.ServerProxy(
     ...     'http://xmlrpc.launchpad.test/+opstats',
     ...     transport=XMLRPCTestTransport()
     ...     )
@@ -192,7 +192,7 @@ Number of XML-RPC Faults
     ...     try:
     ...         opstats = lp_xmlrpc.invalid() # XXX: Need a HTTP test too
     ...         print('Should have raised a Fault exception!')
-    ...     except xmlrpc_client.Fault:
+    ...     except xmlrpc.client.Fault:
     ...         pass
     >>> report()
     requests: 1

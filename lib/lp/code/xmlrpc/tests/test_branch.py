@@ -4,10 +4,10 @@
 """Unit tests for the public codehosting API."""
 
 import os
+import xmlrpc.client
 
 from breezy import urlutils
 from lazr.uri import URI
-from six.moves import xmlrpc_client
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -79,7 +79,7 @@ class TestExpandURL(TestCaseWithFactory):
         api = PublicCodehostingAPI(None, None)
         fault = api.resolve_lp_path(lp_url_path)
         self.assertTrue(
-            isinstance(fault, xmlrpc_client.Fault),
+            isinstance(fault, xmlrpc.client.Fault),
             "resolve_lp_path(%r) returned %r, not a Fault."
             % (lp_url_path, fault))
         self.assertEqual(expected_fault.__class__, fault.__class__)
