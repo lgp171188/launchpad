@@ -57,7 +57,6 @@ importlib==1.0.2
 importlib-metadata==2.1.1
 importlib-resources==0.5
 incremental==21.3.0
-ipaddress==1.0.18
 ipython==0.13.2
 iso8601==0.1.12
 jmespath==0.10.0
