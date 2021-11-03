@@ -11,6 +11,8 @@ __all__ = [
     'InvalidEmailAddress',
     'VALID_EMAIL_STATUSES']
 
+import http.client
+
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -21,7 +23,6 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     )
 from lazr.restful.fields import Reference
-from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Choice,
@@ -37,7 +38,7 @@ class InvalidEmailAddress(Exception):
     """The email address is not valid."""
 
 
-@error_status(http_client.CONFLICT)
+@error_status(http.client.CONFLICT)
 class EmailAddressAlreadyTaken(Exception):
     """The email address is already registered in Launchpad."""
 

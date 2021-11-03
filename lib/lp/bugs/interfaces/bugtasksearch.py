@@ -19,6 +19,7 @@ __all__ = [
     ]
 
 import collections
+import http.client
 
 from lazr.enum import (
     EnumeratedType,
@@ -26,7 +27,6 @@ from lazr.enum import (
     )
 from lazr.restful.declarations import error_status
 from lazr.restful.fields import ReferenceChoice
-from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -57,7 +57,7 @@ from lp.services.searchbuilder import (
 from lp.soyuz.interfaces.component import IComponent
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class IllegalRelatedBugTasksParams(Exception):
     """Exception raised when trying to overwrite all relevant parameters
     in a search for related bug tasks"""

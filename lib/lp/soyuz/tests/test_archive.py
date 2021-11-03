@@ -9,13 +9,13 @@ from datetime import (
     timedelta,
     )
 import doctest
+import http.client
 import os.path
 
 from aptsources.sourceslist import SourceEntry
 from pytz import UTC
 import responses
 import six
-from six.moves import http_client
 from six.moves.urllib.parse import urlsplit
 from storm.store import Store
 from testtools.matchers import (
@@ -4087,7 +4087,7 @@ class TestGetSigningKeyData(TestCaseWithFactory):
             error = self.assertRaises(
                 GPGKeyDoesNotExistOnServer, ppa.getSigningKeyData)
         error_view = create_webservice_error_view(error)
-        self.assertEqual(http_client.NOT_FOUND, error_view.status)
+        self.assertEqual(http.client.NOT_FOUND, error_view.status)
 
     @responses.activate
     def test_getSigningKeyData_keyserver_failure(self):
@@ -4100,7 +4100,7 @@ class TestGetSigningKeyData(TestCaseWithFactory):
             error = self.assertRaises(
                 GPGKeyTemporarilyNotFoundError, ppa.getSigningKeyData)
         error_view = create_webservice_error_view(error)
-        self.assertEqual(http_client.INTERNAL_SERVER_ERROR, error_view.status)
+        self.assertEqual(http.client.INTERNAL_SERVER_ERROR, error_view.status)
 
 
 class TestCountersAndSummaries(TestCaseWithFactory):

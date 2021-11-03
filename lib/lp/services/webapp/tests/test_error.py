@@ -3,14 +3,13 @@
 
 """Test error views."""
 
-
+import http.client
 import logging
 import socket
 import time
 
 from fixtures import FakeLogger
 import psycopg2
-from six.moves import http_client
 from six.moves.urllib.error import HTTPError
 from storm.exceptions import (
     DisconnectionError,
@@ -111,7 +110,7 @@ class TestDatabaseErrorViews(TestCase):
                 browser.open(url)
                 return
             except HTTPError as e:
-                if e.code != http_client.SERVICE_UNAVAILABLE:
+                if e.code != http.client.SERVICE_UNAVAILABLE:
                     raise
             time.sleep(1)
         else:
@@ -246,7 +245,7 @@ class TestDatabaseErrorViews(TestCase):
         browser.raiseHttpErrors = False
         browser.open(url)
         self.assertEqual(
-            http_client.SERVICE_UNAVAILABLE,
+            http.client.SERVICE_UNAVAILABLE,
             int(browser.headers['Status'].split(' ', 1)[0]))
         self.assertThat(
             browser.contents, Contains(OperationalErrorView.reason))

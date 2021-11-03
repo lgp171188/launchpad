@@ -13,10 +13,10 @@ __all__ = [
     ]
 
 import datetime
+import http.client
 from operator import itemgetter
 
 from lazr.restful.declarations import error_status
-from six.moves import http_client
 from storm.expr import (
     And,
     Desc,
@@ -124,7 +124,7 @@ class HasMilestonesMixin:
     milestones = property(_get_milestones)
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class MultipleProductReleases(Exception):
     """Raised when a second ProductRelease is created for a milestone."""
 
@@ -132,7 +132,7 @@ class MultipleProductReleases(Exception):
         super(MultipleProductReleases, self).__init__(msg)
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class InvalidTags(Exception):
     """Raised when tags are invalid."""
 

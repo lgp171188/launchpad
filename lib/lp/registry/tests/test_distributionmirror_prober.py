@@ -4,6 +4,7 @@
 """distributionmirror-prober tests."""
 
 from datetime import datetime
+import http.client
 import logging
 import os
 import re
@@ -13,7 +14,6 @@ from fixtures import MockPatchObject
 from lazr.uri import URI
 import responses
 import six
-from six.moves import http_client
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -242,7 +242,7 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         deferred = prober.probe()
 
         def got_result(result):
-            self.assertEqual(http_client.OK, result.code)
+            self.assertEqual(http.client.OK, result.code)
             expected_url = 'https://localhost:%s/valid-mirror/file' % self.port
             self.assertEqual(
                 expected_url.encode('UTF-8'), result.request.absoluteURI)
@@ -409,7 +409,7 @@ class TestProberProtocolAndFactory(TestCase):
             self.assertEqual(1, prober.redirection_count)
             new_url = 'http://localhost:%s/valid-mirror/file' % self.port
             self.assertEqual(new_url, prober.url)
-            self.assertEqual(http_client.OK, result)
+            self.assertEqual(http.client.OK, result)
 
         return deferred.addBoth(got_result)
 
@@ -430,7 +430,7 @@ class TestProberProtocolAndFactory(TestCase):
 
         def got_result(result):
             self.assertEqual(
-                http_client.OK, result,
+                http.client.OK, result,
                 "Expected a '200' status but got %r" % result)
 
         return d.addCallback(got_result)
@@ -907,7 +907,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
 
     def test_mirrorcdimageseries_creation_and_deletion_some_404s(self):
         not_all_success = [
-            (defer.FAILURE, Failure(BadResponseCode(http_client.NOT_FOUND))),
+            (defer.FAILURE, Failure(BadResponseCode(http.client.NOT_FOUND))),
             (defer.SUCCESS, '200')]
         callbacks = self.makeMirrorProberCallbacks()
         all_success = [(defer.SUCCESS, '200'), (defer.SUCCESS, '200')]
@@ -938,7 +938,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
                 InvalidHTTPSCertificate,
                 InvalidHTTPSCertificateSkipped,
                 ]))
-        exceptions = [BadResponseCode(http_client.NOT_FOUND),
+        exceptions = [BadResponseCode(http.client.NOT_FOUND),
                       ProberTimeout('http://localhost/', 5),
                       ConnectionSkipped(),
                       RedirectToDifferentFile('/foo', '/bar'),
@@ -997,7 +997,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
             self.fail("A timeout shouldn't be propagated. Got %s" % e)
         try:
             callbacks.deleteMirrorSeries(
-                Failure(BadResponseCode(http_client.INTERNAL_SERVER_ERROR)))
+                Failure(BadResponseCode(http.client.INTERNAL_SERVER_ERROR)))
         except Exception as e:
             self.fail(
                 "A bad response code shouldn't be propagated. Got %s" % e)
@@ -1028,7 +1028,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
     def test_mirrorseries_creation_and_deletion(self):
         callbacks = self.makeMirrorProberCallbacks()
         mirror_distro_series_source = callbacks.ensureMirrorSeries(
-             str(int(http_client.OK)))
+             str(int(http.client.OK)))
         self.assertIsNot(
             mirror_distro_series_source, None,
             "If the prober gets a 200 Okay status, a new "
@@ -1036,7 +1036,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
             "created.")
 
         callbacks.deleteMirrorSeries(
-            Failure(BadResponseCode(http_client.NOT_FOUND)))
+            Failure(BadResponseCode(http.client.NOT_FOUND)))
         # If the prober gets a 404 status, we need to make sure there's no
         # MirrorDistroSeriesSource/MirrorDistroArchSeries referent to
         # that url

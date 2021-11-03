@@ -17,8 +17,9 @@ __all__ = [
     'UserCannotUnsubscribePerson',
     ]
 
+import http.client
+
 from lazr.restful.declarations import error_status
-from six.moves import http_client
 from zope.security.interfaces import (
     ForbiddenAttribute,
     Unauthorized,
@@ -33,12 +34,12 @@ class TeamAccountNotClosable(Exception):
     """We do not close team accounts."""
 
 
-@error_status(http_client.NOT_FOUND)
+@error_status(http.client.NOT_FOUND)
 class NotFoundError(KeyError):
     """Launchpad object not found."""
 
 
-@error_status(http_client.GONE)
+@error_status(http.client.GONE)
 class GoneError(KeyError):
     """Launchpad object is gone."""
 
@@ -76,25 +77,25 @@ class POSTToNonCanonicalURL(UnexpectedFormData):
     """
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class UserCannotUnsubscribePerson(Unauthorized):
     """User does not have permission to unsubscribe person or team."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class SubscriptionPrivacyViolation(Exception):
     """The subscription would violate privacy policies."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class ServiceUsageForbidden(Exception):
     """The specified ServiceUsage is not allowed."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class IncompatibleArguments(Exception):
     """Raised when incompatible arguments are passed to a method."""
 
 
 # Slam a 401 response code onto all ForbiddenAttribute errors.
-error_status(http_client.UNAUTHORIZED)(ForbiddenAttribute)
+error_status(http.client.UNAUTHORIZED)(ForbiddenAttribute)

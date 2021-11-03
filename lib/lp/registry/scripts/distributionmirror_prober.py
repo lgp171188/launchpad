@@ -6,6 +6,7 @@ __all__ = [
     ]
 
 from datetime import datetime
+import http.client
 import io
 import itertools
 import logging
@@ -18,7 +19,6 @@ from OpenSSL.SSL import (
     )
 import requests
 import six
-from six.moves import http_client
 from six.moves.urllib.parse import (
     unquote,
     urljoin,
@@ -166,7 +166,7 @@ class ProberProtocol(HTTPClient):
         # same here.
         try:
             status = int(status)
-            if status == http_client.OK:
+            if status == http.client.OK:
                 self.factory.succeeded(status)
             else:
                 self.factory.failed(Failure(BadResponseCode(status)))
@@ -195,7 +195,7 @@ class HTTPSProbeFailureHandler:
         for HTTP responses.
         """
         status = response.code
-        if status == http_client.OK:
+        if status == http.client.OK:
             return response
         else:
             raise BadResponseCode(status, response)
@@ -244,8 +244,8 @@ class RedirectAwareProberProtocol(ProberProtocol):
 
     # The different redirect statuses that I handle.
     handled_redirect_statuses = (
-        http_client.MOVED_PERMANENTLY, http_client.FOUND,
-        http_client.SEE_OTHER)
+        http.client.MOVED_PERMANENTLY, http.client.FOUND,
+        http.client.SEE_OTHER)
 
     def handleHeader(self, key, value):
         key = key.lower()

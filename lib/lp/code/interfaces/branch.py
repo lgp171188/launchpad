@@ -20,6 +20,7 @@ __all__ = [
     'WrongNumberOfReviewTypeArguments',
     ]
 
+import http.client
 import re
 
 from lazr.restful.declarations import (
@@ -49,7 +50,6 @@ from lazr.restful.fields import (
     )
 from lazr.restful.interface import copy_field
 from lazr.uri import URI
-from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -114,7 +114,7 @@ DEFAULT_BRANCH_STATUS_IN_LISTING = (
     BranchLifecycleStatus.MATURE)
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class WrongNumberOfReviewTypeArguments(ValueError):
     """Raised in the webservice API if `reviewers` and `review_types`
     do not have equal length.

@@ -1,11 +1,12 @@
 # Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import http.client
+
 from lazr.restfulclient.errors import (
     HTTPError,
     Unauthorized,
     )
-from six.moves import http_client
 import transaction
 
 from lp.app.enums import InformationType
@@ -46,7 +47,7 @@ class TestTeamJoining(TestCaseWithFactory):
             HTTPError,
             person.join,
             team='test-team')
-        self.assertEqual(http_client.BAD_REQUEST, api_error.response.status)
+        self.assertEqual(http.client.BAD_REQUEST, api_error.response.status)
 
     def test_open_accepts_membership(self):
         # Calling person.join with a team that has an open membership

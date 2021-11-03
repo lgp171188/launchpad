@@ -10,11 +10,11 @@ __all__ = [
     'BugSubscriptionFilterTag',
     ]
 
+import http.client
 from itertools import chain
 
 from lazr.restful.declarations import error_status
 import pytz
-from six.moves import http_client
 from storm.expr import (
     Exists,
     Not,
@@ -50,7 +50,7 @@ from lp.services.database.sqlbase import convert_storm_clause_to_string
 from lp.services.database.stormbase import StormBase
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class MuteNotAllowed(Exception):
     """Raised when someone tries to mute a filter that can't be muted."""
 

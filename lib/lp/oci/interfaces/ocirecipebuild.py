@@ -13,6 +13,8 @@ __all__ = [
     'OCIRecipeBuildSetRegistryUploadStatus',
     ]
 
+import http.client
+
 from lazr.enum import (
     EnumeratedType,
     Item,
@@ -29,7 +31,6 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -58,7 +59,7 @@ from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotScheduleRegistryUpload(Exception):
     """This build cannot be uploaded to registries."""
 

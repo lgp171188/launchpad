@@ -8,17 +8,18 @@ __all__ = [
     'InvalidSearchParameters',
 ]
 
+import http.client
+
 from lazr.restful.declarations import error_status
-from six.moves import http_client
 
 from lp.app.validators import LaunchpadValidationError
 
 
-@error_status(http_client.EXPECTATION_FAILED)
+@error_status(http.client.EXPECTATION_FAILED)
 class InvalidDuplicateValue(LaunchpadValidationError):
     """A bug cannot be set as the duplicate of another."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class InvalidSearchParameters(ValueError):
     """Invalid search parameters were passed to searchTasks."""

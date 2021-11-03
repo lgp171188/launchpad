@@ -9,6 +9,8 @@ __all__ = [
     'OCIPushRuleAlreadyExists',
     ]
 
+import http.client
+
 from lazr.restful.declarations import (
     error_status,
     export_destructor_operation,
@@ -20,7 +22,6 @@ from lazr.restful.declarations import (
     operation_parameters,
     )
 from lazr.restful.fields import Reference
-from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Int,
@@ -32,7 +33,7 @@ from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 
 
-@error_status(http_client.CONFLICT)
+@error_status(http.client.CONFLICT)
 class OCIPushRuleAlreadyExists(Exception):
     """A new OCIPushRuleAlreadyExists was added with the
        same details as an existing one.

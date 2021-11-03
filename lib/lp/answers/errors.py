@@ -11,11 +11,12 @@ __all__ = [
     'QuestionTargetError',
     ]
 
+import http.client
+
 from lazr.restful.declarations import error_status
-from six.moves import http_client
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class AddAnswerContactError(ValueError):
     """The person cannot be an answer contact.
 
@@ -24,12 +25,12 @@ class AddAnswerContactError(ValueError):
     """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class FAQTargetError(ValueError):
     """The target must be an `IFAQTarget`."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class InvalidQuestionStateError(ValueError):
     """Error raised when the question is in an invalid state.
 
@@ -38,21 +39,21 @@ class InvalidQuestionStateError(ValueError):
     """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NotAnswerContactError(ValueError):
     """The person must be an answer contact."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NotMessageOwnerError(ValueError):
     """The person must be the message owner."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NotQuestionOwnerError(ValueError):
     """The person must be the question owner."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class QuestionTargetError(ValueError):
     """The target must be an `IQueastionTarget`."""

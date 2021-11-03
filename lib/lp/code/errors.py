@@ -66,10 +66,11 @@ __all__ = [
     'WrongBranchMergeProposal',
 ]
 
+import http.client
+
 from breezy.plugins.builder.recipe import RecipeParseError
 from lazr.restful.declarations import error_status
 import six
-from six.moves import http_client
 
 from lp.app.errors import (
     NameLookupFailed,
@@ -78,14 +79,14 @@ from lp.app.errors import (
 
 
 # Annotate the RecipeParseError's with a 400 webservice status.
-error_status(http_client.BAD_REQUEST)(RecipeParseError)
+error_status(http.client.BAD_REQUEST)(RecipeParseError)
 
 
 class BadBranchMergeProposalSearchContext(Exception):
     """The context is not valid for a branch merge proposal search."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class BadStateTransition(Exception):
     """The user requested a state transition that is not possible."""
 
@@ -94,7 +95,7 @@ class BranchCreationException(Exception):
     """Base class for branch creation exceptions."""
 
 
-@error_status(http_client.CONFLICT)
+@error_status(http.client.CONFLICT)
 class BranchExists(BranchCreationException):
     """Raised when creating a branch that already exists."""
 
@@ -130,7 +131,7 @@ class BranchTargetError(Exception):
     """Raised when there is an error determining a branch target."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotDeleteBranch(Exception):
     """The branch cannot be deleted at this time."""
 
@@ -143,7 +144,7 @@ class BranchCreationForbidden(BranchCreationException):
     """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class BranchCreatorNotMemberOfOwnerTeam(BranchCreationException):
     """Branch creator is not a member of the owner team.
 
@@ -152,7 +153,7 @@ class BranchCreatorNotMemberOfOwnerTeam(BranchCreationException):
     """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class BranchCreatorNotOwner(BranchCreationException):
     """A user cannot create a branch belonging to another user.
 
@@ -232,7 +233,7 @@ class ClaimReviewFailed(Exception):
     """The user cannot claim the pending review."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class InvalidBranchMergeProposal(Exception):
     """Raised during the creation of a new branch merge proposal.
 
@@ -240,7 +241,7 @@ class InvalidBranchMergeProposal(Exception):
     """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class BranchMergeProposalExists(InvalidBranchMergeProposal):
     """Raised if there is already a matching BranchMergeProposal."""
 
@@ -304,7 +305,7 @@ class StaleLastMirrored(Exception):
             (db_branch.last_mirrored_id, self.info['last_revision_id']))
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class PrivateBranchRecipe(Exception):
 
     def __init__(self, branch):
@@ -314,7 +315,7 @@ class PrivateBranchRecipe(Exception):
         Exception.__init__(self, message)
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class PrivateGitRepositoryRecipe(Exception):
 
     def __init__(self, repository):
@@ -386,7 +387,7 @@ class GitRepositoryCreationException(Exception):
     """Base class for Git repository creation exceptions."""
 
 
-@error_status(http_client.CONFLICT)
+@error_status(http.client.CONFLICT)
 class GitRepositoryExists(GitRepositoryCreationException):
     """Raised when creating a Git repository that already exists."""
 
@@ -402,7 +403,7 @@ class GitRepositoryExists(GitRepositoryCreationException):
         GitRepositoryCreationException.__init__(self, message)
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotDeleteGitRepository(Exception):
     """The Git repository cannot be deleted at this time."""
 
@@ -416,7 +417,7 @@ class GitRepositoryCreationForbidden(GitRepositoryCreationException):
 
 
 @six.python_2_unicode_compatible
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class GitRepositoryCreatorNotMemberOfOwnerTeam(GitRepositoryCreationException):
     """Git repository creator is not a member of the owner team.
 
@@ -435,7 +436,7 @@ class GitRepositoryCreatorNotMemberOfOwnerTeam(GitRepositoryCreationException):
 
 
 @six.python_2_unicode_compatible
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class GitRepositoryCreatorNotOwner(GitRepositoryCreationException):
     """A user cannot create a Git repository belonging to another user.
 
@@ -534,7 +535,7 @@ class NoSuchGitReference(NotFoundError):
         return self.message
 
 
-@error_status(http_client.CONFLICT)
+@error_status(http.client.CONFLICT)
 class GitDefaultConflict(Exception):
     """Raised when trying to set a Git repository as the default for
     something that already has a default."""
@@ -559,7 +560,7 @@ class GitDefaultConflict(Exception):
         Exception.__init__(self, message)
 
 
-@error_status(http_client.FORBIDDEN)
+@error_status(http.client.FORBIDDEN)
 class CannotModifyNonHostedGitRepository(Exception):
     """Raised when trying to modify a non-hosted Git repository."""
 
@@ -569,7 +570,7 @@ class CannotModifyNonHostedGitRepository(Exception):
             repository.display_name)
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CodeImportNotInReviewedState(Exception):
     """Raised when the user requests an import of a non-automatic import."""
 
@@ -582,12 +583,12 @@ class CodeImportAlreadyRequested(Exception):
         self.requesting_user = requesting_user
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CodeImportAlreadyRunning(Exception):
     """Raised when the user requests an import that is already running."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CodeImportInvalidTargetType(Exception):
     """Raised for code imports with an invalid target for their type."""
 
@@ -597,7 +598,7 @@ class CodeImportInvalidTargetType(Exception):
             (target.__class__.__name__, target_rcs_type))
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class TooNewRecipeFormat(Exception):
     """The format of the recipe supplied was too new."""
 
@@ -607,7 +608,7 @@ class TooNewRecipeFormat(Exception):
         self.newest_supported = newest_supported
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class RecipeBuildException(Exception):
 
     def __init__(self, recipe, distroseries, template):
@@ -635,6 +636,6 @@ class BuildNotAllowedForDistro(RecipeBuildException):
             'A build against this distro is not allowed.')
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class DiffNotFound(Exception):
     """A `IPreviewDiff` with the timestamp was not found."""
