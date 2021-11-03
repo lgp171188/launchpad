@@ -36,6 +36,8 @@ __all__ = [
     'SnapPrivateFeatureDisabled',
     ]
 
+import http.client
+
 from lazr.enum import (
     EnumeratedType,
     Item,
@@ -64,7 +66,6 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from lazr.restful.interface import copy_field
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -127,7 +128,7 @@ SNAP_TESTING_FLAGS = {
     }
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class SnapBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
@@ -136,7 +137,7 @@ class SnapBuildAlreadyPending(Exception):
             "An identical build of this snap package is already pending.")
 
 
-@error_status(http_client.FORBIDDEN)
+@error_status(http.client.FORBIDDEN)
 class SnapBuildArchiveOwnerMismatch(Forbidden):
     """Builds against private archives require that owners match.
 
@@ -154,7 +155,7 @@ class SnapBuildArchiveOwnerMismatch(Forbidden):
             "if the snap package owner and the archive owner are equal.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class SnapBuildDisallowedArchitecture(Exception):
     """A build was requested for a disallowed architecture."""
 
@@ -164,7 +165,7 @@ class SnapBuildDisallowedArchitecture(Exception):
             (das.distroseries.getSuite(pocket), das.architecturetag))
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class SnapPrivateFeatureDisabled(Unauthorized):
     """Only certain users can create private snap objects."""
 
@@ -173,7 +174,7 @@ class SnapPrivateFeatureDisabled(Unauthorized):
             "You do not have permission to create private snaps")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class DuplicateSnapName(Exception):
     """Raised for snap packages with duplicate name/owner."""
 
@@ -182,7 +183,7 @@ class DuplicateSnapName(Exception):
             "There is already a snap package with the same name and owner.")
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class SnapNotOwner(Unauthorized):
     """The registrant/requester is not the owner or a member of its team."""
 
@@ -192,7 +193,7 @@ class NoSuchSnap(NameLookupFailed):
     _message_prefix = "No such snap package with this owner"
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NoSourceForSnap(Exception):
     """Snap packages must have a source (Bazaar or Git branch)."""
 
@@ -202,12 +203,12 @@ class NoSourceForSnap(Exception):
             "branch.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class BadSnapSource(Exception):
     """The elements of the source for a snap package are inconsistent."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class SnapPrivacyMismatch(Exception):
     """Snap package privacy does not match its content."""
 
@@ -217,7 +218,7 @@ class SnapPrivacyMismatch(Exception):
             "Snap recipe contains private information and cannot be public.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class SnapPrivacyPillarError(Exception):
     """Private Snaps should be based in a pillar."""
 
@@ -230,7 +231,7 @@ class BadSnapSearchContext(Exception):
     """The context is not valid for a snap package search."""
 
 
-@error_status(http_client.FORBIDDEN)
+@error_status(http.client.FORBIDDEN)
 class CannotModifySnapProcessor(Exception):
     """Tried to enable or disable a restricted processor on an snap package."""
 
@@ -243,22 +244,22 @@ class CannotModifySnapProcessor(Exception):
             self._fmt % {'processor': processor.name})
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotAuthorizeStoreUploads(Exception):
     """Cannot authorize uploads of a snap package to the store."""
 
 
-@error_status(http_client.INTERNAL_SERVER_ERROR)
+@error_status(http.client.INTERNAL_SERVER_ERROR)
 class SnapAuthorizationBadGeneratedMacaroon(Exception):
     """The macaroon generated to authorize store uploads is unusable."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class BadMacaroon(Exception):
     """A macaroon supplied by the user is invalid."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotRequestAutoBuilds(Exception):
     """Snap package is not configured for automatic builds."""
 

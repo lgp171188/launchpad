@@ -22,6 +22,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+import http.client
 
 from lazr.enum import (
     DBEnumeratedType,
@@ -40,7 +41,6 @@ from lazr.restful.declarations import (
     )
 from lazr.restful.fields import Reference
 import pytz
-from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -128,7 +128,7 @@ class PollStatus:
     ALL = frozenset([OPEN, CLOSED, NOT_YET_OPENED])
 
 
-@error_status(http_client.FORBIDDEN)
+@error_status(http.client.FORBIDDEN)
 class CannotCreatePoll(Exception):
     pass
 

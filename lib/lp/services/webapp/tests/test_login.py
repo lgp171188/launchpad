@@ -15,6 +15,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+import http.client
 import unittest
 
 from openid.consumer.consumer import (
@@ -26,7 +27,6 @@ from openid.extensions import (
     sreg,
     )
 from openid.yadis.discover import DiscoveryFailure
-from six.moves import http_client
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.parse import (
     parse_qsl,
@@ -241,7 +241,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
                 person.account, email=test_email)
         self.assertTrue(view.login_called)
         response = view.request.response
-        self.assertEqual(http_client.TEMPORARY_REDIRECT, response.getStatus())
+        self.assertEqual(http.client.TEMPORARY_REDIRECT, response.getStatus())
         self.assertEqual(view.request.form['starting_url'],
                          response.getHeader('Location'))
         # The 'last_write' flag was not updated (unlike in the other test
@@ -410,7 +410,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
             view, html = self._createAndRenderView(openid_response)
         self.assertTrue(view.login_called)
         response = view.request.response
-        self.assertEqual(http_client.TEMPORARY_REDIRECT, response.getStatus())
+        self.assertEqual(http.client.TEMPORARY_REDIRECT, response.getStatus())
         self.assertEqual(view.request.form['starting_url'],
                          response.getHeader('Location'))
         self.assertEqual(AccountStatus.ACTIVE, person.account.status)
@@ -589,7 +589,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
             view_class=StubbedOpenIDCallbackViewLoggedIn)
         self.assertFalse(view.login_called)
         response = view.request.response
-        self.assertEqual(http_client.TEMPORARY_REDIRECT, response.getStatus())
+        self.assertEqual(http.client.TEMPORARY_REDIRECT, response.getStatus())
         self.assertEqual(view.request.form['starting_url'],
                          response.getHeader('Location'))
         notification_msg = view.request.response.notifications[0].message
@@ -637,7 +637,7 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
         view.initialize()
         view._redirect()
         self.assertEqual(
-            http_client.TEMPORARY_REDIRECT, view.request.response.getStatus())
+            http.client.TEMPORARY_REDIRECT, view.request.response.getStatus())
         self.assertEqual(
             view.request.response.getHeader('Location'), self.STARTING_URL)
 
@@ -651,7 +651,7 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
         view.initialize()
         view._redirect()
         self.assertEqual(
-            http_client.TEMPORARY_REDIRECT, view.request.response.getStatus())
+            http.client.TEMPORARY_REDIRECT, view.request.response.getStatus())
         self.assertEqual(
             view.request.response.getHeader('Location'), self.STARTING_URL)
 
@@ -663,7 +663,7 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
         view.initialize()
         view._redirect()
         self.assertEqual(
-            http_client.TEMPORARY_REDIRECT, view.request.response.getStatus())
+            http.client.TEMPORARY_REDIRECT, view.request.response.getStatus())
         self.assertEqual(
             view.request.response.getHeader('Location'), self.APPLICATION_URL)
 
@@ -690,12 +690,12 @@ class TestOpenIDReplayAttack(TestCaseWithFactory):
         self.assertEqual('Login', browser.title)
         fill_login_form_and_submit(browser, 'test@canonical.com')
         self.assertEqual(
-            http_client.FOUND, int(browser.headers['Status'].split(' ', 1)[0]))
+            http.client.FOUND, int(browser.headers['Status'].split(' ', 1)[0]))
         callback_url = browser.headers['Location']
         self.assertIn('+openid-callback', callback_url)
         browser.open(callback_url)
         self.assertEqual(
-            http_client.TEMPORARY_REDIRECT,
+            http.client.TEMPORARY_REDIRECT,
             int(browser.headers['Status'].split(' ', 1)[0]))
         browser.open(browser.headers['Location'])
         login_status = extract_text(

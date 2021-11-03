@@ -12,6 +12,7 @@ __all__ = [
 
 
 import datetime
+import http.client
 import itertools
 import operator
 
@@ -19,7 +20,6 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.restful.declarations import error_status
 from lazr.restful.utils import safe_hasattr
 import pytz
-from six.moves import http_client
 from storm.expr import (
     And,
     Coalesce,
@@ -258,7 +258,7 @@ def get_license_status(license_approved, project_reviewed, licenses):
         return LicenseStatus.OPEN_SOURCE
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class UnDeactivateable(Exception):
     """Raised when a project is requested to deactivate but can not."""
 

@@ -37,6 +37,8 @@ __all__ = [
     'validate_membership_policy',
     ]
 
+import http.client
+
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -68,7 +70,6 @@ from lazr.restful.fields import (
     )
 from lazr.restful.interface import copy_field
 import six
-from six.moves import http_client
 from zope.component import getUtility
 from zope.formlib.form import NoInputData
 from zope.interface import (
@@ -2696,12 +2697,12 @@ class AlreadyConvertedException(Exception):
     """Raised when attempting to claim a team that has been claimed."""
 
 
-@error_status(http_client.FORBIDDEN)
+@error_status(http.client.FORBIDDEN)
 class ImmutableVisibilityError(Exception):
     """A change in team membership visibility is not allowed."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NoAccountError(Exception):
     """The person has no account."""
 

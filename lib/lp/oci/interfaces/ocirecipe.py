@@ -25,6 +25,8 @@ __all__ = [
     'UsingDistributionCredentials',
     ]
 
+import http.client
+
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -42,7 +44,6 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -88,7 +89,7 @@ OCI_RECIPE_BUILD_DISTRIBUTION = 'oci.default_build_distribution'
 OCI_RECIPE_PRIVATE_FEATURE_FLAG = "oci.recipe.allow_private"
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class OCIRecipeFeatureDisabled(Unauthorized):
     """Only certain users can create new OCI recipes."""
 
@@ -97,12 +98,12 @@ class OCIRecipeFeatureDisabled(Unauthorized):
             "You do not have permission to create new OCI recipes.")
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class OCIRecipeNotOwner(Unauthorized):
     """The registrant/requester is not the owner or a member of its team."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class OCIRecipeBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
@@ -111,7 +112,7 @@ class OCIRecipeBuildAlreadyPending(Exception):
             "An identical build of this OCI recipe is already pending.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class DuplicateOCIRecipeName(Exception):
     """An OCI Recipe already exists with the same name."""
 
@@ -121,7 +122,7 @@ class NoSuchOCIRecipe(NameLookupFailed):
     _message_prefix = "No such OCI recipe exists for this OCI project"
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class UsingDistributionCredentials(Exception):
     """The OCI Recipe is in a Distribution that has credentials set."""
 
@@ -130,7 +131,7 @@ class UsingDistributionCredentials(Exception):
             "The OCI recipe is in a distribution that has credentials set.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NoSourceForOCIRecipe(Exception):
     """OCI Recipes must have a source and build file."""
 
@@ -139,7 +140,7 @@ class NoSourceForOCIRecipe(Exception):
             "New OCI recipes must have a git branch and build file.")
 
 
-@error_status(http_client.FORBIDDEN)
+@error_status(http.client.FORBIDDEN)
 class CannotModifyOCIRecipeProcessor(Exception):
     """Tried to enable or disable a restricted processor on an OCI recipe."""
 
@@ -152,7 +153,7 @@ class CannotModifyOCIRecipeProcessor(Exception):
             self._fmt % {'processor': processor.name})
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class OCIRecipePrivacyMismatch(Exception):
     """OCI recipe privacy does not match its content."""
 
@@ -162,7 +163,7 @@ class OCIRecipePrivacyMismatch(Exception):
             "OCI recipe contains private information and cannot be public.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class OCIRecipeBranchHasInvalidFormat(Exception):
     """The branch name for the OCI recipe does not match the correct format."""
 

@@ -11,11 +11,11 @@ __all__ = [
     ]
 
 from contextlib import contextmanager
+import http.client
 import time
 
 import pytz
 import requests
-from six.moves import http_client
 from six.moves.urllib.parse import (
     urlencode,
     urlunsplit,
@@ -258,7 +258,7 @@ class GitHub(ExternalBugTracker):
             except BugTrackerConnectError as e:
                 if (e.error.response is not None and
                     e.error.response.status_code ==
-                        http_client.NOT_MODIFIED):
+                        http.client.NOT_MODIFIED):
                     return
                 else:
                     raise

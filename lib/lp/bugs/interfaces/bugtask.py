@@ -32,6 +32,8 @@ __all__ = [
     'valid_remote_bug_url',
     ]
 
+import http.client
+
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -58,7 +60,6 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from lazr.restful.interface import copy_field
-from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -320,7 +321,7 @@ BUG_SUPERVISOR_BUGTASK_STATUSES = (
     BugTaskStatus.TRIAGED)
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotDeleteBugtask(Exception):
     """The bugtask cannot be deleted.
 
@@ -329,7 +330,7 @@ class CannotDeleteBugtask(Exception):
     """
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class UserCannotEditBugTaskStatus(Unauthorized):
     """User not permitted to change status.
 
@@ -338,7 +339,7 @@ class UserCannotEditBugTaskStatus(Unauthorized):
     """
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class UserCannotEditBugTaskImportance(Unauthorized):
     """User not permitted to change importance.
 
@@ -347,7 +348,7 @@ class UserCannotEditBugTaskImportance(Unauthorized):
     """
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class UserCannotEditBugTaskMilestone(Unauthorized):
     """User not permitted to change milestone.
 
@@ -356,7 +357,7 @@ class UserCannotEditBugTaskMilestone(Unauthorized):
     """
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class UserCannotEditBugTaskAssignee(Unauthorized):
     """User not permitted to change bugtask assignees.
 
@@ -365,7 +366,7 @@ class UserCannotEditBugTaskAssignee(Unauthorized):
     """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class IllegalTarget(Exception):
     """Exception raised when trying to set an illegal bug task target."""
 
