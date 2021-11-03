@@ -196,7 +196,6 @@ setup(
         'pyasn1',
         'pygettextpo',
         'pygpgme',
-        'pyinotify',
         'pymacaroons',
         'pystache',
         'python-debian',
