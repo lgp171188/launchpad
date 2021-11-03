@@ -147,12 +147,10 @@ setup(
         'boto3',
         'breezy',
         'celery',
-        'cssselect',
         'cssutils',
         'defusedxml',
         'distro',
         'dkimpy[ed25519]',
-        'dulwich',
         'feedparser',
         'fixtures',
         # Required for gunicorn[gthread].  We depend on it explicitly
@@ -179,6 +177,7 @@ setup(
         'lazr.sshserver',
         'lazr.uri',
         'lpjsmin',
+        'lxml[cssselect]',
         'Markdown',
         'meliae',
         'multipart',
@@ -197,7 +196,6 @@ setup(
         'pyasn1',
         'pygettextpo',
         'pygpgme',
-        'pyinotify',
         'pymacaroons',
         'pystache',
         'python-debian',
@@ -277,7 +275,6 @@ setup(
         'zope.testing',
         'zope.testrunner[subunit]',
         'zope.traversing',
-        'zope.viewlet',  # only fixing a broken dependency
         'zope.vocabularyregistry',
         # Loggerhead dependencies. These should be removed once
         # bug 383360 is fixed and we include it as a source dist.
