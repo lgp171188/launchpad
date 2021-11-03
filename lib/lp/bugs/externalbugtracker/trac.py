@@ -5,12 +5,12 @@
 
 __all__ = ['Trac', 'TracLPPlugin']
 
+import cgi
 import csv
 from datetime import datetime
 from email.utils import parseaddr
 import time
 
-from mimeparse import parse_mime_type
 import pytz
 import requests
 from requests.cookies import RequestsCookieJar
@@ -129,9 +129,9 @@ class Trac(ExternalBugTracker):
                     response = self._getPage(
                         "%s/%s" %
                         (self.baseurl, self.ticket_url % ticket_id))
-                    subtype = parse_mime_type(
-                        response.headers.get('Content-Type', ''))[1]
-                    return subtype == 'csv'
+                    ctype, _ = cgi.parse_header(
+                        response.headers.get('Content-Type', ''))
+                    return '/' in ctype and ctype.split('/')[1] == 'csv'
                 except BugTrackerConnectError:
                     return False
         else:
