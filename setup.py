@@ -152,7 +152,6 @@ setup(
         'defusedxml',
         'distro',
         'dkimpy[ed25519]',
-        'dulwich',
         'feedparser',
         'fixtures',
         # Required for gunicorn[gthread].  We depend on it explicitly
