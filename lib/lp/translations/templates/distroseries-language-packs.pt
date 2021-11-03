@@ -38,7 +38,7 @@
                Base pack:
                <a class="sprite download"
                   tal:condition="context/language_pack_base"
-                  tal:attributes="href context/language_pack_base/file/http_url">
+                  tal:attributes="href context/language_pack_base/file/getURL">
                  <tal:export-date
                     replace="context/language_pack_base/date_exported/fmt:datetime" />
                </a>
@@ -54,7 +54,7 @@
                Update pack:
                <a class="sprite download"
                   tal:condition="context/language_pack_delta"
-                  tal:attributes="href context/language_pack_delta/file/http_url">
+                  tal:attributes="href context/language_pack_delta/file/getURL">
                  <tal:export-date
                     replace="context/language_pack_delta/date_exported/fmt:datetime" />
                </a>
@@ -107,7 +107,7 @@
              <dd>
                 Latest archive containing translation updates, applied on top
                  of the base pack.
-             </dd>            
+             </dd>
             </dl>
             </div>
             <div id="testing-language-packs">
@@ -117,7 +117,7 @@
                  <tal:type content="context/language_pack_proposed/type/name" />
                  language pack:
                  <a tal:attributes="
-                     href context/language_pack_proposed/file/http_url">
+                     href context/language_pack_proposed/file/getURL">
                    <tal:export-date
                       condition="context/language_pack_proposed"
                       replace="context/language_pack_proposed/date_exported/fmt:datetime"
@@ -133,7 +133,7 @@
              <p tal:condition="not:context/language_pack_proposed">
                No pack is being tested right now.
              </p>
-            </div> 
+            </div>
            </div>
          </div>
        </div>
@@ -148,8 +148,8 @@
            <h2>Currently unused language packs</h2>
            <ul>
              <li tal:repeat="lang_pack view/unused_language_packs">
-               <tal:type content="lang_pack/type/title" /> language pack: 
-               <a tal:attributes="href lang_pack/file/http_url">
+               <tal:type content="lang_pack/type/title" /> language pack:
+               <a tal:attributes="href lang_pack/file/getURL">
                  <tal:date-exported
                     content="lang_pack/date_exported/fmt:datetime" />
                  <img alt="download icon" src="/@@/download" />
@@ -164,4 +164,3 @@
     </div>
   </body>
 </html>
-
