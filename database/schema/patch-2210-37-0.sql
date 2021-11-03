@@ -12,6 +12,7 @@ CREATE TABLE RevisionStatusReport (
     description text,
     result integer,
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
+    creator integer REFERENCES Person,
     date_started timestamp without time zone,
     date_finished timestamp without time zone,
     log integer
@@ -25,11 +26,12 @@ COMMENT ON COLUMN RevisionStatusReport.git_repository IS 'Reference to the GitRe
 COMMENT ON COLUMN RevisionStatusReport.commit_sha1 IS 'The commit sha1 for the report.';
 COMMENT ON COLUMN RevisionStatusReport.result IS 'The result of the check job for this revision.';
 COMMENT ON COLUMN RevisionStatusReport.date_created IS 'DateTime that report was created.';
+COMMENT ON COLUMN RevisionStatusReport.creator IS 'The person that created the report.';
 COMMENT ON COLUMN RevisionStatusReport.date_started IS 'DateTime that report was started.';
 COMMENT ON COLUMN RevisionStatusReport.date_finished IS 'DateTime that report was completed.';
 
-CREATE INDEX revision_status_report__git_repository__idx_commit_sha1__name
-    ON RevisionStatusReport (git_repository, commit_sha1, name);
+CREATE INDEX revisionstatusreport__git_repository__commit_sha1__idx
+    ON RevisionStatusReport (git_repository, commit_sha1);
 
 CREATE TABLE RevisionStatusArtifact (
     id serial PRIMARY KEY,
