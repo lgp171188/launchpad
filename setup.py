@@ -277,7 +277,6 @@ setup(
         'zope.testing',
         'zope.testrunner[subunit]',
         'zope.traversing',
-        'zope.viewlet',  # only fixing a broken dependency
         'zope.vocabularyregistry',
         # Loggerhead dependencies. These should be removed once
         # bug 383360 is fixed and we include it as a source dist.
