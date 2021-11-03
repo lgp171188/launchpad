@@ -251,7 +251,7 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IStore
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.database.sqlbase import (
     convert_storm_clause_to_string,
     cursor,
@@ -3332,10 +3332,10 @@ class PersonSet:
             "OpenID identifier must not be empty.")
 
         # Load the EmailAddress, Account and OpenIdIdentifier records
-        # from the master (if they exist). We use the master to avoid
+        # from the primary (if they exist). We use the primary to avoid
         # possible replication lag issues but this might actually be
         # unnecessary.
-        with MasterDatabasePolicy():
+        with PrimaryDatabasePolicy():
             identifier = IStore(OpenIdIdentifier).find(
                 OpenIdIdentifier, identifier=openid_identifier).one()
             email = getUtility(IEmailAddressSet).getByEmail(email_address)

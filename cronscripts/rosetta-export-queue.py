@@ -5,7 +5,7 @@
 
 import _pythonpath  # noqa: F401
 
-from lp.services.database.policy import SlaveDatabasePolicy
+from lp.services.database.policy import StandbyDatabasePolicy
 from lp.services.scripts.base import LaunchpadCronScript
 from lp.translations.scripts.po_export_queue import process_queue
 
@@ -14,7 +14,7 @@ class RosettaExportQueue(LaunchpadCronScript):
     """Translation exports."""
 
     def main(self):
-        with SlaveDatabasePolicy():
+        with StandbyDatabasePolicy():
             process_queue(self.txn, self.logger)
 
 
