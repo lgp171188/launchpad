@@ -7,9 +7,9 @@ __all__ = [
     'BaseDatabasePolicy',
     'DatabaseBlockedPolicy',
     'LaunchpadDatabasePolicy',
-    'MasterDatabasePolicy',
-    'SlaveDatabasePolicy',
-    'SlaveOnlyDatabasePolicy',
+    'PrimaryDatabasePolicy',
+    'StandbyDatabasePolicy',
+    'StandbyOnlyDatabasePolicy',
     ]
 
 from datetime import (
@@ -192,10 +192,10 @@ class DatabaseBlockedPolicy(BaseDatabasePolicy):
         raise DisallowedStore(name, flavor)
 
 
-class MasterDatabasePolicy(BaseDatabasePolicy):
+class PrimaryDatabasePolicy(BaseDatabasePolicy):
     """`IDatabasePolicy` that selects the MASTER_FLAVOR by default.
 
-    Slave databases can still be accessed if requested explicitly.
+    Standby databases can still be accessed if requested explicitly.
 
     This policy is used for XMLRPC and WebService requests which don't
     support session cookies. It is also used when no policy has been
@@ -204,15 +204,15 @@ class MasterDatabasePolicy(BaseDatabasePolicy):
     default_flavor = MASTER_FLAVOR
 
 
-class SlaveDatabasePolicy(BaseDatabasePolicy):
+class StandbyDatabasePolicy(BaseDatabasePolicy):
     """`IDatabasePolicy` that selects the SLAVE_FLAVOR by default.
 
-    Access to a master can still be made if requested explicitly.
+    Access to the primary can still be made if requested explicitly.
     """
     default_flavor = SLAVE_FLAVOR
 
 
-class SlaveOnlyDatabasePolicy(BaseDatabasePolicy):
+class StandbyOnlyDatabasePolicy(BaseDatabasePolicy):
     """`IDatabasePolicy` that only allows access to SLAVE_FLAVOR stores.
 
     This policy is used for Feeds requests and other always-read only request.
@@ -223,8 +223,7 @@ class SlaveOnlyDatabasePolicy(BaseDatabasePolicy):
         """See `IDatabasePolicy`."""
         if flavor == MASTER_FLAVOR:
             raise DisallowedStore(flavor)
-        return super(SlaveOnlyDatabasePolicy, self).getStore(
-            name, SLAVE_FLAVOR)
+        return super().getStore(name, SLAVE_FLAVOR)
 
 
 def LaunchpadDatabasePolicyFactory(request):
@@ -375,10 +374,10 @@ def WebServiceDatabasePolicyFactory(request):
     """
     # If a session cookie was sent with the request, use the
     # standard Launchpad database policy for load balancing to
-    # the slave databases. The javascript web service libraries
+    # the standby databases. The javascript web service libraries
     # send the session cookie for authenticated users.
     cookie_name = getUtility(IClientIdManager).namespace
     if cookie_name in request.cookies:
         return LaunchpadDatabasePolicy(request)
-    # Otherwise, use the master only web service database policy.
-    return MasterDatabasePolicy(request)
+    # Otherwise, use the primary only web service database policy.
+    return PrimaryDatabasePolicy(request)

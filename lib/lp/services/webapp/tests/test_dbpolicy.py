@@ -45,9 +45,9 @@ from lp.services.database.interfaces import (
 from lp.services.database.policy import (
     BaseDatabasePolicy,
     LaunchpadDatabasePolicy,
-    MasterDatabasePolicy,
-    SlaveDatabasePolicy,
-    SlaveOnlyDatabasePolicy,
+    PrimaryDatabasePolicy,
+    StandbyDatabasePolicy,
+    StandbyOnlyDatabasePolicy,
     )
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCase
@@ -98,13 +98,13 @@ class BaseDatabasePolicyTestCase(ImplicitDatabasePolicyTestCase):
         self.assertProvides(self.policy, IDatabasePolicy)
 
 
-class SlaveDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
-    """Tests for the `SlaveDatabasePolicy`."""
+class StandbyDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
+    """Tests for the `StandbyDatabasePolicy`."""
 
     def setUp(self):
         if self.policy is None:
-            self.policy = SlaveDatabasePolicy()
-        super(SlaveDatabasePolicyTestCase, self).setUp()
+            self.policy = StandbyDatabasePolicy()
+        super().setUp()
 
     def test_defaults(self):
         for store in ALL_STORES:
@@ -119,12 +119,12 @@ class SlaveDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
                 IMasterStore)
 
 
-class SlaveOnlyDatabasePolicyTestCase(SlaveDatabasePolicyTestCase):
-    """Tests for the `SlaveDatabasePolicy`."""
+class StandbyOnlyDatabasePolicyTestCase(StandbyDatabasePolicyTestCase):
+    """Tests for the `StandbyOnlyDatabasePolicy`."""
 
     def setUp(self):
-        self.policy = SlaveOnlyDatabasePolicy()
-        super(SlaveOnlyDatabasePolicyTestCase, self).setUp()
+        self.policy = StandbyOnlyDatabasePolicy()
+        super().setUp()
 
     def test_master_allowed(self):
         for store in ALL_STORES:
@@ -133,15 +133,15 @@ class SlaveOnlyDatabasePolicyTestCase(SlaveDatabasePolicyTestCase):
                 getUtility(IStoreSelector).get, store, MASTER_FLAVOR)
 
 
-class MasterDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
-    """Tests for the `MasterDatabasePolicy`."""
+class PrimaryDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
+    """Tests for the `PrimaryDatabasePolicy`."""
 
     def setUp(self):
-        self.policy = MasterDatabasePolicy()
-        super(MasterDatabasePolicyTestCase, self).setUp()
+        self.policy = PrimaryDatabasePolicy()
+        super().setUp()
 
-    def test_XMLRPCRequest_uses_MasterPolicy(self):
-        """XMLRPC should always use the master flavor, since they always
+    def test_XMLRPCRequest_uses_PrimaryDatabasePolicy(self):
+        """XMLRPC should always use the primary flavor, since they always
         use POST and do not support session cookies.
         """
         request = LaunchpadTestRequest(
@@ -149,22 +149,22 @@ class MasterDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
         setFirstLayer(request, IXMLRPCRequest)
         policy = getAdapter(request, IDatabasePolicy)
         self.assertTrue(
-            isinstance(policy, MasterDatabasePolicy),
-            "Expected MasterDatabasePolicy, not %s." % policy)
+            isinstance(policy, PrimaryDatabasePolicy),
+            "Expected PrimaryDatabasePolicy, not %s." % policy)
 
-    def test_slave_allowed(self):
-        # We get the master store even if the slave was requested.
+    def test_standby_allowed(self):
+        # We get the primary store even if the standby was requested.
         for store in ALL_STORES:
             self.assertProvides(
                 getUtility(IStoreSelector).get(store, SLAVE_FLAVOR),
                 ISlaveStore)
 
 
-class LaunchpadDatabasePolicyTestCase(SlaveDatabasePolicyTestCase):
+class LaunchpadDatabasePolicyTestCase(StandbyDatabasePolicyTestCase):
     """Fuller LaunchpadDatabasePolicy tests are in the page tests.
 
     This test just checks the defaults, which is the same as the
-    slave policy for unauthenticated requests.
+    standby policy for unauthenticated requests.
     """
 
     def setUp(self):
@@ -176,8 +176,8 @@ class LaunchpadDatabasePolicyTestCase(SlaveDatabasePolicyTestCase):
 class LayerDatabasePolicyTestCase(TestCase):
     layer = FunctionalLayer
 
-    def test_FeedsLayer_uses_SlaveDatabasePolicy(self):
-        """FeedsRequest should use the SlaveDatabasePolicy since they
+    def test_FeedsLayer_uses_StandbyOnlyDatabasePolicy(self):
+        """FeedsRequest should use the StandbyOnlyDatabasePolicy since they
         are read-only in nature. Also we don't want to send session cookies
         over them.
         """
@@ -185,10 +185,10 @@ class LayerDatabasePolicyTestCase(TestCase):
             SERVER_URL='http://feeds.launchpad.test')
         setFirstLayer(request, FeedsLayer)
         policy = IDatabasePolicy(request)
-        self.assertIsInstance(policy, SlaveOnlyDatabasePolicy)
+        self.assertIsInstance(policy, StandbyOnlyDatabasePolicy)
 
-    def test_WebServiceRequest_uses_MasterDatabasePolicy(self):
-        """WebService requests should always use the master flavor, since
+    def test_WebServiceRequest_uses_PrimaryDatabasePolicy(self):
+        """WebService requests should always use the primary flavor, since
         it's likely that clients won't support cookies and thus mixing read
         and write requests will result in incoherent views of the data.
 
@@ -201,12 +201,12 @@ class LayerDatabasePolicyTestCase(TestCase):
         request = LaunchpadTestRequest(SERVER_URL=server_url)
         setFirstLayer(request, WebServiceLayer)
         policy = IDatabasePolicy(request)
-        self.assertIsInstance(policy, MasterDatabasePolicy)
+        self.assertIsInstance(policy, PrimaryDatabasePolicy)
 
     def test_WebServiceRequest_uses_LaunchpadDatabasePolicy(self):
         """WebService requests with a session cookie will use the
         standard LaunchpadDatabasePolicy so their database queries
-        can be outsourced to a slave database when possible.
+        can be outsourced to a standby database when possible.
         """
         api_prefix = getUtility(
             IWebServiceConfiguration).active_versions[0]

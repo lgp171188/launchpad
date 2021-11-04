@@ -24,7 +24,7 @@ from lp.services.command_spawner import (
 from lp.services.config import config
 from lp.services.database.policy import (
     DatabaseBlockedPolicy,
-    SlaveOnlyDatabasePolicy,
+    StandbyOnlyDatabasePolicy,
     )
 from lp.services.osutils import ensure_directory_exists
 from lp.services.scripts.base import (
@@ -304,5 +304,5 @@ class GenerateContentsFiles(LaunchpadCronScript):
     def main(self):
         """See `LaunchpadScript`."""
         # This code has no need to alter the database.
-        with SlaveOnlyDatabasePolicy():
+        with StandbyOnlyDatabasePolicy():
             self.process()

@@ -255,7 +255,7 @@ from lp.services.database.interfaces import (
     IStore,
     IStoreSelector,
     )
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.gpg.interfaces import (
     GPGKeyAlgorithm,
@@ -408,7 +408,7 @@ def default_master_store(func):
         except ComponentLookupError:
             # Utilities not registered. No policies.
             return func(*args, **kw)
-        store_selector.push(MasterDatabasePolicy())
+        store_selector.push(PrimaryDatabasePolicy())
         try:
             return func(*args, **kw)
         finally:

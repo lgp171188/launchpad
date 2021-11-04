@@ -60,7 +60,7 @@ from lp.services.database.interfaces import (
     MASTER_FLAVOR,
     SLAVE_FLAVOR,
     )
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.database.postgresql import ConnectionString
 from lp.services.log.loglevels import DEBUG2
 from lp.services.stacktrace import (
@@ -749,7 +749,7 @@ class StoreSelector:
         """See `IStoreSelector`."""
         db_policy = StoreSelector.get_current()
         if db_policy is None:
-            db_policy = MasterDatabasePolicy(None)
+            db_policy = PrimaryDatabasePolicy(None)
         return db_policy.getStore(name, flavor)
 
 
