@@ -11,8 +11,9 @@ __all__ = [
     'user_can_edit_credentials_for_owner',
     ]
 
+import http.client
+
 from lazr.restful.declarations import error_status
-from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Int,
@@ -31,7 +32,7 @@ from lp.services.fields import (
     )
 
 
-@error_status(http_client.CONFLICT)
+@error_status(http.client.CONFLICT)
 class OCIRegistryCredentialsAlreadyExist(Exception):
     """A new `OCIRegistryCredentials` was added with the
     same details as an existing one.
@@ -43,7 +44,7 @@ class OCIRegistryCredentialsAlreadyExist(Exception):
             "region.")
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class OCIRegistryCredentialsNotOwner(Unauthorized):
     """The registrant is not the owner or a member of its team."""
 

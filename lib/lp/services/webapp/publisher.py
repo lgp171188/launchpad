@@ -26,6 +26,7 @@ __all__ = [
     ]
 
 from cgi import FieldStorage
+import http.client
 import re
 from wsgiref.headers import Headers
 
@@ -40,7 +41,6 @@ from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
 import simplejson
 import six
-from six.moves import http_client
 from six.moves.urllib.parse import urlparse
 from zope.app.publisher.xmlrpc import IMethodPublisher
 from zope.component import (
@@ -97,7 +97,7 @@ from lp.services.webapp.vhosts import allvhosts
 
 # Monkeypatch NotFound to always avoid generating OOPS
 # from NotFound in web service calls.
-error_status(http_client.NOT_FOUND)(NotFound)
+error_status(http.client.NOT_FOUND)(NotFound)
 
 # Used to match zope namespaces eg ++model++.
 RESERVED_NAMESPACE = re.compile('\\+\\+.*\\+\\+')

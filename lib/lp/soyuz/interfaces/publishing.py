@@ -23,6 +23,8 @@ __all__ = [
     'name_priority_map',
     ]
 
+import http.client
+
 from lazr.restful.declarations import (
     call_with,
     error_status,
@@ -38,7 +40,6 @@ from lazr.restful.declarations import (
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -96,12 +97,12 @@ class MissingSymlinkInPool(Exception):
     """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class OverrideError(Exception):
     """Raised when an attempt to change an override fails."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class DeletionError(Exception):
     """Raised when an attempt to delete a publication fails."""
 

@@ -11,6 +11,7 @@ __all__ = [
     ]
 
 from email.utils import parseaddr
+from http.client import BadStatusLine
 import re
 import xml.parsers.expat
 
@@ -19,7 +20,6 @@ import pytz
 import requests
 import six
 from six.moves import xmlrpc_client
-from six.moves.http_client import BadStatusLine
 from zope.component import getUtility
 from zope.interface import (
     alsoProvides,

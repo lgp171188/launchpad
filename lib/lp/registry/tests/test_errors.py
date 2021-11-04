@@ -3,7 +3,7 @@
 
 """Tests for registry errors."""
 
-from six.moves.http_client import (
+from http.client import (
     BAD_REQUEST,
     CONFLICT,
     FORBIDDEN,
