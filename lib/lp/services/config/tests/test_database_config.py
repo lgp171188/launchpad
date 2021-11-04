@@ -1,12 +1,7 @@
 # Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from textwrap import dedent
-
-from lp.services.config import (
-    config,
-    DatabaseConfig,
-    )
+from lp.services.config import DatabaseConfig
 from lp.services.propertycache import get_property_cache
 from lp.testing import TestCase
 from lp.testing.layers import DatabaseLayer
@@ -63,29 +58,3 @@ class TestDatabaseConfig(TestCase):
             selected_standby, get_property_cache(dbc).main_standby)
         dbc.reset()
         self.assertEqual(original_standby, dbc.main_standby)
-
-    def test_main_master_compatibility(self):
-        # The old rw_main_master compatibility name works, until such time
-        # as we update production configs to stop using it.
-        config_key = 'old-naming'
-        config.push(config_key, dedent('''\
-            [database]
-            rw_main_master: dbname=launchpad_test_primary port=5433
-            '''))
-        self.addCleanup(config.pop, config_key)
-        dbc = DatabaseConfig()
-        self.assertEqual(
-            'dbname=launchpad_test_primary port=5433', dbc.main_primary)
-
-    def test_main_slave_compatibility(self):
-        # The old rw_main_slave compatibility name works, until such time as
-        # we update production configs to stop using it.
-        config_key = 'old-naming'
-        config.push(config_key, dedent('''\
-            [database]
-            rw_main_slave: dbname=launchpad_test_standby port=5433
-            '''))
-        self.addCleanup(config.pop, config_key)
-        dbc = DatabaseConfig()
-        self.assertEqual(
-            'dbname=launchpad_test_standby port=5433', dbc.main_standby)
