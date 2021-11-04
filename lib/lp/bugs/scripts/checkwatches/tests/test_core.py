@@ -5,8 +5,8 @@
 from datetime import datetime
 import threading
 import unittest
+from xmlrpc.client import ProtocolError
 
-from six.moves.xmlrpc_client import ProtocolError
 import transaction
 from zope.component import getUtility
 

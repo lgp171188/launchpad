@@ -5,9 +5,9 @@ Launchpad can generate LoginTokens which can then be used to
 authenticate it with remote bug trackers. Generating these tokens is
 done using the internal XML-RPC service.
 
-    >>> from six.moves import xmlrpc_client
+    >>> import xmlrpc.client
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
-    >>> bugtracker_api = xmlrpc_client.ServerProxy(
+    >>> bugtracker_api = xmlrpc.client.ServerProxy(
     ...     'http://xmlrpc-private.launchpad.test:8087/bugs',
     ...     transport=XMLRPCTestTransport())
 

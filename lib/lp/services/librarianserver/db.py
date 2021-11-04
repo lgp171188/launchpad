@@ -8,13 +8,13 @@ __all__ = [
     ]
 
 import hashlib
+from xmlrpc.client import Fault
 
 from pymacaroons import Macaroon
 from six.moves.urllib.parse import (
     quote,
     unquote,
     )
-from six.moves.xmlrpc_client import Fault
 from storm.expr import (
     And,
     SQL,

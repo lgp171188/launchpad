@@ -6,11 +6,11 @@ Trac plugin. It can be used to avoid network traffic while testing, and
 it implements the same API that Trac instances having the LP plugin
 installed implement.
 
-    >>> from six.moves import xmlrpc_client
+    >>> import xmlrpc.client
     >>> from lp.bugs.tests.externalbugtracker import (
     ...     TestTracXMLRPCTransport)
     >>> trac_transport = TestTracXMLRPCTransport('http://example.com/xmlrpc')
-    >>> server = xmlrpc_client.ServerProxy(
+    >>> server = xmlrpc.client.ServerProxy(
     ...     'http://example.com/xmlrpc', transport=trac_transport)
 
 All the methods need an authentication cookie to be sent.

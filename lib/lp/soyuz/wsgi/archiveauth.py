@@ -15,12 +15,12 @@ from random import SystemRandom
 import string
 import sys
 import time
-
-import six
-from six.moves.xmlrpc_client import (
+from xmlrpc.client import (
     Fault,
     ServerProxy,
     )
+
+import six
 
 from lp.services.config import config
 from lp.services.memcache.client import memcache_client_factory

@@ -4,6 +4,7 @@
 """Definition of the internet servers that Launchpad uses."""
 
 import threading
+import xmlrpc.client
 
 from lazr.restful.interfaces import (
     ICollectionResource,
@@ -17,7 +18,6 @@ from lazr.restful.publisher import (
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import six
-from six.moves import xmlrpc_client
 from six.moves.urllib.parse import parse_qs
 from talisker.logs import logging_context
 import transaction
@@ -1403,15 +1403,15 @@ class PublicXMLRPCResponse(XMLRPCResponse):
     """Response type for doing public XML-RPC in Launchpad."""
 
     def handleException(self, exc_info):
-        # If we don't have a proper xmlrpc_client.Fault, and we have
+        # If we don't have a proper xmlrpc.client.Fault, and we have
         # logged an OOPS, create a Fault that reports the OOPS ID to
         # the user.
         exc_value = exc_info[1]
-        if not isinstance(exc_value, xmlrpc_client.Fault):
+        if not isinstance(exc_value, xmlrpc.client.Fault):
             request = get_current_browser_request()
             if request is not None and request.oopsid is not None:
-                exc_info = (xmlrpc_client.Fault,
-                            xmlrpc_client.Fault(-1, request.oopsid),
+                exc_info = (xmlrpc.client.Fault,
+                            xmlrpc.client.Fault(-1, request.oopsid),
                             None)
         XMLRPCResponse.handleException(self, exc_info)
 

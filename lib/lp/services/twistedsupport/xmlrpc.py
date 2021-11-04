@@ -26,7 +26,7 @@ class BlockingProxy:
     def __init__(self, proxy):
         """Construct a `BlockingProxy`.
 
-        :param proxy: An xmlrpc_client.ServerProxy.
+        :param proxy: An xmlrpc.client.ServerProxy.
         """
         self._proxy = proxy
 
@@ -39,7 +39,7 @@ class DeferredBlockingProxy(BlockingProxy):
 
     This is almost exactly like 'BlockingProxy', except that this returns
     Deferreds. It is guaranteed to be exactly as synchronous as the passed-in
-    proxy. That means if you pass in a normal xmlrpc_client proxy you ought to
+    proxy. That means if you pass in a normal xmlrpc.client proxy you ought to
     be able to use `lp.services.twistedsupport.extract_result` to get the
     result.
     """

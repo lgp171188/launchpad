@@ -5,8 +5,8 @@
 
 from email import message_from_string
 from textwrap import dedent
+import xmlrpc.client
 
-from six.moves import xmlrpc_client
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -42,7 +42,7 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
 
     def setUp(self):
         super(TestCanonicalSSOApplication, self).setUp()
-        self.rpc_proxy = xmlrpc_client.ServerProxy(
+        self.rpc_proxy = xmlrpc.client.ServerProxy(
             'http://xmlrpc-private.launchpad.test:8087/canonicalsso',
             transport=XMLRPCTestTransport())
 
@@ -71,12 +71,12 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
         person = self.factory.makePerson()
         openid_identifier = removeSecurityProxy(
             person.account).openid_identifiers.any().identifier
-        public_rpc_proxy = xmlrpc_client.ServerProxy(
+        public_rpc_proxy = xmlrpc.client.ServerProxy(
             'http://test@canonical.com:test@'
             'xmlrpc.launchpad.test/canonicalsso',
             transport=XMLRPCTestTransport())
         e = self.assertRaises(
-            xmlrpc_client.ProtocolError,
+            xmlrpc.client.ProtocolError,
             public_rpc_proxy.getPersonDetailsByOpenIDIdentifier,
             openid_identifier)
         self.assertEqual(404, e.errcode)
@@ -88,7 +88,7 @@ class TestMailingListXMLRPC(TestCaseWithFactory):
 
     def setUp(self):
         super(TestMailingListXMLRPC, self).setUp()
-        self.rpc_proxy = xmlrpc_client.ServerProxy(
+        self.rpc_proxy = xmlrpc.client.ServerProxy(
             'http://xmlrpc-private.launchpad.test:8087/mailinglists',
             transport=XMLRPCTestTransport())
 
@@ -147,7 +147,7 @@ class TestMailingListXMLRPCMessage(TestCaseWithFactory):
 
     def setUp(self):
         super(TestMailingListXMLRPCMessage, self).setUp()
-        self.rpc_proxy = xmlrpc_client.ServerProxy(
+        self.rpc_proxy = xmlrpc.client.ServerProxy(
             'http://xmlrpc-private.launchpad.test:8087/mailinglists',
             transport=XMLRPCTestTransport())
 

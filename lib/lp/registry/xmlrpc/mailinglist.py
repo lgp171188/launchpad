@@ -8,9 +8,9 @@ __all__ = [
     ]
 
 import re
+import xmlrpc.client
 
 from six import ensure_text
-from six.moves import xmlrpc_client
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -244,7 +244,7 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         # non-ascii characters in the message can be safely passed across
         # XMLRPC. For most tests though it's much more convenient to just
         # pass 8-bit strings.
-        if isinstance(bytes, xmlrpc_client.Binary):
+        if isinstance(bytes, xmlrpc.client.Binary):
             bytes = bytes.data
         team_name = ensure_text(team_name)
         # Although it is illegal for an email header to have unencoded
