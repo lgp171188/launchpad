@@ -26,7 +26,7 @@ import transaction
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
 from lp.services.database.interfaces import ISlaveStore
-from lp.services.database.policy import SlaveDatabasePolicy
+from lp.services.database.policy import StandbyDatabasePolicy
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.librarian import client as client_module
 from lp.services.librarian.client import (
@@ -293,14 +293,14 @@ class LibrarianClientTestCase(TestCase):
             client.addFile,
             'sample.txt', 7, io.BytesIO(b'sample'), 'text/plain')
 
-    def test_addFile_uses_master(self):
+    def test_addFile_uses_primary(self):
         # addFile is a write operation, so it should always use the
-        # master store, even if the slave is the default. Close the
-        # slave store and try to add a file, verifying that the master
+        # primary store, even if the standby is the default. Close the
+        # standby store and try to add a file, verifying that the primary
         # is used.
         client = LibrarianClient()
         ISlaveStore(LibraryFileAlias).close()
-        with SlaveDatabasePolicy():
+        with StandbyDatabasePolicy():
             alias_id = client.addFile(
                 'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()
