@@ -7,7 +7,8 @@ __all__ = [
     'return_fault',
     ]
 
-from six.moves.xmlrpc_client import Fault
+from xmlrpc.client import Fault
+
 from twisted.python.util import mergeFunctionMetadata
 
 

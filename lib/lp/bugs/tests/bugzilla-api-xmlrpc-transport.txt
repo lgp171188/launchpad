@@ -9,12 +9,12 @@ very similar to the TestBugzillaXMLRPCTransport, which it subclasses.
 Only the parts of TestBugzillaAPIXMLRPCTransport that are different from
 its ancestor will be tested here.
 
-    >>> from six.moves import xmlrpc_client
+    >>> import xmlrpc.client
     >>> from lp.bugs.tests.externalbugtracker import (
     ...     TestBugzillaAPIXMLRPCTransport)
     >>> bugzilla_transport = TestBugzillaAPIXMLRPCTransport(
     ...     'http://example.com/xmlrpc.cgi')
-    >>> server = xmlrpc_client.ServerProxy(
+    >>> server = xmlrpc.client.ServerProxy(
     ...     'http://example.com/xmlrpc.cgi', transport=bugzilla_transport)
 
 

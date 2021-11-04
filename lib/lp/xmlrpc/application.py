@@ -9,7 +9,8 @@ __all__ = [
     'SelfTest',
     ]
 
-from six.moves import xmlrpc_client
+import xmlrpc.client
+
 from zope.component import getUtility
 from zope.interface import (
     implementer,
@@ -104,7 +105,7 @@ class SelfTest(LaunchpadXMLRPCView):
 
     def make_fault(self):
         """Returns an xmlrpc fault."""
-        return xmlrpc_client.Fault(666, "Yoghurt and spanners.")
+        return xmlrpc.client.Fault(666, "Yoghurt and spanners.")
 
     def concatenate(self, string1, string2):
         """Return the concatenation of the two given strings."""

@@ -10,7 +10,8 @@ __all__ = [
     'new_team',
     ]
 
-from six.moves import xmlrpc_client
+import xmlrpc.client
+
 from zope.component import getUtility
 
 from lp.registry.enums import TeamMembershipPolicy
@@ -36,7 +37,7 @@ def fault_catcher(func):
 
     def caller(self, *args, **kws):
         result = func(self, *args, **kws)
-        if isinstance(result, xmlrpc_client.Fault):
+        if isinstance(result, xmlrpc.client.Fault):
             raise result
         else:
             return result

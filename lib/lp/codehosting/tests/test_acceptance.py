@@ -5,6 +5,7 @@
 
 import os
 import re
+import xmlrpc.client
 
 import breezy.branch
 from breezy.tests import TestCaseWithTransport
@@ -12,7 +13,6 @@ from breezy.tests.per_repository import all_repository_format_scenarios
 from breezy.urlutils import local_path_from_url
 from breezy.workingtree import WorkingTree
 import six
-from six.moves import xmlrpc_client
 from six.moves.urllib.request import urlopen
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -229,9 +229,9 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
         Used to create branches that the test user is not able to create, and
         might not even be able to view.
         """
-        authserver = xmlrpc_client.ServerProxy(
+        authserver = xmlrpc.client.ServerProxy(
             config.codehosting.authentication_endpoint)
-        codehosting_api = xmlrpc_client.ServerProxy(
+        codehosting_api = xmlrpc.client.ServerProxy(
             config.codehosting.codehosting_endpoint)
         if creator is None:
             creator_id = authserver.getUserAndSSHKeys(user)['id']

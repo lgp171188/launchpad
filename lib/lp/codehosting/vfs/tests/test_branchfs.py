@@ -6,6 +6,7 @@
 import os
 import re
 import sys
+import xmlrpc.client
 
 from breezy import errors
 from breezy.bzr.bzrdir import BzrDir
@@ -33,7 +34,6 @@ from breezy.urlutils import (
     )
 from fixtures import MonkeyPatch
 import six
-from six.moves import xmlrpc_client
 from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
@@ -1035,7 +1035,7 @@ class TestBranchChangedErrorHandling(TestCaseWithTransport, TestCase):
             report = errorlog.globalErrorUtility.raising(f, request)
             # Record the id for checking later.
             self.generated_oopsids.append(report['id'])
-            raise xmlrpc_client.Fault(-1, report)
+            raise xmlrpc.client.Fault(-1, report)
 
     def get_server(self):
         if self._server is None:

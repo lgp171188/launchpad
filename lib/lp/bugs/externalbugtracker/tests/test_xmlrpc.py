@@ -20,7 +20,7 @@ class TestRequestsTransport(TestCase):
 
     @responses.activate
     def test_expat_error(self):
-        # Malformed XML-RPC responses cause xmlrpc_client to raise an
+        # Malformed XML-RPC responses cause xmlrpc.client to raise an
         # ExpatError.
         responses.add(
             "POST", "http://www.example.com/xmlrpc",
@@ -28,7 +28,7 @@ class TestRequestsTransport(TestCase):
         transport = RequestsTransport("http://not.real/")
 
         # The Launchpad production environment selects Expat at present. This
-        # is quite strict compared to the other parsers that xmlrpc_client
+        # is quite strict compared to the other parsers that xmlrpc.client
         # can possibly select.
         ensure_response_parser_is_expat(transport)
 

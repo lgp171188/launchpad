@@ -130,7 +130,7 @@ login_required() and will retry the method call.
 
 If authentication fails, a BugTrackerAuthenticationError will be raised.
 
-    >>> from six.moves.xmlrpc_client import Fault, ProtocolError
+    >>> from xmlrpc.client import Fault, ProtocolError
     >>> class TestAuthFailingBugzillaXMLRPCTransport(
     ...         ZopelessBugzillaXMLRPCTransport):
     ...     error = Fault(100, "Sorry, you can't log in.")

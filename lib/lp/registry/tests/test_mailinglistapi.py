@@ -7,8 +7,8 @@ __all__ = []
 
 import email
 from textwrap import dedent
+import xmlrpc.client
 
-from six.moves import xmlrpc_client
 from testtools.matchers import (
     Equals,
     MatchesDict,
@@ -498,7 +498,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
                 I put \xa9 in the body.
                 """).encode('ISO-8859-1'))
         info = self.mailinglist_api.holdMessage(
-            'team', xmlrpc_client.Binary(message_as_bytes(message)))
+            'team', xmlrpc.client.Binary(message_as_bytes(message)))
         transaction.commit()
         found = self.message_approval_set.getMessageByMessageID('<\\xa9-me>')
         self.assertIs(True, info)

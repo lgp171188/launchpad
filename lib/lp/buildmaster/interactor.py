@@ -551,7 +551,7 @@ class BuilderInteractor(object):
         if builder_status == "BuilderStatus.ABORTING":
             logtail = u"Waiting for slave process to be terminated"
         elif slave_status.get("logtail") is not None:
-            # slave_status["logtail"] is an xmlrpc_client.Binary instance,
+            # slave_status["logtail"] is an xmlrpc.client.Binary instance,
             # and the contents might include invalid UTF-8 due to being a
             # fixed number of bytes from the tail of the log.  Turn it into
             # Unicode as best we can.
