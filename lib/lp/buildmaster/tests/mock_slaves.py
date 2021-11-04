@@ -27,7 +27,7 @@ from lpbuildd.tests.harness import BuilddSlaveTestSetup
 import six
 from testtools.content import attach_file
 from twisted.internet import defer
-from twisted.web import xmlrpc
+from twisted.web.xmlrpc import Proxy
 
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
@@ -275,7 +275,7 @@ class TrivialBehaviour:
     pass
 
 
-class DeadProxy(xmlrpc.Proxy):
+class DeadProxy(Proxy):
     """An xmlrpc.Proxy that doesn't actually send any messages.
 
     Used when you want to test timeouts, for example.
