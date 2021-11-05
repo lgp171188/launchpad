@@ -92,7 +92,7 @@ class lp_develop(develop):
             # env/bin/python, but if we just symlink to it and try to
             # execute it as bin/py then the virtualenv doesn't get
             # activated.  We use -S to avoid importing sitecustomize both
-            # before and after the execve.
+            # before and after the execv.
             py_header = LPScriptWriter.get_header("#!python -S")
             py_script_text = dedent("""\
                 import os
