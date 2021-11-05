@@ -361,16 +361,6 @@ class DatabaseConfig:
             raise AttributeError(name)
         value = None
         for section in sections:
-            # XXX cjwatson 2021-10-01: Remove this once production configs
-            # have been updated to the new name.
-            if name == 'rw_main_primary':
-                value = getattr(section, 'rw_main_master', None)
-                if value is not None:
-                    break
-            elif name == 'rw_main_standby':
-                value = getattr(section, 'rw_main_slave', None)
-                if value is not None:
-                    break
             value = getattr(section, name, None)
             if value is not None:
                 break
