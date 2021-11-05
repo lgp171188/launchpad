@@ -893,6 +893,7 @@ class Publisher(object):
         self.log.debug("Generating Sources")
 
         separate_long_descriptions = False
+        # Must match DdtpTarballUpload.shouldInstall.
         if (not distroseries.include_long_descriptions and
                 getFeatureFlag("soyuz.ppa.separate_long_descriptions")):
             # If include_long_descriptions is False and the feature flag is
