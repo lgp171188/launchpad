@@ -55,7 +55,10 @@ from lp.app.enums import (
     )
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
+from lp.charms.interfaces.charmrecipe import (
+    CHARM_RECIPE_ALLOW_CREATE,
+    CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
+    )
 from lp.code.enums import (
     BranchMergeProposalStatus,
     BranchSubscriptionDiffSize,
@@ -2794,6 +2797,48 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
         ref.repository.createOrUpdateRefs(
             {ref.path: {"sha1": "0" * 40, "type": GitObjectType.COMMIT}})
         self.assertTrue(snap.is_stale)
+
+
+class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def setUp(self):
+        super().setUp()
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+            }))
+
+    def test_same_repository(self):
+        # On ref changes, charm recipes using this ref become stale.
+        [ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeCharmRecipe(git_ref=ref)
+        removeSecurityProxy(recipe).is_stale = False
+        ref.repository.createOrUpdateRefs(
+            {ref.path: {"sha1": "0" * 40, "type": GitObjectType.COMMIT}})
+        self.assertTrue(recipe.is_stale)
+
+    def test_same_repository_different_ref(self):
+        # On ref changes, charm recipes using a different ref in the same
+        # repository are left alone.
+        ref1, ref2 = self.factory.makeGitRefs(
+            paths=["refs/heads/a", "refs/heads/b"])
+        recipe = self.factory.makeCharmRecipe(git_ref=ref1)
+        removeSecurityProxy(recipe).is_stale = False
+        ref1.repository.createOrUpdateRefs(
+            {ref2.path: {"sha1": "0" * 40, "type": GitObjectType.COMMIT}})
+        self.assertFalse(recipe.is_stale)
+
+    def test_different_repository(self):
+        # On ref changes, unrelated charm recipes are left alone.
+        [ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeCharmRecipe(
+            git_ref=self.factory.makeGitRefs()[0])
+        removeSecurityProxy(recipe).is_stale = False
+        ref.repository.createOrUpdateRefs(
+            {ref.path: {"sha1": "0" * 40, "type": GitObjectType.COMMIT}})
+        self.assertFalse(recipe.is_stale)
 
 
 class TestGitRepositoryFork(TestCaseWithFactory):

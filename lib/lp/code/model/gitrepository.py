@@ -1290,6 +1290,16 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
             # this.
             removeSecurityProxy(snap).is_stale = True
 
+    def markCharmRecipesStale(self, paths):
+        """See `IGitRepository`."""
+        recipes = getUtility(ICharmRecipeSet).findByGitRepository(
+            self, paths=paths, check_permissions=False)
+        for recipe in recipes:
+            # ICharmRecipeSet.findByGitRepository returns security-proxied
+            # CharmRecipe objects on which the is_stale attribute is
+            # read-only.  Bypass this.
+            removeSecurityProxy(recipe).is_stale = True
+
     def _markProposalMerged(self, proposal, merged_revision_id, logger=None):
         if logger is not None:
             logger.info(
