@@ -473,12 +473,12 @@ class YUIAppServerTestCase(AbstractYUITestCase):
     # 12 seconds for each test.  Hopefully they are three or less for
     # yuixhr tests, and less than one for pure JS tests, but
     # occasionally buildbot runs over six seconds even for tests that
-    # are well-behaved locally and on ec2, so we up the limit to 12..
+    # are well-behaved locally, so we up the limit to 12..
     incremental_timeout = 12000
     # 45 seconds for the first test, to include warmup time.  These times
-    # are wildly large, and they are only necessary on buildbot.  ec2 and
-    # local instances are much, much faster.  We have not yet investigated
-    # why buildbot is so slow for these.
+    # are wildly large, and they are only necessary on buildbot.  Local
+    # instances are much, much faster.  We have not yet investigated why
+    # buildbot is so slow for these.
     initial_timeout = 45000
 
     def __init__(self, module_name, facet='mainsite'):

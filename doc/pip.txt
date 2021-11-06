@@ -252,14 +252,6 @@ Let's suppose that we want to add the "lazr.foo" package as a dependency.
 
 7.  Test.
 
-    Note that you can tell ``ec2 test`` to include all uncommitted
-    distributions from the local download-cache in its tests with the
-    ``--include-download-cache-changes`` flag (or ``-c``).  If you do
-    this, you cannot use the ec2 test feature to submit on test
-    success.  Also, if you have uncommitted distributions and you do
-    *not* explicitly tell ec2 test to include or ignore the
-    uncommitted distributions, it will refuse to start an instance.
-
 8.  Check old versions in the download-cache.  If you are sure that
     they are not in use any more, *anywhere*, then remove them to save
     checkout space.  More explicitly, check with the LOSAs to see if
