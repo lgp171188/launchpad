@@ -193,7 +193,7 @@ from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
@@ -363,8 +363,8 @@ class Bug(SQLBase, InformationTypeMixin):
     who_made_private = ForeignKey(
         dbName='who_made_private', foreignKey='Person',
         storm_validator=validate_public_person, default=None)
-    information_type = EnumCol(
-        enum=InformationType, notNull=True, default=InformationType.PUBLIC)
+    information_type = DBEnum(
+        enum=InformationType, allow_none=False, default=InformationType.PUBLIC)
 
     # useful Joins
     activity = SQLMultipleJoin('BugActivity', joinColumn='bug', orderBy='id')
