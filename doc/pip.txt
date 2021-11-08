@@ -268,7 +268,7 @@ Let's suppose that we want to add the "lazr.foo" package as a dependency.
     PQM or else your branch will not build properly anywhere else,
     including buildbot.  Commit the changes (``cd download-cache``,
     git add the needed files, ``git pull``, ``git commit -m 'Add
-    lazr.foom 1.1.2 and dependencies'``) to the shared download cache
+    lazr.foo 1.1.2 and dependencies'``) to the shared download cache
     when you are sure it is what you want.
 
 *Never* modify a package in the download-cache.  A change in code must mean a
