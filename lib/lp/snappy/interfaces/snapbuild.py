@@ -31,11 +31,11 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
-from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
     Interface,
     )
+from zope.interface.interfaces import IObjectEvent
 from zope.schema import (
     Bool,
     Choice,

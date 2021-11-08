@@ -7,7 +7,7 @@
 
 import _pythonpath  # noqa: F401
 
-from zope.component.interfaces import ComponentLookupError
+from zope.interface.interfaces import ComponentLookupError
 
 from lp.services.config import config
 from lp.services.mail.incoming import handleMail

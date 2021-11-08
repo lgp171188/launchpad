@@ -11,11 +11,11 @@ __all__ = [
     ]
 
 from lazr.restful.fields import Reference
-from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
     Interface,
     )
+from zope.interface.interfaces import IObjectEvent
 from zope.schema import (
     Int,
     TextLine,

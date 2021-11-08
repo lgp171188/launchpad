@@ -47,11 +47,11 @@ from zope.component import (
     getUtility,
     queryMultiAdapter,
     )
-from zope.component.interfaces import ComponentLookupError
 from zope.interface import (
     directlyProvides,
     implementer,
     )
+from zope.interface.interfaces import ComponentLookupError
 from zope.publisher.defaultview import getDefaultViewName
 from zope.publisher.interfaces import NotFound
 from zope.publisher.interfaces.browser import (

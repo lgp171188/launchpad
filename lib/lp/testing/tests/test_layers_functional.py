@@ -21,10 +21,8 @@ from fixtures import (
 import six
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.request import urlopen
-from zope.component import (
-    ComponentLookupError,
-    getUtility,
-    )
+from zope.component import getUtility
+from zope.interface.interfaces import ComponentLookupError
 
 from lp.services.config import config
 from lp.services.librarian.client import (

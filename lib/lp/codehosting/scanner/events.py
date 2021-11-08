@@ -10,11 +10,11 @@ __all__ = [
     ]
 
 import six
-from zope.component.interfaces import (
+from zope.interface import implementer
+from zope.interface.interfaces import (
     IObjectEvent,
     ObjectEvent,
     )
-from zope.interface import implementer
 
 from lp.services.webapp.publisher import canonical_url
 

@@ -24,12 +24,12 @@ from storm.locals import (
     )
 import transaction
 from zope.component import getUtility
-from zope.component.interfaces import ObjectEvent
 from zope.event import notify
 from zope.interface import (
     implementer,
     provider,
     )
+from zope.interface.interfaces import ObjectEvent
 
 from lp.app.errors import NotFoundError
 from lp.services.config import config

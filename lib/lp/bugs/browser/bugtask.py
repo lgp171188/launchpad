@@ -53,7 +53,6 @@ from zope import formlib
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,
-    ComponentLookupError,
     getAdapter,
     getMultiAdapter,
     getUtility,
@@ -64,6 +63,7 @@ from zope.interface import (
     implementer,
     providedBy,
     )
+from zope.interface.interfaces import ComponentLookupError
 from zope.schema import Choice
 from zope.schema.vocabulary import (
     getVocabularyRegistry,

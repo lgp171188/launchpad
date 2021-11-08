@@ -7,8 +7,8 @@ __all__ = [
     'GitRefsUpdatedEvent',
     ]
 
-from zope.component.interfaces import ObjectEvent
 from zope.interface import implementer
+from zope.interface.interfaces import ObjectEvent
 
 from lp.code.interfaces.event import IGitRefsUpdatedEvent
 

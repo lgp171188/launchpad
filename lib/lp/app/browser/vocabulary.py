@@ -17,13 +17,13 @@ from zope.component import (
     adapter,
     getUtility,
     )
-from zope.component.interfaces import ComponentLookupError
 from zope.formlib.interfaces import MissingInputError
 from zope.interface import (
     Attribute,
     implementer,
     Interface,
     )
+from zope.interface.interfaces import ComponentLookupError
 from zope.schema.interfaces import IVocabularyFactory
 from zope.security.interfaces import Unauthorized
 # This registers the registry.

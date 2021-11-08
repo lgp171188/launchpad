@@ -15,11 +15,11 @@ __all__ = [
     'IKarmaContext',
     ]
 
-from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
     Interface,
     )
+from zope.interface.interfaces import IObjectEvent
 from zope.schema import (
     Choice,
     Datetime,
