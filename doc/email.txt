@@ -31,8 +31,8 @@ similar to the following::
             name="smtp"
             hostname="localhost"
             port="25"
-            username="biggus"
-            password="dickus"
+            username="user"
+            password="pass"
             />
 
         <mail:stubMailer

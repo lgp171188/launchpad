@@ -74,3 +74,4 @@ callgrind.out.*
 yarn/node_modules
 /wheels
 requirements/combined.txt
+.tox/
