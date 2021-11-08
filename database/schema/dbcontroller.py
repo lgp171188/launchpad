@@ -29,7 +29,7 @@ def pg_connect(conn_str):
 
 
 def streaming_sync(con, timeout=None):
-    """Wait for streaming replicas to synchronize with master as of now.
+    """Wait for streaming replicas to synchronize with primary as of now.
 
     :param timeout: seconds to wait, None for no timeout.
 
@@ -48,7 +48,7 @@ def streaming_sync(con, timeout=None):
             WHERE replay_lsn < %s LIMIT 1
             """, (wal_point,))
         if cur.fetchone() is None:
-            # All slaves, possibly 0, are in sync.
+            # All standbys, possibly 0, are in sync.
             return True
         time.sleep(0.2)
     return False
@@ -66,9 +66,9 @@ class DBController:
                 "pgbouncer administrative database not named 'pgbouncer'")
         self.pgbouncer_con = pg_connect(pgbouncer_conn_str)
 
-        self.master_name = None
-        self.master = None
-        self.slaves = {}
+        self.primary_name = None
+        self.primary = None
+        self.standbys = {}
 
         for db in self.pgbouncer_cmd('show databases', results=True):
             if db.database != dbname:
@@ -82,13 +82,13 @@ class DBController:
             cur = con.cursor()
             cur.execute('select pg_is_in_recovery()')
             if cur.fetchone()[0] is True:
-                self.slaves[db.name] = conn_str
+                self.standbys[db.name] = conn_str
             else:
-                self.master_name = db.name
-                self.master = conn_str
+                self.primary_name = db.name
+                self.primary = conn_str
 
-        if self.master_name is None:
-            log.fatal('No master detected.')
+        if self.primary_name is None:
+            log.fatal('No primary detected.')
             raise SystemExit(98)
 
     def pgbouncer_cmd(self, cmd, results):
@@ -98,9 +98,9 @@ class DBController:
             return cur.fetchall()
 
     def pause_replication(self):
-        names = self.slaves.keys()
+        names = self.standbys.keys()
         self.log.info("Pausing replication to %s.", ', '.join(names))
-        for name, conn_str in self.slaves.items():
+        for name, conn_str in self.standbys.items():
             try:
                 con = pg_connect(conn_str)
                 cur = con.cursor()
@@ -113,10 +113,10 @@ class DBController:
         return True
 
     def resume_replication(self):
-        names = self.slaves.keys()
+        names = self.standbys.keys()
         self.log.info("Resuming replication to %s.", ', '.join(names))
         success = True
-        for name, conn_str in self.slaves.items():
+        for name, conn_str in self.standbys.items():
             try:
                 con = pg_connect(conn_str)
                 cur = con.cursor()
@@ -137,7 +137,7 @@ class DBController:
         """
         success = True
         wait_for_sync = False
-        for name, conn_str in self.slaves.items():
+        for name, conn_str in self.standbys.items():
             try:
                 con = pg_connect(conn_str)
                 cur = con.cursor()
@@ -174,39 +174,39 @@ class DBController:
             self.log.error("Unable to enable %s (%s)", name, str(x))
             return False
 
-    def disable_master(self):
-        self.log.info("Disabling access to %s.", self.master_name)
-        return self.disable(self.master_name)
+    def disable_primary(self):
+        self.log.info("Disabling access to %s.", self.primary_name)
+        return self.disable(self.primary_name)
 
-    def enable_master(self):
-        self.log.info("Enabling access to %s.", self.master_name)
-        return self.enable(self.master_name)
+    def enable_primary(self):
+        self.log.info("Enabling access to %s.", self.primary_name)
+        return self.enable(self.primary_name)
 
-    def disable_slaves(self):
-        names = self.slaves.keys()
+    def disable_standbys(self):
+        names = self.standbys.keys()
         self.log.info(
             "Disabling access to %s.", ', '.join(names))
-        for name in self.slaves.keys():
+        for name in self.standbys.keys():
             if not self.disable(name):
                 return False  # Don't do further damage if we failed.
         return True
 
-    def enable_slaves(self):
-        names = self.slaves.keys()
+    def enable_standbys(self):
+        names = self.standbys.keys()
         self.log.info(
             "Enabling access to %s.", ', '.join(names))
         success = True
-        for name in self.slaves.keys():
+        for name in self.standbys.keys():
             if not self.enable(name):
                 success = False
         return success
 
     def sync(self):
-        sync = streaming_sync(pg_connect(self.master), STREAMING_SYNC_TIMEOUT)
+        sync = streaming_sync(pg_connect(self.primary), STREAMING_SYNC_TIMEOUT)
         if sync:
-            self.log.debug('Slaves in sync.')
+            self.log.debug('Standbys in sync.')
         else:
             self.log.error(
-                'Slaves failed to sync after %d seconds.',
+                'Standbys failed to sync after %d seconds.',
                 STREAMING_SYNC_TIMEOUT)
         return sync
