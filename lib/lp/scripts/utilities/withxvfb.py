@@ -11,16 +11,15 @@ Follows sinzui's advice to the launchpad-dev list:
 """
 
 import os
+import shutil
 import sys
-
-from lp.services.osutils import find_on_path
 
 
 def main():
     # Look for the command to run in this script's directory if it's not
     # found along the default PATH.
     args = sys.argv[1:]
-    if args and not find_on_path(args[0]):
+    if args and not shutil.which(args[0]):
         nearby = os.path.join(os.path.dirname(sys.argv[0]), args[0])
         if os.access(nearby, os.X_OK):
             args[0] = nearby
