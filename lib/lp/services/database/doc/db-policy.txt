@@ -83,7 +83,7 @@ resources.
     ...         Person, Person.name == 'janitor').one()
     Traceback (most recent call last):
     ...
-    lp.services.database.interfaces.DisallowedStore: master
+    lp.services.database.interfaces.DisallowedStore: primary
 
 We can even ensure no database activity occurs at all, for instance
 if we need to guarantee a potentially long running call doesn't access

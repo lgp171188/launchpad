@@ -14,8 +14,8 @@ __all__ = [
     'IStore',
     'IStoreSelector',
     'MAIN_STORE',
-    'MASTER_FLAVOR',
-    'SLAVE_FLAVOR',
+    'PRIMARY_FLAVOR',
+    'STANDBY_FLAVOR',
     ]
 
 
@@ -46,8 +46,8 @@ MAIN_STORE = 'main'  # The main database.
 ALL_STORES = frozenset([MAIN_STORE])
 
 DEFAULT_FLAVOR = 'default'  # Default flavor for current state.
-MASTER_FLAVOR = 'master'  # The master database.
-SLAVE_FLAVOR = 'slave'  # A slave database.
+PRIMARY_FLAVOR = 'primary'  # The primary database.
+STANDBY_FLAVOR = 'standby'  # A standby database.
 
 
 class IDatabasePolicy(Interface):
@@ -75,7 +75,7 @@ class IDatabasePolicy(Interface):
 
         :param name: one of ALL_STORES.
 
-        :param flavor: MASTER_FLAVOR, SLAVE_FLAVOR, or DEFAULT_FLAVOR.
+        :param flavor: PRIMARY_FLAVOR, STANDBY_FLAVOR, or DEFAULT_FLAVOR.
         """
 
     def install():
@@ -94,15 +94,15 @@ class DisallowedStore(Exception):
 class IStoreSelector(Interface):
     """Get a Storm store with a desired flavor.
 
-    Stores come in two flavors - MASTER_FLAVOR and SLAVE_FLAVOR.
+    Stores come in two flavors - PRIMARY_FLAVOR and STANDBY_FLAVOR.
 
-    The master is writable and up to date, but we should not use it
-    whenever possible because there is only one master and we don't want
+    The primary is writable and up to date, but we should not use it
+    whenever possible because there is only one primary and we don't want
     it to be overloaded.
 
-    The slave is read only replica of the master and may lag behind the
-    master. For many purposes such as serving unauthenticated web requests
-    and generating reports this is fine. We can also have as many slave
+    The standby is a read-only replica of the primary and may lag behind the
+    primary. For many purposes such as serving unauthenticated web requests
+    and generating reports this is fine. We can also have as many standby
     databases as we are prepared to pay for, so they will perform better
     because they are less loaded.
     """
@@ -126,16 +126,16 @@ class IStoreSelector(Interface):
         returned for a given name or flavor can depend on thread state
         (eg. the HTTP request currently being handled).
 
-        If a SLAVE_FLAVOR is requested, the MASTER_FLAVOR may be returned
+        If a STANDBY_FLAVOR is requested, the PRIMARY_FLAVOR may be returned
         anyway.
 
-        The DEFAULT_FLAVOR flavor may return either a master or slave
+        The DEFAULT_FLAVOR flavor may return either a primary or standby
         depending on process state. Application code using the
-        DEFAULT_FLAVOR flavor should assume they have a MASTER and that
+        DEFAULT_FLAVOR flavor should assume they have a PRIMARY and that
         a higher level will catch the exception raised if an attempt is
-        made to write changes to a read only store. DEFAULT_FLAVOR exists
+        made to write changes to a read-only store. DEFAULT_FLAVOR exists
         for backwards compatibility, and new code should explicitly state
-        if they want a master or a slave.
+        if they want a primary or a standby.
 
         :raises DisconnectionError:
 

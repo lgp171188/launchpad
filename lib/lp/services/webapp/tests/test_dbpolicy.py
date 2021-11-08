@@ -39,8 +39,8 @@ from lp.services.database.interfaces import (
     ISlaveStore,
     IStoreSelector,
     MAIN_STORE,
-    MASTER_FLAVOR,
-    SLAVE_FLAVOR,
+    PRIMARY_FLAVOR,
+    STANDBY_FLAVOR,
     )
 from lp.services.database.policy import (
     BaseDatabasePolicy,
@@ -112,10 +112,10 @@ class StandbyDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
                 getUtility(IStoreSelector).get(store, DEFAULT_FLAVOR),
                 ISlaveStore)
 
-    def test_master_allowed(self):
+    def test_primary_allowed(self):
         for store in ALL_STORES:
             self.assertProvides(
-                getUtility(IStoreSelector).get(store, MASTER_FLAVOR),
+                getUtility(IStoreSelector).get(store, PRIMARY_FLAVOR),
                 IMasterStore)
 
 
@@ -126,11 +126,11 @@ class StandbyOnlyDatabasePolicyTestCase(StandbyDatabasePolicyTestCase):
         self.policy = StandbyOnlyDatabasePolicy()
         super().setUp()
 
-    def test_master_allowed(self):
+    def test_primary_allowed(self):
         for store in ALL_STORES:
             self.assertRaises(
                 DisallowedStore,
-                getUtility(IStoreSelector).get, store, MASTER_FLAVOR)
+                getUtility(IStoreSelector).get, store, PRIMARY_FLAVOR)
 
 
 class PrimaryDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
@@ -156,7 +156,7 @@ class PrimaryDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
         # We get the primary store even if the standby was requested.
         for store in ALL_STORES:
             self.assertProvides(
-                getUtility(IStoreSelector).get(store, SLAVE_FLAVOR),
+                getUtility(IStoreSelector).get(store, STANDBY_FLAVOR),
                 ISlaveStore)
 
 
@@ -235,11 +235,11 @@ class LayerDatabasePolicyTestCase(TestCase):
         self.assertIsInstance(policy, LaunchpadDatabasePolicy)
 
 
-class MasterFallbackTestCase(TestCase):
+class PrimaryFallbackTestCase(TestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(MasterFallbackTestCase, self).setUp()
+        super().setUp()
 
         self.pgbouncer_fixture = PGBouncerFixture()
 
@@ -264,7 +264,7 @@ class MasterFallbackTestCase(TestCase):
 
         self.useFixture(self.pgbouncer_fixture)
 
-    def test_can_shutdown_slave_only(self):
+    def test_can_shutdown_standby_only(self):
         '''Confirm that this TestCase's test infrastructure works as needed.
         '''
         master_store = IMasterStore(Person)
@@ -280,8 +280,8 @@ class MasterFallbackTestCase(TestCase):
         master_store.get(Person, 2)
         self.assertRaises(DisconnectionError, slave_store.get, Person, 2)
 
-    def test_startup_with_no_slave(self):
-        '''An attempt is made for the first time to connect to a slave.'''
+    def test_startup_with_no_standby(self):
+        '''An attempt is made for the first time to connect to a standby.'''
         self.pgbouncer_fixture.stop()
 
         master_store = IMasterStore(Person)
@@ -290,8 +290,8 @@ class MasterFallbackTestCase(TestCase):
         # The master and slave Stores are the same object.
         self.assertIs(master_store, slave_store)
 
-    def test_slave_shutdown_during_transaction(self):
-        '''Slave is shutdown while running, but we can recover.'''
+    def test_standby_shutdown_during_transaction(self):
+        '''Standby is shutdown while running, but we can recover.'''
         master_store = IMasterStore(Person)
         slave_store = ISlaveStore(Person)
 
@@ -313,8 +313,8 @@ class MasterFallbackTestCase(TestCase):
 
         self.assertIs(master_store, slave_store)
 
-    def test_slave_shutdown_between_transactions(self):
-        '''Slave is shutdown in between transactions.'''
+    def test_standby_shutdown_between_transactions(self):
+        '''Standby is shutdown in between transactions.'''
         master_store = IMasterStore(Person)
         slave_store = ISlaveStore(Person)
         self.assertIsNot(master_store, slave_store)
@@ -322,8 +322,8 @@ class MasterFallbackTestCase(TestCase):
         transaction.abort()
         self.pgbouncer_fixture.stop()
 
-        # The process doesn't notice the slave going down, and things
-        # will fail the next time the slave is used.
+        # The process doesn't notice the standby going down, and things
+        # will fail the next time the standby is used.
         master_store = IMasterStore(Person)
         slave_store = ISlaveStore(Person)
         self.assertIsNot(master_store, slave_store)
@@ -336,8 +336,8 @@ class MasterFallbackTestCase(TestCase):
         slave_store = ISlaveStore(Person)
         self.assertIs(master_store, slave_store)
 
-    def test_slave_reconnect_after_outage(self):
-        '''The slave is again used once it becomes available.'''
+    def test_standby_reconnect_after_outage(self):
+        '''The standby is again used once it becomes available.'''
         self.pgbouncer_fixture.stop()
 
         master_store = IMasterStore(Person)
@@ -391,54 +391,54 @@ class TestFastDowntimeRollout(TestCase):
         except DisconnectionError:
             return False
 
-    def store_is_slave(self, store):
-        return store.get_database().name == 'main-slave'
+    def store_is_standby(self, store):
+        return store.get_database().name == 'main-standby'
 
-    def store_is_master(self, store):
-        return not self.store_is_slave(store)
+    def store_is_primary(self, store):
+        return not self.store_is_standby(store)
 
-    def test_slave_only_fast_downtime_rollout(self):
-        '''You can always access a working slave store during fast downtime.
+    def test_standby_only_fast_downtime_rollout(self):
+        '''You can always access a working standby store during fast downtime.
         '''
         # Everything is running happily.
         store = ISlaveStore(Person)
         original_store = store
         self.assertTrue(self.store_is_working(store))
-        self.assertTrue(self.store_is_slave(store))
+        self.assertTrue(self.store_is_standby(store))
 
         # But fast downtime is about to happen.
 
-        # Replication is stopped on the slave, and lag starts
+        # Replication is stopped on the standby, and lag starts
         # increasing.
 
-        # All connections to the master are killed so database schema
+        # All connections to the primary are killed so database schema
         # updates can be applied.
         self.pgbouncer_cur.execute('DISABLE %s' % self.primary_dbname)
         self.pgbouncer_cur.execute('KILL %s' % self.primary_dbname)
 
-        # Of course, slave connections are unaffected.
+        # Of course, standby connections are unaffected.
         self.assertTrue(self.store_is_working(store))
 
-        # After schema updates have been made to the master, it is
+        # After schema updates have been made to the primary, it is
         # reenabled.
         self.pgbouncer_cur.execute('RESUME %s' % self.primary_dbname)
         self.pgbouncer_cur.execute('ENABLE %s' % self.primary_dbname)
 
-        # And the slaves taken down, and replication reenabled so the
+        # And the standbys taken down, and replication reenabled so the
         # schema updates can replicate.
         self.pgbouncer_cur.execute('DISABLE %s' % self.standby_dbname)
         self.pgbouncer_cur.execute('KILL %s' % self.standby_dbname)
 
-        # The next attempt at accessing the slave store will fail
+        # The next attempt at accessing the standby store will fail
         # with a DisconnectionError.
         self.assertRaises(DisconnectionError, store.execute, 'SELECT TRUE')
         transaction.abort()
 
         # But if we handle that and retry, we can continue.
         # Now the failed connection has been detected, the next Store
-        # we are handed is a master Store instead of a slave.
+        # we are handed is a primary Store instead of a standby.
         store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_master(store))
+        self.assertTrue(self.store_is_primary(store))
         self.assertIsNot(ISlaveStore(Person), original_store)
 
         # But alas, it might not work the first transaction. If it has
@@ -447,10 +447,10 @@ class TestFastDowntimeRollout(TestCase):
         self.assertFalse(self.store_is_working(store))
         transaction.abort()
 
-        # Next retry attempt, everything is fine using the master
-        # connection, even though our code only asked for a slave.
+        # Next retry attempt, everything is fine using the primary
+        # connection, even though our code only asked for a standby.
         store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_master(store))
+        self.assertTrue(self.store_is_primary(store))
         self.assertTrue(self.store_is_working(store))
 
         # The original Store is busted though. You cannot reuse Stores
@@ -459,85 +459,85 @@ class TestFastDowntimeRollout(TestCase):
         self.assertFalse(self.store_is_working(original_store))
         transaction.abort()
 
-        # Once replication has caught up, the slave is reenabled.
+        # Once replication has caught up, the standby is reenabled.
         self.pgbouncer_cur.execute('RESUME %s' % self.standby_dbname)
         self.pgbouncer_cur.execute('ENABLE %s' % self.standby_dbname)
 
         # And next transaction, we are back to normal.
         store = ISlaveStore(Person)
         self.assertTrue(self.store_is_working(store))
-        self.assertTrue(self.store_is_slave(store))
+        self.assertTrue(self.store_is_standby(store))
         self.assertIs(original_store, store)
 
-    def test_master_slave_fast_downtime_rollout(self):
+    def test_primary_standby_fast_downtime_rollout(self):
         '''Parts of your app can keep working during a fast downtime update.
         '''
         # Everything is running happily.
         master_store = IMasterStore(Person)
-        self.assertTrue(self.store_is_master(master_store))
+        self.assertTrue(self.store_is_primary(master_store))
         self.assertTrue(self.store_is_working(master_store))
 
         slave_store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_slave(slave_store))
+        self.assertTrue(self.store_is_standby(slave_store))
         self.assertTrue(self.store_is_working(slave_store))
 
         # But fast downtime is about to happen.
 
-        # Replication is stopped on the slave, and lag starts
+        # Replication is stopped on the standby, and lag starts
         # increasing.
 
-        # All connections to the master are killed so database schema
+        # All connections to the primary are killed so database schema
         # updates can be applied.
         self.pgbouncer_cur.execute('DISABLE %s' % self.primary_dbname)
         self.pgbouncer_cur.execute('KILL %s' % self.primary_dbname)
 
-        # Of course, slave connections are unaffected.
+        # Of course, standby connections are unaffected.
         self.assertTrue(self.store_is_working(slave_store))
 
-        # But attempts to use a master store will fail.
+        # But attempts to use a primary store will fail.
         self.assertFalse(self.store_is_working(master_store))
         transaction.abort()
 
-        # After schema updates have been made to the master, it is
+        # After schema updates have been made to the primary, it is
         # reenabled.
         self.pgbouncer_cur.execute('RESUME %s' % self.primary_dbname)
         self.pgbouncer_cur.execute('ENABLE %s' % self.primary_dbname)
 
-        # And the slaves taken down, and replication reenabled so the
+        # And the standbys taken down, and replication reenabled so the
         # schema updates can replicate.
         self.pgbouncer_cur.execute('DISABLE %s' % self.standby_dbname)
         self.pgbouncer_cur.execute('KILL %s' % self.standby_dbname)
 
-        # The master store is working again.
+        # The primary store is working again.
         master_store = IMasterStore(Person)
-        self.assertTrue(self.store_is_master(master_store))
+        self.assertTrue(self.store_is_primary(master_store))
         self.assertTrue(self.store_is_working(master_store))
 
-        # The next attempt at accessing the slave store will fail
+        # The next attempt at accessing the standby store will fail
         # with a DisconnectionError.
         slave_store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_slave(slave_store))
+        self.assertTrue(self.store_is_standby(slave_store))
         self.assertRaises(
             DisconnectionError, slave_store.execute, 'SELECT TRUE')
         transaction.abort()
 
         # But if we handle that and retry, we can continue.
         # Now the failed connection has been detected, the next Store
-        # we are handed is a master Store instead of a slave.
+        # we are handed is a primary Store instead of a standby.
         slave_store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_master(slave_store))
+        self.assertTrue(self.store_is_primary(slave_store))
         self.assertTrue(self.store_is_working(slave_store))
 
-        # Once replication has caught up, the slave is reenabled.
+        # Once replication has caught up, the standby is reenabled.
         self.pgbouncer_cur.execute('RESUME %s' % self.standby_dbname)
         self.pgbouncer_cur.execute('ENABLE %s' % self.standby_dbname)
 
         # And next transaction, we are back to normal.
         transaction.abort()
         master_store = IMasterStore(Person)
-        self.assertTrue(self.store_is_master(master_store))
+        self.assertTrue(self.store_is_primary(master_store))
         self.assertTrue(self.store_is_working(master_store))
 
         slave_store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_slave(slave_store))
+        self.assertTrue(self.store_is_standby(slave_store))
         self.assertTrue(self.store_is_working(slave_store))
