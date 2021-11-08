@@ -7,15 +7,11 @@ import errno
 import os
 import tempfile
 
-from fixtures import (
-    EnvironmentVariable,
-    MockPatch,
-    )
+from fixtures import MockPatch
 from testtools.matchers import FileContains
 
 from lp.services.osutils import (
     ensure_directory_exists,
-    find_on_path,
     open_for_writing,
     process_exists,
     remove_tree,
@@ -115,29 +111,6 @@ class TestWriteFile(TestCase):
         content = self.factory.getUniqueUnicode()
         write_file(filename, content.encode('UTF-8'))
         self.assertThat(filename, FileContains(content))
-
-
-class TestFindOnPath(TestCase):
-
-    def test_missing_environment(self):
-        self.useFixture(EnvironmentVariable("PATH"))
-        self.assertFalse(find_on_path("ls"))
-
-    def test_present_executable(self):
-        temp_dir = self.makeTemporaryDirectory()
-        bin_dir = os.path.join(temp_dir, "bin")
-        program = os.path.join(bin_dir, "program")
-        write_file(program, b"")
-        os.chmod(program, 0o755)
-        self.useFixture(EnvironmentVariable("PATH", bin_dir))
-        self.assertTrue(find_on_path("program"))
-
-    def test_present_not_executable(self):
-        temp_dir = self.makeTemporaryDirectory()
-        bin_dir = os.path.join(temp_dir, "bin")
-        write_file(os.path.join(bin_dir, "program"), b"")
-        self.useFixture(EnvironmentVariable("PATH", bin_dir))
-        self.assertFalse(find_on_path("program"))
 
 
 class TestProcessExists(TestCase):
