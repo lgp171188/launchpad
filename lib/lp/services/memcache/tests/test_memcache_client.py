@@ -4,6 +4,7 @@
 """Tests for the IMemcacheClient utility."""
 
 from lazr.restful.utils import get_current_browser_request
+from pymemcache.exceptions import MemcacheIllegalInputError
 from zope.component import getUtility
 
 from lp.services.memcache.client import memcache_client_factory
@@ -25,15 +26,10 @@ class MemcacheClientTestCase(TestCase):
         self.assertTrue(self.client.set('somekey', 'somevalue'))
         self.assertEqual(self.client.get('somekey'), 'somevalue')
 
-    def test_bug_452092(self):
-        """Memcache 1.44 allowed spaces in keys, which was incorrect. This
-        would break things badly enough that we are running a patched version.
-        This test ensures that spaces are correctly flagged as errors at
-        the callsite rather than causing chaos later, ensuring that if
-        we upgrade we upgrade to a version with correct validation.
-        """
+    def test_key_with_spaces_are_illegal(self):
+        """Memcache 1.44 allowed spaces in keys, which was incorrect."""
         self.assertRaises(
-            self.client.MemcachedKeyCharacterError,
+            MemcacheIllegalInputError,
             self.client.set, 'key with spaces', 'some value')
 
     def test_set_recorded_to_timeline(self):

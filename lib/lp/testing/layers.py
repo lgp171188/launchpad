@@ -543,8 +543,11 @@ class MemcachedLayer(BaseLayer):
         # First, check to see if there is a memcached already running.
         # This happens when new layers are run as a subprocess.
         test_key = "MemcachedLayer__live_test"
-        if MemcachedLayer.client.set(test_key, "live"):
-            return
+        try:
+            if MemcachedLayer.client.set(test_key, "live"):
+                return
+        except OSError:
+            pass
 
         # memcached >= 1.4.29 requires the item size to be at most a quarter
         # of the memory size; 1.5.4 lifts this restriction to at most half
@@ -574,13 +577,16 @@ class MemcachedLayer(BaseLayer):
         MemcachedLayer._memcached_process.stdin.close()
 
         # Wait for the memcached to become operational.
-        while not MemcachedLayer.client.set(test_key, "live"):
-            if MemcachedLayer._memcached_process.returncode is not None:
-                raise LayerInvariantError(
-                    "memcached never started or has died.",
-                    MemcachedLayer._memcached_process.stdout.read())
-            MemcachedLayer.client.forget_dead_hosts()
-            time.sleep(0.1)
+        while True:
+            try:
+                if MemcachedLayer.client.set(test_key, "live"):
+                    break
+            except OSError:
+                if MemcachedLayer._memcached_process.returncode is not None:
+                    raise LayerInvariantError(
+                        "memcached never started or has died.",
+                        MemcachedLayer._memcached_process.stdout.read())
+                time.sleep(0.1)
 
         # Store the pidfile for other processes to kill.
         pid_file = MemcachedLayer.getPidFile()
@@ -612,7 +618,6 @@ class MemcachedLayer(BaseLayer):
     @classmethod
     @profiled
     def testSetUp(cls):
-        MemcachedLayer.client.forget_dead_hosts()
         MemcachedLayer.client.flush_all()
 
     @classmethod

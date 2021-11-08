@@ -253,7 +253,6 @@ class BaseTestCase(TestCase):
         # reports memcached did not die.(self):
         client = MemcachedLayer.client or memcache_client_factory()
         key = "BaseTestCase.testMemcachedWorking"
-        client.forget_dead_hosts()
         is_live = client.set(key, "live")
         if self.want_memcached:
             self.assertEqual(
