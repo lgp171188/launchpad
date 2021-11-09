@@ -23,7 +23,7 @@ from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.interface import Interface, implementer
-from zope.schema import Choice, Dict, List, TextLine
+from zope.schema import Choice, List, TextLine
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -424,11 +424,11 @@ class SnapRequestBuildsView(LaunchpadFormView):
         pocket = copy_field(
             ISnapBuild["pocket"], title="Pocket", readonly=False
         )
-        channels = Dict(
+        channels = copy_field(
+            ISnap["auto_build_channels"],
+            __name__="channels",
             title="Source snap channels",
-            key_type=TextLine(),
             required=True,
-            description=ISnap["auto_build_channels"].description,
         )
 
     custom_widget_archive = SnapArchiveWidget

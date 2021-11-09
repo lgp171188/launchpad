@@ -86,7 +86,12 @@ from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IHasOwner
-from lp.services.fields import PersonChoice, PublicPersonChoice, URIField
+from lp.services.fields import (
+    PersonChoice,
+    PublicPersonChoice,
+    SnapBuildChannelsField,
+    URIField,
+)
 from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.snappy.interfaces.snapbase import ISnapBase
 from lp.snappy.interfaces.snappyseries import (
@@ -457,15 +462,14 @@ class ISnapView(Interface):
         distro_arch_series=Reference(schema=IDistroArchSeries),
         pocket=Choice(vocabulary=PackagePublishingPocket),
         snap_base=Reference(schema=ISnapBase),
-        channels=Dict(
+        channels=SnapBuildChannelsField(
             title=_("Source snap channels to use for this build."),
-            description=_(
+            description_prefix=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'core', 'core18', 'core20', 'core22', "
-                "and 'snapcraft' keys are supported."
+                "build."
             ),
-            key_type=TextLine(),
             required=False,
+            extra_snap_names=["snapcraft"],
         ),
     )
     # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
@@ -501,15 +505,14 @@ class ISnapView(Interface):
     @operation_parameters(
         archive=Reference(schema=IArchive),
         pocket=Choice(vocabulary=PackagePublishingPocket),
-        channels=Dict(
+        channels=SnapBuildChannelsField(
             title=_("Source snap channels to use for this build."),
-            description=_(
+            description_prefix=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'core', 'core18', 'core20', 'core22', "
-                "and 'snapcraft' keys are supported."
+                "build."
             ),
-            key_type=TextLine(),
             required=False,
+            extra_snap_names=["snapcraft"],
         ),
     )
     @export_factory_operation(ISnapBuildRequest, [])
@@ -1057,16 +1060,14 @@ class ISnapEditableAttributes(IHasOwner):
     )
 
     auto_build_channels = exported(
-        Dict(
+        SnapBuildChannelsField(
             title=_("Source snap channels for automatic builds"),
-            key_type=TextLine(),
             required=False,
             readonly=False,
-            description=_(
+            extra_snap_names=["snapcraft"],
+            description_prefix=_(
                 "A dictionary mapping snap names to channels to use when "
-                "building this snap package.  Currently only 'core', "
-                "'core18', 'core20', 'core22', and 'snapcraft' keys are "
-                "supported."
+                "building this snap package."
             ),
         )
     )

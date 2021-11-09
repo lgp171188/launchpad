@@ -40,6 +40,7 @@ __all__ = [
     "ProductNameField",
     "PublicPersonChoice",
     "SearchTag",
+    "SnapBuildChannelsField",
     "StrippedTextLine",
     "Summary",
     "Tag",
@@ -68,6 +69,7 @@ from zope.schema import (
     Choice,
     Date,
     Datetime,
+    Dict,
     Int,
     Object,
     Text,
@@ -1008,3 +1010,37 @@ class IInlineObject(IObject):
 @implementer(IInlineObject)
 class InlineObject(Object):
     """An object that is represented as a dict rather than a URL reference."""
+
+
+class SnapBuildChannelsField(Dict):
+    """A field that holds source snap channels for builds."""
+
+    _core_snap_names = ["core", "core18", "core20", "core22"]
+
+    def __init__(
+        self,
+        description_prefix=None,
+        description=None,
+        extra_snap_names=None,
+        **kwargs
+    ):
+        snap_names = list(self._core_snap_names)
+        if extra_snap_names is not None:
+            snap_names.extend(extra_snap_names)
+        if description is None:
+            if description_prefix is None:
+                description = ""
+            else:
+                description = description_prefix + "\n"
+            description += "Supported snap names: {}".format(
+                ", ".join(
+                    "'{}'".format(snap_name)
+                    for snap_name in sorted(snap_names)
+                )
+            )
+        super().__init__(
+            key_type=Choice(values=snap_names),
+            value_type=TextLine(),
+            description=description,
+            **kwargs,
+        )
