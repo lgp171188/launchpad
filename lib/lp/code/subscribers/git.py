@@ -9,4 +9,5 @@ def refs_updated(repository, event):
     repository.updateLandingTargets(event.paths)
     repository.markRecipesStale(event.paths)
     repository.markSnapsStale(event.paths)
+    repository.markCharmRecipesStale(event.paths)
     repository.detectMerges(event.paths, logger=event.logger)
