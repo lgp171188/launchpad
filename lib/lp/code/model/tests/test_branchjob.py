@@ -227,7 +227,7 @@ class TestBranchScanJob(TestCaseWithFactory):
         actions = [action[2:4] for action in self.oopses[0]['timeline']]
         # Long action details are truncated.
         self.assertIn(
-            ('SQL-main-master',
+            ('SQL-main-primary',
              "SELECT '" + 'x' * 489 + ' ... ' + 'x' * 496 + "'"),
             actions)
         # Short action details are left untouched.

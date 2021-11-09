@@ -14,12 +14,12 @@ from zope.authentication.interfaces import (
     IPrincipal,
     IPrincipalSource,
     )
-from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
     implementer,
     Interface,
     )
+from zope.interface.interfaces import IObjectEvent
 from zope.publisher.interfaces.browser import IBrowserApplicationRequest
 from zope.schema import (
     Bool,

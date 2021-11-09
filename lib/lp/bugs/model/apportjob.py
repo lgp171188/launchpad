@@ -38,7 +38,7 @@ from lp.bugs.utilities.filebugdataparser import (
     FileBugDataParser,
     )
 from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import (
@@ -64,7 +64,7 @@ class ApportJob(StormBase):
     blob_id = Int(name='blob')
     blob = Reference(blob_id, TemporaryBlobStorage.id)
 
-    job_type = EnumCol(enum=ApportJobType, notNull=True)
+    job_type = DBEnum(enum=ApportJobType, allow_none=False)
 
     _json_data = Unicode('json_data')
 

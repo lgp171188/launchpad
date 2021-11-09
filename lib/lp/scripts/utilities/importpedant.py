@@ -35,13 +35,17 @@ valid_imports_not_in_all = {
     'twisted.web.client': set(['BrowserLikePolicyForHTTPS']),
     'zope.component': set(
         ['adapter',
-         'ComponentLookupError',
          'provideAdapter',
          'provideHandler',
          ]),
-    # XXX cjwatson 2020-04-12: Fixed in zope.interface 5.1.0; remove this
-    # when we upgrade to that version.
-    'zope.interface': set(['invariant']),
+    # https://github.com/zopefoundation/zope.interface/pull/248
+    'zope.interface.interfaces': {
+        'ComponentLookupError',
+        'Invalid',
+        'ObjectEvent',
+        'Registered',
+        'Unregistered',
+        },
     }
 
 

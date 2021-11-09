@@ -11,7 +11,6 @@ from storm.exceptions import DisconnectionError
 import transaction
 from zope.component import (
     adapter,
-    ComponentLookupError,
     getGlobalSiteManager,
     queryAdapter,
     )
@@ -19,6 +18,7 @@ from zope.interface import (
     implementer,
     Interface,
     )
+from zope.interface.interfaces import ComponentLookupError
 from zope.sendmail.interfaces import IMailDelivery
 
 from lp.registry.model.person import Person

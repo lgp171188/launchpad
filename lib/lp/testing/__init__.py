@@ -96,13 +96,13 @@ from testtools.matchers import (
 from testtools.testcase import ExpectedException as TTExpectedException
 import transaction
 from zope.component import (
-    ComponentLookupError,
     getMultiAdapter,
     getSiteManager,
     getUtility,
     )
 import zope.event
 from zope.interface import Interface
+from zope.interface.interfaces import ComponentLookupError
 from zope.interface.verify import verifyObject as zope_verifyObject
 from zope.publisher.interfaces import IEndRequestEvent
 from zope.publisher.interfaces.browser import IBrowserRequest

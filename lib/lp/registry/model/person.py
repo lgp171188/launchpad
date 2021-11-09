@@ -84,13 +84,13 @@ from zope.component import (
     adapter,
     getUtility,
     )
-from zope.component.interfaces import ComponentLookupError
 from zope.event import notify
 from zope.interface import (
     alsoProvides,
     classImplements,
     implementer,
     )
+from zope.interface.interfaces import ComponentLookupError
 from zope.lifecycleevent import ObjectCreatedEvent
 from zope.publisher.interfaces import Unauthorized
 from zope.security.checker import (

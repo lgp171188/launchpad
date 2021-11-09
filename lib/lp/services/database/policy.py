@@ -47,8 +47,8 @@ from lp.services.database.interfaces import (
     ISlaveStore,
     IStoreSelector,
     MAIN_STORE,
-    MASTER_FLAVOR,
-    SLAVE_FLAVOR,
+    PRIMARY_FLAVOR,
+    STANDBY_FLAVOR,
     )
 from lp.services.database.sqlbase import StupidCache
 
@@ -107,7 +107,7 @@ class BaseDatabasePolicy:
     """Base class for database policies."""
 
     # The default flavor to use.
-    default_flavor = MASTER_FLAVOR
+    default_flavor = PRIMARY_FLAVOR
 
     def __init__(self, request=None):
         pass
@@ -121,21 +121,21 @@ class BaseDatabasePolicy:
             store = get_connected_store(name, flavor)
         except DisconnectionError:
 
-            # A request for a master database connection was made
+            # A request for a primary database connection was made
             # and failed. Nothing we can do so reraise the exception.
-            if flavor != SLAVE_FLAVOR:
+            if flavor != STANDBY_FLAVOR:
                 raise
 
-            # A request for a slave database connection was made
-            # and failed. Try to return a master connection, this
+            # A request for a standby database connection was made
+            # and failed. Try to return a primary connection, this
             # will be good enough. Note we don't call self.getStore()
             # recursively because we want to make this attempt even if
-            # the DatabasePolicy normally disallows master database
+            # the DatabasePolicy normally disallows primary database
             # connections. All this behaviour allows read-only requests
-            # to keep working when slave databases are being rebuilt or
+            # to keep working when standby databases are being rebuilt or
             # updated.
             try:
-                flavor = MASTER_FLAVOR
+                flavor = PRIMARY_FLAVOR
                 store = get_connected_store(name, flavor)
             except DisconnectionError:
                 store = None
@@ -155,7 +155,7 @@ class BaseDatabasePolicy:
             store._cache = storm_cache_factory()
 
             # Attach our marker interfaces so our adapters don't lie.
-            if flavor == MASTER_FLAVOR:
+            if flavor == PRIMARY_FLAVOR:
                 alsoProvides(store, IMasterStore)
             else:
                 alsoProvides(store, ISlaveStore)
@@ -193,7 +193,7 @@ class DatabaseBlockedPolicy(BaseDatabasePolicy):
 
 
 class PrimaryDatabasePolicy(BaseDatabasePolicy):
-    """`IDatabasePolicy` that selects the MASTER_FLAVOR by default.
+    """`IDatabasePolicy` that selects the PRIMARY_FLAVOR by default.
 
     Standby databases can still be accessed if requested explicitly.
 
@@ -201,29 +201,29 @@ class PrimaryDatabasePolicy(BaseDatabasePolicy):
     support session cookies. It is also used when no policy has been
     installed.
     """
-    default_flavor = MASTER_FLAVOR
+    default_flavor = PRIMARY_FLAVOR
 
 
 class StandbyDatabasePolicy(BaseDatabasePolicy):
-    """`IDatabasePolicy` that selects the SLAVE_FLAVOR by default.
+    """`IDatabasePolicy` that selects the STANDBY_FLAVOR by default.
 
     Access to the primary can still be made if requested explicitly.
     """
-    default_flavor = SLAVE_FLAVOR
+    default_flavor = STANDBY_FLAVOR
 
 
 class StandbyOnlyDatabasePolicy(BaseDatabasePolicy):
-    """`IDatabasePolicy` that only allows access to SLAVE_FLAVOR stores.
+    """`IDatabasePolicy` that only allows access to STANDBY_FLAVOR stores.
 
     This policy is used for Feeds requests and other always-read only request.
     """
-    default_flavor = SLAVE_FLAVOR
+    default_flavor = STANDBY_FLAVOR
 
     def getStore(self, name, flavor):
         """See `IDatabasePolicy`."""
-        if flavor == MASTER_FLAVOR:
+        if flavor == PRIMARY_FLAVOR:
             raise DisallowedStore(flavor)
-        return super().getStore(name, SLAVE_FLAVOR)
+        return super().getStore(name, STANDBY_FLAVOR)
 
 
 def LaunchpadDatabasePolicyFactory(request):
@@ -263,25 +263,25 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
         """See `IDatabasePolicy`."""
         default_flavor = None
 
-        # If this is a Retry attempt, force use of the master database.
+        # If this is a Retry attempt, force use of the primary database.
         if getattr(self.request, '_retry_count', 0) > 0:
-            default_flavor = MASTER_FLAVOR
+            default_flavor = PRIMARY_FLAVOR
 
-        # Select if the DEFAULT_FLAVOR Store will be the master or a
-        # slave. We select slave if this is a readonly request, and
+        # Select if the DEFAULT_FLAVOR Store will be the primary or a
+        # standby. We select standby if this is a readonly request, and
         # only readonly requests have been made by this user recently.
         # This ensures that a user will see any changes they just made
-        # on the master, despite the fact it might take a while for
-        # those changes to propagate to the slave databases.
+        # on the primary, despite the fact it might take a while for
+        # those changes to propagate to the standby databases.
         elif self.read_only:
             lag = self.getReplicationLag()
             if (lag is not None
                 and lag > timedelta(seconds=config.database.max_usable_lag)):
-                # Don't use the slave at all if lag is greater than the
+                # Don't use the standby at all if lag is greater than the
                 # configured threshold. This reduces replication oddities
                 # noticed by users, as well as reducing load on the
-                # slave allowing it to catch up quicker.
-                default_flavor = MASTER_FLAVOR
+                # standby allowing it to catch up quicker.
+                default_flavor = PRIMARY_FLAVOR
             else:
                 # We don't want to even make a DB query to read the session
                 # if we can tell that it is not around.  This can be
@@ -300,11 +300,11 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
                 else:
                     recently = timedelta(minutes=2) + lag
                 if last_write is None or last_write < now - recently:
-                    default_flavor = SLAVE_FLAVOR
+                    default_flavor = STANDBY_FLAVOR
                 else:
-                    default_flavor = MASTER_FLAVOR
+                    default_flavor = PRIMARY_FLAVOR
         else:
-            default_flavor = MASTER_FLAVOR
+            default_flavor = PRIMARY_FLAVOR
 
         assert default_flavor is not None, 'default_flavor not set!'
 
@@ -315,7 +315,7 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
 
         If the request just handled was not read_only, we need to store
         this fact and the timestamp in the session. Subsequent requests
-        can then keep using the master until they are sure any changes
+        can then keep using the primary until they are sure any changes
         made have been propagated.
         """
         if not self.read_only:
@@ -352,15 +352,15 @@ class LaunchpadDatabasePolicy(BaseDatabasePolicy):
             return _test_lag
 
         # Attempt to retrieve PostgreSQL streaming replication lag
-        # from the slave.
-        slave_store = self.getStore(MAIN_STORE, SLAVE_FLAVOR)
-        hot_standby, streaming_lag = slave_store.execute("""
+        # from the standby.
+        standby_store = self.getStore(MAIN_STORE, STANDBY_FLAVOR)
+        hot_standby, streaming_lag = standby_store.execute("""
             SELECT
                 pg_is_in_recovery(),
                 now() - pg_last_xact_replay_timestamp()
             """).get_one()
         if hot_standby and streaming_lag is not None:
-            # Slave is a PG 9.1 streaming replication hot standby.
+            # standby is a PG 9.1 streaming replication hot standby.
             # Return the lag.
             return streaming_lag
 

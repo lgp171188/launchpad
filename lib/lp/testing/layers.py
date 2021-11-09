@@ -11,7 +11,7 @@ and testTearDown. If you don't do this, a base class' method will be called
 instead probably breaking something.
 
 Preferred style is to not use the 'cls' argument to Layer class methods,
-as this is unambguious.
+as this is unambiguous.
 
 TODO: Make the Zope3 test runner handle multiple layers per test instead
 of one, forcing us to attempt to make some sort of layer tree.
@@ -89,9 +89,9 @@ from zope.component import (
     globalregistry,
     provideUtility,
     )
-from zope.component.interfaces import ComponentLookupError
 from zope.component.testlayer import ZCMLFileLayer
 from zope.event import notify
+from zope.interface.interfaces import ComponentLookupError
 from zope.processlifetime import DatabaseOpened
 from zope.security.management import (
     endInteraction,
@@ -327,7 +327,7 @@ class BaseLayer:
         BaseLayer.check()
         BaseLayer.original_working_directory = os.getcwd()
 
-        # Tests and test infrastruture sometimes needs to know the test
+        # Tests and test infrastructure sometimes needs to know the test
         # name.  The testrunner doesn't provide this, so we have to do
         # some snooping.
         import inspect
@@ -408,7 +408,7 @@ class BaseLayer:
             BaseLayer.flagTestIsolationFailure(
                 "Test left SIGCHLD handler.")
 
-        # Objects with __del__ methods cannot participate in refence cycles.
+        # Objects with __del__ methods cannot participate in reference cycles.
         # Fail tests with memory leaks now rather than when Launchpad crashes
         # due to a leak because someone ignored the warnings.
         if gc.garbage:

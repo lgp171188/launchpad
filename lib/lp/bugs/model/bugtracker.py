@@ -66,7 +66,7 @@ from lp.registry.model.product import (
     ProductSet,
     )
 from lp.registry.model.projectgroup import ProjectGroup
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_updates,
@@ -307,8 +307,8 @@ class BugTracker(SQLBase):
 
     _table = 'BugTracker'
 
-    bugtrackertype = EnumCol(
-        dbName='bugtrackertype', schema=BugTrackerType, notNull=True)
+    bugtrackertype = DBEnum(
+        name='bugtrackertype', enum=BugTrackerType, allow_none=False)
     name = StringCol(notNull=True, unique=True)
     title = StringCol(notNull=True)
     summary = StringCol(notNull=False)

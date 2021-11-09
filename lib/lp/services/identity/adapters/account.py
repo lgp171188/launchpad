@@ -3,7 +3,7 @@
 
 """Components related to accounts."""
 
-from zope.component.interfaces import ComponentLookupError
+from zope.interface.interfaces import ComponentLookupError
 
 from lp.services.webapp.interfaces import ILaunchpadPrincipal
 

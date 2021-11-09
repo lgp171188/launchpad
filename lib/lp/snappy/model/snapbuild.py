@@ -33,9 +33,9 @@ from storm.locals import (
     )
 from storm.store import EmptyResultSet
 from zope.component import getUtility
-from zope.component.interfaces import ObjectEvent
 from zope.event import notify
 from zope.interface import implementer
+from zope.interface.interfaces import ObjectEvent
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError

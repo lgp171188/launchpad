@@ -48,7 +48,7 @@ from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 
 
 @implementer(IBugSummary)
@@ -81,10 +81,9 @@ class BugSummary(Storm):
     milestone_id = Int(name='milestone')
     milestone = Reference(milestone_id, Milestone.id)
 
-    status = EnumCol(
-        dbName='status', schema=(BugTaskStatus, BugTaskStatusSearch))
+    status = DBEnum(name='status', enum=(BugTaskStatus, BugTaskStatusSearch))
 
-    importance = EnumCol(dbName='importance', schema=BugTaskImportance)
+    importance = DBEnum(name='importance', enum=BugTaskImportance)
 
     tag = Unicode()
 

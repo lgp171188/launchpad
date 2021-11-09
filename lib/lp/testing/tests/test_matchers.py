@@ -217,8 +217,8 @@ class TestQueryMatching(TestCase):
         collector = RequestTimelineCollector()
         collector.count = 2
         collector.queries = [
-            (0, 1, "SQL-main-slave", "SELECT 1 FROM Person", None),
-            (2, 3, "SQL-main-slave", "SELECT 1 FROM Product", None),
+            (0, 1, "SQL-main-standby", "SELECT 1 FROM Person", None),
+            (2, 3, "SQL-main-standby", "SELECT 1 FROM Product", None),
             ]
         mismatch = matcher.match(collector)
         self.assertThat(mismatch, Not(Is(None)))
@@ -230,8 +230,8 @@ class TestQueryMatching(TestCase):
             lines.append(''.join(content.iter_text()))
         separator = "-" * 70
         expected_lines = [
-            "0-1@SQL-main-slave SELECT 1 FROM Person\n" + separator + "\n" +
-            "2-3@SQL-main-slave SELECT 1 FROM Product\n" + separator,
+            "0-1@SQL-main-standby SELECT 1 FROM Person\n" + separator + "\n" +
+            "2-3@SQL-main-standby SELECT 1 FROM Product\n" + separator,
             ]
         self.assertEqual(expected_lines, lines)
         self.assertEqual(
@@ -243,10 +243,10 @@ class TestQueryMatching(TestCase):
         collector = RequestTimelineCollector()
         collector.count = 2
         collector.queries = [
-            (0, 1, "SQL-main-slave", "SELECT 1 FROM Person",
+            (0, 1, "SQL-main-standby", "SELECT 1 FROM Person",
              '  File "example", line 2, in <module>\n'
              '    Store.of(Person).one()\n'),
-            (2, 3, "SQL-main-slave", "SELECT 1 FROM Product",
+            (2, 3, "SQL-main-standby", "SELECT 1 FROM Product",
              '  File "example", line 3, in <module>\n'
              '    Store.of(Product).one()\n'),
             ]
@@ -261,10 +261,10 @@ class TestQueryMatching(TestCase):
         separator = "-" * 70
         backtrace_separator = "." * 70
         expected_lines = [
-            '0-1@SQL-main-slave SELECT 1 FROM Person\n' + separator + '\n' +
+            '0-1@SQL-main-standby SELECT 1 FROM Person\n' + separator + '\n' +
             '  File "example", line 2, in <module>\n' +
             '    Store.of(Person).one()\n' + backtrace_separator + '\n' +
-            '2-3@SQL-main-slave SELECT 1 FROM Product\n' + separator + '\n' +
+            '2-3@SQL-main-standby SELECT 1 FROM Product\n' + separator + '\n' +
             '  File "example", line 3, in <module>\n' +
             '    Store.of(Product).one()\n' + backtrace_separator,
             ]
@@ -277,15 +277,15 @@ class TestQueryMatching(TestCase):
         old_collector = RequestTimelineCollector()
         old_collector.count = 2
         old_collector.queries = [
-            (0, 1, "SQL-main-slave", "SELECT 1 FROM Person", None),
-            (2, 3, "SQL-main-slave", "SELECT 1 FROM Product", None),
+            (0, 1, "SQL-main-standby", "SELECT 1 FROM Person", None),
+            (2, 3, "SQL-main-standby", "SELECT 1 FROM Product", None),
             ]
         new_collector = RequestTimelineCollector()
         new_collector.count = 3
         new_collector.queries = [
-            (0, 1, "SQL-main-slave", "SELECT 1 FROM Person", None),
-            (2, 3, "SQL-main-slave", "SELECT 1 FROM Product", None),
-            (4, 5, "SQL-main-slave", "SELECT 1 FROM Distribution", None),
+            (0, 1, "SQL-main-standby", "SELECT 1 FROM Person", None),
+            (2, 3, "SQL-main-standby", "SELECT 1 FROM Product", None),
+            (4, 5, "SQL-main-standby", "SELECT 1 FROM Distribution", None),
             ]
         matcher = HasQueryCount.byEquality(old_collector)
         mismatch = matcher.match(new_collector)
@@ -300,13 +300,13 @@ class TestQueryMatching(TestCase):
         new_lines.append("".join(details["queries"].iter_text()))
         separator = "-" * 70
         expected_old_lines = [
-            "0-1@SQL-main-slave SELECT 1 FROM Person\n" + separator + "\n" +
-            "2-3@SQL-main-slave SELECT 1 FROM Product\n" + separator,
+            "0-1@SQL-main-standby SELECT 1 FROM Person\n" + separator + "\n" +
+            "2-3@SQL-main-standby SELECT 1 FROM Product\n" + separator,
             ]
         expected_new_lines = [
-            "0-1@SQL-main-slave SELECT 1 FROM Person\n" + separator + "\n" +
-            "2-3@SQL-main-slave SELECT 1 FROM Product\n" + separator + "\n" +
-            "4-5@SQL-main-slave SELECT 1 FROM Distribution\n" + separator,
+            "0-1@SQL-main-standby SELECT 1 FROM Person\n" + separator + "\n" +
+            "2-3@SQL-main-standby SELECT 1 FROM Product\n" + separator + "\n" +
+            "4-5@SQL-main-standby SELECT 1 FROM Distribution\n" + separator,
             ]
         self.assertEqual(expected_old_lines, old_lines)
         self.assertEqual(expected_new_lines, new_lines)

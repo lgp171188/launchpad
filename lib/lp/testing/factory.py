@@ -57,10 +57,8 @@ from twisted.conch.ssh.common import (
     )
 from twisted.conch.test import keydata
 from twisted.python.util import mergeFunctionMetadata
-from zope.component import (
-    ComponentLookupError,
-    getUtility,
-    )
+from zope.component import getUtility
+from zope.interface.interfaces import ComponentLookupError
 from zope.security.proxy import (
     Proxy,
     ProxyFactory,
