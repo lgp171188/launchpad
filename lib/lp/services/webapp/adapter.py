@@ -501,8 +501,7 @@ class LaunchpadDatabase(Postgres):
                 'SET DEFAULT_TRANSACTION_READ_ONLY TO TRUE')
             # Make the altered session setting stick.
             raw_connection.commit()
-        elif (not config_entry.endswith('_master') and
-                not config_entry.endswith('_primary')):
+        elif not config_entry.endswith(('_master', '_primary')):
             raise AssertionError(
                 'DB connection URL %s does not meet naming convention.')
 
