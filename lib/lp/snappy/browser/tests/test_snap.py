@@ -31,6 +31,9 @@ from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.widgets.tests.test_snapbuildchannels import (
+    TestSnapBuildChannelsWidget,
+)
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.errors import BranchHostingFault, GitRepositoryScanFault
@@ -50,9 +53,15 @@ from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.snappy.browser.snap import SnapAdminView, SnapEditView, SnapView
+from lp.snappy.browser.snap import (
+    HintedSnapBuildChannelsWidget,
+    SnapAdminView,
+    SnapEditView,
+    SnapView,
+)
 from lp.snappy.interfaces.snap import (
     SNAP_PRIVATE_FEATURE_FLAG,
+    SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
     SNAP_TESTING_FLAGS,
     CannotModifySnapProcessor,
     ISnapSet,
@@ -2545,6 +2554,51 @@ class TestSnapView(BaseTestSnapView):
         self.assertEqual(authorize_url, authorize_link.url)
 
 
+class TestHintedSnapBuildChannelsWidget(TestSnapBuildChannelsWidget):
+    def setUp(self):
+        super().setUp()
+        self.widget = HintedSnapBuildChannelsWidget(self.field, self.request)
+
+    def test_hint_no_feature_flag(self):
+        self.assertEqual(
+            "The channels to use for build tools when building the snap "
+            "package.\n"
+            'If unset, or if the channel for snapcraft is set to "apt", '
+            "the default is to install snapcraft from the source archive "
+            "using apt.",
+            self.widget.hint,
+        )
+
+    def test_hint_feature_flag_apt(self):
+        self.useFixture(
+            FeatureFixture({SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG: "apt"})
+        )
+        widget = HintedSnapBuildChannelsWidget(self.field, self.request)
+        self.assertEqual(
+            "The channels to use for build tools when building the snap "
+            "package.\n"
+            'If unset, or if the channel for snapcraft is set to "apt", '
+            "the default is to install snapcraft from the source archive "
+            "using apt.",
+            widget.hint,
+        )
+
+    def test_hint_feature_flag_real_channel(self):
+        self.useFixture(
+            FeatureFixture({SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG: "stable"})
+        )
+        widget = HintedSnapBuildChannelsWidget(self.field, self.request)
+        self.assertEqual(
+            "The channels to use for build tools when building the snap "
+            "package.\n"
+            'If unset, the default is to install snapcraft from the "stable" '
+            'channel.  Setting the channel for snapcraft to "apt" causes '
+            "snapcraft to be installed from the source archive using "
+            "apt.",
+            widget.hint,
+        )
+
+
 class TestSnapRequestBuildsView(BaseTestSnapView):
     def setUp(self):
         super().setUp()
@@ -2603,6 +2657,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             core20
             core22
             snapcraft
+            snapd
             The channels to use for build tools when building the snap
             package.
             If unset, or if the channel for snapcraft is set to "apt", the

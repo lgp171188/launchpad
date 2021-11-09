@@ -1,0 +1,12 @@
+<tal:root
+    xmlns:tal="http://xml.zope.org/namespaces/tal"
+    omit-tag="">
+
+<table class="subordinate">
+  <tr tal:repeat="snap_name view/snap_names">
+    <td tal:content="snap_name" />
+    <td><div tal:content="structure python: view.widgets[snap_name]()" /></td>
+  </tr>
+</table>
+
+</tal:root>
