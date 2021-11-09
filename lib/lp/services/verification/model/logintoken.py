@@ -279,7 +279,7 @@ class LoginTokenSet:
                 "consumed should be one of {True, False, None}. Got '%s'."
                 % consumed)
 
-        # It's important to always use the MASTER_FLAVOR store here
+        # It's important to always use the PRIMARY_FLAVOR store here
         # because we don't want replication lag to cause a 404 error.
         return IMasterStore(LoginToken).find(LoginToken, conditions)
 
@@ -306,7 +306,7 @@ class LoginTokenSet:
                 "consumed should be one of {True, False, None}. Got '%s'."
                 % consumed)
 
-        # It's important to always use the MASTER_FLAVOR store here
+        # It's important to always use the PRIMARY_FLAVOR store here
         # because we don't want replication lag to cause a 404 error.
         return IMasterStore(LoginToken).find(LoginToken, conditions)
 

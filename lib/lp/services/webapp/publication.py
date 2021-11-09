@@ -75,7 +75,7 @@ from lp.services.config import config
 from lp.services.database.interfaces import (
     IDatabasePolicy,
     IStoreSelector,
-    MASTER_FLAVOR,
+    PRIMARY_FLAVOR,
     )
 from lp.services.database.policy import LaunchpadDatabasePolicy
 from lp.services.features.flags import NullFeatureController
@@ -707,10 +707,10 @@ class LaunchpadBrowserPublication(
             # used is a replica, raise a Retry exception instead of
             # returning the 404 error page. We do this in case the
             # LookupError is caused by replication lag. Our database
-            # policy forces the use of the master database for retries.
+            # policy forces the use of the primary database for retries.
             if (isinstance(exc_info[1], LookupError)
                 and isinstance(db_policy, LaunchpadDatabasePolicy)):
-                if db_policy.default_flavor == MASTER_FLAVOR:
+                if db_policy.default_flavor == PRIMARY_FLAVOR:
                     return False
                 else:
                     return True
@@ -861,9 +861,9 @@ class LaunchpadBrowserPublication(
             # Reset all Storm stores when not running the test suite.
             # We could reset them when running the test suite but
             # that'd make writing tests a much more painful task. We
-            # still reset the slave stores though to minimize stale
+            # still reset the standby stores though to minimize stale
             # cache issues.
-            if thread_name != 'MainThread' or name.endswith('-slave'):
+            if thread_name != 'MainThread' or name.endswith('-standby'):
                 store.reset()
 
 

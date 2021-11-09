@@ -1,24 +1,25 @@
-Our database adapters need to trap writes to tables in slave replication
-sets. These tables may be reached directly using a SLAVE_FLAVOR store, or
-traversed to from a MASTER_FLAVOR store.
+Our database adapters need to trap writes to tables in standby replication
+sets. These tables may be reached directly using a STANDBY_FLAVOR store, or
+traversed to from a PRIMARY_FLAVOR store.
 
 Because our development environment is not replicated, we use database
-permissions to ensure that tables we should not be writing too cannot
+permissions to ensure that tables we should not be writing to cannot
 be written to. The same permissions structure is also used on production,
-so the Slony-I triggers blocking writes to slaved tables will never
+so the Slony-I triggers blocking writes to some tables will never
 actually be invoked.
 
     >>> from lp.registry.model.person import Person
     >>> from lp.services.database.interfaces import (
-    ...     IStoreSelector, MAIN_STORE, MASTER_FLAVOR, SLAVE_FLAVOR)
+    ...     IStoreSelector, MAIN_STORE, PRIMARY_FLAVOR, STANDBY_FLAVOR)
     >>> import transaction
     >>> from zope.component import getUtility
 
-If a SLAVE_FLAVOR store is requested, it should trap all writes.
+If a STANDBY_FLAVOR store is requested, it should trap all writes.
 
     >>> t = transaction.begin()
-    >>> main_slave = getUtility(IStoreSelector).get(MAIN_STORE, SLAVE_FLAVOR)
-    >>> janitor = main_slave.find(Person, name='janitor').one()
+    >>> main_standby = getUtility(IStoreSelector).get(
+    ...     MAIN_STORE, STANDBY_FLAVOR)
+    >>> janitor = main_standby.find(Person, name='janitor').one()
     >>> janitor.display_name = 'Ben Dover'
     >>> transaction.commit()
     Traceback (most recent call last):
@@ -29,21 +30,21 @@ Test this once more to ensure the settings stick across transactions.
 
     >>> transaction.abort()
     >>> t = transaction.begin()
-    >>> main_slave.find(Person, name='janitor').one().display_name = 'BenD'
+    >>> main_standby.find(Person, name='janitor').one().display_name = 'BenD'
     >>> transaction.commit()
     Traceback (most recent call last):
     ...
     storm.database.InternalError: ...
 
-If a MASTER_FLAVOR is requested, it should allow writes to table in that
+If a PRIMARY_FLAVOR is requested, it should allow writes to table in that
 Store's replication set.
 
     >>> t = transaction.begin()
-    >>> main_master = getUtility(IStoreSelector).get(
-    ...     MAIN_STORE, MASTER_FLAVOR)
-    >>> main_master.find(Person, name='janitor').one().display_name = 'BenD'
+    >>> main_primary = getUtility(IStoreSelector).get(
+    ...     MAIN_STORE, PRIMARY_FLAVOR)
+    >>> main_primary.find(Person, name='janitor').one().display_name = 'BenD'
     >>> transaction.commit()
     >>> t = transaction.begin()
-    >>> print(main_master.find(Person, name='janitor').one().display_name)
+    >>> print(main_primary.find(Person, name='janitor').one().display_name)
     BenD
     >>> transaction.abort()
