@@ -4,7 +4,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from zope.component import getUtility
-from zope.component.interfaces import ComponentLookupError
+from zope.interface.interfaces import ComponentLookupError
 
 from lp.app.errors import NotFoundError
 from lp.archiveuploader.nascentuploadfile import CustomUploadFile

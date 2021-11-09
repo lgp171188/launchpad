@@ -21,11 +21,11 @@ import six
 from six.moves.urllib.parse import urlparse
 from talisker.logs import logging_context
 from zope.component import getUtility
-from zope.component.interfaces import ObjectEvent
 from zope.error.interfaces import IErrorReportingUtility
 from zope.event import notify
 from zope.exceptions.exceptionformatter import format_exception
 from zope.interface import implementer
+from zope.interface.interfaces import ObjectEvent
 from zope.publisher.interfaces.xmlrpc import IXMLRPCRequest
 from zope.traversing.namespace import view
 

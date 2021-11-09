@@ -1,15 +1,13 @@
 # Copyright 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from zope.component import (
-    ComponentLookupError,
-    getMultiAdapter,
-    )
+from zope.component import getMultiAdapter
 from zope.configuration import xmlconfig
 from zope.interface import (
     implementer,
     Interface,
     )
+from zope.interface.interfaces import ComponentLookupError
 from zope.publisher.interfaces.browser import (
     IBrowserPublisher,
     IDefaultBrowserLayer,

@@ -10,11 +10,9 @@ __all__ = [
 
 from pymacaroons import Macaroon
 from storm.sqlobject import SQLObjectNotFound
-from zope.component import (
-    ComponentLookupError,
-    getUtility,
-    )
+from zope.component import getUtility
 from zope.interface import implementer
+from zope.interface.interfaces import ComponentLookupError
 from zope.security.proxy import removeSecurityProxy
 
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet

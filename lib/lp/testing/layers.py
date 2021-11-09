@@ -89,9 +89,9 @@ from zope.component import (
     globalregistry,
     provideUtility,
     )
-from zope.component.interfaces import ComponentLookupError
 from zope.component.testlayer import ZCMLFileLayer
 from zope.event import notify
+from zope.interface.interfaces import ComponentLookupError
 from zope.processlifetime import DatabaseOpened
 from zope.security.management import (
     endInteraction,

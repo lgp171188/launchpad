@@ -20,7 +20,7 @@ from zope.component import (
     getMultiAdapter,
     getUtility,
     )
-from zope.component.interfaces import ComponentLookupError
+from zope.interface.interfaces import ComponentLookupError
 from zope.schema.interfaces import (
     IField,
     RequiredMissing,

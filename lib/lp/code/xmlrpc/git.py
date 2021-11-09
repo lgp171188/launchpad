@@ -16,12 +16,10 @@ from pymacaroons import Macaroon
 import six
 from six.moves.urllib.parse import quote
 import transaction
-from zope.component import (
-    ComponentLookupError,
-    getUtility,
-    )
+from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer
+from zope.interface.interfaces import ComponentLookupError
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
