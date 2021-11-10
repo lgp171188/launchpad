@@ -420,7 +420,9 @@ class SnapStoreClient:
                     action.finish()
             channels = response.json().get("_embedded", {}).get(
                 "clickindex:channel", [])
-            expire_time = time.time() + 60 * 60 * 24
+            DAY_IN_SECONDS = 60 * 60 * 24
+            # pymemcache's `expire` expects an int
+            expire_time = int(time.time()) + DAY_IN_SECONDS
             memcache_client.set(
                 memcache_key, json.dumps(channels), expire_time)
         if channels is None:
