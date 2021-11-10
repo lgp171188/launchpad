@@ -40,12 +40,12 @@ class TimelineRecordingClient(HashClient):
         finally:
             action.finish()
 
-    def set(self, key, value, time=0):
+    def set(self, key, value, expire=0):
         if not self._enabled:
             return None
         action = self.__get_timeline_action("set", key)
         try:
-            success = HashClient.set(self, key, value, expire=time)
+            success = HashClient.set(self, key, value, expire=expire)
             if success:
                 logging.debug("Memcache set succeeded for %s", key)
             else:
