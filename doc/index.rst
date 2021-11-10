@@ -21,6 +21,15 @@ Overview
    scope
    values
 
+Guides
+======
+
+.. toctree::
+   :maxdepth: 1
+
+   guides/architecture
+   guides/python
+
 Technical
 =========
 
