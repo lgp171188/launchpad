@@ -187,7 +187,7 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
                 'date': time.strftime('%d %b %Y', entry.published_parsed),
                 })
         # The cache of posts expires after an hour.
-        getUtility(IMemcacheClient).set(key, posts, time=3600)
+        getUtility(IMemcacheClient).set(key, posts, expire=3600)
         return posts
 
 
