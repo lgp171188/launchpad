@@ -30,13 +30,14 @@ class MemcacheFixture(fixtures.Fixture):
         else:
             return value
 
-    def set(self, key, val, time=0):
+    def set(self, key, val, expire=0):
         # memcached accepts either delta-seconds from the current time or
         # absolute epoch-seconds, and tells them apart using a magic
         # threshold.  See memcached/memcached.c:realtime.
-        if time and time <= 60 * 60 * 24 * 30:
-            time = _time.time() + time
-        self._cache[key] = (val, time)
+        MONTH_IN_SECONDS = 60 * 60 * 24 * 30
+        if expire and expire <= MONTH_IN_SECONDS:
+            expire = _time.time() + expire
+        self._cache[key] = (val, expire)
         return 1
 
     def delete(self, key):
