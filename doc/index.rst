@@ -29,6 +29,7 @@ Guides
 
    guides/architecture
    guides/python
+   guides/tests
 
 Technical
 =========

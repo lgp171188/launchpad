@@ -34,7 +34,7 @@ Related Documents
 * `Exception guidelines <https://dev.launchpad.net/ExceptionGuidelines>`_
 * `Assertions <https://dev.launchpad.net/AssertionsInLaunchpad>`_
 * `Launchpad hacking FAQ <https://dev.launchpad.net/LaunchpadHackingFAQ>`_
-* `Tests style guide <https://dev.launchpad.net/TestsStyleGuide>`_
+* :doc:`Tests style guide <tests>`
 
 Whitespace and Wrapping
 =======================
