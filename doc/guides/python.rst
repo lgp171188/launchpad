@@ -13,28 +13,28 @@ There are well-established conventions in the Python community, and in
 general we should follow these.  General Python conventions, and required
 reading:
 
- * `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_: Style Guide for
-   Python Code
- * `PEP 257 <https://www.python.org/dev/peps/pep-0257/>`_: Docstring
-   Conventions
- * The Zen of Python: ``python3 -c "import this"``
+* `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_: Style Guide for
+  Python Code
+* `PEP 257 <https://www.python.org/dev/peps/pep-0257/>`_: Docstring
+  Conventions
+* The Zen of Python: ``python3 -c "import this"``
 
 Note that our standards differ slightly from PEP-8 in some cases.
 
 Coding standards other projects use:
 
- * `Twisted Coding Standard
-   <https://twistedmatrix.com/documents/current/core/development/policy/coding-standard.html>`_
- * `Zope developer guidelines
-   <https://www.zope.org/developer/guidelines.html>`_
+* `Twisted Coding Standard
+  <https://twistedmatrix.com/documents/current/core/development/policy/coding-standard.html>`_
+* `Zope developer guidelines
+  <https://www.zope.org/developer/guidelines.html>`_
 
 Related Documents
 =================
 
- * `Exception guidelines <https://dev.launchpad.net/ExceptionGuidelines>`_
- * `Assertions <https://dev.launchpad.net/AssertionsInLaunchpad>`_
- * `Launchpad hacking FAQ <https://dev.launchpad.net/LaunchpadHackingFAQ>`_
- * `Tests style guide <https://dev.launchpad.net/TestsStyleGuide>`_
+* `Exception guidelines <https://dev.launchpad.net/ExceptionGuidelines>`_
+* `Assertions <https://dev.launchpad.net/AssertionsInLaunchpad>`_
+* `Launchpad hacking FAQ <https://dev.launchpad.net/LaunchpadHackingFAQ>`_
+* `Tests style guide <https://dev.launchpad.net/TestsStyleGuide>`_
 
 Whitespace and Wrapping
 =======================
@@ -42,10 +42,10 @@ Whitespace and Wrapping
 (Most of this is likely to be delegated to `black
 <https://github.com/psf/black>`_ in the near future.)
 
- * Code should fit within 78 columns, so as to fit nicely in an 80 column
-   terminal, even when quoted in an email.
- * Indents should be 4 spaces.
- * **No tabs**.  This is not negotiable.
+* Code should fit within 78 columns, so as to fit nicely in an 80 column
+  terminal, even when quoted in an email.
+* Indents should be 4 spaces.
+* **No tabs**.  This is not negotiable.
 
 .. _multiline:
 
@@ -77,11 +77,11 @@ Naming
 Consistency with existing code is the top priority.  We follow PEP-8 with
 the following exceptions:
 
- * ``CamelCase``: classes, interfaces (beginning with ``I``)
- * ``initialCamelCase``: methods
- * ``lowercase_underscores``: functions, non-method attributes, properties,
-   local variables
- * ``ALL_CAPS``: constants
+* ``CamelCase``: classes, interfaces (beginning with ``I``)
+* ``initialCamelCase``: methods
+* ``lowercase_underscores``: functions, non-method attributes, properties,
+  local variables
+* ``ALL_CAPS``: constants
 
 Private names are private
 -------------------------
@@ -93,14 +93,14 @@ anywhere outside class A.
 Docstrings
 ==========
 
- * If you haven't already, read `PEP 257
-   <https://www.python.org/dev/peps/pep-0257/>`_.
- * In general, everything that can have a docstring should: modules,
-   classes, methods, functions.
- * Docstrings should always be enclosed in triple double quotes: ``"""Like
-   this."""``
- * When a class or a method implements an interface, the docstring should
-   say ``"""See `IFoo`."""``
+* If you haven't already, read `PEP 257
+  <https://www.python.org/dev/peps/pep-0257/>`_.
+* In general, everything that can have a docstring should: modules, classes,
+  methods, functions.
+* Docstrings should always be enclosed in triple double quotes: ``"""Like
+  this."""``
+* When a class or a method implements an interface, the docstring should say
+  ``"""See `IFoo`."""``
 
 Docstrings should be valid `reStructuredText
 <https://docutils.sourceforge.io/rst.html>`_ (with all the painful
@@ -171,11 +171,11 @@ Restrictions
 
 There are restrictions on which imports can happen in Launchpad.  Namely:
 
- * View code cannot import code from ``lp.*.model``.
- * ``import *`` cannot be used if the module being imported from does not
-   have an ``__all__``.
- * Database code may not import ``zope.exceptions.NotFoundError`` -- it must
-   instead use ``lp.app.errors.NotFoundError``.
+* View code cannot import code from ``lp.*.model``.
+* ``import *`` cannot be used if the module being imported from does not
+  have an ``__all__``.
+* Database code may not import ``zope.exceptions.NotFoundError`` -- it must
+  instead use ``lp.app.errors.NotFoundError``.
 
 These restrictions are enforced by the Import Pedant, which will cause your
 tests not to pass if you don't abide by the rules.
@@ -242,16 +242,16 @@ Short of adopting something like Zope's lazy imports (which has issues of
 its own), you can't avoid this, so here are some tips to make it less
 painful.
 
- * Do the nested import in the least common case.  For example, if 5 methods
-   in ``model/mailinglist.py`` need access to ``EmailAddress`` but only one
-   method in ``model/emailaddress.py`` needs access to ``MailingList``, put
-   the import inside the ``emailaddress.py`` method, so you have fewer
-   overall nested imports.
- * Clearly comment that the nested import is for avoiding a circular import,
-   using the example below.
- * Put the nested import at the top of the method.
+* Do the nested import in the least common case.  For example, if 5 methods
+  in ``model/mailinglist.py`` need access to ``EmailAddress`` but only one
+  method in ``model/emailaddress.py`` needs access to ``MailingList``, put
+  the import inside the ``emailaddress.py`` method, so you have fewer
+  overall nested imports.
+* Clearly comment that the nested import is for avoiding a circular import,
+  using the example below.
+* Put the nested import at the top of the method.
 
-... code-block:: python
+.. code-block:: python
 
     def doFooWithBar(self, ...):
         # Import this here to avoid circular imports.

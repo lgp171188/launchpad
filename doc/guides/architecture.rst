@@ -20,11 +20,11 @@ Goals
 The goal of the recommendations and suggestions in this guide are to help us
 reach a number of big picture goals.  We want Launchpad to be:
 
- * Blazingly fast
- * Always available
- * Change safely
- * Simple to make, manage and use
- * Flexible
+* Blazingly fast
+* Always available
+* Change safely
+* Simple to make, manage and use
+* Flexible
 
 However it's hard when making any particular design choice to be confident
 that it drives us towards these goals: they are quite specific, and not
@@ -48,12 +48,12 @@ easier it will be to meet our goals.
 
 The values are:
 
- * Transparency
- * Loose coupling
- * Highly cohesive
- * Testable
- * Predictable
- * Simple
+* Transparency
+* Loose coupling
+* Highly cohesive
+* Testable
+* Predictable
+* Simple
 
 Transparency
 ------------
@@ -63,19 +63,19 @@ into ``pdb`` or taking guesses.
 
 Some specific things that aid transparency:
 
- * For blocking calls (SQL, bzr, email, librarian, backend web services,
-   memcache) use ``lp.services.timeline.requesttimeline`` to record the
-   call.  This includes it in OOPS reports.
- * fine grained just-in-time logging (e.g. bzr's ``-Dhpssdetail`` option)
+* For blocking calls (SQL, bzr, email, librarian, backend web services,
+  memcache) use ``lp.services.timeline.requesttimeline`` to record the call.
+  This includes it in OOPS reports.
+* fine grained just-in-time logging (e.g. bzr's ``-Dhpssdetail`` option)
 
- * live status information 
-   * (+opstats, but more so)
-   * cron script status
-   * migration script status
+* live status information 
+  * (+opstats, but more so)
+  * cron script status
+  * migration script status
 
- * regular log files
- * OOPS reports - lovely
- * Which revisions/versions of the software & its dependencies are running
+* regular log files
+* OOPS reports - lovely
+* Which revisions/versions of the software & its dependencies are running
 
 We already have a lot of transparency.  We can use more.
 
