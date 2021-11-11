@@ -9,15 +9,21 @@ __all__ = [
 
 import re
 
-import memcache
+from pymemcache.client.hash import HashClient
+from pymemcache.serde import (
+    python_memcache_deserializer,
+    python_memcache_serializer,
+    )
 
 from lp.services.config import config
 
 
 def memcache_client_factory(timeline=True):
-    """Return a memcache.Client for Launchpad."""
+    """Return a pymemcache HashClient for Launchpad."""
+    # example value for config.memcache.servers:
+    # (127.0.0.1:11242,1)
     servers = [
-        (host, int(weight)) for host, weight in re.findall(
+        host for host, _ in re.findall(
             r'\((.+?),(\d+)\)', config.memcache.servers)]
     assert len(servers) > 0, "Invalid memcached server list %r" % (
         config.memcache.servers,)
@@ -25,5 +31,9 @@ def memcache_client_factory(timeline=True):
         from lp.services.memcache.timeline import TimelineRecordingClient
         client_factory = TimelineRecordingClient
     else:
-        client_factory = memcache.Client
-    return client_factory(servers)
+        client_factory = HashClient
+    return client_factory(
+        servers,
+        serializer=python_memcache_serializer,
+        deserializer=python_memcache_deserializer
+    )
