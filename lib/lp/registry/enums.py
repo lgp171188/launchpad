@@ -292,14 +292,14 @@ class DistroSeriesDifferenceStatus(DBEnumeratedType):
         """)
 
     BLACKLISTED_CURRENT = DBItem(2, """
-        Blacklisted current version
+        Blocklisted current version
 
         This difference is being ignored until a new package is uploaded
         or the status is manually updated.
         """)
 
     BLACKLISTED_ALWAYS = DBItem(3, """
-        Blacklisted always
+        Blocklisted always
 
         This difference should always be ignored.
         """)

@@ -448,57 +448,57 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             sorted([packageset.name for packageset in packagesets]),
             [packageset.name for packageset in ds_diff.packagesets])
 
-    def test_blacklist_unauthorised(self):
+    def test_blocklist_unauthorised(self):
         # If you're not an archive admin, you don't get to blacklist or
-        # unblacklist.
+        # unblocklist.
         ds_diff = self.factory.makeDistroSeriesDifference()
         random_joe = self.factory.makePerson()
         with person_logged_in(random_joe):
-            self.assertRaises(Unauthorized, getattr, ds_diff, 'blacklist')
-            self.assertRaises(Unauthorized, getattr, ds_diff, 'unblacklist')
+            self.assertRaises(Unauthorized, getattr, ds_diff, 'blocklist')
+            self.assertRaises(Unauthorized, getattr, ds_diff, 'unblocklist')
 
-    def test_blacklist_default(self):
-        # By default the current version is blacklisted.
+    def test_blocklist_default(self):
+        # By default the current version is blocklisted.
         ds_diff = self.factory.makeDistroSeriesDifference()
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
 
         with person_logged_in(admin):
-            ds_diff.blacklist(admin)
+            ds_diff.blocklist(admin)
 
         self.assertEqual(
             DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
             ds_diff.status)
 
-    def test_blacklist_all(self):
-        # All versions are blacklisted with the all=True param.
+    def test_blocklist_all(self):
+        # All versions are blocklisted with the all=True param.
         ds_diff = self.factory.makeDistroSeriesDifference()
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
 
         with person_logged_in(admin):
-            ds_diff.blacklist(admin, all=True)
+            ds_diff.blocklist(admin, all=True)
 
         self.assertEqual(
             DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
             ds_diff.status)
 
-    def test_unblacklist(self):
-        # Unblacklisting will return to NEEDS_ATTENTION by default.
+    def test_unblocklist(self):
+        # Unblocklisting will return to NEEDS_ATTENTION by default.
         ds_diff = self.factory.makeDistroSeriesDifference(
             status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT)
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
 
         with person_logged_in(admin):
-            ds_diff.unblacklist(admin)
+            ds_diff.unblocklist(admin)
 
         self.assertEqual(
             DistroSeriesDifferenceStatus.NEEDS_ATTENTION,
             ds_diff.status)
 
-    def test_unblacklist_resolved(self):
-        # Status is resolved when unblacklisting a now-resolved difference.
+    def test_unblocklist_resolved(self):
+        # Status is resolved when unblocklisting a now-resolved difference.
         ds_diff = self.factory.makeDistroSeriesDifference(
             versions={
                 'derived': '0.9',
@@ -514,7 +514,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
         with person_logged_in(admin):
-            ds_diff.unblacklist(admin)
+            ds_diff.unblocklist(admin)
 
         self.assertEqual(
             DistroSeriesDifferenceStatus.RESOLVED,
@@ -541,7 +541,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             comment_string,
             ds_diff.latest_comment.message.text_contents)
 
-    def test_unblacklist_creates_comment(self):
+    def test_unblocklist_creates_comment(self):
         old_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
         ds_diff = self.factory.makeDistroSeriesDifference(
             status=old_status,
@@ -549,7 +549,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
         with person_logged_in(admin):
-            dsd_comment = ds_diff.unblacklist(
+            dsd_comment = ds_diff.unblocklist(
                 admin, "Ok now")
         new_status = DistroSeriesDifferenceStatus.NEEDS_ATTENTION
         expected_comment = 'Ok now\n\nIgnored: %s => %s' % (
@@ -557,7 +557,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
 
         self.assertDSDComment(ds_diff, dsd_comment, expected_comment)
 
-    def test_blacklist_creates_comment(self):
+    def test_blocklist_creates_comment(self):
         old_status = DistroSeriesDifferenceStatus.NEEDS_ATTENTION
         ds_diff = self.factory.makeDistroSeriesDifference(
             status=old_status,
@@ -565,7 +565,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
         with person_logged_in(admin):
-            dsd_comment = ds_diff.blacklist(
+            dsd_comment = ds_diff.blocklist(
                 admin, True, "Wait until version 2.1")
         new_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
         expected_comment = 'Wait until version 2.1\n\nIgnored: %s => %s' % (

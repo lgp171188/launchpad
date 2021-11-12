@@ -252,14 +252,14 @@ class IDistroSeriesDifferenceAdmin(Interface):
         comment=TextLine(title=_('Comment text'), required=False),
         )
     @export_write_operation()
-    def blacklist(commenter, all=False, comment=None):
-        """Blacklist this version or all versions of this source package and
+    def blocklist(commenter, all=False, comment=None):
+        """Blocklists this version or all versions of this source package and
         adds a comment on this difference.
 
         :param commenter: The requestor `IPerson`.
         :param comment: The comment string.
         :param all: Indicates whether all versions of this package should
-            be blacklisted or just the current (default).
+            be blocklisted or just the current (default).
         :return: The created `DistroSeriesDifferenceComment` object.
         """
 
@@ -267,8 +267,8 @@ class IDistroSeriesDifferenceAdmin(Interface):
     @operation_parameters(
         comment=TextLine(title=_('Comment text'), required=False))
     @export_write_operation()
-    def unblacklist(commenter, comment=None):
-        """Removes this difference from the blacklist and adds a comment on
+    def unblocklist(commenter, comment=None):
+        """Removes this difference from the blocklist and adds a comment on
         this difference.
 
         The status will be updated based on the versions.
