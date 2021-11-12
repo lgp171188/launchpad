@@ -101,7 +101,7 @@ class IBuilderModerateAttributes(Interface):
     manual = exported(Bool(
         title=_('Manual Mode'), required=False, default=False,
         description=_('The auto-build system does not dispatch '
-                      'jobs automatically for slaves in manual mode.')))
+                      'jobs automatically for builders in manual mode.')))
 
     builderok = exported(Bool(
         title=_('Builder State OK'), required=True, default=True,
@@ -149,12 +149,12 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
 
     name = exported(TextLine(
         title=_('Name'), required=True, constraint=name_validator,
-        description=_('Builder Slave Name used for reference purposes')))
+        description=_('The builder name used for reference purposes')))
 
     title = exported(Title(
         title=_('Title'), required=True,
         description=_(
-            'The builder slave title. Should be just a few words.')))
+            'The builder title. Should be just a few words.')))
 
     virtualized = exported(Bool(
         title=_('Virtualized'), required=True, default=False,
@@ -164,7 +164,7 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
     vm_host = exported(TextLine(
         title=_('VM host'), required=False,
         description=_('The machine hostname hosting the virtual '
-                      'buildd-slave, e.g.: foobar-host.ppa')))
+                      'buildd-worker, e.g.: foobar-host.ppa')))
 
     vm_reset_protocol = exported(Choice(
         title=_("VM reset protocol"), vocabulary=BuilderResetProtocol,
@@ -189,12 +189,12 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
 
     version = exported(Text(
         title=_('Version'), required=False,
-        description=_('The version of launchpad-buildd on the slave.')))
+        description=_('The version of launchpad-buildd on the worker.')))
 
     clean_status = exported(Choice(
         title=_("Clean status"), vocabulary=BuilderCleanStatus, readonly=True,
         description=_(
-            "The readiness of the slave to take a job. Only internal build "
+            "The readiness of the builder to take a job. Only internal build "
             "infrastructure bots need to or should write to this.")))
 
     date_clean_status_changed = exported(Datetime(
@@ -223,14 +223,14 @@ class IBuilderEdit(Interface):
 
 @exported_as_webservice_entry()
 class IBuilder(IBuilderEdit, IBuilderView, IBuilderModerateAttributes):
-    """Build-slave information and state.
+    """Builder information and state.
 
-    Builder instance represents a single builder slave machine within the
+    Builder instance represents a single machine within the
     Launchpad Auto Build System. It should specify a 'processor' on which the
     machine is based and is able to build packages for; a URL, by which the
     machine is accessed through an XML-RPC interface; name, title for entity
     identification and browsing purposes; an LP-like owner which has
-    unrestricted access to the instance; the build slave machine status
+    unrestricted access to the instance; the machine status
     representation, including the field/properties: virtualized, builderok,
     status, failnotes and currentjob.
     """

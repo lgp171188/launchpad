@@ -196,7 +196,7 @@ class ILiveFSEditSchema(Interface):
         title=u'Live filesystem build metadata',
         description=(
             u'A JSON dictionary of data about the image.  Entries here will '
-             'be passed to the builder slave.'))
+             'be passed to the builder.'))
 
 
 class LiveFSMetadataValidatorMixin:
