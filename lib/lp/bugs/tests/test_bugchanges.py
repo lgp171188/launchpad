@@ -5,6 +5,7 @@
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from testtools.matchers import (
+    AllMatch,
     MatchesStructure,
     StartsWith,
     )
@@ -32,6 +33,7 @@ from lp.testing import (
     TestCaseWithFactory,
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.mail_helpers import pop_notifications
 from lp.testing.pages import webservice_for_person
 
 
@@ -1842,3 +1844,44 @@ class TestBugChanges(TestCaseWithFactory):
         # self.product_metadata_subscriber is not included among the
         # recipients.
         self.assertRecipients([self.user])
+
+    def test_bugtask_subscription_email_mentions_the_user(self):
+        # When a bugtask is assigned to a user, the email
+        # notification sent to them mentions that the bug was directly
+        # assigned to them.
+        user = self.factory.makePerson(
+            displayname='New user', selfgenerated_bugnotifications=True)
+
+        with notify_modified(self.bug_task, ['assignee'], user=self.user):
+            self.bug_task.transitionToAssignee(user)
+        expected_message = (
+            '{} ({}) has assigned this bug to you'.format(
+                self.user.display_name, self.user.name
+            )
+        )
+        [message] = pop_notifications()
+        email_body = message.get_payload(decode=True).decode()
+        self.assertThat(email_body, StartsWith(expected_message))
+
+    def test_team_membership_subscription_email_mentions_the_team(self):
+        # When a bugtask is assigned to a team, the email
+        # notifications sent to the team members mention that the bug
+        # was assigned to the team.
+        user = self.factory.makePerson(
+            displayname='New user', selfgenerated_bugnotifications=True)
+        team = self.factory.makeTeam()
+        team.addMember(user, team.teamowner)
+
+        with notify_modified(self.bug_task, ['assignee'], user=user):
+            self.bug_task.transitionToAssignee(team)
+        expected_message = (
+            '{} ({}) has assigned this bug to your team "{}" for {}'.format(
+                user.display_name, user.name, team.display_name,
+                self.bug_task.target.display_name
+            )
+        )
+        email_bodies = [
+            notification.get_payload(decode=True).decode()
+            for notification in pop_notifications()
+        ]
+        self.assertThat(email_bodies, AllMatch(StartsWith(expected_message)))
