@@ -741,7 +741,7 @@ class IDistroSeriesPublic(
         """
 
     def searchPackages(text):
-        """Search through the packge cache for this distroseries and return
+        """Search through the package cache for this distroseries and return
         DistroSeriesBinaryPackage objects that match the given text.
         """
 
