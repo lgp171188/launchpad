@@ -21,7 +21,7 @@ from zope.interface import implementer
 
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import (
     BoolCol,
@@ -59,13 +59,13 @@ class BinaryPackageRelease(SQLBase):
     description = StringCol(dbName='description', notNull=True)
     build = ForeignKey(
         dbName='build', foreignKey='BinaryPackageBuild', notNull=True)
-    binpackageformat = EnumCol(dbName='binpackageformat', notNull=True,
-                               schema=BinaryPackageFormat)
+    binpackageformat = DBEnum(name='binpackageformat', allow_none=False,
+                              enum=BinaryPackageFormat)
     component = ForeignKey(dbName='component', foreignKey='Component',
                            notNull=True)
     section = ForeignKey(dbName='section', foreignKey='Section', notNull=True)
-    priority = EnumCol(dbName='priority', notNull=True,
-                       schema=PackagePublishingPriority)
+    priority = DBEnum(name='priority', allow_none=False,
+                      enum=PackagePublishingPriority)
     shlibdeps = StringCol(dbName='shlibdeps')
     depends = StringCol(dbName='depends')
     recommends = StringCol(dbName='recommends')

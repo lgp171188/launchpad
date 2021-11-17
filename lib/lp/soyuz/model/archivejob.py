@@ -18,7 +18,7 @@ from zope.interface import (
     )
 
 from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import (
@@ -54,7 +54,7 @@ class ArchiveJob(StormBase):
     archive_id = Int(name='archive')
     archive = Reference(archive_id, Archive.id)
 
-    job_type = EnumCol(enum=ArchiveJobType, notNull=True)
+    job_type = DBEnum(enum=ArchiveJobType, allow_none=False)
 
     metadata = JSON('json_data')
 

@@ -25,7 +25,7 @@ from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import (
@@ -380,12 +380,12 @@ class PocketChroot(SQLBase):
     distroarchseries = ForeignKey(
         dbName='distroarchseries', foreignKey='DistroArchSeries', notNull=True)
 
-    pocket = EnumCol(
-        schema=PackagePublishingPocket,
-        default=PackagePublishingPocket.RELEASE, notNull=True)
+    pocket = DBEnum(
+        enum=PackagePublishingPocket,
+        default=PackagePublishingPocket.RELEASE, allow_none=False)
 
     chroot = ForeignKey(dbName='chroot', foreignKey='LibraryFileAlias')
 
-    image_type = EnumCol(
-        schema=BuildBaseImageType, default=BuildBaseImageType.CHROOT,
-        notNull=True)
+    image_type = DBEnum(
+        enum=BuildBaseImageType, default=BuildBaseImageType.CHROOT,
+        allow_none=False)

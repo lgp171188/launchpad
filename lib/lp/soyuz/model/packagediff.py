@@ -26,7 +26,7 @@ from lp.services.database.bulk import load
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
@@ -141,8 +141,8 @@ class PackageDiff(SQLBase):
         dbName="diff_content", foreignKey='LibraryFileAlias',
         notNull=False, default=None)
 
-    status = EnumCol(
-        dbName='status', notNull=True, schema=PackageDiffStatus,
+    status = DBEnum(
+        name='status', allow_none=False, enum=PackageDiffStatus,
         default=PackageDiffStatus.PENDING)
 
     @property
