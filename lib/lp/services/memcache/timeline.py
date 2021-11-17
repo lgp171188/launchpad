@@ -10,13 +10,13 @@ __all__ = [
 import logging
 
 from lazr.restful.utils import get_current_browser_request
-from pymemcache.client.hash import HashClient
 
 from lp.services import features
+from lp.services.memcache.client import MemcacheClient
 from lp.services.timeline.requesttimeline import get_request_timeline
 
 
-class TimelineRecordingClient(HashClient):
+class TimelineRecordingClient(MemcacheClient):
 
     def __get_timeline_action(self, suffix, key):
         request = get_current_browser_request()
@@ -36,7 +36,7 @@ class TimelineRecordingClient(HashClient):
             return None
         action = self.__get_timeline_action("get", key)
         try:
-            return HashClient.get(self, key)
+            return super().get(key)
         finally:
             action.finish()
 
@@ -45,7 +45,7 @@ class TimelineRecordingClient(HashClient):
             return None
         action = self.__get_timeline_action("set", key)
         try:
-            success = HashClient.set(self, key, value, expire=expire)
+            success = super().set(key, value, expire=expire)
             if success:
                 logging.debug("Memcache set succeeded for %s", key)
             else:

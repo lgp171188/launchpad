@@ -7,8 +7,10 @@ from lazr.restful.utils import get_current_browser_request
 from pymemcache.exceptions import MemcacheIllegalInputError
 from zope.component import getUtility
 
+from lp.services.log.logger import BufferLogger
 from lp.services.memcache.client import memcache_client_factory
 from lp.services.memcache.interfaces import IMemcacheClient
+from lp.services.memcache.testing import MemcacheFixture
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.testing import TestCase
 from lp.testing.layers import LaunchpadZopelessLayer
@@ -75,3 +77,21 @@ class MemcacheClientFactoryTestCase(TestCase):
         client.set('foo', 'bar')
         self.assertEqual('bar', client.get('foo'))
         self.assertEqual(base_action_count, len(timeline.actions))
+
+
+class MemcacheClientJSONTestCase(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.client = self.useFixture(MemcacheFixture())
+        self.logger = BufferLogger()
+
+    def test_handle_invalid_data(self):
+        self.client.set("key", b"invalid_data")
+        description = "binary data"
+
+        self.client.get_json("key", self.logger, description)
+
+        self.assertEqual(
+            "ERROR Cannot load cached binary data; deleting\n",
+            self.logger.content.as_text()
+        )

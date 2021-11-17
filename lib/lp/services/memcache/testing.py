@@ -9,11 +9,12 @@ import time as _time
 
 import fixtures
 
+from lp.services.memcache.client import MemcacheClient
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.testing.fixture import ZopeUtilityFixture
 
 
-class MemcacheFixture(fixtures.Fixture):
+class MemcacheFixture(fixtures.Fixture, MemcacheClient):
     """A trivial in-process memcache fixture."""
 
     def __init__(self):
