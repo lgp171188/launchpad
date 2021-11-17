@@ -1727,10 +1727,10 @@ class POFileToTranslationFileDataAdapter:
             msgset.file_references = row.file_references
 
             if row.flags_comment:
-                msgset.flags = set([
+                msgset.flags = {
                     flag.strip()
                     for flag in row.flags_comment.split(',')
-                    if flag])
+                    if flag}
 
             messages.append(msgset)
 

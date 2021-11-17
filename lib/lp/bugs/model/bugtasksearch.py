@@ -558,9 +558,9 @@ def _build_query(params):
 
         # It's much faster to query for a single archive, so don't
         # include partner unless we have to.
-        archive_ids = set(
+        archive_ids = {
             distroseries.distribution.getArchiveByComponent(c.name).id
-            for c in components)
+            for c in components}
 
         extra_clauses.append(
             BugTaskFlat.sourcepackagename_id.is_in(
@@ -806,13 +806,13 @@ def _process_order_by(params):
     else:
         in_unique_context = False
 
-    unambiguous_cols = set([
+    unambiguous_cols = {
         BugTaskFlat.date_last_updated,
         BugTaskFlat.datecreated,
         BugTaskFlat.bugtask_id,
         Bug.datecreated,
         BugTask.date_assigned,
-        ])
+        }
     if in_unique_context:
         unambiguous_cols.add(BugTaskFlat.bug)
 
@@ -907,7 +907,7 @@ def _build_status_clause(col, status):
         values = list(status.query_values)
         # Since INCOMPLETE isn't stored as a single value any more, we need to
         # expand it before generating the SQL.
-        old = set([BugTaskStatus.INCOMPLETE, BugTaskStatusSearch.INCOMPLETE])
+        old = {BugTaskStatus.INCOMPLETE, BugTaskStatusSearch.INCOMPLETE}
         accepted_values = list(set(values) - old)
         if len(accepted_values) < len(values):
             accepted_values.extend(DB_INCOMPLETE_BUGTASK_STATUSES)
@@ -1345,7 +1345,7 @@ def _make_cache_user_can_view_bug(user):
     userid = user.id
 
     def cache_user_can_view_bug(bugtask):
-        get_property_cache(bugtask.bug)._known_viewers = set([userid])
+        get_property_cache(bugtask.bug)._known_viewers = {userid}
         return bugtask
     return cache_user_can_view_bug
 

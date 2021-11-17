@@ -51,7 +51,7 @@ class POFileTranslatorSet:
 
     def prefetchPOFileTranslatorRelations(self, pofiletranslators):
         """See `IPOFileTranslatorSet`."""
-        ids = set(record.id for record in pofiletranslators)
+        ids = {record.id for record in pofiletranslators}
         if not ids:
             return None
 

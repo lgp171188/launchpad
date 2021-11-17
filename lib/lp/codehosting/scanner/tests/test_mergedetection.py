@@ -299,10 +299,10 @@ class TestBranchMergeDetectionHandler(TestCaseWithFactory):
             'Work in progress => Merged',
             six.ensure_text(notifications[0].get_payload(decode=True)))
         self.assertEqual(proposal.address, notifications[0]['From'])
-        recipients = set(msg['x-envelope-to'] for msg in notifications)
-        expected = set(
-            [proposal.source_branch.registrant.preferredemail.email,
-             proposal.target_branch.registrant.preferredemail.email])
+        recipients = {msg['x-envelope-to'] for msg in notifications}
+        expected = {
+            proposal.source_branch.registrant.preferredemail.email,
+             proposal.target_branch.registrant.preferredemail.email}
         self.assertEqual(expected, recipients)
 
     def test_mergeProposalMergeDetected_not_series(self):

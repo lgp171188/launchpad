@@ -99,7 +99,7 @@ class TestLibrarianGarbageCollectionBase:
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
                     os.makedirs(os.path.dirname(path))
-                content_bytes = '{0} content'.format(content.id).encode(
+                content_bytes = '{} content'.format(content.id).encode(
                     'UTF-8')
                 with open(path, 'wb') as f:
                     f.write(content_bytes)

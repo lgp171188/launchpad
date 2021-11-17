@@ -2217,9 +2217,9 @@ class TestPublisher(TestPublisherBase):
 
         release = self.parseRelease(suite_path('Release'))
         paths = ['Release'] + [entry['name'] for entry in release['md5sum']]
-        timestamps = set(
+        timestamps = {
             os.stat(suite_path(path)).st_mtime for path in paths
-            if '/dep11/' not in path and os.path.exists(suite_path(path)))
+            if '/dep11/' not in path and os.path.exists(suite_path(path))}
         self.assertEqual(1, len(timestamps))
 
         # Non-core files preserve their original timestamps.
@@ -3380,8 +3380,8 @@ class TestPublisherLite(TestCaseWithFactory):
         paths = [path for path, _ in path_times]
         self.makePublisher(series)._syncTimestamps(series.name, set(paths))
 
-        timestamps = set(
-            os.stat(os.path.join(location, path)).st_mtime for path in paths)
+        timestamps = {
+            os.stat(os.path.join(location, path)).st_mtime for path in paths}
         self.assertEqual(1, len(timestamps))
         # The filesystem may round off subsecond parts of timestamps.
         self.assertEqual(int(now), int(list(timestamps)[0]))

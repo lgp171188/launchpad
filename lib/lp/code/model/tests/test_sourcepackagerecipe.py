@@ -552,7 +552,7 @@ class TestSourcePackageRecipeMixin:
         (old_distroseries,) = recipe.distroseries
         recipe.distroseries.add(distroseries)
         self.assertEqual(
-            set([distroseries, old_distroseries]), set(recipe.distroseries))
+            {distroseries, old_distroseries}, set(recipe.distroseries))
         recipe.distroseries.remove(distroseries)
         self.assertEqual([old_distroseries], list(recipe.distroseries))
         recipe.distroseries.clear()
@@ -1195,7 +1195,7 @@ class TestWebserviceMixin:
         # at the moment, distroseries is not exposed in the API.
         transaction.commit()
         db_recipe = owner.getRecipe(name='toaster-1')
-        self.assertEqual(set([db_distroseries]), set(db_recipe.distroseries))
+        self.assertEqual({db_distroseries}, set(db_recipe.distroseries))
         return recipe, ws_owner, launchpad
 
     def test_createRecipe(self):

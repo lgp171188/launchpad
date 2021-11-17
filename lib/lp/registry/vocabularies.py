@@ -716,9 +716,9 @@ class ValidPersonOrTeamVocabulary(
         # we get one query per person per attribute.
         def pre_iter_hook(persons):
             emails = bulk.load_referencing(EmailAddress, persons, ['personID'])
-            email_by_person = dict(
-                (email.personID, email) for email in emails
-                if email.status == EmailAddressStatus.PREFERRED)
+            email_by_person = {
+                email.personID: email for email in emails
+                if email.status == EmailAddressStatus.PREFERRED}
 
             for person in persons:
                 cache = get_property_cache(person)
@@ -1390,13 +1390,13 @@ class MilestoneVocabulary(SQLObjectVocabularyBase):
 
         # Prefetch products and distributions for rendering
         # milestones: optimization to reduce the number of queries.
-        product_ids = set(
+        product_ids = {
             removeSecurityProxy(milestone).productID
-            for milestone in milestones)
+            for milestone in milestones}
         product_ids.discard(None)
-        distro_ids = set(
+        distro_ids = {
             removeSecurityProxy(milestone).distributionID
-            for milestone in milestones)
+            for milestone in milestones}
         distro_ids.discard(None)
         if len(product_ids) > 0:
             list(Product.select("id IN %s" % sqlvalues(product_ids)))
@@ -1647,7 +1647,7 @@ class DistroSeriesDerivationVocabulary(FilteredVocabularyBase):
 
     def terms_by_token(self):
         """Mapping of terms by token."""
-        return dict((term.token, term) for term in self.terms)
+        return {term.token: term for term in self.terms}
 
     def getTermByToken(self, token):
         try:

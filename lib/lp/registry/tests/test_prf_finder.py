@@ -83,7 +83,7 @@ class FindReleasesDBTestCase(TestCaseWithFactory):
         self.factory.makeProductReleaseFile(
             productseries=series2, release=file2.productrelease,
             filename='foo-2.1.tar.gz')
-        expected = set(['foo-1.0.tar.gz', 'foo-2.0.tar.gz', 'foo-2.1.tar.gz'])
+        expected = {'foo-1.0.tar.gz', 'foo-2.0.tar.gz', 'foo-2.1.tar.gz'}
         transaction.commit()
         prf = ProductReleaseFinder(self.layer.txn, logging.getLogger())
         found = prf.getReleaseFileNames(product.name)

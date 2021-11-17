@@ -269,9 +269,9 @@ def eager_load_dsds(dsds):
             dsds, statuses=active_publishing_status,
             in_parent=True, match_version=True))
 
-    latest_comment_by_dsd_id = dict(
-        (comment.distro_series_difference_id, comment)
-        for comment in most_recent_comments(dsds))
+    latest_comment_by_dsd_id = {
+        comment.distro_series_difference_id: comment
+        for comment in most_recent_comments(dsds)}
     latest_comments = latest_comment_by_dsd_id.values()
 
     # SourcePackageReleases of the parent and source pubs are often

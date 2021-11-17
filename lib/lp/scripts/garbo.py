@@ -1396,7 +1396,7 @@ class UnusedPOTMsgSetPruner(TunableLoop):
             """ % constraints
         store = IMasterStore(POTMsgSet)
         results = store.execute(query)
-        ids_to_remove = set([id for (id,) in results.get_all()])
+        ids_to_remove = {id for (id,) in results.get_all()}
         return list(ids_to_remove)
 
     def __call__(self, chunk_size):

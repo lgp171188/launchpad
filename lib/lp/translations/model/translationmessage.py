@@ -601,9 +601,9 @@ class TranslationMessageSet:
             POFile.potemplateID == TranslationTemplateItem.potemplateID,
             *pofile_constraints
             ).config(distinct=(TranslationTemplateItem.potmsgsetID,))
-        potmsgset_map = dict(
-            (potmsgset_id, (pofile_id, sequence))
-            for potmsgset_id, pofile_id, sequence in results)
+        potmsgset_map = {
+            potmsgset_id: (pofile_id, sequence)
+            for potmsgset_id, pofile_id, sequence in results}
         load(POFile, (pofile_id for pofile_id, _ in potmsgset_map.values()))
         for message in messages:
             assert message.language == language

@@ -155,10 +155,10 @@ class StructuralSubscriptionView(LaunchpadFormView):
         be removed, else return None.
         """
         teams = set(self.user_teams)
-        other_subscriptions = set(
+        other_subscriptions = {
             subscription.subscriber
             for subscription
-            in self.context.bug_subscriptions)
+            in self.context.bug_subscriptions}
 
         # Teams and the current user have their own UI elements. Remove
         # them to avoid duplicates.
@@ -196,9 +196,9 @@ class StructuralSubscriptionView(LaunchpadFormView):
     def initial_values(self):
         """See `LaunchpadFormView`."""
         teams = set(self.user_teams)
-        subscribed_teams = set(team
+        subscribed_teams = {team
                                for team in teams
-                               if self.isSubscribed(team))
+                               if self.isSubscribed(team)}
         return {
             'subscribe_me': self.currentUserIsSubscribed(),
             'subscriptions_team': subscribed_teams,
@@ -261,8 +261,8 @@ class StructuralSubscriptionView(LaunchpadFormView):
         target = self.context
         teams = set(self.user_teams)
         form_selected_teams = teams & set(form_selected_teams)
-        subscriptions = set(
-            team for team in teams if self.isSubscribed(team))
+        subscriptions = {
+            team for team in teams if self.isSubscribed(team)}
 
         for team in form_selected_teams - subscriptions:
             target.addBugSubscription(team, self.user)

@@ -55,14 +55,14 @@ def _install_and_reschedule(controller, script_name):
     try:
         refresh = float(refresh)
     except ValueError:
-        log.msg("Invalid value {0!r} for twisted.flags.refresh".format(
+        log.msg("Invalid value {!r} for twisted.flags.refresh".format(
             refresh))
         refresh = 60.0
 
     global _last_refresh
     if refresh != _last_refresh:
         if _last_refresh is not None:
-            log.msg("twisted.flags.refresh changed to {0}".format(refresh))
+            log.msg("twisted.flags.refresh changed to {}".format(refresh))
         _last_refresh = refresh
 
     reactor.callLater(refresh, update, script_name)

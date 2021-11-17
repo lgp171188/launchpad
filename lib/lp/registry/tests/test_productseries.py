@@ -597,18 +597,18 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
             product=self.proprietary_product)
 
     expected_get_permissions = {
-        CheckerPublic: set((
+        CheckerPublic: {
             'id', 'userCanView',
-            )),
-        'launchpad.AnyAllowedPerson': set((
+            },
+        'launchpad.AnyAllowedPerson': {
             'addBugSubscription', 'addBugSubscriptionFilter',
             'addSubscription', 'removeBugSubscription',
-            )),
-        'launchpad.Edit': set(('newMilestone', )),
-        'launchpad.LimitedView': set((
+            },
+        'launchpad.Edit': {'newMilestone'},
+        'launchpad.LimitedView': {
             'bugtargetdisplayname', 'bugtarget_parent', 'name',
-            'parent_subscription_target', 'product', 'productID', 'series')),
-        'launchpad.View': set((
+            'parent_subscription_target', 'product', 'productID', 'series'},
+        'launchpad.View': {
             'visible_specifications', '_getOfficialTagClause',
             'valid_specifications', 'api_valid_specifications',
             'active', 'all_milestones', 'answers_usage', 'blueprints_usage',
@@ -644,7 +644,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
             'translations_autoimport_mode', 'userCanAlterBugSubscription',
             'userCanAlterSubscription', 'userHasBugSubscriptions',
             'translations_branch', 'translations_usage', 'uses_launchpad',
-            )),
+            },
         }
 
     def test_get_permissions(self):
@@ -653,17 +653,17 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
             self.expected_get_permissions, checker.get_permissions, 'get')
 
     expected_set_permissions = {
-        'launchpad.Edit': set((
+        'launchpad.Edit': {
             'answers_usage', 'blueprints_usage', 'branch',
             'bug_tracking_usage', 'codehosting_usage', 'driver', 'name',
             'owner', 'product', 'releasefileglob', 'status', 'summary',
             'translations_autoimport_mode', 'translations_branch',
             'translations_usage', 'uses_launchpad',
-            )),
-        'launchpad.AnyAllowedPerson': set((
+            },
+        'launchpad.AnyAllowedPerson': {
             'cvsbranch', 'cvsmodule', 'cvsroot', 'cvstarfileurl',
             'importstatus', 'rcstype', 'svnrepository',
-            )),
+            },
         }
 
     def test_set_permissions(self):

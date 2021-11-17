@@ -89,7 +89,7 @@ class LinkCheckerAPI(LaunchpadView):
         valid_links = {}
         user = self.user
         # List of all the bugs we are checking.
-        bugs_ids = set([int(link[len('/bugs/'):]) for link in links])
+        bugs_ids = {int(link[len('/bugs/'):]) for link in links}
         if bugs_ids:
             params = BugTaskSearchParams(
                 user=user, status=None,

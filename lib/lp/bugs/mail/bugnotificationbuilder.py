@@ -117,7 +117,7 @@ class BugNotificationBuilder:
         # Add the -Bug-Commenters header, a space-separated list of
         # distinct IDs of people who have commented on the bug. The
         # list is sorted to aid testing.
-        commenters = set(message.owner.name for message in bug.messages)
+        commenters = {message.owner.name for message in bug.messages}
         self.common_headers.append(
             ('X-Launchpad-Bug-Commenters', ' '.join(sorted(commenters))))
 

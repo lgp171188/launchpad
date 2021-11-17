@@ -249,9 +249,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             self.information_type not in PUBLIC_INFORMATION_TYPES):
             aasource = getUtility(IAccessArtifactSource)
             [abstract_artifact] = aasource.ensure([self])
-            wanted_links = set(
+            wanted_links = {
                 (abstract_artifact, policy) for policy in
-                getUtility(IAccessPolicySource).findByTeam([self.owner]))
+                getUtility(IAccessPolicySource).findByTeam([self.owner])}
         else:
             # We haven't yet quite worked out how distribution privacy
             # works, so only work for products for now.
@@ -941,9 +941,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         """See `IBranch`."""
         alteration_operations, deletion_operations, = (
             self._deletionRequirements(eager_load=eager_load))
-        result = dict(
-            (operation.affected_object, ('alter', operation.rationale)) for
-            operation in alteration_operations)
+        result = {
+            operation.affected_object: ('alter', operation.rationale) for
+            operation in alteration_operations}
         # Deletion entries should overwrite alteration entries.
         result.update(
             (operation.affected_object, ('delete', operation.rationale)) for

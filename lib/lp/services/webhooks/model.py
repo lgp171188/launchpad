@@ -228,7 +228,7 @@ class WebhookSet:
         hooks = list(hooks)
         getUtility(IWebhookJobSource).deleteByWebhooks(hooks)
         IStore(Webhook).find(
-            Webhook, Webhook.id.is_in(set(hook.id for hook in hooks))).remove()
+            Webhook, Webhook.id.is_in({hook.id for hook in hooks})).remove()
 
     def getByID(self, id):
         return IStore(Webhook).get(Webhook, id)

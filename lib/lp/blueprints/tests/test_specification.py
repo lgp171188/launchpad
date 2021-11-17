@@ -158,9 +158,9 @@ class SpecificationTests(TestCaseWithFactory):
 
     def test_get_permissions(self):
         expected_get_permissions = {
-            CheckerPublic: set((
-                'id', 'information_type', 'private', 'userCanView')),
-            'launchpad.LimitedView': set((
+            CheckerPublic: {
+                'id', 'information_type', 'private', 'userCanView'},
+            'launchpad.LimitedView': {
                 'all_blocked', 'all_deps', 'approver', 'approverID',
                 'assignee', 'assigneeID', 'bugs', 'completer',
                 'createDependency', 'date_completed', 'date_goal_decided',
@@ -182,14 +182,14 @@ class SpecificationTests(TestCaseWithFactory):
                 'superseded_by', 'target', 'title', 'unlinkBranch',
                 'unlinkSprint', 'unsubscribe', 'updateLifecycleStatus',
                 'validateMove', 'whiteboard', 'work_items',
-                'workitems_text')),
-            'launchpad.Edit': set((
+                'workitems_text'},
+            'launchpad.Edit': {
                 'newWorkItem', 'proposeGoal', 'retarget',
                 'setDefinitionStatus', 'setImplementationStatus', 'setTarget',
-                'transitionToInformationType', 'updateWorkItems')),
-            'launchpad.Driver': set(('acceptBy', 'declineBy')),
-            'launchpad.AnyLegitimatePerson': set((
-                'unlinkBug', 'linkBug', 'setWorkItems')),
+                'transitionToInformationType', 'updateWorkItems'},
+            'launchpad.Driver': {'acceptBy', 'declineBy'},
+            'launchpad.AnyLegitimatePerson': {
+                'unlinkBug', 'linkBug', 'setWorkItems'},
             }
         specification = self.factory.makeSpecification()
         checker = getChecker(specification)
@@ -198,13 +198,13 @@ class SpecificationTests(TestCaseWithFactory):
 
     def test_set_permissions(self):
         expected_get_permissions = {
-            'launchpad.Admin': set(('direction_approved', 'priority')),
-            'launchpad.AnyLegitimatePerson': set(('whiteboard', )),
-            'launchpad.Edit': set((
+            'launchpad.Admin': {'direction_approved', 'priority'},
+            'launchpad.AnyLegitimatePerson': {'whiteboard'},
+            'launchpad.Edit': {
                 'approver', 'assignee', 'definition_status', 'distribution',
                 'drafter', 'implementation_status', 'man_days', 'milestone',
                 'name', 'product', 'specurl', 'summary', 'superseded_by',
-                'title')),
+                'title'},
             }
         specification = self.factory.makeSpecification()
         checker = getChecker(specification)

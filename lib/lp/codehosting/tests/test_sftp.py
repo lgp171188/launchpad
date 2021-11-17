@@ -558,7 +558,7 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
         names = [entry[0] for entry in entries]
         self.assertEqual(
             set(names),
-            set([child_dir.encode('UTF-8'), child_file.encode('UTF-8')]))
+            {child_dir.encode('UTF-8'), child_file.encode('UTF-8')})
 
         def check_entry(entries, filename):
             t = get_transport('.')

@@ -1140,13 +1140,13 @@ class DistroSeriesDifferenceBaseView(LaunchpadFormView,
         """If specified, return Packagesets given in the GET form data."""
         packageset_ids = (
             self.request.query_string_params.get("field.packageset", []))
-        packageset_ids = set(
+        packageset_ids = {
             int(packageset_id) for packageset_id in packageset_ids
-            if packageset_id.isdigit())
+            if packageset_id.isdigit()}
         packagesets = getUtility(IPackagesetSet).getBySeries(self.context)
-        packagesets = set(
+        packagesets = {
             packageset for packageset in packagesets
-            if packageset.id in packageset_ids)
+            if packageset.id in packageset_ids}
         return None if len(packagesets) == 0 else packagesets
 
     @property
@@ -1157,8 +1157,8 @@ class DistroSeriesDifferenceBaseView(LaunchpadFormView,
             self.request.query_string_params.get("field.changed_by", ()))
         changed_by = (
             get_person_by_name(name) for name in changed_by_names)
-        changed_by = set(
-            person for person in changed_by if person is not None)
+        changed_by = {
+            person for person in changed_by if person is not None}
         return None if len(changed_by) == 0 else changed_by
 
     @property

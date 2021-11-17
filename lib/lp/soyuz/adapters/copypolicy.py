@@ -85,7 +85,7 @@ policies = [
     ]
 
 
-enum_to_policy = dict((policy.enum_value, policy()) for policy in policies)
+enum_to_policy = {policy.enum_value: policy() for policy in policies}
 
 
 def get_icopypolicy_for_packagecopypolicy(packagecopypolicy):

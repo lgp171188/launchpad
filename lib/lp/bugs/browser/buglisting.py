@@ -1070,8 +1070,8 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
             not FeedsLayer.providedBy(self.request) and
             not self.request.form.get('advanced')):
             cache = IJSONRequestCache(self.request)
-            view_names = set(reg.name for reg
-                in iter_view_registrations(self.__class__))
+            view_names = {reg.name for reg
+                in iter_view_registrations(self.__class__)}
             if len(view_names) != 1:
                 raise AssertionError("Ambiguous view name.")
             cache.objects['view_name'] = view_names.pop()
@@ -1157,7 +1157,7 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
                     "are out of date or you changed the URL by hand?" %
                     field_name)
 
-        sort_column_names = set(sort_key[0] for sort_key in SORT_KEYS)
+        sort_column_names = {sort_key[0] for sort_key in SORT_KEYS}
         orderby = get_sortorder_from_request(self.request)
         for orderby_col in orderby:
             if orderby_col.startswith("-"):

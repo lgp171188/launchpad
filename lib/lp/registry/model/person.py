@@ -842,10 +842,10 @@ class Person(
         # Defaults for informationalness: we don't have to do anything
         # because the default if nothing is said is ANY.
 
-        roles = set([
+        roles = {
             SpecificationFilter.CREATOR, SpecificationFilter.ASSIGNEE,
             SpecificationFilter.DRAFTER, SpecificationFilter.APPROVER,
-            SpecificationFilter.SUBSCRIBER])
+            SpecificationFilter.SUBSCRIBER}
         # If no roles are given, then we want everything.
         if filter.intersection(roles) == set():
             filter.update(roles)
@@ -2321,7 +2321,7 @@ class Person(
         # These tables will be skipped since they do not risk leaking
         # team membership information.
         # Note all of the table names and columns must be all lowercase.
-        skip = set([
+        skip = {
             ('accessartifactgrant', 'grantee'),
             ('accessartifactgrant', 'grantor'),
             ('accesspolicy', 'person'),
@@ -2381,7 +2381,7 @@ class Person(
             # user already has access to the team.
             ('latestpersonsourcepackagereleasecache', 'creator'),
             ('latestpersonsourcepackagereleasecache', 'maintainer'),
-            ])
+            }
 
         warnings = set()
         ref_query = []
@@ -2755,7 +2755,7 @@ class Person(
             AND date_consumed IS NULL
             """ % sqlvalues(self.id, LoginTokenType.VALIDATEEMAIL,
                             LoginTokenType.VALIDATETEAMEMAIL)
-        return sorted(set(token.email for token in LoginToken.select(query)))
+        return sorted({token.email for token in LoginToken.select(query)})
 
     @property
     def guessedemails(self):
@@ -2766,8 +2766,8 @@ class Person(
     def pending_gpg_keys(self):
         """See `IPerson`."""
         logintokenset = getUtility(ILoginTokenSet)
-        return sorted(set(token.fingerprint for token in
-                      logintokenset.getPendingGPGKeys(requesterid=self.id)))
+        return sorted({token.fingerprint for token in
+                      logintokenset.getPendingGPGKeys(requesterid=self.id)})
 
     @property
     def inactive_gpg_keys(self):
@@ -3849,9 +3849,9 @@ class PersonSet:
         # This has the side effect of sucking in the ValidPersonCache
         # items into the cache, allowing Person.is_valid_person calls to
         # not hit the DB.
-        valid_person_ids = set(
+        valid_person_ids = {
                 person_id.id for person_id in ValidPersonCache.select(
-                    "id IN %s" % sqlvalues(person_ids)))
+                    "id IN %s" % sqlvalues(person_ids))}
         return [
             person for person in persons if person.id in valid_person_ids]
 

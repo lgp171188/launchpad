@@ -53,7 +53,7 @@ def pop_notifications(sort_key=None, commit=True):
 
 def sort_addresses(header):
     """Sort an address-list in an email header field body."""
-    addresses = set(address.strip() for address in header.split(','))
+    addresses = {address.strip() for address in header.split(',')}
     return ", ".join(sorted(addresses))
 
 
@@ -86,9 +86,9 @@ def print_emails(include_reply_to=False, group_similar=False,
     if notifications is None:
         notifications = pop_notifications()
     for message in notifications:
-        recipients = set(
+        recipients = {
             recipient.strip()
-            for recipient in message['To'].split(','))
+            for recipient in message['To'].split(',')}
         body = message.get_payload(decode=decode)
         if group_similar:
             # Strip the first line as it's different for each recipient.

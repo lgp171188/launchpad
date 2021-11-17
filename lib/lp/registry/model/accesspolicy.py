@@ -67,7 +67,7 @@ def reconcile_access_for_artifacts(artifacts, information_type, pillars,
     abstract_artifacts = getUtility(IAccessArtifactSource).ensure(artifacts)
     aps = getUtility(IAccessPolicySource).find(
         (pillar, information_type) for pillar in pillars)
-    missing_pillars = set(pillars) - set([ap.pillar for ap in aps])
+    missing_pillars = set(pillars) - {ap.pillar for ap in aps}
     if len(missing_pillars):
         pillar_str = ', '.join([p.name for p in missing_pillars])
         raise AssertionError(
@@ -79,9 +79,9 @@ def reconcile_access_for_artifacts(artifacts, information_type, pillars,
     apasource = getUtility(IAccessPolicyArtifactSource)
     wanted_links = (
             wanted_links or set(product(abstract_artifacts, aps)))
-    existing_links = set([
+    existing_links = {
         (apa.abstract_artifact, apa.policy)
-        for apa in apasource.findByArtifact(abstract_artifacts)])
+        for apa in apasource.findByArtifact(abstract_artifacts)}
     apasource.create(wanted_links - existing_links)
     apasource.delete(existing_links - wanted_links)
 
@@ -163,7 +163,7 @@ class AccessArtifact(StormBase):
         # Not everything exists. Create missing ones.
         needed = (
             set(concrete_artifacts) -
-            set(abstract.concrete_artifact for abstract in existing))
+            {abstract.concrete_artifact for abstract in existing})
 
         insert_values = []
         for concrete in needed:
@@ -489,7 +489,7 @@ class AccessPolicyGrantFlat(StormBase):
     @classmethod
     def findGranteePermissionsByPolicy(cls, policies, grantees=None):
         """See `IAccessPolicyGrantFlatSource`."""
-        policies_by_id = dict((policy.id, policy) for policy in policies)
+        policies_by_id = {policy.id: policy for policy in policies}
 
         # A cache for the sharing permissions, keyed on grantee
         permissions_cache = defaultdict(dict)
@@ -506,8 +506,8 @@ class AccessPolicyGrantFlat(StormBase):
         def load_permissions(people):
             # We now have the grantees and policies we want in the result so
             # load any corresponding permissions and cache them.
-            people_by_id = dict(
-                (person[0].id, person[0]) for person in people)
+            people_by_id = {
+                person[0].id: person[0] for person in people}
             cls._populatePermissionsCache(
                 permissions_cache, shared_artifact_info_types,
                 people_by_id.keys(), policies_by_id, people_by_id)

@@ -363,7 +363,7 @@ class TestPOTMsgSetMergingAndTranslations(TestCaseWithFactory,
         # All three of the messages still exist, despite two of the
         # translations being near-identical.
         current_message, stable_message = self._getMessages()
-        expected_tms = set([current_message, trunk_message, stable_message])
+        expected_tms = {current_message, trunk_message, stable_message}
         tms = set(trunk_message.potmsgset.getAllTranslationMessages())
         self.assertEqual(tms, expected_tms)
         self.assertEqual(len(tms), 3)
@@ -536,7 +536,7 @@ class TestRemoveDuplicates(TestCaseWithFactory, TranslatedProductMixin):
         # stable has none.
         self.assertEqual(self._getTranslations(), ('snaggle', None))
         tms = set(potmsgset.getAllTranslationMessages())
-        self.assertEqual(tms, set([trunk_message, stable_message]))
+        self.assertEqual(tms, {trunk_message, stable_message})
 
         self.merger._removeDuplicateMessages()
 

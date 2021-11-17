@@ -282,7 +282,7 @@ class TeamParticipationTestCase(TestCaseWithFactory):
         """
         self.assertEqual(
             sorted(participant_names),
-            sorted([participant.name for participant in team.allmembers]))
+            sorted(participant.name for participant in team.allmembers))
 
     def getTeamParticipationCount(self):
         return IStore(TeamParticipation).find(TeamParticipation).count()

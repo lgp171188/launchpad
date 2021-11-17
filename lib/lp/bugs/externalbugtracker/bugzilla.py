@@ -845,8 +845,8 @@ class BugzillaAPI(Bugzilla):
                 del comments[comment_id]
 
         # Ensure that comment IDs are converted to ints.
-        comments_with_int_ids = dict(
-            (int(id), comments[id]) for id in comments)
+        comments_with_int_ids = {
+            int(id): comments[id] for id in comments}
         self._bugs[actual_bug_id]['comments'] = comments_with_int_ids
 
     def getPosterForComment(self, remote_bug_id, comment_id):
@@ -1090,8 +1090,8 @@ class BugzillaLPPlugin(BugzillaAPI):
         comment_list = bug_comments_dict['bugs'][str(actual_bug_id)]
 
         # Transfer the comment list into a dict.
-        bug_comments = dict(
-            (comment['id'], comment) for comment in comment_list)
+        bug_comments = {
+            comment['id']: comment for comment in comment_list}
 
         self._bugs[actual_bug_id]['comments'] = bug_comments
 

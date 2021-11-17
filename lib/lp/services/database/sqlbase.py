@@ -408,7 +408,7 @@ def sqlvalues(*values, **kwvalues):
     if values:
         return tuple(quote(item) for item in values)
     elif kwvalues:
-        return dict((key, quote(value)) for key, value in kwvalues.items())
+        return {key: quote(value) for key, value in kwvalues.items()}
 
 
 def quote_identifier(identifier):

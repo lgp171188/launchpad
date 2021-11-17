@@ -58,7 +58,7 @@ class RetryDepwaitTunableLoop(TunableLoop):
             PocketChroot.distroarchseriesID.is_in(
                 b.distro_arch_series_id for b in bpbs),
             PocketChroot.chroot != None)
-        chroot_series = set(chroot.distroarchseriesID for chroot in chroots)
+        chroot_series = {chroot.distroarchseriesID for chroot in chroots}
         for build in bpbs:
             if (build.distro_arch_series.distroseries.status ==
                     SeriesStatus.OBSOLETE

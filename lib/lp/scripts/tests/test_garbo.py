@@ -346,14 +346,14 @@ class TestSessionPruner(TestCase):
         finally:
             pruner.cleanUp()
 
-        expected_sessions = set([
+        expected_sessions = {
             'recent_auth',
             'recent_unauth',
             'yesterday_auth',
             'yesterday_unauth',
             # 'ancient_auth',
             # 'ancient_unauth',
-            ])
+            }
 
         found_sessions = set(
             IMasterStore(SessionData).find(SessionData.client_id))
@@ -369,14 +369,14 @@ class TestSessionPruner(TestCase):
         finally:
             pruner.cleanUp()
 
-        expected_sessions = set([
+        expected_sessions = {
             'recent_auth',
             'recent_unauth',
             'yesterday_auth',
             # 'yesterday_unauth',
             'ancient_auth',
             # 'ancient_unauth',
-            ])
+            }
 
         found_sessions = set(
             IMasterStore(SessionData).find(SessionData.client_id))
@@ -386,14 +386,14 @@ class TestSessionPruner(TestCase):
     def test_duplicate_session_pruner(self):
         # None of the sessions created in setUp() are duplicates, so
         # they will all survive the pruning.
-        expected_sessions = set([
+        expected_sessions = {
             'recent_auth',
             'recent_unauth',
             'yesterday_auth',
             'yesterday_unauth',
             'ancient_auth',
             'ancient_unauth',
-            ])
+            }
 
         now = datetime.now(UTC)
 

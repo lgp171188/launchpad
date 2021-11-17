@@ -503,9 +503,9 @@ class SourcePackageHandler:
         log.debug("Found a source package for %s (%s) in %s" % (sp_name,
             sp_version, sp_component))
         dsc_contents = parse_tagfile(dsc_path)
-        dsc_contents = dict([
-            (name.lower(), value) for
-            (name, value) in six.iteritems(dsc_contents)])
+        dsc_contents = {
+            name.lower(): value for
+            (name, value) in six.iteritems(dsc_contents)}
 
         # Since the dsc doesn't know, we add in the directory, package
         # component and section

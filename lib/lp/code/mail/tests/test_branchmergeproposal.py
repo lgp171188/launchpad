@@ -147,7 +147,7 @@ class TestMergeProposalMailing(TestCaseWithFactory):
             'Baz Qux <mp+%d@%s>' % (bmp.id, config.launchpad.code_domain),
             ctrl.from_addr)
         reviewer_id = format_address_for_person(reviewer)
-        self.assertEqual(set([reviewer_id, bmp.address]), set(ctrl.to_addrs))
+        self.assertEqual({reviewer_id, bmp.address}, set(ctrl.to_addrs))
         mailer.sendAll()
 
     def test_forCreation_without_commit_message(self):
@@ -304,7 +304,7 @@ class TestMergeProposalMailing(TestCaseWithFactory):
                                     bmp.registrant)
         reviewer = request.recipient
         reviewer_id = format_address_for_person(reviewer)
-        self.assertEqual(set([reviewer_id, bmp.address]), set(ctrl.to_addrs))
+        self.assertEqual({reviewer_id, bmp.address}, set(ctrl.to_addrs))
 
     def test_to_addrs_excludes_team_reviewers(self):
         """Addresses for the to header exclude requested team reviewers."""
@@ -318,7 +318,7 @@ class TestMergeProposalMailing(TestCaseWithFactory):
                                     subscriber)
         reviewer = bmp.target_branch.owner
         reviewer_id = format_address_for_person(reviewer)
-        self.assertEqual(set([reviewer_id, bmp.address]), set(ctrl.to_addrs))
+        self.assertEqual({reviewer_id, bmp.address}, set(ctrl.to_addrs))
 
     def test_to_addrs_excludes_people_with_hidden_addresses(self):
         """The to header excludes those with hidden addresses."""

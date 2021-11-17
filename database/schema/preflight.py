@@ -38,32 +38,32 @@ import upgrade
 
 
 # Ignore connections by these users.
-SYSTEM_USERS = set(['postgres', 'slony', 'nagios', 'lagmon'])
+SYSTEM_USERS = {'postgres', 'slony', 'nagios', 'lagmon'}
 
 # Fail checks if these users are connected. If a process should not be
 # interrupted by a rollout, the database user it connects as should be
 # added here. The preflight check will fail if any of these users are
 # connected, so these systems will need to be shut down manually before
 # a database update.
-FRAGILE_USERS = set([
+FRAGILE_USERS = {
     # process_accepted is fragile, but also fast so we likely shouldn't
     # need to ever manually shut it down.
     'process_accepted',
     'process_upload',
     'publish_distro',
     'publish_ftpmaster',
-    ])
+    }
 
 # If these users have long running transactions, just kill 'em. Entries
 # added here must come with a bug number, a if part of Launchpad holds
 # open a long running transaction it is a bug we need to fix.
-BAD_USERS = set([
+BAD_USERS = {
     'karma',  # Bug #863109
     'rosettaadmin',  # Bug #863122
     'update-pkg-cache',  # Bug #912144
     'process_death_row',  # Bug #912146
     'langpack',  # Bug #912147
-    ])
+    }
 
 # How lagged the cluster can be before failing the preflight check.
 # If this is set too low, perfectly normal state will abort rollouts. If
@@ -82,7 +82,7 @@ class DatabasePreflight:
 
         node = Node(None, None, None, True)
         node.con = master_con
-        self.nodes = set([node])
+        self.nodes = {node}
         self.lpmain_nodes = self.nodes
         self.lpmain_master_node = node
 
@@ -343,7 +343,7 @@ class KillConnectionsPreflight(DatabasePreflight):
         num_tries = 100
         seconds_to_pause = 0.1
         if self.replication_paused:
-            nodes = set([self.lpmain_master_node])
+            nodes = {self.lpmain_master_node}
         else:
             nodes = self.lpmain_nodes
 

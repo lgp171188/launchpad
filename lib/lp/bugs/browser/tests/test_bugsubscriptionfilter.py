@@ -160,7 +160,7 @@ class TestBugSubscriptionFilterAPIModifications(
         self.assertTrue(self.subscription_filter.include_any_tags)
         self.assertTrue(self.subscription_filter.exclude_any_tags)
         self.assertEqual(
-            set(["*", "-*", "foo", "-bar"]),
+            {"*", "-*", "foo", "-bar"},
             self.subscription_filter.tags)
 
     def test_modify_description(self):
@@ -189,7 +189,7 @@ class TestBugSubscriptionFilterAPIModifications(
 
         # Updated state.
         self.assertEqual(
-            set([BugTaskStatus.NEW, BugTaskStatus.TRIAGED]),
+            {BugTaskStatus.NEW, BugTaskStatus.TRIAGED},
             self.subscription_filter.statuses)
 
     def test_modify_importances(self):
@@ -204,7 +204,7 @@ class TestBugSubscriptionFilterAPIModifications(
 
         # Updated state.
         self.assertEqual(
-            set([BugTaskImportance.LOW, BugTaskImportance.HIGH]),
+            {BugTaskImportance.LOW, BugTaskImportance.HIGH},
             self.subscription_filter.importances)
 
     def test_delete(self):

@@ -129,7 +129,7 @@ class TestGroupCommentsWithActivities(TestCase):
         activity2 = BugActivityStub(next(self.time_index)[0])
         comment2 = BugCommentStub(*next(self.time_index))
 
-        activities = set([activity1, activity2])
+        activities = {activity1, activity2}
         comments = list([comment1, comment2])
 
         self.assertEqual(

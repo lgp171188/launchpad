@@ -154,8 +154,8 @@ def countsByType(objects, n=30):
 
 def deltaCounts(counts1, counts2, n=30):
     """Compare two references counts lists and return the increase."""
-    counts1_map = dict((ref_type, count) for count, ref_type in counts1)
-    counts2_map = dict((ref_type, count) for count, ref_type in counts2)
+    counts1_map = {ref_type: count for count, ref_type in counts1}
+    counts2_map = {ref_type: count for count, ref_type in counts2}
     types1 = set(counts1_map.keys())
     types2 = set(counts2_map.keys())
     delta = []

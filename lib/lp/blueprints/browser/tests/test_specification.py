@@ -370,7 +370,7 @@ NEW_SPEC_FROM_ROOT_URL = 'http://blueprints.launchpad.test/specs/+new'
 
 class NewSpecificationTests:
 
-    expected_keys = set(['PROPRIETARY', 'PUBLIC', 'EMBARGOED'])
+    expected_keys = {'PROPRIETARY', 'PUBLIC', 'EMBARGOED'}
 
     def _create_form_data(self, context):
         return {
@@ -474,7 +474,7 @@ class TestNewSpecificationFromProductView(TestCaseWithFactory,
 
     layer = DatabaseFunctionalLayer
 
-    expected_keys = set(['PROPRIETARY', 'EMBARGOED'])
+    expected_keys = {'PROPRIETARY', 'EMBARGOED'}
 
     def createInitializedView(self):
         policy = SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY
@@ -495,7 +495,7 @@ class TestNewSpecificationFromDistributionView(TestCaseWithFactory,
 
     layer = DatabaseFunctionalLayer
 
-    expected_keys = set(['PUBLIC'])
+    expected_keys = {'PUBLIC'}
 
     def createInitializedView(self):
         distro = self.factory.makeDistribution()

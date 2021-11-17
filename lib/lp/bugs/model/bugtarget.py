@@ -150,7 +150,7 @@ class OfficialBugTagTargetMixin:
 
     def _setOfficialTags(self, tags):
         """Set the official bug tags from a list of strings."""
-        new_tags = set([tag.lower() for tag in tags])
+        new_tags = {tag.lower() for tag in tags}
         old_tags = set(self.official_bug_tags)
         added_tags = new_tags.difference(old_tags)
         removed_tags = old_tags.difference(new_tags)

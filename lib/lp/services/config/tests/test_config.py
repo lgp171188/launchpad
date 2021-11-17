@@ -63,7 +63,7 @@ class TestLaunchpadConfig(testtools.TestCase):
         names = set(dir(config))
         self.assertTrue(names.issuperset(dir(config.__class__)))
         self.assertTrue(names.issuperset(config.__dict__))
-        section_names = set(section.name for section in config._config)
+        section_names = {section.name for section in config._config}
         self.assertTrue(names.issuperset(section_names))
 
     def test_iter(self):

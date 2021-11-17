@@ -28,6 +28,12 @@ repos:
     hooks:
     -   id: flake8
         exclude: ^lib/contrib/
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v2.29.1
+    hooks:
+    -   id: pyupgrade
+        args: [--keep-percent-format]
+        exclude: ^lib/contrib/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
     hooks:

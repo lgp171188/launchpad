@@ -48,4 +48,4 @@ class TestConnectionString(TestCase):
         self.assertNotEqual(cs2, cs3)
         self.assertEqual(hash(cs1), hash(cs2))
         self.assertNotEqual(hash(cs1), hash(cs3))
-        self.assertContentEqual([cs1, cs3], set([cs1, cs2, cs3]))
+        self.assertContentEqual([cs1, cs3], {cs1, cs2, cs3})

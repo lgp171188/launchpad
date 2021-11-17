@@ -389,7 +389,7 @@ class ProductSeriesView(LaunchpadView,
         productserieslangs = list(self.context.productserieslanguages)
 
         # Make a set of the existing languages.
-        existing_languages = set(psl.language for psl in productserieslangs)
+        existing_languages = {psl.language for psl in productserieslangs}
 
         # Find all the preferred languages which are not in the set of
         # existing languages, and add a dummy PSL for each of them.

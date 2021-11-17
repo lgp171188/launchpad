@@ -84,7 +84,7 @@ class TestCaptureOops(TestCaseWithFactory):
         self.attachOopses()
         self.assertEqual(
             ["oops-0", "oops-1"],
-            sorted([a for a in self.getDetails() if "oops" in a]))
+            sorted(a for a in self.getDetails() if "oops" in a))
 
     def test_oops_content(self):
         self.assertEqual(0, len(self.oopses))

@@ -117,7 +117,7 @@ class TestScrubPOFileTranslator(TestCaseWithFactory):
         # way to avoid the risk of mistaking accidental orderings such
         # as per-id from being mistaken for the proper order.
         languages = ['nl', 'fr']
-        pofiles_per_language = dict((language, []) for language in languages)
+        pofiles_per_language = {language: [] for language in languages}
         for language, pofiles in pofiles_per_language.items():
             for template in templates:
                 pofiles.append(
@@ -244,7 +244,7 @@ class TestScrubPOFileTranslator(TestCaseWithFactory):
         old_poft = self.query_pofiletranslator(pofile, tm.submitter).one()
 
         fix_pofile(
-            fake_logger, pofile, [tm.potmsgset.id], set([tm.submitter.id]))
+            fake_logger, pofile, [tm.potmsgset.id], {tm.submitter.id})
 
         new_poft = self.query_pofiletranslator(pofile, tm.submitter).one()
         self.assertEqual(old_poft, new_poft)
@@ -255,7 +255,7 @@ class TestScrubPOFileTranslator(TestCaseWithFactory):
         self.becomeDbUser('postgres')
         poft = self.make_pofiletranslator_without_message()
         (pofile, person) = (poft.pofile, poft.person)
-        fix_pofile(fake_logger, pofile, [], set([person.id]))
+        fix_pofile(fake_logger, pofile, [], {person.id})
         self.assertIsNone(self.query_pofiletranslator(pofile, person).one())
 
     def test_fix_pofile_adds_missing_entries(self):

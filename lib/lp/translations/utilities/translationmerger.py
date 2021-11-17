@@ -101,7 +101,7 @@ def merge_translationtemplateitems(subordinate, representative,
     """
     source = subordinate.getAllTranslationTemplateItems()
     targets = representative.getAllTranslationTemplateItems()
-    templates = set(item.potemplate for item in targets)
+    templates = {item.potemplate for item in targets}
 
     for item in source:
         item = removeSecurityProxy(item)
@@ -497,7 +497,7 @@ class TranslationMerger:
             log.debug("Message %d/%d: %d subordinate(s)." % (
                 representative_num, num_representatives, len(potmsgsets)))
 
-            seen_potmsgsets = set([representative.id])
+            seen_potmsgsets = {representative.id}
 
             potmsgset_deletions = 0
             tm_deletions = 0
@@ -579,7 +579,7 @@ class TranslationMerger:
                 potmsgset = POTMsgSet.get(potmsgset_id)
 
                 tm_ids = self._partitionTranslationMessageIds(potmsgset)
-                before = sum([len(sublist) for sublist in tm_ids], 0)
+                before = sum((len(sublist) for sublist in tm_ids), 0)
 
                 for ids in tm_ids:
                     for id in ids:
@@ -607,9 +607,9 @@ class TranslationMerger:
         that's sorted out in the nested dicts).
         """
         tm = removeSecurityProxy(tm)
-        msgstr_ids = tuple([
+        msgstr_ids = tuple(
             getattr(tm, 'msgstr%d_id' % form)
-            for form in range(TranslationConstants.MAX_PLURAL_FORMS)])
+            for form in range(TranslationConstants.MAX_PLURAL_FORMS))
 
         return (tm.potemplateID, tm.languageID) + msgstr_ids
 

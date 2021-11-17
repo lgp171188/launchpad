@@ -133,7 +133,7 @@ class TestBug(TestCaseWithFactory):
             bug.subscribe(team2, person)
             bug.subscribe(person, person)
         self.assertEqual(
-            set([person, team1, team2]),
+            {person, team1, team2},
             set(bug.getSubscribersForPerson(person)))
 
     def test_get_subscribers_for_person_from_duplicates_too(self):
@@ -148,7 +148,7 @@ class TestBug(TestCaseWithFactory):
             bug.subscribe(person, person)
             bug.markAsDuplicate(real_bug)
         self.assertEqual(
-            set([person, team1, team2]),
+            {person, team1, team2},
             set(real_bug.getSubscribersForPerson(person)))
 
     def test_getSubscriptionsFromDuplicates(self):
@@ -704,9 +704,9 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
 
         (bug, bug_owner, bugtask_a, bugtask_b, default_bugtask) = (
             self.createBugTasksAndSubscribers())
-        initial_subscribers = set((
+        initial_subscribers = {
             self.factory.makePerson(name='subscriber'), bugtask_a.owner,
-            bug_owner))
+            bug_owner}
         initial_subscribers.update(bug.getDirectSubscribers())
 
         with person_logged_in(bug_owner):
@@ -726,8 +726,8 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
 
         (bug, bug_owner, bugtask_a, bugtask_b, default_bugtask) = (
                 self.createBugTasksAndSubscribers())
-        initial_subscribers = set((
-            self.factory.makePerson(name='subscriber'), bug_owner))
+        initial_subscribers = {
+            self.factory.makePerson(name='subscriber'), bug_owner}
 
         with person_logged_in(bug_owner):
             for subscriber in initial_subscribers:
@@ -745,9 +745,9 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
 
         (bug, bug_owner, bugtask_a, bugtask_b, default_bugtask) = (
             self.createBugTasksAndSubscribers(private_security_related=True))
-        initial_subscribers = set((
+        initial_subscribers = {
             self.factory.makePerson(), bug_owner, bugtask_a.pillar.driver,
-            bugtask_a.pillar.bug_supervisor))
+            bugtask_a.pillar.bug_supervisor}
 
         with person_logged_in(bug_owner):
             for subscriber in initial_subscribers:
@@ -756,7 +756,7 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
             bug.transitionToInformationType(
                 InformationType.PUBLICSECURITY, who)
             subscribers = bug.getDirectSubscribers()
-        expected_subscribers = set((default_bugtask.pillar.driver, bug_owner))
+        expected_subscribers = {default_bugtask.pillar.driver, bug_owner}
         expected_subscribers.update(initial_subscribers)
         self.assertContentEqual(expected_subscribers, subscribers)
 
@@ -766,9 +766,9 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
 
         (bug, bug_owner, bugtask_a, bugtask_b, default_bugtask) = (
             self.createBugTasksAndSubscribers(private_security_related=True))
-        initial_subscribers = set((
+        initial_subscribers = {
             self.factory.makePerson(name='subscriber'), bug_owner,
-            bugtask_a.pillar.driver))
+            bugtask_a.pillar.driver}
 
         with person_logged_in(bug_owner):
             for subscriber in initial_subscribers:

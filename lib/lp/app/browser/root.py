@@ -262,13 +262,13 @@ class LaunchpadSearchView(LaunchpadFormView):
     schema = ILaunchpadSearch
     field_names = ['text']
 
-    shipit_keywords = set([
+    shipit_keywords = {
         'ubuntu', 'kubuntu', 'edubuntu',
         'ship', 'shipit', 'send', 'get', 'mail', 'free',
-        'cd', 'cds', 'dvd', 'dvds', 'disc'])
-    shipit_anti_keywords = set([
+        'cd', 'cds', 'dvd', 'dvds', 'disc'}
+    shipit_anti_keywords = {
         'burn', 'burning', 'enable', 'error', 'errors', 'image', 'iso',
-        'read', 'rip', 'write'])
+        'read', 'rip', 'write'}
 
     def __init__(self, context, request):
         """Initialize the view.

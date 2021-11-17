@@ -389,9 +389,9 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         # Exceptions caused by bad URLs that may not be an Lp code issue.
         utility = ErrorReportingUtility()
         utility._oops_config.publisher = None
-        errors = set([
+        errors = {
             GoneError.__name__, InvalidBatchSizeError.__name__,
-            NotFound.__name__])
+            NotFound.__name__}
         self.assertEqual(
             errors, utility._ignored_exceptions_for_offsite_referer)
 

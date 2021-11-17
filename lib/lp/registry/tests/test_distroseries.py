@@ -660,7 +660,7 @@ class TestDistroSeriesSet(TestCaseWithFactory):
         distro_series_set = getUtility(IDistroSeriesSet)
         # Get translatables as a sequence of names of the series.
         return sorted(
-            [series.name for series in distro_series_set.translatables()])
+            series.name for series in distro_series_set.translatables())
 
     def _ref_translatables(self, expected=None):
         # Return the reference value, merged with expected data.

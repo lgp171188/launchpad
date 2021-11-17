@@ -384,7 +384,7 @@ class MilestoneView(
 
     def getReleases(self):
         """See `ProductDownloadFileMixin`."""
-        return set([self.release])
+        return {self.release}
 
     @cachedproperty
     def download_files(self):

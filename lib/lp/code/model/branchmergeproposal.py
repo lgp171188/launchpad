@@ -510,9 +510,9 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         current_bug_ids = set(current_bug_ids_from_source)
         new_bug_ids = self._fetchRelatedBugIDsFromSource()
         # Only remove links marked as originating in the source branch.
-        remove_bugs = load(Bug, set(
+        remove_bugs = load(Bug, {
             bug_id for bug_id in current_bug_ids - new_bug_ids
-            if current_bug_ids_from_source[bug_id]))
+            if current_bug_ids_from_source[bug_id]})
         add_bugs = load(Bug, new_bug_ids - current_bug_ids)
         if remove_bugs or add_bugs:
             janitor = getUtility(ILaunchpadCelebrities).janitor
@@ -852,8 +852,8 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         # a database query to identify if there are any active proposals
         # with the same source and target branches.
         self.syncUpdate()
-        review_requests = list(set(
-            (vote.reviewer, vote.review_type) for vote in self.votes))
+        review_requests = list({
+            (vote.reviewer, vote.review_type) for vote in self.votes})
         proposal = merge_source.addLandingTarget(
             registrant=registrant,
             merge_target=merge_target,
@@ -1215,9 +1215,9 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         """See `IBranchMergeProposal`."""
         diffs = Store.of(self).find(IncrementalDiff,
             IncrementalDiff.branch_merge_proposal_id == self.id)
-        diff_dict = dict(
-            ((diff.old_revision, diff.new_revision), diff)
-            for diff in diffs)
+        diff_dict = {
+            (diff.old_revision, diff.new_revision): diff
+            for diff in diffs}
         return [diff_dict.get(revisions) for revisions in revision_list]
 
     def scheduleDiffUpdates(self, return_jobs=True):
@@ -1344,8 +1344,8 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
                          mp.prerequisite_git_path))
             person_ids.add(mp.registrantID)
             person_ids.add(mp.merge_reporterID)
-        git_repository_ids = set(
-            repository_id for repository_id, _ in git_ref_keys)
+        git_repository_ids = {
+            repository_id for repository_id, _ in git_ref_keys}
 
         branches = load_related(
             Branch, branch_merge_proposals, (
@@ -1476,7 +1476,7 @@ class BranchMergeProposalGetter:
             return {}
         ids = [proposal.id for proposal in proposals]
         store = Store.of(proposals[0])
-        result = dict([(proposal, []) for proposal in proposals])
+        result = {proposal: [] for proposal in proposals}
         # Make sure that the Person and the review comment are loaded in the
         # storm cache as the reviewer is displayed in a title attribute on the
         # merge proposal listings page, and the message is needed to get to

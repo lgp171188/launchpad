@@ -464,8 +464,8 @@ class TestOCIProjectVocabulary(TestCaseWithFactory):
         """
         naked = removeSecurityProxy
         self.assertEqual(
-            set(naked(ociproject).id for ociproject in ociprojects),
-            set(naked(term.value).id for term in search_result))
+            {naked(ociproject).id for ociproject in ociprojects},
+            {naked(term.value).id for term in search_result})
 
     def test_search_with_name_substring(self):
         vocabulary = self.getVocabulary()

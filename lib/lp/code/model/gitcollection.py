@@ -252,7 +252,7 @@ class GenericGitCollection:
                 *self._convertListingSortToOrderBy(sort_by)))
 
         def do_eager_load(rows):
-            repository_ids = set(repository.id for repository in rows)
+            repository_ids = {repository.id for repository in rows}
             if not repository_ids:
                 return
             GenericGitCollection.preloadDataForRepositories(rows)
@@ -262,8 +262,8 @@ class GenericGitCollection:
 
         def cache_permission(repository):
             if self._user:
-                get_property_cache(repository)._known_viewers = set(
-                    [self._user.id])
+                get_property_cache(repository)._known_viewers = {
+                    self._user.id}
             return repository
 
         eager_load_hook = (

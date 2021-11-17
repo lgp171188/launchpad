@@ -1292,9 +1292,9 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
 
         self.assertEqual("New", ws_upload.status)
         self.assertEqual(
-            set(["universe"]),
-            set(binary["component"]
-                for binary in ws_upload.getBinaryProperties()))
+            {"universe"},
+            {binary["component"]
+                for binary in ws_upload.getBinaryProperties()})
         self.assertRaises(
             Unauthorized, ws_upload.overrideBinaries,
             changes=[{"component": "main"}])
@@ -1306,9 +1306,9 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         transaction.commit()
 
         self.assertEqual(
-            set(["main"]),
-            set(binary["component"]
-                for binary in ws_upload.getBinaryProperties()))
+            {"main"},
+            {binary["component"]
+                for binary in ws_upload.getBinaryProperties()})
         self.assertRaises(
             Unauthorized, ws_upload.overrideBinaries,
             changes=[{"component": "universe"}])

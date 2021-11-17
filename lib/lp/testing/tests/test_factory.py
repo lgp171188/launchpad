@@ -913,7 +913,7 @@ class IsSecurityProxiedOrHarmlessTests(TestCaseWithFactory):
             is_security_proxied_or_harmless([1, '2', proxied_person]))
         self.assertTrue(
             is_security_proxied_or_harmless(
-                set([1, '2', proxied_person])))
+                {1, '2', proxied_person}))
         self.assertTrue(
             is_security_proxied_or_harmless(
                 frozenset([1, '2', proxied_person])))
@@ -927,7 +927,7 @@ class IsSecurityProxiedOrHarmlessTests(TestCaseWithFactory):
             is_security_proxied_or_harmless([1, '2', unproxied_person]))
         self.assertFalse(
             is_security_proxied_or_harmless(
-                set([1, '2', unproxied_person])))
+                {1, '2', unproxied_person}))
         self.assertFalse(
             is_security_proxied_or_harmless(
                 frozenset([1, '2', unproxied_person])))

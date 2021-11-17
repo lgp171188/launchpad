@@ -784,10 +784,10 @@ class TestDominatorMethods(TestCaseWithFactory):
         versions = ["1.%d" % number for number in range(4)]
 
         # We have one package releases for each version.
-        relevant_releases = dict(
-            (version, self.factory.makeSourcePackageRelease(
-                sourcepackagename=package, version=version))
-            for version in jumble(versions))
+        relevant_releases = {
+            version: self.factory.makeSourcePackageRelease(
+                sourcepackagename=package, version=version)
+            for version in jumble(versions)}
 
         # Each of those releases is subsequently published in
         # different components.
@@ -798,15 +798,15 @@ class TestDominatorMethods(TestCaseWithFactory):
         # oldest to newest.  Each re-publishing into a different
         # component is meant to supersede publication into the previous
         # component.
-        pubs_by_version = dict(
-            (version, [
+        pubs_by_version = {
+            version: [
                 self.factory.makeSourcePackagePublishingHistory(
                     archive=series.main_archive, distroseries=series,
                     pocket=pocket, status=PackagePublishingStatus.PUBLISHED,
                     sourcepackagerelease=relevant_releases[version],
                     component=component)
-                for component in components])
-            for version in jumble(versions))
+                for component in components]
+            for version in jumble(versions)}
 
         ages = jumble(
             [datetime.timedelta(age) for age in range(len(versions))])
@@ -904,11 +904,11 @@ class TestDominatorMethods(TestCaseWithFactory):
     def test_findPublishedSourcePackageNames_ignores_other_states(self):
         series = self.factory.makeDistroSeries()
         pocket = PackagePublishingPocket.RELEASE
-        spphs = dict(
-            (status, self.factory.makeSourcePackagePublishingHistory(
+        spphs = {
+            status: self.factory.makeSourcePackagePublishingHistory(
                 distroseries=series, archive=series.main_archive,
-                pocket=pocket, status=status))
-            for status in PackagePublishingStatus.items)
+                pocket=pocket, status=status)
+            for status in PackagePublishingStatus.items}
         published_spph = spphs[PackagePublishingStatus.PUBLISHED]
         dominator = self.makeDominator(list(spphs.values()))
         self.assertContentEqual(
@@ -988,13 +988,13 @@ class TestDominatorMethods(TestCaseWithFactory):
         series = self.factory.makeDistroSeries()
         package = self.factory.makeSourcePackageName()
         pocket = PackagePublishingPocket.RELEASE
-        spphs = dict(
-            (status, self.factory.makeSourcePackagePublishingHistory(
+        spphs = {
+            status: self.factory.makeSourcePackagePublishingHistory(
                 distroseries=series, archive=series.main_archive,
                 pocket=pocket, status=status,
                 sourcepackagerelease=self.factory.makeSourcePackageRelease(
-                    sourcepackagename=package)))
-            for status in PackagePublishingStatus.items)
+                    sourcepackagename=package))
+            for status in PackagePublishingStatus.items}
         dominator = self.makeDominator(list(spphs.values()))
         self.assertContentEqual(
             [spphs[PackagePublishingStatus.PUBLISHED]],
@@ -1336,7 +1336,7 @@ class TestArchSpecificPublicationsCache(TestCaseWithFactory):
         cache = self.makeCache()
         self.assertContentEqual(
             [cache.getKey(bpph) for bpph in bpphs],
-            set(cache.getKey(bpph) for bpph in bpphs * 2))
+            {cache.getKey(bpph) for bpph in bpphs * 2})
 
     def test_hasArchSpecificPublications_is_consistent_and_correct(self):
         # hasArchSpecificPublications consistently, repeatably returns

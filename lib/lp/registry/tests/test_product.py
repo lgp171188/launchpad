@@ -339,8 +339,8 @@ class TestProduct(TestCaseWithFactory):
             licenses=[License.MIT])
         policies = getUtility(IAccessPolicySource).findByPillar((product,))
         grants = getUtility(IAccessPolicyGrantSource).findByPolicy(policies)
-        expected_grantess = set([product.owner])
-        grantees = set([grant.grantee for grant in grants])
+        expected_grantess = {product.owner}
+        grantees = {grant.grantee for grant in grants}
         self.assertEqual(expected_grantess, grantees)
 
     def test_open_product_creation_sharing_policies(self):
@@ -821,18 +821,18 @@ class TestProduct(TestCaseWithFactory):
                 product.information_type = InformationType.PROPRIETARY
 
     expected_get_permissions = {
-        CheckerPublic: set((
+        CheckerPublic: {
             'active', 'id', 'information_type', 'pillar_category', 'private',
-            'userCanLimitedView', 'userCanView',)),
-        'launchpad.LimitedView': set((
+            'userCanLimitedView', 'userCanView'},
+        'launchpad.LimitedView': {
             'bugtargetdisplayname', 'display_name', 'displayname', 'drivers',
             'enable_bug_expiration', 'getBugTaskWeightFunction',
             'getOCIProject', 'getSpecification',
             'icon', 'logo', 'name', 'official_answers', 'official_anything',
             'official_blueprints', 'official_codehosting', 'official_malone',
             'owner', 'parent_subscription_target', 'pillar', 'projectgroup',
-            'searchTasks', 'title')),
-        'launchpad.View': set((
+            'searchTasks', 'title'},
+        'launchpad.View': {
             '_getOfficialTagClause', 'visible_specifications',
             'valid_specifications', 'api_valid_specifications',
             'active_or_packaged_series', 'aliases', 'all_milestones',
@@ -894,21 +894,21 @@ class TestProduct(TestCaseWithFactory):
             'translationpermission', 'translations_usage', 'ubuntu_packages',
             'userCanAlterBugSubscription', 'userCanAlterSubscription',
             'userCanEdit', 'userHasBugSubscriptions', 'uses_launchpad',
-            'vcs', 'wikiurl')),
-        'launchpad.AnyAllowedPerson': set((
+            'vcs', 'wikiurl'},
+        'launchpad.AnyAllowedPerson': {
             'addAnswerContact', 'addBugSubscription',
             'addBugSubscriptionFilter', 'addSubscription',
             'createQuestionFromBug', 'newQuestion', 'removeAnswerContact',
-            'removeBugSubscription')),
-        'launchpad.Append': set(('newFAQ', )),
-        'launchpad.Driver': set(('newSeries', )),
-        'launchpad.Edit': set((
+            'removeBugSubscription'},
+        'launchpad.Append': {'newFAQ'},
+        'launchpad.Driver': {'newSeries'},
+        'launchpad.Edit': {
             'addOfficialBugTag', 'removeOfficialBugTag',
             'setBranchSharingPolicy', 'setBugSharingPolicy',
-            'setSpecificationSharingPolicy', 'checkInformationType')),
-        'launchpad.Moderate': set((
+            'setSpecificationSharingPolicy', 'checkInformationType'},
+        'launchpad.Moderate': {
             'is_permitted', 'license_approved', 'project_reviewed',
-            'reviewer_whiteboard', 'setAliases')),
+            'reviewer_whiteboard', 'setAliases'},
         }
 
     def test_get_permissions(self):
@@ -919,12 +919,12 @@ class TestProduct(TestCaseWithFactory):
 
     def test_set_permissions(self):
         expected_set_permissions = {
-            'launchpad.BugSupervisor': set((
+            'launchpad.BugSupervisor': {
                 'bug_reported_acknowledgement', 'bug_reporting_guidelines',
                 'bugtracker', 'enable_bug_expiration',
                 'enable_bugfiling_duplicate_search', 'official_bug_tags',
-                'official_malone', 'remote_product')),
-            'launchpad.Edit': set((
+                'official_malone', 'remote_product'},
+            'launchpad.Edit': {
                 'answers_usage', 'blueprints_usage', 'bug_supervisor',
                 'bug_tracking_usage', 'codehosting_usage',
                 'commercial_subscription', 'description', 'development_focus',
@@ -935,15 +935,15 @@ class TestProduct(TestCaseWithFactory):
                 'official_codehosting', 'owner', 'private',
                 'programminglang', 'projectgroup',
                 'releaseroot', 'screenshotsurl', 'sourceforgeproject',
-                'summary', 'uses_launchpad', 'wikiurl', 'vcs')),
-            'launchpad.Moderate': set((
+                'summary', 'uses_launchpad', 'wikiurl', 'vcs'},
+            'launchpad.Moderate': {
                 'active', 'autoupdate', 'license_approved', 'name',
-                'project_reviewed', 'registrant', 'reviewer_whiteboard')),
-            'launchpad.TranslationsAdmin': set((
+                'project_reviewed', 'registrant', 'reviewer_whiteboard'},
+            'launchpad.TranslationsAdmin': {
                 'translation_focus', 'translationgroup',
-                'translationpermission', 'translations_usage')),
-            'launchpad.AnyAllowedPerson': set((
-                'date_next_suggest_packaging', )),
+                'translationpermission', 'translations_usage'},
+            'launchpad.AnyAllowedPerson': {
+                'date_next_suggest_packaging'},
             }
         product = self.factory.makeProduct()
         checker = getChecker(product)

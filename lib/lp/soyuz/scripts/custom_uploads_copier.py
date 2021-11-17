@@ -79,7 +79,7 @@ class CustomUploadsCopier:
         uploads = source_series.getPackageUploads(
             pocket=source_pocket, custom_type=list(self.copyable_types))
         load_referencing(PackageUploadCustom, uploads, ['packageuploadID'])
-        customs = sum([list(upload.customfiles) for upload in uploads], [])
+        customs = sum((list(upload.customfiles) for upload in uploads), [])
         return sorted(
             filter(self.isCopyable, customs),
             key=attrgetter('id'), reverse=True)

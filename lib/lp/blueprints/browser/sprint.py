@@ -410,8 +410,8 @@ class SprintTopicSetView(HasSpecificationsView, LaunchpadView):
     def initialize(self):
         self.status_message = None
         self.process_form()
-        self.attendee_ids = set(
-            attendance.attendeeID for attendance in self.context.attendances)
+        self.attendee_ids = {
+            attendance.attendeeID for attendance in self.context.attendances}
 
     @cachedproperty
     def spec_filter(self):
@@ -523,8 +523,8 @@ class SprintMeetingExportView(LaunchpadView):
             if spec.drafter is not None:
                 spec_people[spec.drafter.id] = True
                 attendee_set.add(spec.drafter.id)
-        people_by_id = dict((person.id, person) for person in
-            getUtility(IPersonSet).getPrecachedPersonsFromIDs(attendee_set))
+        people_by_id = {person.id: person for person in
+            getUtility(IPersonSet).getPrecachedPersonsFromIDs(attendee_set)}
         self.specifications = [
             dict(spec=spec, interested=[
                     dict(name=people_by_id[person_id].name, required=required)
@@ -593,9 +593,9 @@ class SprintAttendeesCsvExportView(LaunchpadView):
             location = attendance.attendee.location
             if location is not None and location.visible:
                 time_zone = attendance.attendee.time_zone
-            irc_nicknames = ', '.join(sorted(set(
-                [ircid.nickname for ircid
-                 in attendance.attendee.ircnicknames])))
+            irc_nicknames = ', '.join(sorted({
+                ircid.nickname for ircid
+                 in attendance.attendee.ircnicknames}))
             rows.append(
                 (attendance.attendee.name,
                  attendance.attendee.displayname,

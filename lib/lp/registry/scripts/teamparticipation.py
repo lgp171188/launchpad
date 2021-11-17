@@ -155,7 +155,7 @@ def check_teamparticipation_consistency(log, info):
 
     log.debug("Checking consistency of %d people", len(people))
     for person in report_progress(log, 50000, people, "people"):
-        participants_expected = set((person,))
+        participants_expected = {person}
         participants_observed = team_participations[person]
         errors.extend(
             check_participants(

@@ -1287,7 +1287,7 @@ class Archive(SQLBase):
             count_map['total'].append(BuildStatus.NEEDSBUILD)
 
         # Initialize all the counts in the map to zero:
-        build_counts = dict((count_type, 0) for count_type in count_map)
+        build_counts = {count_type: 0 for count_type in count_map}
 
         # For each count type that we want to return ('failed', 'total'),
         # there may be a number of corresponding buildstate counts.
@@ -1497,8 +1497,8 @@ class Archive(SQLBase):
             components = [components]
         component_permissions = self.getComponentsForQueueAdmin(user)
         if not component_permissions.is_empty():
-            allowed_components = set(
-                permission.component for permission in component_permissions)
+            allowed_components = {
+                permission.component for permission in component_permissions}
             # The intersection of allowed_components and components must be
             # equal to components to allow the operation to go ahead.
             if allowed_components.intersection(components) == set(components):
@@ -2062,7 +2062,7 @@ class Archive(SQLBase):
         # Check for duplicate names.
         token_set = getUtility(IArchiveAuthTokenSet)
         dup_tokens = token_set.getActiveNamedTokensForArchive(self, names)
-        dup_names = set(token.name for token in dup_tokens)
+        dup_names = {token.name for token in dup_tokens}
 
         values = [
             (name, create_token(20), self) for name in set(names) - dup_names]

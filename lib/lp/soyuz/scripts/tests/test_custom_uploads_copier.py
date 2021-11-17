@@ -21,9 +21,9 @@ from lp.testing.layers import (
 def list_custom_uploads(distroseries):
     """Return a list of all `PackageUploadCustom`s for `distroseries`."""
     return sum(
-        [
+        (
             list(upload.customfiles)
-            for upload in distroseries.getPackageUploads()],
+            for upload in distroseries.getPackageUploads()),
         [])
 
 

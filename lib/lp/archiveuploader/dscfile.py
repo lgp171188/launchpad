@@ -250,15 +250,15 @@ class SignableTagFile:
 class DSCFile(SourceUploadFile, SignableTagFile):
     """Models a given DSC file and its content."""
 
-    mandatory_fields = set([
+    mandatory_fields = {
         "Source",
         "Version",
         "Binary",
         "Maintainer",
         "Architecture",
-        "Files"])
+        "Files"}
 
-    known_fields = mandatory_fields.union(set([
+    known_fields = mandatory_fields.union({
         "Build-Depends",
         "Build-Depends-Indep",
         "Build-Conflicts",
@@ -269,7 +269,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         "Format",
         "Homepage",
         "Standards-Version",
-        ]))
+        })
 
     # Note that files is actually only set inside verify().
     files = None

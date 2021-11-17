@@ -929,7 +929,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
         callbacks = self.makeMirrorProberCallbacks()
         self.assertEqual(
             set(callbacks.expected_failures),
-            set([
+            {
                 BadResponseCode,
                 ProberTimeout,
                 ConnectionSkipped,
@@ -937,7 +937,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
                 UnknownURLSchemeAfterRedirect,
                 InvalidHTTPSCertificate,
                 InvalidHTTPSCertificateSkipped,
-                ]))
+                })
         exceptions = [BadResponseCode(http.client.NOT_FOUND),
                       ProberTimeout('http://localhost/', 5),
                       ConnectionSkipped(),

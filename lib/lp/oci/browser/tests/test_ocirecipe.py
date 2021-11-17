@@ -1786,7 +1786,7 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
             ["amd64", "i386"],
             [build.distro_arch_series.architecturetag for build in builds])
         self.assertContentEqual(
-            [2510], set(build.buildqueue_record.lastscore for build in builds))
+            [2510], {build.buildqueue_record.lastscore for build in builds})
 
     def test_request_builds_no_architectures(self):
         # Selecting no architectures causes a validation failure.

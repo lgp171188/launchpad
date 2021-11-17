@@ -552,7 +552,7 @@ class TestPublishFTPMasterScript(
         script.runFinalizeParts(distro)
         _, kwargs = run_parts_fixture.new_value.calls[0]
         env = kwargs["env"]
-        required_parameters = set(["ARCHIVEROOTS", "SECURITY_UPLOAD_ONLY"])
+        required_parameters = {"ARCHIVEROOTS", "SECURITY_UPLOAD_ONLY"}
         missing_parameters = required_parameters.difference(set(env.keys()))
         self.assertEqual(set(), missing_parameters)
 

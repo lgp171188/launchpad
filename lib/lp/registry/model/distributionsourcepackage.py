@@ -426,9 +426,9 @@ class DistributionSourcePackage(BugTargetBase,
             sprs = [SourcePackageRelease.get(spr_id) for spr_id in spr_ids]
             pubs = DistributionSourcePackageRelease.getPublishingHistories(
                 self.distribution, sprs)
-            sprs_by_id = dict(
-                (spr, list(pubs)) for (spr, pubs) in
-                itertools.groupby(pubs, attrgetter('sourcepackagereleaseID')))
+            sprs_by_id = {
+                spr: list(pubs) for (spr, pubs) in
+                itertools.groupby(pubs, attrgetter('sourcepackagereleaseID'))}
             return [
                 (DistributionSourcePackageRelease(
                     distribution=self.distribution,
