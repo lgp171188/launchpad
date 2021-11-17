@@ -9,7 +9,6 @@ __all__ = [
 
 from datetime import datetime
 from functools import partial
-import json
 import operator
 import os.path
 
@@ -833,15 +832,12 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             memcache_key = six.ensure_binary(
                 '%s:bzr-file-list:%s:%s:%s' % (
                     instance_name, self.id, revision_id, dirname))
-            cached_file_list = memcache_client.get(memcache_key)
-            if cached_file_list is not None:
-                try:
-                    file_list = json.loads(cached_file_list)
-                except Exception:
-                    logger.exception(
-                        'Cannot load cached file list for %s:%s:%s; deleting' %
-                        (self.unique_name, revision_id, dirname))
-                    memcache_client.delete(memcache_key)
+            description = "file list for %s:%s:%s" % (
+                self.unique_name, revision_id, dirname
+            )
+            file_list = memcache_client.get_json(
+                memcache_key, logger, description, default=unset)
+
         if file_list is unset:
             try:
                 inventory = hosting_client.getInventory(
@@ -854,7 +850,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             if enable_memcache:
                 # Cache the file list in case there's a request for another
                 # file in the same directory.
-                memcache_client.set(memcache_key, json.dumps(file_list))
+                memcache_client.set_json(memcache_key, file_list)
         file_id = (file_list or {}).get(os.path.basename(filename))
         if file_id is None:
             raise BranchFileNotFound(

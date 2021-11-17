@@ -34,15 +34,15 @@ class DistroSeriesDifferenceWebServiceTestCase(TestCaseWithFactory):
         self.assertTrue(
             ws_diff.self_link.endswith(ds_diff_path))
 
-    def test_blacklist(self):
-        # The blacklist method can be called by people with admin access.
+    def test_blocklist(self):
+        # The blocklist method can be called by people with admin access.
         ds_diff = self.factory.makeDistroSeriesDifference()
         archive_admin = self.factory.makeArchiveAdmin(
             archive=ds_diff.derived_series.main_archive)
         ws_diff = ws_object(self.factory.makeLaunchpadService(
             archive_admin), ds_diff)
 
-        ws_diff.blacklist()
+        ws_diff.blocklist()
         transaction.commit()
 
         utility = getUtility(IDistroSeriesDifferenceSource)
@@ -53,8 +53,8 @@ class DistroSeriesDifferenceWebServiceTestCase(TestCaseWithFactory):
             DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
             ds_diff.status)
 
-    def test_unblacklist(self):
-        # The unblacklist method can be called by people with admin access.
+    def test_unblocklist(self):
+        # The unblocklist method can be called by people with admin access.
         ds_diff = self.factory.makeDistroSeriesDifference(
             status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT)
         archive_admin = self.factory.makeArchiveAdmin(
@@ -62,7 +62,7 @@ class DistroSeriesDifferenceWebServiceTestCase(TestCaseWithFactory):
         ws_diff = ws_object(self.factory.makeLaunchpadService(
             archive_admin), ds_diff)
 
-        ws_diff.unblacklist()
+        ws_diff.unblocklist()
         transaction.commit()
 
         utility = getUtility(IDistroSeriesDifferenceSource)
@@ -179,7 +179,7 @@ class DistroSeriesDifferenceWebServiceTestCase(TestCaseWithFactory):
         ws_diff = ws_object(self.factory.makeLaunchpadService(
             self.factory.makePerson()), ds_diff)
 
-        self.assertEqual(u'Blacklisted always', ws_diff.status)
+        self.assertEqual(u'Blocklisted always', ws_diff.status)
 
     def test_exported_sourcepackagename(self):
         # The difference's sourcepackagename is exposed.

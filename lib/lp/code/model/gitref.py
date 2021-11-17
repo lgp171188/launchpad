@@ -9,7 +9,6 @@ __all__ = [
     ]
 
 from functools import partial
-import json
 import re
 
 from lazr.lifecycle.event import ObjectCreatedEvent
@@ -353,23 +352,17 @@ class GitRefMixin:
             if stop is not None:
                 memcache_key += ":stop=%s" % stop
             memcache_key = six.ensure_binary(memcache_key)
-            cached_log = memcache_client.get(memcache_key)
-            if cached_log is not None:
-                try:
-                    log = json.loads(cached_log)
-                except Exception:
-                    if logger is not None:
-                        logger.exception(
-                            "Cannot load cached log information for %s:%s; "
-                            "deleting" % (path, start))
-                    memcache_client.delete(memcache_key)
+
+            description = "log information for %s:%s" % (path, start)
+            log = memcache_client.get_json(memcache_key, logger, description)
+
         if log is None:
             if enable_hosting:
                 hosting_client = getUtility(IGitHostingClient)
                 log = removeSecurityProxy(hosting_client.getLog(
                     path, start, limit=limit, stop=stop, logger=logger))
                 if enable_memcache:
-                    memcache_client.set(memcache_key, json.dumps(log))
+                    memcache_client.set_json(memcache_key, log)
             else:
                 # Fall back to synthesising something reasonable based on
                 # information in our own database.

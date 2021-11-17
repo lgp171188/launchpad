@@ -248,7 +248,7 @@ class ILiveFSEditableAttributes(IHasOwner):
     metadata = exported(Dict(
         title=_(
             "A dict of data about the image.  Entries here will be passed to "
-            "the builder slave."),
+            "the builder."),
         key_type=TextLine(), required=True, readonly=False))
 
 

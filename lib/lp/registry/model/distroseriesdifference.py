@@ -882,7 +882,7 @@ class DistroSeriesDifference(StormBase):
         return get_comment_with_status_change(
             self.status, new_status, comment)
 
-    def blacklist(self, commenter, all=False, comment=None):
+    def blocklist(self, commenter, all=False, comment=None):
         """See `IDistroSeriesDifference`."""
         if all:
             new_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
@@ -893,7 +893,7 @@ class DistroSeriesDifference(StormBase):
         self.status = new_status
         return dsd_comment
 
-    def unblacklist(self, commenter, comment=None):
+    def unblocklist(self, commenter, comment=None):
         """See `IDistroSeriesDifference`."""
         new_status = DistroSeriesDifferenceStatus.NEEDS_ATTENTION
         new_comment = self._getCommentWithStatusChange(new_status, comment)
