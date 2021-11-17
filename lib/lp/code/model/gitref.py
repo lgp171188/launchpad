@@ -362,7 +362,7 @@ class GitRefMixin:
                 log = removeSecurityProxy(hosting_client.getLog(
                     path, start, limit=limit, stop=stop, logger=logger))
                 if enable_memcache:
-                    memcache_client.set_json(memcache_key, log)
+                    memcache_client.set_json(memcache_key, log, logger=logger)
             else:
                 # Fall back to synthesising something reasonable based on
                 # information in our own database.
