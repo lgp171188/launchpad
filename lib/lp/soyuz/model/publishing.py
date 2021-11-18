@@ -50,7 +50,7 @@ from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -245,7 +245,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     distroseries = ForeignKey(foreignKey='DistroSeries', dbName='distroseries')
     component = ForeignKey(foreignKey='Component', dbName='component')
     section = ForeignKey(foreignKey='Section', dbName='section')
-    status = EnumCol(schema=PackagePublishingStatus)
+    status = DBEnum(enum=PackagePublishingStatus)
     scheduleddeletiondate = UtcDateTimeCol(default=None)
     datepublished = UtcDateTimeCol(default=None)
     datecreated = UtcDateTimeCol(default=UTC_NOW)
@@ -254,9 +254,9 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                               dbName='supersededby', default=None)
     datemadepending = UtcDateTimeCol(default=None)
     dateremoved = UtcDateTimeCol(default=None)
-    pocket = EnumCol(dbName='pocket', schema=PackagePublishingPocket,
-                     default=PackagePublishingPocket.RELEASE,
-                     notNull=True)
+    pocket = DBEnum(name='pocket', enum=PackagePublishingPocket,
+                    default=PackagePublishingPocket.RELEASE,
+                    allow_none=False)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)
@@ -643,8 +643,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         foreignKey='DistroArchSeries', dbName='distroarchseries')
     component = ForeignKey(foreignKey='Component', dbName='component')
     section = ForeignKey(foreignKey='Section', dbName='section')
-    priority = EnumCol(dbName='priority', schema=PackagePublishingPriority)
-    status = EnumCol(dbName='status', schema=PackagePublishingStatus)
+    priority = DBEnum(name='priority', enum=PackagePublishingPriority)
+    status = DBEnum(name='status', enum=PackagePublishingStatus)
     phased_update_percentage = IntCol(
         dbName='phased_update_percentage', notNull=False, default=None)
     scheduleddeletiondate = UtcDateTimeCol(default=None)
@@ -658,7 +658,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         foreignKey='BinaryPackageBuild', dbName='supersededby', default=None)
     datemadepending = UtcDateTimeCol(default=None)
     dateremoved = UtcDateTimeCol(default=None)
-    pocket = EnumCol(dbName='pocket', schema=PackagePublishingPocket)
+    pocket = DBEnum(name='pocket', enum=PackagePublishingPocket)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)

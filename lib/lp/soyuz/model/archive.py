@@ -103,7 +103,7 @@ from lp.services.database.bulk import (
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     ISlaveStore,
     IStore,
@@ -298,11 +298,11 @@ class Archive(SQLBase):
     distribution = ForeignKey(
         foreignKey='Distribution', dbName='distribution', notNull=False)
 
-    purpose = EnumCol(
-        dbName='purpose', unique=False, notNull=True, schema=ArchivePurpose)
+    purpose = DBEnum(
+        name='purpose', allow_none=False, enum=ArchivePurpose)
 
-    status = EnumCol(
-        dbName="status", unique=False, notNull=True, schema=ArchiveStatus,
+    status = DBEnum(
+        name="status", allow_none=False, enum=ArchiveStatus,
         default=ArchiveStatus.ACTIVE)
 
     _enabled = BoolCol(dbName='enabled', notNull=True, default=True)

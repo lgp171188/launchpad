@@ -52,10 +52,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import (
-    DBEnum,
-    EnumCol,
-    )
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -169,18 +166,17 @@ class PackageUpload(SQLBase):
 
     _defaultOrder = ['id']
 
-    status = EnumCol(
-        dbName='status', unique=False, notNull=True,
-        default=PackageUploadStatus.NEW, schema=PackageUploadStatus,
-        storm_validator=validate_status)
+    status = DBEnum(
+        name='status', allow_none=False,
+        default=PackageUploadStatus.NEW, enum=PackageUploadStatus,
+        validator=validate_status)
 
     date_created = UtcDateTimeCol(notNull=False, default=UTC_NOW)
 
     distroseries = ForeignKey(dbName="distroseries", foreignKey='DistroSeries')
 
-    pocket = EnumCol(
-        dbName='pocket', unique=False, notNull=True,
-        schema=PackagePublishingPocket)
+    pocket = DBEnum(
+        name='pocket', allow_none=False, enum=PackagePublishingPocket)
 
     changes_file_id = Int(name='changesfile')
     changesfile = Reference(changes_file_id, 'LibraryFileAlias.id')
@@ -1421,9 +1417,8 @@ class PackageUploadCustom(SQLBase):
     packageupload = ForeignKey(
         dbName='packageupload', foreignKey='PackageUpload')
 
-    customformat = EnumCol(
-        dbName='customformat', unique=False, notNull=True,
-        schema=PackageUploadCustomFormat)
+    customformat = DBEnum(
+        name='customformat', allow_none=False, enum=PackageUploadCustomFormat)
 
     libraryfilealias = ForeignKey(
         dbName='libraryfilealias', foreignKey="LibraryFileAlias", notNull=True)
