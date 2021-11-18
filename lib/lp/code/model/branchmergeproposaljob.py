@@ -82,7 +82,7 @@ from lp.codehosting.bzrutils import server
 from lp.codehosting.vfs import get_ro_server
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -159,7 +159,7 @@ class BranchMergeProposalJob(StormBase):
     branch_merge_proposal = Reference(
         branch_merge_proposalID, BranchMergeProposal.id)
 
-    job_type = EnumCol(enum=BranchMergeProposalJobType, notNull=True)
+    job_type = DBEnum(enum=BranchMergeProposalJobType, allow_none=False)
 
     _json_data = Unicode('json_data')
 

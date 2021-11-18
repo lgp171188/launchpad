@@ -26,7 +26,7 @@ from lp.registry.interfaces.person import (
     validate_public_person,
     )
 from lp.services.database.constants import DEFAULT
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 
 
@@ -52,8 +52,8 @@ class GitActivity(StormBase):
         name='changee', allow_none=True, validator=validate_person)
     changee = Reference(changee_id, 'Person.id')
 
-    what_changed = EnumCol(
-        dbName='what_changed', enum=GitActivityType, notNull=True)
+    what_changed = DBEnum(
+        name='what_changed', enum=GitActivityType, allow_none=False)
 
     old_value = JSON(name='old_value', allow_none=True)
     new_value = JSON(name='new_value', allow_none=True)

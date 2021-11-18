@@ -79,7 +79,7 @@ from lp.code.model.gitrule import (
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
@@ -510,7 +510,7 @@ class GitRef(GitRefMixin, StormBase):
 
     commit_sha1 = Unicode(name='commit_sha1', allow_none=False)
 
-    object_type = EnumCol(enum=GitObjectType, notNull=True)
+    object_type = DBEnum(enum=GitObjectType, allow_none=False)
 
     author_id = Int(name='author', allow_none=True)
     author = Reference(author_id, 'RevisionAuthor.id')
