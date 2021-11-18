@@ -33,7 +33,7 @@ class MemcacheClient(HashClient):
             return super().get(key, default=None)
         except MemcacheClientError:
             raise
-        except MemcacheError as e:
+        except (MemcacheError, OSError) as e:
             if logger is not None:
                 logger.exception("Cannot get %s from memcached: %s" % (key, e))
             return default
@@ -44,7 +44,7 @@ class MemcacheClient(HashClient):
             return super().set(key, value, expire=expire)
         except MemcacheClientError:
             raise
-        except MemcacheError as e:
+        except (MemcacheError, OSError) as e:
             if logger is not None:
                 logger.exception("Cannot set %s in memcached: %s" % (key, e))
             return False
@@ -55,7 +55,7 @@ class MemcacheClient(HashClient):
             return super().delete(key)
         except MemcacheClientError:
             raise
-        except MemcacheError as e:
+        except (MemcacheError, OSError) as e:
             if logger is not None:
                 logger.exception(
                     "Cannot delete %s from memcached: %s" % (key, e))
