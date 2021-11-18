@@ -684,15 +684,17 @@ class EditSpecificationByRelatedPeople(AuthorizationBase):
                     self.obj, ['owner', 'drafter', 'assignee', 'approver']))
 
 
-class EditRevisionStatusReport(AuthorizationBase):
+class EditRevisionStatusReport(DelegatedAuthorization):
+    """The owner of a Git repository can edit its status reports."""
     permission = 'launchpad.Edit'
     usedfor = IRevisionStatusReport
 
+    def __init__(self, obj):
+        super().__init__(obj, obj.git_repository, 'launchpad.Edit')
+
     def checkAuthenticated(self, user):
-        return (
-                user.inTeam(self.obj.git_repository.owner) or
-                user_has_special_git_repository_access(
-                    user.person, self.obj.git_repository))
+        assert self.obj.creator
+        return user.isOwner(self.obj.git_repository)
 
 
 class AdminSpecification(AuthorizationBase):

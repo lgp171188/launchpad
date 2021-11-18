@@ -812,12 +812,31 @@ class IGitRepositoryExpensiveRequest(Interface):
         that is not an admin or a registry expert."""
 
 
-@exported_as_webservice_entry(as_of="beta")
-class IRevisionStatusReport(Interface):
+class IRevisionStatusReportView(Interface):
+    """`IRevisionStatusReport` attributes that require launchpad.View."""
+
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    name = exported(TextLine(
-        title=_("The name of the report."), required=True))
+    date_created = exported(Datetime(
+        title=_("When the report was created."), required=True, readonly=True))
+    date_started = exported(Datetime(
+        title=_("When the report was started.")), readonly=False)
+    date_finished = exported(Datetime(
+        title=_("When the report has finished.")), readonly=False)
+    log_url = exported(Reference(
+        title=_("The `RevisionStatusArtifact` for which "
+                "this report is built."),
+        schema=Interface))
+
+
+class IRevisionStatusReportEditableAttributes(Interface):
+    """`IRevisionStatusReport` attributes that can be edited.
+
+    These attributes need launchpad.View to see, and launchpad.Edit to change.
+    """
+
+    title = exported(TextLine(
+        title=_("A short title for the report."), required=True))
 
     git_repository = exported(Reference(
         title=_("The Git repository for which this report is built."),
@@ -831,32 +850,43 @@ class IRevisionStatusReport(Interface):
     url = exported(URIField(title=_("URL"), required=False, readonly=True,
                             description=_("The external url of the report.")))
 
-    description = exported(TextLine(
-        title=_("A short description of the report.")))
+    result_summary = exported(TextLine(
+        title=_("A short summary of the result.")))
 
     result = exported(Choice(
-        title=_('Result of the report'), vocabulary=RevisionStatusResult))
+        title=_('Result of the report'),  readonly=True, vocabulary=RevisionStatusResult))
 
-    date_created = exported(Datetime(
-        title=_("When the report was created."), required=True, readonly=True))
-    date_started = exported(Datetime(
-        title=_("When the report was started.")))
-    date_finished = exported(Datetime(
-        title=_("When the report has finished.")))
-    log = exported(Reference(
-        title=_("The `RevisionStatusArtifact` for which "
-                "this report is built."),
-        schema=Interface))
+    @mutator_for(result)
+    @operation_parameters(result=copy_field(result))
+    @call_with(user=REQUEST_USER)
+    @export_write_operation()
+    def transitionToNewResult(result, user):
+        """Set the RevisionStatusReport result.
 
-    def setLog(id, artifact):
+        Set the revision status report result, 
+        making sure that the user is
+        authorised to do so.
+        """
+
+
+class IRevisionStatusReportEdit(Interface):
+    """`IRevisionStatusReport` attributes that require launchpad.Edit."""
+
+    def setLog(artifact):
         """Sets the `RevisionStatusArtifact` for the `RevisionStatusReport`."""
+
+
+@exported_as_webservice_entry(as_of="beta")
+class IRevisionStatusReport(IRevisionStatusReportView, IRevisionStatusReportEditableAttributes,
+                            IRevisionStatusReportEdit):
+    """An revision status report for a Git commit."""
 
 
 class IRevisionStatusReportSet(Interface):
     """The set of all revision status reports."""
 
-    def new(name, git_repository, commit_sha1, date_created=None,
-            url=None, description=None, result=None, date_started=None,
+    def new(creator, title, git_repository, commit_sha1, date_created=None,
+            url=None, result_summary=None, result=None, date_started=None,
             date_finished=None, log=None):
         """Return a new revision status report.
 
@@ -868,8 +898,11 @@ class IRevisionStatusReportSet(Interface):
         :param date_created: The date when the report is being created.
         """
 
-    def findRevisionStatusReportById(id):
-        """Returns the RevisionStatusReport for a given Id."""
+    def findRevisionStatusReportByID(id):
+        """Returns the RevisionStatusReport for a given ID."""
+
+    def findRevisionStatusReportByCreator(creator):
+        """Returns the RevisionStatusReport for a creator."""
 
 
 class IRevisionStatusArtifactSet(Interface):
@@ -883,13 +916,19 @@ class IRevisionStatusArtifactSet(Interface):
             artifact is being created.
         """
 
-    def findRevisionStatusArtifactById(id):
-        """Returns the RevisionStatusArtifact for a given Id."""
+    def findRevisionStatusArtifactByID(id):
+        """Returns the RevisionStatusArtifact for a given ID."""
 
-    def findRevisionStatusArtifacstByReportId(id):
-        """Returns a collection of RevisionStatusArtifact for
-        a given `IRevisionStatusReport` Id.
-        """
+
+class IRevisionStatusArtifact(Interface):
+    id = Int(title=_("ID"), required=True, readonly=True)
+
+    library_file = Attribute(
+        "The `LibraryFileAlias` object containing information for "
+        "a revision status report.")
+
+    report = Attribute(
+        "The `RevisionStatusReport` that this artifact is linked to.")
 
 
 class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
@@ -1095,30 +1134,22 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         """
 
     @operation_parameters(
-        name=TextLine(title=_("The name of the status report.")),
+        title=TextLine(title=_("A short title for the report.")),
         commit_sha1=TextLine(title=_("The commit sha1 of the status report.")),
-        date_created=Datetime(
-            title=_("The time when this request was made")),
         url=TextLine(title=_("The external link of the status report.")),
-        description=TextLine(title=_("The description of the status report.")),
-        date_started=Datetime(
-            title=_("The time when this report was started.")),
-        date_finished=Datetime(
-            title=_("The time when this report completed.")))
+        result_summary=TextLine(title=_("A short summary of the result.")),
+        result=Choice(vocabulary=RevisionStatusResult,))
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @call_with(user=REQUEST_USER)
-    @export_factory_operation(Interface, [])
-    @export_write_operation()
+    @export_factory_operation(IRevisionStatusReport, [])
     @operation_for_version("devel")
-    def newRevisionStatusReport(user, name, commit_sha1,
-                                date_created, url=None, description=None,
-                                result=None, date_started=None,
-                                date_finished=None):
-        """Create a New Status Report and return its ID.
+    def newStatusReport(title, commit_sha1, url, result_summary, result, user):
+        """Create a new status report and return its ID.
 
-        :param name: The name of the new report.
-        :param description: The description of the new report.
+        :param title: The name of the new report.
         :param commit_sha1: The commit sha1 for the report.
+        :param url: The external link of the status report.
+        :param result_summary: The description of the new report.
         :param result: The result of the new report.
         """
 

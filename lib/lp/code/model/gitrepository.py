@@ -192,7 +192,7 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import EnumCol, DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.database.stormbase import StormBase
@@ -303,66 +303,72 @@ class RevisionStatusReport(StormBase):
 
     id = Int(primary=True)
 
-    name = Unicode(name='name', allow_none=False)
+    creator_id = Int(name="creator", allow_none=False)
+    creator = Reference(creator_id, "Person.id")
+
+    title = Unicode(name='name', allow_none=False)
 
     git_repository_id = Int(name='git_repository', allow_none=False)
     git_repository = Reference(git_repository_id, 'GitRepository.id')
 
-    commit_sha1_id = Unicode(name='commit_sha1', allow_none=False)
-    commit_sha1 = Reference(commit_sha1_id, 'GitRef.commit_sha1')
+    commit_sha1 = Unicode(name='commit_sha1', allow_none=False)
 
     url = Unicode(name='url')
 
-    description = TextLine(title=msg("The description of the status report."))
+    result_summary = TextLine(title=msg("A short summary of the result."))
 
-    result = EnumCol(
-        dbName='result', schema=RevisionStatusResult)
+    result = DBEnum(name='result', enum=RevisionStatusResult)
 
     date_created = DateTime(
         name='date_created', tzinfo=pytz.UTC, allow_none=False)
+
     date_started = DateTime(name='date_started', tzinfo=pytz.UTC)
     date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC)
 
     log_id = Int(name='log', allow_none=True)
     log = Reference(log_id, 'RevisionStatusArtifact.id')
 
-    def __init__(self, name, git_repository, commit_sha1, date_created,
-                 url=None, description=None, result=None, date_started=None,
-                 date_finished=None):
-        super()
-        self.name = name
+    def __init__(self, git_repository, user, title, commit_sha1,
+                 url, result_summary, result):
+        super().__init__()
+        self.creator = user
         self.git_repository = git_repository
+        self.title = title
         self.commit_sha1 = commit_sha1
-        self.date_created = date_created
         self.url = url
-        self.description = description
+        self.result_summary = result_summary
         self.result = result
-        self.date_started = date_started
-        self.date_finished = date_finished
+        self.date_created = UTC_NOW
 
     def setLog(self, artifact):
         self.log = artifact
+
+    def transitionToNewResult(self, result, user):
+        self.result = result
+        if result == RevisionStatusResult.PENDING:
+            self.date_started == UTC_NOW
+        else:
+            self.date_finished = UTC_NOW
 
 
 @implementer(IRevisionStatusReportSet)
 class RevisionStatusReportSet:
 
-    def new(self, name, git_repository, commit_sha1, date_created,
-            url=None, description=None, result=None, date_started=None,
+    def new(self, creator, title, git_repository, commit_sha1,
+            url=None, result_summary=None, result=None, date_started=None,
             date_finished=None, log=None):
-        """See `IGitRevisionStatusReportSet`."""
+        """See `IRevisionStatusReportSet`."""
         store = IStore(RevisionStatusReport)
-        date_created = UTC_NOW
-        report = RevisionStatusReport(name, git_repository, commit_sha1,
-                                      date_created, url, description, result,
-                                      date_started, date_finished)
+        report = RevisionStatusReport(git_repository, creator, title, commit_sha1,
+                                      url, result_summary, result)
         store.add(report)
         return report
 
-    def findRevisionStatusReportById(self, id):
-        return IStore(RevisionStatusReport).find(
-            RevisionStatusReport,
-            RevisionStatusReport.id == id)
+    def findRevisionStatusReportByID(self, id):
+        return IStore(RevisionStatusReport).find(RevisionStatusReport, id=id)
+
+    def findRevisionStatusReportByCreator(self, creator):
+        return IStore(RevisionStatusReport).find(RevisionStatusReport, creator=creator)
 
 
 class RevisionStatusArtifact(StormBase):
@@ -607,14 +613,11 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
     def collectGarbage(self):
         getUtility(IGitHostingClient).collectGarbage(self.getInternalPath())
 
-    def newRevisionStatusReport(self, user, name, commit_sha1,
-                                date_created, url=None, description=None,
-                                result=None, date_started=None,
-                                date_finished=None):
+    def newStatusReport(self, user, title, commit_sha1, url=None,
+                        result_summary=None, result=None):
 
-        report = RevisionStatusReport(name, self, commit_sha1,
-                                      date_created, url, description, result,
-                                      date_started, date_finished)
+        report = RevisionStatusReport(self, user, title, commit_sha1,
+                                      url, result_summary, result)
         return report
 
     @property

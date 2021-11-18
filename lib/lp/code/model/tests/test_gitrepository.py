@@ -68,6 +68,7 @@ from lp.code.enums import (
     GitRepositoryStatus,
     GitRepositoryType,
     TargetRevisionControlSystems,
+    RevisionStatusResult,
     )
 from lp.code.errors import (
     CannotDeleteGitRepository,
@@ -575,22 +576,25 @@ class TestGitRepository(TestCaseWithFactory):
 
     def test_findRevisionStatusReport(self):
         repository = removeSecurityProxy(self.factory.makeGitRepository())
-        name = self.factory.getUniqueUnicode('report-name')
+        title = self.factory.getUniqueUnicode('report-title')
         commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
         lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        result_summary = "120/120 tests passed"
 
         report = self.factory.makeRevisionStatusReport(
-            name=name, git_repository=repository, commit_sha1=commit_sha1,
-            date_created=self.factory.getUniqueDate())
+            user=repository.owner, git_repository=repository,
+            title=title, commit_sha1=commit_sha1,
+            result_summary=result_summary, result=RevisionStatusResult.SUCCESS)
+
         artifact = self.factory.makeRevisionStatusArtifact(lfa, report)
 
         with person_logged_in(repository.owner):
             results = getUtility(
-                IRevisionStatusReportSet).findRevisionStatusReportById(
+                IRevisionStatusReportSet).findRevisionStatusReportByID(
                 report.id)
             report.setLog(artifact)
             self.assertEqual([report], list(results))
-            self.assertEqual(report.log, artifact)
+            self.assertEqual(removeSecurityProxy(report).log, artifact)
 
 
 class TestGitIdentityMixin(TestCaseWithFactory):
@@ -4233,17 +4237,25 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             header = {'Authorization': 'Token %s' % secret}
 
         response = webservice.named_post(
-            repository_url, "newRevisionStatusReport",
-            headers=header, name="CI",
+            repository_url, "newStatusReport",
+            headers=header, title="CI",
             commit_sha1=hashlib.sha1(
                 self.factory.getUniqueBytes()).hexdigest(),
-            date_created=datetime.now(pytz.UTC).isoformat(),
-            description="120/120 tests passed")
+            url='https://launchpad.net/',
+            result_summary="120/120 tests passed",
+            result="Success")
 
         self.assertEqual(201, response.status)
+
         with person_logged_in(requester):
+            results = getUtility(
+                IRevisionStatusReportSet).findRevisionStatusReportByCreator(
+                requester)
+            report = list(results)[0]
             self.assertEqual(
-                webservice.getAbsoluteUrl(api_url(repository))+'/+status/1',
+                webservice.getAbsoluteUrl('%s/+status/%s' % (
+                    api_url(repository),
+                    report.id)),
                 response.getHeader("Location"))
 
     def test_set_target(self):

@@ -1853,21 +1853,28 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 grantee, grantor, can_create=can_create, can_push=can_push,
                 can_force_push=can_force_push)
 
-    def makeRevisionStatusReport(self, name, git_repository, commit_sha1,
-                                 date_created=None, url=None, description=None,
-                                 result=None, date_started=None,
-                                 date_finished=None):
+    def makeRevisionStatusReport(self, user=None, title=None, git_repository=None, commit_sha1=None,
+                                 result_summary=None, url=None, result=None):
         """Create a new RevisionStatusReport."""
-
+        if title is None:
+            title = self.getUniqueUnicode()
+        if git_repository is None:
+            git_repository = self.makeGitRepository()
+        if user is None:
+            user = git_repository.owner
+        if commit_sha1 is None:
+            commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
         return getUtility(IRevisionStatusReportSet).new(
-            name, git_repository, commit_sha1, date_created,
-            url, description, result, date_started,
-            date_finished)
+            user, title, git_repository, commit_sha1, result_summary,
+            url, result)
 
-    def makeRevisionStatusArtifact(self, lfa, report):
+    def makeRevisionStatusArtifact(self, lfa=None, report=None):
         """Create a new RevisionStatusArtifact."""
-        return getUtility(IRevisionStatusArtifactSet).new(
-            lfa, report)
+        if lfa is None:
+            lfa = self.makeLibraryFileAlias()
+        if report is None:
+            report = self.makeRevisionStatusReport()
+        return getUtility(IRevisionStatusArtifactSet).new(lfa, report)
 
     def makeBug(self, target=None, owner=None, bug_watch_url=None,
                 information_type=None, date_closed=None, title=None,

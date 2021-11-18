@@ -256,33 +256,34 @@ class GitPermissionType(EnumeratedType):
 class RevisionStatusResult(DBEnumeratedType):
     """Revision Status Result"""
 
-    SUCCESS = DBItem(1, """
+    PENDING = DBItem(1, """
+        Pending
+
+        The job is pending.
+        """)
+
+    SUCCESS = DBItem(2, """
         Success
 
         The check job ran successfully.
         """)
 
-    FAILED = DBItem(2, """
+    FAILED = DBItem(3, """
         Failed
 
         The check job failed.
         """)
 
-    SKIPPED = DBItem(3, """
+    SKIPPED = DBItem(4, """
         Skipped
 
         The check job was skipped.
         """)
 
-    CANCELLED = DBItem(4, """
+    CANCELLED = DBItem(5, """
         Cancelled
 
         The check job was cancelled.
-        """)
-    PENDING = DBItem(5, """
-        Pending
-
-        The job is pending.
         """)
 
 
