@@ -187,7 +187,7 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.database.stormbase import StormBase
@@ -306,11 +306,11 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
     date_last_modified = DateTime(
         name='date_last_modified', tzinfo=pytz.UTC, allow_none=False)
 
-    repository_type = EnumCol(
-        dbName='repository_type', enum=GitRepositoryType, notNull=True)
+    repository_type = DBEnum(
+        name='repository_type', enum=GitRepositoryType, allow_none=False)
 
-    status = EnumCol(
-        dbName='status', enum=GitRepositoryStatus, notNull=True,
+    status = DBEnum(
+        name='status', enum=GitRepositoryStatus, allow_none=False,
         default=GitRepositoryStatus.AVAILABLE)
 
     registrant_id = Int(name='registrant', allow_none=False)
@@ -338,7 +338,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
 
     description = Unicode(name='description', allow_none=True)
 
-    information_type = EnumCol(enum=InformationType, notNull=True)
+    information_type = DBEnum(enum=InformationType, allow_none=False)
     owner_default = Bool(name='owner_default', allow_none=False)
     target_default = Bool(name='target_default', allow_none=False)
 

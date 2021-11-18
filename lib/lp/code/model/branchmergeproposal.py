@@ -108,7 +108,7 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -321,8 +321,8 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
 
     whiteboard = StringCol(default=None)
 
-    queue_status = EnumCol(
-        enum=BranchMergeProposalStatus, notNull=True,
+    queue_status = DBEnum(
+        enum=BranchMergeProposalStatus, allow_none=False,
         default=BranchMergeProposalStatus.WORK_IN_PROGRESS)
 
     @property

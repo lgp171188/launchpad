@@ -164,7 +164,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -206,19 +206,19 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
     """A sequence of ordered revisions in Bazaar."""
     _table = 'Branch'
 
-    branch_type = EnumCol(enum=BranchType, notNull=True)
+    branch_type = DBEnum(enum=BranchType, allow_none=False)
 
     name = StringCol(notNull=False)
     url = StringCol(dbName='url')
     description = StringCol(dbName='summary')
-    branch_format = EnumCol(enum=BranchFormat)
-    repository_format = EnumCol(enum=RepositoryFormat)
+    branch_format = DBEnum(enum=BranchFormat)
+    repository_format = DBEnum(enum=RepositoryFormat)
     # XXX: Aaron Bentley 2008-06-13
     # Rename the metadir_format in the database, see bug 239746
-    control_format = EnumCol(enum=ControlFormat, dbName='metadir_format')
+    control_format = DBEnum(enum=ControlFormat, name='metadir_format')
     whiteboard = StringCol(default=None)
     mirror_status_message = StringCol(default=None)
-    information_type = EnumCol(
+    information_type = DBEnum(
         enum=InformationType, default=InformationType.PUBLIC)
 
     @property
@@ -334,8 +334,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         dbName='sourcepackagename', foreignKey='SourcePackageName',
         default=None)
 
-    lifecycle_status = EnumCol(
-        enum=BranchLifecycleStatus, notNull=True,
+    lifecycle_status = DBEnum(
+        enum=BranchLifecycleStatus, allow_none=False,
         default=BranchLifecycleStatus.DEVELOPMENT)
 
     last_mirrored = UtcDateTimeCol(default=None)

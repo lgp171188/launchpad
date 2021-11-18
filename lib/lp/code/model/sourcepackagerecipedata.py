@@ -69,7 +69,7 @@ from lp.services.database.bulk import (
     load_referencing,
     load_related,
     )
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.propertycache import (
     cachedproperty,
@@ -134,7 +134,7 @@ class _SourcePackageRecipeDataInstruction(Storm):
     id = Int(primary=True)
 
     name = Unicode(allow_none=False)
-    type = EnumCol(notNull=True, schema=InstructionType)
+    type = DBEnum(allow_none=False, enum=InstructionType)
     comment = Unicode(allow_none=True)
     line_number = Int(allow_none=False)
 
