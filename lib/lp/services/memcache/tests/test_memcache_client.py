@@ -66,6 +66,17 @@ class MemcacheClientTestCase(TestCase):
                 "ERROR Cannot get foo from memcached: All servers down\n",
                 logger.content.as_text())
 
+    def test_get_connection_refused(self):
+        logger = BufferLogger()
+        with patch.object(self.client, "_get_client") as mock_get_client:
+            mock_get_client.side_effect = ConnectionRefusedError(
+                "Connection refused")
+            self.assertIsNone(self.client.get("foo"))
+            self.assertIsNone(self.client.get("foo", logger=logger))
+            self.assertEqual(
+                "ERROR Cannot get foo from memcached: Connection refused\n",
+                logger.content.as_text())
+
     def test_set_failure(self):
         logger = BufferLogger()
         with patch.object(self.client, "_get_client") as mock_get_client:
@@ -76,6 +87,17 @@ class MemcacheClientTestCase(TestCase):
                 "ERROR Cannot set foo in memcached: All servers down\n",
                 logger.content.as_text())
 
+    def test_set_connection_refused(self):
+        logger = BufferLogger()
+        with patch.object(self.client, "_get_client") as mock_get_client:
+            mock_get_client.side_effect = ConnectionRefusedError(
+                "Connection refused")
+            self.assertFalse(self.client.set("foo", "bar"))
+            self.assertFalse(self.client.set("foo", "bar", logger=logger))
+            self.assertEqual(
+                "ERROR Cannot set foo in memcached: Connection refused\n",
+                logger.content.as_text())
+
     def test_delete_failure(self):
         logger = BufferLogger()
         with patch.object(self.client, "_get_client") as mock_get_client:
@@ -84,6 +106,17 @@ class MemcacheClientTestCase(TestCase):
             self.assertFalse(self.client.delete("foo", logger=logger))
             self.assertEqual(
                 "ERROR Cannot delete foo from memcached: All servers down\n",
+                logger.content.as_text())
+
+    def test_delete_connection_refused(self):
+        logger = BufferLogger()
+        with patch.object(self.client, "_get_client") as mock_get_client:
+            mock_get_client.side_effect = ConnectionRefusedError(
+                "Connection refused")
+            self.assertFalse(self.client.delete("foo"))
+            self.assertFalse(self.client.delete("foo", logger=logger))
+            self.assertEqual(
+                "ERROR Cannot delete foo from memcached: Connection refused\n",
                 logger.content.as_text())
 
 
