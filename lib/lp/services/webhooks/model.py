@@ -51,7 +51,7 @@ from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -338,7 +338,7 @@ class WebhookJob(StormBase):
     webhook_id = Int(name='webhook', allow_none=False)
     webhook = Reference(webhook_id, 'Webhook.id')
 
-    job_type = EnumCol(enum=WebhookJobType, notNull=True)
+    job_type = DBEnum(enum=WebhookJobType, allow_none=False)
 
     json_data = JSON('json_data')
 
