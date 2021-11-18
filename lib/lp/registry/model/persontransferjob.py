@@ -66,7 +66,7 @@ from lp.registry.personmerge import merge_people
 from lp.registry.scripts.closeaccount import close_account
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -98,7 +98,7 @@ class PersonTransferJob(StormBase):
     minor_person_id = Int(name='minor_person')
     minor_person = Reference(minor_person_id, Person.id)
 
-    job_type = EnumCol(enum=PersonTransferJobType, notNull=True)
+    job_type = DBEnum(enum=PersonTransferJobType, allow_none=False)
 
     _json_data = Unicode('json_data')
 

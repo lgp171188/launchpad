@@ -26,7 +26,7 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import ForeignKey
 from lp.services.webapp.interfaces import ILaunchBag
@@ -48,8 +48,7 @@ class Packaging(SQLBase):
     distroseries = ForeignKey(foreignKey='DistroSeries',
                                dbName='distroseries',
                                notNull=True)
-    packaging = EnumCol(dbName='packaging', notNull=True,
-                        enum=PackagingType)
+    packaging = DBEnum(name='packaging', allow_none=False, enum=PackagingType)
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     owner = ForeignKey(
         dbName='owner', foreignKey='Person',

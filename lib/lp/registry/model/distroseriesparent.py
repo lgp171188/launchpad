@@ -22,7 +22,7 @@ from lp.registry.interfaces.distroseriesparent import (
     IDistroSeriesParentSet,
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -47,9 +47,8 @@ class DistroSeriesParent(Storm):
     is_overlay = Bool(allow_none=False, default=False)
     inherit_overrides = Bool(allow_none=False, default=False)
 
-    pocket = EnumCol(
-        dbName='pocket', notNull=False,
-        schema=PackagePublishingPocket)
+    pocket = DBEnum(
+        name='pocket', allow_none=True, enum=PackagePublishingPocket)
 
     component_id = Int(name='component', allow_none=True)
     component = Reference(component_id, 'Component.id')
