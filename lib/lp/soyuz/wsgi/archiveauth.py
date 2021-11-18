@@ -92,7 +92,7 @@ def check_password(environ, user, password):
         proxy.checkArchiveAuthToken(archive_reference, user, password)
         # Cache positive responses for a minute to reduce database load.
         _memcache_client.set(
-            memcache_key, _crypt_sha256(password), time.time() + 60)
+            memcache_key, _crypt_sha256(password), int(time.time()) + 60)
         _log(environ, "%s@%s: Authorized.", user, archive_reference)
         return True
     except Fault as e:
