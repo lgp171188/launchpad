@@ -23,7 +23,7 @@ from storm.locals import (
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import (
@@ -74,7 +74,7 @@ class TranslationSharingJob(StormBase):
 
     job = Reference(job_id, Job.id)
 
-    job_type = EnumCol(enum=TranslationSharingJobType, notNull=True)
+    job_type = DBEnum(enum=TranslationSharingJobType, allow_none=False)
 
     productseries_id = Int('productseries')
 
