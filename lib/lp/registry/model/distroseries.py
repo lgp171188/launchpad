@@ -97,7 +97,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
@@ -234,8 +234,8 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
     title = StringCol(notNull=True)
     description = StringCol(notNull=True)
     version = StringCol(notNull=True)
-    status = EnumCol(
-        dbName='releasestatus', notNull=True, schema=SeriesStatus)
+    status = DBEnum(
+        name='releasestatus', allow_none=False, enum=SeriesStatus)
     date_created = UtcDateTimeCol(notNull=False, default=UTC_NOW)
     datereleased = UtcDateTimeCol(notNull=False, default=None)
     previous_series = ForeignKey(

@@ -49,7 +49,7 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
@@ -86,8 +86,8 @@ class TeamMembership(SQLBase):
     reviewed_by = ForeignKey(
         dbName='reviewed_by', foreignKey='Person',
         storm_validator=validate_public_person, default=None)
-    status = EnumCol(
-        dbName='status', notNull=True, enum=TeamMembershipStatus)
+    status = DBEnum(
+        name='status', allow_none=False, enum=TeamMembershipStatus)
     # XXX: salgado, 2008-03-06: Need to rename datejoined and dateexpires to
     # match their db names.
     datejoined = UtcDateTimeCol(dbName='date_joined', default=None)

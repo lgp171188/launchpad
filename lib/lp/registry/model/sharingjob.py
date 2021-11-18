@@ -85,7 +85,7 @@ from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.database.stormbase import StormBase
@@ -144,7 +144,7 @@ class SharingJob(StormBase):
     grantee_id = Int(name='grantee')
     grantee = Reference(grantee_id, Person.id)
 
-    job_type = EnumCol(enum=SharingJobType, notNull=True)
+    job_type = DBEnum(enum=SharingJobType, allow_none=False)
 
     _json_data = Unicode('json_data')
 
