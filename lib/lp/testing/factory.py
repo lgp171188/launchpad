@@ -1853,7 +1853,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 grantee, grantor, can_create=can_create, can_push=can_push,
                 can_force_push=can_force_push)
 
-    def makeRevisionStatusReport(self, user=None, title=None, git_repository=None, commit_sha1=None,
+    def makeRevisionStatusReport(self, user=None, title=None,
+                                 git_repository=None, commit_sha1=None,
                                  result_summary=None, url=None, result=None):
         """Create a new RevisionStatusReport."""
         if title is None:

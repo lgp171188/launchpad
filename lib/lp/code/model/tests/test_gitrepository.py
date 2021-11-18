@@ -67,8 +67,8 @@ from lp.code.enums import (
     GitObjectType,
     GitRepositoryStatus,
     GitRepositoryType,
-    TargetRevisionControlSystems,
     RevisionStatusResult,
+    TargetRevisionControlSystems,
     )
 from lp.code.errors import (
     CannotDeleteGitRepository,
@@ -125,6 +125,7 @@ from lp.code.model.gitrepository import (
     DeletionCallable,
     DeletionOperation,
     GitRepository,
+    REVISION_STATUS_REPORT_ALLOW_CREATE,
     )
 from lp.code.tests.helpers import GitHostingFixture
 from lp.code.xmlrpc.git import GitAPI
@@ -4245,6 +4246,20 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             result_summary="120/120 tests passed",
             result="Success")
 
+        self.assertEqual(500, response.status)
+        self.assertIn(b'This API is not available', response.body)
+
+        self.useFixture(FeatureFixture(
+            {REVISION_STATUS_REPORT_ALLOW_CREATE: "on"}))
+
+        response = webservice.named_post(
+            repository_url, "newStatusReport",
+            headers=header, title="CI",
+            commit_sha1=hashlib.sha1(
+                self.factory.getUniqueBytes()).hexdigest(),
+            url='https://launchpad.net/',
+            result_summary="120/120 tests passed",
+            result="Success")
         self.assertEqual(201, response.status)
 
         with person_logged_in(requester):

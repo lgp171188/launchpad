@@ -31,6 +31,7 @@ from lazr.enum import DBItem
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
+from requests.exceptions import HTTPError
 import six
 from six.moves.urllib.parse import (
     quote_plus,
@@ -192,7 +193,10 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol, DBEnum
+from lp.services.database.enumcol import (
+    DBEnum,
+    EnumCol,
+    )
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.database.stormbase import StormBase
@@ -222,6 +226,9 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.interfaces.snap import ISnapSet
+
+
+REVISION_STATUS_REPORT_ALLOW_CREATE = 'revision.status.report.allow.create'
 
 
 logger = logging.getLogger(__name__)
@@ -355,12 +362,13 @@ class RevisionStatusReport(StormBase):
 class RevisionStatusReportSet:
 
     def new(self, creator, title, git_repository, commit_sha1,
-            url=None, result_summary=None, result=None, date_started=None,
-            date_finished=None, log=None):
+            url=None, result_summary=None, result=None,
+            date_started=None, date_finished=None, log=None):
         """See `IRevisionStatusReportSet`."""
         store = IStore(RevisionStatusReport)
-        report = RevisionStatusReport(git_repository, creator, title, commit_sha1,
-                                      url, result_summary, result)
+        report = RevisionStatusReport(git_repository, creator, title,
+                                      commit_sha1, url, result_summary,
+                                      result)
         store.add(report)
         return report
 
@@ -368,7 +376,9 @@ class RevisionStatusReportSet:
         return IStore(RevisionStatusReport).find(RevisionStatusReport, id=id)
 
     def findRevisionStatusReportByCreator(self, creator):
-        return IStore(RevisionStatusReport).find(RevisionStatusReport, creator=creator)
+        return IStore(RevisionStatusReport).find(
+            RevisionStatusReport,
+            creator=creator)
 
 
 class RevisionStatusArtifact(StormBase):
@@ -616,9 +626,12 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
     def newStatusReport(self, user, title, commit_sha1, url=None,
                         result_summary=None, result=None):
 
-        report = RevisionStatusReport(self, user, title, commit_sha1,
-                                      url, result_summary, result)
-        return report
+        if getFeatureFlag(REVISION_STATUS_REPORT_ALLOW_CREATE):
+            report = RevisionStatusReport(self, user, title, commit_sha1,
+                                          url, result_summary, result)
+            return report
+
+        raise HTTPError("This API is not available")
 
     @property
     def namespace(self):

@@ -854,7 +854,8 @@ class IRevisionStatusReportEditableAttributes(Interface):
         title=_("A short summary of the result.")))
 
     result = exported(Choice(
-        title=_('Result of the report'),  readonly=True, vocabulary=RevisionStatusResult))
+        title=_('Result of the report'),  readonly=True,
+        vocabulary=RevisionStatusResult))
 
     @mutator_for(result)
     @operation_parameters(result=copy_field(result))
@@ -863,10 +864,7 @@ class IRevisionStatusReportEditableAttributes(Interface):
     def transitionToNewResult(result, user):
         """Set the RevisionStatusReport result.
 
-        Set the revision status report result, 
-        making sure that the user is
-        authorised to do so.
-        """
+        Set the revision status report result."""
 
 
 class IRevisionStatusReportEdit(Interface):
@@ -877,7 +875,8 @@ class IRevisionStatusReportEdit(Interface):
 
 
 @exported_as_webservice_entry(as_of="beta")
-class IRevisionStatusReport(IRevisionStatusReportView, IRevisionStatusReportEditableAttributes,
+class IRevisionStatusReport(IRevisionStatusReportView,
+                            IRevisionStatusReportEditableAttributes,
                             IRevisionStatusReportEdit):
     """An revision status report for a Git commit."""
 
