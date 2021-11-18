@@ -3,8 +3,13 @@
 
 """Tests for the IMemcacheClient utility."""
 
+from unittest.mock import patch
+
 from lazr.restful.utils import get_current_browser_request
-from pymemcache.exceptions import MemcacheIllegalInputError
+from pymemcache.exceptions import (
+    MemcacheError,
+    MemcacheIllegalInputError,
+    )
 from zope.component import getUtility
 
 from lp.services.log.logger import BufferLogger
@@ -50,6 +55,36 @@ class MemcacheClientTestCase(TestCase):
         action = timeline.actions[-1]
         self.assertEqual('memcache-get', action.category)
         self.assertEqual('foo', action.detail)
+
+    def test_get_failure(self):
+        logger = BufferLogger()
+        with patch.object(self.client, "_get_client") as mock_get_client:
+            mock_get_client.side_effect = MemcacheError("All servers down")
+            self.assertIsNone(self.client.get("foo"))
+            self.assertIsNone(self.client.get("foo", logger=logger))
+            self.assertEqual(
+                "ERROR Cannot get foo from memcached: All servers down\n",
+                logger.content.as_text())
+
+    def test_set_failure(self):
+        logger = BufferLogger()
+        with patch.object(self.client, "_get_client") as mock_get_client:
+            mock_get_client.side_effect = MemcacheError("All servers down")
+            self.assertFalse(self.client.set("foo", "bar"))
+            self.assertFalse(self.client.set("foo", "bar", logger=logger))
+            self.assertEqual(
+                "ERROR Cannot set foo in memcached: All servers down\n",
+                logger.content.as_text())
+
+    def test_delete_failure(self):
+        logger = BufferLogger()
+        with patch.object(self.client, "_get_client") as mock_get_client:
+            mock_get_client.side_effect = MemcacheError("All servers down")
+            self.assertFalse(self.client.delete("foo"))
+            self.assertFalse(self.client.delete("foo", logger=logger))
+            self.assertEqual(
+                "ERROR Cannot delete foo from memcached: All servers down\n",
+                logger.content.as_text())
 
 
 class MemcacheClientFactoryTestCase(TestCase):

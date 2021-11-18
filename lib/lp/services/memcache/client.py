@@ -12,6 +12,10 @@ import json
 import re
 
 from pymemcache.client.hash import HashClient
+from pymemcache.exceptions import (
+    MemcacheClientError,
+    MemcacheError,
+    )
 from pymemcache.serde import (
     python_memcache_deserializer,
     python_memcache_serializer,
@@ -22,6 +26,40 @@ from lp.services.config import config
 
 class MemcacheClient(HashClient):
     """memcached client with added JSON handling"""
+
+    def get(self, key, default=None, logger=None):
+        """Get a key from memcached, disregarding server failures."""
+        try:
+            return super().get(key, default=None)
+        except MemcacheClientError:
+            raise
+        except MemcacheError as e:
+            if logger is not None:
+                logger.exception("Cannot get %s from memcached: %s" % (key, e))
+            return default
+
+    def set(self, key, value, expire=0, logger=None):
+        """Set a key in memcached, disregarding server failures."""
+        try:
+            return super().set(key, value, expire=expire)
+        except MemcacheClientError:
+            raise
+        except MemcacheError as e:
+            if logger is not None:
+                logger.exception("Cannot set %s in memcached: %s" % (key, e))
+            return False
+
+    def delete(self, key, logger=None):
+        """Set a key in memcached, disregarding server failures."""
+        try:
+            return super().delete(key)
+        except MemcacheClientError:
+            raise
+        except MemcacheError as e:
+            if logger is not None:
+                logger.exception(
+                    "Cannot delete %s from memcached: %s" % (key, e))
+            return False
 
     def get_json(self, key, logger, description, default=None):
         """Returns decoded JSON data from a memcache instance for a given key
@@ -34,7 +72,7 @@ class MemcacheClient(HashClient):
 
         :returns: dict or the default value
         """
-        data = self.get(key)
+        data = self.get(key, logger=logger)
         if data is not None:
             try:
                 rv = json.loads(data)
@@ -45,19 +83,19 @@ class MemcacheClient(HashClient):
                     logger.exception(
                         "Cannot load cached %s; deleting" % description
                     )
-                self.delete(key)
+                self.delete(key, logger=logger)
                 rv = default
         else:
             rv = default
         return rv
 
-    def set_json(self, key, value, expire=0):
+    def set_json(self, key, value, expire=0, logger=None):
         """Saves the given key/value pair, after converting the value.
 
         `expire` (optional int) is the number of seconds until the item
             expires from the cache; zero means no expiry.
         """
-        self.set(key, json.dumps(value), expire)
+        self.set(key, json.dumps(value), expire, logger=logger)
 
 
 def memcache_client_factory(timeline=True):
