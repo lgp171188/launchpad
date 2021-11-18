@@ -33,7 +33,7 @@ from zope.interface import implementer
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import StringCol
@@ -76,9 +76,9 @@ class Job(SQLBase):
 
     log = StringCol()
 
-    _status = EnumCol(
-        enum=JobStatus, notNull=True, default=JobStatus.WAITING,
-        dbName='status')
+    _status = DBEnum(
+        enum=JobStatus, allow_none=False, default=JobStatus.WAITING,
+        name='status')
 
     attempt_count = Int(default=0)
 
@@ -89,7 +89,7 @@ class Job(SQLBase):
 
     base_json_data = JSON(name='json_data')
 
-    base_job_type = EnumCol(enum=JobType, dbName='job_type')
+    base_job_type = DBEnum(enum=JobType, name='job_type')
 
     # Mapping of valid target states from a given state.
     _valid_transitions = {

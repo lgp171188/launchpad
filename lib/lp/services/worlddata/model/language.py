@@ -24,7 +24,7 @@ from lp.registry.model.karma import (
     KarmaCategory,
     )
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     ISlaveStore,
     IStore,
@@ -60,8 +60,8 @@ class Language(SQLBase):
     pluralforms = IntCol(dbName='pluralforms')
     pluralexpression = StringCol(dbName='pluralexpression')
     visible = BoolCol(dbName='visible', notNull=True)
-    direction = EnumCol(
-        dbName='direction', notNull=True, schema=TextDirection,
+    direction = DBEnum(
+        name='direction', allow_none=False, enum=TextDirection,
         default=TextDirection.LTR)
 
     translation_teams = SQLRelatedJoin(
