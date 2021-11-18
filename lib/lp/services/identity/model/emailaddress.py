@@ -17,7 +17,7 @@ from storm.expr import Lower
 from zope.interface import implementer
 
 from lp.app.validators.email import valid_email
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -56,7 +56,7 @@ class EmailAddress(SQLBase, HasOwnerMixin):
 
     email = StringCol(
             dbName='email', notNull=True, unique=True, alternateID=True)
-    status = EnumCol(dbName='status', schema=EmailAddressStatus, notNull=True)
+    status = DBEnum(name='status', enum=EmailAddressStatus, allow_none=False)
     person = ForeignKey(dbName='person', foreignKey='Person', notNull=False)
 
     def __repr__(self):

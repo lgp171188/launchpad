@@ -21,7 +21,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -66,7 +66,7 @@ class LoginToken(SQLBase):
     # The hex SHA-256 hash of the token.
     _token = StringCol(dbName='token', unique=True)
 
-    tokentype = EnumCol(dbName='tokentype', notNull=True, enum=LoginTokenType)
+    tokentype = DBEnum(name='tokentype', allow_none=False, enum=LoginTokenType)
     date_created = UtcDateTimeCol(dbName='created', notNull=True)
     fingerprint = StringCol(dbName='fingerprint', notNull=False, default=None)
     date_consumed = UtcDateTimeCol(default=None)

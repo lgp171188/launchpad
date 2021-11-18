@@ -16,7 +16,7 @@ from zope.interface import implementer
 
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -33,13 +33,13 @@ from lp.services.identity.interfaces.account import (
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
 
 
-class AccountStatusEnumCol(EnumCol):
+class AccountStatusDBEnum(DBEnum):
 
     def __set__(self, obj, value):
         if self.__get__(obj) == value:
             return
         IAccount['status'].bind(obj)._validate(value)
-        super(AccountStatusEnumCol, self).__set__(obj, value)
+        super().__set__(obj, value)
 
 
 @implementer(IAccount)
@@ -50,11 +50,11 @@ class Account(SQLBase):
 
     displayname = StringCol(dbName='displayname', notNull=True)
 
-    creation_rationale = EnumCol(
-        dbName='creation_rationale', schema=AccountCreationRationale,
-        notNull=True)
-    status = AccountStatusEnumCol(
-        enum=AccountStatus, default=AccountStatus.NOACCOUNT, notNull=True)
+    creation_rationale = DBEnum(
+        name='creation_rationale', enum=AccountCreationRationale,
+        allow_none=False)
+    status = AccountStatusDBEnum(
+        enum=AccountStatus, default=AccountStatus.NOACCOUNT, allow_none=False)
     date_status_set = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     status_history = StringCol(dbName='status_comment', default=None)
 
