@@ -22,7 +22,7 @@ from lp.blueprints.interfaces.specificationworkitem import (
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import backslashreplace
 
@@ -41,9 +41,9 @@ class SpecificationWorkItem(StormBase):
     assignee = Reference(assignee_id, 'Person.id')
     milestone_id = Int(name='milestone')
     milestone = Reference(milestone_id, 'Milestone.id')
-    status = EnumCol(
-        schema=SpecificationWorkItemStatus,
-        notNull=True, default=SpecificationWorkItemStatus.TODO)
+    status = DBEnum(
+        enum=SpecificationWorkItemStatus,
+        allow_none=False, default=SpecificationWorkItemStatus.TODO)
     date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
     sequence = Int(allow_none=False)
     deleted = Bool(allow_none=False, default=False)
