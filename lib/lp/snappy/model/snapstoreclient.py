@@ -418,7 +418,7 @@ class SnapStoreClient:
             # pymemcache's `expire` expects an int
             expire_time = int(time.time()) + DAY_IN_SECONDS
             memcache_client.set_json(
-                memcache_key, channels, expire_time)
+                memcache_key, channels, expire_time, logger=log)
         if channels is None:
             channels = _default_store_channels
         return channels

@@ -23,7 +23,7 @@ class MemcacheFixture(fixtures.Fixture, MemcacheClient):
     def _setUp(self):
         self.useFixture(ZopeUtilityFixture(self, IMemcacheClient))
 
-    def get(self, key):
+    def get(self, key, default=None, logger=None):
         value, expiry_time = self._cache.get(key, (None, None))
         if expiry_time and _time.time() >= expiry_time:
             self.delete(key)
@@ -31,7 +31,7 @@ class MemcacheFixture(fixtures.Fixture, MemcacheClient):
         else:
             return value
 
-    def set(self, key, val, expire=0):
+    def set(self, key, val, expire=0, logger=None):
         # memcached accepts either delta-seconds from the current time or
         # absolute epoch-seconds, and tells them apart using a magic
         # threshold.  See memcached/memcached.c:realtime.
@@ -41,7 +41,7 @@ class MemcacheFixture(fixtures.Fixture, MemcacheClient):
         self._cache[key] = (val, expire)
         return 1
 
-    def delete(self, key):
+    def delete(self, key, logger=None):
         self._cache.pop(key, None)
         return 1
 

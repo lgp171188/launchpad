@@ -31,21 +31,21 @@ class TimelineRecordingClient(MemcacheClient):
         else:
             return configured_value
 
-    def get(self, key):
+    def get(self, key, default=None, logger=None):
         if not self._enabled:
             return None
         action = self.__get_timeline_action("get", key)
         try:
-            return super().get(key)
+            return super().get(key, default=default, logger=logger)
         finally:
             action.finish()
 
-    def set(self, key, value, expire=0):
+    def set(self, key, value, expire=0, logger=None):
         if not self._enabled:
             return None
         action = self.__get_timeline_action("set", key)
         try:
-            success = super().set(key, value, expire=expire)
+            success = super().set(key, value, expire=expire, logger=logger)
             if success:
                 logging.debug("Memcache set succeeded for %s", key)
             else:

@@ -850,7 +850,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             if enable_memcache:
                 # Cache the file list in case there's a request for another
                 # file in the same directory.
-                memcache_client.set_json(memcache_key, file_list)
+                memcache_client.set_json(
+                    memcache_key, file_list, logger=logger)
         file_id = (file_list or {}).get(os.path.basename(filename))
         if file_id is None:
             raise BranchFileNotFound(
