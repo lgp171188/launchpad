@@ -18,7 +18,7 @@ from zope.interface import implementer
 from lp.app.errors import NotFoundError
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import (
@@ -49,7 +49,7 @@ class DistributionJob(StormBase):
     distroseries_id = Int(name='distroseries')
     distroseries = Reference(distroseries_id, DistroSeries.id)
 
-    job_type = EnumCol(enum=DistributionJobType, notNull=True)
+    job_type = DBEnum(enum=DistributionJobType, allow_none=False)
 
     metadata = JSON('json_data')
 
