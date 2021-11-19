@@ -249,7 +249,7 @@ from lp.services.database import (
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.database.sqlbase import (
@@ -597,24 +597,24 @@ class Person(
 
     sshkeys = SQLMultipleJoin('SSHKey', joinColumn='person')
 
-    renewal_policy = EnumCol(
+    renewal_policy = DBEnum(
         enum=TeamMembershipRenewalPolicy,
         default=TeamMembershipRenewalPolicy.NONE)
-    membership_policy = EnumCol(
-        dbName='subscriptionpolicy', enum=TeamMembershipPolicy,
+    membership_policy = DBEnum(
+        name='subscriptionpolicy', enum=TeamMembershipPolicy,
         default=TeamMembershipPolicy.RESTRICTED,
-        storm_validator=validate_membership_policy)
+        validator=validate_membership_policy)
     defaultrenewalperiod = IntCol(dbName='defaultrenewalperiod', default=None)
     defaultmembershipperiod = IntCol(
         dbName='defaultmembershipperiod', default=None)
-    mailing_list_auto_subscribe_policy = EnumCol(
+    mailing_list_auto_subscribe_policy = DBEnum(
         enum=MailingListAutoSubscribePolicy,
         default=MailingListAutoSubscribePolicy.ON_REGISTRATION)
 
     merged = ForeignKey(dbName='merged', foreignKey='Person', default=None)
 
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    creation_rationale = EnumCol(enum=PersonCreationRationale, default=None)
+    creation_rationale = DBEnum(enum=PersonCreationRationale, default=None)
     creation_comment = StringCol(default=None)
     registrant = ForeignKey(
         dbName='registrant', foreignKey='Person', default=None,
@@ -626,12 +626,13 @@ class Person(
     _ircnicknames = SQLMultipleJoin('IrcID', joinColumn='person')
     jabberids = SQLMultipleJoin('JabberID', joinColumn='person')
 
-    visibility = EnumCol(
+    visibility = DBEnum(
         enum=PersonVisibility, default=PersonVisibility.PUBLIC,
-        storm_validator=validate_person_visibility)
+        validator=validate_person_visibility)
 
-    personal_standing = EnumCol(
-        enum=PersonalStanding, default=PersonalStanding.UNKNOWN, notNull=True)
+    personal_standing = DBEnum(
+        enum=PersonalStanding, default=PersonalStanding.UNKNOWN,
+        allow_none=False)
 
     personal_standing_reason = StringCol(default=None)
 
@@ -4316,7 +4317,7 @@ class SSHKey(SQLBase):
     _table = 'SSHKey'
 
     person = ForeignKey(foreignKey='Person', dbName='person', notNull=True)
-    keytype = EnumCol(dbName='keytype', notNull=True, enum=SSHKeyType)
+    keytype = DBEnum(name='keytype', allow_none=False, enum=SSHKeyType)
     keytext = StringCol(dbName='keytext', notNull=True)
     comment = StringCol(dbName='comment', notNull=True)
 
