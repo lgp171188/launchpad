@@ -36,7 +36,7 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     quote,
@@ -281,11 +281,11 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
 
     comment = StringCol(
         dbName='comment', notNull=False, default=None)
-    origin = EnumCol(
-        dbName='origin', notNull=True, schema=RosettaTranslationOrigin)
-    validation_status = EnumCol(
-        dbName='validation_status', notNull=True,
-        schema=TranslationValidationStatus)
+    origin = DBEnum(
+        name='origin', allow_none=False, enum=RosettaTranslationOrigin)
+    validation_status = DBEnum(
+        name='validation_status', allow_none=False,
+        enum=TranslationValidationStatus)
     is_current_ubuntu = BoolCol(
         dbName='is_current_ubuntu', notNull=True, default=False)
     is_current_upstream = BoolCol(

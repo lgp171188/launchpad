@@ -47,7 +47,7 @@ from lp.services.database.collection import Collection
 from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -214,9 +214,10 @@ class POTemplate(SQLBase, RosettaStats):
     path = StringCol(dbName='path', notNull=True)
     source_file = ForeignKey(foreignKey='LibraryFileAlias',
         dbName='source_file', notNull=False, default=None)
-    source_file_format = EnumCol(dbName='source_file_format',
-        schema=TranslationFileFormat, default=TranslationFileFormat.PO,
-        notNull=True)
+    source_file_format = DBEnum(
+        name='source_file_format',
+        enum=TranslationFileFormat, default=TranslationFileFormat.PO,
+        allow_none=False)
     iscurrent = BoolCol(dbName='iscurrent', notNull=True, default=True)
     messagecount = IntCol(dbName='messagecount', notNull=True, default=0)
     owner = ForeignKey(
