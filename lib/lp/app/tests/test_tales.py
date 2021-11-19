@@ -100,36 +100,6 @@ def test_cookie_scope():
     """
 
 
-def test_dbschemaapi():
-    """
-    >>> from lp.app.browser.tales import DBSchemaAPI
-    >>> from lp.code.enums import BranchType
-
-    The syntax to get the title is: number/lp:DBSchemaClass
-
-    >>> (
-    ...     str(DBSchemaAPI(1).traverse("BranchType", []))
-    ...     == BranchType.HOSTED.title
-    ... )
-    True
-
-    Using an inappropriate number should give a KeyError.
-
-    >>> DBSchemaAPI(99).traverse("BranchType", [])
-    Traceback (most recent call last):
-    ...
-    KeyError: 99
-
-    Using a dbschema name that doesn't exist should give a LocationError
-
-    >>> DBSchemaAPI(99).traverse("NotADBSchema", [])
-    Traceback (most recent call last):
-    ...
-    LocationError: 'NotADBSchema'
-
-    """
-
-
 class TestPersonFormatterAPI(TestCaseWithFactory):
     """Tests for PersonFormatterAPI"""
 

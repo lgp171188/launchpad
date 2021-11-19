@@ -648,13 +648,6 @@
       />
 
   <adapter
-      for="int"
-      provides="zope.traversing.interfaces.IPathAdapter"
-      factory="lp.app.browser.tales.DBSchemaAPI"
-      name="lp"
-      />
-
-  <adapter
       for="datetime.datetime"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.DateTimeFormatterAPI"
