@@ -17,8 +17,7 @@ class TestQuestionTargetProjectAndPersonBreadcrumbOnAnswersFacet(
     """
 
     def setUp(self):
-        super(TestQuestionTargetProjectAndPersonBreadcrumbOnAnswersFacet,
-              self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.person_questions_url = canonical_url(
             self.person, rootsite='answers')
@@ -54,7 +53,7 @@ class TestAnswersBreadcrumb(BaseBreadcrumbTestCase):
     """Test Breadcrumbs for answer module objects."""
 
     def setUp(self):
-        super(TestAnswersBreadcrumb, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct(name="mellon")
         login_person(self.product.owner)
 

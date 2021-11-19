@@ -257,7 +257,7 @@ class QuestionModifiedDefaultNotification(QuestionNotification):
 
     def getSubject(self):
         """The reply subject line."""
-        line = super(QuestionModifiedDefaultNotification, self).getSubject()
+        line = super().getSubject()
         return 'Re: %s' % line
 
     def getHeaders(self):

@@ -7,7 +7,6 @@ __all__ = [
     'QuestionFactory',
     ]
 
-import six
 from zope.component import getUtility
 
 from lp.answers.interfaces.questiontarget import IQuestionTarget
@@ -25,7 +24,7 @@ class QuestionFactory:
         It returns the pillar with the target_name and makes sure it
         provides `IQuestionTarget`.
         """
-        assert isinstance(target_name, six.string_types), (
+        assert isinstance(target_name, str), (
             "expected a project name: %r", target_name)
         target = getUtility(IPillarNameSet).getByName(target_name)
         assert target is not None, (
