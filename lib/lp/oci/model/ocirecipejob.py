@@ -42,7 +42,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -81,7 +81,7 @@ class OCIRecipeJob(StormBase):
     recipe_id = Int(name='recipe', allow_none=False)
     recipe = Reference(recipe_id, 'OCIRecipe.id')
 
-    job_type = EnumCol(enum=OCIRecipeJobType, notNull=True)
+    job_type = DBEnum(enum=OCIRecipeJobType, allow_none=False)
 
     metadata = JSON('json_data', allow_none=False)
 
