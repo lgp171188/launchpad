@@ -27,7 +27,8 @@ def check_enum_type(enum):
 
 def check_type(enum):
     if type(enum) in (list, tuple):
-        map(check_enum_type, enum)
+        for element in enum:
+            check_enum_type(element)
     else:
         check_enum_type(enum)
 
@@ -37,12 +38,8 @@ class DBEnumVariable(Variable):
     __slots__ = ("_enum",)
 
     def __init__(self, *args, **kwargs):
-        enum = kwargs.pop("enum")
-        if type(enum) not in (list, tuple):
-            enum = (enum,)
-        self._enum = enum
-        check_type(self._enum)
-        super(DBEnumVariable, self).__init__(*args, **kwargs)
+        self._enum = kwargs.pop("enum")
+        super().__init__(*args, **kwargs)
 
     def parse_set(self, value, from_db):
         if from_db:
@@ -71,6 +68,13 @@ class DBEnumVariable(Variable):
 class DBEnum(SimpleProperty):
     variable_class = DBEnumVariable
 
+    def __init__(self, *args, **kwargs):
+        enum = kwargs.pop("enum")
+        if type(enum) not in (list, tuple):
+            enum = (enum,)
+        check_type(enum)
+        super().__init__(enum=enum, *args, **kwargs)
+
 
 class EnumCol(sqlobject.PropertyAdapter, DBEnum):
     def __init__(self, **kw):
@@ -84,7 +88,6 @@ class EnumCol(sqlobject.PropertyAdapter, DBEnum):
             enum = kw.pop('enum')
         except KeyError:
             enum = kw.pop('schema')
-        check_type(enum)
         self._kwargs = {
             'enum': enum,
             }
