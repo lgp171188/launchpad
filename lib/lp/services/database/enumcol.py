@@ -1,13 +1,10 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import warnings
-
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-from storm import sqlobject
 from storm.properties import SimpleProperty
 from storm.variables import Variable
 from zope.security.proxy import isinstance as zope_isinstance
@@ -15,7 +12,6 @@ from zope.security.proxy import isinstance as zope_isinstance
 
 __all__ = [
     'DBEnum',
-    'EnumCol',
     ]
 
 
@@ -74,21 +70,3 @@ class DBEnum(SimpleProperty):
             enum = (enum,)
         check_type(enum)
         super().__init__(enum=enum, *args, **kwargs)
-
-
-class EnumCol(sqlobject.PropertyAdapter, DBEnum):
-    def __init__(self, **kw):
-        # We want to end up using only the Storm style, not a mix of
-        # SQLObject and Storm.
-        warnings.warn(
-            "The SQLObject property EnumCol is deprecated; use the Storm "
-            "property DBEnum instead.",
-            DeprecationWarning, stacklevel=2)
-        try:
-            enum = kw.pop('enum')
-        except KeyError:
-            enum = kw.pop('schema')
-        self._kwargs = {
-            'enum': enum,
-            }
-        super().__init__(**kw)
