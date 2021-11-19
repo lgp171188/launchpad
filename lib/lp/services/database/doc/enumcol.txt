@@ -1,9 +1,8 @@
-An example of EnumCol with EnumeratedTypes
-==========================================
+An example of DBEnum with EnumeratedTypes
+=========================================
 
-EnumCol is a type of column that is used in SQLBase classes where the
-database representation is an integer and the code uses an enumerated
-type.
+DBEnum is a type of column that is used in Storm classes where the database
+representation is an integer and the code uses an enumerated type.
 
 Firstly we need an example table.
 
@@ -20,10 +19,10 @@ Firstly we need an example table.
     >>> import transaction
     >>> transaction.commit()
 
-The enumerated type that is used with the EnumCol must be a
+The enumerated type that is used with the DBEnum must be a
 DBEnumeratedType, with items that are instances of DBItem.
 
-Attempting to use a normal enumerated type for an enumcol will
+Attempting to use a normal enumerated type for a DBEnum will
 result in an error.
 
     >>> from lazr.enum import EnumeratedType, Item, use_template
@@ -32,11 +31,15 @@ result in an error.
     ...     ONE = Item("One")
     ...     TWO = Item("Two")
 
+    >>> from storm.locals import Int
     >>> from lp.services.database.constants import DEFAULT
-    >>> from lp.services.database.enumcol import EnumCol
-    >>> from lp.services.database.sqlbase import SQLBase
-    >>> class BadFooTest(SQLBase):
-    ...     foo = EnumCol(enum=PlainFooType, default=DEFAULT)
+    >>> from lp.services.database.enumcol import DBEnum
+    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.services.database.stormbase import StormBase
+    >>> class BadFooTest(StormBase):
+    ...     __storm_table__ = "footest"
+    ...     id = Int(primary=True)
+    ...     foo = DBEnum(enum=PlainFooType, default=DEFAULT)
     Traceback (most recent call last):
     ...
     TypeError: <EnumeratedType 'PlainFooType'> must be a
@@ -59,12 +62,15 @@ result in an error.
 
 The database implementation class then refers to the enumerated type.
 
-    >>> class FooTest(SQLBase):
-    ...     foo = EnumCol(enum=FooType, default=DEFAULT)
+    >>> class FooTest(StormBase):
+    ...     __storm_table__ = "footest"
+    ...     id = Int(primary=True)
+    ...     foo = DBEnum(enum=FooType, default=DEFAULT)
 
 Create a row in the table.
 
-    >>> t = FooTest()
+    >>> store = IStore(FooTest)
+    >>> t = store.add(FooTest())
 
 The value of the foo column has been set to the default defined in the
 database, because we didn't specify one in the constructor.
@@ -72,7 +78,7 @@ database, because we didn't specify one in the constructor.
     >>> t.foo == FooType.ONE
     True
 
-You cannot use integers or strings as EnumCol values:
+You cannot use integers or strings as DBEnum values:
 
     >>> t.foo = 2
     Traceback (most recent call last):
@@ -130,24 +136,27 @@ schemas into one table. This works if you tell the column about both enums:
 
 Redefine the table with awareness of BarType:
 
-    >>> class FooTest(SQLBase):
-    ...     foo = EnumCol(schema=[FooType, BarType], default=DEFAULT)
+    >>> class FooTest(StormBase):
+    ...     __storm_table__ = "footest"
+    ...     id = Int(primary=True)
+    ...     foo = DBEnum(enum=[FooType, BarType], default=DEFAULT)
 
 We can assign items from either schema to the table;
 
-    >>> t = FooTest()
+    >>> t = store.add(FooTest())
     >>> t.foo = FooType.ONE
+    >>> store.flush()
     >>> t_id = t.id
-    >>> b = FooTest()
+    >>> b = store.add(FooTest())
     >>> b.foo = BarType.THREE
+    >>> store.flush()
     >>> b_id = b.id
 
 And reading back from the database correctly finds things from the schemas in
 the order given.
 
-    >>> from storm.store import AutoReload
-    >>> b.foo = AutoReload
-    >>> t.foo = AutoReload
+    >>> store.autoreload(b)
+    >>> store.autoreload(t)
     >>> b.foo == BarType.THREE
     True
     >>> t.foo == FooType.ONE
