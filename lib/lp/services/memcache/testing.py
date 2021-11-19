@@ -8,6 +8,7 @@ __all__ = [
 import time as _time
 
 import fixtures
+from pymemcache.exceptions import MemcacheIllegalInputError
 
 from lp.services.memcache.client import MemcacheClient
 from lp.services.memcache.interfaces import IMemcacheClient
@@ -36,8 +37,12 @@ class MemcacheFixture(fixtures.Fixture, MemcacheClient):
         # absolute epoch-seconds, and tells them apart using a magic
         # threshold.  See memcached/memcached.c:realtime.
         MONTH_IN_SECONDS = 60 * 60 * 24 * 30
-        if expire and expire <= MONTH_IN_SECONDS:
-            expire = _time.time() + expire
+        if expire:
+            if not isinstance(expire, int):
+                raise MemcacheIllegalInputError(
+                    "expire must be integer, got bad value: %r" % expire)
+            if expire <= MONTH_IN_SECONDS:
+                expire = int(_time.time()) + expire
         self._cache[key] = (val, expire)
         return 1
 

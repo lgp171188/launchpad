@@ -34,7 +34,7 @@ from lp.answers.interfaces.questionjob import (
 from lp.answers.model.question import Question
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import Job
@@ -61,7 +61,7 @@ class QuestionJob(StormBase):
     job_id = Int(name='job')
     job = Reference(job_id, Job.id)
 
-    job_type = EnumCol(enum=QuestionJobType, notNull=True)
+    job_type = DBEnum(enum=QuestionJobType, allow_none=False)
 
     question_id = Int(name='question')
     question = Reference(question_id, Question.id)

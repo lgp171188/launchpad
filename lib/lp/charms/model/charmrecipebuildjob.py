@@ -46,7 +46,7 @@ from lp.charms.interfaces.charmrecipebuildjob import (
     )
 from lp.charms.mail.charmrecipebuild import CharmRecipeBuildMailer
 from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -83,7 +83,7 @@ class CharmRecipeBuildJob(StormBase):
     build_id = Int(name="build", allow_none=False)
     build = Reference(build_id, "CharmRecipeBuild.id")
 
-    job_type = EnumCol(enum=CharmRecipeBuildJobType, notNull=True)
+    job_type = DBEnum(enum=CharmRecipeBuildJobType, allow_none=False)
 
     metadata = JSON("json_data", allow_none=False)
 
