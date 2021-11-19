@@ -220,11 +220,11 @@ class DistroSeriesDifferenceJob(DistributionJobDerived):
             Job._status.is_in(Job.PENDING_STATUSES),
             DistributionJob.distroseries == derived_series)
 
-        parent_series_ids = set(
-            dsd.parent_series.id for dsd in distroseriesdifferences)
-        keyed_dsds = dict(
-            (dsd.source_package_name.id, dsd)
-            for dsd in distroseriesdifferences)
+        parent_series_ids = {
+            dsd.parent_series.id for dsd in distroseriesdifferences}
+        keyed_dsds = {
+            dsd.source_package_name.id: dsd
+            for dsd in distroseriesdifferences}
         jobs_by_dsd = {}
         for job in jobs:
             if job.metadata["parent_series"] not in parent_series_ids:

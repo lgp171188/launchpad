@@ -198,10 +198,10 @@ class FTPArchiveHandler:
         spawner.complete()
         stdout_handler.finalize()
         stderr_handler.finalize()
-        failures = sorted([
+        failures = sorted(
             (tag, receiver.returncode)
             for tag, receiver in six.iteritems(returncodes)
-                if receiver.returncode != 0])
+                if receiver.returncode != 0)
         if len(failures) > 0:
             by_arch = ["%s (returned %d)" % failure for failure in failures]
             raise AptFTPArchiveFailure(

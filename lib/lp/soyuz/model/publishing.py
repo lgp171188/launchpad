@@ -320,8 +320,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 Desc(BinaryPackagePublishingHistory.id)))
 
         # Preload attached BinaryPackageReleases.
-        bpr_ids = set(
-            pub.binarypackagereleaseID for pub in binary_publications)
+        bpr_ids = {
+            pub.binarypackagereleaseID for pub in binary_publications}
         list(Store.of(self).find(
             BinaryPackageRelease, BinaryPackageRelease.id.is_in(bpr_ids)))
 
@@ -337,7 +337,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 get_property_cache(bpr).files = bpfs_by_bpr[bpr]
 
             # Preload LibraryFileAliases.
-            lfa_ids = set(bpf.libraryfileID for bpf in bpfs)
+            lfa_ids = {bpf.libraryfileID for bpf in bpfs}
             list(Store.of(self).find(
                 LibraryFileAlias, LibraryFileAlias.id.is_in(lfa_ids)))
 
@@ -1028,7 +1028,7 @@ def expand_binary_requests(distroseries, binaries):
     """
 
     archs = list(distroseries.enabled_architectures)
-    arch_map = dict((arch.architecturetag, arch) for arch in archs)
+    arch_map = {arch.architecturetag: arch for arch in archs}
 
     expanded = []
     for bpr, overrides in six.iteritems(binaries):
@@ -1155,10 +1155,10 @@ class PublishingSet:
                     bpph.distroarchseries.architecturetag)] = bpph
             with_overrides = {}
             overrides = policy.calculateBinaryOverrides(
-                dict(
-                    ((bpn, archtag), BinaryOverride(
-                        source_override=source_override))
-                    for bpn, archtag in bpn_archtag.keys()))
+                {
+                    (bpn, archtag): BinaryOverride(
+                        source_override=source_override)
+                    for bpn, archtag in bpn_archtag.keys()})
             for (bpn, archtag), override in overrides.items():
                 bpph = bpn_archtag[(bpn, archtag)]
                 new_component = override.component or bpph.component
@@ -1183,9 +1183,9 @@ class PublishingSet:
                     ddebs.remove(maybe_ddeb)
                     with_overrides[maybe_ddeb] = calculated
         else:
-            with_overrides = dict(
-                (bpph.binarypackagerelease, (bpph.component, bpph.section,
-                 bpph.priority, None)) for bpph in bpphs)
+            with_overrides = {
+                bpph.binarypackagerelease: (bpph.component, bpph.section,
+                 bpph.priority, None) for bpph in bpphs}
         if not with_overrides:
             return list()
         copied_from_archives = {
@@ -1729,8 +1729,8 @@ class PublishingSet:
             return
         assert len(sources) + len(binaries) == len(pubs)
 
-        locations = set(
-            (pub.archive, pub.distroseries, pub.pocket) for pub in pubs)
+        locations = {
+            (pub.archive, pub.distroseries, pub.pocket) for pub in pubs}
         for archive, distroseries, pocket in locations:
             if not archive.canModifySuite(distroseries, pocket):
                 raise DeletionError(

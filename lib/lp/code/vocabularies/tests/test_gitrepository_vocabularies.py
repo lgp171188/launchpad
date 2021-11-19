@@ -40,7 +40,7 @@ class TestGitRepositoryVocabulary(TestCaseWithFactory):
         results = self.vocab.searchForTerms("fizzbuzz")
         expected = [
             u"~scotty/sprocket/+git/fizzbuzz", u"~scotty/widget/+git/fizzbuzz"]
-        repository_names = sorted([repository.token for repository in results])
+        repository_names = sorted(repository.token for repository in results)
         self.assertEqual(expected, repository_names)
 
     def test_singleQueryResult(self):
@@ -94,7 +94,7 @@ class TestRestrictedGitRepositoryVocabularyOnProduct(TestCaseWithFactory):
         """
         results = self.vocab.searchForTerms('mountain')
         expected = [u'~scotty/widget/+git/mountain']
-        repo_names = sorted([repo.token for repo in results])
+        repo_names = sorted(repo.token for repo in results)
         self.assertEqual(expected, repo_names)
 
     def test_singleQueryResult(self):

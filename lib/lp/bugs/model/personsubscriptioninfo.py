@@ -267,9 +267,9 @@ class PersonSubscriptions(object):
                 'subscription': get_id(info.subscription),
                 'principal_is_reporter': info.principal_is_reporter,
                 # We won't add bugtasks yet unless we need them.
-                'bug_supervisor_pillars': sorted(set(
+                'bug_supervisor_pillars': sorted({
                     get_id(d['pillar']) for d
-                    in info.bug_supervisor_tasks)),
+                    in info.bug_supervisor_tasks}),
                 }
         direct = {}
         from_duplicate = {}

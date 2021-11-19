@@ -584,7 +584,7 @@ class TestBugWatchSetBulkOperations(TestCaseWithFactory):
     def test_bulkAddActivity_with_iterator(self):
         # Any iterator can be passed in.
         getUtility(IBugWatchSet).bulkAddActivity(
-            (bug_watch for bug_watch in self.bug_watches))
+            bug_watch for bug_watch in self.bug_watches)
         self._checkActivityForBugWatches(
             BugWatchActivityStatus.SYNC_SUCCEEDED, None, None)
 

@@ -245,8 +245,8 @@ class GenericBranchCollection:
         load_related(SourcePackageName, branches, ['sourcepackagenameID'])
         load_related(DistroSeries, branches, ['distroseriesID'])
         load_related(Product, branches, ['productID'])
-        caches = dict((branch.id, get_property_cache(branch))
-            for branch in branches)
+        caches = {branch.id: get_property_cache(branch)
+            for branch in branches}
         branch_ids = caches.keys()
         for cache in caches.values():
             cache._associatedProductSeries = []
@@ -326,7 +326,7 @@ class GenericBranchCollection:
                 *self._convertListingSortToOrderBy(sort_by))
 
         def do_eager_load(rows):
-            branch_ids = set(branch.id for branch in rows)
+            branch_ids = {branch.id for branch in rows}
             if not branch_ids:
                 return
             GenericBranchCollection.preloadDataForBranches(rows)
@@ -338,8 +338,8 @@ class GenericBranchCollection:
 
         def cache_permission(branch):
             if self._user:
-                get_property_cache(branch)._known_viewers = set(
-                    [self._user.id])
+                get_property_cache(branch)._known_viewers = {
+                    self._user.id}
             return branch
 
         eager_load_hook = (
@@ -531,8 +531,8 @@ class GenericBranchCollection:
         merge_proposals = self.getMergeProposals(
                 target_branch=branch, merged_revnos=rev_nos,
                 statuses=[BranchMergeProposalStatus.MERGED])
-        merge_proposal_revs = dict(
-                [(mp.merged_revno, mp) for mp in merge_proposals])
+        merge_proposal_revs = {
+                mp.merged_revno: mp for mp in merge_proposals}
         source_branch_ids = [mp.source_branch.id for mp in merge_proposals]
         linked_bugtasks = defaultdict(list)
 

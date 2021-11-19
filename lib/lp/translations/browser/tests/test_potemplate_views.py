@@ -47,8 +47,8 @@ class TestPOTemplateEditViewValidation(WithScenarios, TestCaseWithFactory):
         attributes = [
             'distroseries', 'sourcepackagename', 'productseries',
             'name', 'translation_domain']
-        data = dict(
-            [(name, getattr(potemplate, name)) for name in attributes])
+        data = {
+            name: getattr(potemplate, name) for name in attributes}
         data.update(**kwargs)
         return data
 

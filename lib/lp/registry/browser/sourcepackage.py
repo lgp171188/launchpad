@@ -483,8 +483,8 @@ class SourcePackageView(LaunchpadView):
     def binaries(self):
         """Format binary packages into binarypackagename and archtags"""
         results = {}
-        all_arch = sorted([arch.architecturetag for arch in
-                           self.context.distroseries.architectures])
+        all_arch = sorted(arch.architecturetag for arch in
+                           self.context.distroseries.architectures)
         for bin in self.context.currentrelease.getBinariesForSeries(
                 self.context.distroseries):
             distroarchseries = bin.build.distro_arch_series

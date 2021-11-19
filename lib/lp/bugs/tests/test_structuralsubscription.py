@@ -491,8 +491,8 @@ class TestGetStructuralSubscriptionTargets(TestCaseWithFactory):
         bug = self.factory.makeBug(target=product, milestone=milestone)
         bugtask = bug.bugtasks[0]
         result = get_structural_subscription_targets(bug.bugtasks)
-        self.assertEqual(set(result), set(
-            ((bugtask, product), (bugtask, milestone))))
+        self.assertEqual(set(result), {
+            (bugtask, product), (bugtask, milestone)})
 
     def test_sourcepackage_target(self):
         actor = self.factory.makePerson()
@@ -506,9 +506,9 @@ class TestGetStructuralSubscriptionTargets(TestCaseWithFactory):
         product_bugtask = bug.bugtasks[0]
         sourcepackage_bugtask = bug.bugtasks[1]
         result = get_structural_subscription_targets(bug.bugtasks)
-        self.assertEqual(set(result), set(
-            ((product_bugtask, product),
-             (sourcepackage_bugtask, distroseries))))
+        self.assertEqual(set(result), {
+            (product_bugtask, product),
+             (sourcepackage_bugtask, distroseries)})
 
     def test_distribution_source_package_target(self):
         actor = self.factory.makePerson()
@@ -522,10 +522,10 @@ class TestGetStructuralSubscriptionTargets(TestCaseWithFactory):
         product_bugtask = bug.bugtasks[0]
         dist_sourcepackage_bugtask = bug.bugtasks[1]
         result = get_structural_subscription_targets(bug.bugtasks)
-        self.assertEqual(set(result), set(
-            ((product_bugtask, product),
+        self.assertEqual(set(result), {
+            (product_bugtask, product),
              (dist_sourcepackage_bugtask, dist_sourcepackage),
-             (dist_sourcepackage_bugtask, distribution))))
+             (dist_sourcepackage_bugtask, distribution)})
 
     def test_product_with_project_group(self):
         # get_structural_subscription_targets() will yield both a
@@ -541,7 +541,7 @@ class TestGetStructuralSubscriptionTargets(TestCaseWithFactory):
         bug = self.factory.makeBug(target=product)
         result = get_structural_subscription_targets(bug.bugtasks)
         self.assertEqual(
-            set([(bug.bugtasks[0], product), (bug.bugtasks[0], projectgroup)]),
+            {(bug.bugtasks[0], product), (bug.bugtasks[0], projectgroup)},
             set(result))
 
 
@@ -580,7 +580,7 @@ class TestGetStructuralSubscriptionsForBug(TestCaseWithFactory):
         sub2 = self.milestone.addBugSubscription(
             self.subscriber, self.subscriber)
         subscriptions = self.getSubscriptions(self.subscriber)
-        self.assertEqual(set([sub1, sub2]), set(subscriptions))
+        self.assertEqual({sub1, sub2}, set(subscriptions))
 
     def test_two_bugtasks_one_subscription(self):
         sub = self.product.addBugSubscription(
@@ -598,7 +598,7 @@ class TestGetStructuralSubscriptionsForBug(TestCaseWithFactory):
         sub2 = product2.addBugSubscription(
             self.subscriber, self.subscriber)
         subscriptions = self.getSubscriptions(self.subscriber)
-        self.assertEqual(set([sub1, sub2]), set(subscriptions))
+        self.assertEqual({sub1, sub2}, set(subscriptions))
 
     def test_ignore_other_subscriptions(self):
         sub1 = self.product.addBugSubscription(
@@ -626,7 +626,7 @@ class TestGetStructuralSubscriptionsForBug(TestCaseWithFactory):
             team_sub = self.product.addBugSubscription(
                 self.team, self.team.teamowner)
         subscriptions = self.getSubscriptions(self.subscriber)
-        self.assertEqual(set([self_sub, team_sub]), set(subscriptions))
+        self.assertEqual({self_sub, team_sub}, set(subscriptions))
 
     def test_subscriptions_from_parent(self):
         # get_structural_subscriptions_for_bug() will return any
@@ -642,7 +642,7 @@ class TestGetStructuralSubscriptionsForBug(TestCaseWithFactory):
         bug = self.factory.makeBug(target=product)
         subscriptions = get_structural_subscriptions_for_bug(
             bug, subscriber)
-        self.assertEqual(set([self_sub]), set(subscriptions))
+        self.assertEqual({self_sub}, set(subscriptions))
 
 
 class TestGetStructuralSubscriptions(TestCaseWithFactory):
@@ -783,7 +783,7 @@ class TestGetStructuralSubscribers(TestCaseWithFactory):
 
         subscribers = get_structural_subscribers(bug, None, None, None)
         self.assertIsInstance(subscribers, RESULT_SETS)
-        self.assertEqual(set([subscriber1, subscriber2]), set(subscribers))
+        self.assertEqual({subscriber1, subscriber2}, set(subscribers))
 
     def test_getStructuralSubscribers_recipients(self):
         # If provided, get_structural_subscribers() calls the appropriate

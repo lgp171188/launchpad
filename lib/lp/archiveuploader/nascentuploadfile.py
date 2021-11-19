@@ -215,7 +215,7 @@ class NascentUploadFile:
 
         # Read in the file and compute its md5 and sha1 checksums and remember
         # the size of the file as read-in.
-        digesters = dict((n, hashlib.new(n)) for n in self.checksums.keys())
+        digesters = {n: hashlib.new(n) for n in self.checksums.keys()}
         with open(self.filepath, "rb") as ckfile:
             size = 0
             for chunk in filechunks(ckfile):
@@ -432,9 +432,9 @@ class BaseBinaryUploadFile(PackageUploadFile):
     ddeb_file = None
 
     # Capitalised because we extract these directly from the control file.
-    mandatory_fields = set(["Package", "Architecture", "Version"])
+    mandatory_fields = {"Package", "Architecture", "Version"}
 
-    known_fields = mandatory_fields.union(set([
+    known_fields = mandatory_fields.union({
         "Depends",
         "Conflicts",
         "Breaks",
@@ -458,7 +458,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
         "Maintainer",
         "Source",
         "Homepage",
-        ]))
+        })
 
     # Map priorities to their dbschema valuesa
     # We treat a priority of '-' as EXTRA since some packages in some distros

@@ -436,7 +436,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             ds_diff, ds_diff.parent_series, 5)
         parent_packagesets = ds_diff.parent_packagesets
         self.assertEqual(
-            sorted([packageset.name for packageset in packagesets]),
+            sorted(packageset.name for packageset in packagesets),
             [packageset.name for packageset in parent_packagesets])
 
     def test_packagesets(self):
@@ -445,7 +445,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         packagesets = self._setupPackageSets(
             ds_diff, ds_diff.derived_series, 5)
         self.assertEqual(
-            sorted([packageset.name for packageset in packagesets]),
+            sorted(packageset.name for packageset in packagesets),
             [packageset.name for packageset in ds_diff.packagesets])
 
     def test_blocklist_unauthorised(self):
@@ -998,17 +998,17 @@ class DistroSeriesDifferenceSourceTestCase(TestCaseWithFactory):
 
     def makeDifferencesForAllDifferenceTypes(self, derived_series):
         """Create DSDs of all types for `derived_series`."""
-        return dict(
-            (diff_type, self.factory.makeDistroSeriesDifference(
-                derived_series, difference_type=diff_type))
-            for diff_type in DistroSeriesDifferenceType.items)
+        return {
+            diff_type: self.factory.makeDistroSeriesDifference(
+                derived_series, difference_type=diff_type)
+            for diff_type in DistroSeriesDifferenceType.items}
 
     def makeDifferencesForAllStatuses(self, derived_series):
         """Create DSDs of all statuses for `derived_series`."""
-        return dict(
-            (status, self.factory.makeDistroSeriesDifference(
-                derived_series, status=status))
-            for status in DistroSeriesDifferenceStatus.items)
+        return {
+            status: self.factory.makeDistroSeriesDifference(
+                derived_series, status=status)
+            for status in DistroSeriesDifferenceStatus.items}
 
     def makeDerivedSeries(self, derived_series=None):
         """Create a derived `DistroSeries`."""
@@ -1337,9 +1337,9 @@ class TestMostRecentComments(TestCaseWithFactory):
 
     def test_most_recent_comments(self):
         dsp = self.factory.makeDistroSeriesParent()
-        dsds = set(
+        dsds = {
             self.factory.makeDistroSeriesDifference(
-                derived_series=dsp.derived_series) for index in range(5))
+                derived_series=dsp.derived_series) for index in range(5)}
         expected_comments = set()
         for dsd in dsds:
             # Add a couple of comments.
@@ -1377,9 +1377,9 @@ class TestMostRecentPublications(TestCaseWithFactory):
             self.create_difference(derived_series),
             ]
         # Derived publication.
-        source_pubs_by_spn_id_expected = set(
+        source_pubs_by_spn_id_expected = {
             (dsd.source_package_name.id, dsd.source_pub)
-            for dsd in dsds)
+            for dsd in dsds}
         source_pubs_by_spn_id_found = most_recent_publications(
             dsds, in_parent=False, statuses=(
                 PackagePublishingStatus.PUBLISHED,
@@ -1388,9 +1388,9 @@ class TestMostRecentPublications(TestCaseWithFactory):
             source_pubs_by_spn_id_expected,
             source_pubs_by_spn_id_found)
         # Parent publication
-        parent_source_pubs_by_spn_id_expected = set(
+        parent_source_pubs_by_spn_id_expected = {
             (dsd.source_package_name.id, dsd.parent_source_pub)
-            for dsd in dsds)
+            for dsd in dsds}
         parent_source_pubs_by_spn_id_found = most_recent_publications(
             dsds, in_parent=True, statuses=(
                 PackagePublishingStatus.PUBLISHED,

@@ -456,7 +456,7 @@ class GitRefMixin:
         from lp.code.model.sourcepackagerecipedata import (
             SourcePackageRecipeData,
             )
-        revspecs = set([self.path, self.name])
+        revspecs = {self.path, self.name}
         if self.path == self.repository.default_branch:
             revspecs.add(None)
         recipes = SourcePackageRecipeData.findRecipes(

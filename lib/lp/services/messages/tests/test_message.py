@@ -279,7 +279,7 @@ class TestMessageEditing(MessageTypeScenariosMixin, TestCaseWithFactory):
         # new text message.
         self.assertEqual(3, len(msg.chunks))
         # Make sure we avoid gaps in sequence.
-        self.assertEqual([1, 2, 3], sorted([i.sequence for i in msg.chunks]))
+        self.assertEqual([1, 2, 3], sorted(i.sequence for i in msg.chunks))
         self.assertThat(msg.chunks[0], MatchesStructure(
             content=Equals("final form"),
             sequence=Equals(1),

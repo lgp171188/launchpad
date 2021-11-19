@@ -243,7 +243,7 @@ def linkify_bug_numbers(text):
 def extract_email_addresses(text):
     '''Unique email addresses in the text.'''
     matches = re.finditer(re_email_address, text)
-    return list(set([match.group() for match in matches]))
+    return list({match.group() for match in matches})
 
 
 def parse_diff(text):

@@ -143,7 +143,7 @@ def remove_suffix(path):
 
 def get_suffixed_indices(path):
     """Return a set of paths to compressed copies of the given index."""
-    return set([path + suffix for suffix in ('', '.gz', '.bz2', '.xz')])
+    return {path + suffix for suffix in ('', '.gz', '.bz2', '.xz')}
 
 
 def _getDiskPool(pubconf, log):

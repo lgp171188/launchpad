@@ -165,8 +165,8 @@ class TestPreviewDiffFormatter(TestCaseWithFactory):
 
     def test_fmt_stale_non_empty_diff(self):
         # If there is no diff, there is no link.
-        diffstat = dict(
-            (self.factory.getUniqueString(), (2, 3)) for x in range(23))
+        diffstat = {
+            self.factory.getUniqueString(): (2, 3) for x in range(23)}
         preview = self._createStalePreviewDiff(
             500, 89, 340, diffstat=diffstat)
         expected_diffstat = '<br/>'.join(
@@ -183,8 +183,8 @@ class TestPreviewDiffFormatter(TestCaseWithFactory):
 
     def test_fmt_stale_non_empty_diff_with_conflicts(self):
         # If there is no diff, there is no link.
-        diffstat = dict(
-            (self.factory.getUniqueString(), (2, 3)) for x in range(23))
+        diffstat = {
+            self.factory.getUniqueString(): (2, 3) for x in range(23)}
         preview = self._createStalePreviewDiff(
             500, 89, 340, 'conflicts', diffstat=diffstat)
         expected_diffstat = '<br/>'.join(

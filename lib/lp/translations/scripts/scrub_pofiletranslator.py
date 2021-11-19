@@ -64,7 +64,7 @@ def summarize_pofiles(pofile_ids):
     rows = store.find(
         (POFile.id, POFile.potemplateID, POFile.languageID),
         POFile.id.is_in(pofile_ids))
-    return dict((row[0], row[1:]) for row in rows)
+    return {row[0]: row[1:] for row in rows}
 
 
 def get_potmsgset_ids(potemplate_id):
@@ -240,7 +240,7 @@ def preload_work_items(work_items):
     productseries = load_related(
         ProductSeries, templates, ['productseriesID'])
     load_related(Product, productseries, ['productID'])
-    return dict((pofile.id, pofile) for pofile in pofiles)
+    return {pofile.id: pofile for pofile in pofiles}
 
 
 def process_work_items(logger, work_items, pofiles):

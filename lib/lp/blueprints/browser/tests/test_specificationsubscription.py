@@ -41,7 +41,7 @@ class TestSpecificationPortletSubcribersIds(TestCaseWithFactory):
             spec.subscribe(subscriber, subscriber)
             view = create_initialized_view(
                 spec, name="+blueprint-portlet-subscribers-ids")
-            subscriber_ids = dict(
-                    (subscriber.name, 'subscriber-%s' % subscriber.id)
-                    for subscriber in [person, subscriber])
+            subscriber_ids = {
+                    subscriber.name: 'subscriber-%s' % subscriber.id
+                    for subscriber in [person, subscriber]}
             self.assertEqual(subscriber_ids, view.subscriber_ids)

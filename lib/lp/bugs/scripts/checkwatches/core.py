@@ -486,9 +486,9 @@ class CheckwatchesMaster(WorkingBase):
 
         with self.transaction:
             reload(bug_watches)
-            old_bug_watches = set(
+            old_bug_watches = {
                 bug_watch for bug_watch in bug_watches
-                if bug_watch.lastchecked is not None)
+                if bug_watch.lastchecked is not None}
             if len(old_bug_watches) == 0:
                 oldest_lastchecked = None
             else:
@@ -500,10 +500,10 @@ class CheckwatchesMaster(WorkingBase):
                     ACCEPTABLE_TIME_SKEW + timedelta(minutes=1))
             # Collate the remote IDs.
             remote_old_ids = sorted(
-                set(bug_watch.remotebug for bug_watch in old_bug_watches))
+                {bug_watch.remotebug for bug_watch in old_bug_watches})
             remote_new_ids = sorted(
-                set(bug_watch.remotebug for bug_watch in bug_watches
-                if bug_watch not in old_bug_watches))
+                {bug_watch.remotebug for bug_watch in bug_watches
+                if bug_watch not in old_bug_watches})
             # If the remote system is not configured to sync comments,
             # don't bother checking for any to push.
             if remotesystem.sync_comments:

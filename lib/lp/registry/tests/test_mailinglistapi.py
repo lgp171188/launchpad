@@ -193,9 +193,9 @@ class MailingListAPITestCase(TestCaseWithFactory):
         def getEmails(people):
             email_address_set = getUtility(IEmailAddressSet)
             return {
-                person.name: set(
+                person.name: {
                     removeSecurityProxy(email_address).email
-                    for email_address in email_address_set.getByPerson(person))
+                    for email_address in email_address_set.getByPerson(person)}
                 for person in people}
 
         self.assertThat(

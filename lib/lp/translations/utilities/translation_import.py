@@ -283,8 +283,8 @@ class TranslationImporter:
         """See `ITranslationImporter`."""
         # Several formats (particularly the various gettext variants) can have
         # the same template suffix.
-        unique_suffixes = set(
-            importer.template_suffix for importer in importers.values())
+        unique_suffixes = {
+            importer.template_suffix for importer in importers.values()}
         return sorted(unique_suffixes)
 
     def isTemplateName(self, path):

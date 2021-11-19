@@ -43,4 +43,4 @@ class TestMakeStoryTest(unittest.TestCase):
 
         # Each unnumbered file appears as an independent test.
         ids = set(map(os.path.basename, map(methodcaller('id'), tests)))
-        self.assertEqual(set(['xx-bar.txt', 'xx-foo.txt']), ids)
+        self.assertEqual({'xx-bar.txt', 'xx-foo.txt'}, ids)

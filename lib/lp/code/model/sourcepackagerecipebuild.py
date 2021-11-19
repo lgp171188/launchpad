@@ -390,9 +390,9 @@ class SourcePackageRecipeBuild(SpecificBuildFarmJobSourceMixin,
 
     def getFileByName(self, filename):
         """See `ISourcePackageRecipeBuild`."""
-        files = dict((lfa.filename, lfa)
+        files = {lfa.filename: lfa
                      for lfa in [self.log, self.upload_log]
-                     if lfa is not None)
+                     if lfa is not None}
         try:
             return files[filename]
         except KeyError:

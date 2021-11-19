@@ -83,9 +83,9 @@ class TestBugChanges(TestCaseWithFactory):
         if bug is None:
             bug = self.bug
         old_activities = set(bug.activity)
-        old_notification_ids = set(
+        old_notification_ids = {
             notification.id for notification in IStore(BugNotification).find(
-                BugNotification, bug=bug))
+                BugNotification, bug=bug)}
 
         if append:
             self.old_activities.update(old_activities)
@@ -173,23 +173,23 @@ class TestBugChanges(TestCaseWithFactory):
                         level=BugNotificationLevel.METADATA)
                 self.assertEqual(
                     set(expected_recipients),
-                    set(recipient.person
-                        for recipient in added_notification.recipients))
+                    {recipient.person
+                        for recipient in added_notification.recipients})
                 if expected_recipient_reasons:
                     self.assertEqual(
                         set(expected_recipient_reasons),
-                        set(recipient.reason_header
-                            for recipient in added_notification.recipients))
+                        {recipient.reason_header
+                            for recipient in added_notification.recipients})
 
     def assertRecipients(self, expected_recipients):
         notifications = self.getNewNotifications()
         notifications, omitted, messages = construct_email_notifications(
             notifications)
-        recipients = set(message['to'] for message in messages)
+        recipients = {message['to'] for message in messages}
 
         self.assertEqual(
-            set(recipient.preferredemail.email
-                for recipient in expected_recipients),
+            {recipient.preferredemail.email
+                for recipient in expected_recipients},
             recipients)
 
     def test_subscribe(self):

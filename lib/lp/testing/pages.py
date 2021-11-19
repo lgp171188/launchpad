@@ -911,10 +911,10 @@ def PageTestSuite(storydir, package=None, setUp=setUpGlobs, **kw):
     package = doctest._normalize_module(package)
     abs_storydir = doctest._module_relative_path(package, storydir)
 
-    filenames = set(
+    filenames = {
         filename
         for filename in os.listdir(abs_storydir)
-        if filename.lower().endswith('.txt'))
+        if filename.lower().endswith('.txt')}
 
     suite = unittest.TestSuite()
     # Add tests to the suite individually.

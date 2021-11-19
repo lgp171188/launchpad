@@ -37,9 +37,9 @@ class CanonicalSSOAPI(LaunchpadXMLRPCView):
             return
 
         time_zone = person.time_zone
-        team_names = dict(
-            (removeSecurityProxy(t).name, t.private)
-            for t in person.teams_participated_in)
+        team_names = {
+            removeSecurityProxy(t).name: t.private
+            for t in person.teams_participated_in}
         return {
             'name': person.name,
             'time_zone': time_zone,

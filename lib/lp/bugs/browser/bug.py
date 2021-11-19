@@ -570,10 +570,10 @@ class BugView(LaunchpadView, BugViewMixin):
         """
         duplicate_bugs = list(self.context.duplicates)
         current_task = self.current_bugtask
-        dupes_in_current_context = dict(
-            (bugtask.bug, bugtask)
+        dupes_in_current_context = {
+            bugtask.bug: bugtask
             for bugtask in current_task.target.searchTasks(
-                BugTaskSearchParams(self.user, bug=any(*duplicate_bugs))))
+                BugTaskSearchParams(self.user, bug=any(*duplicate_bugs)))}
         dupes = []
         for bug in duplicate_bugs:
             # Don't disclose even the ID of a private bug. The link will

@@ -326,7 +326,7 @@ class TestNoneFormatterAPI(TestCaseWithFactory):
     def test_valid_traversal(self):
         # Traversal of allowed names works as expected.
 
-        allowed_names = set([
+        allowed_names = {
             'approximatedate',
             'approximateduration',
             'break-long-words',
@@ -345,7 +345,7 @@ class TestNoneFormatterAPI(TestCaseWithFactory):
             'time',
             'url',
             'link',
-            ])
+            }
 
         for name in allowed_names:
             self.assertEqual('', test_tales('foo/fmt:%s' % name, foo=None))

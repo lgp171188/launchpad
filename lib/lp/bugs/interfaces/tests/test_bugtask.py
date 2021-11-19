@@ -17,9 +17,9 @@ class TestFunctions(TestCase):
 
     def test_get_bugtask_status(self):
         # Compose a map of BugTaskStatusSearch members from their values.
-        expected = dict(
-            (status.value, status)
-            for status in BugTaskStatusSearch.items)
+        expected = {
+            status.value: status
+            for status in BugTaskStatusSearch.items}
         # Update the expected status map - overwriting some entries - from
         # BugTaskStatus members and their values.
         expected.update(
@@ -27,9 +27,9 @@ class TestFunctions(TestCase):
             for status in BugTaskStatus.items)
         # Compose a map of statuses as discovered by value for each member of
         # BugTaskStatusSearch.
-        observed = dict(
-            (status.value, get_bugtask_status(status.value))
-            for status in BugTaskStatusSearch.items)
+        observed = {
+            status.value: get_bugtask_status(status.value)
+            for status in BugTaskStatusSearch.items}
         # Update the expected status map with statuses discovered by value for
         # each member of BugTaskStatus.
         observed.update(
@@ -52,9 +52,9 @@ class TestFunctions(TestCase):
             BugTaskStatus.UNKNOWN: BugTaskStatus.UNKNOWN,
             BugTaskStatus.WONTFIX: BugTaskStatus.WONTFIX,
             }
-        observed = dict(
-            (status, normalize_bugtask_status(status))
-            for status in BugTaskStatus.items)
+        observed = {
+            status: normalize_bugtask_status(status)
+            for status in BugTaskStatus.items}
         self.assertEqual(expected, observed)
 
     def test_normalize_bugtask_status_from_BugTaskStatusSearch(self):
@@ -75,9 +75,9 @@ class TestFunctions(TestCase):
             BugTaskStatusSearch.TRIAGED: BugTaskStatus.TRIAGED,
             BugTaskStatusSearch.WONTFIX: BugTaskStatus.WONTFIX,
             }
-        observed = dict(
-            (status, normalize_bugtask_status(status))
-            for status in BugTaskStatusSearch.items)
+        observed = {
+            status: normalize_bugtask_status(status)
+            for status in BugTaskStatusSearch.items}
         self.assertEqual(expected, observed)
 
     def test_normalize_bugtask_status_from_BugTaskStatusSearchDisplay(self):
@@ -99,7 +99,7 @@ class TestFunctions(TestCase):
             BugTaskStatusSearchDisplay.TRIAGED: BugTaskStatus.TRIAGED,
             BugTaskStatusSearchDisplay.WONTFIX: BugTaskStatus.WONTFIX,
             }
-        observed = dict(
-            (status, normalize_bugtask_status(status))
-            for status in BugTaskStatusSearchDisplay.items)
+        observed = {
+            status: normalize_bugtask_status(status)
+            for status in BugTaskStatusSearchDisplay.items}
         self.assertEqual(expected, observed)

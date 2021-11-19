@@ -499,7 +499,7 @@ class NoneFormatter:
     attributes in content classes.
     """
 
-    allowed_names = set([
+    allowed_names = {
         'approximatedate',
         'approximatedatetitle',
         'approximateduration',
@@ -520,7 +520,7 @@ class NoneFormatter:
         'time',
         'url',
         'link',
-        ])
+        }
 
     def __init__(self, context):
         self.context = context
@@ -670,7 +670,7 @@ class ObjectFormatterAPI:
             "for %r." % (self, self._context))
 
     def global_css(self):
-        css_classes = set([])
+        css_classes = set()
         view = self._context
 
         # XXX: Bug #1076074
@@ -915,13 +915,13 @@ class BugTaskImageDisplayAPI(ObjectImageDisplayAPI):
     Used for image:icon.
     """
 
-    allowed_names = set([
+    allowed_names = {
         'icon',
         'logo',
         'mugshot',
         'badges',
         'sprite_css',
-        ])
+        }
 
     icon_template = (
         '<span alt="%s" title="%s" class="%s"></span>')
@@ -1424,9 +1424,9 @@ class CustomizableFormatter(ObjectFormatterAPI):
         This summary is for use in fmt:link, which is meant to be used in
         contexts like lists of items.
         """
-        values = dict(
-            (k, v if v is not None else '')
-            for k, v in six.iteritems(self._link_summary_values()))
+        values = {
+            k: v if v is not None else ''
+            for k, v in six.iteritems(self._link_summary_values())}
         return structured(self._link_summary_template, **values).escapedtext
 
     def _title_values(self):
@@ -1446,9 +1446,9 @@ class CustomizableFormatter(ObjectFormatterAPI):
         title_template = getattr(self, '_title_template', None)
         if title_template is None:
             return None
-        values = dict(
-            (k, v if v is not None else '')
-            for k, v in six.iteritems(self._title_values()))
+        values = {
+            k: v if v is not None else ''
+            for k, v in six.iteritems(self._title_values())}
         return structured(title_template, **values).escapedtext
 
     def sprite_css(self):

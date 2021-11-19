@@ -89,8 +89,8 @@ class FindMissingReady:
         from lazr.jobrunner.celerytask import list_queued
         self.job_source = job_source
         self.queue_contents = list_queued(celery_app, [job_source.task_queue])
-        self.queued_job_ids = set(task[1][0][0] for task in
-                                  self.queue_contents)
+        self.queued_job_ids = {task[1][0][0] for task in
+                                  self.queue_contents}
 
     def find_missing_ready(self):
         return [job for job in self.job_source.iterReady()

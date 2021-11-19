@@ -1214,10 +1214,10 @@ class TestBuilddManager(TestCase):
         self._stub_out_scheduleNextScanCycle()
 
         manager = BuilddManager()
-        builder_names = set(
-            builder.name for builder in getUtility(IBuilderSet))
+        builder_names = {
+            builder.name for builder in getUtility(IBuilderSet)}
         scanners = manager.addScanForBuilders(builder_names)
-        scanner_names = set(scanner.builder_name for scanner in scanners)
+        scanner_names = {scanner.builder_name for scanner in scanners}
         self.assertEqual(builder_names, scanner_names)
 
     def test_startService_adds_scanBuilders_loop(self):

@@ -42,7 +42,7 @@ class TestBranchVocabulary(TestCaseWithFactory):
         results = self.vocab.searchForTerms('fizzbuzz')
         expected = [
             u'~scotty/sprocket/fizzbuzz', u'~scotty/widget/fizzbuzz']
-        branch_names = sorted([branch.token for branch in results])
+        branch_names = sorted(branch.token for branch in results)
         self.assertEqual(expected, branch_names)
 
     def test_singleQueryResult(self):
@@ -99,7 +99,7 @@ class TestRestrictedBranchVocabularyOnProduct(TestCaseWithFactory):
         """
         results = self.vocab.searchForTerms('main')
         expected = [u'~scotty/widget/main']
-        branch_names = sorted([branch.token for branch in results])
+        branch_names = sorted(branch.token for branch in results)
         self.assertEqual(expected, branch_names)
 
     def test_singleQueryResult(self):
@@ -122,7 +122,7 @@ class TestRestrictedBranchVocabularyOnProduct(TestCaseWithFactory):
             self.factory.makeProductBranch(
                 owner=team, product=self.product, name='mountain')
         results = self.vocab.searchForTerms('mountain')
-        branch_names = sorted([branch.token for branch in results])
+        branch_names = sorted(branch.token for branch in results)
         self.assertEqual(['~scotty/widget/mountain'], branch_names)
 
 

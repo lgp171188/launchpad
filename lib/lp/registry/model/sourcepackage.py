@@ -142,7 +142,7 @@ class SourcePackageQuestionTargetMixin(QuestionTargetMixin):
             set(QuestionTargetMixin.getAnswerContactsForLanguage(
             self, language)))
         return sorted(
-            [person for person in persons], key=attrgetter('displayname'))
+            (person for person in persons), key=attrgetter('displayname'))
 
     def getAnswerContactRecipients(self, language):
         """See `IQuestionTarget`."""
@@ -761,7 +761,7 @@ class SourcePackage(BugTargetBase, HasCodeImportsMixin,
 
     def linkedBranches(self):
         """See `ISourcePackage`."""
-        return dict((p.name, b) for (p, b) in self.linked_branches)
+        return {p.name: b for (p, b) in self.linked_branches}
 
     def getBugTaskWeightFunction(self):
         """Provide a weight function to determine optimal bug task.

@@ -360,14 +360,14 @@ class MaloneHandler:
     # application/ms-tnef attachment are created by Outlook; they
     # seem to store no more than an RTF representation of an email.
 
-    irrelevant_content_types = set((
+    irrelevant_content_types = {
         'application/applefile',  # the resource fork of a MacOS file
         'application/pgp-signature',
         'application/pkcs7-signature',
         'application/x-pkcs7-signature',
         'text/x-vcard',
         'application/ms-tnef',
-        ))
+        }
 
     def processAttachments(self, bug, message, signed_mail):
         """Create Bugattachments for "reasonable" mail attachments.

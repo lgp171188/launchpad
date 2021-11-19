@@ -316,8 +316,8 @@ merge_names_pairs = (
      u'William Grant <william.grant {_AT_} canonical.com>'),
     )
 # Then put it in dictionary form with the correct encodings.
-merge_names_map = dict((wiki_encode(a), wiki_encode(b))
-                       for a, b in merge_names_pairs)
+merge_names_map = {wiki_encode(a): wiki_encode(b)
+                       for a, b in merge_names_pairs}
 
 
 class ContainerRevision():

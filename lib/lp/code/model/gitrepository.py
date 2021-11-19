@@ -618,9 +618,9 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
             self.information_type not in PUBLIC_INFORMATION_TYPES):
             aasource = getUtility(IAccessArtifactSource)
             [abstract_artifact] = aasource.ensure([self])
-            wanted_links = set(
+            wanted_links = {
                 (abstract_artifact, policy) for policy in
-                getUtility(IAccessPolicySource).findByTeam([self.owner]))
+                getUtility(IAccessPolicySource).findByTeam([self.owner])}
         else:
             # We haven't yet quite worked out how distribution privacy
             # works, so only work for projects for now.
@@ -847,7 +847,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
     @staticmethod
     def fetchRefCommits(hosting_path, refs, logger=None):
         """See `IGitRepository`."""
-        oids = sorted(set(info["sha1"] for info in refs.values()))
+        oids = sorted({info["sha1"] for info in refs.values()})
         if not oids:
             return
         commits = parse_git_commits(
@@ -1318,7 +1318,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
             proposals = list(group)
             merges = hosting_client.detectMerges(
                 self.getInternalPath(), proposals[0].target_git_commit_sha1,
-                set(proposal.source_git_commit_sha1 for proposal in proposals))
+                {proposal.source_git_commit_sha1 for proposal in proposals})
             for proposal in proposals:
                 merged_revision_id = merges.get(
                     proposal.source_git_commit_sha1)

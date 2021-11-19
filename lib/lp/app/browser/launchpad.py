@@ -188,9 +188,9 @@ class NavigationMenuTabs(LaunchpadView):
 
     def initialize(self):
         menuapi = MenuAPI(self.context)
-        self.links = sorted([
+        self.links = sorted((
             link for link in menuapi.navigation.values()
-            if (link.enabled or config.launchpad.devmode)],
+            if (link.enabled or config.launchpad.devmode)),
             key=operator.attrgetter('sort_key'))
         self.title = None
         if len(self.links) > 0:
@@ -273,9 +273,9 @@ class Hierarchy(LaunchpadView):
         """The objects for which we want breadcrumbs."""
         # Start the chain with the deepest object that has a breadcrumb.
         try:
-            objects = [next((
+            objects = [next(
                 obj for obj in reversed(self.request.traversed_objects)
-                if IBreadcrumb(obj, None)))]
+                if IBreadcrumb(obj, None))]
         except StopIteration:
             return []
         # Now iterate. If an object has a breadcrumb, it can override

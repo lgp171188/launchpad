@@ -69,13 +69,13 @@ def search_specifications(context, base_clauses, user, sort=None,
     store = IStore(Specification)
     if not default_acceptance:
         default = SpecificationFilter.INCOMPLETE
-        options = set([
-            SpecificationFilter.COMPLETE, SpecificationFilter.INCOMPLETE])
+        options = {
+            SpecificationFilter.COMPLETE, SpecificationFilter.INCOMPLETE}
     else:
         default = SpecificationFilter.ACCEPTED
-        options = set([
+        options = {
             SpecificationFilter.ACCEPTED, SpecificationFilter.DECLINED,
-            SpecificationFilter.PROPOSED])
+            SpecificationFilter.PROPOSED}
     if not spec_filter:
         spec_filter = [default]
 
@@ -120,8 +120,8 @@ def search_specifications(context, base_clauses, user, sort=None,
             # If not specially looking for complete, we care about date
             # registered.
             order = []
-            show_proposed = set(
-                [SpecificationFilter.ALL, SpecificationFilter.PROPOSED])
+            show_proposed = {
+                SpecificationFilter.ALL, SpecificationFilter.PROPOSED}
             if default_acceptance and not (set(spec_filter) & show_proposed):
                 order.append(Desc(Specification.date_goal_decided))
             order.extend([Desc(Specification.datecreated), Specification.id])
@@ -135,8 +135,8 @@ def search_specifications(context, base_clauses, user, sort=None,
         work_items_by_spec = defaultdict(list)
         for spec in rows:
             if need_people:
-                person_ids |= set(
-                    [spec._assigneeID, spec._approverID, spec._drafterID])
+                person_ids |= {
+                    spec._assigneeID, spec._approverID, spec._drafterID}
             if need_branches:
                 get_property_cache(spec).linked_branches = []
         if need_workitems:
@@ -146,7 +146,7 @@ def search_specifications(context, base_clauses, user, sort=None,
             for workitem in work_items:
                 person_ids.add(workitem.assignee_id)
                 work_items_by_spec[workitem.specification_id].append(workitem)
-        person_ids -= set([None])
+        person_ids -= {None}
         if need_people:
             list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
                 person_ids, need_validity=True))
@@ -274,7 +274,7 @@ def _make_cache_user_can_view_spec(user):
     userid = user.id
 
     def cache_user_can_view_spec(spec):
-        get_property_cache(spec)._known_viewers = set([userid])
+        get_property_cache(spec)._known_viewers = {userid}
         return spec
     return cache_user_can_view_spec
 

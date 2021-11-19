@@ -653,7 +653,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         self.assertEqual(
             parent_udev_pubs.count(), child_udev_pubs.count())
         self.assertEqual(
-            {child_pocket}, set(pub.pocket for pub in child_udev_pubs))
+            {child_pocket}, {pub.pocket for pub in child_udev_pubs})
         parent_arch_udev_pubs = parent.main_archive.getAllPublishedBinaries(
             distroarchseries=parent[parent_das.architecturetag], name=u'udev')
         child_arch_udev_pubs = child.main_archive.getAllPublishedBinaries(
@@ -661,7 +661,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         self.assertEqual(
             parent_arch_udev_pubs.count(), child_arch_udev_pubs.count())
         self.assertEqual(
-            {child_pocket}, set(pub.pocket for pub in child_arch_udev_pubs))
+            {child_pocket}, {pub.pocket for pub in child_arch_udev_pubs})
         # And the binary package, and linked source package look fine too.
         udev_bin = child_arch_udev_pubs[0].binarypackagerelease
         self.assertEqual(udev_bin.title, u'udev-0.1-1')
@@ -776,9 +776,9 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         published_sources = child.main_archive.getPublishedSources(
             distroseries=child)
         pub_sources = sorted(
-            [(s.sourcepackagerelease.sourcepackagename.name,
+            (s.sourcepackagerelease.sourcepackagename.name,
               s.sourcepackagerelease.version)
-                for s in published_sources])
+                for s in published_sources)
         self.assertContentEqual(
             [(u'udev', u'0.1-1'), (u'firefox', u'2.1')],
             pub_sources)
@@ -1465,9 +1465,9 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             distroseries=child)
         self.assertEqual(2, published_sources.count())
         pub_sources = sorted(
-            [(s.sourcepackagerelease.sourcepackagename.name,
+            (s.sourcepackagerelease.sourcepackagename.name,
               s.sourcepackagerelease.version)
-                for s in published_sources])
+                for s in published_sources)
         self.assertEqual(
             [(u'p1', u'1.2'), (u'p2', u'1.5')],
             pub_sources)

@@ -143,10 +143,10 @@ class TestFindLatestSourcePackageReleases(TestCaseWithFactory, FactoryHelper):
 
     def test_does_not_find_publication_outside_primary_archive(self):
         distroseries = self.factory.makeDistroSeries()
-        spphs = dict(
-            (purpose, self.makeSPPH(
-                distroseries=distroseries, archive_purpose=purpose))
-            for purpose in ArchivePurpose.items)
+        spphs = {
+            purpose: self.makeSPPH(
+                distroseries=distroseries, archive_purpose=purpose)
+            for purpose in ArchivePurpose.items}
         query = compose_sql_find_latest_source_package_releases(distroseries)
         self.assertContentEqual(
             [self.getExpectedResultFor(spphs[ArchivePurpose.PRIMARY])],
@@ -154,9 +154,9 @@ class TestFindLatestSourcePackageReleases(TestCaseWithFactory, FactoryHelper):
 
     def test_does_not_find_publication_outside_release_pocket(self):
         distroseries = self.factory.makeDistroSeries()
-        spphs = dict(
-            (pocket, self.makeSPPH(distroseries=distroseries, pocket=pocket))
-            for pocket in PackagePublishingPocket.items)
+        spphs = {
+            pocket: self.makeSPPH(distroseries=distroseries, pocket=pocket)
+            for pocket in PackagePublishingPocket.items}
         release_spph = spphs[PackagePublishingPocket.RELEASE]
         query = compose_sql_find_latest_source_package_releases(distroseries)
         self.assertContentEqual(
@@ -165,9 +165,9 @@ class TestFindLatestSourcePackageReleases(TestCaseWithFactory, FactoryHelper):
 
     def test_finds_active_publication(self):
         distroseries = self.factory.makeDistroSeries()
-        spphs = dict(
-            (status, self.makeSPPH(distroseries=distroseries, status=status))
-            for status in active_publishing_status)
+        spphs = {
+            status: self.makeSPPH(distroseries=distroseries, status=status)
+            for status in active_publishing_status}
         query = compose_sql_find_latest_source_package_releases(distroseries)
         self.assertContentEqual(
             [self.getExpectedResultFor(spph)

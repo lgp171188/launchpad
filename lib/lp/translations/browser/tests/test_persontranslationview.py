@@ -174,7 +174,7 @@ class TestPersonTranslationView(TestCaseWithFactory):
         pofile_suffix = '/+translate?show=new_suggestions'
         expected_links = [canonical_url(pofile_worked_on) + pofile_suffix]
         self.assertEqual(
-            set(expected_links), set(item['link'] for item in targets))
+            set(expected_links), {item['link'] for item in targets})
 
     def test_recent_translation_activity(self):
         # the recent_activity property lists the most recent translation
@@ -217,7 +217,7 @@ class TestPersonTranslationView(TestCaseWithFactory):
         targets = self.view.top_projects_and_packages_to_review
 
         self.assertEqual(9, len(targets))
-        self.assertEqual(9, len(set(item['link'] for item in targets)))
+        self.assertEqual(9, len({item['link'] for item in targets}))
 
     def test_top_p_n_p_to_review_caps_total(self):
         # top_projects_and_packages will show at most 9 POFiles
@@ -228,7 +228,7 @@ class TestPersonTranslationView(TestCaseWithFactory):
         targets = self.view.top_projects_and_packages_to_review
 
         self.assertEqual(9, len(targets))
-        self.assertEqual(9, len(set(item['link'] for item in targets)))
+        self.assertEqual(9, len({item['link'] for item in targets}))
 
     def test_person_is_translator_false(self):
         # By default, a user is not a translator.

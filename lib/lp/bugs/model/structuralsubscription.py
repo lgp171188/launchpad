@@ -563,7 +563,7 @@ def _get_structural_subscriptions(find, targets, *conditions):
                     get_structural_subscription_targets.
     :param conditions: additional conditions to filter the results.
     """
-    targets = set(target for bugtask, target in targets)
+    targets = {target for bugtask, target in targets}
     target_descriptions = [
         IStructuralSubscriptionTargetHelper(bugtarget).join
         for bugtarget in targets]

@@ -156,7 +156,7 @@ class TestFromExistingOverridePolicy(TestCaseWithFactory):
             spph.distroseries.main_archive, spph.distroseries, spph.pocket)
         with StormStatementRecorder() as recorder:
             policy.calculateSourceOverrides(
-                dict((spn, SourceOverride()) for spn in spns))
+                {spn: SourceOverride() for spn in spns})
         self.assertThat(recorder, HasQueryCount(Equals(3)))
 
     def test_no_binary_overrides(self):
@@ -366,7 +366,7 @@ class TestFromExistingOverridePolicy(TestCaseWithFactory):
             distroseries.main_archive, distroseries, pocket)
         with StormStatementRecorder() as recorder:
             policy.calculateBinaryOverrides(
-                dict(((bpn, das), BinaryOverride()) for bpn, das in bpns))
+                {(bpn, das): BinaryOverride() for bpn, das in bpns})
         self.assertThat(recorder, HasQueryCount(Equals(4)))
 
 
@@ -438,16 +438,16 @@ class TestUnknownOverridePolicy(TestCaseWithFactory):
             distroseries.main_archive, distroseries,
             PackagePublishingPocket.RELEASE)
         overrides = policy.calculateSourceOverrides(
-            dict(
-                (spn, SourceOverride(
-                    component=getUtility(IComponentSet)[component]))
+            {
+                spn: SourceOverride(
+                    component=getUtility(IComponentSet)[component])
                 for spn, component in
-                zip(spns, ('main', 'contrib', 'non-free'))))
-        expected = dict(
-            (spn, SourceOverride(
-                component=getUtility(IComponentSet)[component], new=True))
+                zip(spns, ('main', 'contrib', 'non-free'))})
+        expected = {
+            spn: SourceOverride(
+                component=getUtility(IComponentSet)[component], new=True)
             for spn, component in
-            zip(spns, ('universe', 'multiverse', 'multiverse')))
+            zip(spns, ('universe', 'multiverse', 'multiverse'))}
         self.assertEqual(expected, overrides)
 
     def test_unknown_binaries(self):
@@ -536,7 +536,7 @@ class TestFallbackOverridePolicy(TestCaseWithFactory):
             UnknownOverridePolicy(
                 distroseries.main_archive, distroseries, pocket)])
         overrides = policy.calculateSourceOverrides(
-            dict((spn, SourceOverride()) for spn in spns))
+            {spn: SourceOverride() for spn in spns})
         self.assertEqual(10, len(overrides))
         self.assertEqual(expected, overrides)
 
@@ -579,7 +579,7 @@ class TestFallbackOverridePolicy(TestCaseWithFactory):
             UnknownOverridePolicy(
                 distroseries.main_archive, distroseries, pocket)])
         overrides = policy.calculateBinaryOverrides(
-            dict(((bpn, das), BinaryOverride()) for bpn, das in bpns))
+            {(bpn, das): BinaryOverride() for bpn, das in bpns})
         self.assertEqual(5, len(overrides))
         self.assertEqual(expected, overrides)
 
@@ -620,6 +620,6 @@ class TestFallbackOverridePolicy(TestCaseWithFactory):
                 distroseries.main_archive, distroseries, pocket,
                 phased_update_percentage=50)])
         overrides = policy.calculateBinaryOverrides(
-            dict(((bpn, das), BinaryOverride()) for bpn, das in bpns))
+            {(bpn, das): BinaryOverride() for bpn, das in bpns})
         self.assertEqual(2, len(overrides))
         self.assertEqual(expected, overrides)

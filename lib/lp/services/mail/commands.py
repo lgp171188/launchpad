@@ -143,9 +143,9 @@ class EmailCommandCollection:
     @classmethod
     def parsingParameters(klass):
         """Returns all the command names."""
-        return dict(
-            (command_name, command.case_insensitive_args)
-            for command_name, command in klass._commands.items())
+        return {
+            command_name: command.case_insensitive_args
+            for command_name, command in klass._commands.items()}
 
     @classmethod
     def get(klass, name, string_args):

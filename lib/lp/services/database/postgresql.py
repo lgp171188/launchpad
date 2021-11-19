@@ -516,9 +516,9 @@ def all_tables_in_schema(cur, schema):
             AND pg_namespace.nspname = %s
             AND pg_class.relkind = 'r'
         """ % sqlvalues(schema))
-    return set(
+    return {
             fqn(namespace, tablename)
-            for namespace, tablename in cur.fetchall())
+            for namespace, tablename in cur.fetchall()}
 
 
 def all_sequences_in_schema(cur, schema):
@@ -534,9 +534,9 @@ def all_sequences_in_schema(cur, schema):
             AND pg_namespace.nspname = %s
             AND pg_class.relkind = 'S'
         """ % sqlvalues(schema))
-    return set(
+    return {
             fqn(namespace, sequence)
-            for namespace, sequence in cur.fetchall())
+            for namespace, sequence in cur.fetchall()}
 
 
 def fqn(namespace, name):

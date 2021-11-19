@@ -39,7 +39,7 @@ def main():
             if options.verbose and not notified:
                 notified = True
                 print(
-                    'Blocking on {0} unshipped WAL'.format(
+                    'Blocking on {} unshipped WAL'.format(
                         len(glob(ready_wal_glob))),
                     end='', file=sys.stderr)
             time.sleep(5)

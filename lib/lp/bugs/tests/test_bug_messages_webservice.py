@@ -91,16 +91,16 @@ class TestBugMessage(TestCaseWithFactory):
         # are the same set.
         with admin_logged_in():
             bug = self.factory.makeBug()
-            created_attachment_ids = set(
-                self.factory.makeBugAttachment(bug).id for i in range(3))
+            created_attachment_ids = {
+                self.factory.makeBugAttachment(bug).id for i in range(3)}
             bug_url = api_url(bug)
         self.assertThat(created_attachment_ids, HasLength(3))
 
         webservice = webservice_for_person(None)
         bug_attachments = webservice.get(
             bug_url + '/attachments').jsonBody()['entries']
-        bug_attachment_ids = set(
-            int(att['self_link'].rsplit('/', 1)[1]) for att in bug_attachments)
+        bug_attachment_ids = {
+            int(att['self_link'].rsplit('/', 1)[1]) for att in bug_attachments}
         self.assertContentEqual(created_attachment_ids, bug_attachment_ids)
 
         messages = webservice.get(bug_url + '/messages').jsonBody()['entries']
@@ -110,9 +110,9 @@ class TestBugMessage(TestCaseWithFactory):
             attachments = webservice.get(attachments_url).jsonBody()['entries']
             self.assertThat(attachments, HasLength(1))
             message_attachments.append(attachments[0])
-        message_attachment_ids = set(
+        message_attachment_ids = {
             int(att['self_link'].rsplit('/', 1)[1])
-            for att in message_attachments)
+            for att in message_attachments}
         self.assertContentEqual(bug_attachment_ids, message_attachment_ids)
 
 

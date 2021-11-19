@@ -121,7 +121,7 @@ def get_distinct(things, fields):
     """
     def key(thing):
         return tuple(thing[field] for field in fields)
-    return dict((key(thing), thing) for thing in things)
+    return {key(thing): thing for thing in things}
 
 
 def gen_mapping(sniffer):

@@ -240,7 +240,7 @@ def create(columns, values, get_objects=False,
     """
     # Flatten Reference faux-columns into their primary keys.
     db_cols = list(chain.from_iterable(map(dbify_column, columns)))
-    clses = set(col.cls for col in db_cols)
+    clses = {col.cls for col in db_cols}
     if len(clses) != 1:
         raise ValueError(
             "The Storm columns to insert values into must be from a single "

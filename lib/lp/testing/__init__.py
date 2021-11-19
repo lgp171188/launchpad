@@ -784,9 +784,9 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
             expected, set(used_permissions.values()),
             'Unexpected %s permissions' % type_)
         for permission in expected_permissions:
-            attribute_names = set(
+            attribute_names = {
                 name for name, value in used_permissions.items()
-                if value == permission)
+                if value == permission}
             self.assertEqual(
                 expected_permissions[permission], attribute_names,
                 'Unexpected set of attributes with %s permission %s:\n'

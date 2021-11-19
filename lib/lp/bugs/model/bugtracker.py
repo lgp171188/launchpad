@@ -558,7 +558,7 @@ class BugTracker(SQLBase):
 
     def _get_aliases(self):
         """See `IBugTracker.aliases`."""
-        alias_urls = set(alias.base_url for alias in self._bugtracker_aliases)
+        alias_urls = {alias.base_url for alias in self._bugtracker_aliases}
         # Although it does no harm if the current baseurl is also an
         # alias, we hide it and all its permutations to avoid
         # confusion.
@@ -572,8 +572,8 @@ class BugTracker(SQLBase):
         else:
             alias_urls = set(alias_urls)
 
-        current_aliases_by_url = dict(
-            (alias.base_url, alias) for alias in self._bugtracker_aliases)
+        current_aliases_by_url = {
+            alias.base_url: alias for alias in self._bugtracker_aliases}
         # Make a set of the keys, i.e. a set of current URLs.
         current_alias_urls = set(current_aliases_by_url)
 

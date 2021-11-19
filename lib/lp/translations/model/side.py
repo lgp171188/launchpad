@@ -54,9 +54,9 @@ class TranslationSideTraitsSet:
             TranslationSide.UBUNTU, 'is_current_ubuntu', "Ubuntu")
         ubuntu.other_side_traits = upstream
         upstream.other_side_traits = ubuntu
-        self.traits = dict(
-            (traits.side, traits)
-            for traits in [ubuntu, upstream])
+        self.traits = {
+            traits.side: traits
+            for traits in [ubuntu, upstream]}
 
     def getTraits(self, side):
         """See `ITranslationSideTraitsSet`."""

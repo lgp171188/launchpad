@@ -53,7 +53,7 @@ dpkg_architecture = DpkgArchitectureCache()
 def resolve_arch_spec(hintlist, valid_archs):
     hint_archs = set(hintlist.split())
     # 'all' is only used if it's a purely arch-indep package.
-    if hint_archs == set(["all"]):
+    if hint_archs == {"all"}:
         return set(), True
     return (
         set(dpkg_architecture.findAllMatches(valid_archs, hint_archs)), False)

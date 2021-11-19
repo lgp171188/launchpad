@@ -126,7 +126,7 @@ class TestQuestionSubscriptionCanBeUnsubscribedbyUser(TestCaseWithFactory):
         """Question target answer contact can unsubscribe someone."""
         answer_contact = self.factory.makePerson()
         english = getUtility(ILanguageSet)['en']
-        with person_logged_in((answer_contact)):
+        with person_logged_in(answer_contact):
             answer_contact.addLanguage(english)
         distro_owner = self.factory.makePerson()
         distro = self.factory.makeDistribution(owner=distro_owner)
