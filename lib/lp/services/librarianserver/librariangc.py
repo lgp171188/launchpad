@@ -891,13 +891,13 @@ def delete_unwanted_swift_files(con):
         if os.path.exists(path) and (os.stat(path).st_ctime
                                      < time() - (7 * 24 * 60 * 60)):
             log.error(
-                "LibraryFileContent {0} exists in the database and disk "
+                "LibraryFileContent {} exists in the database and disk "
                 "but was not found in Swift.".format(next_wanted_content_id))
         next_wanted_content_id = get_next_wanted_content_id()
 
     cur.close()
     log.info(
-        "Deleted {0} files from Swift that were no longer referenced "
+        "Deleted {} files from Swift that were no longer referenced "
         "in the db.".format(removed_count))
 
 

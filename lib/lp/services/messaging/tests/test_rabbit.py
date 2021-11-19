@@ -395,9 +395,9 @@ class TestRabbit(RabbitTestCase):
         except KeyError:
             return set()
         else:
-            return set(
+            return {
                 sync.session for sync in six.itervalues(syncs_set.data)
-                if isinstance(sync, RabbitSessionTransactionSync))
+                if isinstance(sync, RabbitSessionTransactionSync)}
 
     def test_global_session(self):
         self.assertIsInstance(global_session, RabbitSession)

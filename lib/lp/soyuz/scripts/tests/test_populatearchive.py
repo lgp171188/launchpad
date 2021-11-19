@@ -390,12 +390,12 @@ class TestPopulateArchiveScript(TestCaseWithFactory):
         self._verifyClonedSourcePackages(
             second_stage, hoary,
             # The set of packages that were superseded in the target archive.
-            obsolete=set(['alsa-utils 1.0.9a-4ubuntu1 in hoary']),
+            obsolete={'alsa-utils 1.0.9a-4ubuntu1 in hoary'},
             # The set of packages that are new/fresher in the source archive.
-            new=set([
+            new={
                 'alsa-utils 2.0 in hoary',
                 'new-in-second-round 1.0 in hoary',
-                ]))
+                })
 
         # Now populate a 3rd copy archive from the first ubuntu/hoary
         # snapshot.
@@ -421,12 +421,12 @@ class TestPopulateArchiveScript(TestCaseWithFactory):
         self._verifyClonedSourcePackages(
             copy_archive, hoary,
             # The set of packages that were superseded in the target archive.
-            obsolete=set(['alsa-utils 1.0.9a-4ubuntu1 in hoary']),
+            obsolete={'alsa-utils 1.0.9a-4ubuntu1 in hoary'},
             # The set of packages that are new/fresher in the source archive.
-            new=set([
+            new={
                 'alsa-utils 2.0 in hoary',
                 'new-in-second-round 1.0 in hoary',
-                ]))
+                })
 
     def testUnknownOriginArchive(self):
         """Try copy archive population with a unknown origin archive.
@@ -656,7 +656,7 @@ class TestPopulateArchiveScript(TestCaseWithFactory):
     def _getPendingPackageNames(self, archive, series):
         sources = archive.getPublishedSources(
             distroseries=series, status=self.pending_statuses)
-        return set(source.displayname for source in sources)
+        return {source.displayname for source in sources}
 
     def _prepareMergeCopy(self):
         """Add a fresher and a new package to ubuntu/hoary.

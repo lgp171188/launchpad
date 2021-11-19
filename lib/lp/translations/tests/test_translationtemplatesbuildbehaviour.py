@@ -272,7 +272,7 @@ class TestTranslationTemplatesBuildBehaviour(
                 'po-thethird/templ3.pot',
                 ]
             list1 = sorted(expected_templates)
-            list2 = sorted([entry.path for entry in entries])
+            list2 = sorted(entry.path for entry in entries)
             self.assertEqual(list1, list2)
 
         d.addCallback(got_status)

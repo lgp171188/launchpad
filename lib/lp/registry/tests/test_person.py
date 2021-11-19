@@ -1305,7 +1305,7 @@ class TestGetRecipients(TestCaseWithFactory):
         team = self.factory.makeTeam(owner)
         super_team = self.factory.makeTeam(team)
         recipients = get_recipients(super_team)
-        self.assertEqual(set([owner]), set(recipients))
+        self.assertEqual({owner}, set(recipients))
 
     def test_get_recipients_team(self):
         """Ensure get_recipients uses teams with preferredemail."""
@@ -1314,7 +1314,7 @@ class TestGetRecipients(TestCaseWithFactory):
         team = self.factory.makeTeam(owner, email='team@bar.com')
         super_team = self.factory.makeTeam(team)
         recipients = get_recipients(super_team)
-        self.assertEqual(set([team]), set(recipients))
+        self.assertEqual({team}, set(recipients))
 
     def test_get_recipients_team_with_unvalidated_address(self):
         """Ensure get_recipients handles teams with non-preferred addresses.
@@ -1336,7 +1336,7 @@ class TestGetRecipients(TestCaseWithFactory):
     def test_get_recipients_person(self):
         person = self.factory.makePerson()
         recipients = get_recipients(person)
-        self.assertEqual(set([person]), set(recipients))
+        self.assertEqual({person}, set(recipients))
 
     def test_get_recipients_person_with_disabled_account(self):
         """Mail is not sent to a direct recipient whose account is disabled."""
@@ -1367,9 +1367,9 @@ class TestGetRecipients(TestCaseWithFactory):
         super_team_member_team.acceptInvitationToBeMemberOf(
             super_team, u'Go Team!')
         recipients = list(get_recipients(super_team))
-        self.assertEqual(set([owner,
+        self.assertEqual({owner,
                               super_team_member_person,
-                              super_team_member_team]),
+                              super_team_member_team},
                          set(recipients))
 
     def test_get_recipients_team_with_disabled_owner_account(self):

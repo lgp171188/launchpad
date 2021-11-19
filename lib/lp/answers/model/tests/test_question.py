@@ -99,7 +99,7 @@ class TestQuestionInDirectSubscribers(TestCaseWithFactory):
             english_person.addLanguage(getUtility(ILanguageSet)['en'])
         spanish = getUtility(ILanguageSet)['es']
         spanish_person = self.factory.makePerson()
-        with person_logged_in((spanish_person)):
+        with person_logged_in(spanish_person):
             spanish_person.addLanguage(spanish)
         question = self.factory.makeQuestion(language=spanish)
         with person_logged_in(question.owner):

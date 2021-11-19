@@ -62,9 +62,9 @@ class TestTranslationsImport(TestCaseWithFactory):
 
     def _getEmailRecipients(self):
         """List the recipients of all pending outgoing emails."""
-        return sum([
+        return sum((
             recipients
-            for sender, recipients, text in stub.test_emails], [])
+            for sender, recipients, text in stub.test_emails), [])
 
     def test_describeEntry_without_target(self):
         productseries = self._makeProductSeries()

@@ -203,10 +203,10 @@ class CveSet:
             Cve, Cve.sequence.is_in([seq for _, seq in bugcve_ids]))
 
         if cve_mapper is None:
-            cvemap = dict((cve.sequence, cve) for cve in cves)
+            cvemap = {cve.sequence: cve for cve in cves}
         else:
-            cvemap = dict((cve.sequence, cve_mapper(cve)) for cve in cves)
-        bugmap = dict((bug.id, bug) for bug in bugs)
+            cvemap = {cve.sequence: cve_mapper(cve) for cve in cves}
+        bugmap = {bug.id: bug for bug in bugs}
         return [
             (bugmap[bug_id], cvemap[cve_sequence])
             for bug_id, cve_sequence in bugcve_ids

@@ -51,7 +51,7 @@ class TestFeedSwift(TestCase):
         self.librarian_client = LibrarianClient()
         self.contents = [str(i).encode('ASCII') * i for i in range(1, 5)]
         self.lfa_ids = [
-            self.add_file('file_{0}'.format(i), content, when=the_past)
+            self.add_file('file_{}'.format(i), content, when=the_past)
             for i, content in enumerate(self.contents)]
         self.lfas = [
             IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id)
@@ -312,12 +312,12 @@ class TestFeedSwift(TestCase):
         self.assertEqual(obj, b'')
 
         # The segments we expect are all in their expected locations.
-        _, obj1 = swift_client.get_object(container, '{0}/0000'.format(name))
-        _, obj2 = swift_client.get_object(container, '{0}/0001'.format(name))
-        _, obj3 = swift_client.get_object(container, '{0}/0002'.format(name))
+        _, obj1 = swift_client.get_object(container, '{}/0000'.format(name))
+        _, obj2 = swift_client.get_object(container, '{}/0001'.format(name))
+        _, obj3 = swift_client.get_object(container, '{}/0002'.format(name))
         self.assertRaises(
             swiftclient.ClientException, swift.quiet_swiftclient,
-            swift_client.get_object, container, '{0}/0003'.format(name))
+            swift_client.get_object, container, '{}/0003'.format(name))
 
         # Our object round tripped
         self.assertEqual(obj1 + obj2 + obj3, expected_content)

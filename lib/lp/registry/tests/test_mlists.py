@@ -85,7 +85,7 @@ class BaseMailingListImportTest(unittest.TestCase):
 
     def assertPeople(self, *people):
         """Assert that `people` are members of the team."""
-        members = set(person.name for person in self.team.allmembers)
+        members = {person.name for person in self.team.allmembers}
         expected = set(people)
         # Always add the team owner.
         expected.add(u'teamowner')
@@ -93,10 +93,10 @@ class BaseMailingListImportTest(unittest.TestCase):
 
     def assertAddresses(self, *addresses):
         """Assert that `addresses` are subscribed to the mailing list."""
-        subscribers = set([
+        subscribers = {
             address for (name, address) in
             getUtility(IMailingListSet).getSubscribedAddresses(
-                [self.team.name]).get(self.team.name, [])])
+                [self.team.name]).get(self.team.name, [])}
         expected = set(addresses)
         self.assertEqual(subscribers, expected)
 
@@ -469,7 +469,7 @@ class TestMailingListImportScript(BaseMailingListImportTest):
         messages = pop_notifications()
         self.assertEqual(len(messages), 5)
         # The messages are all being sent to the team owner.
-        recipients = set(message['to'] for message in messages)
+        recipients = {message['to'] for message in messages}
         self.assertEqual(len(recipients), 1)
         self.assertEqual(
             recipients.pop(),

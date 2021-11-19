@@ -185,7 +185,7 @@ class QueueItemsView(LaunchpadView):
         """
         sprs = [spr for spr in source_package_releases if spr is not None]
         return getUtility(IPackagesetSet).getForPackages(
-            self.context, set(spr.sourcepackagenameID for spr in sprs))
+            self.context, {spr.sourcepackagenameID for spr in sprs})
 
     def loadPackageCopyJobs(self, uploads):
         """Batch-load `PackageCopyJob`s and related information."""
@@ -218,8 +218,8 @@ class QueueItemsView(LaunchpadView):
         # Both "u.sources" and "u.builds" below are preloaded by
         # self.context.getPackageUploads (which uses PackageUploadSet.getAll)
         # when building self.batchnav.
-        puses = sum([removeSecurityProxy(u.sources) for u in uploads], [])
-        pubs = sum([removeSecurityProxy(u.builds) for u in uploads], [])
+        puses = sum((removeSecurityProxy(u.sources) for u in uploads), [])
+        pubs = sum((removeSecurityProxy(u.builds) for u in uploads), [])
 
         source_sprs = load_related(
             SourcePackageRelease, puses, ['sourcepackagereleaseID'])
@@ -336,8 +336,8 @@ class QueueItemsView(LaunchpadView):
         permission_set = getUtility(IArchivePermissionSet)
         component_permissions = permission_set.componentsForQueueAdmin(
             self.context.main_archive, self.user)
-        allowed_components = set(
-            permission.component for permission in component_permissions)
+        allowed_components = {
+            permission.component for permission in component_permissions}
         pocket_permissions = permission_set.pocketsForQueueAdmin(
             self.context.main_archive, self.user)
 

@@ -76,9 +76,9 @@ def get_bugtask_targets():
          )).config(distinct=True))
     # BugSummary counts package tasks in the packageless totals, so
     # ensure that there's also a packageless total for each distro(series).
-    new_targets.update(set(
+    new_targets.update({
         (p, ps, d, ds, None, None)
-        for (p, ps, d, ds, spn, ocip) in new_targets))
+        for (p, ps, d, ds, spn, ocip) in new_targets})
     return new_targets
 
 
@@ -111,8 +111,8 @@ def format_target(target):
 def _get_bugsummary_constraint_bits(target):
     raw_key = bug_target_to_key(target)
     # Map to ID columns to work around Storm bug #682989.
-    return dict(
-        ('%s_id' % k, v.id if v else None) for (k, v) in raw_key.items())
+    return {
+        '%s_id' % k: v.id if v else None for (k, v) in raw_key.items()}
 
 
 def get_bugsummary_constraint(target, cls=RawBugSummary):
@@ -233,10 +233,10 @@ def apply_bugsummary_changes(target, added, updated, removed):
 
 def rebuild_bugsummary_for_target(target, log):
     log.debug("Rebuilding %s" % format_target(target))
-    existing = dict(
-        (v[:-1], v[-1]) for v in get_bugsummary_rows(target))
-    expected = dict(
-        (v[:-1], v[-1]) for v in calculate_bugsummary_rows(target))
+    existing = {
+        v[:-1]: v[-1] for v in get_bugsummary_rows(target)}
+    expected = {
+        v[:-1]: v[-1] for v in calculate_bugsummary_rows(target)}
     added, updated, removed = calculate_bugsummary_changes(existing, expected)
     if added:
         log.debug('Added %r' % added)

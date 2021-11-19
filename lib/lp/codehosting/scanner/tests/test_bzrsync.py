@@ -443,25 +443,25 @@ class TestBzrSync(BzrSyncTestCase):
         added_ancestry, removed_ancestry = get_delta(b'merge', None)
         # All revisions are new for an unscanned branch
         self.assertEqual(
-            set(['base', 'trunk', 'branch', 'merge']), added_ancestry)
+            {'base', 'trunk', 'branch', 'merge'}, added_ancestry)
         self.assertEqual(set(), removed_ancestry)
         added_ancestry, removed_ancestry = get_delta(b'merge', 'base')
         self.assertEqual(
-            set(['trunk', 'branch', 'merge']), added_ancestry)
+            {'trunk', 'branch', 'merge'}, added_ancestry)
         self.assertEqual(set(), removed_ancestry)
         added_ancestry, removed_ancestry = get_delta(NULL_REVISION, 'merge')
         self.assertEqual(
             set(), added_ancestry)
         self.assertEqual(
-            set(['base', 'trunk', 'branch', 'merge']), removed_ancestry)
+            {'base', 'trunk', 'branch', 'merge'}, removed_ancestry)
         added_ancestry, removed_ancestry = get_delta(b'base', 'merge')
         self.assertEqual(
             set(), added_ancestry)
         self.assertEqual(
-            set(['trunk', 'branch', 'merge']), removed_ancestry)
+            {'trunk', 'branch', 'merge'}, removed_ancestry)
         added_ancestry, removed_ancestry = get_delta(b'trunk', 'branch')
-        self.assertEqual(set(['trunk']), added_ancestry)
-        self.assertEqual(set(['branch']), removed_ancestry)
+        self.assertEqual({'trunk'}, added_ancestry)
+        self.assertEqual({'branch'}, removed_ancestry)
 
     def test_getAncestryDelta(self):
         """"Test ancestry delta calculations with a dirty repository."""
@@ -510,8 +510,8 @@ class TestBzrSync(BzrSyncTestCase):
         (db_branch, branch_tree), ignored = self.makeBranchWithMerge(
             b'r1', b'r2', b'r1.1.1', b'r3')
         self.makeBzrSync(db_branch).syncBranchAndClose()
-        expected = set(
-            [(1, 'r1'), (2, 'r2'), (3, 'r3'), (None, 'r1.1.1')])
+        expected = {
+            (1, 'r1'), (2, 'r2'), (3, 'r3'), (None, 'r1.1.1')}
         self.assertEqual(self.getBranchRevisions(db_branch), expected)
 
     def test_sync_merged_to_merging(self):
@@ -538,7 +538,7 @@ class TestBzrSync(BzrSyncTestCase):
         self.syncBazaarBranchToDatabase(trunk_tree.branch, db_trunk)
         # Then sync with the merged branch.
         self.syncBazaarBranchToDatabase(branch_tree.branch, db_trunk)
-        expected = set([(1, 'base'), (2, 'branch')])
+        expected = {(1, 'base'), (2, 'branch')}
         self.assertEqual(self.getBranchRevisions(db_trunk), expected)
 
     def test_retrieveDatabaseAncestry(self):
@@ -556,8 +556,8 @@ class TestBzrSync(BzrSyncTestCase):
         branch_revisions = IStore(BranchRevision).find(
             BranchRevision, BranchRevision.branch == branch)
         sampledata = list(branch_revisions.order_by(BranchRevision.sequence))
-        expected_ancestry = set(branch_revision.revision.revision_id
-            for branch_revision in sampledata)
+        expected_ancestry = {branch_revision.revision.revision_id
+            for branch_revision in sampledata}
         expected_history = [branch_revision.revision.revision_id
             for branch_revision in sampledata
             if branch_revision.sequence is not None]

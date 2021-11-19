@@ -227,7 +227,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
             {"name": "stable", "display_name": "Stable"},
             {"name": "edge", "display_name": "Edge"},
             ]
-        self.channels_memcache_key = "search.example:channels".encode("UTF-8")
+        self.channels_memcache_key = b"search.example:channels"
 
     def _make_store_secrets(self, encrypted=False):
         self.root_key = hashlib.sha256(

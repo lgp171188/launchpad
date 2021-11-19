@@ -375,9 +375,9 @@ class BugTrackerEditView(LaunchpadEditFormView):
 
         # If the bugtracker is a celebrity then we protect it from
         # deletion.
-        celebrities_set = set(
+        celebrities_set = {
             getattr(celebrities, name)
-            for name in ILaunchpadCelebrities.names())
+            for name in ILaunchpadCelebrities.names()}
         if self.context in celebrities_set:
             reasons.append(
                 'This bug tracker is protected from deletion.')

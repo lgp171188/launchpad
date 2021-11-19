@@ -20,9 +20,9 @@ import six
 from lp.services.log import loglevels
 
 
-LEVEL_PREFIXES = dict(
-    (debug_level, "DEBUG%d" % (1 + debug_level - loglevels.DEBUG))
-    for debug_level in range(loglevels.DEBUG9, loglevels.DEBUG))
+LEVEL_PREFIXES = {
+    debug_level: "DEBUG%d" % (1 + debug_level - loglevels.DEBUG)
+    for debug_level in range(loglevels.DEBUG9, loglevels.DEBUG)}
 
 LEVEL_PREFIXES.update({
     loglevels.DEBUG: 'DEBUG',

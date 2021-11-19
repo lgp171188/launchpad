@@ -157,7 +157,7 @@ def latest_proposals_for_each_branch(proposals):
             targets[target] = (proposal, date_created)
 
     return sorted(
-        [proposal for proposal, date_created in six.itervalues(targets)],
+        (proposal for proposal, date_created in six.itervalues(targets)),
         key=operator.attrgetter('date_created'), reverse=True)
 
 

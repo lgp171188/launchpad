@@ -1364,7 +1364,7 @@ class TestArchiveTokens(TestCaseWithFactory):
         # Preload feature flag so it is cached.
         getFeatureFlag(NAMED_AUTH_TOKEN_FEATURE_FLAG)
         with StormStatementRecorder() as recorder1:
-            self.private_ppa.newNamedAuthTokens(("tok1"))
+            self.private_ppa.newNamedAuthTokens("tok1")
         with StormStatementRecorder() as recorder2:
             self.private_ppa.newNamedAuthTokens(("tok1", "tok2", "tok3"))
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
@@ -2162,7 +2162,7 @@ class TestComponents(TestCaseWithFactory):
         # restriction isn't relevant to this test.
         ap_set = removeSecurityProxy(getUtility(IArchivePermissionSet))
         ap = ap_set.newComponentUploader(archive, person, component)
-        self.assertEqual(set([ap]),
+        self.assertEqual({ap},
             set(archive.getComponentsForUploader(person)))
 
 
@@ -2187,7 +2187,7 @@ class TestPockets(TestCaseWithFactory):
         ap_set = removeSecurityProxy(getUtility(IArchivePermissionSet))
         ap = ap_set.newPocketUploader(
             archive, person, PackagePublishingPocket.SECURITY)
-        self.assertEqual(set([ap]), set(archive.getPocketsForUploader(person)))
+        self.assertEqual({ap}, set(archive.getPocketsForUploader(person)))
 
 
 class TestValidatePPA(TestCaseWithFactory):
@@ -2339,7 +2339,7 @@ class TestGetComponentsForSeries(TestCaseWithFactory):
         clear_property_cache(self.series)
 
         self.assertEqual(
-            set((self.comp1, self.comp2)),
+            {self.comp1, self.comp2},
             set(archive.getComponentsForSeries(self.series)))
 
     def test_partner_component_for_partner_archive(self):
@@ -2809,7 +2809,7 @@ class TestGetPublishedSourcesWebService(TestCaseWithFactory):
         # via a wrapper to improving performance (by reducing the
         # number of queries issued)
         ppa = self.createTestingPPA()
-        ppa_url = '/~{0}/+archive/ubuntu/ppa'.format(ppa.owner.name)
+        ppa_url = '/~{}/+archive/ubuntu/ppa'.format(ppa.owner.name)
         webservice = webservice_for_person(
             ppa.owner, permission=OAuthPermission.READ_PRIVATE)
 

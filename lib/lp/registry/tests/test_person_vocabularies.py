@@ -223,10 +223,10 @@ class TestValidPersonOrTeamPreloading(VocabularyTestBase,
 
         # Remember the current values for checking later, and throw out
         # the cache.
-        expected_nicks = dict(
-            (person.id, list(person.ircnicknames)) for person in people)
-        expected_emails = dict(
-            (person.id, person.preferredemail) for person in people)
+        expected_nicks = {
+            person.id: list(person.ircnicknames) for person in people}
+        expected_emails = {
+            person.id: person.preferredemail for person in people}
         Store.of(people[0]).invalidate()
 
         results = list(self.searchVocabulary(None, u'foobar'))

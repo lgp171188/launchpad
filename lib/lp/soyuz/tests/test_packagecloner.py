@@ -44,7 +44,7 @@ class PackageClonerTests(TestCaseWithFactory):
         that distroseries are checked against a set of PackageInfo to
         ensure that the correct package names and versions are published.
         """
-        expected_set = set([(info.name, info.version) for info in expected])
+        expected_set = {(info.name, info.version) for info in expected}
         sources = archive.getPublishedSources(
             distroseries=distroseries,
             status=active_publishing_status)
@@ -129,7 +129,7 @@ class PackageClonerTests(TestCaseWithFactory):
         created for it.
         """
         expected_builds = list(
-            [(info.name, info.version) for info in package_infos])
+            (info.name, info.version) for info in package_infos)
         builds = list(
             getUtility(IBinaryPackageBuildSet).getBuildsForArchive(
             archive, status=BuildStatus.NEEDSBUILD))

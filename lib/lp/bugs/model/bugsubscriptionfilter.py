@@ -186,11 +186,11 @@ class BugSubscriptionFilter(StormBase):
         # Deal with other tags.
         tags = tags - wildcards
         store = IStore(BugSubscriptionFilterTag)
-        current_tag_filters = dict(
-            (tag_filter.qualified_tag, tag_filter)
+        current_tag_filters = {
+            tag_filter.qualified_tag: tag_filter
             for tag_filter in store.find(
                 BugSubscriptionFilterTag,
-                BugSubscriptionFilterTag.filter == self))
+                BugSubscriptionFilterTag.filter == self)}
         # Remove unused tags.
         for tag in set(current_tag_filters).difference(tags):
             tag_filter = current_tag_filters.pop(tag)

@@ -140,7 +140,7 @@ class DistributionSourcePackageReleaseView(LaunchpadView):
         def distroseries_sort_key(item):
             return Version(item.version)
         sorted_distroseries = sorted(
-            set(build.distro_series for build in cached_builds),
+            {build.distro_series for build in cached_builds},
             key=distroseries_sort_key, reverse=True)
 
         # Group builds as dictionaries.

@@ -144,8 +144,8 @@ def compose_approval_conflict_notice(domain, templates_count, sample):
         complete, just enough to report the problem usefully.
     :return: A string describing the problematic clash.
     """
-    sample_names = sorted([
-        '"%s"' % template.displayname for template in sample])
+    sample_names = sorted(
+        '"%s"' % template.displayname for template in sample)
     if templates_count > len(sample_names):
         sample_names.append("and more (not shown here)")
     return dedent("""\

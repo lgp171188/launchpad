@@ -129,7 +129,7 @@ class TestPersonOwnedBranchesView(TestCaseWithFactory,
     def test_branch_ids_with_bug_links(self):
         # _branches_for_current_batch should return a list of all branches in
         # the current batch.
-        branch_ids = set([self.branches[0].id])
+        branch_ids = {self.branches[0].id}
 
         view = create_initialized_view(
             self.barney, name="+branches", rootsite='code')
@@ -140,7 +140,7 @@ class TestPersonOwnedBranchesView(TestCaseWithFactory,
     def test_branch_ids_with_spec_links(self):
         # _branches_for_current_batch should return a list of all branches in
         # the current batch.
-        branch_ids = set([self.branches[1].id])
+        branch_ids = {self.branches[1].id}
 
         view = create_initialized_view(
             self.barney, name="+branches", rootsite='code')
@@ -151,7 +151,7 @@ class TestPersonOwnedBranchesView(TestCaseWithFactory,
     def test_branch_ids_with_merge_propoasls(self):
         # _branches_for_current_batch should return a list of all branches in
         # the current batch.
-        branch_ids = set([])
+        branch_ids = set()
         view = create_initialized_view(
             self.barney, name="+branches", rootsite='code')
         self.assertEqual(
@@ -680,8 +680,8 @@ class TestProjectGroupBranches(TestCaseWithFactory,
             self.projectgroup, name='+branches', rootsite='code')
         displayname = self.projectgroup.displayname
         expected_text = normalize_whitespace(
-            ("Launchpad does not know where any of %s's "
-             "projects host their code." % displayname))
+            "Launchpad does not know where any of %s's "
+             "projects host their code." % displayname)
         no_branch_div = find_tag_by_id(view(), "no-branchtable")
         text = normalize_whitespace(extract_text(no_branch_div))
         self.assertEqual(expected_text, text)

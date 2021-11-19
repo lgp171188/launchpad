@@ -473,7 +473,7 @@ class TestGetAllStructuralSubscriptionsForTarget(TestCaseWithFactory):
             team_sub = self.product.addBugSubscription(
                 self.team, self.team.teamowner)
         subscriptions = self.getSubscriptions()
-        self.assertEqual(set([self_sub, team_sub]), set(subscriptions))
+        self.assertEqual({self_sub, team_sub}, set(subscriptions))
 
     def test_subscribed_to_project_group(self):
         # If a user is subscribed to a project group, calls to
@@ -486,7 +486,7 @@ class TestGetAllStructuralSubscriptionsForTarget(TestCaseWithFactory):
             self.subscriber, self.subscriber)
         subscriptions = get_structural_subscriptions_for_target(
             product, self.subscriber)
-        self.assertEqual(set([projectgroup_sub]), set(subscriptions))
+        self.assertEqual({projectgroup_sub}, set(subscriptions))
 
 
 def distributionSourcePackageSetUp(test):

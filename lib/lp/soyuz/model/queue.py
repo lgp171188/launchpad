@@ -1056,8 +1056,8 @@ class PackageUpload(SQLBase):
             permission_set = getUtility(IArchivePermissionSet)
             permissions = permission_set.componentsForQueueAdmin(
                 self.distroseries.main_archive, user)
-            allowed_components = set(
-                permission.component for permission in permissions)
+            allowed_components = {
+                permission.component for permission in permissions}
         assert allowed_components is not None, (
             "Must provide allowed_components for non-webservice calls.")
 
@@ -1112,8 +1112,8 @@ class PackageUpload(SQLBase):
             permission_set = getUtility(IArchivePermissionSet)
             permissions = permission_set.componentsForQueueAdmin(
                 self.distroseries.main_archive, user)
-            allowed_components = set(
-                permission.component for permission in permissions)
+            allowed_components = {
+                permission.component for permission in permissions}
         assert allowed_components is not None, (
             "Must provide allowed_components for non-webservice calls.")
 

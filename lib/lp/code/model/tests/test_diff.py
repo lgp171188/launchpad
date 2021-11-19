@@ -282,47 +282,47 @@ class TestDiffInScripts(DiffTestCase):
         self.checkExampleBzrMerge(diff.text)
 
     diff_bytes = (
-        "--- bar\t2009-08-26 15:53:34.000000000 -0400\n"
-        "+++ bar\t1969-12-31 19:00:00.000000000 -0500\n"
-        "@@ -1,3 +0,0 @@\n"
-        "-a\n"
-        "-b\n"
-        "-c\n"
-        "--- baz\t1969-12-31 19:00:00.000000000 -0500\n"
-        "+++ baz\t2009-08-26 15:53:57.000000000 -0400\n"
-        "@@ -0,0 +1,2 @@\n"
-        "+a\n"
-        "+b\n"
-        "--- foo\t2009-08-26 15:53:23.000000000 -0400\n"
-        "+++ foo\t2009-08-26 15:56:43.000000000 -0400\n"
-        "@@ -1,3 +1,4 @@\n"
-        " a\n"
-        "-b\n"
-        " c\n"
-        "+d\n"
-        "+e\n").encode("UTF-8")
+        b"--- bar\t2009-08-26 15:53:34.000000000 -0400\n"
+        b"+++ bar\t1969-12-31 19:00:00.000000000 -0500\n"
+        b"@@ -1,3 +0,0 @@\n"
+        b"-a\n"
+        b"-b\n"
+        b"-c\n"
+        b"--- baz\t1969-12-31 19:00:00.000000000 -0500\n"
+        b"+++ baz\t2009-08-26 15:53:57.000000000 -0400\n"
+        b"@@ -0,0 +1,2 @@\n"
+        b"+a\n"
+        b"+b\n"
+        b"--- foo\t2009-08-26 15:53:23.000000000 -0400\n"
+        b"+++ foo\t2009-08-26 15:56:43.000000000 -0400\n"
+        b"@@ -1,3 +1,4 @@\n"
+        b" a\n"
+        b"-b\n"
+        b" c\n"
+        b"+d\n"
+        b"+e\n")
 
     diff_bytes_2 = (
-        "--- bar\t2009-08-26 15:53:34.000000000 -0400\n"
-        "+++ bar\t1969-12-31 19:00:00.000000000 -0500\n"
-        "@@ -1,3 +0,0 @@\n"
-        "-a\n"
-        "-b\n"
-        "-c\n"
-        "--- baz\t1969-12-31 19:00:00.000000000 -0500\n"
-        "+++ baz\t2009-08-26 15:53:57.000000000 -0400\n"
-        "@@ -0,0 +1,2 @@\n"
-        "+a\n"
-        "+b\n"
-        "--- foo\t2009-08-26 15:53:23.000000000 -0400\n"
-        "+++ foo\t2009-08-26 15:56:43.000000000 -0400\n"
-        "@@ -1,3 +1,5 @@\n"
-        " a\n"
-        "-b\n"
-        " c\n"
-        "+d\n"
-        "+e\n"
-        "+f\n").encode("UTF-8")
+        b"--- bar\t2009-08-26 15:53:34.000000000 -0400\n"
+        b"+++ bar\t1969-12-31 19:00:00.000000000 -0500\n"
+        b"@@ -1,3 +0,0 @@\n"
+        b"-a\n"
+        b"-b\n"
+        b"-c\n"
+        b"--- baz\t1969-12-31 19:00:00.000000000 -0500\n"
+        b"+++ baz\t2009-08-26 15:53:57.000000000 -0400\n"
+        b"@@ -0,0 +1,2 @@\n"
+        b"+a\n"
+        b"+b\n"
+        b"--- foo\t2009-08-26 15:53:23.000000000 -0400\n"
+        b"+++ foo\t2009-08-26 15:56:43.000000000 -0400\n"
+        b"@@ -1,3 +1,5 @@\n"
+        b" a\n"
+        b"-b\n"
+        b" c\n"
+        b"+d\n"
+        b"+e\n"
+        b"+f\n")
 
     def test_mergePreviewWithPrerequisite(self):
         # Changes introduced in the prerequisite branch are ignored.
@@ -354,10 +354,10 @@ class TestDiffInScripts(DiffTestCase):
 
     def test_generateDiffstat_with_CR(self):
         diff_bytes = (
-            "--- foo\t2009-08-26 15:53:23.000000000 -0400\n"
-            "+++ foo\t2009-08-26 15:56:43.000000000 -0400\n"
-            "@@ -1,1 +1,1 @@\n"
-            " a\r-b\r c\r+d\r+e\r+f\r").encode("UTF-8")
+            b"--- foo\t2009-08-26 15:53:23.000000000 -0400\n"
+            b"+++ foo\t2009-08-26 15:56:43.000000000 -0400\n"
+            b"@@ -1,1 +1,1 @@\n"
+            b" a\r-b\r c\r+d\r+e\r+f\r")
         self.assertEqual({'foo': (0, 0)}, Diff.generateDiffstat(diff_bytes))
 
     def test_fromFileSetsDiffstat(self):
@@ -442,7 +442,7 @@ class TestPreviewDiff(DiffTestCase):
         # canonical_url of the merge proposal itself.
         mp = self._createProposalWithPreviewDiff()
         self.assertEqual(
-            '{0}/+preview-diff/{1}'.format(
+            '{}/+preview-diff/{}'.format(
                 canonical_url(mp), mp.preview_diff.id),
             canonical_url(mp.preview_diff))
 

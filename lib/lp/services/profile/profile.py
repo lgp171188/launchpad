@@ -300,7 +300,7 @@ def end_request(event):
         _major, _minor, content_type_params = parse(content_type)
         is_html = _major == 'text' and _minor == 'html'
     template_context = {
-        'actions': dict((key, True) for key in actions),
+        'actions': {key: True for key in actions},
         'always_log': config.profiling.profile_all_requests}
     dump_path = config.profiling.profile_dir
     if _profilers.profiler is not None:
@@ -542,7 +542,7 @@ def get_desired_profile_actions(request):
             elif 'sql' in result:
                 result['sql'] = False
             # Only honor the available options.
-            available_options = set(('show', 'sql', 'help'))
+            available_options = {'show', 'sql', 'help'}
             available_options.update(available_profilers)
             # .keys() gives a list, not mutated during iteration.
             for key in result.keys():

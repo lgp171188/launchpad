@@ -1288,7 +1288,7 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
         repository = self.factory.makeGitRepository(
             date_created=datetime(2015, 6, 1, tzinfo=pytz.UTC))
         [ref] = self.factory.makeGitRefs(repository=repository)
-        repository.removeRefs(set([ref.path]))
+        repository.removeRefs({ref.path})
         self.assertSqlAttributeEqualsDate(
             repository, "date_last_modified", UTC_NOW)
 
@@ -1783,7 +1783,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 },
             }
         self.assertEqual(expected_upsert, refs_to_upsert)
-        self.assertEqual(set(["refs/heads/bar"]), refs_to_remove)
+        self.assertEqual({"refs/heads/bar"}, refs_to_remove)
 
     def test_planRefChanges_skips_non_commits(self):
         # planRefChanges does not attempt to update refs that point to
@@ -1957,7 +1957,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "type": GitObjectType.COMMIT,
                 },
             }
-        refs_to_remove = set(["refs/heads/bar"])
+        refs_to_remove = {"refs/heads/bar"}
         repository.synchroniseRefs(refs_to_upsert, refs_to_remove)
         expected_sha1s = [
             ("refs/heads/master", "1111111111111111111111111111111111111111"),
@@ -2968,10 +2968,10 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
             "Work in progress => Merged",
             notifications[0].get_payload(decode=True).decode("UTF-8"))
         self.assertEqual(proposal.address, notifications[0]["From"])
-        recipients = set(msg["x-envelope-to"] for msg in notifications)
-        expected = set(
-            [proposal.source_git_repository.registrant.preferredemail.email,
-             proposal.target_git_repository.registrant.preferredemail.email])
+        recipients = {msg["x-envelope-to"] for msg in notifications}
+        expected = {
+            proposal.source_git_repository.registrant.preferredemail.email,
+             proposal.target_git_repository.registrant.preferredemail.email}
         self.assertEqual(expected, recipients)
 
     def test_update_detects_merges(self):
@@ -3009,9 +3009,9 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
             expected_events, True, repository.createOrUpdateRefs, refs_info)
         expected_args = [
             (repository.getInternalPath(), target_1.commit_sha1,
-             set([source_1.commit_sha1, source_2.commit_sha1])),
+             {source_1.commit_sha1, source_2.commit_sha1}),
             (repository.getInternalPath(), target_2.commit_sha1,
-             set([source_1.commit_sha1])),
+             {source_1.commit_sha1}),
             ]
         self.assertContentEqual(
             expected_args, hosting_fixture.detectMerges.extract_args())
@@ -3027,9 +3027,9 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         self.assertContentEqual(
             [(BranchMergeProposalStatus.WORK_IN_PROGRESS,
               BranchMergeProposalStatus.MERGED)],
-            set((event.object_before_modification.queue_status,
+            {(event.object_before_modification.queue_status,
                  event.object.queue_status)
-                for event in events[:2]))
+                for event in events[:2]})
 
 
 class TestGitRepositoryGetBlob(TestCaseWithFactory):

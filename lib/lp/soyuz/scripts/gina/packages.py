@@ -328,7 +328,7 @@ class SourcePackageData(AbstractPackageData):
         'component',
         ]
 
-    _known_fields = set(k.lower() for k in DSCFile.known_fields)
+    _known_fields = {k.lower() for k in DSCFile.known_fields}
 
     def __init__(self, **args):
         for k, v in args.items():
@@ -454,7 +454,7 @@ class BinaryPackageData(AbstractPackageData):
         'priority',
         ]
 
-    _known_fields = set(k.lower() for k in BaseBinaryUploadFile.known_fields)
+    _known_fields = {k.lower() for k in BaseBinaryUploadFile.known_fields}
 
     # Set in __init__
     source = None

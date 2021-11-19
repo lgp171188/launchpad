@@ -251,8 +251,8 @@ class SourcePackageRelease(SQLBase):
 
     @cachedproperty
     def published_archives(self):
-        archives = set(
-            pub.archive for pub in self.publishings.prejoin(['archive']))
+        archives = {
+            pub.archive for pub in self.publishings.prejoin(['archive'])}
         return sorted(archives, key=operator.attrgetter('id'))
 
     def addFile(self, file, filetype=None):

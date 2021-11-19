@@ -1400,7 +1400,7 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
     def test__getRuleGrants(self):
         rule = self.factory.makeGitRule()
         grantees = sorted(
-            [self.factory.makePerson() for _ in range(3)],
+            (self.factory.makePerson() for _ in range(3)),
             key=attrgetter("name"))
         for grantee in (grantees[1], grantees[0], grantees[2]):
             self.factory.makeGitRuleGrant(rule=rule, grantee=grantee)

@@ -192,7 +192,7 @@ def check_copy_permissions(person, archive, series, pocket, sources,
 
     if move:
         roles = IPersonRoles(person)
-        for source_archive in set(source.archive for source in sources):
+        for source_archive in {source.archive for source in sources}:
             # XXX cjwatson 2019-10-09: Checking the archive rather than the
             # SPPH duplicates security adapter logic, which is unfortunate;
             # but too much of the logic required to use
@@ -367,9 +367,9 @@ class CopyChecker:
 
             # Update published binaries inventory for the conflicting
             # candidates.
-            archive_binaries = set(
+            archive_binaries = {
                 pub_binary.binarypackagerelease.id
-                for pub_binary in candidate.getBuiltBinaries())
+                for pub_binary in candidate.getBuiltBinaries()}
             published_binaries.update(archive_binaries)
 
         if not self.include_binaries:
@@ -383,9 +383,9 @@ class CopyChecker:
             # correct to assume that the set of BinaryPackageReleases being
             # copied can only be a superset of the set of
             # BinaryPackageReleases published in the destination archive.
-            copied_binaries = set(
+            copied_binaries = {
                 pub.binarypackagerelease.id
-                for pub in source.getBuiltBinaries())
+                for pub in source.getBuiltBinaries()}
             if not copied_binaries.issuperset(published_binaries):
                 raise CannotCopy(
                     "binaries conflicting with the existing ones")
@@ -751,9 +751,9 @@ def _do_direct_copy(source, archive, series, pocket, include_binaries,
 
         if binary_copies is not None:
             copies.extend(binary_copies)
-            binary_uploads = set(
+            binary_uploads = {
                 bpph.binarypackagerelease.build.package_upload
-                for bpph in binary_copies)
+                for bpph in binary_copies}
             for binary_upload in binary_uploads:
                 if binary_upload is not None:
                     custom_files.extend(binary_upload.customfiles)

@@ -1397,8 +1397,8 @@ class BugTaskSet:
             Bug,
             BugTag,
             )
-        bugtask_ids = set(bugtask.id for bugtask in bugtasks)
-        bug_ids = set(bugtask.bug_id for bugtask in bugtasks)
+        bugtask_ids = {bugtask.id for bugtask in bugtasks}
+        bug_ids = {bugtask.bug_id for bugtask in bugtasks}
         tags = IStore(BugTag).find(
             (BugTag.tag, BugTask.id),
             BugTask.bug == Bug.id,
@@ -1418,8 +1418,8 @@ class BugTaskSet:
             [bugtask.assignee_id for bugtask in bugtasks] +
             [bugtask.bug.ownerID for bugtask in bugtasks])
         people = getUtility(IPersonSet).getPrecachedPersonsFromIDs(people_ids)
-        return dict(
-            (person.id, person) for person in people)
+        return {
+            person.id: person for person in people}
 
     def getBugTaskBadgeProperties(self, bugtasks):
         """See `IBugTaskSet`."""
@@ -1427,11 +1427,11 @@ class BugTaskSet:
         from lp.bugs.model.bug import Bug
         from lp.bugs.model.bugbranch import BugBranch
 
-        bug_ids = set(bugtask.bug_id for bugtask in bugtasks)
-        bug_ids_with_specifications = set(
+        bug_ids = {bugtask.bug_id for bugtask in bugtasks}
+        bug_ids_with_specifications = {
             int(id) for _, id in getUtility(IXRefSet).findFromMany(
                 [(u'bug', six.text_type(bug_id)) for bug_id in bug_ids],
-                types=[u'specification']).keys())
+                types=[u'specification']).keys()}
         bug_ids_with_branches = set(IStore(BugBranch).find(
                 BugBranch.bug_id, BugBranch.bug_id.is_in(bug_ids)))
         # Badging looks up milestones too : eager load into the storm cache.
@@ -1445,9 +1445,9 @@ class BugTaskSet:
         # Check if the bugs are cached. If not, cache all uncached bugs
         # at once to avoid one query per bugtask. We could rely on the
         # Storm cache, but this is explicit.
-        bugs = dict(
-            (bug.id, bug)
-            for bug in IStore(Bug).find(Bug, Bug.id.is_in(bug_ids)).cached())
+        bugs = {
+            bug.id: bug
+            for bug in IStore(Bug).find(Bug, Bug.id.is_in(bug_ids)).cached()}
         uncached_ids = bug_ids.difference(bug_id for bug_id in bugs)
         if len(uncached_ids) > 0:
             bugs.update(dict(IStore(Bug).find((Bug.id, Bug),
@@ -1474,7 +1474,7 @@ class BugTaskSet:
         # Query the database, returning the results in a dictionary:
         if len(task_ids) > 0:
             tasks = IStore(BugTask).find(BugTask, BugTask.id.is_in(task_ids))
-            return dict([(task.id, task) for task in tasks])
+            return {task.id: task for task in tasks}
         else:
             return {}
 
@@ -1715,9 +1715,9 @@ class BugTaskSet:
             privacy=bug_privacy_filter)
         cur = cursor()
         cur.execute(query)
-        return dict(
-            (get_bugtask_status(status_id), count)
-            for (status_id, count) in cur.fetchall())
+        return {
+            get_bugtask_status(status_id): count
+            for (status_id, count) in cur.fetchall()}
 
     def findExpirableBugTasks(self, min_days_old, user,
                               bug=None, target=None, limit=None):
@@ -1894,7 +1894,7 @@ class BugTaskSet:
     def getBugCountsForPackages(self, user, packages):
         """See `IBugTaskSet`."""
         distributions = sorted(
-            set(package.distribution for package in packages),
+            {package.distribution for package in packages},
             key=attrgetter('name'))
         counts = []
         for distribution in distributions:
@@ -1955,9 +1955,9 @@ class BugTaskSet:
 
         # Only packages with open bugs were included in the query. Let's
         # add the rest of the packages as well.
-        all_packages = set(
+        all_packages = {
             (distro_package.distribution, distro_package.sourcepackagename)
-            for distro_package in packages)
+            for distro_package in packages}
         for distribution, sourcepackagename in all_packages.difference(
                 packages_with_bugs):
             package_counts = dict(

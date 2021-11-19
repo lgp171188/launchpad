@@ -736,8 +736,8 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         # information types.
         aps = getUtility(IAccessPolicySource)
         existing_policies = aps.findByPillar([self])
-        existing_types = set([
-            access_policy.type for access_policy in existing_policies])
+        existing_types = {
+            access_policy.type for access_policy in existing_policies}
         # Create the missing policies.
         required_types = set(information_types).difference(
             existing_types).intersection(PRIVATE_INFORMATION_TYPES)
@@ -1232,10 +1232,10 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     @property
     def translatable_packages(self):
         """See `IProduct`."""
-        packages = set(
+        packages = {
             package
             for package in self.sourcepackages
-            if package.has_current_translation_templates)
+            if package.has_current_translation_templates}
 
         # Sort packages by distroseries.name and package.name
         return sorted(packages, key=lambda p: (p.distroseries.name, p.name))
@@ -1245,10 +1245,10 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `IProduct`."""
         if not service_uses_launchpad(self.translations_usage):
             return []
-        translatable_product_series = set(
+        translatable_product_series = {
             product_series
             for product_series in self.series
-            if product_series.has_current_translation_templates)
+            if product_series.has_current_translation_templates}
         return sorted(
             translatable_product_series,
             key=operator.attrgetter('datecreated'))
@@ -1283,9 +1283,9 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     @property
     def obsolete_translatable_series(self):
         """See `IProduct`."""
-        obsolete_product_series = set(
+        obsolete_product_series = {
             product_series for product_series in self.series
-            if product_series.has_obsolete_translation_templates)
+            if product_series.has_obsolete_translation_templates}
         return sorted(obsolete_product_series, key=lambda s: s.datecreated)
 
     @property
@@ -1525,12 +1525,12 @@ def get_precached_products(products, need_licences=False,
     from lp.code.interfaces.gitrepository import IGitRepositorySet
     from lp.registry.model.projectgroup import ProjectGroup
 
-    product_ids = set(obj.id for obj in products)
+    product_ids = {obj.id for obj in products}
     if not product_ids:
         return
-    products_by_id = dict((product.id, product) for product in products)
-    caches = dict((product.id, get_property_cache(product))
-        for product in products)
+    products_by_id = {product.id: product for product in products}
+    caches = {product.id: get_property_cache(product)
+        for product in products}
     for cache in caches.values():
         if not safe_hasattr(cache, 'commercial_subscription'):
             cache.commercial_subscription = None

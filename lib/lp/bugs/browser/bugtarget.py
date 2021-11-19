@@ -1222,12 +1222,12 @@ class BugTargetBugTagsView(LaunchpadView):
             self.user, 10, official_tags)
 
         return sorted(
-            [dict(
+            (dict(
                 tag=tag,
                 count=count,
                 url=self._getSearchURL(tag),
                 )
-            for (tag, count) in six.iteritems(tags)],
+            for (tag, count) in six.iteritems(tags)),
             key=lambda item: (-item['count'], item['tag']))
 
     @property

@@ -207,7 +207,7 @@ class TestSwiftFixture(TestCase):
 
     def test_env(self):
         self.assertThat(config.librarian_server, MatchesStructure.byEquality(
-            os_auth_url='http://localhost:{0}/keystone/v2.0/'.format(
+            os_auth_url='http://localhost:{}/keystone/v2.0/'.format(
                 self.swift_fixture.daemon_port),
             os_username=fakeswift.DEFAULT_USERNAME,
             os_password=fakeswift.DEFAULT_PASSWORD,
@@ -217,12 +217,12 @@ class TestSwiftFixture(TestCase):
     def test_old_instance_env(self):
         old_swift_fixture = self.useFixture(SwiftFixture(old_instance=True))
         self.assertThat(config.librarian_server, MatchesStructure.byEquality(
-            os_auth_url='http://localhost:{0}/keystone/v2.0/'.format(
+            os_auth_url='http://localhost:{}/keystone/v2.0/'.format(
                 self.swift_fixture.daemon_port),
             os_username=fakeswift.DEFAULT_USERNAME,
             os_password=fakeswift.DEFAULT_PASSWORD,
             os_tenant_name=fakeswift.DEFAULT_TENANT_NAME,
-            old_os_auth_url='http://localhost:{0}/keystone/v2.0/'.format(
+            old_os_auth_url='http://localhost:{}/keystone/v2.0/'.format(
                 old_swift_fixture.daemon_port),
             old_os_username=fakeswift.DEFAULT_USERNAME,
             old_os_password=fakeswift.DEFAULT_PASSWORD,

@@ -650,8 +650,8 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
         # link_upstream_how has _displayItemForMissingValue=False
         # so that renderItems() doesn't return an extra radio button which
         # prevents it from matching widget.vocabulary's ordering.
-        return dict((entry.token, items[i])
-                    for i, entry in enumerate(widget.vocabulary))
+        return {entry.token: items[i]
+                    for i, entry in enumerate(widget.vocabulary)}
 
     def main_action(self, data):
         link_upstream_how = data.get('link_upstream_how')

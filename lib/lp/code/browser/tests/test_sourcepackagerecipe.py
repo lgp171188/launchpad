@@ -308,10 +308,10 @@ class TestSourcePackageRecipeAddViewInitialValuesMixin:
         with person_logged_in(archive.owner):
             view = create_initialized_view(branch, '+new-recipe')
         series = set(view.initial_values['distroseries'])
-        initial_series = set([development, current])
+        initial_series = {development, current}
         self.assertEqual(initial_series, series.intersection(initial_series))
-        other_series = set(
-            [experimental, frozen, supported, obsolete, future])
+        other_series = {
+            experimental, frozen, supported, obsolete, future}
         self.assertEqual(set(), series.intersection(other_series))
 
 
@@ -440,7 +440,7 @@ class TestSourcePackageRecipeAddViewMixin:
         options = browser.getControl(name='field.owner.owner').displayOptions
         self.assertEqual(
             ['Good Chefs (good-chefs)', 'Master Chef (chef)'],
-            sorted([str(option) for option in options]))
+            sorted(str(option) for option in options))
 
     def test_create_new_recipe_team_owner(self):
         # New recipes can be owned by teams that the user is a member of.
@@ -1499,8 +1499,8 @@ class TestSourcePackageRecipeViewMixin:
         # Our recipe has a Warty distroseries
         self.assertEqual(['Warty'], build_distros)
         self.assertEqual(
-            set([2510]),
-            set(build.buildqueue_record.lastscore for build in builds))
+            {2510},
+            {build.buildqueue_record.lastscore for build in builds})
 
     def test_request_daily_builds_disabled_archive(self):
         # Requesting a daily build from a disabled archive is a user error.

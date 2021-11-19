@@ -111,11 +111,11 @@ class TestGetAncestry(TestCaseWithTransport):
         tree.commit('msg b', rev_id=b'B')
         tree.commit('msg c', rev_id=b'C')
         self.assertEqual(
-            set([b'A']), get_ancestry(branch.repository, b'A'))
+            {b'A'}, get_ancestry(branch.repository, b'A'))
         self.assertEqual(
-            set([b'A', b'B']), get_ancestry(branch.repository, b'B'))
+            {b'A', b'B'}, get_ancestry(branch.repository, b'B'))
         self.assertEqual(
-            set([b'A', b'B', b'C']), get_ancestry(branch.repository, b'C'))
+            {b'A', b'B', b'C'}, get_ancestry(branch.repository, b'C'))
 
     def test_children(self):
         # Verify non-mainline children are included.
@@ -129,8 +129,8 @@ class TestGetAncestry(TestCaseWithTransport):
         tree.set_parent_ids([b'A', b'B'])
         tree.commit('msg c', rev_id=b'C')
         self.assertEqual(
-            set([b'A']), get_ancestry(branch.repository, b'A'))
+            {b'A'}, get_ancestry(branch.repository, b'A'))
         self.assertEqual(
-            set([b'B']), get_ancestry(branch.repository, b'B'))
+            {b'B'}, get_ancestry(branch.repository, b'B'))
         self.assertEqual(
-            set([b'A', b'B', b'C']), get_ancestry(branch.repository, b'C'))
+            {b'A', b'B', b'C'}, get_ancestry(branch.repository, b'C'))

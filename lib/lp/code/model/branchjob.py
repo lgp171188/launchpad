@@ -690,7 +690,7 @@ class RevisionsAddedJob(BranchJobDerived):
                 proposals[source_id] = (proposal, date_created)
 
         return sorted(
-            [proposal for proposal, date_created in six.itervalues(proposals)],
+            (proposal for proposal, date_created in six.itervalues(proposals)),
             key=operator.attrgetter('date_created'), reverse=True)
 
     def getRevisionMessage(self, revision_id, revno):

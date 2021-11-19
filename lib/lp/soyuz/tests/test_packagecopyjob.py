@@ -273,7 +273,7 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
         job_ids = list(job_source.createMultiple(copy_tasks, requester))
         jobs = list(job_source.getActiveJobs(derived_series.main_archive))
         self.assertContentEqual(job_ids, [job.id for job in jobs])
-        self.assertEqual(len(copy_tasks), len(set([job.job for job in jobs])))
+        self.assertEqual(len(copy_tasks), len({job.job for job in jobs}))
         # Get jobs into the same order as copy_tasks, for ease of
         # comparison.
         if jobs[0].package_name != mother_package.name:
@@ -291,7 +291,7 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
         self.assertEqual(copy_tasks, requested_copies)
 
         # The passed requester should be the same on all jobs.
-        actual_requester = set(job.requester for job in jobs)
+        actual_requester = {job.requester for job in jobs}
         self.assertEqual(1, len(actual_requester))
         self.assertEqual(requester, jobs[0].requester)
 

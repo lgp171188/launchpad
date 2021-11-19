@@ -754,8 +754,8 @@ class TestIterViewRegistrations(TestCaseWithFactory):
         """iter_view_registrations provides only registrations of class."""
         macros = getMultiAdapter(
             (object(), LaunchpadTestRequest()), name='+base-layout-macros')
-        names = set(
-            reg.name for reg in iter_view_registrations(macros.__class__))
+        names = {
+            reg.name for reg in iter_view_registrations(macros.__class__)}
         self.assertIn('+base-layout-macros', names)
         self.assertNotIn('+related-pages', names)
 

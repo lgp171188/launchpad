@@ -140,9 +140,9 @@ class PrefetchedBuildCandidates:
         # each builder group, and then re-sort the combined list in exactly
         # the same way.
         grouped_candidates = sorted(
-            [(builder_group_key, self.candidates[builder_group_key][0])
+            ((builder_group_key, self.candidates[builder_group_key][0])
              for builder_group_key in builder_group_keys
-             if self.candidates[builder_group_key]],
+             if self.candidates[builder_group_key]),
             key=lambda key_candidate: self.sort_keys[key_candidate[1]])
         if grouped_candidates:
             builder_group_key, candidate_id = grouped_candidates[0]
@@ -264,9 +264,9 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
             ).find((Builder, BuildQueue)))
         getUtility(IBuilderSet).preloadProcessors(
             [b for b, _ in builders_and_current_bqs])
-        self.vitals_map = dict(
-            (b.name, extract_vitals_from_db(b, bq))
-            for b, bq in builders_and_current_bqs)
+        self.vitals_map = {
+            b.name: extract_vitals_from_db(b, bq)
+            for b, bq in builders_and_current_bqs}
         self.candidates = PrefetchedBuildCandidates(
             list(self.vitals_map.values()))
         transaction.abort()
@@ -736,8 +736,8 @@ class BuilddManager(service.Service):
 
     def checkForNewBuilders(self):
         """Add and return any new builders."""
-        new_builders = set(
-            vitals.name for vitals in self.builder_factory.iterVitals())
+        new_builders = {
+            vitals.name for vitals in self.builder_factory.iterVitals()}
         old_builders = set(self.current_builders)
         extra_builders = new_builders.difference(old_builders)
         self.current_builders.extend(extra_builders)

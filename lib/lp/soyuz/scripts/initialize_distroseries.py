@@ -430,10 +430,10 @@ class InitializeDistroSeries:
                 self.distroseries.getDistroArchSeries(self.archindep_archtag))
 
     def _potential_nominated_arches(self, parent_list):
-        parent_indep_archtags = set(
+        parent_indep_archtags = {
             parent.nominatedarchindep.architecturetag
             for parent in parent_list
-            if parent.nominatedarchindep is not None)
+            if parent.nominatedarchindep is not None}
 
         if len(self.arches) == 0:
             return parent_indep_archtags

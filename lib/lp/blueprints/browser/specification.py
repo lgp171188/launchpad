@@ -1180,7 +1180,7 @@ class SpecGraph:
             graph.link(node, related)
         """
         # This is a standard pattern for "flattening" a recursive algorithm.
-        to_search = set([spec])
+        to_search = {spec}
         visited = set()
         while to_search:
             current_spec = to_search.pop()
@@ -1341,7 +1341,7 @@ class SpecGraphNode:
             # We want to have links in the image map for all nodes
             # except the one that were currently on the page of.
             attrnames.append('URL')
-        attrdict = dict((name, getattr(self, name)) for name in attrnames)
+        attrdict = {name: getattr(self, name) for name in attrnames}
         return u'%s\n%s' % (to_DOT_ID(self.name), dict_to_DOT_attrs(attrdict))
 
 

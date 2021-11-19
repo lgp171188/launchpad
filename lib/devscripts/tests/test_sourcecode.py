@@ -171,7 +171,7 @@ class TestPlanUpdate(unittest.TestCase):
         new, existing, removed = plan_update(['a', 'b', 'c'], {})
         self.assertEqual({}, new)
         self.assertEqual({}, existing)
-        self.assertEqual(set(['a', 'b', 'c']), removed)
+        self.assertEqual({'a', 'b', 'c'}, removed)
 
     def test_all_same(self):
         # If the set of existing branches is the same as the set of

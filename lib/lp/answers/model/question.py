@@ -850,7 +850,7 @@ class QuestionSet:
     def getOpenQuestionCountByPackages(self, packages):
         """See `IQuestionSet`."""
         distributions = list(
-            set(package.distribution for package in packages))
+            {package.distribution for package in packages})
         # We can't get counts for all packages in one query, since we'd
         # need to match on (distribution, sourcepackagename). Issue one
         # query per distribution instead.
@@ -882,7 +882,7 @@ class QuestionSet:
         sourcepackagename_set = getUtility(ISourcePackageNameSet)
         # Only packages with open questions are included in the query
         # result, so initialize each package to 0.
-        counts = dict((package, 0) for package in packages)
+        counts = {package: 0 for package in packages}
         for distro_id, spn_id, open_questions in results:
             # The SourcePackageNames here should already be pre-fetched,
             # so that .get(spn_id) won't issue a DB query.
@@ -1525,6 +1525,6 @@ class QuestionTargetMixin:
         for contact in self.answer_contacts_with_languages:
             languages |= set(contact.languages)
         languages.add(getUtility(ILaunchpadCelebrities).english)
-        languages = set(
-            lang for lang in languages if not is_english_variant(lang))
+        languages = {
+            lang for lang in languages if not is_english_variant(lang)}
         return list(languages)

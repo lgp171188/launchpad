@@ -416,8 +416,8 @@ class TestHelpers(TestCaseWithFactory):
 
     def test_revert_unselected_translations_handles_plurals(self):
         translated_forms = list(range(3))
-        translations = dict(
-            (form, self.getUniqueString()) for form in translated_forms)
+        translations = {
+            form: self.getUniqueString() for form in translated_forms}
 
         self.assertEqual(
             translations,

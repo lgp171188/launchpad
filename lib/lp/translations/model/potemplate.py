@@ -187,7 +187,7 @@ def get_pofiles_for(potemplates, language):
         POFile.potemplateID.is_in(template_ids),
         POFile.language == language))
 
-    mapping = dict((pofile.potemplate.id, pofile) for pofile in pofiles)
+    mapping = {pofile.potemplate.id: pofile for pofile in pofiles}
     result = [mapping.get(id) for id in template_ids]
     for entry, pofile in enumerate(result):
         assert pofile == result[entry], "This enumerate confuses me."
@@ -1625,10 +1625,10 @@ class POTemplateToTranslationFileDataAdapter:
             msgset.file_references = row.file_references
 
             if row.flags_comment:
-                msgset.flags = set([
+                msgset.flags = {
                     flag.strip()
                     for flag in row.flags_comment.split(',')
-                    if flag])
+                    if flag}
 
             # Store the message.
             messages.append(msgset)

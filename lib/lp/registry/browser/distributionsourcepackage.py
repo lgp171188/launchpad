@@ -310,11 +310,11 @@ class DistributionSourcePackageBaseView(LaunchpadView):
                 [spr.changelog_entry for spr in sprs
                 if not_empty(spr.changelog_entry)])
             if self.user:
-                self._person_data = dict(
-                    [(email.email, person) for (email, person) in
+                self._person_data = {
+                    email.email: person for (email, person) in
                         getUtility(IPersonSet).getByEmails(
                             extract_email_addresses(the_changelog),
-                            include_hidden=False)])
+                            include_hidden=False)}
             else:
                 self._person_data = None
             # Collate diffs for relevant SourcePackageReleases

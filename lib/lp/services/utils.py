@@ -316,9 +316,9 @@ def obfuscate_structure(o):
     elif isinstance(o, (list, tuple)):
         return [obfuscate_structure(value) for value in o]
     elif isinstance(o, (dict)):
-        return dict(
-            (obfuscate_structure(key), obfuscate_structure(value))
-            for key, value in six.iteritems(o))
+        return {
+            obfuscate_structure(key): obfuscate_structure(value)
+            for key, value in six.iteritems(o)}
     else:
         return o
 

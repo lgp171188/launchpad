@@ -70,13 +70,13 @@ class ImportantInfo:
 def find_important_info():
     stack = inspect.stack()
     try:
-        important_classes = set([
+        important_classes = {
             PythonExpr,
             TrustedZopeContext,
             TALInterpreter,
             ViewPageTemplateFile,
             simple
-            ])
+            }
         important_objects = {}
         metadata = {}  # cls -> (filename, lineno, funcname)
 

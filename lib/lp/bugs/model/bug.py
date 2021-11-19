@@ -287,7 +287,7 @@ def get_bug_tags_open_count(context_condition, user, tag_limit=0,
         )
     tags = {}
     if include_tags:
-        tags = dict((tag, 0) for tag in include_tags)
+        tags = {tag: 0 for tag in include_tags}
     where_conditions = [
         BugSummary.status.is_in(UNRESOLVED_BUGTASK_STATUSES),
         BugSummary.tag != None,
@@ -560,7 +560,7 @@ class Bug(SQLBase, InformationTypeMixin):
             # in storm with very large bugs by not joining and instead
             # querying a second time. If this starts to show high db
             # time, we can left outer join instead.
-            owner_ids = set(message.ownerID for message in messages)
+            owner_ids = {message.ownerID for message in messages}
             owner_ids.discard(None)
             if not owner_ids:
                 return
@@ -571,7 +571,7 @@ class Bug(SQLBase, InformationTypeMixin):
             # message, or joining in the database (though perhaps in
             # future we should do that), we do a single separate query
             # for the message content.
-            message_ids = set(message.id for message in messages)
+            message_ids = {message.id for message in messages}
             chunks = store.find(
                 MessageChunk, MessageChunk.messageID.is_in(message_ids))
             chunks.order_by(MessageChunk.id)
@@ -896,7 +896,7 @@ class Bug(SQLBase, InformationTypeMixin):
         clear_property_cache(self)
         # Ensure the unsubscriber is in the _known_viewer cache for the bug so
         # that the permissions are such that the operation can succeed.
-        get_property_cache(self)._known_viewers = set([unsubscribed_by.id])
+        get_property_cache(self)._known_viewers = {unsubscribed_by.id}
         if person is None:
             person = unsubscribed_by
 
@@ -1431,8 +1431,8 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def getVisibleLinkedMergeProposals(self, user, eager_load=False):
         """See `IBug`."""
-        linked_merge_proposal_ids = set(
-            bmp.id for bmp in self.linked_merge_proposals)
+        linked_merge_proposal_ids = {
+            bmp.id for bmp in self.linked_merge_proposals}
         if not linked_merge_proposal_ids:
             return EmptyResultSet()
         else:
@@ -1863,7 +1863,7 @@ class Bug(SQLBase, InformationTypeMixin):
         """Set the tags from a list of strings."""
         # Sets provide an easy way to get the difference between the old and
         # new tags.
-        new_tags = set([tag.lower() for tag in tags])
+        new_tags = {tag.lower() for tag in tags}
         old_tags = set(self.tags)
         # The cache will be stale after we add/remove tags, clear it.
         del get_property_cache(self)._cached_tags

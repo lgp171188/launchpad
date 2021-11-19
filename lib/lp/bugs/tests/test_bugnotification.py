@@ -373,9 +373,9 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
             self.dupe_bug.owner, subject='subject', content='content')
         latest_notification = IStore(BugNotification).find(
             BugNotification).order_by(BugNotification.id).last()
-        recipients = set(
+        recipients = {
             recipient.person
-            for recipient in latest_notification.recipients)
+            for recipient in latest_notification.recipients}
         self.assertEqual(self.dupe_subscribers, recipients)
 
     def test_duplicate_edit_notifications(self):
@@ -385,9 +385,9 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
             self.dupe_bug.description = 'A changed description'
         latest_notification = IStore(BugNotification).find(
             BugNotification).order_by(BugNotification.id).last()
-        recipients = set(
+        recipients = {
             recipient.person
-            for recipient in latest_notification.recipients)
+            for recipient in latest_notification.recipients}
         self.assertEqual(self.dupe_subscribers, recipients)
 
     def test_branch_linked_notification(self):
@@ -400,9 +400,9 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
         self.dupe_bug.linkBranch(branch, self.dupe_bug.owner)
         latest_notification = IStore(BugNotification).find(
             BugNotification).order_by(BugNotification.id).last()
-        recipients = set(
+        recipients = {
             recipient.person
-            for recipient in latest_notification.recipients)
+            for recipient in latest_notification.recipients}
         self.assertEqual(self.dupe_subscribers, recipients)
 
 

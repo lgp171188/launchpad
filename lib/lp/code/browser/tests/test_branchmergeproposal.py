@@ -2044,16 +2044,16 @@ class TestBranchMergeProposalChangeStatusView(TestCaseWithFactory):
         # generated vocabulary.
         login_person(user)
         vocabulary = self._createView()._createStatusVocabulary()
-        vocab_tokens = sorted([term.token for term in vocabulary])
+        vocab_tokens = sorted(term.token for term in vocabulary)
         self.assertEqual(
             sorted(tokens), vocab_tokens)
 
     def assertAllStatusesAvailable(self, user, except_for=None):
         # All options should be available to the user, except for SUPERSEDED,
         # which is only provided through resubmit.
-        desired_statuses = set([
+        desired_statuses = {
             'WORK_IN_PROGRESS', 'NEEDS_REVIEW', 'MERGED', 'CODE_APPROVED',
-            'REJECTED'])
+            'REJECTED'}
         if except_for is not None:
             desired_statuses -= set(except_for)
         self.assertStatusVocabTokens(desired_statuses, user)

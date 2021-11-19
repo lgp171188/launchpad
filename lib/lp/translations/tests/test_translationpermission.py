@@ -129,9 +129,9 @@ class TestTranslationPermission(TestCaseWithFactory):
         potemplate = self.makePOTemplateForProduct(product)
         group = self.factory.makeTranslationGroup()
         potemplate.productseries.product.translationgroup = group
-        pofiles = dict(
-            (coverage, self.factory.makePOFile(potemplate=potemplate))
-            for coverage in team_coverage)
+        pofiles = {
+            coverage: self.factory.makePOFile(potemplate=potemplate)
+            for coverage in team_coverage}
         self.makeTranslationTeam(group, pofiles['tended'].language)
         self.makeTranslationTeam(
             group, pofiles['member'].language, members=[user])

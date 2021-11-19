@@ -576,7 +576,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         graph = job.bzr_branch.repository.get_graph()
         self.addCleanup(job.bzr_branch.unlock)
         self.assertEqual(
-            set([b'rev2a-id', b'rev3-id', b'rev2b-id', b'rev2c-id']),
+            {b'rev2a-id', b'rev3-id', b'rev2b-id', b'rev2c-id'},
             job.getMergedRevisionIDs(b'rev2d-id', graph))
 
     def test_findRelatedBMP(self):
@@ -622,7 +622,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         self.addCleanup(job.bzr_branch.unlock)
         graph = job.bzr_branch.repository.get_graph()
         revision_ids = [b'rev2a-id', b'rev3-id', b'rev2b-id']
-        self.assertEqual(set(['foo@', 'bar@', 'baz@blaine.com', 'qux@']),
+        self.assertEqual({'foo@', 'bar@', 'baz@blaine.com', 'qux@'},
                          job.getAuthors(revision_ids, graph))
 
     def test_getAuthors_with_ghost(self):
@@ -632,7 +632,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         graph = job.bzr_branch.repository.get_graph()
         self.addCleanup(job.bzr_branch.unlock)
         revision_ids = [b'rev2a-id', b'rev3-id', b'rev2b-id', b'rev2c-id']
-        self.assertEqual(set(['foo@', 'bar@', 'baz@blaine.com', 'qux@']),
+        self.assertEqual({'foo@', 'bar@', 'baz@blaine.com', 'qux@'},
                          job.getAuthors(revision_ids, graph))
 
     def test_getRevisionMessage(self):

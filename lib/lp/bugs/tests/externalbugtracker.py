@@ -115,8 +115,8 @@ def print_bugwatches(bug_watches, convert_remote_status=None):
     used to convert the watches' remote statuses to Launchpad
     BugTaskStatuses and these will be output instead.
     """
-    watches = dict((int(bug_watch.remotebug), bug_watch)
-        for bug_watch in bug_watches)
+    watches = {int(bug_watch.remotebug): bug_watch
+        for bug_watch in bug_watches}
 
     for remote_bug_id in sorted(watches.keys()):
         status = watches[remote_bug_id].remotestatus
@@ -542,7 +542,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
 
     @property
     def auth_cookie(self):
-        if len(set(cookie.domain for cookie in self.cookie_jar)) > 1:
+        if len({cookie.domain for cookie in self.cookie_jar}) > 1:
             raise AssertionError(
                 "There should only be cookies for one domain.")
 
@@ -719,9 +719,9 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
 
     def _copy_comment(self, comment, fields_to_return=None):
         # Copy wanted fields.
-        return dict(
-            (key, value) for (key, value) in six.iteritems(comment)
-            if fields_to_return is None or key in fields_to_return)
+        return {
+            key: value for (key, value) in six.iteritems(comment)
+            if fields_to_return is None or key in fields_to_return}
 
     def comments(self, arguments):
         """Return comments for a given set of bugs."""
@@ -1389,7 +1389,7 @@ class TestTracXMLRPCTransport(RequestsTransport):
         #     this method. See bugs 203564, 158703 and 158705.
 
         # We sort the list of bugs for the sake of testing.
-        bug_ids = sorted([bug_id for bug_id in self.remote_bugs.keys()])
+        bug_ids = sorted(bug_id for bug_id in self.remote_bugs.keys())
         bugs_to_return = []
         missing_bugs = []
 
@@ -1476,8 +1476,8 @@ class TestTracXMLRPCTransport(RequestsTransport):
 
         # For each of the missing ones, return a dict with a type of
         # 'missing'.
-        comment_ids_to_return = sorted([
-            comment['id'] for comment in comments_to_return])
+        comment_ids_to_return = sorted(
+            comment['id'] for comment in comments_to_return)
         missing_comments = [
             {'id': comment_id, 'type': 'missing'}
             for comment_id in comments

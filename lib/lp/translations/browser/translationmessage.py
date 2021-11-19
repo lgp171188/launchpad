@@ -1289,7 +1289,7 @@ class CurrentTranslationMessageView(LaunchpadView):
 
             alt_external = translations[self.sec_lang].used
             externally_used = sorted(
-                [m for m in translations[language].used if m.browser_pofile],
+                (m for m in translations[language].used if m.browser_pofile),
                 key=operator.attrgetter("date_created"),
                 reverse=True)
 
@@ -1297,8 +1297,8 @@ class CurrentTranslationMessageView(LaunchpadView):
             # translations for this same message in a different translation
             # template, but are not used.
             externally_suggested = sorted(
-                [m for m in translations[language].suggested
-                 if m.browser_pofile],
+                (m for m in translations[language].suggested
+                 if m.browser_pofile),
                 key=operator.attrgetter("date_created"),
                 reverse=True)
         else:
@@ -1333,7 +1333,7 @@ class CurrentTranslationMessageView(LaunchpadView):
         # Builds ITranslationMessageSuggestions for each type of the
         # suggestion per plural form.
         for index in self.pluralform_indices:
-            self.seen_translations = set([self.context.translations[index]])
+            self.seen_translations = {self.context.translations[index]}
             if other is not None:
                 self.seen_translations.add(other.translations[index])
             local_suggestions = (

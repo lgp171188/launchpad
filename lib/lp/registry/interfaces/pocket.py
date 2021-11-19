@@ -77,4 +77,4 @@ pocketsuffix = {
     PackagePublishingPocket.BACKPORTS: "-backports",
 }
 
-suffixpocket = dict((v, k) for (k, v) in pocketsuffix.items())
+suffixpocket = {v: k for (k, v) in pocketsuffix.items()}

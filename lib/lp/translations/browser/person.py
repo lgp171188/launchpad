@@ -68,9 +68,9 @@ class WorkListLinksAggregator(TranslationLinksAggregator):
     def describe(self, target, link, covered_files):
         """See `TranslationLinksAggregator.describe`."""
         strings_count = sum(
-            [self.countStrings(pofile) for pofile in covered_files])
-        languages = set(
-            [pofile.language.englishname for pofile in covered_files])
+            self.countStrings(pofile) for pofile in covered_files)
+        languages = {
+            pofile.language.englishname for pofile in covered_files}
         languages_list = ", ".join(sorted(languages))
 
         if strings_count == 1:
@@ -361,7 +361,7 @@ class PersonTranslationView(LaunchpadView):
         if remaining_slots <= 0:
             return existing_targets
 
-        known_targets = set([item['target'] for item in existing_targets])
+        known_targets = {item['target'] for item in existing_targets}
         really_new = [
             item
             for item in new_targets

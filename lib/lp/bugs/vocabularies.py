@@ -352,8 +352,8 @@ class BugTaskMilestoneVocabulary:
         self.default_bugtask = default_bugtask
         self._milestones = None
         if milestones is not None:
-            self._milestones = dict(
-                (str(milestone.id), milestone) for milestone in milestones)
+            self._milestones = {
+                str(milestone.id): milestone for milestone in milestones}
 
     def _load_milestones(self, bugtask):
         # If the milestones have not already been cached, load them for the
@@ -362,8 +362,8 @@ class BugTaskMilestoneVocabulary:
             bugtask_set = getUtility(IBugTaskSet)
             milestones = list(
                 bugtask_set.getBugTaskTargetMilestones([bugtask]))
-            self._milestones = dict(
-                (str(milestone.id), milestone) for milestone in milestones)
+            self._milestones = {
+                str(milestone.id): milestone for milestone in milestones}
         return self._milestones
 
     @property

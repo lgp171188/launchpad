@@ -76,10 +76,10 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
         # Maximum id capable of being stored on the filesystem - ffffffff
         end_lfc_id = 0xffffffff
 
-    log.info("Walking disk store {0} from {1} to {2}, inclusive".format(
+    log.info("Walking disk store {} from {} to {}, inclusive".format(
         fs_root, start_lfc_id, end_lfc_id))
     if instance_id is not None and num_instances is not None:
-        log.info("Parallel mode: instance ID {0} of {1}".format(
+        log.info("Parallel mode: instance ID {} of {}".format(
             instance_id, num_instances))
 
     start_fs_path = filesystem_path(start_lfc_id)
@@ -101,7 +101,7 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
             # an aborted job.
             dirnames.sort()
 
-        log.debug('Scanning {0} for matching files'.format(dirpath))
+        log.debug('Scanning {} for matching files'.format(dirpath))
 
         _filename_re = re.compile('^[0-9a-f]{2}$')
 
@@ -131,22 +131,22 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
             hex_lfc = ''.join(rel_fs_path.split('/'))
             if len(hex_lfc) != 8:
                 log.warning(
-                    'Filename length fail, skipping {0}'.format(fs_path))
+                    'Filename length fail, skipping {}'.format(fs_path))
                 continue
             try:
                 lfc = int(hex_lfc, 16)
             except ValueError:
-                log.warning('Invalid hex fail, skipping {0}'.format(fs_path))
+                log.warning('Invalid hex fail, skipping {}'.format(fs_path))
                 continue
             if instance_id is not None and num_instances is not None:
                 if (lfc % num_instances) != instance_id:
                     continue
 
-            log.debug('Found {0} ({1})'.format(lfc, filename))
+            log.debug('Found {} ({})'.format(lfc, filename))
 
             if ISlaveStore(LibraryFileContent).get(
                     LibraryFileContent, lfc) is None:
-                log.info("{0} exists on disk but not in the db".format(
+                log.info("{} exists on disk but not in the db".format(
                     lfc))
                 continue
 
@@ -169,28 +169,28 @@ def _to_swift_file(log, swift_connection, lfc_id, fs_path):
 
     try:
         quiet_swiftclient(swift_connection.head_container, container)
-        log.debug2('{0} container already exists'.format(container))
+        log.debug2('{} container already exists'.format(container))
     except swiftclient.ClientException as x:
         if x.http_status != 404:
             raise
-        log.info('Creating {0} container'.format(container))
+        log.info('Creating {} container'.format(container))
         swift_connection.put_container(container)
 
     try:
         headers = quiet_swiftclient(
             swift_connection.head_object, container, obj_name)
         log.debug(
-            "{0} already exists in Swift({1}, {2})".format(
+            "{} already exists in Swift({}, {})".format(
                 lfc_id, container, obj_name))
         if ('X-Object-Manifest' not in headers and
                 int(headers['content-length'])
                 != os.path.getsize(fs_path)):
             raise AssertionError(
-                '{0} has incorrect size in Swift'.format(lfc_id))
+                '{} has incorrect size in Swift'.format(lfc_id))
     except swiftclient.ClientException as x:
         if x.http_status != 404:
             raise
-        log.info('Putting {0} into Swift ({1}, {2})'.format(
+        log.info('Putting {} into Swift ({}, {})'.format(
             lfc_id, container, obj_name))
         _put(log, swift_connection, lfc_id, container, obj_name, fs_path)
 
@@ -219,8 +219,8 @@ def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
         disk_md5_hash = fs_file.hash.hexdigest()
         if not (disk_md5_hash == db_md5_hash == swift_md5_hash):
             log.error(
-                "LibraryFileContent({0}) corrupt. "
-                "disk md5={1}, db md5={2}, swift md5={3}".format(
+                "LibraryFileContent({}) corrupt. "
+                "disk md5={}, db md5={}, swift md5={}".format(
                     lfc_id, disk_md5_hash, db_md5_hash, swift_md5_hash))
             try:
                 swift_connection.delete_object(container, obj_name)
@@ -241,7 +241,7 @@ def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
                 container, seg_name, md5_stream, seg_size)
             segment_md5_hash = md5_stream.hash.hexdigest()
             assert swift_md5_hash == segment_md5_hash, (
-                "LibraryFileContent({0}) segment {1} upload corrupted".format(
+                "LibraryFileContent({}) segment {} upload corrupted".format(
                     lfc_id, segment))
             segment = segment + 1
 
@@ -250,12 +250,12 @@ def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
             # We don't have to delete the uploaded segments, as Librarian
             # Garbage Collection handles this for us.
             log.error(
-                "Large LibraryFileContent({0}) corrupt. "
-                "disk md5={1}, db_md5={2}".format(
+                "Large LibraryFileContent({}) corrupt. "
+                "disk md5={}, db_md5={}".format(
                     lfc_id, disk_md5_hash, db_md5_hash))
             raise AssertionError('md5 mismatch')
 
-        manifest = '{0}/{1}/'.format(quote(container), quote(obj_name))
+        manifest = '{}/{}/'.format(quote(container), quote(obj_name))
         manifest_headers = {'X-Object-Manifest': manifest}
         swift_connection.put_object(
             container, obj_name, b'', 0, headers=manifest_headers)

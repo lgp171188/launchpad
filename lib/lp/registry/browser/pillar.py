@@ -221,8 +221,8 @@ class PillarInvolvementView(LaunchpadView):
     def enabled_links(self):
         """The enabled involvement links."""
         menuapi = MenuAPI(self)
-        return sorted([
-            link for link in menuapi.navigation.values() if link.enabled],
+        return sorted((
+            link for link in menuapi.navigation.values() if link.enabled),
             key=attrgetter('sort_key'))
 
     @cachedproperty
@@ -239,8 +239,8 @@ class PillarInvolvementView(LaunchpadView):
         important_links = [
             involved_menu[name]
             for name in self.visible_disabled_link_names]
-        return sorted([
-            link for link in important_links if not link.enabled],
+        return sorted((
+            link for link in important_links if not link.enabled),
             key=attrgetter('sort_key'))
 
     @property
@@ -451,7 +451,7 @@ class PillarPersonSharingView(LaunchpadView):
         self.specifications = artifacts["specifications"]
         self.ocirecipes = artifacts["ocirecipes"]
 
-        bug_ids = set([bugtask.bug.id for bugtask in self.bugtasks])
+        bug_ids = {bugtask.bug.id for bugtask in self.bugtasks}
         self.shared_bugs_count = len(bug_ids)
         self.shared_branches_count = len(self.branches)
         self.shared_gitrepositories_count = len(self.gitrepositories)

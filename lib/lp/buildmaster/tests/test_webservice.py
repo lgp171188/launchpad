@@ -66,8 +66,8 @@ class TestBuildersCollection(TestCaseWithFactory):
 
         builders = self.webservice.get(
             '/builders', api_version='devel').jsonBody()
-        current_builds = dict(
-            (b['name'], b['current_build_link']) for b in builders['entries'])
+        current_builds = {
+            b['name']: b['current_build_link'] for b in builders['entries']}
         self.assertEqual(
             'tag:launchpad.net:2008:redacted', current_builds['restricted'])
         self.assertEqual(

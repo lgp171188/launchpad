@@ -100,8 +100,8 @@ class TestLoaders(TestCaseWithFactory):
     def test_gen_reload_queries_with_multiple_similar_objects(self):
         # gen_reload_queries() should generate a single query to load
         # multiple objects of the same type.
-        db_objects = set(
-            self.factory.makeSourcePackageName() for i in range(5))
+        db_objects = {
+            self.factory.makeSourcePackageName() for i in range(5)}
         db_queries = list(bulk.gen_reload_queries(db_objects))
         self.assertEqual(1, len(db_queries))
         db_query = db_queries[0]
@@ -110,8 +110,8 @@ class TestLoaders(TestCaseWithFactory):
     def test_gen_reload_queries_with_mixed_objects(self):
         # gen_reload_queries() should return one query for each
         # distinct object type in the given objects.
-        db_objects = set(
-            self.factory.makeSourcePackageName() for i in range(5))
+        db_objects = {
+            self.factory.makeSourcePackageName() for i in range(5)}
         db_objects.update(
             self.factory.makeComponent() for i in range(5))
         db_queries = list(bulk.gen_reload_queries(db_objects))
@@ -254,7 +254,7 @@ class TestLoaders(TestCaseWithFactory):
             self.factory.makeBug(),
             self.factory.makeBug(),
             ]
-        expected = set(bug.owner for bug in owning_objects)
+        expected = {bug.owner for bug in owning_objects}
         self.assertEqual(expected,
             set(bulk.load_related(Person, owning_objects, ['ownerID'])))
 

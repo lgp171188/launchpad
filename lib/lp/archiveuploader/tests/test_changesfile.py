@@ -209,7 +209,7 @@ class ChangesFileTests(TestCase):
         contents["Binary"] = "binary1\n binary2 \n binary3"
         changes = self.createChangesFile("mypkg_0.1_i386.changes", contents)
         self.assertEqual(
-            set(["binary1", "binary2", "binary3"]), changes.binaries)
+            {"binary1", "binary2", "binary3"}, changes.binaries)
 
     def test_checkFileName(self):
         # checkFileName() yields an UploadError if the filename is invalid.
@@ -245,7 +245,7 @@ class ChangesFileTests(TestCase):
         changes = self.createChangesFile(
             "mypkg_0.1_i386.changes", self.getBaseChanges())
         self.assertEqual("i386", changes.architecture_line)
-        self.assertEqual(set(["i386"]), changes.architectures)
+        self.assertEqual({"i386"}, changes.architectures)
 
     def test_source(self):
         # The source package name gets extracted from the changes file.
