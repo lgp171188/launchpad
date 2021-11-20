@@ -341,11 +341,11 @@ class SearchQuestionsView(UserSupportLanguagesMixin, LaunchpadFormView):
         if len(language_counts) == 0:
             return ''
         url = canonical_url(self.context, rootsite='answers')
-        format = (u'%s in <a href="' + url + u'/+by-language'
-                  u'?field.language=%s&field.status=Open">%s</a>')
+        format = ('%s in <a href="' + url + '/+by-language'
+                  '?field.language=%s&field.status=Open">%s</a>')
         links = [format % (language_counts[key], key.code, key.englishname)
                  for key in language_counts]
-        return u', '.join(links)
+        return ', '.join(links)
 
     @property
     def empty_listing_message(self):

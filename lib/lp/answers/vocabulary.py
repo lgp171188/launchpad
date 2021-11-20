@@ -93,8 +93,7 @@ class UsesAnswersProductVocabulary(ProductVocabulary):
             vocab_filter = []
         vocab_filter.append(
             And(Product.official_answers == True))
-        return super(UsesAnswersProductVocabulary, self).search(
-            query, vocab_filter)
+        return super().search(query, vocab_filter)
 
 
 class UsesAnswersDistributionVocabulary(DistributionVocabulary):
@@ -107,8 +106,7 @@ class UsesAnswersDistributionVocabulary(DistributionVocabulary):
     """
 
     def __init__(self, context=None):
-        super(UsesAnswersDistributionVocabulary, self).__init__(
-            context=context)
+        super().__init__(context=context)
         self.distribution = IDistribution(self.context, None)
 
     @property

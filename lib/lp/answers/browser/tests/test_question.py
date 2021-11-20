@@ -26,7 +26,7 @@ class TestQuestionAddView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestQuestionAddView, self).setUp()
+        super().setUp()
         self.question_target = self.factory.makeProduct()
         self.user = self.factory.makePerson()
         login_person(self.user)

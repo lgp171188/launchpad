@@ -73,7 +73,7 @@ class TestDistributionPermissions(BaseIFAQTargetTests, TestCaseWithFactory):
     """Test who can add FAQs to a distribution."""
 
     def setUp(self):
-        super(TestDistributionPermissions, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistribution()
         self.owner = self.target.owner
 
@@ -82,7 +82,7 @@ class TestProductPermissions(BaseIFAQTargetTests, TestCaseWithFactory):
     """Test who can add FAQs to a product."""
 
     def setUp(self):
-        super(TestProductPermissions, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.owner = self.target.owner
 
@@ -91,7 +91,7 @@ class TestDSPPermissions(BaseIFAQTargetTests, TestCaseWithFactory):
     """Test who can add FAQs for a distribution source package."""
 
     def setUp(self):
-        super(TestDSPPermissions, self).setUp()
+        super().setUp()
         distribution = self.factory.makeDistribution()
         self.owner = distribution.owner
         self.target = self.factory.makeDistributionSourcePackage(

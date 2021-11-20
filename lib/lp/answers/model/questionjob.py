@@ -76,7 +76,7 @@ class QuestionJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(QuestionJob, self).__init__()
+        super().__init__()
         self.job = Job()
         self.job_type = job_type
         self.question = question

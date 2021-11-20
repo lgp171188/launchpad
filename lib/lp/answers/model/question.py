@@ -29,7 +29,6 @@ from lazr.lifecycle.event import (
     )
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
-import six
 from storm.expr import (
     Alias,
     LeftJoin,
@@ -702,7 +701,7 @@ class Question(StormBase, BugLinkTargetMixin):
         from lp.bugs.model.bug import Bug
         bug_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'question', six.text_type(self.id)), types=[u'bug'])]
+                ('question', str(self.id)), types=['bug'])]
         return list(sorted(
             bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
 
@@ -713,14 +712,12 @@ class Question(StormBase, BugLinkTargetMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {(u'question', six.text_type(self.id)):
-                {(u'bug', six.text_type(bug.id)): props}})
+            {('question', str(self.id)): {('bug', str(bug.id)): props}})
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {(u'question', six.text_type(self.id)):
-                [(u'bug', six.text_type(bug.id))]})
+            {('question', str(self.id)): [('bug', str(bug.id))]})
 
     def setCommentVisibility(self, user, comment_number, visible):
         """See `IQuestion`."""
@@ -749,9 +746,9 @@ class QuestionSet:
         origin = [
             Question,
             LeftJoin(XRef, And(
-                XRef.from_type == u'question',
+                XRef.from_type == 'question',
                 XRef.from_id_int == Question.id,
-                XRef.to_type == u'bug')),
+                XRef.to_type == 'bug')),
             LeftJoin(BugTask, And(
                 BugTask.bug == XRef.to_id_int,
                 BugTask._status != BugTaskStatus.INVALID)),

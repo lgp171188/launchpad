@@ -43,8 +43,7 @@ class AnswersBrowserRequest(LaunchpadBrowserRequest):
     """Instances of AnswersBrowserRequest provide `AnswersLayer`."""
 
     def __init__(self, body_instream, environ, response=None):
-        super(AnswersBrowserRequest, self).__init__(
-            body_instream, environ, response)
+        super().__init__(body_instream, environ, response)
         # Many of the responses from Answers vary based on language.
         self.response.setHeader(
             'Vary', 'Cookie, Authorization, Accept-Language')
