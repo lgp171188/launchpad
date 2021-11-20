@@ -104,7 +104,7 @@ class PersonCelebrityDescriptor(CelebrityDescriptor):
 
     def __init__(self, name):
         PersonCelebrityDescriptor.names.add(name)
-        super(PersonCelebrityDescriptor, self).__init__(IPersonSet, name)
+        super().__init__(IPersonSet, name)
 
 
 class LanguageCelebrityDescriptor(CelebrityDescriptor):

@@ -21,7 +21,7 @@ class TestMixedVisibility(TestCaseWithFactory):
         viewer = self.factory.makePerson()
         with person_logged_in(viewer):
             self.assertEqual(
-                u'<hidden>', TeamFormatterAPI(team).displayname(None))
+                '<hidden>', TeamFormatterAPI(team).displayname(None))
         self.assertEqual(1, len(self.oopses))
         self.assertTrue(
             'MixedVisibilityError' in self.oopses[0]['tb_text'])

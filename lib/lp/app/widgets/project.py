@@ -33,7 +33,7 @@ class ProjectScopeWidget(BrowserWidget, InputWidget):
     _error = None
 
     def __init__(self, field, vocabulary, request):
-        super(ProjectScopeWidget, self).__init__(field, request)
+        super().__init__(field, request)
 
         # We copy the title, description and vocabulary from the main
         # field since it determines the valid target types.
@@ -143,4 +143,4 @@ class ProjectScopeWidget(BrowserWidget, InputWidget):
         if self._error:
             return self._error.doc()
         else:
-            return u""
+            return ""

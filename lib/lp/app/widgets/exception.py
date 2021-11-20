@@ -36,7 +36,7 @@ class WidgetInputError(_WidgetInputError):
 
 
 @implementer(IWidgetInputErrorView)
-class WidgetInputErrorView(object):
+class WidgetInputErrorView:
     """Rendering of IWidgetInputError"""
 
     def __init__(self, context, request):

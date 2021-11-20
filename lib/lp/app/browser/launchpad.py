@@ -1105,7 +1105,7 @@ class LaunchpadTourFolder(ExportedFolder):
         """
         if name == 'source':
             raise NotFound(request, name)
-        return super(LaunchpadTourFolder, self).publishTraverse(request, name)
+        return super().publishTraverse(request, name)
 
     def browserDefault(self, request):
         """Redirect to index.html if the directory itself is requested."""

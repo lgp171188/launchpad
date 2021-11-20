@@ -15,7 +15,6 @@ __all__ = [
 
 from lazr.restful.utils import safe_hasattr
 import simplejson
-import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import ConversionError
@@ -77,14 +76,14 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
         user currently has entered in the form.
         """
         # Pull form value using the parent class to avoid loop
-        formValue = super(VocabularyPickerWidget, self)._getFormInput()
+        formValue = super()._getFormInput()
         if not formValue:
             return []
 
         vocab = self.vocabulary
         # Special case - if the entered value is valid, it is an object
         # rather than a string (I think this is a bug somewhere)
-        if not isinstance(formValue, six.string_types):
+        if not isinstance(formValue, str):
             return [vocab.getTerm(formValue)]
 
         search_results = vocab.searchForTerms(formValue)
@@ -101,7 +100,7 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
         val = self._getFormValue()
 
         # We have a valid object - return the corresponding token
-        if not isinstance(val, six.string_types):
+        if not isinstance(val, str):
             return self.vocabulary.getTerm(val).token
 
         # Just return the existing invalid token
@@ -323,8 +322,7 @@ class SourcePackageNameWidgetBase(DistributionSourcePackagePickerWidget):
     distribution_id = ''
 
     def __init__(self, field, vocabulary, request):
-        super(SourcePackageNameWidgetBase, self).__init__(
-            field, vocabulary, request)
+        super().__init__(field, vocabulary, request)
         self.cached_values = {}
         if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
             # The distribution may change later when we process form input,

@@ -114,7 +114,7 @@ class IPickerEntrySource(Interface):
 
 @adapter(Interface)
 @implementer(IPickerEntrySource)
-class DefaultPickerEntrySourceAdapter(object):
+class DefaultPickerEntrySourceAdapter:
     """Adapts Interface to IPickerEntrySource."""
 
     def __init__(self, context):
@@ -151,9 +151,7 @@ class PersonPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
 
     def getPickerEntries(self, term_values, context_object, **kwarg):
         """See `IPickerEntrySource`"""
-        picker_entries = (
-            super(PersonPickerEntrySourceAdapter, self)
-                .getPickerEntries(term_values, context_object))
+        picker_entries = super().getPickerEntries(term_values, context_object)
 
         affiliated_context = IHasAffiliation(context_object, None)
         if affiliated_context is not None:
@@ -214,8 +212,7 @@ class BranchPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
     def getPickerEntries(self, term_values, context_object, **kwarg):
         """See `IPickerEntrySource`"""
         entries = (
-            super(BranchPickerEntrySourceAdapter, self)
-                    .getPickerEntries(term_values, context_object, **kwarg))
+            super().getPickerEntries(term_values, context_object, **kwarg))
         for branch, picker_entry in izip(term_values, entries):
             picker_entry.description = branch.bzr_identity
         return entries
@@ -241,8 +238,7 @@ class TargetPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
     def getPickerEntries(self, term_values, context_object, **kwarg):
         """See `IPickerEntrySource`"""
         entries = (
-            super(TargetPickerEntrySourceAdapter, self)
-                .getPickerEntries(term_values, context_object, **kwarg))
+            super().getPickerEntries(term_values, context_object, **kwarg))
         for target, picker_entry in izip(term_values, entries):
             picker_entry.description = self.getDescription(target)
             picker_entry.details = []
@@ -284,8 +280,7 @@ class SourcePackageNamePickerEntrySourceAdapter(
     def getPickerEntries(self, term_values, context_object, **kwarg):
         """See `IPickerEntrySource`"""
         entries = (
-            super(SourcePackageNamePickerEntrySourceAdapter, self)
-                .getPickerEntries(term_values, context_object, **kwarg))
+            super().getPickerEntries(term_values, context_object, **kwarg))
         for sourcepackagename, picker_entry in izip(term_values, entries):
             descriptions = getSourcePackageDescriptions([sourcepackagename])
             picker_entry.description = descriptions.get(
@@ -313,7 +308,7 @@ class DistributionSourcePackagePickerEntrySourceAdapter(
         return description
 
     def getPickerEntries(self, term_values, context_object, **kwarg):
-        this = super(DistributionSourcePackagePickerEntrySourceAdapter, self)
+        this = super()
         entries = this.getPickerEntries(term_values, context_object, **kwarg)
         for picker_entry in entries:
             picker_entry.alt_title = None
@@ -384,8 +379,7 @@ class ArchivePickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
     def getPickerEntries(self, term_values, context_object, **kwarg):
         """See `IPickerEntrySource`"""
         entries = (
-            super(ArchivePickerEntrySourceAdapter, self)
-                    .getPickerEntries(term_values, context_object, **kwarg))
+            super().getPickerEntries(term_values, context_object, **kwarg))
         for archive, picker_entry in izip(term_values, entries):
             picker_entry.description = archive.reference
         return entries

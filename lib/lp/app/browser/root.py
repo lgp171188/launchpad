@@ -14,7 +14,6 @@ import time
 import feedparser
 from lazr.batchnavigator.z3batching import batch
 import requests
-import six
 from zope.component import getUtility
 from zope.formlib.interfaces import ConversionError
 from zope.interface import Interface
@@ -79,7 +78,7 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
 
     def initialize(self):
         """Set up featured projects list and the top featured project."""
-        super(LaunchpadRootIndexView, self).initialize()
+        super().initialize()
         # The maximum number of projects to be displayed as defined by the
         # number of items plus one top featured project.
         self.featured_projects = list(
@@ -275,7 +274,7 @@ class LaunchpadSearchView(LaunchpadFormView):
 
         Set the state of the search_params and matches.
         """
-        super(LaunchpadSearchView, self).__init__(context, request)
+        super().__init__(context, request)
         self.has_page_service = True
         self._bug = None
         self._question = None
@@ -346,7 +345,7 @@ class LaunchpadSearchView(LaunchpadFormView):
         """Focus the first widget when there are no matches."""
         if self.has_matches:
             return None
-        return super(LaunchpadSearchView, self).focusedElementScript()
+        return super().focusedElementScript()
 
     @property
     def bug(self):
@@ -427,7 +426,7 @@ class LaunchpadSearchView(LaunchpadFormView):
             if isinstance(error, ConversionError):
                 self.setFieldError(
                     'text', 'Can not convert your search term.')
-            elif isinstance(error, six.text_type):
+            elif isinstance(error, str):
                 continue
             elif (error.field_name == 'text'
                 and isinstance(error.errors, TooLong)):
@@ -435,7 +434,7 @@ class LaunchpadSearchView(LaunchpadFormView):
                     'text', 'The search text cannot exceed 250 characters.')
 
     @safe_action
-    @action(u'Search', name='search')
+    @action('Search', name='search')
     def search_action(self, action, data):
         """The Action executed when the user uses the search button.
 
@@ -579,7 +578,7 @@ class WindowedListBatch(batch._Batch):
 
     def __iter__(self):
         """Iterate over objects that are not None."""
-        for item in super(WindowedListBatch, self).__iter__():
+        for item in super().__iter__():
             if item is not None:
                 # Never yield None
                 yield item
@@ -614,7 +613,7 @@ class SiteSearchBatchNavigator(BatchNavigator):
         :param callback: Not used.
         """
         results = WindowedList(results, start, results.total)
-        super(SiteSearchBatchNavigator, self).__init__(results, request,
+        super().__init__(results, request,
             start=start, size=size, callback=callback,
             transient_parameters=transient_parameters,
             force_start=force_start, range_factory=range_factory)

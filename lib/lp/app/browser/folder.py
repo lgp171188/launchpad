@@ -85,7 +85,7 @@ class ExportedFolder:
         name = os.path.basename(filename)
         try:
             fileobj = File(filename, name)
-        except IOError as ioerror:
+        except OSError as ioerror:
             expected = (errno.ENOENT, errno.EISDIR, errno.ENOTDIR)
             if ioerror.errno in expected:
                 # No such file or is a directory.
@@ -147,5 +147,4 @@ class ExportedImageFolder(ExportedFolder):
                 if os.path.exists(root + image_ext):
                     filename = filename + image_ext
                     break
-        return super(
-            ExportedImageFolder, self).prepareDataForServing(filename)
+        return super().prepareDataForServing(filename)

@@ -15,7 +15,7 @@ from lp.services.webapp.interfaces import ILaunchBag
 
 
 @implementer(IInputWidget, IBrowserWidget)
-class RequestWidget(object):
+class RequestWidget:
     '''A widget that sets itself to a value calculated from request
 
     This is a bit of a hack, but necessary. If we are using the Zope
