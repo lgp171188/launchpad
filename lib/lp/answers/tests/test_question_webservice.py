@@ -86,7 +86,7 @@ class TestQuestionRepresentation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestQuestionRepresentation, self).setUp()
+        super().setUp()
         with celebrity_logged_in('admin'):
             self.question = self.factory.makeQuestion(
                 title="This is a question")
@@ -178,7 +178,7 @@ class TestSetCommentVisibility(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSetCommentVisibility, self).setUp()
+        super().setUp()
         self.commenter = self.factory.makePerson()
         with person_logged_in(self.commenter):
             self.question = self.factory.makeQuestion()

@@ -25,7 +25,7 @@ class QuestionTargetAnswerContactTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(QuestionTargetAnswerContactTestCase, self).setUp()
+        super().setUp()
         self.project = self.factory.makeProduct()
         self.user = self.factory.makePerson()
 
@@ -79,7 +79,7 @@ class TestQuestionTarget_answer_contacts_with_languages(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestQuestionTarget_answer_contacts_with_languages, self).setUp()
+        super().setUp()
         self.answer_contact = self.factory.makePerson()
         login_person(self.answer_contact)
         lang_set = getUtility(ILanguageSet)
@@ -137,7 +137,7 @@ class TestQuestionTargetCreateQuestionFromBug(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestQuestionTargetCreateQuestionFromBug, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug(description="first comment")
         self.target = self.bug.bugtasks[0].target
         self.contributor = self.target.owner

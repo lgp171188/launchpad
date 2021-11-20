@@ -65,7 +65,7 @@ class BaseAnswerTrackerWorkflowTestCase(TestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(BaseAnswerTrackerWorkflowTestCase, self).setUp()
+        super().setUp()
 
         self.now = datetime.now(UTC)
 
@@ -514,7 +514,7 @@ class LinkFAQTestCase(BaseAnswerTrackerWorkflowTestCase):
 
     def setUp(self):
         """Create an additional FAQ."""
-        super(LinkFAQTestCase, self).setUp()
+        super().setUp()
 
         # Only admin can create FAQ on ubuntu.
         login_person(self.admin)

@@ -27,7 +27,7 @@ class TestFAQPermissions(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestFAQPermissions, self).setUp()
+        super().setUp()
         target = self.factory.makeProduct()
         self.owner = target.owner
         with person_logged_in(self.owner):

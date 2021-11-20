@@ -1251,7 +1251,7 @@ class SearchAllQuestionsView(SearchQuestionsView):
         Saves the user submitted search parameters in an instance
         attribute and redirects to questions when the term is a question id.
         """
-        super(SearchAllQuestionsView, self).search_action.success(data)
+        super().search_action.success(data)
 
         if not self.search_text:
             return
@@ -1292,7 +1292,7 @@ class QuestionCreateFAQView(LinkFAQMixin, LaunchpadFormView):
 
         Adds a message field to the form.
         """
-        super(QuestionCreateFAQView, self).setUpFields()
+        super().setUpFields()
         self.form_fields += form.Fields(
             copy_field(IQuestionLinkFAQForm['message']))
         self.form_fields['message'].field.title = _(
@@ -1341,7 +1341,7 @@ class SearchableFAQRadioWidget(LaunchpadRadioWidget):
 
     def renderValue(self, value):
         """Render the widget with the value."""
-        content = super(SearchableFAQRadioWidget, self).renderValue(value)
+        content = super().renderValue(value)
         return "<br />".join([content, self.renderSearchWidget()])
 
     def renderItemsWithValues(self, values):
@@ -1413,7 +1413,7 @@ class SearchableFAQRadioWidget(LaunchpadRadioWidget):
             type='radio')
         if selected:
             attributes['checked'] = 'checked'
-        input = renderElement(u'input', **attributes)
+        input = renderElement('input', **attributes)
         button = structured(
             '<label style="font-weight: normal">%s&nbsp;%s:</label>',
             structured(input), term.token)
@@ -1472,7 +1472,7 @@ class QuestionLinkFAQView(LinkFAQMixin, LaunchpadFormView):
 
     def setUpWidgets(self):
         """Set the query on the search widget to the question title."""
-        super(QuestionLinkFAQView, self).setUpWidgets()
+        super().setUpWidgets()
         self.widgets['faq'].default_query = self.context.title
 
     def validate(self, data):

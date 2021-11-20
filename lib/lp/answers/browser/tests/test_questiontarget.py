@@ -10,7 +10,6 @@ from lazr.restful.interfaces import (
     IJSONRequestCache,
     IWebServiceClientRequest,
     )
-import six
 from six.moves.urllib.parse import quote
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -196,7 +195,7 @@ class TestSearchQuestionsViewUnknown(TestCaseWithFactory):
             hoary, sourcepackagename, product.owner)
 
     def setUp(self):
-        super(TestSearchQuestionsViewUnknown, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.view = create_initialized_view(self.product, '+questions')
 
@@ -246,7 +245,7 @@ class QuestionSetViewTestCase(TestCaseWithFactory):
         target_widget = view.widgets['scope'].target_widget
         self.assertIsNot(
             None, content.find(True, id=target_widget.show_widget_id))
-        text = six.text_type(content)
+        text = str(content)
         picker_vocab = "DistributionOrProductOrProjectGroup"
         self.assertIn(picker_vocab, text)
         focus_script = "setFocusByName('field.search_text')"
