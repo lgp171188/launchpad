@@ -649,7 +649,7 @@ def reset_permissions(con, config, options):
     if options.revoke:
         alter_permissions(cur, required_revokes, revoke=True)
 
-    # Raise an error if we have database objects lying around that have not
+    # Log a warning if we have database objects lying around that have not
     # had permissions assigned.
     forgotten = set()
     for obj in schema.values():
