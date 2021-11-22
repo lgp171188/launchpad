@@ -19,6 +19,7 @@ from datetime import (
 import email
 from fnmatch import fnmatch
 from functools import partial
+import io
 from itertools import (
     chain,
     groupby,
@@ -214,6 +215,7 @@ from lp.services.identity.interfaces.account import (
     )
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
+from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.mail.notificationrecipientset import NotificationRecipientSet
@@ -380,6 +382,11 @@ class RevisionStatusReportSet:
             RevisionStatusReport,
             creator=creator)
 
+    def findRevisionStatusReportByCommit(self, commit_sha1):
+        return IStore(RevisionStatusReport).find(
+            RevisionStatusReport,
+            commit_sha1=commit_sha1).one()
+
 
 class RevisionStatusArtifact(StormBase):
     __storm_table__ = 'RevisionStatusArtifact'
@@ -412,6 +419,11 @@ class RevisionStatusArtifactSet:
         return IStore(RevisionStatusArtifact).find(
             RevisionStatusArtifact,
             RevisionStatusArtifact.id == id)
+
+    def findArtifactByReport(self, report):
+        return IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            RevisionStatusArtifact.report == report).one()
 
 
 @implementer(IGitRepository, IHasOwner, IPrivacy, IInformationType)
@@ -632,6 +644,19 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
             return report
 
         raise HTTPError("This API is not available")
+
+    def setLogOnStatusReport(self, commit_sha1, log_data, user):
+        report = getUtility(
+            IRevisionStatusReportSet).findRevisionStatusReportByCommit(
+            commit_sha1)
+        filename = '%s-%s.txt' % (report.title, report.commit_sha1)
+
+        lfa = getUtility(ILibraryFileAliasSet).create(
+            name=filename, size=len(log_data),
+            file=io.BytesIO(log_data), contentType='text/plain')
+
+        artifact = getUtility(IRevisionStatusArtifactSet).new(lfa, report)
+        report.setLog(artifact)
 
     @property
     def namespace(self):

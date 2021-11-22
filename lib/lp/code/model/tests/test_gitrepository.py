@@ -14,6 +14,7 @@ from datetime import (
 import email
 from functools import partial
 import hashlib
+import io
 import json
 
 from breezy import urlutils
@@ -98,6 +99,7 @@ from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
     IGitRepositoryView,
+    IRevisionStatusArtifactSet,
     IRevisionStatusReportSet,
     )
 from lp.code.interfaces.gitrule import (
@@ -4861,6 +4863,48 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(
             b"Personal access tokens may only be issued for a logged-in user.",
             response.body)
+
+
+class TestGitRepositoryWebserviceFunctionalLayer(TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def test_setLogOnRevisionStatusReport(self):
+        repository = self.factory.makeGitRepository()
+        requester = repository.owner
+        title = self.factory.getUniqueUnicode('report-title')
+        commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
+        result_summary = "120/120 tests passed"
+
+        report = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title=title, commit_sha1=commit_sha1,
+            result_summary=result_summary, result=RevisionStatusResult.SUCCESS)
+
+        webservice = webservice_for_person(None, default_api_version="devel")
+        with person_logged_in(requester):
+            repository_url = api_url(repository)
+
+            secret, _ = self.factory.makeAccessToken(
+                owner=requester, target=repository,
+                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+            header = {'Authorization': 'Token %s' % secret}
+        content = b'log_content_data'
+        response = webservice.named_post(
+            repository_url, "setLogOnStatusReport",
+            headers=header, commit_sha1=commit_sha1,
+            log_data=io.BytesIO(content))
+        self.assertEqual(200, response.status)
+        with person_logged_in(requester):
+            artifact = removeSecurityProxy(
+                getUtility(
+                    IRevisionStatusArtifactSet).findArtifactByReport(report))
+        filesize = len(content)
+        sha1 = hashlib.sha1(content).hexdigest()
+        md5 = hashlib.md5(content).hexdigest()
+        self.assertEqual(artifact.library_file.content.sha1, sha1)
+        self.assertEqual(artifact.library_file.content.md5, md5)
+        self.assertEqual(artifact.library_file.content.filesize, filesize)
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):

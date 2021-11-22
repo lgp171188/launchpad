@@ -99,6 +99,7 @@ from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
+    IRevisionStatusArtifact,
     IRevisionStatusReport,
     user_has_special_git_repository_access,
     )
@@ -689,12 +690,17 @@ class EditRevisionStatusReport(DelegatedAuthorization):
     permission = 'launchpad.Edit'
     usedfor = IRevisionStatusReport
 
-    def __init__(self, obj):
-        super().__init__(obj, obj.git_repository, 'launchpad.Edit')
-
     def checkAuthenticated(self, user):
         assert self.obj.creator
         return user.isOwner(self.obj.git_repository)
+
+
+class EditRevisionStatusArtifact(DelegatedAuthorization):
+    permission = 'launchpad.Edit'
+    usedfor = IRevisionStatusArtifact
+
+    def __init__(self, obj):
+        super().__init__(obj, obj.report, 'launchpad.Edit')
 
 
 class AdminSpecification(AuthorizationBase):

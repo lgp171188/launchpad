@@ -11,6 +11,7 @@ __all__ = [
     'IGitRepository',
     'IGitRepositoryDelta',
     'IGitRepositoryExpensiveRequest',
+    'IRevisionStatusArtifact',
     'IRevisionStatusArtifactSet',
     'IRevisionStatusReportSet',
     'IGitRepositorySet',
@@ -55,6 +56,7 @@ from zope.interface import (
     )
 from zope.schema import (
     Bool,
+    Bytes,
     Choice,
     Datetime,
     Int,
@@ -66,6 +68,7 @@ from zope.schema import (
 from lp import _
 from lp.app.enums import InformationType
 from lp.app.validators import LaunchpadValidationError
+from lp.app.validators.attachment import attachment_size_constraint
 from lp.code.enums import (
     BranchMergeProposalStatus,
     BranchSubscriptionDiffSize,
@@ -889,12 +892,18 @@ class IRevisionStatusReportSet(Interface):
             date_finished=None, log=None):
         """Return a new revision status report.
 
-        :param name: A text string.
+        :param title: A text string.
         :param git_repository: An `IGitRepository` for which the report
             is being created.
         :param commit_sha1: The sha1 of the commit for which the report
             is being created.
         :param date_created: The date when the report is being created.
+        :param url: External URL to view result of report.
+        :param result_summary: A short summary of the result.
+        :param result: The result of the check job for this revision.
+        :param date_started: DateTime that report was started.
+        :param date_finished: DateTime that report was completed.
+        :param log: Stores the content of the artifact for this report.
         """
 
     def findRevisionStatusReportByID(id):
@@ -902,6 +911,9 @@ class IRevisionStatusReportSet(Interface):
 
     def findRevisionStatusReportByCreator(creator):
         """Returns the RevisionStatusReport for a creator."""
+
+    def findRevisionStatusReportByCommit(commmit_sha1):
+        """Returns the RevisionStatusReport for a commit."""
 
 
 class IRevisionStatusArtifactSet(Interface):
@@ -917,6 +929,9 @@ class IRevisionStatusArtifactSet(Interface):
 
     def findRevisionStatusArtifactByID(id):
         """Returns the RevisionStatusArtifact for a given ID."""
+
+    def findArtifactByReport(report):
+        """Returns the artifact for a given report."""
 
 
 class IRevisionStatusArtifact(Interface):
@@ -1137,19 +1152,34 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         commit_sha1=TextLine(title=_("The commit sha1 of the status report.")),
         url=TextLine(title=_("The external link of the status report.")),
         result_summary=TextLine(title=_("A short summary of the result.")),
-        result=Choice(vocabulary=RevisionStatusResult,))
+        result=Choice(vocabulary=RevisionStatusResult, required=False))
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @call_with(user=REQUEST_USER)
     @export_factory_operation(IRevisionStatusReport, [])
     @operation_for_version("devel")
     def newStatusReport(title, commit_sha1, url, result_summary, result, user):
-        """Create a new status report and return its ID.
+        """Create a new status report.
 
         :param title: The name of the new report.
         :param commit_sha1: The commit sha1 for the report.
         :param url: The external link of the status report.
         :param result_summary: The description of the new report.
         :param result: The result of the new report.
+        """
+
+    @operation_parameters(
+        commit_sha1=TextLine(title=_("The commit sha1 of the status report.")),
+        log_data=Bytes(title=_("The content of the artifact in bytes."),
+                       constraint=attachment_size_constraint))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @call_with(user=REQUEST_USER)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setLogOnStatusReport(commit_sha1, log_data, user):
+        """Set a new log on an existing status report.
+
+        :param commit_sha1: The commit sha1 for the report.
+        :param log_data: The contents of the artifact.
         """
 
 
