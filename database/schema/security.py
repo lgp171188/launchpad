@@ -653,6 +653,10 @@ def reset_permissions(con, config, options):
     # had permissions assigned.
     forgotten = set()
     for obj in schema.values():
+        if obj.schema == "dbr":
+            # The "dbr" schema is used for metrics in some environments, and
+            # is none of our business.
+            continue
         if obj not in found:
             forgotten.add(obj)
     forgotten = [obj.fullname for obj in forgotten
