@@ -30,6 +30,7 @@ Guides
    guides/architecture
    guides/python
    guides/tests
+   guides/exceptions
 
 Technical
 =========
