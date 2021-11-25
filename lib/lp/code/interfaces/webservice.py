@@ -24,6 +24,7 @@ __all__ = [
     'ICodeImport',
     'ICodeReviewComment',
     'ICodeReviewVoteReference',
+    'IRevisionStatusReport',
     'IDiff',
     'IGitRef',
     'IGitRepository',
@@ -66,6 +67,7 @@ from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
+    IRevisionStatusReport,
     )
 from lp.code.interfaces.gitsubscription import IGitSubscription
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories

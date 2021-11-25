@@ -963,6 +963,12 @@
         factory="lp.code.browser.gitrepository.GitRepositoryBreadcrumb"
         permission="zope.Public"/>
 
+  <browser:url
+        for="lp.code.interfaces.gitrepository.IRevisionStatusReport"
+        path_expression="string:+status/${id}"
+        attribute_to_parent="git_repository"
+        rootsite="code"/>   
+
     <browser:defaultView
         for="lp.code.interfaces.gitref.IGitRef"
         name="+index"/>

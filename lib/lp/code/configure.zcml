@@ -970,11 +970,6 @@
         permission="launchpad.View"
         interface="lp.code.interfaces.gitrepository.IRevisionStatusArtifact" />
   </class>
-  <browser:url
-        for="lp.code.interfaces.gitrepository.IRevisionStatusReport"
-        path_expression="string:+status/${id}"
-        attribute_to_parent="git_repository"
-        rootsite="code"/>
   <class class="lp.code.model.gitrepository.RevisionStatusReportSet">
     <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusReportSet" />
   </class>

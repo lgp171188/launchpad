@@ -587,7 +587,8 @@ class TestGitRepository(TestCaseWithFactory):
         report = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
             title=title, commit_sha1=commit_sha1,
-            result_summary=result_summary, result=RevisionStatusResult.SUCCESS)
+            result_summary=result_summary,
+            result=RevisionStatusResult.SUCCEEDED)
 
         artifact = self.factory.makeRevisionStatusArtifact(lfa, report)
 
@@ -4227,7 +4228,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             self.assertEqual(
                 InformationType.PUBLIC, repository_db.information_type)
 
-    def test_newRevisionStatusReport(self):
+    def test_newRevisionStatusReport_featureFlagDisabled(self):
         repository = self.factory.makeGitRepository()
         requester = repository.owner
         webservice = webservice_for_person(None, default_api_version="devel")
@@ -4246,10 +4247,24 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                 self.factory.getUniqueBytes()).hexdigest(),
             url='https://launchpad.net/',
             result_summary="120/120 tests passed",
-            result="Success")
+            result="Succeeded")
 
-        self.assertEqual(500, response.status)
-        self.assertIn(b'This API is not available', response.body)
+        self.assertEqual(401, response.status)
+        self.assertIn(
+            b'You do not have permission to create revision status reports',
+            response.body)
+
+    def test_newRevisionStatusReport(self):
+        repository = self.factory.makeGitRepository()
+        requester = repository.owner
+        webservice = webservice_for_person(None, default_api_version="devel")
+        with person_logged_in(requester):
+            repository_url = api_url(repository)
+
+            secret, _ = self.factory.makeAccessToken(
+                owner=requester, target=repository,
+                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+            header = {'Authorization': 'Token %s' % secret}
 
         self.useFixture(FeatureFixture(
             {REVISION_STATUS_REPORT_ALLOW_CREATE: "on"}))
@@ -4261,7 +4276,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                 self.factory.getUniqueBytes()).hexdigest(),
             url='https://launchpad.net/',
             result_summary="120/120 tests passed",
-            result="Success")
+            result="Succeeded")
         self.assertEqual(201, response.status)
 
         with person_logged_in(requester):
@@ -4865,7 +4880,48 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             response.body)
 
 
-class TestGitRepositoryWebserviceFunctionalLayer(TestCaseWithFactory):
+class TestRevisionStatusReport(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestRevisionStatusReport, self).setUp()
+        self.repository = self.factory.makeGitRepository()
+        self.requester = self.repository.owner
+        title = self.factory.getUniqueUnicode('report-title')
+        commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
+        result_summary = "120/120 tests passed"
+
+        self.report = self.factory.makeRevisionStatusReport(
+            user=self.repository.owner, git_repository=self.repository,
+            title=title, commit_sha1=commit_sha1,
+            result_summary=result_summary,
+            result=RevisionStatusResult.SUCCEEDED)
+
+        self.webservice = webservice_for_person(
+            None, default_api_version="devel")
+
+    def test_top_level_revisionStatusReport_get(self):
+
+        with person_logged_in(self.requester):
+            url = self.webservice.getAbsoluteUrl('%s/+status/%s' % (
+                    api_url(self.repository),
+                    self.report.id))
+            secret, _ = self.factory.makeAccessToken(
+                owner=self.requester, target=self.repository,
+                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+            header = {'Authorization': 'Token %s' % secret}
+
+        response = self.webservice.get(url, 'application/xhtml+xml',
+                                       headers=header)
+        self.assertEqual(response.status, 301)
+        self.assertEqual(
+                'http://api.launchpad.test/devel/%s/+status/%d' % (
+                    self.git_repository, self.report.id),
+                response.getheader('Location'))
+
+
+class TestRevisionStatusReportWebserviceFunctionalLayer(TestCaseWithFactory):
 
     layer = LaunchpadFunctionalLayer
 
@@ -4879,11 +4935,13 @@ class TestGitRepositoryWebserviceFunctionalLayer(TestCaseWithFactory):
         report = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
             title=title, commit_sha1=commit_sha1,
-            result_summary=result_summary, result=RevisionStatusResult.SUCCESS)
+            result_summary=result_summary,
+            result=RevisionStatusResult.SUCCEEDED)
 
-        webservice = webservice_for_person(None, default_api_version="devel")
+        webservice = webservice_for_person(
+            None, default_api_version="devel")
         with person_logged_in(requester):
-            repository_url = api_url(repository)
+            report_url = api_url(report)
 
             secret, _ = self.factory.makeAccessToken(
                 owner=requester, target=repository,
@@ -4891,8 +4949,8 @@ class TestGitRepositoryWebserviceFunctionalLayer(TestCaseWithFactory):
             header = {'Authorization': 'Token %s' % secret}
         content = b'log_content_data'
         response = webservice.named_post(
-            repository_url, "setLogOnStatusReport",
-            headers=header, commit_sha1=commit_sha1,
+            report_url, "api_setLog",
+            headers=header,
             log_data=io.BytesIO(content))
         self.assertEqual(200, response.status)
         with person_logged_in(requester):

@@ -685,13 +685,12 @@ class EditSpecificationByRelatedPeople(AuthorizationBase):
                     self.obj, ['owner', 'drafter', 'assignee', 'approver']))
 
 
-class EditRevisionStatusReport(DelegatedAuthorization):
+class EditRevisionStatusReport(AuthorizationBase):
     """The owner of a Git repository can edit its status reports."""
     permission = 'launchpad.Edit'
     usedfor = IRevisionStatusReport
 
     def checkAuthenticated(self, user):
-        assert self.obj.creator
         return user.isOwner(self.obj.git_repository)
 
 

@@ -32,7 +32,6 @@ from lazr.enum import DBItem
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
-from requests.exceptions import HTTPError
 import six
 from six.moves.urllib.parse import (
     quote_plus,
@@ -72,7 +71,6 @@ from zope.interface import (
     implementer,
     providedBy,
     )
-from zope.schema import TextLine
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import (
     ProxyFactory,
@@ -138,6 +136,7 @@ from lp.code.interfaces.gitrepository import (
     IRevisionStatusArtifactSet,
     IRevisionStatusReport,
     IRevisionStatusReportSet,
+    RevisionStatusReportsFeatureDisabled,
     user_has_special_git_repository_access,
     )
 from lp.code.interfaces.gitrule import (
@@ -230,7 +229,7 @@ from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.interfaces.snap import ISnapSet
 
 
-REVISION_STATUS_REPORT_ALLOW_CREATE = 'revision.status.report.allow.create'
+REVISION_STATUS_REPORT_ALLOW_CREATE = 'revision_status_report.allow_create'
 
 
 logger = logging.getLogger(__name__)
@@ -322,17 +321,19 @@ class RevisionStatusReport(StormBase):
 
     commit_sha1 = Unicode(name='commit_sha1', allow_none=False)
 
-    url = Unicode(name='url')
+    url = Unicode(name='url', allow_none=True)
 
-    result_summary = TextLine(title=msg("A short summary of the result."))
+    result_summary = Unicode(name='description', allow_none=True)
 
-    result = DBEnum(name='result', enum=RevisionStatusResult)
+    result = DBEnum(name='result', allow_none=True, enum=RevisionStatusResult)
 
     date_created = DateTime(
         name='date_created', tzinfo=pytz.UTC, allow_none=False)
 
-    date_started = DateTime(name='date_started', tzinfo=pytz.UTC)
-    date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC)
+    date_started = DateTime(name='date_started', tzinfo=pytz.UTC,
+                            allow_none=True)
+    date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC,
+                             allow_none=True)
 
     log_id = Int(name='log', allow_none=True)
     log = Reference(log_id, 'RevisionStatusArtifact.id')
@@ -352,12 +353,23 @@ class RevisionStatusReport(StormBase):
     def setLog(self, artifact):
         self.log = artifact
 
-    def transitionToNewResult(self, result, user):
-        self.result = result
-        if result == RevisionStatusResult.PENDING:
-            self.date_started == UTC_NOW
+    def api_setLog(self, log_data):
+        filename = '%s-%s.txt' % (self.title, self.commit_sha1)
+
+        lfa = getUtility(ILibraryFileAliasSet).create(
+            name=filename, size=len(log_data),
+            file=io.BytesIO(log_data), contentType='text/plain')
+
+        artifact = getUtility(IRevisionStatusArtifactSet).new(lfa, self)
+        self.setLog(artifact)
+
+    def transitionToNewResult(self, result):
+        if self.result == RevisionStatusResult.WAITING:
+            if result == RevisionStatusResult.RUNNING:
+                self.date_started == UTC_NOW
         else:
             self.date_finished = UTC_NOW
+        self.result = result
 
 
 @implementer(IRevisionStatusReportSet)
@@ -382,11 +394,6 @@ class RevisionStatusReportSet:
             RevisionStatusReport,
             creator=creator)
 
-    def findRevisionStatusReportByCommit(self, commit_sha1):
-        return IStore(RevisionStatusReport).find(
-            RevisionStatusReport,
-            commit_sha1=commit_sha1).one()
-
 
 class RevisionStatusArtifact(StormBase):
     __storm_table__ = 'RevisionStatusArtifact'
@@ -400,7 +407,7 @@ class RevisionStatusArtifact(StormBase):
     report = Reference(report_id, 'RevisionStatusReport.id')
 
     def __init__(self, library_file, report):
-        super(RevisionStatusArtifact, self).__init__()
+        super().__init__()
         self.library_file = library_file
         self.report = report
 
@@ -420,10 +427,10 @@ class RevisionStatusArtifactSet:
             RevisionStatusArtifact,
             RevisionStatusArtifact.id == id)
 
-    def findArtifactByReport(self, report):
+    def findArtifactsByReport(self, report):
         return IStore(RevisionStatusArtifact).find(
             RevisionStatusArtifact,
-            RevisionStatusArtifact.report == report).one()
+            RevisionStatusArtifact.report == report)
 
 
 @implementer(IGitRepository, IHasOwner, IPrivacy, IInformationType)
@@ -638,25 +645,12 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
     def newStatusReport(self, user, title, commit_sha1, url=None,
                         result_summary=None, result=None):
 
-        if getFeatureFlag(REVISION_STATUS_REPORT_ALLOW_CREATE):
-            report = RevisionStatusReport(self, user, title, commit_sha1,
-                                          url, result_summary, result)
-            return report
+        if not getFeatureFlag(REVISION_STATUS_REPORT_ALLOW_CREATE):
+            raise RevisionStatusReportsFeatureDisabled()
 
-        raise HTTPError("This API is not available")
-
-    def setLogOnStatusReport(self, commit_sha1, log_data, user):
-        report = getUtility(
-            IRevisionStatusReportSet).findRevisionStatusReportByCommit(
-            commit_sha1)
-        filename = '%s-%s.txt' % (report.title, report.commit_sha1)
-
-        lfa = getUtility(ILibraryFileAliasSet).create(
-            name=filename, size=len(log_data),
-            file=io.BytesIO(log_data), contentType='text/plain')
-
-        artifact = getUtility(IRevisionStatusArtifactSet).new(lfa, report)
-        report.setLog(artifact)
+        report = RevisionStatusReport(self, user, title, commit_sha1,
+                                      url, result_summary, result)
+        return report
 
     @property
     def namespace(self):

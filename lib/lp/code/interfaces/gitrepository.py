@@ -11,13 +11,13 @@ __all__ = [
     'IGitRepository',
     'IGitRepositoryDelta',
     'IGitRepositoryExpensiveRequest',
+    'IGitRepositorySet',
+    'IHasGitRepositoryURL',
     'IRevisionStatusArtifact',
     'IRevisionStatusArtifactSet',
-    'IRevisionStatusReportSet',
-    'IGitRepositorySet',
     'IRevisionStatusReport',
     'IRevisionStatusReportSet',
-    'IHasGitRepositoryURL',
+    'RevisionStatusReportsFeatureDisabled',
     'user_has_special_git_repository_access',
     ]
 
@@ -28,6 +28,7 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
+    error_status,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
@@ -49,6 +50,7 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -64,6 +66,7 @@ from zope.schema import (
     Text,
     TextLine,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.enums import InformationType
@@ -815,6 +818,15 @@ class IGitRepositoryExpensiveRequest(Interface):
         that is not an admin or a registry expert."""
 
 
+@error_status(http_client.UNAUTHORIZED)
+class RevisionStatusReportsFeatureDisabled(Unauthorized):
+    """Only certain users can access APIs for revision status reports."""
+
+    def __init__(self):
+        super(RevisionStatusReportsFeatureDisabled, self).__init__(
+            "You do not have permission to create revision status reports")
+
+
 class IRevisionStatusReportView(Interface):
     """`IRevisionStatusReport` attributes that require launchpad.View."""
 
@@ -826,10 +838,10 @@ class IRevisionStatusReportView(Interface):
         title=_("When the report was started.")), readonly=False)
     date_finished = exported(Datetime(
         title=_("When the report has finished.")), readonly=False)
-    log_url = exported(Reference(
+    log_url = Reference(
         title=_("The `RevisionStatusArtifact` for which "
                 "this report is built."),
-        schema=Interface))
+        schema=Interface)
 
 
 class IRevisionStatusReportEditableAttributes(Interface):
@@ -846,25 +858,25 @@ class IRevisionStatusReportEditableAttributes(Interface):
         # Really IGitRepository, patched in _schema_circular_imports.py.
         schema=Interface, required=True, readonly=True))
 
-    commit_sha1 = exported(Reference(
+    commit_sha1 = exported(TextLine(
         title=_("The Git commit for which this report is built."),
-        schema=Interface, required=True, readonly=True))
+        required=True, readonly=True))
 
     url = exported(URIField(title=_("URL"), required=False, readonly=True,
                             description=_("The external url of the report.")))
 
     result_summary = exported(TextLine(
-        title=_("A short summary of the result.")))
+        title=_("A short summary of the result."), required=False))
 
     result = exported(Choice(
         title=_('Result of the report'),  readonly=True,
-        vocabulary=RevisionStatusResult))
+        required=False, vocabulary=RevisionStatusResult))
 
     @mutator_for(result)
     @operation_parameters(result=copy_field(result))
-    @call_with(user=REQUEST_USER)
     @export_write_operation()
-    def transitionToNewResult(result, user):
+    @operation_for_version("devel")
+    def transitionToNewResult(result):
         """Set the RevisionStatusReport result.
 
         Set the revision status report result."""
@@ -875,6 +887,18 @@ class IRevisionStatusReportEdit(Interface):
 
     def setLog(artifact):
         """Sets the `RevisionStatusArtifact` for the `RevisionStatusReport`."""
+
+    @operation_parameters(
+        log_data=Bytes(title=_("The content of the artifact in bytes."),
+                       constraint=attachment_size_constraint))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def api_setLog(log_data):
+        """Set a new log on an existing status report.
+
+        :param log_data: The contents (in bytes) of the log.
+        """
 
 
 @exported_as_webservice_entry(as_of="beta")
@@ -911,9 +935,6 @@ class IRevisionStatusReportSet(Interface):
 
     def findRevisionStatusReportByCreator(creator):
         """Returns the RevisionStatusReport for a creator."""
-
-    def findRevisionStatusReportByCommit(commmit_sha1):
-        """Returns the RevisionStatusReport for a commit."""
 
 
 class IRevisionStatusArtifactSet(Interface):
@@ -1148,11 +1169,11 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         """
 
     @operation_parameters(
-        title=TextLine(title=_("A short title for the report.")),
-        commit_sha1=TextLine(title=_("The commit sha1 of the status report.")),
-        url=TextLine(title=_("The external link of the status report.")),
-        result_summary=TextLine(title=_("A short summary of the result.")),
-        result=Choice(vocabulary=RevisionStatusResult, required=False))
+        title=copy_field(IRevisionStatusReport["title"]),
+        commit_sha1=copy_field(IRevisionStatusReport["commit_sha1"]),
+        url=copy_field(IRevisionStatusReport["url"]),
+        result_summary=copy_field(IRevisionStatusReport["result_summary"]),
+        result=copy_field(IRevisionStatusReport["result"]))
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @call_with(user=REQUEST_USER)
     @export_factory_operation(IRevisionStatusReport, [])
@@ -1165,21 +1186,6 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         :param url: The external link of the status report.
         :param result_summary: The description of the new report.
         :param result: The result of the new report.
-        """
-
-    @operation_parameters(
-        commit_sha1=TextLine(title=_("The commit sha1 of the status report.")),
-        log_data=Bytes(title=_("The content of the artifact in bytes."),
-                       constraint=attachment_size_constraint))
-    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
-    @call_with(user=REQUEST_USER)
-    @export_write_operation()
-    @operation_for_version("devel")
-    def setLogOnStatusReport(commit_sha1, log_data, user):
-        """Set a new log on an existing status report.
-
-        :param commit_sha1: The commit sha1 for the report.
-        :param log_data: The contents of the artifact.
         """
 
 
