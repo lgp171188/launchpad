@@ -21,6 +21,14 @@ Overview
    scope
    values
 
+Tutorials
+=========
+
+.. toctree::
+   :maxdepth: 1
+
+   running
+
 Guides
 ======
 
