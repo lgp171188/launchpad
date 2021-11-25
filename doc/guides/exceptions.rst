@@ -42,7 +42,8 @@ reviewer, ask the author why he thinks that it is reasonable to do that.
 
 Most importantly, we must not hide bugs this way.  You must either
 raise the exception again after doing some cleanup like calling
-``transaction.abort()``, or you must log an OOPS.
+``transaction.abort()``, or you must log an OOPS, which you can do using
+``logger.exception()``.
 
 ``KeyboardInterrupt`` and ``SystemExit`` must not be caught under any
 circumstances.
