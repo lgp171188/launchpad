@@ -7,11 +7,6 @@ from lazr.lifecycle.event import (
     ObjectCreatedEvent,
     ObjectDeletedEvent,
     )
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.store import Store
 from zope.event import notify
 from zope.interface import implementer
@@ -22,8 +17,13 @@ from lp.bugs.interfaces.bugattachment import (
     IBugAttachment,
     IBugAttachmentSet,
     )
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
+    )
 from lp.services.propertycache import cachedproperty
 
 
@@ -35,8 +35,8 @@ class BugAttachment(SQLBase):
 
     bug = ForeignKey(
         foreignKey='Bug', dbName='bug', notNull=True)
-    type = EnumCol(
-        schema=BugAttachmentType, notNull=True,
+    type = DBEnum(
+        enum=BugAttachmentType, allow_none=False,
         default=IBugAttachment['type'].default)
     title = StringCol(notNull=True)
     libraryfile = ForeignKey(

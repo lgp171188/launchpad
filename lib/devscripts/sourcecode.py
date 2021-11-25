@@ -128,7 +128,7 @@ def interpret_config(config_entries, public_only, use_http=False):
 
 def _subset_dict(d, keys):
     """Return a dict that's a subset of 'd', based on the keys in 'keys'."""
-    return dict((key, d[key]) for key in keys)
+    return {key: d[key] for key in keys}
 
 
 def plan_update(existing_branches, configuration):

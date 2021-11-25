@@ -233,7 +233,7 @@ class PublishDistro(PublisherScript):
         suites = set()
         for suite in self.options.suite:
             series, pocket = self.findSuite(distribution, suite)
-            suites.add((series.name, pocket))
+            suites.add(series.getSuite(pocket))
         return suites
 
     def findExplicitlyDirtySuites(self, archive):
@@ -311,7 +311,7 @@ class PublishDistro(PublisherScript):
         """
         for distroseries, pocket in self.findExplicitlyDirtySuites(archive):
             if not cannot_modify_suite(archive, distroseries, pocket):
-                publisher.markPocketDirty(distroseries, pocket)
+                publisher.markSuiteDirty(distroseries, pocket)
         if archive.dirty_suites is not None:
             # Clear the explicit dirt indicator before we start doing
             # time-consuming publishing, which might race with an

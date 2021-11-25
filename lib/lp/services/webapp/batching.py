@@ -52,8 +52,8 @@ from lp.services.webapp.publisher import LaunchpadView
 def get_batch_properties_for_json_cache(view, batchnav):
     """Get values to insert into `IJSONRequestCache` for JS batchnavs."""
     properties = {}
-    view_names = set(
-        reg.name for reg in iter_view_registrations(view.__class__))
+    view_names = {
+        reg.name for reg in iter_view_registrations(view.__class__)}
     if len(view_names) != 1:
         raise AssertionError("Ambiguous view name.")
     properties['view_name'] = view_names.pop()

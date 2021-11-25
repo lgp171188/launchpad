@@ -1659,11 +1659,11 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         self.assertEqual('Invalid option', view.getFieldError('package_type'))
         self.assertContentEqual([], view.cached_differences.batch)
 
-    def test_batch_blacklisted_differences_with_higher_version(self):
+    def test_batch_blocklisted_differences_with_higher_version(self):
         # field.package_type parameter allows to list only
-        # blacklisted differences with a child's version higher than parent's.
-        derived_series, parent_series = self._createChildAndParent()
-        blacklisted_diff_higher = self.factory.makeDistroSeriesDifference(
+        # blocklisted differences with a child's version higher than parent's.
+        derived_series, _ = self._createChildAndParent()
+        blocklisted_diff_higher = self.factory.makeDistroSeriesDifference(
             derived_series=derived_series,
             status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
             versions={'base': '1.1', 'parent': '1.3', 'derived': '1.10'})
@@ -1672,19 +1672,19 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
             versions={'base': '1.1', 'parent': '1.12', 'derived': '1.10'})
 
-        blacklisted_view = create_initialized_view(
+        blocklisted_view = create_initialized_view(
             derived_series,
             '+localpackagediffs',
             query_string='field.package_type=%s' % HIGHER_VERSION_THAN_PARENT)
-        unblacklisted_view = create_initialized_view(
+        unblocklisted_view = create_initialized_view(
             derived_series,
             '+localpackagediffs')
 
         self.assertContentEqual(
-            [blacklisted_diff_higher],
-            blacklisted_view.cached_differences.batch)
+            [blocklisted_diff_higher],
+            blocklisted_view.cached_differences.batch)
         self.assertContentEqual(
-            [], unblacklisted_view.cached_differences.batch)
+            [], unblocklisted_view.cached_differences.batch)
 
     def test_batch_resolved_differences(self):
         # Test that we can search for differences that we marked

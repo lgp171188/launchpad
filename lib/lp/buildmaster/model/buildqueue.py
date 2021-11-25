@@ -141,7 +141,7 @@ class BuildQueue(StormBase):
         from lp.buildmaster.model.buildfarmjob import BuildFarmJob
         queues = [removeSecurityProxy(bq) for bq in queues]
         load_related(BuildFarmJob, queues, ['_build_farm_job_id'])
-        bfj_to_bq = dict((bq._build_farm_job, bq) for bq in queues)
+        bfj_to_bq = {bq._build_farm_job: bq for bq in queues}
         key = attrgetter('_build_farm_job.job_type')
         for job_type, group in groupby(sorted(queues, key=key), key=key):
             source = getUtility(ISpecificBuildFarmJobSource, job_type.name)
@@ -267,8 +267,8 @@ class BuildQueueSet(object):
     def preloadForBuilders(self, builders):
         # Populate builders' currentjob cachedproperty.
         queues = load_referencing(BuildQueue, builders, ['builder_id'])
-        queue_builders = dict(
-            (queue.builder_id, queue) for queue in queues)
+        queue_builders = {
+            queue.builder_id: queue for queue in queues}
         for builder in builders:
             cache = get_property_cache(builder)
             cache.currentjob = queue_builders.get(builder.id, None)
@@ -282,9 +282,9 @@ class BuildQueueSet(object):
             BuildQueue._build_farm_job_id.is_in(
                 [removeSecurityProxy(b).build_farm_job_id for b in builds])))
         load_related(Builder, bqs, ['builder_id'])
-        prefetched_data = dict(
-            (removeSecurityProxy(buildqueue)._build_farm_job_id, buildqueue)
-            for buildqueue in bqs)
+        prefetched_data = {
+            removeSecurityProxy(buildqueue)._build_farm_job_id: buildqueue
+            for buildqueue in bqs}
         for build in builds:
             bq = prefetched_data.get(
                 removeSecurityProxy(build).build_farm_job_id)

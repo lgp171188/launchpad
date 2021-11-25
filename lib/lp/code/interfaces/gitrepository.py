@@ -657,6 +657,14 @@ class IGitRepositoryView(IHasRecipes):
             based on one of these paths will be marked as stale.
         """
 
+    def markCharmRecipesStale(paths):
+        """Mark charm recipes associated with this repository as stale.
+
+        :param paths: A list of reference paths.  Any charm recipes that
+            include an entry that points to this repository and that are
+            based on one of these paths will be marked as stale.
+        """
+
     def detectMerges(paths, logger=None):
         """Detect merges of landing candidates.
 

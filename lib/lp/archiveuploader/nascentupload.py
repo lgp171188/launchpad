@@ -458,7 +458,7 @@ class NascentUpload:
 
     def getComponents(self):
         """Return a set of components present in the uploaded files."""
-        return set(file.component_name for file in self.changes.files)
+        return {file.component_name for file in self.changes.files}
 
     def reject(self, msg):
         """Add the provided message to the rejection message."""

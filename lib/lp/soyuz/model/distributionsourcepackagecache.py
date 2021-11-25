@@ -9,10 +9,6 @@ from operator import (
     itemgetter,
     )
 
-from sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
 from zope.interface import implementer
 
 from lp.code.model.seriessourcepackagebranch import SeriesSourcePackageBranch
@@ -22,6 +18,10 @@ from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    StringCol,
+    )
 from lp.soyuz.interfaces.distributionsourcepackagecache import (
     IDistributionSourcePackageCache,
     )

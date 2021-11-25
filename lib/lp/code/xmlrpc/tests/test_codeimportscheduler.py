@@ -3,7 +3,8 @@
 
 """Test for the methods of `ICodeImportScheduler`."""
 
-from six.moves import xmlrpc_client
+import xmlrpc.client
+
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -76,7 +77,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         # is no code import job with the given ID.
         fault = self.api.getImportDataForJobID(-1)
         self.assertTrue(
-            isinstance(fault, xmlrpc_client.Fault),
+            isinstance(fault, xmlrpc.client.Fault),
             "getImportDataForJobID(-1) returned %r, not a Fault."
             % (fault,))
         self.assertEqual(NoSuchCodeImportJob, fault.__class__)
@@ -95,7 +96,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         # code import job with the given ID.
         fault = self.api.updateHeartbeat(-1, '')
         self.assertTrue(
-            isinstance(fault, xmlrpc_client.Fault),
+            isinstance(fault, xmlrpc.client.Fault),
             "updateHeartbeat(-1, '') returned %r, not a Fault."
             % (fault,))
         self.assertEqual(NoSuchCodeImportJob, fault.__class__)
@@ -131,7 +132,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         code_import = code_import_job.code_import
         self.api.finishJobID(
             code_import_job.id, CodeImportResultStatus.SUCCESS.name,
-            xmlrpc_client.Binary(b'log file data\n'))
+            xmlrpc.client.Binary(b'log file data\n'))
         transaction.commit()
         self.assertEqual(
             b'log file data\n', code_import.results.last().log_file.read())
@@ -143,7 +144,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         code_import = code_import_job.code_import
         self.api.finishJobID(
             code_import_job.id, CodeImportResultStatus.SUCCESS.name,
-            xmlrpc_client.Binary(b''))
+            xmlrpc.client.Binary(b''))
         self.assertIsNone(code_import.results.last().log_file)
 
     def test_finishJobID_not_found(self):
@@ -152,7 +153,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         fault = self.api.finishJobID(
             -1, CodeImportResultStatus.SUCCESS.name, '')
         self.assertTrue(
-            isinstance(fault, xmlrpc_client.Fault),
+            isinstance(fault, xmlrpc.client.Fault),
             "finishJobID(-1, 'SUCCESS', 0) returned %r, not a Fault."
             % (fault,))
         self.assertEqual(NoSuchCodeImportJob, fault.__class__)

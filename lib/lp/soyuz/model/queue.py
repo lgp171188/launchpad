@@ -17,12 +17,6 @@ from operator import attrgetter
 
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import Cast
 from storm.locals import (
     And,
@@ -58,10 +52,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import (
-    DBEnum,
-    EnumCol,
-    )
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -69,6 +60,12 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
@@ -169,18 +166,17 @@ class PackageUpload(SQLBase):
 
     _defaultOrder = ['id']
 
-    status = EnumCol(
-        dbName='status', unique=False, notNull=True,
-        default=PackageUploadStatus.NEW, schema=PackageUploadStatus,
-        storm_validator=validate_status)
+    status = DBEnum(
+        name='status', allow_none=False,
+        default=PackageUploadStatus.NEW, enum=PackageUploadStatus,
+        validator=validate_status)
 
     date_created = UtcDateTimeCol(notNull=False, default=UTC_NOW)
 
     distroseries = ForeignKey(dbName="distroseries", foreignKey='DistroSeries')
 
-    pocket = EnumCol(
-        dbName='pocket', unique=False, notNull=True,
-        schema=PackagePublishingPocket)
+    pocket = DBEnum(
+        name='pocket', allow_none=False, enum=PackagePublishingPocket)
 
     changes_file_id = Int(name='changesfile')
     changesfile = Reference(changes_file_id, 'LibraryFileAlias.id')
@@ -651,7 +647,14 @@ class PackageUpload(SQLBase):
     @cachedproperty
     def contains_build(self):
         """See `IPackageUpload`."""
-        return bool(self.builds)
+        if self.builds:
+            return True
+        else:
+            # handle case when PackageUpload is a copy
+            copy_job = self.concrete_package_copy_job
+            if copy_job is not None:
+                return copy_job.include_binaries
+        return False
 
     @cachedproperty
     def contains_copy(self):
@@ -1053,8 +1056,8 @@ class PackageUpload(SQLBase):
             permission_set = getUtility(IArchivePermissionSet)
             permissions = permission_set.componentsForQueueAdmin(
                 self.distroseries.main_archive, user)
-            allowed_components = set(
-                permission.component for permission in permissions)
+            allowed_components = {
+                permission.component for permission in permissions}
         assert allowed_components is not None, (
             "Must provide allowed_components for non-webservice calls.")
 
@@ -1109,8 +1112,8 @@ class PackageUpload(SQLBase):
             permission_set = getUtility(IArchivePermissionSet)
             permissions = permission_set.componentsForQueueAdmin(
                 self.distroseries.main_archive, user)
-            allowed_components = set(
-                permission.component for permission in permissions)
+            allowed_components = {
+                permission.component for permission in permissions}
         assert allowed_components is not None, (
             "Must provide allowed_components for non-webservice calls.")
 
@@ -1414,9 +1417,8 @@ class PackageUploadCustom(SQLBase):
     packageupload = ForeignKey(
         dbName='packageupload', foreignKey='PackageUpload')
 
-    customformat = EnumCol(
-        dbName='customformat', unique=False, notNull=True,
-        schema=PackageUploadCustomFormat)
+    customformat = DBEnum(
+        name='customformat', allow_none=False, enum=PackageUploadCustomFormat)
 
     libraryfilealias = ForeignKey(
         dbName='libraryfilealias', foreignKey="LibraryFileAlias", notNull=True)
@@ -1621,8 +1623,10 @@ class PackageUploadSet:
 
 def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     # Circular imports.
+    from lp.registry.model.distribution import Distribution
     from lp.soyuz.model.archive import Archive
     from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
+    from lp.soyuz.model.packagecopyjob import PackageCopyJob
     from lp.soyuz.model.publishing import SourcePackagePublishingHistory
     from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
@@ -1684,3 +1688,11 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
         spr_cache.published_archives.append(publication.archive)
     for diff in diffs:
         get_property_cache(diff.to_source).package_diffs.append(diff)
+
+    package_copy_jobs = load_related(
+        PackageCopyJob, uploads, ['package_copy_job_id']
+    )
+    archives = load_related(
+        Archive, package_copy_jobs, ['source_archive_id']
+    )
+    load_related(Distribution, archives, ['distributionID'])

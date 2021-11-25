@@ -22,13 +22,13 @@ request parameters as an XMLRPC parameter, and sets a cookie from the
 server, 'foo=bar'.
 
     >>> import responses
-    >>> from six.moves import xmlrpc_client
+    >>> import xmlrpc.client
 
     >>> def test_callback(request):
-    ...     params = xmlrpc_client.loads(request.body)[0]
+    ...     params = xmlrpc.client.loads(request.body)[0]
     ...     return (
     ...         200, {'Set-Cookie': 'foo=bar'},
-    ...         xmlrpc_client.dumps(
+    ...         xmlrpc.client.dumps(
     ...             ([request.url] + list(params),), methodresponse=True))
 
 Before sending the request, the transport's cookie jar is empty.
@@ -71,7 +71,7 @@ In addition to cookies sent by the server, we can set cookies locally.
     foo=bar
 
 If an error occurs trying to make the request, an
-``xmlrpc_client.ProtocolError`` is raised.
+``xmlrpc.client.ProtocolError`` is raised.
 
     >>> request_body = """<?xml version="1.0"?>
     ... <methodCall>

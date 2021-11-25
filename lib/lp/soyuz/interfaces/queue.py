@@ -22,6 +22,8 @@ __all__ = [
     'QueueStateWriteProtectedError'
     ]
 
+import http.client
+
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -38,7 +40,6 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -70,7 +71,7 @@ class QueueStateWriteProtectedError(Exception):
     """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class QueueInconsistentStateError(Exception):
     """Queue state machine error.
 
@@ -774,7 +775,7 @@ class IPackageUploadSet(Interface):
     def count(status=None, distroseries=None, pocket=None):
         """Number of IPackageUpload present in a given status.
 
-        If status is ommitted return the number of all entries.
+        If status is omitted return the number of all entries.
         'distroseries' is optional and restrict the results in given
         distroseries, same for pocket.
         """

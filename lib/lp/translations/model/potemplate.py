@@ -19,13 +19,6 @@ import os
 
 from psycopg2.extensions import TransactionRollbackError
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -54,7 +47,7 @@ from lp.services.database.collection import Collection
 from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -62,6 +55,13 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     flush_database_updates,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    StringCol,
     )
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import get_email_template
@@ -187,7 +187,7 @@ def get_pofiles_for(potemplates, language):
         POFile.potemplateID.is_in(template_ids),
         POFile.language == language))
 
-    mapping = dict((pofile.potemplate.id, pofile) for pofile in pofiles)
+    mapping = {pofile.potemplate.id: pofile for pofile in pofiles}
     result = [mapping.get(id) for id in template_ids]
     for entry, pofile in enumerate(result):
         assert pofile == result[entry], "This enumerate confuses me."
@@ -214,9 +214,10 @@ class POTemplate(SQLBase, RosettaStats):
     path = StringCol(dbName='path', notNull=True)
     source_file = ForeignKey(foreignKey='LibraryFileAlias',
         dbName='source_file', notNull=False, default=None)
-    source_file_format = EnumCol(dbName='source_file_format',
-        schema=TranslationFileFormat, default=TranslationFileFormat.PO,
-        notNull=True)
+    source_file_format = DBEnum(
+        name='source_file_format',
+        enum=TranslationFileFormat, default=TranslationFileFormat.PO,
+        allow_none=False)
     iscurrent = BoolCol(dbName='iscurrent', notNull=True, default=True)
     messagecount = IntCol(dbName='messagecount', notNull=True, default=0)
     owner = ForeignKey(
@@ -1624,10 +1625,10 @@ class POTemplateToTranslationFileDataAdapter:
             msgset.file_references = row.file_references
 
             if row.flags_comment:
-                msgset.flags = set([
+                msgset.flags = {
                     flag.strip()
                     for flag in row.flags_comment.split(',')
-                    if flag])
+                    if flag}
 
             # Store the message.
             messages.append(msgset)

@@ -49,7 +49,7 @@ from lp.code.interfaces.gitrule import describe_git_permissions
 from lp.code.mail.branch import BranchMailer
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -110,7 +110,7 @@ class GitJob(StormBase):
     repository_id = Int(name='repository', allow_none=True)
     repository = Reference(repository_id, 'GitRepository.id')
 
-    job_type = EnumCol(enum=GitJobType, notNull=True)
+    job_type = DBEnum(enum=GitJobType, allow_none=False)
 
     metadata = JSON('json_data')
 

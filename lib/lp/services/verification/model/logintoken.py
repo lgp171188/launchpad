@@ -10,11 +10,6 @@ import hashlib
 
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import And
 from zope.component import getUtility
 from zope.interface import implementer
@@ -26,7 +21,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -34,6 +29,11 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.mail.helpers import get_email_template
@@ -66,7 +66,7 @@ class LoginToken(SQLBase):
     # The hex SHA-256 hash of the token.
     _token = StringCol(dbName='token', unique=True)
 
-    tokentype = EnumCol(dbName='tokentype', notNull=True, enum=LoginTokenType)
+    tokentype = DBEnum(name='tokentype', allow_none=False, enum=LoginTokenType)
     date_created = UtcDateTimeCol(dbName='created', notNull=True)
     fingerprint = StringCol(dbName='fingerprint', notNull=False, default=None)
     date_consumed = UtcDateTimeCol(default=None)
@@ -279,7 +279,7 @@ class LoginTokenSet:
                 "consumed should be one of {True, False, None}. Got '%s'."
                 % consumed)
 
-        # It's important to always use the MASTER_FLAVOR store here
+        # It's important to always use the PRIMARY_FLAVOR store here
         # because we don't want replication lag to cause a 404 error.
         return IMasterStore(LoginToken).find(LoginToken, conditions)
 
@@ -306,7 +306,7 @@ class LoginTokenSet:
                 "consumed should be one of {True, False, None}. Got '%s'."
                 % consumed)
 
-        # It's important to always use the MASTER_FLAVOR store here
+        # It's important to always use the PRIMARY_FLAVOR store here
         # because we don't want replication lag to cause a 404 error.
         return IMasterStore(LoginToken).find(LoginToken, conditions)
 

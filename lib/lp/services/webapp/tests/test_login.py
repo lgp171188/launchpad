@@ -15,6 +15,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+import http.client
 import unittest
 
 from openid.consumer.consumer import (
@@ -26,7 +27,6 @@ from openid.extensions import (
     sreg,
     )
 from openid.yadis.discover import DiscoveryFailure
-from six.moves import http_client
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.parse import (
     parse_qsl,
@@ -50,7 +50,7 @@ from lp.services.database.interfaces import (
     IStore,
     IStoreSelector,
     )
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.identity.interfaces.account import (
     AccountStatus,
     IAccountSet,
@@ -112,9 +112,9 @@ class StubbedOpenIDCallbackView(OpenIDCallbackView):
         super(StubbedOpenIDCallbackView, self).login(account)
         self.login_called = True
         current_policy = getUtility(IStoreSelector).get_current()
-        if not isinstance(current_policy, MasterDatabasePolicy):
+        if not isinstance(current_policy, PrimaryDatabasePolicy):
             raise AssertionError(
-                "Not using the master store: %s" % current_policy)
+                "Not using the primary store: %s" % current_policy)
 
 
 class FakeConsumer:
@@ -174,17 +174,17 @@ def MacaroonResponse_fromSuccessResponse_stubbed():
 def IAccountSet_getByOpenIDIdentifier_monkey_patched():
     # Monkey patch getUtility(IAccountSet).getByOpenIDIdentifier() with a
     # method that will raise an AssertionError when it's called and the
-    # installed DB policy is not MasterDatabasePolicy.  This is to ensure that
-    # the code we're testing forces the use of the master DB by installing the
-    # MasterDatabasePolicy.
+    # installed DB policy is not PrimaryDatabasePolicy.  This is to ensure
+    # that the code we're testing forces the use of the primary DB by
+    # installing the PrimaryDatabasePolicy.
     account_set = removeSecurityProxy(getUtility(IAccountSet))
     orig_getByOpenIDIdentifier = account_set.getByOpenIDIdentifier
 
     def fake_getByOpenIDIdentifier(identifier):
         current_policy = getUtility(IStoreSelector).get_current()
-        if not isinstance(current_policy, MasterDatabasePolicy):
+        if not isinstance(current_policy, PrimaryDatabasePolicy):
             raise AssertionError(
-                "Not using the master store: %s" % current_policy)
+                "Not using the primary store: %s" % current_policy)
         return orig_getByOpenIDIdentifier(identifier)
 
     try:
@@ -224,9 +224,9 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         view.initialize()
         view.openid_response = response
         # Monkey-patch getByOpenIDIdentifier() to make sure the view uses the
-        # master DB. This mimics the problem we're trying to avoid, where
+        # primary DB. This mimics the problem we're trying to avoid, where
         # getByOpenIDIdentifier() doesn't find a newly created account because
-        # it looks in the slave database.
+        # it looks in the standby database.
         with IAccountSet_getByOpenIDIdentifier_monkey_patched():
             html = view.render()
         return view, html
@@ -241,13 +241,13 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
                 person.account, email=test_email)
         self.assertTrue(view.login_called)
         response = view.request.response
-        self.assertEqual(http_client.TEMPORARY_REDIRECT, response.getStatus())
+        self.assertEqual(http.client.TEMPORARY_REDIRECT, response.getStatus())
         self.assertEqual(view.request.form['starting_url'],
                          response.getHeader('Location'))
         # The 'last_write' flag was not updated (unlike in the other test
         # methods) because in this case we didn't have to create a
         # Person/Account entry, so it's ok for further requests to hit the
-        # slave DBs.
+        # standby DBs.
         self.assertNotIn('last_write', ISession(view.request)['lp.dbpolicy'])
 
     def test_gather_params(self):
@@ -350,7 +350,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
                          removeSecurityProxy(person.preferredemail).email)
 
         # We also update the last_write flag in the session, to make sure
-        # further requests use the master DB and thus see the newly created
+        # further requests use the primary DB and thus see the newly created
         # stuff.
         self.assertLastWriteIsSet(view.request)
 
@@ -389,7 +389,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         self.assertEqual('Test account', person.displayname)
 
         # We also update the last_write flag in the session, to make sure
-        # further requests use the master DB and thus see the newly created
+        # further requests use the primary DB and thus see the newly created
         # stuff.
         self.assertLastWriteIsSet(view.request)
 
@@ -410,13 +410,13 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
             view, html = self._createAndRenderView(openid_response)
         self.assertTrue(view.login_called)
         response = view.request.response
-        self.assertEqual(http_client.TEMPORARY_REDIRECT, response.getStatus())
+        self.assertEqual(http.client.TEMPORARY_REDIRECT, response.getStatus())
         self.assertEqual(view.request.form['starting_url'],
                          response.getHeader('Location'))
         self.assertEqual(AccountStatus.ACTIVE, person.account.status)
         self.assertEqual(email, person.preferredemail.email)
         # We also update the last_write flag in the session, to make sure
-        # further requests use the master DB and thus see the newly created
+        # further requests use the primary DB and thus see the newly created
         # stuff.
         self.assertLastWriteIsSet(view.request)
 
@@ -442,7 +442,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         self.assertEqual(AccountStatus.ACTIVE, person.account.status)
         self.assertEqual(email, person.preferredemail.email)
         # We also update the last_write flag in the session, to make sure
-        # further requests use the master DB and thus see the newly created
+        # further requests use the primary DB and thus see the newly created
         # stuff.
         self.assertLastWriteIsSet(view.request)
 
@@ -589,7 +589,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
             view_class=StubbedOpenIDCallbackViewLoggedIn)
         self.assertFalse(view.login_called)
         response = view.request.response
-        self.assertEqual(http_client.TEMPORARY_REDIRECT, response.getStatus())
+        self.assertEqual(http.client.TEMPORARY_REDIRECT, response.getStatus())
         self.assertEqual(view.request.form['starting_url'],
                          response.getHeader('Location'))
         notification_msg = view.request.response.notifications[0].message
@@ -637,7 +637,7 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
         view.initialize()
         view._redirect()
         self.assertEqual(
-            http_client.TEMPORARY_REDIRECT, view.request.response.getStatus())
+            http.client.TEMPORARY_REDIRECT, view.request.response.getStatus())
         self.assertEqual(
             view.request.response.getHeader('Location'), self.STARTING_URL)
 
@@ -651,7 +651,7 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
         view.initialize()
         view._redirect()
         self.assertEqual(
-            http_client.TEMPORARY_REDIRECT, view.request.response.getStatus())
+            http.client.TEMPORARY_REDIRECT, view.request.response.getStatus())
         self.assertEqual(
             view.request.response.getHeader('Location'), self.STARTING_URL)
 
@@ -663,7 +663,7 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
         view.initialize()
         view._redirect()
         self.assertEqual(
-            http_client.TEMPORARY_REDIRECT, view.request.response.getStatus())
+            http.client.TEMPORARY_REDIRECT, view.request.response.getStatus())
         self.assertEqual(
             view.request.response.getHeader('Location'), self.APPLICATION_URL)
 
@@ -690,12 +690,12 @@ class TestOpenIDReplayAttack(TestCaseWithFactory):
         self.assertEqual('Login', browser.title)
         fill_login_form_and_submit(browser, 'test@canonical.com')
         self.assertEqual(
-            http_client.FOUND, int(browser.headers['Status'].split(' ', 1)[0]))
+            http.client.FOUND, int(browser.headers['Status'].split(' ', 1)[0]))
         callback_url = browser.headers['Location']
         self.assertIn('+openid-callback', callback_url)
         browser.open(callback_url)
         self.assertEqual(
-            http_client.TEMPORARY_REDIRECT,
+            http.client.TEMPORARY_REDIRECT,
             int(browser.headers['Status'].split(' ', 1)[0]))
         browser.open(browser.headers['Location'])
         login_status = extract_text(

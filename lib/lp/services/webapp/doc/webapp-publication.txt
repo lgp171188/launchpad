@@ -1134,11 +1134,11 @@ principal's access_level and scope will match what was specified in the
 token.
 
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> from lp.services.database.policy import MasterDatabasePolicy
+    >>> from lp.services.database.policy import PrimaryDatabasePolicy
     >>> from lp.services.database.interfaces import IStoreSelector
     >>> from lp.services.oauth.interfaces import IOAuthConsumerSet
     >>> from lp.services.webapp.interfaces import OAuthPermission
-    >>> getUtility(IStoreSelector).push(MasterDatabasePolicy())
+    >>> getUtility(IStoreSelector).push(PrimaryDatabasePolicy())
     >>> salgado = getUtility(IPersonSet).getByName('salgado')
     >>> consumer = getUtility(IOAuthConsumerSet).getByKey(u'foobar123451432')
     >>> token, _ = consumer.newRequestToken()

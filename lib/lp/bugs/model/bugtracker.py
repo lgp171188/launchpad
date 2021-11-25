@@ -21,14 +21,6 @@ from six.moves.urllib.parse import (
     urlsplit,
     urlunsplit,
     )
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    OR,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     Count,
     Desc,
@@ -74,11 +66,19 @@ from lp.registry.model.product import (
     ProductSet,
     )
 from lp.registry.model.projectgroup import ProjectGroup
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_updates,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    OR,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
@@ -307,8 +307,8 @@ class BugTracker(SQLBase):
 
     _table = 'BugTracker'
 
-    bugtrackertype = EnumCol(
-        dbName='bugtrackertype', schema=BugTrackerType, notNull=True)
+    bugtrackertype = DBEnum(
+        name='bugtrackertype', enum=BugTrackerType, allow_none=False)
     name = StringCol(notNull=True, unique=True)
     title = StringCol(notNull=True)
     summary = StringCol(notNull=False)
@@ -558,7 +558,7 @@ class BugTracker(SQLBase):
 
     def _get_aliases(self):
         """See `IBugTracker.aliases`."""
-        alias_urls = set(alias.base_url for alias in self._bugtracker_aliases)
+        alias_urls = {alias.base_url for alias in self._bugtracker_aliases}
         # Although it does no harm if the current baseurl is also an
         # alias, we hide it and all its permutations to avoid
         # confusion.
@@ -572,8 +572,8 @@ class BugTracker(SQLBase):
         else:
             alias_urls = set(alias_urls)
 
-        current_aliases_by_url = dict(
-            (alias.base_url, alias) for alias in self._bugtracker_aliases)
+        current_aliases_by_url = {
+            alias.base_url: alias for alias in self._bugtracker_aliases}
         # Make a set of the keys, i.e. a set of current URLs.
         current_alias_urls = set(current_aliases_by_url)
 

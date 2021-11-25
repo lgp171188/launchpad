@@ -12,6 +12,8 @@ __all__ = [
     'IDistroSeriesSet',
     ]
 
+import http.client
+
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -33,7 +35,6 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
-from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -740,7 +741,7 @@ class IDistroSeriesPublic(
         """
 
     def searchPackages(text):
-        """Search through the packge cache for this distroseries and return
+        """Search through the package cache for this distroseries and return
         DistroSeriesBinaryPackage objects that match the given text.
         """
 
@@ -1041,7 +1042,7 @@ class IDistroSeriesSet(Interface):
         """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class DerivationError(Exception):
     """Raised when there is a problem deriving a distroseries."""
     _message_prefix = "Error deriving distro series"

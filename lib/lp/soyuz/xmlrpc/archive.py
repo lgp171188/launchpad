@@ -10,11 +10,9 @@ __all__ = [
 import logging
 
 from pymacaroons import Macaroon
-from zope.component import (
-    ComponentLookupError,
-    getUtility,
-    )
+from zope.component import getUtility
 from zope.interface import implementer
+from zope.interface.interfaces import ComponentLookupError
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.macaroons.interfaces import (

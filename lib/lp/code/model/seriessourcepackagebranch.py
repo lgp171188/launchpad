@@ -103,7 +103,7 @@ class SeriesSourcePackageBranchSet:
 
     def findForBranches(self, branches):
         """See `IFindOfficialBranchLinks`."""
-        branch_ids = set(branch.id for branch in branches)
+        branch_ids = {branch.id for branch in branches}
         return IStore(SeriesSourcePackageBranch).find(
             SeriesSourcePackageBranch,
             SeriesSourcePackageBranch.branchID.is_in(branch_ids))

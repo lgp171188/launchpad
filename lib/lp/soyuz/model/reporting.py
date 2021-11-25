@@ -14,7 +14,7 @@ from storm.locals import (
 from storm.properties import DateTime
 from zope.interface import implementer
 
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.reporting import (
     ILatestPersonSourcePackageReleaseCache,
@@ -38,7 +38,7 @@ class LatestPersonSourcePackageReleaseCache(Storm):
     maintainer_id = Int(name='maintainer')
     upload_archive_id = Int(name='upload_archive')
     upload_archive = Reference(upload_archive_id, 'Archive.id')
-    archive_purpose = EnumCol(schema=ArchivePurpose)
+    archive_purpose = DBEnum(enum=ArchivePurpose)
     upload_distroseries_id = Int(name='upload_distroseries')
     upload_distroseries = Reference(upload_distroseries_id, 'DistroSeries.id')
     sourcepackagename_id = Int(name='sourcepackagename')

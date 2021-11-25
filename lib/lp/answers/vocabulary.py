@@ -9,7 +9,6 @@ __all__ = [
     'UsesAnswersProductVocabulary',
     ]
 
-from sqlobject import OR
 from storm.expr import And
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
@@ -22,6 +21,7 @@ from lp.registry.vocabularies import (
     DistributionVocabulary,
     ProductVocabulary,
     )
+from lp.services.database.sqlobject import OR
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,
@@ -93,8 +93,7 @@ class UsesAnswersProductVocabulary(ProductVocabulary):
             vocab_filter = []
         vocab_filter.append(
             And(Product.official_answers == True))
-        return super(UsesAnswersProductVocabulary, self).search(
-            query, vocab_filter)
+        return super().search(query, vocab_filter)
 
 
 class UsesAnswersDistributionVocabulary(DistributionVocabulary):
@@ -107,8 +106,7 @@ class UsesAnswersDistributionVocabulary(DistributionVocabulary):
     """
 
     def __init__(self, context=None):
-        super(UsesAnswersDistributionVocabulary, self).__init__(
-            context=context)
+        super().__init__(context=context)
         self.distribution = IDistribution(self.context, None)
 
     @property

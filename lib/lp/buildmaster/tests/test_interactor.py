@@ -12,10 +12,10 @@ import hashlib
 import os
 import signal
 import tempfile
+import xmlrpc.client
 
 from lpbuildd.builder import BuilderStatus
 import six
-from six.moves import xmlrpc_client
 from testtools.matchers import ContainsAll
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import (
@@ -291,7 +291,7 @@ class TestBuilderInteractorCleanSlave(TestCase):
         try:
             yield BuilderInteractor.cleanSlave(
                 vitals, slave, MockBuilderFactory(builder, None))
-        except xmlrpc_client.Fault:
+        except xmlrpc.client.Fault:
             self.assertEqual(['status', 'abort'], slave.call_log)
         else:
             self.fail("abort() should crash.")
@@ -325,7 +325,7 @@ class TestBuilderSlaveStatus(TestCase):
             del status["build_id"]
         if logtail:
             tail = status.pop("logtail")
-            self.assertIsInstance(tail, xmlrpc_client.Binary)
+            self.assertIsInstance(tail, xmlrpc.client.Binary)
 
         self.assertEqual(expected, status)
 
@@ -584,7 +584,7 @@ class TestSlave(TestCase):
         status = yield slave.status()
         self.assertEqual(BuilderStatus.BUILDING, status['builder_status'])
         self.assertEqual(build_id, status['build_id'])
-        self.assertIsInstance(status['logtail'], xmlrpc_client.Binary)
+        self.assertIsInstance(status['logtail'], xmlrpc.client.Binary)
 
     @defer.inlineCallbacks
     def test_ensurepresent_not_there(self):

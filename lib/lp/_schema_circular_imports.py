@@ -897,8 +897,8 @@ patch_operations_explicit_version(
 # IDistroSeriesDifference
 patch_entry_explicit_version(IDistroSeriesDifference, 'beta')
 patch_operations_explicit_version(
-    IDistroSeriesDifference, 'beta', "addComment", "blacklist",
-    "requestPackageDiffs", "unblacklist")
+    IDistroSeriesDifference, 'beta', "addComment", "blocklist",
+    "requestPackageDiffs", "unblocklist")
 
 # IDistroSeriesDifferenceComment
 patch_entry_explicit_version(IDistroSeriesDifferenceComment, 'beta')

@@ -354,7 +354,7 @@ class BranchListingItemsMixin:
         spec_branches = getUtility(
             ISpecificationBranchSet).getSpecificationBranchesForBranches(
             self.visible_branches_for_view, self.view_user)
-        return set(spec_branch.branch.id for spec_branch in spec_branches)
+        return {spec_branch.branch.id for spec_branch in spec_branches}
 
     @cachedproperty
     def branch_ids_with_merge_proposals(self):
@@ -366,7 +366,7 @@ class BranchListingItemsMixin:
         branches = self.visible_branches_for_view
         collection = self.getBranchCollection()
         proposals = collection.getMergeProposals(for_branches=branches)
-        return set(proposal.source_branch.id for proposal in proposals)
+        return {proposal.source_branch.id for proposal in proposals}
 
     @cachedproperty
     def tip_revisions(self):
@@ -378,8 +378,8 @@ class BranchListingItemsMixin:
             revisions = []
 
         # Key the revisions by revision id.
-        revision_map = dict(
-            (revision.revision_id, revision) for revision in revisions)
+        revision_map = {
+            revision.revision_id: revision for revision in revisions}
 
         # Cache display information for authors of branches' respective
         # last revisions.
@@ -388,9 +388,9 @@ class BranchListingItemsMixin:
             need_icon=True)
 
         # Return a dict keyed on branch id.
-        return dict(
-            (branch.id, revision_map.get(branch.last_scanned_id))
-            for branch in self.visible_branches_for_view)
+        return {
+            branch.id: revision_map.get(branch.last_scanned_id)
+            for branch in self.visible_branches_for_view}
 
     def _createItem(self, branch):
         last_commit = self.tip_revisions[branch.id]
@@ -1321,8 +1321,8 @@ class GroupedDistributionSourcePackageBranchesView(LaunchpadView,
         # Sort the branches by the last modified date, and ignore any that are
         # official.
         ordered_branches = sorted(
-            [branch for branch in branches
-             if branch not in official_branches],
+            (branch for branch in branches
+             if branch not in official_branches),
             key=attrgetter('date_last_modified'), reverse=True)
         num_branches = len(ordered_branches)
         num_official = len(official_branches)

@@ -267,13 +267,13 @@ class Testget_contact_email_addresses(TestCaseWithFactory):
             hide_email_addresses=True,
             name='user')
         result = get_contact_email_addresses(user)
-        self.assertEqual(set(['user@canonical.com']), result)
+        self.assertEqual({'user@canonical.com'}, result)
 
     def test_user_with_preferredemail(self):
         user = self.factory.makePerson(
             email='user@canonical.com', name='user',)
         result = get_contact_email_addresses(user)
-        self.assertEqual(set(['user@canonical.com']), result)
+        self.assertEqual({'user@canonical.com'}, result)
 
     def test_private_team(self):
         email = 'team@canonical.com'
@@ -282,7 +282,7 @@ class Testget_contact_email_addresses(TestCaseWithFactory):
             email=email,
             visibility=PersonVisibility.PRIVATE)
         result = get_contact_email_addresses(team)
-        self.assertEqual(set(['team@canonical.com']), result)
+        self.assertEqual({'team@canonical.com'}, result)
 
 
 def test_suite():

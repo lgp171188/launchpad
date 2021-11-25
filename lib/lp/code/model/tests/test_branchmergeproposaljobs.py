@@ -14,7 +14,6 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.interfaces import IObjectModifiedEvent
 import pytz
 import six
-from sqlobject import SQLObjectNotFound
 from storm.locals import Select
 from storm.store import Store
 from testtools.matchers import (
@@ -60,6 +59,7 @@ from lp.code.model.branchmergeproposaljob import (
 from lp.code.model.tests.test_diff import DiffTestCase
 from lp.code.subscribers.branchmergeproposal import merge_proposal_modified
 from lp.services.config import config
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job

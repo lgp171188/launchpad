@@ -55,10 +55,10 @@ class MilestoneTest(unittest.TestCase):
 
     def testMilestoneSetIterator(self):
         """Test of MilestoneSet.__iter__()."""
-        all_milestones_ids = set(
-            milestone.id for milestone in getUtility(IMilestoneSet))
+        all_milestones_ids = {
+            milestone.id for milestone in getUtility(IMilestoneSet)}
         self.assertEqual(all_milestones_ids,
-                         set((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
+                         {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12})
 
     def testMilestoneSetGet(self):
         """Test of MilestoneSet.get()"""
@@ -130,13 +130,13 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
             product=self.proprietary_product)
 
     expected_get_permissions = {
-        CheckerPublic: set((
+        CheckerPublic: {
             'id', 'checkAuthenticated', 'checkUnauthenticated',
             'userCanView',
-            )),
-        'launchpad.LimitedView': set((
-            'displayname', 'name', 'target',  'title',)),
-        'launchpad.View': set((
+            },
+        'launchpad.LimitedView': {
+            'displayname', 'name', 'target',  'title'},
+        'launchpad.View': {
             'active', 'bug_subscriptions', 'bugtasks', 'code_name',
             'dateexpected', 'distribution', 'distroseries',
             '_getOfficialTagClause', 'getBugSummaryContextWhereClause',
@@ -148,15 +148,15 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
             'summary', 'target_type_display', 'all_specifications',
             'userCanAlterBugSubscription', 'userCanAlterSubscription',
             'userHasBugSubscriptions',
-            )),
-        'launchpad.AnyAllowedPerson': set((
+            },
+        'launchpad.AnyAllowedPerson': {
             'addBugSubscription', 'addBugSubscriptionFilter',
             'addSubscription', 'removeBugSubscription',
-            )),
-        'launchpad.Edit': set((
+            },
+        'launchpad.Edit': {
             'closeBugsAndBlueprints', 'createProductRelease',
             'destroySelf', 'setTags',
-            )),
+            },
         }
 
     def test_get_permissions(self):
@@ -166,10 +166,10 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
             self.expected_get_permissions, checker.get_permissions, 'get')
 
     expected_set_permissions = {
-        'launchpad.Edit': set((
+        'launchpad.Edit': {
             'active', 'code_name', 'dateexpected', 'distroseries', 'name',
             'product_release', 'productseries', 'summary',
-            )),
+            },
         }
 
     def test_set_permissions(self):
@@ -640,7 +640,7 @@ class ProjectMilestoneSecurityAdaperTestCase(TestCaseWithFactory):
                 self.proprietary_projectgroup_milestone = milestone_1
 
     expected_get_permissions = {
-        'launchpad.View': set((
+        'launchpad.View': {
             '_getOfficialTagClause', 'active', 'addBugSubscription',
             'addBugSubscriptionFilter', 'addSubscription',
             'bug_subscriptions', 'bugtasks', 'closeBugsAndBlueprints',
@@ -653,7 +653,7 @@ class ProjectMilestoneSecurityAdaperTestCase(TestCaseWithFactory):
             'product_release', 'productseries', 'removeBugSubscription',
             'searchTasks', 'series_target', 'summary', 'target',
             'target_type_display', 'title', 'userCanAlterBugSubscription',
-            'userCanAlterSubscription', 'userHasBugSubscriptions')),
+            'userCanAlterSubscription', 'userHasBugSubscriptions'},
         }
 
     def test_get_permissions(self):

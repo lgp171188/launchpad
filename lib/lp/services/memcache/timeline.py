@@ -10,13 +10,13 @@ __all__ = [
 import logging
 
 from lazr.restful.utils import get_current_browser_request
-import memcache
 
 from lp.services import features
+from lp.services.memcache.client import MemcacheClient
 from lp.services.timeline.requesttimeline import get_request_timeline
 
 
-class TimelineRecordingClient(memcache.Client):
+class TimelineRecordingClient(MemcacheClient):
 
     def __get_timeline_action(self, suffix, key):
         request = get_current_browser_request()
@@ -31,22 +31,21 @@ class TimelineRecordingClient(memcache.Client):
         else:
             return configured_value
 
-    def get(self, key):
+    def get(self, key, default=None, logger=None):
         if not self._enabled:
             return None
         action = self.__get_timeline_action("get", key)
         try:
-            return memcache.Client.get(self, key)
+            return super().get(key, default=default, logger=logger)
         finally:
             action.finish()
 
-    def set(self, key, value, time=0, min_compress_len=0):
+    def set(self, key, value, expire=0, logger=None):
         if not self._enabled:
             return None
         action = self.__get_timeline_action("set", key)
         try:
-            success = memcache.Client.set(self, key, value, time=time,
-                min_compress_len=min_compress_len)
+            success = super().set(key, value, expire=expire, logger=logger)
             if success:
                 logging.debug("Memcache set succeeded for %s", key)
             else:

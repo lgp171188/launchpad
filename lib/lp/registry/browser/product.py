@@ -755,7 +755,7 @@ class ProductWithSeries:
         # Get all of the releases for all of the series in a single
         # query.  The query sorts the releases properly so we know the
         # resulting list is sorted correctly.
-        series_by_id = dict((series.id, series) for series in self.series)
+        series_by_id = {series.id: series for series in self.series}
         self.release_by_id = {}
         milestones_and_releases = list(
             self.product.getMilestonesAndReleases())
@@ -1989,7 +1989,7 @@ class ProductSetBranchView(ReturnToReferrerMixin, LaunchpadFormView,
 
     def _validSchemes(self, rcs_type):
         """Return the valid schemes for the repository URL."""
-        schemes = set(['http', 'https'])
+        schemes = {'http', 'https'}
         # Extend the allowed schemes for the repository URL based on
         # rcs_type.
         extra_schemes = {

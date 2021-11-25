@@ -12,8 +12,8 @@ __all__ = [
 
 
 from zope.component import getUtility
-from zope.component.interfaces import ComponentLookupError
 from zope.interface import implementer
+from zope.interface.interfaces import ComponentLookupError
 
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.registry.enums import PollSort

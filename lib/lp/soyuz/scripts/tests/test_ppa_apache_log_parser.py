@@ -150,8 +150,8 @@ class TestScriptRunning(TestCaseWithFactory):
               austria,
               1)],
             sorted(
-                [(result.binary_package_release, result.archive, result.day,
-                  result.country, result.count) for result in results],
+                ((result.binary_package_release, result.archive, result.day,
+                  result.country, result.count) for result in results),
                  key=lambda r: (
                      r[0].id, r[2],
                      r[3] is not None, r[3].name if r[3] else None)))

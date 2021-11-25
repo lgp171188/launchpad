@@ -8,9 +8,9 @@ __all__ = [
     ]
 
 import io
+import xmlrpc.client
 
 import six
-from six.moves import xmlrpc_client
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -92,7 +92,7 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
         job = self._getJob(job_id)
         status = CodeImportResultStatus.items[status_name]
         workflow = removeSecurityProxy(getUtility(ICodeImportJobWorkflow))
-        if isinstance(log_file, xmlrpc_client.Binary):
+        if isinstance(log_file, xmlrpc.client.Binary):
             if log_file.data:
                 log_file_name = '%s.log' % (
                     job.code_import.target.unique_name[1:].replace('/', '-'))

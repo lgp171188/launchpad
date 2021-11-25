@@ -18,10 +18,6 @@ __all__ = [
     'WebBugTrackerVocabulary',
     ]
 
-from sqlobject import (
-    CONTAINSSTRING,
-    OR,
-    )
 from storm.expr import (
     And,
     Or,
@@ -64,6 +60,10 @@ from lp.registry.model.milestone import milestone_sort_key
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.vocabularies import DistributionVocabulary
 from lp.services.database.interfaces import IStore
+from lp.services.database.sqlobject import (
+    CONTAINSSTRING,
+    OR,
+    )
 from lp.services.helpers import shortlist
 from lp.services.webapp.escaping import (
     html_escape,
@@ -352,8 +352,8 @@ class BugTaskMilestoneVocabulary:
         self.default_bugtask = default_bugtask
         self._milestones = None
         if milestones is not None:
-            self._milestones = dict(
-                (str(milestone.id), milestone) for milestone in milestones)
+            self._milestones = {
+                str(milestone.id): milestone for milestone in milestones}
 
     def _load_milestones(self, bugtask):
         # If the milestones have not already been cached, load them for the
@@ -362,8 +362,8 @@ class BugTaskMilestoneVocabulary:
             bugtask_set = getUtility(IBugTaskSet)
             milestones = list(
                 bugtask_set.getBugTaskTargetMilestones([bugtask]))
-            self._milestones = dict(
-                (str(milestone.id), milestone) for milestone in milestones)
+            self._milestones = {
+                str(milestone.id): milestone for milestone in milestones}
         return self._milestones
 
     @property

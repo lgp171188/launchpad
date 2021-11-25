@@ -107,11 +107,11 @@ class TestWebhookPermissions(TestCaseWithFactory):
 
     def test_get_permissions(self):
         expected_get_permissions = {
-            'launchpad.View': set((
+            'launchpad.View': {
                 'active', 'date_created', 'date_last_modified', 'deliveries',
                 'delivery_url', 'destroySelf', 'event_types', 'getDelivery',
                 'id', 'ping', 'registrant', 'registrant_id', 'secret',
-                'setSecret', 'target')),
+                'setSecret', 'target'},
             }
         webhook = self.factory.makeWebhook()
         checker = getChecker(webhook)
@@ -120,9 +120,9 @@ class TestWebhookPermissions(TestCaseWithFactory):
 
     def test_set_permissions(self):
         expected_set_permissions = {
-            'launchpad.View': set((
+            'launchpad.View': {
                 'active', 'delivery_url', 'event_types', 'registrant_id',
-                'secret')),
+                'secret'},
             }
         webhook = self.factory.makeWebhook()
         checker = getChecker(webhook)

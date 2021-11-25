@@ -22,30 +22,34 @@ naughty_imports = set()
 # __all__. The following dict maps from such modules to a list of attributes
 # that are allowed to be imported, whether or not they are in __all__.
 valid_imports_not_in_all = {
-    'importlib': set(['resources']),
-    'openid.fetchers': set(['Urllib2Fetcher']),
-    'openid.message': set(['NamespaceAliasRegistrationError']),
-    'six.moves.http_cookiejar': set(['domain_match']),
-    'storm.database': set(['STATE_DISCONNECTED']),
-    'talisker': set(['run_gunicorn']),
-    'textwrap': set(['dedent']),
-    'testtools.testresult.real': set(['_details_to_str']),
-    'twisted.internet.threads': set(['deferToThreadPool']),
+    'importlib': {'resources'},
+    'openid.fetchers': {'Urllib2Fetcher'},
+    'openid.message': {'NamespaceAliasRegistrationError'},
+    'six.moves.http_cookiejar': {'domain_match'},
+    'storm.database': {'STATE_DISCONNECTED'},
+    'talisker': {'run_gunicorn'},
+    'textwrap': {'dedent'},
+    'testtools.testresult.real': {'_details_to_str'},
+    'twisted.internet.threads': {'deferToThreadPool'},
     # Even docs tell us to use this class. See docs on WebClientContextFactory.
-    'twisted.web.client': set(['BrowserLikePolicyForHTTPS']),
-    'zope.component': set(
-        ['adapter',
-         'ComponentLookupError',
+    'twisted.web.client': {'BrowserLikePolicyForHTTPS'},
+    'zope.component': {
+        'adapter',
          'provideAdapter',
          'provideHandler',
-         ]),
-    # XXX cjwatson 2020-04-12: Fixed in zope.interface 5.1.0; remove this
-    # when we upgrade to that version.
-    'zope.interface': set(['invariant']),
+         },
+    # https://github.com/zopefoundation/zope.interface/pull/248
+    'zope.interface.interfaces': {
+        'ComponentLookupError',
+        'Invalid',
+        'ObjectEvent',
+        'Registered',
+        'Unregistered',
+        },
     }
 
 
-unsafe_parts = set(['browser', 'feed', 'xmlrpc', 'widgets'])
+unsafe_parts = {'browser', 'feed', 'xmlrpc', 'widgets'}
 
 dubious = [
     'lp.answers.browser.question',
@@ -304,7 +308,7 @@ def report_naughty_imports():
                 sorted_violations, attrsgetter('name', 'attrname')):
                 print("You should not import %s from %s:" % (attrname, name))
                 import_intos = sorted(
-                    set([error.import_into for error in sequence]))
+                    {error.import_into for error in sequence})
                 for import_into in import_intos:
                     print("   ", import_into)
 

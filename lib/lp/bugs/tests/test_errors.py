@@ -3,7 +3,7 @@
 
 """Tests for bugs errors."""
 
-from six.moves.http_client import EXPECTATION_FAILED
+from http.client import EXPECTATION_FAILED
 
 from lp.bugs.errors import InvalidDuplicateValue
 from lp.testing import TestCase

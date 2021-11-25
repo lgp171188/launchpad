@@ -9,7 +9,6 @@ __all__ = [
 
 from datetime import datetime
 from functools import partial
-import json
 import operator
 import os.path
 
@@ -20,11 +19,6 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import six
 from six.moves.urllib_parse import urlsplit
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Coalesce,
@@ -170,7 +164,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -178,6 +172,11 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    StringCol,
     )
 from lp.services.database.stormexpr import (
     Array,
@@ -207,19 +206,19 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
     """A sequence of ordered revisions in Bazaar."""
     _table = 'Branch'
 
-    branch_type = EnumCol(enum=BranchType, notNull=True)
+    branch_type = DBEnum(enum=BranchType, allow_none=False)
 
     name = StringCol(notNull=False)
     url = StringCol(dbName='url')
     description = StringCol(dbName='summary')
-    branch_format = EnumCol(enum=BranchFormat)
-    repository_format = EnumCol(enum=RepositoryFormat)
+    branch_format = DBEnum(enum=BranchFormat)
+    repository_format = DBEnum(enum=RepositoryFormat)
     # XXX: Aaron Bentley 2008-06-13
     # Rename the metadir_format in the database, see bug 239746
-    control_format = EnumCol(enum=ControlFormat, dbName='metadir_format')
+    control_format = DBEnum(enum=ControlFormat, name='metadir_format')
     whiteboard = StringCol(default=None)
     mirror_status_message = StringCol(default=None)
-    information_type = EnumCol(
+    information_type = DBEnum(
         enum=InformationType, default=InformationType.PUBLIC)
 
     @property
@@ -250,9 +249,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             self.information_type not in PUBLIC_INFORMATION_TYPES):
             aasource = getUtility(IAccessArtifactSource)
             [abstract_artifact] = aasource.ensure([self])
-            wanted_links = set(
+            wanted_links = {
                 (abstract_artifact, policy) for policy in
-                getUtility(IAccessPolicySource).findByTeam([self.owner]))
+                getUtility(IAccessPolicySource).findByTeam([self.owner])}
         else:
             # We haven't yet quite worked out how distribution privacy
             # works, so only work for products for now.
@@ -335,8 +334,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         dbName='sourcepackagename', foreignKey='SourcePackageName',
         default=None)
 
-    lifecycle_status = EnumCol(
-        enum=BranchLifecycleStatus, notNull=True,
+    lifecycle_status = DBEnum(
+        enum=BranchLifecycleStatus, allow_none=False,
         default=BranchLifecycleStatus.DEVELOPMENT)
 
     last_mirrored = UtcDateTimeCol(default=None)
@@ -833,15 +832,12 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             memcache_key = six.ensure_binary(
                 '%s:bzr-file-list:%s:%s:%s' % (
                     instance_name, self.id, revision_id, dirname))
-            cached_file_list = memcache_client.get(memcache_key)
-            if cached_file_list is not None:
-                try:
-                    file_list = json.loads(cached_file_list)
-                except Exception:
-                    logger.exception(
-                        'Cannot load cached file list for %s:%s:%s; deleting' %
-                        (self.unique_name, revision_id, dirname))
-                    memcache_client.delete(memcache_key)
+            description = "file list for %s:%s:%s" % (
+                self.unique_name, revision_id, dirname
+            )
+            file_list = memcache_client.get_json(
+                memcache_key, logger, description, default=unset)
+
         if file_list is unset:
             try:
                 inventory = hosting_client.getInventory(
@@ -854,7 +850,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             if enable_memcache:
                 # Cache the file list in case there's a request for another
                 # file in the same directory.
-                memcache_client.set(memcache_key, json.dumps(file_list))
+                memcache_client.set_json(
+                    memcache_key, file_list, logger=logger)
         file_id = (file_list or {}).get(os.path.basename(filename))
         if file_id is None:
             raise BranchFileNotFound(
@@ -944,9 +941,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         """See `IBranch`."""
         alteration_operations, deletion_operations, = (
             self._deletionRequirements(eager_load=eager_load))
-        result = dict(
-            (operation.affected_object, ('alter', operation.rationale)) for
-            operation in alteration_operations)
+        result = {
+            operation.affected_object: ('alter', operation.rationale) for
+            operation in alteration_operations}
         # Deletion entries should overwrite alteration entries.
         result.update(
             (operation.affected_object, ('delete', operation.rationale)) for

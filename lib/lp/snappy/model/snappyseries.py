@@ -25,7 +25,7 @@ from zope.interface import implementer
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.constants import DEFAULT
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -61,7 +61,7 @@ class SnappySeries(Storm):
 
     display_name = Unicode(name='display_name', allow_none=False)
 
-    status = EnumCol(enum=SeriesStatus, notNull=True)
+    status = DBEnum(enum=SeriesStatus, allow_none=False)
 
     def __init__(self, registrant, name, display_name, status,
                  preferred_distro_series=None, date_created=DEFAULT):

@@ -12,6 +12,8 @@ __all__ = [
     'UnparsableDependencies',
     ]
 
+import http.client
+
 from lazr.enum import (
     EnumeratedType,
     Item,
@@ -27,7 +29,6 @@ from lazr.restful.declarations import (
     operation_returns_entry,
     )
 from lazr.restful.fields import Reference
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -48,7 +49,7 @@ from lp.soyuz.interfaces.publishing import ISourcePackagePublishingHistory
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotBeRescored(Exception):
     """Raised when rescoring a build that cannot be rescored."""
     _message_prefix = "Cannot rescore build"
@@ -412,7 +413,7 @@ class IBinaryPackageBuildSet(ISpecificBuildFarmJobSource):
                            arch_tag=None):
         """Retrieve `IBinaryPackageBuild`s for a given Distribution/DS/DAS.
 
-        Optionally, for a given status and/or pocket, if ommited return all
+        Optionally, for a given status and/or pocket, if omitted return all
         records. If name is passed return only the builds which the
         sourcepackagename matches (SQL LIKE).
         """

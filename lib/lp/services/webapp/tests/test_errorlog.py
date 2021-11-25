@@ -3,6 +3,7 @@
 
 """Tests for error logging & OOPS reporting."""
 
+import http.client
 import sys
 from textwrap import dedent
 import traceback
@@ -13,7 +14,6 @@ from lazr.restful.declarations import error_status
 import oops_amqp
 import pytz
 import six
-from six.moves import http_client
 from talisker.logs import logging_context
 import testtools
 from timeline.timeline import Timeline
@@ -262,7 +262,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
 
         # Exceptions with a error_status in the 500 range result
         # in OOPSes.
-        @error_status(http_client.INTERNAL_SERVER_ERROR)
+        @error_status(http.client.INTERNAL_SERVER_ERROR)
         class InternalServerError(Exception):
             pass
         try:
@@ -273,7 +273,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
 
         # Exceptions with any other error_status do not result
         # in OOPSes.
-        @error_status(http_client.BAD_REQUEST)
+        @error_status(http.client.BAD_REQUEST)
         class BadDataError(Exception):
             pass
         try:
@@ -389,9 +389,9 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         # Exceptions caused by bad URLs that may not be an Lp code issue.
         utility = ErrorReportingUtility()
         utility._oops_config.publisher = None
-        errors = set([
+        errors = {
             GoneError.__name__, InvalidBatchSizeError.__name__,
-            NotFound.__name__])
+            NotFound.__name__}
         self.assertEqual(
             errors, utility._ignored_exceptions_for_offsite_referer)
 

@@ -23,7 +23,6 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from pymacaroons import Macaroon
 import pytz
 import six
-from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
 from storm.store import Store
 from testtools.matchers import (
@@ -57,7 +56,10 @@ from lp.app.enums import (
     )
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.charms.interfaces.charmrecipe import CHARM_RECIPE_ALLOW_CREATE
+from lp.charms.interfaces.charmrecipe import (
+    CHARM_RECIPE_ALLOW_CREATE,
+    CHARM_RECIPE_PRIVATE_FEATURE_FLAG,
+    )
 from lp.code.enums import (
     BranchMergeProposalStatus,
     BranchSubscriptionDiffSize,
@@ -155,6 +157,7 @@ from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.job.interfaces.job import JobStatus
@@ -1313,7 +1316,7 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
         repository = self.factory.makeGitRepository(
             date_created=datetime(2015, 6, 1, tzinfo=pytz.UTC))
         [ref] = self.factory.makeGitRefs(repository=repository)
-        repository.removeRefs(set([ref.path]))
+        repository.removeRefs({ref.path})
         self.assertSqlAttributeEqualsDate(
             repository, "date_last_modified", UTC_NOW)
 
@@ -1808,7 +1811,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 },
             }
         self.assertEqual(expected_upsert, refs_to_upsert)
-        self.assertEqual(set(["refs/heads/bar"]), refs_to_remove)
+        self.assertEqual({"refs/heads/bar"}, refs_to_remove)
 
     def test_planRefChanges_skips_non_commits(self):
         # planRefChanges does not attempt to update refs that point to
@@ -1982,7 +1985,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "type": GitObjectType.COMMIT,
                 },
             }
-        refs_to_remove = set(["refs/heads/bar"])
+        refs_to_remove = {"refs/heads/bar"}
         repository.synchroniseRefs(refs_to_upsert, refs_to_remove)
         expected_sha1s = [
             ("refs/heads/master", "1111111111111111111111111111111111111111"),
@@ -2824,6 +2827,48 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
         self.assertTrue(snap.is_stale)
 
 
+class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def setUp(self):
+        super().setUp()
+        self.useFixture(FeatureFixture({
+            CHARM_RECIPE_ALLOW_CREATE: "on",
+            CHARM_RECIPE_PRIVATE_FEATURE_FLAG: "on",
+            }))
+
+    def test_same_repository(self):
+        # On ref changes, charm recipes using this ref become stale.
+        [ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeCharmRecipe(git_ref=ref)
+        removeSecurityProxy(recipe).is_stale = False
+        ref.repository.createOrUpdateRefs(
+            {ref.path: {"sha1": "0" * 40, "type": GitObjectType.COMMIT}})
+        self.assertTrue(recipe.is_stale)
+
+    def test_same_repository_different_ref(self):
+        # On ref changes, charm recipes using a different ref in the same
+        # repository are left alone.
+        ref1, ref2 = self.factory.makeGitRefs(
+            paths=["refs/heads/a", "refs/heads/b"])
+        recipe = self.factory.makeCharmRecipe(git_ref=ref1)
+        removeSecurityProxy(recipe).is_stale = False
+        ref1.repository.createOrUpdateRefs(
+            {ref2.path: {"sha1": "0" * 40, "type": GitObjectType.COMMIT}})
+        self.assertFalse(recipe.is_stale)
+
+    def test_different_repository(self):
+        # On ref changes, unrelated charm recipes are left alone.
+        [ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeCharmRecipe(
+            git_ref=self.factory.makeGitRefs()[0])
+        removeSecurityProxy(recipe).is_stale = False
+        ref.repository.createOrUpdateRefs(
+            {ref.path: {"sha1": "0" * 40, "type": GitObjectType.COMMIT}})
+        self.assertFalse(recipe.is_stale)
+
+
 class TestGitRepositoryFork(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
@@ -2951,10 +2996,10 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
             "Work in progress => Merged",
             notifications[0].get_payload(decode=True).decode("UTF-8"))
         self.assertEqual(proposal.address, notifications[0]["From"])
-        recipients = set(msg["x-envelope-to"] for msg in notifications)
-        expected = set(
-            [proposal.source_git_repository.registrant.preferredemail.email,
-             proposal.target_git_repository.registrant.preferredemail.email])
+        recipients = {msg["x-envelope-to"] for msg in notifications}
+        expected = {
+            proposal.source_git_repository.registrant.preferredemail.email,
+             proposal.target_git_repository.registrant.preferredemail.email}
         self.assertEqual(expected, recipients)
 
     def test_update_detects_merges(self):
@@ -2992,9 +3037,9 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
             expected_events, True, repository.createOrUpdateRefs, refs_info)
         expected_args = [
             (repository.getInternalPath(), target_1.commit_sha1,
-             set([source_1.commit_sha1, source_2.commit_sha1])),
+             {source_1.commit_sha1, source_2.commit_sha1}),
             (repository.getInternalPath(), target_2.commit_sha1,
-             set([source_1.commit_sha1])),
+             {source_1.commit_sha1}),
             ]
         self.assertContentEqual(
             expected_args, hosting_fixture.detectMerges.extract_args())
@@ -3010,9 +3055,9 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         self.assertContentEqual(
             [(BranchMergeProposalStatus.WORK_IN_PROGRESS,
               BranchMergeProposalStatus.MERGED)],
-            set((event.object_before_modification.queue_status,
+            {(event.object_before_modification.queue_status,
                  event.object.queue_status)
-                for event in events[:2]))
+                for event in events[:2]})
 
 
 class TestGitRepositoryGetBlob(TestCaseWithFactory):

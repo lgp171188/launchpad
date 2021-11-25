@@ -15,6 +15,8 @@ __all__ = [
     'NoOCIAdminForDistribution',
     ]
 
+import http.client
+
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -39,7 +41,6 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -115,7 +116,7 @@ from lp.translations.interfaces.hastranslationimports import (
 from lp.translations.interfaces.translationpolicy import ITranslationPolicy
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NoOCIAdminForDistribution(Exception):
     """There is no OCI Project Admin for this distribution."""
 

@@ -393,10 +393,10 @@ def _get_sources_list_for_dependencies(behaviour, dependencies, logger=None):
                 archive, distro_arch_series, pocket)
             if not has_published_binaries:
                 continue
-            archive_components = set(
+            archive_components = {
                 component.name
                 for component in archive.getComponentsForSeries(
-                    distro_arch_series.distroseries))
+                    distro_arch_series.distroseries)}
             components = [
                 component for component in components
                 if component in archive_components]

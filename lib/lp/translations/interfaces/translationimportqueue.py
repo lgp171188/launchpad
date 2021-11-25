@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from datetime import timedelta
+import http.client
 
 from lazr.enum import (
     DBEnumeratedType,
@@ -25,7 +26,6 @@ from lazr.restful.declarations import (
     )
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -76,7 +76,7 @@ class TranslationImportQueueConflictError(
     conflicts with existing entries."""
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class UserCannotSetTranslationImportStatus(Unauthorized):
     """User not permitted to change status.
 

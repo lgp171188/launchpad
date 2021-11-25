@@ -96,13 +96,13 @@ from testtools.matchers import (
 from testtools.testcase import ExpectedException as TTExpectedException
 import transaction
 from zope.component import (
-    ComponentLookupError,
     getMultiAdapter,
     getSiteManager,
     getUtility,
     )
 import zope.event
 from zope.interface import Interface
+from zope.interface.interfaces import ComponentLookupError
 from zope.interface.verify import verifyObject as zope_verifyObject
 from zope.publisher.interfaces import IEndRequestEvent
 from zope.publisher.interfaces.browser import IBrowserRequest
@@ -268,7 +268,7 @@ class FakeTime:
 
         :param start: The value that will initially be returned by `now()`.
             If None, the current time will be used.
-        :param advance: The value in secounds to advance the clock by by
+        :param advance: The value in seconds to advance the clock by by
             default.
         """
         if start is not None:
@@ -784,9 +784,9 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
             expected, set(used_permissions.values()),
             'Unexpected %s permissions' % type_)
         for permission in expected_permissions:
-            attribute_names = set(
+            attribute_names = {
                 name for name, value in used_permissions.items()
-                if value == permission)
+                if value == permission}
             self.assertEqual(
                 expected_permissions[permission], attribute_names,
                 'Unexpected set of attributes with %s permission %s:\n'

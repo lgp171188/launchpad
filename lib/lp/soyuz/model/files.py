@@ -7,12 +7,12 @@ __all__ = [
     'SourcePackageReleaseFile',
     ]
 
-from sqlobject import ForeignKey
 from zope.interface import implementer
 
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import ForeignKey
 from lp.soyuz.enums import BinaryPackageFileType
 from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
@@ -30,8 +30,7 @@ class BinaryPackageFile(SQLBase):
                                       notNull=True)
     libraryfile = ForeignKey(dbName='libraryfile',
                              foreignKey='LibraryFileAlias', notNull=True)
-    filetype = EnumCol(dbName='filetype',
-                       schema=BinaryPackageFileType)
+    filetype = DBEnum(name='filetype', enum=BinaryPackageFileType)
 
 
 class SourceFileMixin:
@@ -55,4 +54,4 @@ class SourcePackageReleaseFile(SourceFileMixin, SQLBase):
                                       dbName='sourcepackagerelease')
     libraryfile = ForeignKey(foreignKey='LibraryFileAlias',
                              dbName='libraryfile')
-    filetype = EnumCol(schema=SourcePackageFileType)
+    filetype = DBEnum(enum=SourcePackageFileType)

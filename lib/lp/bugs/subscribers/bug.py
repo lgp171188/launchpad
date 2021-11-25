@@ -188,7 +188,7 @@ def add_bug_change_notifications(bug_delta, old_bugtask=None,
 
 def send_bug_details_to_new_bug_subscribers(
     bug, previous_subscribers, current_subscribers, subscribed_by=None,
-    event_creator=None):
+    event_creator=None, modified_bugtask=None):
     """Send an email containing full bug details to new bug subscribers.
 
     This function is designed to handle situations where bugtasks get
@@ -232,7 +232,8 @@ def send_bug_details_to_new_bug_subscribers(
             str(removeSecurityProxy(to_person).preferredemail.email))
         subject, contents = generate_bug_add_email(
             bug, new_recipients=True, subscribed_by=subscribed_by,
-            reason=reason, event_creator=event_creator)
+            reason=reason, event_creator=event_creator,
+            modified_bugtask=modified_bugtask)
         msg = bug_notification_builder.build(
             from_addr, to_person, contents, subject, email_date,
             rationale=rationale, references=references)

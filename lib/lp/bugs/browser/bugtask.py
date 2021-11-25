@@ -53,7 +53,6 @@ from zope import formlib
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,
-    ComponentLookupError,
     getAdapter,
     getMultiAdapter,
     getUtility,
@@ -64,6 +63,7 @@ from zope.interface import (
     implementer,
     providedBy,
     )
+from zope.interface.interfaces import ComponentLookupError
 from zope.schema import Choice
 from zope.schema.vocabulary import (
     getVocabularyRegistry,
@@ -284,7 +284,7 @@ def get_visible_comments(comments, user=None):
     # so that checking owner.is_valid_person, when rendering the link,
     # won't issue a DB query. Note that this should be obsolete now with
     # getMessagesForView improvements.
-    commenters = set(comment.owner for comment in visible_comments)
+    commenters = {comment.owner for comment in visible_comments}
     getUtility(IPersonSet).getValidPersons(commenters)
 
     # If a user is supplied, we can also strip out comments that the user
@@ -602,8 +602,8 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             activity_item for activity_item in activity
             if interesting_match(activity_item.whatchanged) is not None]
         # Pre-load the doers of the activities in one query.
-        person_ids = set(
-            activity_item.personID for activity_item in activity_items)
+        person_ids = {
+            activity_item.personID for activity_item in activity_items}
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
 
@@ -703,10 +703,10 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
                     activities, attrgetter("target"))]
 
         def comment_event_dict(comment):
-            actors = set(activity.person for activity in comment.activity)
+            actors = {activity.person for activity in comment.activity}
             actors.add(comment.owner)
             assert len(actors) == 1, actors
-            dates = set(activity.datechanged for activity in comment.activity)
+            dates = {activity.datechanged for activity in comment.activity}
             dates.add(comment.datecreated)
             comment.activity = group_activities_by_target(comment.activity)
             return {
@@ -716,9 +716,9 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
                 }
 
         def activity_event_dict(activities):
-            actors = set(activity.person for activity in activities)
+            actors = {activity.person for activity in activities}
             assert len(actors) == 1, actors
-            dates = set(activity.datechanged for activity in activities)
+            dates = {activity.datechanged for activity in activities}
             return {
                 "activity": group_activities_by_target(activities),
                 "date": min(dates),
@@ -1173,7 +1173,7 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
                 if 'importance' in editable_field_names:
                     editable_field_names.remove("importance")
         else:
-            editable_field_names = set(('bugwatch', ))
+            editable_field_names = {'bugwatch'}
             if self.context.bugwatch is None:
                 editable_field_names.update(('status', 'assignee'))
                 if ('importance' in self.default_field_names
@@ -1250,8 +1250,8 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
             if self.user is None:
                 status_noshow = set(BugTaskStatus.items)
             else:
-                status_noshow = set((
-                    BugTaskStatus.UNKNOWN, BugTaskStatus.EXPIRED))
+                status_noshow = {
+                    BugTaskStatus.UNKNOWN, BugTaskStatus.EXPIRED}
                 status_noshow.update(
                     status for status in BugTaskStatus.items
                     if not self.context.canTransitionToStatus(

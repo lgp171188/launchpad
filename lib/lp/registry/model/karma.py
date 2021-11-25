@@ -13,13 +13,6 @@ __all__ = [
     'KarmaContextMixin',
     ]
 
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import Desc
 from zope.interface import implementer
 
@@ -44,6 +37,13 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 
 

@@ -795,15 +795,15 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
         another_person_data = (
             another, {access_policies[0]: SharingPermission.ALL}, [])
         expected_data.append(another_person_data)
-        policy_permissions = dict([(
-            policy, SharingPermission.SOME) for policy in access_policies])
+        policy_permissions = {
+            policy: SharingPermission.SOME for policy in access_policies}
         yet_another_person_data = (
             yet_another, policy_permissions,
             [InformationType.PRIVATESECURITY, InformationType.USERDATA])
         expected_data.append(yet_another_person_data)
         if pillar_type == 'product':
-            policy_permissions = dict([(
-                policy, SharingPermission.ALL) for policy in access_policies])
+            policy_permissions = {
+                policy: SharingPermission.ALL for policy in access_policies}
             owner_data = (pillar.owner, policy_permissions, [])
             expected_data.append(owner_data)
         self._assert_grantee_data(

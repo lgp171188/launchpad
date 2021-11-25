@@ -26,14 +26,14 @@ from lp.services.scripts import (
 # The 'read' group does not get given select permission on the following
 # tables. This is to stop the ro user being given access to security
 # sensitive information that interactive sessions don't need.
-SECURE_TABLES = set((
+SECURE_TABLES = {
     'public.oauthnonce',
     'public.oauthnonce_id_seq',
     'public.openidnonce',
     'public.openidnonce_id_seq',
     'public.openidconsumernonce',
     'public.openidconsumernonce_id_seq',
-    ))
+    }
 
 POSTGRES_ACL_MAP = {
     'r': 'SELECT',
@@ -218,9 +218,9 @@ class DbSchema(dict):
         options = (
             'SUPERUSER', 'INHERIT', 'CREATEROLE', 'CREATEDB', 'LOGIN',
             'REPLICATION')
-        self.roles = dict(
-            (r[0], set(opt for (opt, val) in zip(options, r[1:]) if val))
-            for r in cur.fetchall())
+        self.roles = {
+            r[0]: {opt for (opt, val) in zip(options, r[1:]) if val}
+            for r in cur.fetchall()}
 
 
 class CursorWrapper(object):
@@ -326,9 +326,9 @@ class PermissionGatherer:
 
     def countPrincipals(self):
         """Count the number of different principals."""
-        return len(set(sum([
+        return len(set(sum((
             list(principals)
-            for principals in six.itervalues(self.permissions)], [])))
+            for principals in six.itervalues(self.permissions)), [])))
 
     def grant(self, cur):
         """Grant all gathered permissions.
@@ -422,7 +422,7 @@ def reset_permissions(con, config, options):
         type_ = config.get(section_name, 'type')
         assert type_ in ['user', 'group'], 'Unknown type %s' % type_
 
-        desired_opts = set(('INHERIT',))
+        desired_opts = {'INHERIT'}
         if type_ == 'user':
             desired_opts.add('LOGIN')
 
@@ -476,7 +476,7 @@ def reset_permissions(con, config, options):
         else:
             log.debug2("%s not in any roles", user)
 
-    managed_roles = set(['read', 'admin'])
+    managed_roles = {'read', 'admin'}
     for section_name in config.sections():
         managed_roles.add(section_name)
         if section_name != 'public':
@@ -649,10 +649,14 @@ def reset_permissions(con, config, options):
     if options.revoke:
         alter_permissions(cur, required_revokes, revoke=True)
 
-    # Raise an error if we have database objects lying around that have not
+    # Log a warning if we have database objects lying around that have not
     # had permissions assigned.
     forgotten = set()
     for obj in schema.values():
+        if obj.schema == "dbr":
+            # The "dbr" schema is used for metrics in some environments, and
+            # is none of our business.
+            continue
         if obj not in found:
             forgotten.add(obj)
     forgotten = [obj.fullname for obj in forgotten

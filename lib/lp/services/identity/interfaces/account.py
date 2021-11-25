@@ -17,12 +17,13 @@ __all__ = [
     'INACTIVE_ACCOUNT_STATUSES',
     ]
 
+import http.client
+
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
 from lazr.restful.declarations import error_status
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -40,12 +41,12 @@ from lp.app.validators import LaunchpadValidationError
 from lp.services.fields import StrippedTextLine
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class AccountSuspendedError(Exception):
     """The account being accessed has been suspended."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class AccountDeceasedError(Exception):
     """The account being accessed belongs to a deceased user."""
 

@@ -11,6 +11,8 @@ __all__ = [
     'IPocketChroot',
     ]
 
+import http.client
+
 from lazr.restful.declarations import (
     call_with,
     error_status,
@@ -27,7 +29,6 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -53,12 +54,12 @@ from lp.soyuz.enums import DistroArchSeriesFilterSense
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class InvalidChrootUploaded(Exception):
     """Raised when the sha1sum of an uploaded chroot does not match."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class ChrootNotPublic(Exception):
     """Raised when trying to set a chroot from a private livefs build."""
 
@@ -66,7 +67,7 @@ class ChrootNotPublic(Exception):
         super().__init__("Cannot set chroot from a private build.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class FilterSeriesMismatch(Exception):
     """DAS and packageset distroseries do not match when setting a filter."""
 

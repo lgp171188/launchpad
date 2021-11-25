@@ -125,8 +125,8 @@ class FakeKeystone(resource.Resource):
         if "auth" not in credentials:
             request.setResponseCode(http.FORBIDDEN)
             return b""
-        if (("tenantName" not in credentials["auth"] or
-            "passwordCredentials" not in credentials["auth"])):
+        if ("tenantName" not in credentials["auth"] or
+            "passwordCredentials" not in credentials["auth"]):
             request.setResponseCode(http.FORBIDDEN)
             return b""
         tenant_name = credentials["auth"]["tenantName"]
@@ -502,8 +502,8 @@ class FakeSwift(resource.Resource):
         container = self.containers.get(name, None)
 
         # if we operate on a key, pass control
-        if (((request.postpath and request.postpath[0]) or
-             (not request.postpath and request.method == b"GET"))):
+        if ((request.postpath and request.postpath[0]) or
+             (not request.postpath and request.method == b"GET")):
             if container is None:
                 # container does not exist, yet we attempt operation on
                 # an object from that container

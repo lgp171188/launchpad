@@ -19,6 +19,7 @@ __all__ = [
 
 from datetime import datetime
 from functools import partial
+import http.client
 from io import BytesIO
 
 from lazr.restful.interface import copy_field
@@ -26,7 +27,6 @@ from lazr.restful.interfaces import IJSONRequestCache
 from pytz import timezone
 from simplejson import dumps
 import six
-from six.moves import http_client
 from six.moves.urllib.parse import (
     quote,
     urlencode,
@@ -897,7 +897,7 @@ class FileBugAdvancedView(LaunchpadView):
         filebug_url = canonical_url(
             self.context, rootsite='bugs', view_name='+filebug')
         self.request.response.redirect(
-            filebug_url, status=http_client.MOVED_PERMANENTLY)
+            filebug_url, status=http.client.MOVED_PERMANENTLY)
 
 
 class IDistroBugAddForm(IBugAddForm):
@@ -1222,12 +1222,12 @@ class BugTargetBugTagsView(LaunchpadView):
             self.user, 10, official_tags)
 
         return sorted(
-            [dict(
+            (dict(
                 tag=tag,
                 count=count,
                 url=self._getSearchURL(tag),
                 )
-            for (tag, count) in six.iteritems(tags)],
+            for (tag, count) in six.iteritems(tags)),
             key=lambda item: (-item['count'], item['tag']))
 
     @property

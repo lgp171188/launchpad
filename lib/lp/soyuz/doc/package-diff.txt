@@ -386,8 +386,8 @@ for users to view it.
     >>> parsed_url = urlparse(diff.diff_content.http_url)
     >>> netloc, path = parsed_url[1:3]
 
-    >>> from six.moves import http_client
-    >>> con = http_client.HTTPConnection(netloc)
+    >>> import http.client
+    >>> con = http.client.HTTPConnection(netloc)
     >>> con.request("HEAD", path)
     >>> resp = con.getresponse()
 

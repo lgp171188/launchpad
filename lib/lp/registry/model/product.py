@@ -12,6 +12,7 @@ __all__ = [
 
 
 import datetime
+import http.client
 import itertools
 import operator
 
@@ -19,14 +20,6 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.restful.declarations import error_status
 from lazr.restful.utils import safe_hasattr
 import pytz
-from six.moves import http_client
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Coalesce,
@@ -186,11 +179,18 @@ from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormexpr import (
     ArrayAgg,
@@ -258,7 +258,7 @@ def get_license_status(license_approved, project_reviewed, licenses):
         return LicenseStatus.OPEN_SOURCE
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class UnDeactivateable(Exception):
     """Raised when a project is requested to deactivate but can not."""
 
@@ -346,9 +346,9 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     translationgroup = ForeignKey(
         dbName='translationgroup', foreignKey='TranslationGroup',
         notNull=False, default=None)
-    translationpermission = EnumCol(
-        dbName='translationpermission', notNull=True,
-        schema=TranslationPermission, default=TranslationPermission.OPEN)
+    translationpermission = DBEnum(
+        name='translationpermission', allow_none=False,
+        enum=TranslationPermission, default=TranslationPermission.OPEN)
     translation_focus = ForeignKey(
         dbName='translation_focus', foreignKey='ProductSeries',
         notNull=False, default=None)
@@ -363,7 +363,7 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         dbName='official_malone', notNull=True, default=False)
     remote_product = Unicode(
         name='remote_product', allow_none=True, default=None)
-    vcs = EnumCol(enum=VCSType, notNull=False)
+    vcs = DBEnum(enum=VCSType, allow_none=True)
 
     # Cache of AccessPolicy.ids that convey launchpad.LimitedView.
     # Unlike artifacts' cached access_policies, an AccessArtifactGrant
@@ -498,10 +498,9 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
             yield CannotChangeInformationType(
                 'Bug supervisor has inclusive membership.')
 
-    _information_type = EnumCol(
+    _information_type = DBEnum(
         enum=InformationType, default=InformationType.PUBLIC,
-        dbName="information_type",
-        storm_validator=_valid_product_information_type)
+        name="information_type", validator=_valid_product_information_type)
 
     def _get_information_type(self):
         return self._information_type or InformationType.PUBLIC
@@ -554,14 +553,12 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
                         self.official_blueprints, self.official_answers,
                         self.official_codehosting)
 
-    _answers_usage = EnumCol(
-        dbName="answers_usage", notNull=True,
-        schema=ServiceUsage,
-        default=ServiceUsage.UNKNOWN)
-    _blueprints_usage = EnumCol(
-        dbName="blueprints_usage", notNull=True,
-        schema=ServiceUsage,
-        default=ServiceUsage.UNKNOWN)
+    _answers_usage = DBEnum(
+        name="answers_usage", allow_none=False,
+        enum=ServiceUsage, default=ServiceUsage.UNKNOWN)
+    _blueprints_usage = DBEnum(
+        name="blueprints_usage", allow_none=False,
+        enum=ServiceUsage, default=ServiceUsage.UNKNOWN)
 
     def validate_translations_usage(self, attr, value):
         if value == ServiceUsage.LAUNCHPAD and self.private:
@@ -569,11 +566,10 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
                 "Translations are not supported for proprietary products.")
         return value
 
-    translations_usage = EnumCol(
-        dbName="translations_usage", notNull=True,
-        schema=ServiceUsage,
-        default=ServiceUsage.UNKNOWN,
-        storm_validator=validate_translations_usage)
+    translations_usage = DBEnum(
+        name="translations_usage", allow_none=False,
+        enum=ServiceUsage, default=ServiceUsage.UNKNOWN,
+        validator=validate_translations_usage)
 
     @property
     def codehosting_usage(self):
@@ -620,12 +616,12 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     project_reviewed = BoolCol(dbName='reviewed', notNull=True, default=False)
     reviewer_whiteboard = StringCol(notNull=False, default=None)
     private_bugs = False
-    bug_sharing_policy = EnumCol(
-        enum=BugSharingPolicy, notNull=False, default=None)
-    branch_sharing_policy = EnumCol(
-        enum=BranchSharingPolicy, notNull=False, default=None)
-    specification_sharing_policy = EnumCol(
-        enum=SpecificationSharingPolicy, notNull=False,
+    bug_sharing_policy = DBEnum(
+        enum=BugSharingPolicy, allow_none=True, default=None)
+    branch_sharing_policy = DBEnum(
+        enum=BranchSharingPolicy, allow_none=True, default=None)
+    specification_sharing_policy = DBEnum(
+        enum=SpecificationSharingPolicy, allow_none=True,
         default=SpecificationSharingPolicy.PUBLIC)
     autoupdate = BoolCol(dbName='autoupdate', notNull=True, default=False)
     freshmeatproject = None
@@ -740,8 +736,8 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         # information types.
         aps = getUtility(IAccessPolicySource)
         existing_policies = aps.findByPillar([self])
-        existing_types = set([
-            access_policy.type for access_policy in existing_policies])
+        existing_types = {
+            access_policy.type for access_policy in existing_policies}
         # Create the missing policies.
         required_types = set(information_types).difference(
             existing_types).intersection(PRIVATE_INFORMATION_TYPES)
@@ -1236,10 +1232,10 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     @property
     def translatable_packages(self):
         """See `IProduct`."""
-        packages = set(
+        packages = {
             package
             for package in self.sourcepackages
-            if package.has_current_translation_templates)
+            if package.has_current_translation_templates}
 
         # Sort packages by distroseries.name and package.name
         return sorted(packages, key=lambda p: (p.distroseries.name, p.name))
@@ -1249,10 +1245,10 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `IProduct`."""
         if not service_uses_launchpad(self.translations_usage):
             return []
-        translatable_product_series = set(
+        translatable_product_series = {
             product_series
             for product_series in self.series
-            if product_series.has_current_translation_templates)
+            if product_series.has_current_translation_templates}
         return sorted(
             translatable_product_series,
             key=operator.attrgetter('datecreated'))
@@ -1287,9 +1283,9 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     @property
     def obsolete_translatable_series(self):
         """See `IProduct`."""
-        obsolete_product_series = set(
+        obsolete_product_series = {
             product_series for product_series in self.series
-            if product_series.has_obsolete_translation_templates)
+            if product_series.has_obsolete_translation_templates}
         return sorted(obsolete_product_series, key=lambda s: s.datecreated)
 
     @property
@@ -1529,12 +1525,12 @@ def get_precached_products(products, need_licences=False,
     from lp.code.interfaces.gitrepository import IGitRepositorySet
     from lp.registry.model.projectgroup import ProjectGroup
 
-    product_ids = set(obj.id for obj in products)
+    product_ids = {obj.id for obj in products}
     if not product_ids:
         return
-    products_by_id = dict((product.id, product) for product in products)
-    caches = dict((product.id, get_property_cache(product))
-        for product in products)
+    products_by_id = {product.id: product for product in products}
+    caches = {product.id: get_property_cache(product)
+        for product in products}
     for cache in caches.values():
         if not safe_hasattr(cache, 'commercial_subscription'):
             cache.commercial_subscription = None

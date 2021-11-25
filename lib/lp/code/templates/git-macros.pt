@@ -17,7 +17,7 @@
 
   <dl id="clone-url">
     <dt>Get this <tal:kind replace="kind" />:</dt>
-    <dd>
+    <dd class="full-width">
       <tal:anonymous condition="repository/git_https_url">
         <tt class="command">
           git clone
@@ -38,7 +38,7 @@
 
   <div id="merge-instructions" tal:condition="python:kind == 'branch' and view.user">
     <dt>Merge guidelines:</dt>
-    <dd>
+    <dd class="full-width">
       <tt id="remote-add" class="command" tal:content="string:git remote add ${context/repository/owner/name} ${view/git_ssh_url}" />
       <br />
       <tt id="remote-update" class="command" tal:content="string:git remote update ${context/repository/owner/name}" />
@@ -71,7 +71,7 @@
       <tal:can-push tal:condition="view/user_can_push">
         <dl id="push-url">
           <dt>Update this repository:</dt>
-          <dd>
+          <dd class="full-width">
             <tt class="command">
             git push
             <span class="ssh-url" tal:content="view/git_ssh_url" />
@@ -101,7 +101,7 @@
         </tal:team>
         <dl tal:condition="context/namespace/supports_repository_forking" id="push-url">
           <dt>To fork this repository and propose fixes from there, push to this repository:</dt>
-          <dd>
+          <dd class="full-width">
             <tt class="command">
             git push
             <span class="ssh-url" tal:content="view/git_ssh_url_non_owner" />

@@ -16,7 +16,6 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.restfulclient.errors import BadRequest
 from pytz import UTC
 import six
-from sqlobject import SQLObjectNotFound
 from storm.locals import Store
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -83,6 +82,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp import canonical_url
@@ -399,7 +399,7 @@ class TestBranchMergeProposalTransitions(TestCaseWithFactory):
         proposal = self.factory.makeBranchMergeProposal()
         # It is always valid to go to the same state.
         self.assertValidTransitions(
-            set([BranchMergeProposalStatus.REJECTED]),
+            {BranchMergeProposalStatus.REJECTED},
             proposal, BranchMergeProposalStatus.REJECTED,
             proposal.source_branch.owner)
 
@@ -610,7 +610,7 @@ class TestMergeProposalAllComments(TestCase):
         comment3 = self.merge_proposal.createComment(
             self.merge_proposal.registrant, "Subject")
         self.assertEqual(
-            set([comment1, comment2, comment3]),
+            {comment1, comment2, comment3},
             set(self.merge_proposal.all_comments))
 
 
@@ -816,7 +816,7 @@ class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
         target_owner = bmp.merge_target.owner
         recipients = bmp.getNotificationRecipients(
             CodeReviewNotificationLevel.STATUS)
-        subscriber_set = set([source_owner, target_owner])
+        subscriber_set = {source_owner, target_owner}
         self.assertEqual(subscriber_set, set(recipients.keys()))
         source_subscriber = self.factory.makePerson()
         bmp.merge_source.subscribe(
@@ -856,12 +856,12 @@ class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
         # branches with full code review notification level set.
         source_owner = bmp.merge_source.owner
         target_owner = bmp.merge_target.owner
-        self.assertEqual(set([full_subscriber, status_subscriber,
-                              source_owner, target_owner]),
+        self.assertEqual({full_subscriber, status_subscriber,
+                              source_owner, target_owner},
                          set(recipients.keys()))
         recipients = bmp.getNotificationRecipients(
             CodeReviewNotificationLevel.FULL)
-        self.assertEqual(set([full_subscriber, source_owner, target_owner]),
+        self.assertEqual({full_subscriber, source_owner, target_owner},
                          set(recipients.keys()))
 
     def test_getNotificationRecipientsAnyBranch(self):
@@ -873,7 +873,7 @@ class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
         target_owner = bmp.merge_target.owner
         prerequisite_owner = bmp.merge_prerequisite.owner
         self.assertEqual(
-            set([source_owner, target_owner, prerequisite_owner]),
+            {source_owner, target_owner, prerequisite_owner},
             set(recipients.keys()))
         source_subscriber = self.factory.makePerson()
         bmp.merge_source.subscribe(source_subscriber,
@@ -890,9 +890,9 @@ class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
         recipients = bmp.getNotificationRecipients(
             CodeReviewNotificationLevel.FULL)
         self.assertEqual(
-            set([source_subscriber, target_subscriber,
+            {source_subscriber, target_subscriber,
                  prerequisite_subscriber, source_owner, target_owner,
-                 prerequisite_owner]),
+                 prerequisite_owner},
             set(recipients.keys()))
 
     def test_getNotificationRecipientsIncludesReviewers(self):
@@ -906,7 +906,7 @@ class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
         bmp.nominateReviewer(reviewer, registrant=source_owner)
         recipients = bmp.getNotificationRecipients(
             CodeReviewNotificationLevel.STATUS)
-        subscriber_set = set([source_owner, target_owner, reviewer])
+        subscriber_set = {source_owner, target_owner, reviewer}
         self.assertEqual(subscriber_set, set(recipients.keys()))
 
     def test_getNotificationRecipientsIncludesTeamReviewers(self):
@@ -921,7 +921,7 @@ class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
         bmp.nominateReviewer(reviewer, registrant=source_owner)
         recipients = bmp.getNotificationRecipients(
             CodeReviewNotificationLevel.STATUS)
-        subscriber_set = set([source_owner, target_owner, reviewer])
+        subscriber_set = {source_owner, target_owner, reviewer}
         self.assertEqual(subscriber_set, set(recipients.keys()))
 
     def test_getNotificationRecipients_Registrant(self):
@@ -971,7 +971,7 @@ class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
         bmp = self.makeBranchMergeProposal(source=branch)
         recipients = bmp.getNotificationRecipients(
             CodeReviewNotificationLevel.STATUS)
-        headers = set([reason.mail_header for reason in recipients.values()])
+        headers = {reason.mail_header for reason in recipients.values()}
         self.assertFalse("Owner" in headers)
 
     def test_getNotificationRecipients_Owner_not_subscribed(self):
@@ -1325,7 +1325,7 @@ class TestBranchMergeProposalGetterGetProposals(TestCaseWithFactory):
         # Helper method to return tuples of source branch details.
         results = BranchMergeProposalGetter.getProposalsForContext(
             context, status, visible_by_user)
-        return sorted([bmp.source_branch.unique_name for bmp in results])
+        return sorted(bmp.source_branch.unique_name for bmp in results)
 
     def test_getProposalsForParticipant(self):
         # It's possible to get all the merge proposals for a single
@@ -1848,7 +1848,7 @@ class TestBranchMergeProposalNominateReviewer(
         votes = list(merge_proposal.votes)
         self.assertEqual(
             ['general-1', 'general-2'],
-            sorted([review.review_type for review in votes]))
+            sorted(review.review_type for review in votes))
 
     def test_nominate_multiple_with_same_types(self):
         # There can be multiple reviews for a team with the same review_type.
@@ -2111,9 +2111,9 @@ class TestBranchMergeProposalResubmit(TestCaseWithFactory):
             review_type='specious')
         bmp2 = bmp1.resubmit(bmp1.registrant)
         self.assertEqual(
-            set([(bmp1.target_branch.owner, None), (nominee, 'nominee'),
-                 (reviewer, 'specious')]),
-            set((vote.reviewer, vote.review_type) for vote in bmp2.votes))
+            {(bmp1.target_branch.owner, None), (nominee, 'nominee'),
+                 (reviewer, 'specious')},
+            {(vote.reviewer, vote.review_type) for vote in bmp2.votes})
 
     def test_resubmit_no_reviewers(self):
         """Resubmitting a proposal with no reviewers should work."""

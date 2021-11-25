@@ -376,7 +376,7 @@ class RecipeOwnerWidget(SuggestionWidget):
     def _getSuggestions(branch):
         """Suggest the branch owner and current user."""
         logged_in_user = getUtility(ILaunchBag).user
-        return set([branch.owner, logged_in_user])
+        return {branch.owner, logged_in_user}
 
     @staticmethod
     def _valueDisplayname(value):

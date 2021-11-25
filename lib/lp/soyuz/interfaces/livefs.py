@@ -20,6 +20,8 @@ __all__ = [
     'NoSuchLiveFS',
     ]
 
+import http.client
+
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -40,7 +42,6 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
-from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -76,7 +77,7 @@ LIVEFS_FEATURE_FLAG = u"soyuz.livefs.allow_new"
 LIVEFS_WEBHOOKS_FEATURE_FLAG = u"soyuz.livefs.webhooks.enabled"
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class LiveFSBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
@@ -86,7 +87,7 @@ class LiveFSBuildAlreadyPending(Exception):
             "pending.")
 
 
-@error_status(http_client.FORBIDDEN)
+@error_status(http.client.FORBIDDEN)
 class LiveFSBuildArchiveOwnerMismatch(Forbidden):
     """Builds into private archives require that owners match.
 
@@ -105,7 +106,7 @@ class LiveFSBuildArchiveOwnerMismatch(Forbidden):
             "equal.")
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class LiveFSFeatureDisabled(Unauthorized):
     """Only certain users can create new LiveFS-related objects."""
 
@@ -115,7 +116,7 @@ class LiveFSFeatureDisabled(Unauthorized):
             "new live filesystem builds.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class DuplicateLiveFSName(Exception):
     """Raised for live filesystems with duplicate name/owner/distroseries."""
 
@@ -125,7 +126,7 @@ class DuplicateLiveFSName(Exception):
             "and distroseries.")
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class LiveFSNotOwner(Unauthorized):
     """The registrant/requester is not the owner or a member of its team."""
 
@@ -135,7 +136,7 @@ class NoSuchLiveFS(NameLookupFailed):
     _message_prefix = "No such live filesystem with this owner/distroseries"
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotDeleteLiveFS(Exception):
     """This live filesystem cannot be deleted."""
 
@@ -247,7 +248,7 @@ class ILiveFSEditableAttributes(IHasOwner):
     metadata = exported(Dict(
         title=_(
             "A dict of data about the image.  Entries here will be passed to "
-            "the builder slave."),
+            "the builder."),
         key_type=TextLine(), required=True, readonly=False))
 
 

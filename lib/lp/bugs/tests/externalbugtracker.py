@@ -14,10 +14,10 @@ import os
 import random
 import re
 import time
+import xmlrpc.client
 
 import responses
 import six
-from six.moves import xmlrpc_client
 from six.moves.urllib_parse import (
     parse_qs,
     urljoin,
@@ -115,8 +115,8 @@ def print_bugwatches(bug_watches, convert_remote_status=None):
     used to convert the watches' remote statuses to Launchpad
     BugTaskStatuses and these will be output instead.
     """
-    watches = dict((int(bug_watch.remotebug), bug_watch)
-        for bug_watch in bug_watches)
+    watches = {int(bug_watch.remotebug): bug_watch
+        for bug_watch in bug_watches}
 
     for remote_bug_id in sorted(watches.keys()):
         status = watches[remote_bug_id].remotestatus
@@ -542,7 +542,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
 
     @property
     def auth_cookie(self):
-        if len(set(cookie.domain for cookie in self.cookie_jar)) > 1:
+        if len({cookie.domain for cookie in self.cookie_jar}) > 1:
             raise AssertionError(
                 "There should only be cookies for one domain.")
 
@@ -564,7 +564,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
         method on this class with the same name as the XML-RPC method is
         called, with the extracted arguments passed on to it.
         """
-        args, method_name = xmlrpc_client.loads(request)
+        args, method_name = xmlrpc.client.loads(request)
         method_prefix, method_name = method_name.split('.')
 
         assert method_prefix in self.methods, (
@@ -579,7 +579,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
         # cookie, throw a Fault.
         if (method_name in self.auth_required_methods and
             not self.has_valid_auth_cookie):
-            raise xmlrpc_client.Fault(410, 'Login Required')
+            raise xmlrpc.client.Fault(410, 'Login Required')
 
         if self.print_method_calls:
             if len(args) > 0:
@@ -638,7 +638,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
         self._setAuthCookie()
 
         # We always return the same user ID.
-        # This has to be listified because xmlrpc_client tries to expand
+        # This has to be listified because xmlrpc.client tries to expand
         # sequences of length 1.
         return [{'user_id': 42}]
 
@@ -719,9 +719,9 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
 
     def _copy_comment(self, comment, fields_to_return=None):
         # Copy wanted fields.
-        return dict(
-            (key, value) for (key, value) in six.iteritems(comment)
-            if fields_to_return is None or key in fields_to_return)
+        return {
+            key: value for (key, value) in six.iteritems(comment)
+            if fields_to_return is None or key in fields_to_return}
 
     def comments(self, arguments):
         """Return comments for a given set of bugs."""
@@ -762,7 +762,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
 
         # If the bug doesn't exist, raise a fault.
         if int(bug_id) not in self.bugs:
-            raise xmlrpc_client.Fault(101, "Bug #%s does not exist." % bug_id)
+            raise xmlrpc.client.Fault(101, "Bug #%s does not exist." % bug_id)
 
         # If we don't have comments for the bug already, create an empty
         # comment dict.
@@ -790,7 +790,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
 
         self.comment_id_index = comment_id
 
-        # We have to return a list here because xmlrpc_client will try to
+        # We have to return a list here because xmlrpc.client will try to
         # expand sequences of length 1. Trying to do that on a dict will
         # cause it to explode.
         return [{'comment_id': comment_id}]
@@ -810,7 +810,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
         old_launchpad_id = bug['internals'].get('launchpad_id', 0)
         bug['internals']['launchpad_id'] = launchpad_id
 
-        # We need to return a list here because xmlrpc_client will try to
+        # We need to return a list here because xmlrpc.client will try to
         # expand sequences of length 1, which will fail horribly when
         # the sequence is in fact a dict.
         return [{'launchpad_id': old_launchpad_id}]
@@ -908,7 +908,7 @@ class TestBugzillaAPIXMLRPCTransport(TestBugzillaXMLRPCTransport):
 
     def version(self):
         """Return the version of Bugzilla being used."""
-        # This is to work around the old "xmlrpc_client tries to expand
+        # This is to work around the old "xmlrpc.client tries to expand
         # sequences of length 1" problem (see above).
         return [{'version': '3.4.1+'}]
 
@@ -924,7 +924,7 @@ class TestBugzillaAPIXMLRPCTransport(TestBugzillaXMLRPCTransport):
                 self._setAuthCookie()
                 return [{'id': self.users.index(user)}]
             else:
-                raise xmlrpc_client.Fault(
+                raise xmlrpc.client.Fault(
                     300,
                     "The username or password you entered is not valid.")
 
@@ -1043,7 +1043,7 @@ class TestBugzillaAPIXMLRPCTransport(TestBugzillaXMLRPCTransport):
 
         # If the bug doesn't exist, raise a fault.
         if int(bug_id) not in self.bugs:
-            raise xmlrpc_client.Fault(101, "Bug #%s does not exist." % bug_id)
+            raise xmlrpc.client.Fault(101, "Bug #%s does not exist." % bug_id)
 
         # If we don't have comments for the bug already, create an empty
         # comment dict.
@@ -1072,7 +1072,7 @@ class TestBugzillaAPIXMLRPCTransport(TestBugzillaXMLRPCTransport):
 
         self.comment_id_index = comment_id
 
-        # We have to return a list here because xmlrpc_client will try to
+        # We have to return a list here because xmlrpc.client will try to
         # expand sequences of length 1. Trying to do that on a dict will
         # cause it to explode.
         return [{'id': comment_id}]
@@ -1091,7 +1091,7 @@ class TestBugzillaAPIXMLRPCTransport(TestBugzillaXMLRPCTransport):
 
             # If the bug ID doesn't exist, raise a Fault.
             if bug_id not in self.bugs:
-                raise xmlrpc_client.Fault(
+                raise xmlrpc.client.Fault(
                     101, "Bug #%s does not exist." % bug_id)
 
             see_also_list = self.bugs[bug_id].get('see_also', [])
@@ -1122,7 +1122,7 @@ class TestBugzillaAPIXMLRPCTransport(TestBugzillaXMLRPCTransport):
 
                 if ('launchpad' not in url and
                     'show_bug.cgi' not in url):
-                    raise xmlrpc_client.Fault(
+                    raise xmlrpc.client.Fault(
                         112, "Bug URL %s is invalid." % url)
 
                 if changes.get(bug_id) is None:
@@ -1140,7 +1140,7 @@ class TestBugzillaAPIXMLRPCTransport(TestBugzillaXMLRPCTransport):
             # Replace the bug's existing see_also list.
             self.bugs[bug_id]['see_also'] = see_also_list
 
-        # We have to return a list here because xmlrpc_client will try to
+        # We have to return a list here because xmlrpc.client will try to
         # expand sequences of length 1. Trying to do that on a dict will
         # cause it to explode.
         return [{'changes': changes}]
@@ -1267,7 +1267,7 @@ class TestInternalXMLRPCTransport:
         self.quiet = quiet
 
     def request(self, host, handler, request, verbose=None):
-        args, method_name = xmlrpc_client.loads(request)
+        args, method_name = xmlrpc.client.loads(request)
         method = getattr(self, method_name)
         with lp_dbuser():
             return method(*args)
@@ -1327,14 +1327,14 @@ class TestTracXMLRPCTransport(RequestsTransport):
         """
         assert handler.endswith('/xmlrpc'), (
             'The Trac endpoint must end with /xmlrpc')
-        args, method_name = xmlrpc_client.loads(request)
+        args, method_name = xmlrpc.client.loads(request)
         prefix = 'launchpad.'
         assert method_name.startswith(prefix), (
             'All methods should be in the launchpad namespace')
         if (self.auth_cookie is None or
             self.auth_cookie == self.expired_cookie):
             # All the Trac XML-RPC methods need authentication.
-            raise xmlrpc_client.ProtocolError(
+            raise xmlrpc.client.ProtocolError(
                 method_name, errcode=403, errmsg="Forbidden",
                 headers=None)
 
@@ -1389,7 +1389,7 @@ class TestTracXMLRPCTransport(RequestsTransport):
         #     this method. See bugs 203564, 158703 and 158705.
 
         # We sort the list of bugs for the sake of testing.
-        bug_ids = sorted([bug_id for bug_id in self.remote_bugs.keys()])
+        bug_ids = sorted(bug_id for bug_id in self.remote_bugs.keys())
         bugs_to_return = []
         missing_bugs = []
 
@@ -1476,8 +1476,8 @@ class TestTracXMLRPCTransport(RequestsTransport):
 
         # For each of the missing ones, return a dict with a type of
         # 'missing'.
-        comment_ids_to_return = sorted([
-            comment['id'] for comment in comments_to_return])
+        comment_ids_to_return = sorted(
+            comment['id'] for comment in comments_to_return)
         missing_comments = [
             {'id': comment_id, 'type': 'missing'}
             for comment_id in comments
@@ -1522,7 +1522,7 @@ class TestTracXMLRPCTransport(RequestsTransport):
         return 0. Otherwise return the mapped Launchpad bug ID.
         """
         if bugid not in self.remote_bugs:
-            raise xmlrpc_client.Fault(
+            raise xmlrpc.client.Fault(
                 FAULT_TICKET_NOT_FOUND, 'Ticket does not exist')
 
         return [self.utc_time, self.launchpad_bugs.get(bugid, 0)]
@@ -1536,12 +1536,12 @@ class TestTracXMLRPCTransport(RequestsTransport):
         Return the current UTC timestamp.
         """
         if bugid not in self.remote_bugs:
-            raise xmlrpc_client.Fault(
+            raise xmlrpc.client.Fault(
                 FAULT_TICKET_NOT_FOUND, 'Ticket does not exist')
 
         self.launchpad_bugs[bugid] = launchpad_bug
 
-        # Return a list, since xmlrpc_client insists on trying to expand
+        # Return a list, since xmlrpc.client insists on trying to expand
         # results.
         return [self.utc_time]
 
@@ -1698,7 +1698,7 @@ class TestDebBugs(DebBugs):
 def ensure_response_parser_is_expat(transport):
     """Ensure the transport always selects the Expat-based response parser.
 
-    The response parser is chosen by xmlrpc_client at runtime from a number
+    The response parser is chosen by xmlrpc.client at runtime from a number
     of choices, but the main Launchpad production environment selects Expat
     at present.
 
@@ -1707,8 +1707,8 @@ def ensure_response_parser_is_expat(transport):
     response parsers to be chosen.
     """
     def getparser():
-        target = xmlrpc_client.Unmarshaller(
+        target = xmlrpc.client.Unmarshaller(
             use_datetime=transport._use_datetime)
-        parser = xmlrpc_client.ExpatParser(target)
+        parser = xmlrpc.client.ExpatParser(target)
         return parser, target
     transport.getparser = getparser

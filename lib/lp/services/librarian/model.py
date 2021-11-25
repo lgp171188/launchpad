@@ -17,13 +17,6 @@ from lazr.delegates import delegate_to
 import pytz
 import six
 from six.moves.urllib.parse import urlparse
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.locals import (
     Date,
     Desc,
@@ -51,6 +44,13 @@ from lp.services.database.interfaces import IMasterStore
 from lp.services.database.sqlbase import (
     session_store,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLRelatedJoin,
+    StringCol,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.interfaces import (

@@ -234,7 +234,7 @@ class SnapStoreChannelVocabulary(SimpleVocabulary):
             # used by this context.
             context_channels = removeSecurityProxy(context)._store_channels
             if context_channels is not None:
-                known_names = set(channel["name"] for channel in channels)
+                known_names = {channel["name"] for channel in channels}
                 for name in context_channels:
                     if name not in known_names:
                         terms.append(self.createTerm(name, name, name))

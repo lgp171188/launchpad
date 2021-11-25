@@ -46,14 +46,6 @@ from lazr.restful.utils import (
 import pytz
 from requests import PreparedRequest
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.base import Storm
 from storm.expr import (
     Alias,
@@ -92,13 +84,13 @@ from zope.component import (
     adapter,
     getUtility,
     )
-from zope.component.interfaces import ComponentLookupError
 from zope.event import notify
 from zope.interface import (
     alsoProvides,
     classImplements,
     implementer,
     )
+from zope.interface.interfaces import ComponentLookupError
 from zope.lifecycleevent import ObjectCreatedEvent
 from zope.publisher.interfaces import Unauthorized
 from zope.security.checker import (
@@ -257,15 +249,23 @@ from lp.services.database import (
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.database.sqlbase import (
     convert_storm_clause_to_string,
     cursor,
     quote,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
@@ -597,24 +597,24 @@ class Person(
 
     sshkeys = SQLMultipleJoin('SSHKey', joinColumn='person')
 
-    renewal_policy = EnumCol(
+    renewal_policy = DBEnum(
         enum=TeamMembershipRenewalPolicy,
         default=TeamMembershipRenewalPolicy.NONE)
-    membership_policy = EnumCol(
-        dbName='subscriptionpolicy', enum=TeamMembershipPolicy,
+    membership_policy = DBEnum(
+        name='subscriptionpolicy', enum=TeamMembershipPolicy,
         default=TeamMembershipPolicy.RESTRICTED,
-        storm_validator=validate_membership_policy)
+        validator=validate_membership_policy)
     defaultrenewalperiod = IntCol(dbName='defaultrenewalperiod', default=None)
     defaultmembershipperiod = IntCol(
         dbName='defaultmembershipperiod', default=None)
-    mailing_list_auto_subscribe_policy = EnumCol(
+    mailing_list_auto_subscribe_policy = DBEnum(
         enum=MailingListAutoSubscribePolicy,
         default=MailingListAutoSubscribePolicy.ON_REGISTRATION)
 
     merged = ForeignKey(dbName='merged', foreignKey='Person', default=None)
 
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    creation_rationale = EnumCol(enum=PersonCreationRationale, default=None)
+    creation_rationale = DBEnum(enum=PersonCreationRationale, default=None)
     creation_comment = StringCol(default=None)
     registrant = ForeignKey(
         dbName='registrant', foreignKey='Person', default=None,
@@ -626,12 +626,13 @@ class Person(
     _ircnicknames = SQLMultipleJoin('IrcID', joinColumn='person')
     jabberids = SQLMultipleJoin('JabberID', joinColumn='person')
 
-    visibility = EnumCol(
+    visibility = DBEnum(
         enum=PersonVisibility, default=PersonVisibility.PUBLIC,
-        storm_validator=validate_person_visibility)
+        validator=validate_person_visibility)
 
-    personal_standing = EnumCol(
-        enum=PersonalStanding, default=PersonalStanding.UNKNOWN, notNull=True)
+    personal_standing = DBEnum(
+        enum=PersonalStanding, default=PersonalStanding.UNKNOWN,
+        allow_none=False)
 
     personal_standing_reason = StringCol(default=None)
 
@@ -841,10 +842,10 @@ class Person(
         # Defaults for informationalness: we don't have to do anything
         # because the default if nothing is said is ANY.
 
-        roles = set([
+        roles = {
             SpecificationFilter.CREATOR, SpecificationFilter.ASSIGNEE,
             SpecificationFilter.DRAFTER, SpecificationFilter.APPROVER,
-            SpecificationFilter.SUBSCRIBER])
+            SpecificationFilter.SUBSCRIBER}
         # If no roles are given, then we want everything.
         if filter.intersection(roles) == set():
             filter.update(roles)
@@ -2320,7 +2321,7 @@ class Person(
         # These tables will be skipped since they do not risk leaking
         # team membership information.
         # Note all of the table names and columns must be all lowercase.
-        skip = set([
+        skip = {
             ('accessartifactgrant', 'grantee'),
             ('accessartifactgrant', 'grantor'),
             ('accesspolicy', 'person'),
@@ -2380,7 +2381,7 @@ class Person(
             # user already has access to the team.
             ('latestpersonsourcepackagereleasecache', 'creator'),
             ('latestpersonsourcepackagereleasecache', 'maintainer'),
-            ])
+            }
 
         warnings = set()
         ref_query = []
@@ -2754,7 +2755,7 @@ class Person(
             AND date_consumed IS NULL
             """ % sqlvalues(self.id, LoginTokenType.VALIDATEEMAIL,
                             LoginTokenType.VALIDATETEAMEMAIL)
-        return sorted(set(token.email for token in LoginToken.select(query)))
+        return sorted({token.email for token in LoginToken.select(query)})
 
     @property
     def guessedemails(self):
@@ -2765,8 +2766,8 @@ class Person(
     def pending_gpg_keys(self):
         """See `IPerson`."""
         logintokenset = getUtility(ILoginTokenSet)
-        return sorted(set(token.fingerprint for token in
-                      logintokenset.getPendingGPGKeys(requesterid=self.id)))
+        return sorted({token.fingerprint for token in
+                      logintokenset.getPendingGPGKeys(requesterid=self.id)})
 
     @property
     def inactive_gpg_keys(self):
@@ -3332,10 +3333,10 @@ class PersonSet:
             "OpenID identifier must not be empty.")
 
         # Load the EmailAddress, Account and OpenIdIdentifier records
-        # from the master (if they exist). We use the master to avoid
+        # from the primary (if they exist). We use the primary to avoid
         # possible replication lag issues but this might actually be
         # unnecessary.
-        with MasterDatabasePolicy():
+        with PrimaryDatabasePolicy():
             identifier = IStore(OpenIdIdentifier).find(
                 OpenIdIdentifier, identifier=openid_identifier).one()
             email = getUtility(IEmailAddressSet).getByEmail(email_address)
@@ -3848,9 +3849,9 @@ class PersonSet:
         # This has the side effect of sucking in the ValidPersonCache
         # items into the cache, allowing Person.is_valid_person calls to
         # not hit the DB.
-        valid_person_ids = set(
+        valid_person_ids = {
                 person_id.id for person_id in ValidPersonCache.select(
-                    "id IN %s" % sqlvalues(person_ids)))
+                    "id IN %s" % sqlvalues(person_ids))}
         return [
             person for person in persons if person.id in valid_person_ids]
 
@@ -4316,7 +4317,7 @@ class SSHKey(SQLBase):
     _table = 'SSHKey'
 
     person = ForeignKey(foreignKey='Person', dbName='person', notNull=True)
-    keytype = EnumCol(dbName='keytype', notNull=True, enum=SSHKeyType)
+    keytype = DBEnum(name='keytype', allow_none=False, enum=SSHKeyType)
     keytext = StringCol(dbName='keytext', notNull=True)
     comment = StringCol(dbName='comment', notNull=True)
 

@@ -92,7 +92,7 @@ class TranslationLinksAggregator:
 
         A template's language is None, which also counts.
         """
-        return len(set(self._getLanguage(sheet) for sheet in sheets))
+        return len({self._getLanguage(sheet) for sheet in sheets})
 
     def _circumscribe(self, sheets):
         """Find the best common UI link to cover all of `sheets`.
@@ -106,24 +106,24 @@ class TranslationLinksAggregator:
             # Simple case: one sheet.
             return {self._composeLink(first_sheet): sheets}
 
-        templates = set([self._getTemplate(sheet) for sheet in sheets])
+        templates = {self._getTemplate(sheet) for sheet in sheets}
 
-        productseries = set(
+        productseries = {
             template.productseries
             for template in templates
-            if template.productseries)
+            if template.productseries}
 
-        products = set(series.product for series in productseries)
+        products = {series.product for series in productseries}
 
-        sourcepackagenames = set(
+        sourcepackagenames = {
             template.sourcepackagename
             for template in templates
-            if template.sourcepackagename)
+            if template.sourcepackagename}
 
-        distroseries = set(
+        distroseries = {
             template.distroseries
             for template in templates
-            if template.sourcepackagename)
+            if template.sourcepackagename}
 
         assert len(products) <= 1, "Got more than one product."
         assert len(sourcepackagenames) <= 1, "Got more than one package."
@@ -165,8 +165,8 @@ class TranslationLinksAggregator:
         # Different release series of the same product.  Break down into
         # individual sheets.  We could try recursing here to get a better
         # set of aggregated links, but may not be worth the trouble.
-        return dict(
-            (self._composeLink(sheet), [sheet]) for sheet in sheets)
+        return {
+            self._composeLink(sheet): [sheet] for sheet in sheets}
 
     def aggregate(self, sheets):
         """Aggregate `sheets` into a list of translation target descriptions.

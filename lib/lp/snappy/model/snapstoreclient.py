@@ -390,19 +390,13 @@ class SnapStoreClient:
         """See `ISnapStoreClient`."""
         if config.snappy.store_search_url is None:
             return _default_store_channels
-        channels = None
         memcache_client = getUtility(IMemcacheClient)
         search_host = urlsplit(config.snappy.store_search_url).hostname
         memcache_key = ("%s:channels" % search_host).encode("UTF-8")
-        cached_channels = memcache_client.get(memcache_key)
-        if cached_channels is not None:
-            try:
-                channels = json.loads(cached_channels)
-            except ValueError:
-                log.exception(
-                    "Cannot load cached channels for %s; deleting" %
-                    search_host)
-                memcache_client.delete(memcache_key)
+        description = "channels for %s" % search_host
+
+        channels = memcache_client.get_json(memcache_key, log, description)
+
         if (channels is None and
                 not getFeatureFlag(u"snap.disable_channel_search")):
             path = "api/v1/channels"
@@ -420,9 +414,11 @@ class SnapStoreClient:
                     action.finish()
             channels = response.json().get("_embedded", {}).get(
                 "clickindex:channel", [])
-            expire_time = time.time() + 60 * 60 * 24
-            memcache_client.set(
-                memcache_key, json.dumps(channels), expire_time)
+            DAY_IN_SECONDS = 60 * 60 * 24
+            # pymemcache's `expire` expects an int
+            expire_time = int(time.time()) + DAY_IN_SECONDS
+            memcache_client.set_json(
+                memcache_key, channels, expire_time, logger=log)
         if channels is None:
             channels = _default_store_channels
         return channels

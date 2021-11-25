@@ -21,10 +21,8 @@ from fixtures import (
 import six
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.request import urlopen
-from zope.component import (
-    ComponentLookupError,
-    getUtility,
-    )
+from zope.component import getUtility
+from zope.interface.interfaces import ComponentLookupError
 
 from lp.services.config import config
 from lp.services.librarian.client import (
@@ -253,7 +251,6 @@ class BaseTestCase(TestCase):
         # reports memcached did not die.(self):
         client = MemcachedLayer.client or memcache_client_factory()
         key = "BaseTestCase.testMemcachedWorking"
-        client.forget_dead_hosts()
         is_live = client.set(key, "live")
         if self.want_memcached:
             self.assertEqual(

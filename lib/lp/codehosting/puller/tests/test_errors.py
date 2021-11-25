@@ -3,6 +3,7 @@
 
 """Unit tests for the error presentation in worker.py."""
 
+import http.client
 import os
 import socket
 import tempfile
@@ -19,7 +20,6 @@ from breezy.url_policy_open import (
     BranchReferenceForbidden,
     )
 from lazr.uri import InvalidURIError
-from six.moves import http_client
 from six.moves.urllib.error import HTTPError
 
 from lp.code.enums import BranchType
@@ -140,7 +140,7 @@ class TestErrorCatching(TestCase):
         # error message.
         msg = self.getMirrorFailureForException(
             HTTPError(
-                'http://something', http_client.UNAUTHORIZED,
+                'http://something', http.client.UNAUTHORIZED,
                 'Authorization Required', 'some headers',
                 os.fdopen(tempfile.mkstemp()[0])))
         self.assertEqual("Authentication required.", msg)

@@ -9,13 +9,13 @@ __all__ = [
     ]
 
 import operator
+from xmlrpc.client import Fault
 
 from breezy.urlutils import (
     escape,
     unescape,
     )
 import six
-from six.moves.xmlrpc_client import Fault
 from twisted.internet import defer
 from zope.component import (
     adapter,
@@ -565,9 +565,9 @@ class FakeCodehosting:
                 raise UnknownBranchTypeError(
                     'Unknown branch type: %r' % (branch_type_name,))
         branches = sorted(
-            [branch for branch in self._branch_set
+            (branch for branch in self._branch_set
              if branch.next_mirror_time is not None
-             and branch.branch_type in branch_types],
+             and branch.branch_type in branch_types),
             key=operator.attrgetter('next_mirror_time'))
         if branches:
             branch = branches[-1]
@@ -655,8 +655,8 @@ class FakeCodehosting:
         # exceptions.
         if not registrant.inTeam(owner):
             raise faults.PermissionDenied(
-                ('%s cannot create branches owned by %s'
-                 % (registrant.displayname, owner.displayname)))
+                '%s cannot create branches owned by %s'
+                 % (registrant.displayname, owner.displayname))
         product = sourcepackage = None
         if data['product'] == '+junk':
             product = None

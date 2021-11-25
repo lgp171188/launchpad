@@ -11,9 +11,9 @@ import os
 import signal
 import time
 from unittest import mock
+import xmlrpc.client
 
 import six
-from six.moves import xmlrpc_client
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
@@ -308,7 +308,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         builder.failure_count = 0
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
-        with ExpectedException(xmlrpc_client.Fault):
+        with ExpectedException(xmlrpc.client.Fault):
             yield scanner.scan()
 
     @defer.inlineCallbacks
@@ -319,7 +319,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
             @defer.inlineCallbacks
             def status(self):
                 status = yield super(BrokenUTF8Slave, self).status()
-                status["logtail"] = xmlrpc_client.Binary(
+                status["logtail"] = xmlrpc.client.Binary(
                     u"───".encode("UTF-8")[1:])
                 return status
 
@@ -349,7 +349,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
             @defer.inlineCallbacks
             def status(self):
                 status = yield super(NULSlave, self).status()
-                status["logtail"] = xmlrpc_client.Binary(b"foo\0bar\0baz")
+                status["logtail"] = xmlrpc.client.Binary(b"foo\0bar\0baz")
                 return status
 
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
@@ -1196,7 +1196,7 @@ class TestCancellationChecking(TestCaseWithFactory):
         slave = LostBuildingBrokenSlave()
         self.builder.current_build.cancel()
         with ExpectedException(
-                xmlrpc_client.Fault, "<Fault 8002: %r>" % 'Could not abort'):
+                xmlrpc.client.Fault, "<Fault 8002: %r>" % 'Could not abort'):
             yield self._getScanner().checkCancellation(self.vitals, slave)
 
 
@@ -1214,10 +1214,10 @@ class TestBuilddManager(TestCase):
         self._stub_out_scheduleNextScanCycle()
 
         manager = BuilddManager()
-        builder_names = set(
-            builder.name for builder in getUtility(IBuilderSet))
+        builder_names = {
+            builder.name for builder in getUtility(IBuilderSet)}
         scanners = manager.addScanForBuilders(builder_names)
-        scanner_names = set(scanner.builder_name for scanner in scanners)
+        scanner_names = {scanner.builder_name for scanner in scanners}
         self.assertEqual(builder_names, scanner_names)
 
     def test_startService_adds_scanBuilders_loop(self):

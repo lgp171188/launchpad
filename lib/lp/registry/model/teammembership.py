@@ -14,10 +14,6 @@ from datetime import (
     )
 
 import pytz
-from sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
 from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import getUtility
@@ -53,13 +49,17 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
     flush_database_updates,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    StringCol,
     )
 
 
@@ -86,8 +86,8 @@ class TeamMembership(SQLBase):
     reviewed_by = ForeignKey(
         dbName='reviewed_by', foreignKey='Person',
         storm_validator=validate_public_person, default=None)
-    status = EnumCol(
-        dbName='status', notNull=True, enum=TeamMembershipStatus)
+    status = DBEnum(
+        name='status', allow_none=False, enum=TeamMembershipStatus)
     # XXX: salgado, 2008-03-06: Need to rename datejoined and dateexpires to
     # match their db names.
     datejoined = UtcDateTimeCol(dbName='date_joined', default=None)

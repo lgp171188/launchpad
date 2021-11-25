@@ -21,11 +21,6 @@ import sys
 
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Cast,
@@ -55,12 +50,17 @@ from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    StringCol,
+    )
 from lp.services.database.stormexpr import IsDistinctFrom
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import (
@@ -245,7 +245,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     distroseries = ForeignKey(foreignKey='DistroSeries', dbName='distroseries')
     component = ForeignKey(foreignKey='Component', dbName='component')
     section = ForeignKey(foreignKey='Section', dbName='section')
-    status = EnumCol(schema=PackagePublishingStatus)
+    status = DBEnum(enum=PackagePublishingStatus)
     scheduleddeletiondate = UtcDateTimeCol(default=None)
     datepublished = UtcDateTimeCol(default=None)
     datecreated = UtcDateTimeCol(default=UTC_NOW)
@@ -254,9 +254,9 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                               dbName='supersededby', default=None)
     datemadepending = UtcDateTimeCol(default=None)
     dateremoved = UtcDateTimeCol(default=None)
-    pocket = EnumCol(dbName='pocket', schema=PackagePublishingPocket,
-                     default=PackagePublishingPocket.RELEASE,
-                     notNull=True)
+    pocket = DBEnum(name='pocket', enum=PackagePublishingPocket,
+                    default=PackagePublishingPocket.RELEASE,
+                    allow_none=False)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)
@@ -320,8 +320,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 Desc(BinaryPackagePublishingHistory.id)))
 
         # Preload attached BinaryPackageReleases.
-        bpr_ids = set(
-            pub.binarypackagereleaseID for pub in binary_publications)
+        bpr_ids = {
+            pub.binarypackagereleaseID for pub in binary_publications}
         list(Store.of(self).find(
             BinaryPackageRelease, BinaryPackageRelease.id.is_in(bpr_ids)))
 
@@ -337,7 +337,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 get_property_cache(bpr).files = bpfs_by_bpr[bpr]
 
             # Preload LibraryFileAliases.
-            lfa_ids = set(bpf.libraryfileID for bpf in bpfs)
+            lfa_ids = {bpf.libraryfileID for bpf in bpfs}
             list(Store.of(self).find(
                 LibraryFileAlias, LibraryFileAlias.id.is_in(lfa_ids)))
 
@@ -643,8 +643,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         foreignKey='DistroArchSeries', dbName='distroarchseries')
     component = ForeignKey(foreignKey='Component', dbName='component')
     section = ForeignKey(foreignKey='Section', dbName='section')
-    priority = EnumCol(dbName='priority', schema=PackagePublishingPriority)
-    status = EnumCol(dbName='status', schema=PackagePublishingStatus)
+    priority = DBEnum(name='priority', enum=PackagePublishingPriority)
+    status = DBEnum(name='status', enum=PackagePublishingStatus)
     phased_update_percentage = IntCol(
         dbName='phased_update_percentage', notNull=False, default=None)
     scheduleddeletiondate = UtcDateTimeCol(default=None)
@@ -658,7 +658,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         foreignKey='BinaryPackageBuild', dbName='supersededby', default=None)
     datemadepending = UtcDateTimeCol(default=None)
     dateremoved = UtcDateTimeCol(default=None)
-    pocket = EnumCol(dbName='pocket', schema=PackagePublishingPocket)
+    pocket = DBEnum(name='pocket', enum=PackagePublishingPocket)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
     copied_from_archive = ForeignKey(
         dbName="copied_from_archive", foreignKey="Archive", notNull=False)
@@ -1028,7 +1028,7 @@ def expand_binary_requests(distroseries, binaries):
     """
 
     archs = list(distroseries.enabled_architectures)
-    arch_map = dict((arch.architecturetag, arch) for arch in archs)
+    arch_map = {arch.architecturetag: arch for arch in archs}
 
     expanded = []
     for bpr, overrides in six.iteritems(binaries):
@@ -1155,10 +1155,10 @@ class PublishingSet:
                     bpph.distroarchseries.architecturetag)] = bpph
             with_overrides = {}
             overrides = policy.calculateBinaryOverrides(
-                dict(
-                    ((bpn, archtag), BinaryOverride(
-                        source_override=source_override))
-                    for bpn, archtag in bpn_archtag.keys()))
+                {
+                    (bpn, archtag): BinaryOverride(
+                        source_override=source_override)
+                    for bpn, archtag in bpn_archtag.keys()})
             for (bpn, archtag), override in overrides.items():
                 bpph = bpn_archtag[(bpn, archtag)]
                 new_component = override.component or bpph.component
@@ -1183,9 +1183,9 @@ class PublishingSet:
                     ddebs.remove(maybe_ddeb)
                     with_overrides[maybe_ddeb] = calculated
         else:
-            with_overrides = dict(
-                (bpph.binarypackagerelease, (bpph.component, bpph.section,
-                 bpph.priority, None)) for bpph in bpphs)
+            with_overrides = {
+                bpph.binarypackagerelease: (bpph.component, bpph.section,
+                 bpph.priority, None) for bpph in bpphs}
         if not with_overrides:
             return list()
         copied_from_archives = {
@@ -1729,8 +1729,8 @@ class PublishingSet:
             return
         assert len(sources) + len(binaries) == len(pubs)
 
-        locations = set(
-            (pub.archive, pub.distroseries, pub.pocket) for pub in pubs)
+        locations = {
+            (pub.archive, pub.distroseries, pub.pocket) for pub in pubs}
         for archive, distroseries, pocket in locations:
             if not archive.canModifySuite(distroseries, pocket):
                 raise DeletionError(

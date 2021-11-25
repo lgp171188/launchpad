@@ -117,7 +117,7 @@ class WalkerBase_Base(TestCase):
         self.assertEqual(w.path, "/path/to/something/")
 
     def testAddsSlashToPath(self):
-        """WalkerBase adds a trailing slash to path if ommitted."""
+        """WalkerBase adds a trailing slash to path if omitted."""
         w = WalkerBase("ftp://localhost/path/to/something")
         self.assertEqual(w.path, "/path/to/something/")
 

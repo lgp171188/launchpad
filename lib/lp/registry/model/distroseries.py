@@ -20,15 +20,6 @@ from operator import (
 import apt_pkg
 from lazr.delegates import delegate_to
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Column,
@@ -106,11 +97,20 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    SQLRelatedJoin,
+    StringCol,
     )
 from lp.services.database.stormexpr import (
     fti_search,
@@ -234,8 +234,8 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
     title = StringCol(notNull=True)
     description = StringCol(notNull=True)
     version = StringCol(notNull=True)
-    status = EnumCol(
-        dbName='releasestatus', notNull=True, schema=SeriesStatus)
+    status = DBEnum(
+        name='releasestatus', allow_none=False, enum=SeriesStatus)
     date_created = UtcDateTimeCol(notNull=False, default=UTC_NOW)
     datereleased = UtcDateTimeCol(notNull=False, default=None)
     previous_series = ForeignKey(

@@ -1,7 +1,7 @@
 IPublicCodehostingAPI
 =====================
 
-    >>> from six.moves import xmlrpc_client
+    >>> import xmlrpc.client
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
 
 
@@ -17,7 +17,7 @@ Bazaar is strictly unsupported.
 This API is deprecated, and will eventually be replaced with an
 equivalent method in the new Launchpad API infrastructure.
 
-    >>> public_codehosting_api = xmlrpc_client.ServerProxy(
+    >>> public_codehosting_api = xmlrpc.client.ServerProxy(
     ...     'http://xmlrpc.launchpad.test/bazaar/',
     ...     transport=XMLRPCTestTransport())
 

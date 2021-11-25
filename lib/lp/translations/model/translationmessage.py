@@ -12,12 +12,6 @@ __all__ = [
 from datetime import datetime
 
 import pytz
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import And
 from storm.locals import (
     Int,
@@ -42,12 +36,18 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     quote,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.propertycache import (
     cachedproperty,
@@ -281,11 +281,11 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
 
     comment = StringCol(
         dbName='comment', notNull=False, default=None)
-    origin = EnumCol(
-        dbName='origin', notNull=True, schema=RosettaTranslationOrigin)
-    validation_status = EnumCol(
-        dbName='validation_status', notNull=True,
-        schema=TranslationValidationStatus)
+    origin = DBEnum(
+        name='origin', allow_none=False, enum=RosettaTranslationOrigin)
+    validation_status = DBEnum(
+        name='validation_status', allow_none=False,
+        enum=TranslationValidationStatus)
     is_current_ubuntu = BoolCol(
         dbName='is_current_ubuntu', notNull=True, default=False)
     is_current_upstream = BoolCol(
@@ -601,9 +601,9 @@ class TranslationMessageSet:
             POFile.potemplateID == TranslationTemplateItem.potemplateID,
             *pofile_constraints
             ).config(distinct=(TranslationTemplateItem.potmsgsetID,))
-        potmsgset_map = dict(
-            (potmsgset_id, (pofile_id, sequence))
-            for potmsgset_id, pofile_id, sequence in results)
+        potmsgset_map = {
+            potmsgset_id: (pofile_id, sequence)
+            for potmsgset_id, pofile_id, sequence in results}
         load(POFile, (pofile_id for pofile_id, _ in potmsgset_map.values()))
         for message in messages:
             assert message.language == language

@@ -12,6 +12,7 @@ __all__ = [
 
 
 import hashlib
+import http.client
 import select
 import socket
 from socket import (
@@ -23,7 +24,6 @@ import time
 
 from lazr.restful.utils import get_current_browser_request
 import six
-from six.moves import http_client
 from six.moves.urllib.error import (
     HTTPError,
     URLError,
@@ -35,7 +35,6 @@ from six.moves.urllib.parse import (
     urlunparse,
     )
 from six.moves.urllib.request import urlopen
-from sqlobject import SQLObjectNotFound
 from storm.store import Store
 from zope.interface import implementer
 
@@ -45,6 +44,7 @@ from lp.services.config import (
     )
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.postgresql import ConnectionString
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces.client import (
     DownloadFailed,
     ILibrarianClient,
@@ -344,7 +344,7 @@ class _File:
                 # from a non-chunked-transfer-coding resource.  Check this
                 # manually.
                 if not s and chunksize != 0 and self.length:
-                    raise http_client.IncompleteRead(s, expected=self.length)
+                    raise http.client.IncompleteRead(s, expected=self.length)
             return s
         finally:
             action.finish()

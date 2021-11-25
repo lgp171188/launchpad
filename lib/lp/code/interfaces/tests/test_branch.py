@@ -37,8 +37,8 @@ class TestFormatSupport(TestCase):
     def breezy_is_subset(self, breezy_formats, launchpad_enum):
         """Ensure the Breezy format marker list is a subset of Launchpad."""
         breezy_format_strings = set(breezy_formats)
-        launchpad_format_strings = set(
-            six.ensure_binary(format.title) for format in launchpad_enum.items)
+        launchpad_format_strings = {
+            six.ensure_binary(format.title) for format in launchpad_enum.items}
         self.assertEqual(
             set(), breezy_format_strings.difference(launchpad_format_strings))
 

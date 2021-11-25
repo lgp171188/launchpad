@@ -5,7 +5,6 @@
 
 __all__ = [
     'ensure_directory_exists',
-    'find_on_path',
     'get_pid_from_file',
     'kill_by_pidfile',
     'open_for_writing',
@@ -190,20 +189,6 @@ def remove_if_exists(path):
 def write_file(path, content):
     with open_for_writing(path, 'wb') as f:
         f.write(content)
-
-
-def find_on_path(command):
-    """Is 'command' on the executable search path?"""
-    if "PATH" not in os.environ:
-        return False
-    path = os.environ["PATH"]
-    for element in path.split(os.pathsep):
-        if not element:
-            continue
-        filename = os.path.join(element, command)
-        if os.path.isfile(filename) and os.access(filename, os.X_OK):
-            return True
-    return False
 
 
 def process_exists(pid):

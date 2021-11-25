@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import hashlib
+import http.client
 import io
 import os
 import re
@@ -14,7 +15,6 @@ from fixtures import (
     EnvironmentVariable,
     TempDir,
     )
-from six.moves import http_client
 from six.moves.urllib.error import (
     HTTPError,
     URLError,
@@ -26,7 +26,7 @@ import transaction
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
 from lp.services.database.interfaces import ISlaveStore
-from lp.services.database.policy import SlaveDatabasePolicy
+from lp.services.database.policy import StandbyDatabasePolicy
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.librarian import client as client_module
 from lp.services.librarian.client import (
@@ -172,7 +172,7 @@ class LibrarianFileWrapperTestCase(TestCase):
 
     def test_unbounded_read_incorrect_length(self):
         file = self.makeFile(extra_content_length=1)
-        with ExpectedException(http_client.IncompleteRead):
+        with ExpectedException(http.client.IncompleteRead):
             # Python 3 notices the short response on the first read.
             self.assertEqual(b"abcdef", file.read())
             # Python 2 only notices the short response on the next read.
@@ -188,7 +188,7 @@ class LibrarianFileWrapperTestCase(TestCase):
         file = self.makeFile(extra_content_length=1)
         self.assertEqual(b"abcd", file.read(chunksize=4))
         self.assertEqual(b"ef", file.read(chunksize=4))
-        self.assertRaises(http_client.IncompleteRead, file.read, chunksize=4)
+        self.assertRaises(http.client.IncompleteRead, file.read, chunksize=4)
 
 
 class EchoServer(threading.Thread):
@@ -293,14 +293,14 @@ class LibrarianClientTestCase(TestCase):
             client.addFile,
             'sample.txt', 7, io.BytesIO(b'sample'), 'text/plain')
 
-    def test_addFile_uses_master(self):
+    def test_addFile_uses_primary(self):
         # addFile is a write operation, so it should always use the
-        # master store, even if the slave is the default. Close the
-        # slave store and try to add a file, verifying that the master
+        # primary store, even if the standby is the default. Close the
+        # standby store and try to add a file, verifying that the primary
         # is used.
         client = LibrarianClient()
         ISlaveStore(LibraryFileAlias).close()
-        with SlaveDatabasePolicy():
+        with StandbyDatabasePolicy():
             alias_id = client.addFile(
                 'sample.txt', 6, io.BytesIO(b'sample'), 'text/plain')
         transaction.commit()
@@ -521,4 +521,4 @@ class TestWebServiceErrors(unittest.TestCase):
 
     def test_LibrarianServerError_timeout(self):
         error_view = create_webservice_error_view(LibrarianServerError())
-        self.assertEqual(http_client.REQUEST_TIMEOUT, error_view.status)
+        self.assertEqual(http.client.REQUEST_TIMEOUT, error_view.status)

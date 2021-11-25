@@ -16,7 +16,7 @@ from lp.bugs.interfaces.bugtask import (
     BugTaskStatus,
     BugTaskStatusSearch,
     )
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 
 
 class BugTaskFlat(Storm):
@@ -35,7 +35,7 @@ class BugTaskFlat(Storm):
     duplicateof = Reference(duplicateof_id, 'Bug.id')
     bug_owner_id = Int(name='bug_owner')
     bug_owner = Reference(bug_owner_id, 'Person.id')
-    information_type = EnumCol(enum=InformationType)
+    information_type = DBEnum(enum=InformationType)
     heat = Int()
     product_id = Int(name='product')
     product = Reference(product_id, 'Product.id')
@@ -50,8 +50,8 @@ class BugTaskFlat(Storm):
         sourcepackagename_id, 'SourcePackageName.id')
     ociproject_id = Int(name='ociproject')
     ociproject = Reference(ociproject_id, 'OCIProject.id')
-    status = EnumCol(schema=(BugTaskStatus, BugTaskStatusSearch))
-    importance = EnumCol(schema=BugTaskImportance)
+    status = DBEnum(enum=(BugTaskStatus, BugTaskStatusSearch))
+    importance = DBEnum(enum=BugTaskImportance)
     assignee_id = Int(name='assignee')
     assignee = Reference(assignee_id, 'Person.id')
     milestone_id = Int(name='milestone')

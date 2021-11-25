@@ -149,10 +149,10 @@ class BzrSync:
         revisions = Store.of(self.db_branch).find(Revision,
                 BranchRevision.branch_id == self.db_branch.id,
                 Revision.id == BranchRevision.revision_id)
-        parent_map = dict(
-            (six.ensure_binary(r.revision_id),
-             [six.ensure_binary(revid) for revid in r.parent_ids])
-            for r in revisions)
+        parent_map = {
+            six.ensure_binary(r.revision_id):
+             [six.ensure_binary(revid) for revid in r.parent_ids]
+            for r in revisions}
         parents_provider = DictParentsProvider(parent_map)
 
         class PPSource:

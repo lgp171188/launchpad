@@ -18,13 +18,6 @@ import email
 from breezy.revision import NULL_REVISION
 import pytz
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Asc,
@@ -70,6 +63,13 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     quote,
     SQLBase,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    StringCol,
     )
 from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.emailaddress import (
@@ -120,7 +120,7 @@ class Revision(SQLBase):
 
     def getProperties(self):
         """See `IRevision`."""
-        return dict((prop.name, prop.value) for prop in self.properties)
+        return {prop.name: prop.value for prop in self.properties}
 
     def allocateKarma(self, branch):
         """See `IRevision`."""
@@ -347,9 +347,9 @@ class RevisionSet:
                 author = None
             author_names.append(author)
         # Get or make every RevisionAuthor for these revisions.
-        revision_authors = dict(
-            (name, author.id) for name, author in
-            self.acquireRevisionAuthors(author_names).items())
+        revision_authors = {
+            name: author.id for name, author in
+            self.acquireRevisionAuthors(author_names).items()}
 
         # Collect all data for making Revision objects.
         data = []
@@ -367,8 +367,8 @@ class RevisionSet:
             Revision.revision_author_id), data, get_objects=True)
 
         # Map revision_id to Revision database ID.
-        revision_db_id = dict(
-            (rev.revision_id, rev.id) for rev in db_revisions)
+        revision_db_id = {
+            rev.revision_id: rev.id for rev in db_revisions}
 
         # Collect all data for making RevisionParent and RevisionProperty
         # objects.

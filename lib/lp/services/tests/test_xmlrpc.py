@@ -3,7 +3,7 @@
 
 """Test the generic and/or shared xmlrpc code that Launchpad provides."""
 
-from six.moves import http_client
+import http.client
 
 from lp.services.xmlrpc import Transport
 from lp.testing import TestCase
@@ -17,7 +17,7 @@ class TestTransport(TestCase):
 
     def test_default_initialization(self):
         transport = Transport()
-        conn = http_client.HTTPConnection('localhost')
+        conn = http.client.HTTPConnection('localhost')
         self.assertEqual(conn.timeout, transport.timeout)
 
     def test_custom_initialization(self):

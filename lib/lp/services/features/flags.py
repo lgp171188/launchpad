@@ -233,7 +233,7 @@ flag_info = sorted([
     ])
 
 # The set of all flag names that are documented.
-documented_flags = set(info[0] for info in flag_info)
+documented_flags = {info[0] for info in flag_info}
 # The set of all the flags names that have been used during the process
 # lifetime, but were not documented in flag_info.
 undocumented_flags = set()
@@ -386,7 +386,7 @@ class FeatureController():
         or a few flags.
         """
         self._needRules()
-        return dict((f, self.getFlag(f)) for f in self._rules)
+        return {f: self.getFlag(f) for f in self._rules}
 
     def _needRules(self):
         if self._rules is None:

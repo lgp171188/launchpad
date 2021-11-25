@@ -231,7 +231,7 @@ class DistroSeriesView(LaunchpadView, TranslationsMixin):
         distroserieslangs = list(self.context.distroserieslanguages)
 
         # make a set of the existing languages
-        existing_languages = set([drl.language for drl in distroserieslangs])
+        existing_languages = {drl.language for drl in distroserieslangs}
 
         # find all the preferred languages which are not in the set of
         # existing languages, and add a dummydistroserieslanguage for each

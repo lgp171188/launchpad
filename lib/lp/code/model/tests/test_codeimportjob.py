@@ -474,7 +474,7 @@ class NewEvents(object):
 
     def __init__(self):
         event_set = getUtility(ICodeImportEventSet)
-        self.initial = set(event.id for event in event_set.getAll())
+        self.initial = {event.id for event in event_set.getAll()}
 
     def summary(self):
         """Render a summary of the newly created CodeImportEvent objects."""

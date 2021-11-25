@@ -6,12 +6,12 @@
 from datetime import datetime
 import hashlib
 import uuid
+import xmlrpc.client
 
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
 import six
-from six.moves import xmlrpc_client
 from six.moves.urllib.parse import quote
 from storm.store import Store
 from testtools.matchers import (
@@ -157,7 +157,7 @@ class TestGitAPIMixin:
 
     def setUp(self):
         super(TestGitAPIMixin, self).setUp()
-        self.git_api = xmlrpc_client.ServerProxy(
+        self.git_api = xmlrpc.client.ServerProxy(
             "http://xmlrpc-private.launchpad.test:8087/git",
             transport=XMLRPCTestTransport())
         self.hosting_fixture = self.useFixture(GitHostingFixture())
@@ -169,7 +169,7 @@ class TestGitAPIMixin:
         """Assert that a call raises the expected fault."""
         with FakeLogger() as logger:
             fault = self.assertRaises(
-                xmlrpc_client.Fault, getattr(self.git_api, func_name),
+                xmlrpc.client.Fault, getattr(self.git_api, func_name),
                 *args, **kwargs)
             self.assertThat(fault, MatchesFault(expected_fault))
             self.assertThat(logger.output, MatchesRegex(
@@ -468,14 +468,14 @@ class TestGitAPIMixin:
         request_id = auth_params["request-id"]
         translated_path = removeSecurityProxy(repository).getInternalPath()
         ref_paths = [
-            xmlrpc_client.Binary(ref_path) for ref_path in ref_paths]
+            xmlrpc.client.Binary(ref_path) for ref_path in ref_paths]
         results = self.assertDoesNotFault(
             request_id, "checkRefPermissions",
             translated_path, ref_paths, auth_params)
         self.assertThat(results, MatchesSetwise(*(
             MatchesListwise([
                 MatchesAll(
-                    IsInstance(xmlrpc_client.Binary),
+                    IsInstance(xmlrpc.client.Binary),
                     MatchesStructure.byEquality(data=ref_path)),
                 Equals(ref_permissions),
                 ])

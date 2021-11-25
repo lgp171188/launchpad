@@ -388,12 +388,12 @@ class TestDistroSeriesDifferenceJobSource(TestCaseWithFactory):
                 sourcepackagerelease=self.factory.makeSourcePackageRelease(
                     sourcepackagename=spn))
 
-        job_counts = dict(
-            (dsp.derived_series, len(find_waiting_jobs(
-                dsp.derived_series, spn, dsp.parent_series)))
-            for dsp in dsps)
+        job_counts = {
+            dsp.derived_series: len(find_waiting_jobs(
+                dsp.derived_series, spn, dsp.parent_series))
+            for dsp in dsps}
         self.assertEqual(
-            dict((distroseries, 1) for distroseries in series),
+            {distroseries: 1 for distroseries in series},
             job_counts)
 
     def test_createForSPPHs_behaves_sensibly_if_job_already_exists(self):
@@ -900,9 +900,9 @@ class TestDistroSeriesDifferenceJobPermissions(TestCaseWithFactory):
         dsp = self.factory.makeDistroSeriesParent()
         parent = dsp.parent_series
         derived = dsp.derived_series
-        packages = dict(
-            (user, self.factory.makeSourcePackageName())
-            for user in script_users)
+        packages = {
+            user: self.factory.makeSourcePackageName()
+            for user in script_users}
         for user in script_users:
             switch_dbuser(user)
             try:

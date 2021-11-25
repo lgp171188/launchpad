@@ -7,14 +7,8 @@ Use this for things that six doesn't provide.
 """
 
 __all__ = [
-    'escape',
     'message_as_bytes',
     ]
-
-try:
-    from html import escape
-except ImportError:
-    from cgi import escape
 
 import io
 

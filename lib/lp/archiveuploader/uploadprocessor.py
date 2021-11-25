@@ -49,7 +49,6 @@ import os
 import shutil
 import sys
 
-from sqlobject import SQLObjectNotFound
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -75,6 +74,7 @@ from lp.code.interfaces.sourcepackagerecipebuild import (
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.log.logger import BufferLogger
 from lp.services.webapp.errorlog import (
     ErrorReportingUtility,
@@ -299,7 +299,7 @@ class UploadHandler:
              archive) = parse_upload_path(relative_path)
         except UploadPathError as e:
             # pick some defaults to create the NascentUpload() object.
-            # We will be rejecting the upload so it doesn matter much.
+            # We will be rejecting the upload so it doesn't matter much.
             distribution = getUtility(IDistributionSet)['ubuntu']
             suite_name = None
             archive = distribution.main_archive
@@ -436,7 +436,7 @@ class UploadHandler:
         return result
 
     def removeUpload(self, logger):
-        """Remove an upload that has succesfully been processed.
+        """Remove an upload that has successfully been processed.
 
         :param logger: The logger to use for logging results.
         """

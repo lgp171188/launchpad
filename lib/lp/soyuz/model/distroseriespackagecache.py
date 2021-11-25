@@ -8,10 +8,6 @@ __all__ = [
 from collections import defaultdict
 from operator import attrgetter
 
-from sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
 from storm.expr import (
     Desc,
     Max,
@@ -22,6 +18,10 @@ from zope.interface import implementer
 from lp.services.database import bulk
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    StringCol,
+    )
 from lp.soyuz.interfaces.distroseriespackagecache import (
     IDistroSeriesPackageCache,
     )

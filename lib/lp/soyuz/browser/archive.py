@@ -34,7 +34,6 @@ from operator import attrgetter
 
 from lazr.restful.utils import smartquote
 import pytz
-from sqlobject import SQLObjectNotFound
 from storm.expr import Desc
 from zope.component import getUtility
 from zope.formlib import form
@@ -94,6 +93,7 @@ from lp.services.browser_helpers import (
     get_user_agent_distroseries,
     )
 from lp.services.database.bulk import load_related
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.helpers import english_list
 from lp.services.job.model.job import Job
 from lp.services.librarian.browser import (

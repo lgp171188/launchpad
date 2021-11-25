@@ -192,9 +192,9 @@ class FakeBugNotificationSetUtility:
 
     def getRecipientFilterData(self, bug, recipient_to_sources,
                                notifications):
-        return dict(
-            (recipient, {'sources': sources, 'filter descriptions': []})
-            for recipient, sources in recipient_to_sources.items())
+        return {
+            recipient: {'sources': sources, 'filter descriptions': []}
+            for recipient, sources in recipient_to_sources.items()}
 
 
 class MockBugActivity:

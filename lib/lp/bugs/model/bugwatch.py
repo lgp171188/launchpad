@@ -20,11 +20,6 @@ from six.moves.urllib.parse import (
     splitvalue,
     urlunsplit,
     )
-from sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     Desc,
     Not,
@@ -65,9 +60,14 @@ from lp.registry.interfaces.person import validate_public_person
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
+    )
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.messages.model.message import Message
@@ -130,7 +130,7 @@ class BugWatch(SQLBase):
     remote_importance = StringCol(notNull=False, default=None)
     lastchanged = UtcDateTimeCol(notNull=False, default=None)
     lastchecked = UtcDateTimeCol(notNull=False, default=None)
-    last_error_type = EnumCol(schema=BugWatchActivityStatus, default=None)
+    last_error_type = DBEnum(enum=BugWatchActivityStatus, default=None)
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     owner = ForeignKey(
         dbName='owner', foreignKey='Person',
@@ -781,6 +781,6 @@ class BugWatchActivity(StormBase):
     bug_watch_id = Int(name='bug_watch')
     bug_watch = Reference(bug_watch_id, BugWatch.id)
     activity_date = UtcDateTimeCol(notNull=True)
-    result = EnumCol(enum=BugWatchActivityStatus, notNull=False)
+    result = DBEnum(enum=BugWatchActivityStatus, allow_none=True)
     message = Unicode()
     oops_id = Unicode()

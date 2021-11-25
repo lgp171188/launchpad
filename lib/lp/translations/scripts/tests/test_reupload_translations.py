@@ -80,7 +80,7 @@ def upload_tarball(translation_files):
 def summarize_translations_queue(sourcepackage):
     """Describe queue entries for `sourcepackage` as a name/contents dict."""
     entries = TranslationImportQueue().getAllEntries(sourcepackage)
-    return dict((entry.path, entry.content.read()) for entry in entries)
+    return {entry.path: entry.content.read() for entry in entries}
 
 
 def filter_paths(files_dict):

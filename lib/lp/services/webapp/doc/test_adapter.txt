@@ -12,7 +12,7 @@ Imports and test setup:
     >>> from lazr.restful.utils import get_current_browser_request
     >>> from storm.zope.interfaces import IZStorm
     >>> from lp.services.database.interfaces import (
-    ...     IStoreSelector, MAIN_STORE, MASTER_FLAVOR)
+    ...     IStoreSelector, MAIN_STORE, PRIMARY_FLAVOR)
     >>> from lp.services.config import config
     >>> import lp.services.webapp.adapter
     >>> from lp.services.webapp.adapter import (
@@ -24,7 +24,7 @@ Imports and test setup:
 There are several possible database connections available via the
 IStoreSelector utility.
 
-    >>> store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+    >>> store = getUtility(IStoreSelector).get(MAIN_STORE, PRIMARY_FLAVOR)
     >>> dbname = DatabaseLayer._db_fixture.dbname
     >>> active_name = store.execute("SELECT current_database()").get_one()[0]
     >>> if active_name != dbname: print('%s != %s' % (active_name, dbname))
@@ -190,7 +190,7 @@ the Postgres statement timeout (a value of zero means no timeout):
     ...     zstorm.remove(store)
     ...     transaction.abort()
     ...     store.close()
-    ...     store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+    ...     store = getUtility(IStoreSelector).get(MAIN_STORE, PRIMARY_FLAVOR)
 
     >>> set_request_started()
     >>> print(current_statement_timeout(store))
@@ -357,7 +357,7 @@ The request time limit was exceeded before the statement was issued to
 the database.
 
     >>> print(pretty(get_request_statements()))
-    [(0, ..., 'SQL-main-master', 'SELECT 2', ...)]
+    [(0, ..., 'SQL-main-primary', 'SELECT 2', ...)]
 
 
 When a RequestExpired exception is raised, the current

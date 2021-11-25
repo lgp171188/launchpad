@@ -14,11 +14,6 @@ from io import (
     )
 import os
 
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -45,11 +40,16 @@ from lp.registry.interfaces.productrelease import (
     )
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLMultipleJoin,
+    StringCol,
     )
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.propertycache import cachedproperty
@@ -227,8 +227,8 @@ class ProductReleaseFile(SQLBase):
     signature = ForeignKey(dbName='signature',
                            foreignKey='LibraryFileAlias')
 
-    filetype = EnumCol(dbName='filetype', enum=UpstreamFileType,
-                       notNull=True, default=UpstreamFileType.CODETARBALL)
+    filetype = DBEnum(name='filetype', enum=UpstreamFileType,
+                      allow_none=False, default=UpstreamFileType.CODETARBALL)
 
     description = StringCol(notNull=False, default=None)
 

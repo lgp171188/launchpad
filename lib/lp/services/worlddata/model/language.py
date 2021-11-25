@@ -8,13 +8,6 @@ __all__ = [
     ]
 
 import six
-from sqlobject import (
-    BoolCol,
-    IntCol,
-    SQLObjectNotFound,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Count,
@@ -31,12 +24,19 @@ from lp.registry.model.karma import (
     KarmaCategory,
     )
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     ISlaveStore,
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    BoolCol,
+    IntCol,
+    SQLObjectNotFound,
+    SQLRelatedJoin,
+    StringCol,
+    )
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
@@ -60,8 +60,8 @@ class Language(SQLBase):
     pluralforms = IntCol(dbName='pluralforms')
     pluralexpression = StringCol(dbName='pluralexpression')
     visible = BoolCol(dbName='visible', notNull=True)
-    direction = EnumCol(
-        dbName='direction', notNull=True, schema=TextDirection,
+    direction = DBEnum(
+        name='direction', allow_none=False, enum=TextDirection,
         default=TextDirection.LTR)
 
     translation_teams = SQLRelatedJoin(
@@ -222,8 +222,8 @@ class LanguageSet:
         if want_translators_count:
             def preload_translators_count(languages):
                 from lp.registry.model.person import PersonLanguage
-                ids = set(language.id for language in languages).difference(
-                    set([None]))
+                ids = {language.id for language in languages}.difference(
+                    {None})
                 counts = IStore(Language).using(
                     LeftJoin(
                         Language,

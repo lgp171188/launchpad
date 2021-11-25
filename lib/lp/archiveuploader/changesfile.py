@@ -58,13 +58,13 @@ class CannotDetermineFileTypeError(Exception):
 class ChangesFile(SignableTagFile):
     """Changesfile model."""
 
-    mandatory_fields = set([
+    mandatory_fields = {
         "Source", "Architecture", "Version", "Distribution",
         "Maintainer", "Files", "Changes", "Date",
         # Changed-By is not technically mandatory according to
         # Debian policy but Soyuz relies on it being set in
         # various places.
-        "Changed-By"])
+        "Changed-By"}
 
     # Map urgencies to their dbschema values.
     # Debian policy only permits low, medium, high, emergency.

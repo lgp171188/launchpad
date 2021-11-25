@@ -13,7 +13,7 @@
     <adapter
         for="zope.publisher.interfaces.xmlrpc.IXMLRPCRequest"
         provides="lp.services.database.interfaces.IDatabasePolicy"
-        factory="lp.services.database.policy.MasterDatabasePolicy"
+        factory="lp.services.database.policy.PrimaryDatabasePolicy"
         />
     <adapter
         for="lp.layers.WebServiceLayer"
@@ -23,7 +23,7 @@
     <adapter
         for="lp.layers.FeedsLayer"
         provides="lp.services.database.interfaces.IDatabasePolicy"
-        factory="lp.services.database.policy.SlaveOnlyDatabasePolicy"
+        factory="lp.services.database.policy.StandbyOnlyDatabasePolicy"
         />
 
     <!-- Storm Store selector. -->

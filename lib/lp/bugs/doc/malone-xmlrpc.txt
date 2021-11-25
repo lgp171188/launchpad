@@ -3,9 +3,9 @@ XML-RPC Integration with Malone
 
 Malone provides an XML-RPC interface for filing bugs.
 
-    >>> from six.moves import xmlrpc_client
+    >>> import xmlrpc.client
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
-    >>> filebug_api = xmlrpc_client.ServerProxy(
+    >>> filebug_api = xmlrpc.client.ServerProxy(
     ...     'http://test@canonical.com:test@xmlrpc.launchpad.test/bugs/',
     ...     transport=XMLRPCTestTransport())
 
@@ -278,7 +278,7 @@ The LoginToken generated will be of the LoginTokenType BUGTRACKER.
 
 These requests are all handled by the private xml-rpc server.
 
-    >>> bugtracker_api = xmlrpc_client.ServerProxy(
+    >>> bugtracker_api = xmlrpc.client.ServerProxy(
     ...     'http://xmlrpc-private.launchpad.test:8087/bugs',
     ...     transport=XMLRPCTestTransport())
 

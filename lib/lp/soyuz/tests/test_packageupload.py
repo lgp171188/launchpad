@@ -666,6 +666,13 @@ class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
         pu, pcj = self.makeUploadWithPackageCopyJob()
         self.assertIs(None, pu.sourcepackagerelease)
 
+    def test_upload_contains_build_works_with_copy_jobs(self):
+        pu = self.factory.makeCopyJobPackageUpload()
+        self.assertFalse(pu.contains_build)
+
+        pu = self.factory.makeCopyJobPackageUpload(include_binaries=True)
+        self.assertTrue(pu.contains_build)
+
 
 class TestPackageUploadCustom(TestCase):
     """Unit tests for `PackageUploadCustom`."""
@@ -1285,9 +1292,9 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
 
         self.assertEqual("New", ws_upload.status)
         self.assertEqual(
-            set(["universe"]),
-            set(binary["component"]
-                for binary in ws_upload.getBinaryProperties()))
+            {"universe"},
+            {binary["component"]
+                for binary in ws_upload.getBinaryProperties()})
         self.assertRaises(
             Unauthorized, ws_upload.overrideBinaries,
             changes=[{"component": "main"}])
@@ -1299,9 +1306,9 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         transaction.commit()
 
         self.assertEqual(
-            set(["main"]),
-            set(binary["component"]
-                for binary in ws_upload.getBinaryProperties()))
+            {"main"},
+            {binary["component"]
+                for binary in ws_upload.getBinaryProperties()})
         self.assertRaises(
             Unauthorized, ws_upload.overrideBinaries,
             changes=[{"component": "universe"}])
@@ -1474,13 +1481,18 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         self.assertEndsWith(ws_upload.copy_source_archive_link, archive_url)
 
     def test_getPackageUploads_query_count(self):
+        self.pushConfig("launchpad", default_batch_size=20)
         person = self.makeQueueAdmin([self.universe])
         ws_distroseries = self.load(self.distroseries, person)
+
+        def make_uploads():
+            self.makeBinaryPackageUpload(person, component=self.universe)
+            self.makeCopyJobPackageUpload(person)
+
         recorder1, recorder2 = record_two_runs(
-            ws_distroseries.getPackageUploads,
-            lambda: self.makeBinaryPackageUpload(
-                person, component=self.universe),
-            5)
+            ws_distroseries.getPackageUploads, make_uploads, 5
+        )
+
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_api_package_upload_log(self):

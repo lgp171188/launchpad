@@ -168,7 +168,7 @@ def run_test_process():
     # This keeps us from blocking when reading from a hung testrunner, allows
     # us to time out if the child process hangs, and avoids issues when using
     # Popen.communicate() with large data sets.
-    open_readers = set([xvfb_proc.stdout])
+    open_readers = {xvfb_proc.stdout}
     while open_readers:
         # select() blocks for a long time and can easily fail with EINTR
         # <https://bugs.launchpad.net/launchpad/+bug/615740>.  Really we

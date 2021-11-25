@@ -1381,7 +1381,7 @@ class TestGetActiveArchSpecificPublications(TestCaseWithFactory):
         bpphs = self.makeBPPHs(spr, len(PackagePublishingStatus.items))
         for bpph, status in zip(bpphs, PackagePublishingStatus.items):
             bpph.status = status
-        by_status = dict((bpph.status, bpph) for bpph in bpphs)
+        by_status = {bpph.status: bpph for bpph in bpphs}
         self.assertContentEqual(
             [by_status[status] for status in active_publishing_status],
             getUtility(IPublishingSet).getActiveArchSpecificPublications(
@@ -1402,10 +1402,10 @@ class TestPublishBinaries(TestCaseWithFactory):
             'archive': archive,
             'distroseries': distroseries,
             'pocket': PackagePublishingPocket.BACKPORTS,
-            'binaries': dict(
-                (bpr, (self.factory.makeComponent(),
+            'binaries': {
+                bpr: (self.factory.makeComponent(),
                  self.factory.makeSection(),
-                 PackagePublishingPriority.REQUIRED, 50)) for bpr in bprs),
+                 PackagePublishingPriority.REQUIRED, 50) for bpr in bprs},
             }
 
     def test_architecture_dependent(self):

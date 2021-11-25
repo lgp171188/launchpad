@@ -231,10 +231,10 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
                 # they give a desktop type (eg. "Ubuntu") and a
                 # user-recognizable desktop name (eg. the hostname).
                 raise Unauthorized(
-                    ('Consumer "%s" asked for desktop integration, '
+                    'Consumer "%s" asked for desktop integration, '
                      "but didn't say what kind of desktop it is, or name "
                      "the computer being integrated."
-                     % self.token.consumer.key))
+                     % self.token.consumer.key)
 
             # We're going for desktop integration. There are four
             # possibilities: "allow permanently", "allow for one

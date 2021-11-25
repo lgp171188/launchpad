@@ -19,11 +19,6 @@ from datetime import (
     )
 
 import pytz
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -67,11 +62,16 @@ from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    StringCol,
     )
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import (
@@ -136,16 +136,17 @@ class DistributionMirror(SQLBase):
         notNull=False, default=None, unique=True)
     enabled = BoolCol(
         notNull=True, default=False)
-    speed = EnumCol(
-        notNull=True, enum=MirrorSpeed)
+    speed = DBEnum(
+        allow_none=False, enum=MirrorSpeed)
     country = ForeignKey(
         dbName='country', foreignKey='Country', notNull=True)
-    content = EnumCol(
-        notNull=True, enum=MirrorContent)
+    content = DBEnum(
+        allow_none=False, enum=MirrorContent)
     official_candidate = BoolCol(
         notNull=True, default=False)
-    status = EnumCol(
-        notNull=True, default=MirrorStatus.PENDING_REVIEW, enum=MirrorStatus)
+    status = DBEnum(
+        allow_none=False, default=MirrorStatus.PENDING_REVIEW,
+        enum=MirrorStatus)
     date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     date_reviewed = UtcDateTimeCol(default=None)
     whiteboard = StringCol(
@@ -821,10 +822,11 @@ class MirrorDistroArchSeries(SQLBase, _MirrorSeriesMixIn):
         notNull=True)
     component = ForeignKey(
         dbName='component', foreignKey='Component', notNull=True)
-    freshness = EnumCol(
-        notNull=True, default=MirrorFreshness.UNKNOWN, enum=MirrorFreshness)
-    pocket = EnumCol(
-        notNull=True, schema=PackagePublishingPocket)
+    freshness = DBEnum(
+        allow_none=False, default=MirrorFreshness.UNKNOWN,
+        enum=MirrorFreshness)
+    pocket = DBEnum(
+        allow_none=False, enum=PackagePublishingPocket)
 
     def getLatestPublishingEntry(self, time_interval, deb_only=True):
         """Return the BinaryPackagePublishingHistory record with the
@@ -894,10 +896,11 @@ class MirrorDistroSeriesSource(SQLBase, _MirrorSeriesMixIn):
         notNull=True)
     component = ForeignKey(
         dbName='component', foreignKey='Component', notNull=True)
-    freshness = EnumCol(
-        notNull=True, default=MirrorFreshness.UNKNOWN, enum=MirrorFreshness)
-    pocket = EnumCol(
-        notNull=True, schema=PackagePublishingPocket)
+    freshness = DBEnum(
+        allow_none=False, default=MirrorFreshness.UNKNOWN,
+        enum=MirrorFreshness)
+    pocket = DBEnum(
+        allow_none=False, enum=PackagePublishingPocket)
 
     def getLatestPublishingEntry(self, time_interval):
         clauses = [

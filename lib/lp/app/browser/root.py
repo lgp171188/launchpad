@@ -187,7 +187,7 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
                 'date': time.strftime('%d %b %Y', entry.published_parsed),
                 })
         # The cache of posts expires after an hour.
-        getUtility(IMemcacheClient).set(key, posts, time=3600)
+        getUtility(IMemcacheClient).set(key, posts, expire=3600)
         return posts
 
 
@@ -262,13 +262,13 @@ class LaunchpadSearchView(LaunchpadFormView):
     schema = ILaunchpadSearch
     field_names = ['text']
 
-    shipit_keywords = set([
+    shipit_keywords = {
         'ubuntu', 'kubuntu', 'edubuntu',
         'ship', 'shipit', 'send', 'get', 'mail', 'free',
-        'cd', 'cds', 'dvd', 'dvds', 'disc'])
-    shipit_anti_keywords = set([
+        'cd', 'cds', 'dvd', 'dvds', 'disc'}
+    shipit_anti_keywords = {
         'burn', 'burning', 'enable', 'error', 'errors', 'image', 'iso',
-        'read', 'rip', 'write'])
+        'read', 'rip', 'write'}
 
     def __init__(self, context, request):
         """Initialize the view.

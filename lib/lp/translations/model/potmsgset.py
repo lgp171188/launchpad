@@ -14,7 +14,6 @@ import logging
 import re
 
 import six
-from sqlobject import StringCol
 from storm.expr import (
     And,
     Coalesce,
@@ -49,6 +48,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.sqlobject import StringCol
 from lp.services.database.stormexpr import (
     IsTrue,
     NullsFirst,
@@ -129,10 +129,10 @@ def dictify_translations(translations):
         # Turn a sequence into a dict.
         translations = dict(enumerate(translations))
     # Filter out None values.
-    return dict(
-        (form, translation)
+    return {
+        form: translation
         for form, translation in six.iteritems(translations)
-        if translation is not None)
+        if translation is not None}
 
 
 @implementer(IPOTMsgSet)
@@ -399,8 +399,8 @@ class POTMsgSet(SQLBase):
         # Present a list of language + usage constraints to sql. A language
         # can either be unconstrained, used, or suggested depending on which
         # of suggested_languages, used_languages it appears in.
-        suggested_languages = set(lang.id for lang in suggested_languages)
-        used_languages = set(lang.id for lang in used_languages)
+        suggested_languages = {lang.id for lang in suggested_languages}
+        used_languages = {lang.id for lang in used_languages}
         both_languages = suggested_languages.intersection(used_languages)
         suggested_languages = suggested_languages - both_languages
         used_languages = used_languages - both_languages
@@ -625,9 +625,9 @@ class POTMsgSet(SQLBase):
         if existing_message is not None:
             return existing_message
 
-        forms = dict(
-            ('msgstr%d' % form, potranslation)
-            for form, potranslation in six.iteritems(potranslations))
+        forms = {
+            'msgstr%d' % form: potranslation
+            for form, potranslation in six.iteritems(potranslations)}
 
         if from_import:
             origin = RosettaTranslationOrigin.SCM
@@ -762,9 +762,9 @@ class POTMsgSet(SQLBase):
         else:
             potemplate = None
 
-        translation_args = dict(
-            ('msgstr%d' % form, translation)
-            for form, translation in six.iteritems(translations))
+        translation_args = {
+            'msgstr%d' % form: translation
+            for form, translation in six.iteritems(translations)}
 
         return TranslationMessage(
             potmsgset=self,

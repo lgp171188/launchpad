@@ -64,7 +64,7 @@ from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -136,7 +136,7 @@ class ProductJob(StormBase):
     product_id = Int(name='product')
     product = Reference(product_id, Product.id)
 
-    job_type = EnumCol(enum=ProductJobType, notNull=True)
+    job_type = DBEnum(enum=ProductJobType, allow_none=False)
 
     _json_data = Unicode('json_data')
 

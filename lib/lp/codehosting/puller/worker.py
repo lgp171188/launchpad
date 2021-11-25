@@ -1,6 +1,7 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import http.client
 import socket
 import sys
 
@@ -39,7 +40,6 @@ from lazr.uri import (
     URI,
     )
 import six
-from six.moves import http_client
 from six.moves.urllib.error import HTTPError
 
 from lp.code.bzr import (
@@ -392,7 +392,7 @@ class PullerWorker:
         #
         except HTTPError as e:
             msg = str(e)
-            if int(e.code) == http_client.UNAUTHORIZED:
+            if int(e.code) == http.client.UNAUTHORIZED:
                 # Maybe this will be caught in bzrlib one day, and then we'll
                 # be able to get rid of this.
                 # https://launchpad.net/products/bzr/+bug/42383

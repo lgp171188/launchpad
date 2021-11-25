@@ -84,9 +84,9 @@ class TestDeriveDistroSeriesMultipleParents(InitializationHelperTestCase):
         pub_sources = series.main_archive.getPublishedSources(
             distroseries=series)
         binaries = sorted(
-            [(p.getBuiltBinaries()[0].binarypackagerelease.sourcepackagename,
+            (p.getBuiltBinaries()[0].binarypackagerelease.sourcepackagename,
               p.getBuiltBinaries()[0].binarypackagerelease.version)
-                 for p in pub_sources])
+                 for p in pub_sources)
 
         self.assertEqual(pack_versions, binaries)
 

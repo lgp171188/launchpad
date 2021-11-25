@@ -57,10 +57,8 @@ from twisted.conch.ssh.common import (
     )
 from twisted.conch.test import keydata
 from twisted.python.util import mergeFunctionMetadata
-from zope.component import (
-    ComponentLookupError,
-    getUtility,
-    )
+from zope.component import getUtility
+from zope.interface.interfaces import ComponentLookupError
 from zope.security.proxy import (
     Proxy,
     ProxyFactory,
@@ -259,7 +257,7 @@ from lp.services.database.interfaces import (
     IStore,
     IStoreSelector,
     )
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.gpg.interfaces import (
     GPGKeyAlgorithm,
@@ -412,7 +410,7 @@ def default_master_store(func):
         except ComponentLookupError:
             # Utilities not registered. No policies.
             return func(*args, **kw)
-        store_selector.push(MasterDatabasePolicy())
+        store_selector.push(PrimaryDatabasePolicy())
         try:
             return func(*args, **kw)
         finally:
@@ -4566,6 +4564,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         token = getUtility(IAccessTokenSet).new(
             secret, owner, description, target, scopes,
             date_expires=date_expires)
+        IStore(token).flush()
         return secret, token
 
     def makeCVE(self, sequence, description=None,

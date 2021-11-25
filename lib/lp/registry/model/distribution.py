@@ -13,12 +13,6 @@ import itertools
 from operator import itemgetter
 
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -152,11 +146,17 @@ from lp.services.database.bulk import load_referencing
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormexpr import (
     fti_search,
@@ -262,9 +262,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     translationgroup = ForeignKey(
         dbName='translationgroup', foreignKey='TranslationGroup',
         notNull=False, default=None)
-    translationpermission = EnumCol(
-        dbName='translationpermission', notNull=True,
-        schema=TranslationPermission, default=TranslationPermission.OPEN)
+    translationpermission = DBEnum(
+        name='translationpermission', allow_none=False,
+        enum=TranslationPermission, default=TranslationPermission.OPEN)
     active = True
     official_packages = BoolCol(notNull=True, default=False)
     supports_ppas = BoolCol(notNull=True, default=False)
@@ -272,9 +272,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     package_derivatives_email = StringCol(notNull=False, default=None)
     redirect_release_uploads = BoolCol(notNull=True, default=False)
     development_series_alias = StringCol(notNull=False, default=None)
-    vcs = EnumCol(enum=VCSType, notNull=False)
-    default_traversal_policy = EnumCol(
-        enum=DistributionDefaultTraversalPolicy, notNull=False,
+    vcs = DBEnum(enum=VCSType, allow_none=True)
+    default_traversal_policy = DBEnum(
+        enum=DistributionDefaultTraversalPolicy, allow_none=True,
         default=DistributionDefaultTraversalPolicy.SERIES)
     redirect_default_traversal = BoolCol(notNull=False, default=False)
     oci_registry_credentials_id = Int(name='oci_credentials', allow_none=True)
@@ -379,9 +379,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                         self.translations_usage == ServiceUsage.LAUNCHPAD,
                         self.official_blueprints, self.official_answers)
 
-    _answers_usage = EnumCol(
-        dbName="answers_usage", notNull=True,
-        schema=ServiceUsage, default=ServiceUsage.UNKNOWN)
+    _answers_usage = DBEnum(
+        name="answers_usage", allow_none=False,
+        enum=ServiceUsage, default=ServiceUsage.UNKNOWN)
 
     def _get_answers_usage(self):
         if self._answers_usage != ServiceUsage.UNKNOWN:
@@ -403,10 +403,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         _set_answers_usage,
         doc="Indicates if the product uses the answers service.")
 
-    _blueprints_usage = EnumCol(
-        dbName="blueprints_usage", notNull=True,
-        schema=ServiceUsage,
-        default=ServiceUsage.UNKNOWN)
+    _blueprints_usage = DBEnum(
+        name="blueprints_usage", allow_none=False,
+        enum=ServiceUsage, default=ServiceUsage.UNKNOWN)
 
     def _get_blueprints_usage(self):
         if self._blueprints_usage != ServiceUsage.UNKNOWN:
@@ -428,9 +427,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         _set_blueprints_usage,
         doc="Indicates if the product uses the blueprints service.")
 
-    translations_usage = EnumCol(
-        dbName="translations_usage", notNull=True,
-        schema=ServiceUsage, default=ServiceUsage.UNKNOWN)
+    translations_usage = DBEnum(
+        name="translations_usage", allow_none=False,
+        enum=ServiceUsage, default=ServiceUsage.UNKNOWN)
 
     @property
     def codehosting_usage(self):

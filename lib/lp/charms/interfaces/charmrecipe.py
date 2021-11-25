@@ -30,6 +30,8 @@ __all__ = [
     "NoSuchCharmRecipe",
     ]
 
+import http.client
+
 from lazr.enum import (
     EnumeratedType,
     Item,
@@ -57,7 +59,6 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from lazr.restful.interface import copy_field
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -100,7 +101,7 @@ CHARM_RECIPE_BUILD_DISTRIBUTION = "charm.default_build_distribution"
 CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG = "charm.recipe.webhooks.enabled"
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class CharmRecipeFeatureDisabled(Unauthorized):
     """Only certain users can create new charm recipes."""
 
@@ -109,7 +110,7 @@ class CharmRecipeFeatureDisabled(Unauthorized):
             "You do not have permission to create new charm recipes.")
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class CharmRecipePrivateFeatureDisabled(Unauthorized):
     """Only certain users can create private charm recipes."""
 
@@ -118,7 +119,7 @@ class CharmRecipePrivateFeatureDisabled(Unauthorized):
             "You do not have permission to create private charm recipes.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class DuplicateCharmRecipeName(Exception):
     """Raised for charm recipes with duplicate project/owner/name."""
 
@@ -128,7 +129,7 @@ class DuplicateCharmRecipeName(Exception):
             "and name.")
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class CharmRecipeNotOwner(Unauthorized):
     """The registrant/requester is not the owner or a member of its team."""
 
@@ -138,7 +139,7 @@ class NoSuchCharmRecipe(NameLookupFailed):
     _message_prefix = "No such charm recipe with this owner and project"
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NoSourceForCharmRecipe(Exception):
     """Charm recipes must have a source (Git branch)."""
 
@@ -147,12 +148,12 @@ class NoSourceForCharmRecipe(Exception):
             "New charm recipes must have a Git branch.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class BadCharmRecipeSource(Exception):
     """The elements of the source for a charm recipe are inconsistent."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CharmRecipePrivacyMismatch(Exception):
     """Charm recipe privacy does not match its content."""
 
@@ -166,7 +167,7 @@ class BadCharmRecipeSearchContext(Exception):
     """The context is not valid for a charm recipe search."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotAuthorizeCharmhubUploads(Exception):
     """Cannot authorize uploads of a charm to Charmhub."""
 
@@ -187,7 +188,7 @@ class CannotParseCharmcraftYaml(Exception):
     """Launchpad cannot parse this charm recipe's charmcraft.yaml."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CharmRecipeBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
@@ -196,7 +197,7 @@ class CharmRecipeBuildAlreadyPending(Exception):
             "An identical build of this charm recipe is already pending.")
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CharmRecipeBuildDisallowedArchitecture(Exception):
     """A build was requested for a disallowed architecture."""
 

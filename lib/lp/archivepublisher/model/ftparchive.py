@@ -198,10 +198,10 @@ class FTPArchiveHandler:
         spawner.complete()
         stdout_handler.finalize()
         stderr_handler.finalize()
-        failures = sorted([
+        failures = sorted(
             (tag, receiver.returncode)
             for tag, receiver in six.iteritems(returncodes)
-                if receiver.returncode != 0])
+                if receiver.returncode != 0)
         if len(failures) > 0:
             by_arch = ["%s (returned %d)" % failure for failure in failures]
             raise AptFTPArchiveFailure(
@@ -232,7 +232,7 @@ class FTPArchiveHandler:
                         continue
 
                 self.publisher.release_files_needed.add(
-                    (distroseries.name, pocket))
+                    distroseries.getSuite(pocket))
 
                 for comp in components:
                     self.createEmptyPocketRequest(distroseries, pocket, comp)
@@ -768,9 +768,8 @@ class FTPArchiveHandler:
 
         Otherwise, we aim to limit our config to certain distroseries
         and pockets. By default, we will exclude release pockets for
-        released series, and in addition we exclude any pocket not
-        explicitly marked as dirty. dirty_pockets must be a nested
-        dictionary of booleans, keyed by distroseries.name then pocket.
+        released series, and in addition we exclude any suite not
+        explicitly marked as dirty.
         """
         apt_config = six.StringIO()
         apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
@@ -855,6 +854,7 @@ class FTPArchiveHandler:
                          "CACHEINSERT": "",
                          "DISTS": os.path.basename(self._config.distsroot),
                          "HIDEEXTRA": "",
+                         # Must match DdtpTarballUpload.shouldInstall.
                          "LONGDESCRIPTION":
                              "true" if include_long_descriptions else "false",
                          })

@@ -13,17 +13,10 @@ __all__ = [
     ]
 
 import datetime
+import http.client
 from operator import itemgetter
 
 from lazr.restful.declarations import error_status
-from six.moves import http_client
-from sqlobject import (
-    AND,
-    BoolCol,
-    DateCol,
-    ForeignKey,
-    StringCol,
-    )
 from storm.expr import (
     And,
     Desc,
@@ -60,6 +53,13 @@ from lp.registry.model.productrelease import ProductRelease
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    AND,
+    BoolCol,
+    DateCol,
+    ForeignKey,
+    StringCol,
+    )
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp.sorting import expand_numbers
 
@@ -124,7 +124,7 @@ class HasMilestonesMixin:
     milestones = property(_get_milestones)
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class MultipleProductReleases(Exception):
     """Raised when a second ProductRelease is created for a milestone."""
 
@@ -132,7 +132,7 @@ class MultipleProductReleases(Exception):
         super(MultipleProductReleases, self).__init__(msg)
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class InvalidTags(Exception):
     """Raised when tags are invalid."""
 

@@ -22,7 +22,6 @@ import apt_pkg
 from debian.deb822 import PkgRelation
 import pytz
 import six
-from sqlobject import SQLObjectNotFound
 from storm.expr import (
     And,
     Desc,
@@ -76,6 +75,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.services.librarian.model import (
@@ -1340,8 +1340,8 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             if build is not None:
                 relevant_builds.append(build)
 
-        skip_archtags = set(
-            bpb.distro_arch_series.architecturetag for bpb in relevant_builds)
+        skip_archtags = {
+            bpb.distro_arch_series.architecturetag for bpb in relevant_builds}
         # We need to assign the arch-indep role to a build unless an
         # arch-indep build has already succeeded, or another build in
         # this series already has it set.
@@ -1356,13 +1356,13 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         # Processor 1 is i386, a good arch-indep candidate, is a
         # total coincidence and this isn't a hack. I promise.
         need_archs = sorted(
-            [das for das in
+            (das for das in
              self._getAllowedArchitectures(
                  archive,
                  architectures_available
                     or distroseries.buildable_architectures)
              if das.architecturetag not in skip_archtags and
-                das.isSourceIncluded(sourcepackagerelease.sourcepackagename)],
+                das.isSourceIncluded(sourcepackagerelease.sourcepackagename)),
             key=attrgetter('processor.id'))
         nominated_arch_indep_tag = (
             distroseries.nominatedarchindep.architecturetag

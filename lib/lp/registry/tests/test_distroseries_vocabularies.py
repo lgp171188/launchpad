@@ -73,7 +73,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
         expected_distroseries = (
             set(self.all_series_with_arch).difference(
                 distroseries.distribution.series))
-        observed_distroseries = set(term.value for term in vocabulary)
+        observed_distroseries = {term.value for term in vocabulary}
         self.assertEqual(expected_distroseries, observed_distroseries)
 
     def test_distribution_with_non_derived_series_no_arch(self):
@@ -83,7 +83,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         vocabulary = DistroSeriesDerivationVocabulary(distroseries)
         another_parent_no_arch = self.factory.makeDistroSeries()
-        observed_distroseries = set(term.value for term in vocabulary)
+        observed_distroseries = {term.value for term in vocabulary}
 
         self.assertNotIn(another_parent_no_arch, observed_distroseries)
 
@@ -106,7 +106,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
             derived_series=distroseries, parent_series=parent_distroseries)
         vocabulary = DistroSeriesDerivationVocabulary(distroseries)
         expected_distroseries = set(parent_distroseries.distribution.series)
-        observed_distroseries = set(term.value for term in vocabulary)
+        observed_distroseries = {term.value for term in vocabulary}
         self.assertContentEqual(expected_distroseries, observed_distroseries)
 
     def test_distribution_with_derived_series_no_arch(self):
@@ -119,7 +119,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
         self.factory.makeDistroSeriesParent(
             derived_series=distroseries, parent_series=parent_distroseries)
         vocabulary = DistroSeriesDerivationVocabulary(distroseries)
-        observed_distroseries = set(term.value for term in vocabulary)
+        observed_distroseries = {term.value for term in vocabulary}
 
         self.assertIn(another_parent_no_arch, observed_distroseries)
 
@@ -142,7 +142,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
         expected_distroseries = set(
             parent_distroseries.distribution.series).union(
                 set(another_parent_distroseries.distribution.series))
-        observed_distroseries = set(term.value for term in vocabulary)
+        observed_distroseries = {term.value for term in vocabulary}
         self.assertEqual(expected_distroseries, observed_distroseries)
 
     def test_distribution_with_derived_series_of_self(self):
@@ -159,7 +159,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
         expected_distroseries = (
             set(self.all_series_with_arch).difference(
                 distroseries.distribution.series))
-        observed_distroseries = set(term.value for term in vocabulary)
+        observed_distroseries = {term.value for term in vocabulary}
         self.assertEqual(expected_distroseries, observed_distroseries)
 
     def test_distroseries(self):
@@ -170,7 +170,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
         expected_distroseries = (
             set(self.all_series_with_arch).difference(
                 distroseries.distribution.series))
-        observed_distroseries = set(term.value for term in vocabulary)
+        observed_distroseries = {term.value for term in vocabulary}
         self.assertEqual(expected_distroseries, observed_distroseries)
 
     def test_ordering(self):

@@ -10,7 +10,6 @@ __all__ = [
 
 from operator import attrgetter
 
-from sqlobject import StringCol
 from zope.interface import implementer
 
 from lp.registry.interfaces.series import (
@@ -18,6 +17,7 @@ from lp.registry.interfaces.series import (
     SeriesStatus,
     )
 from lp.registry.model.hasdrivers import HasDriversMixin
+from lp.services.database.sqlobject import StringCol
 
 
 ACTIVE_STATUSES = [

@@ -193,10 +193,7 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import (
-    DBEnum,
-    EnumCol,
-    )
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.database.stormbase import StormBase
@@ -447,11 +444,11 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
     date_last_modified = DateTime(
         name='date_last_modified', tzinfo=pytz.UTC, allow_none=False)
 
-    repository_type = EnumCol(
-        dbName='repository_type', enum=GitRepositoryType, notNull=True)
+    repository_type = DBEnum(
+        name='repository_type', enum=GitRepositoryType, allow_none=False)
 
-    status = EnumCol(
-        dbName='status', enum=GitRepositoryStatus, notNull=True,
+    status = DBEnum(
+        name='status', enum=GitRepositoryStatus, allow_none=False,
         default=GitRepositoryStatus.AVAILABLE)
 
     registrant_id = Int(name='registrant', allow_none=False)
@@ -479,7 +476,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
 
     description = Unicode(name='description', allow_none=True)
 
-    information_type = EnumCol(enum=InformationType, notNull=True)
+    information_type = DBEnum(enum=InformationType, allow_none=False)
     owner_default = Bool(name='owner_default', allow_none=False)
     target_default = Bool(name='target_default', allow_none=False)
 
@@ -769,9 +766,9 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
             self.information_type not in PUBLIC_INFORMATION_TYPES):
             aasource = getUtility(IAccessArtifactSource)
             [abstract_artifact] = aasource.ensure([self])
-            wanted_links = set(
+            wanted_links = {
                 (abstract_artifact, policy) for policy in
-                getUtility(IAccessPolicySource).findByTeam([self.owner]))
+                getUtility(IAccessPolicySource).findByTeam([self.owner])}
         else:
             # We haven't yet quite worked out how distribution privacy
             # works, so only work for projects for now.
@@ -998,7 +995,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
     @staticmethod
     def fetchRefCommits(hosting_path, refs, logger=None):
         """See `IGitRepository`."""
-        oids = sorted(set(info["sha1"] for info in refs.values()))
+        oids = sorted({info["sha1"] for info in refs.values()})
         if not oids:
             return
         commits = parse_git_commits(
@@ -1441,6 +1438,16 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
             # this.
             removeSecurityProxy(snap).is_stale = True
 
+    def markCharmRecipesStale(self, paths):
+        """See `IGitRepository`."""
+        recipes = getUtility(ICharmRecipeSet).findByGitRepository(
+            self, paths=paths, check_permissions=False)
+        for recipe in recipes:
+            # ICharmRecipeSet.findByGitRepository returns security-proxied
+            # CharmRecipe objects on which the is_stale attribute is
+            # read-only.  Bypass this.
+            removeSecurityProxy(recipe).is_stale = True
+
     def _markProposalMerged(self, proposal, merged_revision_id, logger=None):
         if logger is not None:
             logger.info(
@@ -1459,7 +1466,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
             proposals = list(group)
             merges = hosting_client.detectMerges(
                 self.getInternalPath(), proposals[0].target_git_commit_sha1,
-                set(proposal.source_git_commit_sha1 for proposal in proposals))
+                {proposal.source_git_commit_sha1 for proposal in proposals})
             for proposal in proposals:
                 merged_revision_id = merges.get(
                     proposal.source_git_commit_sha1)

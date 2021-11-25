@@ -131,7 +131,7 @@ Checking flags without access to the database
 Feature flags can also be checked without access to the database by making use
 of the 'getFeatureFlag' XML-RPC method.
 
-    server_proxy = xmlrpc_client.ServerProxy(
+    server_proxy = xmlrpc.client.ServerProxy(
         config.launchpad.feature_flags_endpoint, allow_none=True)
     if server_proxy.getFeatureFlag(
             'example_flag.enabled', ['user:' + user_name]):

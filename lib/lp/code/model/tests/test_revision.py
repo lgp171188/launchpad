@@ -711,7 +711,7 @@ class TestOnlyPresent(TestCaseWithFactory):
         # onlyPresent returns a revid that is present in the database.
         present = self.factory.makeRevision().revision_id
         self.assertEqual(
-            set([present]),
+            {present},
             set(getUtility(IRevisionSet).onlyPresent([present])))
 
     def test_some_present(self):
@@ -719,7 +719,7 @@ class TestOnlyPresent(TestCaseWithFactory):
         not_present = self.factory.getUniqueString()
         present = self.factory.makeRevision().revision_id
         self.assertEqual(
-            set([present]),
+            {present},
             set(getUtility(IRevisionSet).onlyPresent([present, not_present])))
 
     def test_call_twice_in_one_transaction(self):

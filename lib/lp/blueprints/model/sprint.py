@@ -192,7 +192,7 @@ class Sprint(StormBase, HasDriversMixin, HasSpecificationsMixin):
         # need_* is provided only for interface compatibility and
         # need_*=True is not implemented.
         if filter is None:
-            filter = set([SpecificationFilter.ACCEPTED])
+            filter = {SpecificationFilter.ACCEPTED}
         tables, query = self.spec_filter_clause(user, filter)
         # import here to avoid circular deps
         from lp.blueprints.model.specification import Specification

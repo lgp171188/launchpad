@@ -44,4 +44,4 @@ def notify_bugtask_edited(modified_bugtask, event):
 
     send_bug_details_to_new_bug_subscribers(
         event.object.bug, previous_subscribers, current_subscribers,
-        event_creator=event_creator)
+        event_creator=event_creator, modified_bugtask=modified_bugtask)

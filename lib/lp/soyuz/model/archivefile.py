@@ -131,7 +131,7 @@ class ArchiveFileSet:
         """See `IArchiveFileSet`."""
         clauses = [
             ArchiveFile.id.is_in(
-                set(archive_file.id for archive_file in archive_files)),
+                {archive_file.id for archive_file in archive_files}),
             ArchiveFile.library_file == LibraryFileAlias.id,
             LibraryFileAlias.content == LibraryFileContent.id,
             ]
@@ -151,7 +151,7 @@ class ArchiveFileSet:
         """See `IArchiveFileSet`."""
         clauses = [
             ArchiveFile.id.is_in(
-                set(archive_file.id for archive_file in archive_files)),
+                {archive_file.id for archive_file in archive_files}),
             ArchiveFile.library_file == LibraryFileAlias.id,
             LibraryFileAlias.content == LibraryFileContent.id,
             ]

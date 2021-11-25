@@ -8,10 +8,6 @@ __all__ = [
 
 from email.utils import make_msgid
 
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    )
 from zope.interface import implementer
 
 from lp.blueprints.interfaces.specificationmessage import (
@@ -19,6 +15,10 @@ from lp.blueprints.interfaces.specificationmessage import (
     ISpecificationMessageSet,
     )
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    )
 from lp.services.messages.model.message import (
     Message,
     MessageChunk,
@@ -27,7 +27,7 @@ from lp.services.messages.model.message import (
 
 @implementer(ISpecificationMessage)
 class SpecificationMessage(SQLBase):
-    """A table linking specifictions and messages."""
+    """A table linking specifications and messages."""
 
     _table = 'SpecificationMessage'
 

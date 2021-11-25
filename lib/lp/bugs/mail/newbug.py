@@ -12,7 +12,8 @@ from lp.services.webapp.publisher import canonical_url
 
 
 def generate_bug_add_email(bug, new_recipients=False, reason=None,
-                           subscribed_by=None, event_creator=None):
+                           subscribed_by=None, event_creator=None,
+                           modified_bugtask=None):
     """Generate a new bug notification from the given IBug.
 
     If new_recipients is supplied we generate a notification explaining
@@ -60,17 +61,27 @@ def generate_bug_add_email(bug, new_recipients=False, reason=None,
         }
 
     if new_recipients:
-        if "assignee" in reason and event_creator is not None:
-            if event_creator == bugtask.assignee:
+        if ("assignee" in reason and
+                event_creator is not None and
+                modified_bugtask is not None):
+            if event_creator == modified_bugtask.assignee:
                 contents += (
                     "You have assigned this bug to yourself for %(target)s")
             else:
-                contents += (
-                    "%(assigner)s has assigned this bug to you for " +
-                    "%(target)s")
+                contents += "%(assigner)s has assigned this bug to "
+
+                if modified_bugtask.assignee.is_team:
+                    contents += 'your team "%(team_name)s" '
+                    content_substitutions['team_name'] = (
+                        modified_bugtask.assignee.display_name)
+                else:
+                    contents += "you "
+
+            contents += "for %(target)s"
             content_substitutions['assigner'] = (
                 event_creator.unique_displayname)
-            content_substitutions['target'] = bugtask.target.displayname
+            content_substitutions['target'] = (
+                modified_bugtask.target.displayname)
         else:
             contents += "You have been subscribed to a %(visibility)s bug"
         if subscribed_by is not None:

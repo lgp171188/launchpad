@@ -12,12 +12,6 @@ __all__ = [
 import datetime
 
 from lazr.delegates import delegate_to
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     Max,
     Sum,
@@ -69,9 +63,15 @@ from lp.registry.model.series import SeriesMixin
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLMultipleJoin,
+    SQLObjectNotFound,
+    StringCol,
+    )
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.sorting import sorted_dotted_numbers
@@ -118,8 +118,8 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
     _table = 'ProductSeries'
 
     product = ForeignKey(dbName='product', foreignKey='Product', notNull=True)
-    status = EnumCol(
-        notNull=True, schema=SeriesStatus,
+    status = DBEnum(
+        allow_none=False, enum=SeriesStatus,
         default=SeriesStatus.DEVELOPMENT)
     name = StringCol(notNull=True)
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
@@ -145,12 +145,12 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
                                      ' proprietary projects.')
         return value
 
-    translations_autoimport_mode = EnumCol(
-        dbName='translations_autoimport_mode',
-        notNull=True,
-        schema=TranslationsBranchImportMode,
+    translations_autoimport_mode = DBEnum(
+        name='translations_autoimport_mode',
+        allow_none=False,
+        enum=TranslationsBranchImportMode,
         default=TranslationsBranchImportMode.NO_IMPORT,
-        storm_validator=validate_autoimport_mode)
+        validator=validate_autoimport_mode)
     translations_branch = ForeignKey(
         dbName='translations_branch', foreignKey='Branch', notNull=False,
         default=None)

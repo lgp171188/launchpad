@@ -759,8 +759,8 @@ class TestBugTaskDelta(TestCaseWithFactory):
         # expected_delta is assumed to be None in the delta.
         delta = bug_task_after.getDelta(bug_task_before)
         expected_delta.setdefault('bugtask', bug_task_after)
-        names = set(
-            name for interface in providedBy(delta) for name in interface)
+        names = {
+            name for interface in providedBy(delta) for name in interface}
         for name in names:
             self.assertEqual(getattr(delta, name), expected_delta.get(name))
 
@@ -3282,8 +3282,8 @@ class TestTargetNameCache(TestCase):
             stderr=subprocess.PIPE, universal_newlines=True)
         (out, err) = process.communicate()
 
-        self.assertTrue(err.startswith(("INFO    Creating lockfile: "
-            "/var/lock/launchpad-launchpad-targetnamecacheupdater.lock")))
+        self.assertTrue(err.startswith("INFO    Creating lockfile: "
+            "/var/lock/launchpad-launchpad-targetnamecacheupdater.lock"))
         self.assertTrue('INFO    Updating targetname cache of bugtasks' in err)
         self.assertTrue('INFO    Calculating targets.' in err)
         self.assertTrue('INFO    Will check ' in err)

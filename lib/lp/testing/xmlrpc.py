@@ -7,12 +7,10 @@ __all__ = [
     'XMLRPCTestTransport',
     ]
 
+import http.client as http_client
 import io
+import xmlrpc.client
 
-from six.moves import (
-    http_client,
-    xmlrpc_client,
-    )
 from zope.security.management import (
     endInteraction,
     queryInteraction,
@@ -28,7 +26,7 @@ from lp.testing.pages import http
 class _FakeSocket(object):
     """Pretend to be a socket that has a makefile method.
 
-    This is used because it is what http_client.HTTPResponse expects.
+    This is used because it is what http.client.HTTPResponse expects.
     """
     def __init__(self, output):
         self._output = output
@@ -40,7 +38,7 @@ class _FakeSocket(object):
 class TestHTTPConnection(http_client.HTTPConnection):
     """A HTTPConnection which talks to http() instead of a real server.
 
-    Only the methods called by xmlrpc_client are overridden.
+    Only the methods called by xmlrpc.client are overridden.
     """
 
     _data_to_send = b''
@@ -78,7 +76,7 @@ class TestHTTPConnection(http_client.HTTPConnection):
         return response
 
 
-class XMLRPCTestTransport(xmlrpc_client.Transport):
+class XMLRPCTestTransport(xmlrpc.client.Transport):
     """An XMLRPC Transport which sends the requests to http()."""
 
     def make_connection(self, host):

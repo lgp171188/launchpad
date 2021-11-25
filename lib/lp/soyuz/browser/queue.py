@@ -19,7 +19,6 @@ from lp.app.errors import (
     UnexpectedFormData,
     )
 from lp.registry.interfaces.person import IPersonSet
-from lp.registry.model.distribution import Distribution
 from lp.services.database.bulk import (
     load_referencing,
     load_related,
@@ -56,14 +55,12 @@ from lp.soyuz.interfaces.queue import (
     QueueInconsistentStateError,
     )
 from lp.soyuz.interfaces.section import ISectionSet
-from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.files import (
     BinaryPackageFile,
     SourcePackageReleaseFile,
     )
-from lp.soyuz.model.packagecopyjob import PackageCopyJob
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
@@ -188,15 +185,16 @@ class QueueItemsView(LaunchpadView):
         """
         sprs = [spr for spr in source_package_releases if spr is not None]
         return getUtility(IPackagesetSet).getForPackages(
-            self.context, set(spr.sourcepackagenameID for spr in sprs))
+            self.context, {spr.sourcepackagenameID for spr in sprs})
 
     def loadPackageCopyJobs(self, uploads):
         """Batch-load `PackageCopyJob`s and related information."""
-        package_copy_jobs = load_related(
-            PackageCopyJob, uploads, ['package_copy_job_id'])
-        archives = load_related(
-            Archive, package_copy_jobs, ['source_archive_id'])
-        load_related(Distribution, archives, ['distributionID'])
+        # PackageUploadSet.getAll preloads the PackageCopyJobs themselves,
+        # along with their related archives and distributions.
+        package_copy_jobs = {
+            removeSecurityProxy(upload.package_copy_job) for upload in uploads
+            if upload.package_copy_job_id is not None}
+        archives = {pcj.source_archive for pcj in package_copy_jobs}
         person_ids = [archive.ownerID for archive in archives]
         jobs = load_related(Job, package_copy_jobs, ['job_id'])
         person_ids.extend(job.requester_id for job in jobs)
@@ -220,8 +218,8 @@ class QueueItemsView(LaunchpadView):
         # Both "u.sources" and "u.builds" below are preloaded by
         # self.context.getPackageUploads (which uses PackageUploadSet.getAll)
         # when building self.batchnav.
-        puses = sum([removeSecurityProxy(u.sources) for u in uploads], [])
-        pubs = sum([removeSecurityProxy(u.builds) for u in uploads], [])
+        puses = sum((removeSecurityProxy(u.sources) for u in uploads), [])
+        pubs = sum((removeSecurityProxy(u.builds) for u in uploads), [])
 
         source_sprs = load_related(
             SourcePackageRelease, puses, ['sourcepackagereleaseID'])
@@ -338,8 +336,8 @@ class QueueItemsView(LaunchpadView):
         permission_set = getUtility(IArchivePermissionSet)
         component_permissions = permission_set.componentsForQueueAdmin(
             self.context.main_archive, self.user)
-        allowed_components = set(
-            permission.component for permission in component_permissions)
+        allowed_components = {
+            permission.component for permission in component_permissions}
         pocket_permissions = permission_set.pocketsForQueueAdmin(
             self.context.main_archive, self.user)
 

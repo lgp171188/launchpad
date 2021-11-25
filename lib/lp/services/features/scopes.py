@@ -233,7 +233,7 @@ class FixedScope(BaseScope):
 # we can for example show all of them in an admin page.  Any new scope will
 # need a scope handler and that scope handler has to be added to this list.
 # See BaseScope for hints as to what a scope handler should look like.
-HANDLERS = set([DefaultScope, PageScope, TeamScope, ServerScope, ScriptScope])
+HANDLERS = {DefaultScope, PageScope, TeamScope, ServerScope, ScriptScope}
 
 
 class MultiScopeHandler():

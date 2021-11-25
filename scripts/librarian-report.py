@@ -55,7 +55,7 @@ def main():
     cur = con.cursor()
 
     # Collect direct references to the LibraryFileAlias table.
-    references = set(
+    references = {
         (from_table, from_column)
         # Note that listReferences is recursive, which we don't
         # care about in this simple report. We also ignore the
@@ -63,7 +63,7 @@ def main():
         for from_table, from_column, to_table, to_column, update, delete
             in listReferences(cur, 'libraryfilealias', 'id')
         if to_table == 'libraryfilealias'
-        )
+        }
 
     totals = set()
     for referring_table, referring_column in sorted(references):

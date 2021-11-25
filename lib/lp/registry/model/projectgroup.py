@@ -10,13 +10,6 @@ __all__ = [
     ]
 
 import six
-from sqlobject import (
-    AND,
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-    )
 from storm.expr import (
     And,
     In,
@@ -94,11 +87,18 @@ from lp.registry.model.product import (
 from lp.registry.model.productseries import ProductSeries
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    AND,
+    BoolCol,
+    ForeignKey,
+    SQLObjectNotFound,
+    StringCol,
     )
 from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import shortlist
@@ -156,8 +156,9 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
     lastdoap = StringCol(dbName='lastdoap', notNull=False, default=None)
     translationgroup = ForeignKey(dbName='translationgroup',
         foreignKey='TranslationGroup', notNull=False, default=None)
-    translationpermission = EnumCol(dbName='translationpermission',
-        notNull=True, schema=TranslationPermission,
+    translationpermission = DBEnum(
+        name='translationpermission',
+        allow_none=False, enum=TranslationPermission,
         default=TranslationPermission.OPEN)
     active = BoolCol(dbName='active', notNull=True, default=True)
     reviewed = BoolCol(dbName='reviewed', notNull=True, default=False)

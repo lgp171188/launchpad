@@ -20,14 +20,14 @@ __all__ = [
 from collections import OrderedDict
 import os
 import sys
+import xmlrpc.client
 
 import fixtures
 from lpbuildd.tests.harness import BuilddSlaveTestSetup
 import six
-from six.moves import xmlrpc_client
 from testtools.content import attach_file
 from twisted.internet import defer
-from twisted.web import xmlrpc
+from twisted.web.xmlrpc import Proxy
 
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
@@ -160,7 +160,7 @@ class BuildingSlave(OkSlave):
 
     def status(self):
         self.call_log.append('status')
-        buildlog = xmlrpc_client.Binary(
+        buildlog = xmlrpc.client.Binary(
             b"This is a build log: %d" % self.status_count)
         self.status_count += 1
         return defer.succeed({
@@ -238,7 +238,7 @@ class AbortingSlave(OkSlave):
 class LostBuildingBrokenSlave:
     """A mock slave building bogus Build/BuildQueue IDs that can't be aborted.
 
-    When 'aborted' it raises an xmlrpc_client.Fault(8002, 'Could not abort')
+    When 'aborted' it raises an xmlrpc.client.Fault(8002, 'Could not abort')
     """
 
     def __init__(self):
@@ -253,7 +253,7 @@ class LostBuildingBrokenSlave:
 
     def abort(self):
         self.call_log.append('abort')
-        return defer.fail(xmlrpc_client.Fault(8002, "Could not abort"))
+        return defer.fail(xmlrpc.client.Fault(8002, "Could not abort"))
 
     def resume(self):
         self.call_log.append('resume')
@@ -268,14 +268,14 @@ class BrokenSlave:
 
     def status(self):
         self.call_log.append('status')
-        return defer.fail(xmlrpc_client.Fault(8001, "Broken slave"))
+        return defer.fail(xmlrpc.client.Fault(8001, "Broken slave"))
 
 
 class TrivialBehaviour:
     pass
 
 
-class DeadProxy(xmlrpc.Proxy):
+class DeadProxy(Proxy):
     """An xmlrpc.Proxy that doesn't actually send any messages.
 
     Used when you want to test timeouts, for example.

@@ -15,14 +15,6 @@ import operator
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.objectdelta import ObjectDelta
 import six
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLRelatedJoin,
-    StringCol,
-    )
 from storm.locals import (
     Count,
     Desc,
@@ -94,12 +86,20 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     convert_storm_clause_to_string,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    SQLMultipleJoin,
+    SQLRelatedJoin,
+    StringCol,
     )
 from lp.services.mail.helpers import get_contact_email_addresses
 from lp.services.propertycache import (
@@ -177,10 +177,11 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     name = StringCol(unique=True, notNull=True)
     title = StringCol(notNull=True)
     summary = StringCol(notNull=True)
-    definition_status = EnumCol(
-        schema=SpecificationDefinitionStatus, notNull=True,
+    definition_status = DBEnum(
+        enum=SpecificationDefinitionStatus, allow_none=False,
         default=SpecificationDefinitionStatus.NEW)
-    priority = EnumCol(schema=SpecificationPriority, notNull=True,
+    priority = DBEnum(
+        enum=SpecificationPriority, allow_none=False,
         default=SpecificationPriority.UNDEFINED)
     _assignee = ForeignKey(dbName='assignee', notNull=False,
         foreignKey='Person',
@@ -203,7 +204,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         foreignKey='Distribution', notNull=False, default=None)
     distroseries = ForeignKey(dbName='distroseries',
         foreignKey='DistroSeries', notNull=False, default=None)
-    goalstatus = EnumCol(schema=SpecificationGoalStatus, notNull=True,
+    goalstatus = DBEnum(
+        enum=SpecificationGoalStatus, allow_none=False,
         default=SpecificationGoalStatus.PROPOSED)
     goal_proposer = ForeignKey(dbName='goal_proposer', notNull=False,
         foreignKey='Person',
@@ -219,8 +221,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     whiteboard = StringCol(notNull=False, default=None)
     direction_approved = BoolCol(notNull=True, default=False)
     man_days = IntCol(notNull=False, default=None)
-    implementation_status = EnumCol(
-        schema=SpecificationImplementationStatus, notNull=True,
+    implementation_status = DBEnum(
+        enum=SpecificationImplementationStatus, allow_none=False,
         default=SpecificationImplementationStatus.UNKNOWN)
     superseded_by = ForeignKey(dbName='superseded_by',
         foreignKey='Specification', notNull=False, default=None)
@@ -254,8 +256,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     dependencies = SQLRelatedJoin('Specification', joinColumn='specification',
         otherColumn='dependency', orderBy='title',
         intermediateTable='SpecificationDependency')
-    information_type = EnumCol(
-        enum=InformationType, notNull=True, default=InformationType.PUBLIC)
+    information_type = DBEnum(
+        enum=InformationType, allow_none=False, default=InformationType.PUBLIC)
 
     @cachedproperty
     def linked_branches(self):

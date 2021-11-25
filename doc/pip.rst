@@ -89,18 +89,18 @@ together we can come up with another approach that meets our needs better.
 These are the items in or near the top-level Launchpad directory associated
 with pip:
 
-``setup.py``
-    This is the file that uses ``distutils``, extended by ``setuptools``, to
-    specify direct dependencies, scripts, and other elements of the local
+``setup.py``, ``setup.cfg``
+    These are the files that use ``distutils``, extended by ``setuptools``,
+    to specify direct dependencies, scripts, and other elements of the local
     source tree.
 
-    pip uses it, but the reverse is not true: ``setup.py`` does not know
-    about pip.
+    pip uses them, but the reverse is not true: ``setup.py`` and
+    ``setup.cfg`` do not know about pip.
 
-    Describing this file in full is well beyond the scope of this document.  We
-    will give recipes for modifying it for certain tasks below. For more
-    information beyond these recipes, see the setuptools and distutils
-    documentation.
+    Describing these files in full is well beyond the scope of this
+    document.  We will give recipes for modifying them for certain tasks
+    below. For more information beyond these recipes, see the setuptools and
+    distutils documentation.
 
 ``requirements/ztk-versions.cfg``
     This is a copy of the dependency versions file published by the `Zope
@@ -184,8 +184,8 @@ Add a Package
 
 Let's suppose that we want to add the "lazr.foo" package as a dependency.
 
-1.  Add the new package to the ``setup.py`` file in the ``install_requires``
-    list.
+1.  Add the new package to the ``setup.cfg`` file in the
+    ``install_requires`` list under ``[options]``.
 
     Generally, our policy is to only set minimum version numbers in this
     file, or none at all.  It doesn't really matter for an application like
@@ -252,14 +252,6 @@ Let's suppose that we want to add the "lazr.foo" package as a dependency.
 
 7.  Test.
 
-    Note that you can tell ``ec2 test`` to include all uncommitted
-    distributions from the local download-cache in its tests with the
-    ``--include-download-cache-changes`` flag (or ``-c``).  If you do
-    this, you cannot use the ec2 test feature to submit on test
-    success.  Also, if you have uncommitted distributions and you do
-    *not* explicitly tell ec2 test to include or ignore the
-    uncommitted distributions, it will refuse to start an instance.
-
 8.  Check old versions in the download-cache.  If you are sure that
     they are not in use any more, *anywhere*, then remove them to save
     checkout space.  More explicitly, check with the LOSAs to see if
@@ -276,7 +268,7 @@ Let's suppose that we want to add the "lazr.foo" package as a dependency.
     PQM or else your branch will not build properly anywhere else,
     including buildbot.  Commit the changes (``cd download-cache``,
     git add the needed files, ``git pull``, ``git commit -m 'Add
-    lazr.foom 1.1.2 and dependencies'``) to the shared download cache
+    lazr.foo 1.1.2 and dependencies'``) to the shared download cache
     when you are sure it is what you want.
 
 *Never* modify a package in the download-cache.  A change in code must mean a
@@ -310,8 +302,9 @@ We often need scripts that are run in a certain environment defined by Python
 dependencies, and sometimes even different Python executables.  Several of the
 scripts we have are specified using setuptools.
 
-For the common case, in ``setup.py``, add a string in the ``console_scripts``
-list of the ``entry_points`` argument. Here's an example string::
+For the common case, in ``setup.cfg``, add a string in the
+``console_scripts`` list under ``[options.entry_points]``. Here's an example
+string::
 
     'run = lp.scripts.runlaunchpad:start_launchpad'
 

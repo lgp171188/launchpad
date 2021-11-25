@@ -115,7 +115,7 @@ class HasTranslationTemplatesTestMixin:
         current_translations = set(
             self.container.getCurrentTranslationFiles())
         self.assertEqual(
-            set([pofile_sr, pofile_es]),
+            {pofile_sr, pofile_es},
             current_translations)
 
         # All files, no matter what template they are in, are returned.
@@ -124,7 +124,7 @@ class HasTranslationTemplatesTestMixin:
         current_translations = set(
             self.container.getCurrentTranslationFiles())
         self.assertEqual(
-            set([pofile_sr, pofile_es, pofile2_sr]),
+            {pofile_sr, pofile_es, pofile2_sr},
             current_translations)
 
         # If template is marked as obsolete, attached POFiles are
@@ -133,7 +133,7 @@ class HasTranslationTemplatesTestMixin:
         current_translations = set(
             self.container.getCurrentTranslationFiles())
         self.assertEqual(
-            set([pofile_sr, pofile_es]),
+            {pofile_sr, pofile_es},
             current_translations)
 
     def test_getCurrentTranslationFiles_ids(self):
@@ -144,7 +144,7 @@ class HasTranslationTemplatesTestMixin:
         current_translations_ids = set(
             self.container.getCurrentTranslationFiles(just_ids=True))
         self.assertEqual(
-            set([pofile_sr.id, pofile_es.id]),
+            {pofile_sr.id, pofile_es.id},
             current_translations_ids)
 
     def test_has_current_translation_templates__no_template(self):

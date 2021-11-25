@@ -436,7 +436,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             ds_diff, ds_diff.parent_series, 5)
         parent_packagesets = ds_diff.parent_packagesets
         self.assertEqual(
-            sorted([packageset.name for packageset in packagesets]),
+            sorted(packageset.name for packageset in packagesets),
             [packageset.name for packageset in parent_packagesets])
 
     def test_packagesets(self):
@@ -445,60 +445,60 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         packagesets = self._setupPackageSets(
             ds_diff, ds_diff.derived_series, 5)
         self.assertEqual(
-            sorted([packageset.name for packageset in packagesets]),
+            sorted(packageset.name for packageset in packagesets),
             [packageset.name for packageset in ds_diff.packagesets])
 
-    def test_blacklist_unauthorised(self):
+    def test_blocklist_unauthorised(self):
         # If you're not an archive admin, you don't get to blacklist or
-        # unblacklist.
+        # unblocklist.
         ds_diff = self.factory.makeDistroSeriesDifference()
         random_joe = self.factory.makePerson()
         with person_logged_in(random_joe):
-            self.assertRaises(Unauthorized, getattr, ds_diff, 'blacklist')
-            self.assertRaises(Unauthorized, getattr, ds_diff, 'unblacklist')
+            self.assertRaises(Unauthorized, getattr, ds_diff, 'blocklist')
+            self.assertRaises(Unauthorized, getattr, ds_diff, 'unblocklist')
 
-    def test_blacklist_default(self):
-        # By default the current version is blacklisted.
+    def test_blocklist_default(self):
+        # By default the current version is blocklisted.
         ds_diff = self.factory.makeDistroSeriesDifference()
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
 
         with person_logged_in(admin):
-            ds_diff.blacklist(admin)
+            ds_diff.blocklist(admin)
 
         self.assertEqual(
             DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
             ds_diff.status)
 
-    def test_blacklist_all(self):
-        # All versions are blacklisted with the all=True param.
+    def test_blocklist_all(self):
+        # All versions are blocklisted with the all=True param.
         ds_diff = self.factory.makeDistroSeriesDifference()
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
 
         with person_logged_in(admin):
-            ds_diff.blacklist(admin, all=True)
+            ds_diff.blocklist(admin, all=True)
 
         self.assertEqual(
             DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
             ds_diff.status)
 
-    def test_unblacklist(self):
-        # Unblacklisting will return to NEEDS_ATTENTION by default.
+    def test_unblocklist(self):
+        # Unblocklisting will return to NEEDS_ATTENTION by default.
         ds_diff = self.factory.makeDistroSeriesDifference(
             status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT)
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
 
         with person_logged_in(admin):
-            ds_diff.unblacklist(admin)
+            ds_diff.unblocklist(admin)
 
         self.assertEqual(
             DistroSeriesDifferenceStatus.NEEDS_ATTENTION,
             ds_diff.status)
 
-    def test_unblacklist_resolved(self):
-        # Status is resolved when unblacklisting a now-resolved difference.
+    def test_unblocklist_resolved(self):
+        # Status is resolved when unblocklisting a now-resolved difference.
         ds_diff = self.factory.makeDistroSeriesDifference(
             versions={
                 'derived': '0.9',
@@ -514,7 +514,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
         with person_logged_in(admin):
-            ds_diff.unblacklist(admin)
+            ds_diff.unblocklist(admin)
 
         self.assertEqual(
             DistroSeriesDifferenceStatus.RESOLVED,
@@ -541,7 +541,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             comment_string,
             ds_diff.latest_comment.message.text_contents)
 
-    def test_unblacklist_creates_comment(self):
+    def test_unblocklist_creates_comment(self):
         old_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
         ds_diff = self.factory.makeDistroSeriesDifference(
             status=old_status,
@@ -549,7 +549,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
         with person_logged_in(admin):
-            dsd_comment = ds_diff.unblacklist(
+            dsd_comment = ds_diff.unblocklist(
                 admin, "Ok now")
         new_status = DistroSeriesDifferenceStatus.NEEDS_ATTENTION
         expected_comment = 'Ok now\n\nIgnored: %s => %s' % (
@@ -557,7 +557,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
 
         self.assertDSDComment(ds_diff, dsd_comment, expected_comment)
 
-    def test_blacklist_creates_comment(self):
+    def test_blocklist_creates_comment(self):
         old_status = DistroSeriesDifferenceStatus.NEEDS_ATTENTION
         ds_diff = self.factory.makeDistroSeriesDifference(
             status=old_status,
@@ -565,7 +565,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive)
         with person_logged_in(admin):
-            dsd_comment = ds_diff.blacklist(
+            dsd_comment = ds_diff.blocklist(
                 admin, True, "Wait until version 2.1")
         new_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
         expected_comment = 'Wait until version 2.1\n\nIgnored: %s => %s' % (
@@ -998,17 +998,17 @@ class DistroSeriesDifferenceSourceTestCase(TestCaseWithFactory):
 
     def makeDifferencesForAllDifferenceTypes(self, derived_series):
         """Create DSDs of all types for `derived_series`."""
-        return dict(
-            (diff_type, self.factory.makeDistroSeriesDifference(
-                derived_series, difference_type=diff_type))
-            for diff_type in DistroSeriesDifferenceType.items)
+        return {
+            diff_type: self.factory.makeDistroSeriesDifference(
+                derived_series, difference_type=diff_type)
+            for diff_type in DistroSeriesDifferenceType.items}
 
     def makeDifferencesForAllStatuses(self, derived_series):
         """Create DSDs of all statuses for `derived_series`."""
-        return dict(
-            (status, self.factory.makeDistroSeriesDifference(
-                derived_series, status=status))
-            for status in DistroSeriesDifferenceStatus.items)
+        return {
+            status: self.factory.makeDistroSeriesDifference(
+                derived_series, status=status)
+            for status in DistroSeriesDifferenceStatus.items}
 
     def makeDerivedSeries(self, derived_series=None):
         """Create a derived `DistroSeries`."""
@@ -1337,9 +1337,9 @@ class TestMostRecentComments(TestCaseWithFactory):
 
     def test_most_recent_comments(self):
         dsp = self.factory.makeDistroSeriesParent()
-        dsds = set(
+        dsds = {
             self.factory.makeDistroSeriesDifference(
-                derived_series=dsp.derived_series) for index in range(5))
+                derived_series=dsp.derived_series) for index in range(5)}
         expected_comments = set()
         for dsd in dsds:
             # Add a couple of comments.
@@ -1377,9 +1377,9 @@ class TestMostRecentPublications(TestCaseWithFactory):
             self.create_difference(derived_series),
             ]
         # Derived publication.
-        source_pubs_by_spn_id_expected = set(
+        source_pubs_by_spn_id_expected = {
             (dsd.source_package_name.id, dsd.source_pub)
-            for dsd in dsds)
+            for dsd in dsds}
         source_pubs_by_spn_id_found = most_recent_publications(
             dsds, in_parent=False, statuses=(
                 PackagePublishingStatus.PUBLISHED,
@@ -1388,9 +1388,9 @@ class TestMostRecentPublications(TestCaseWithFactory):
             source_pubs_by_spn_id_expected,
             source_pubs_by_spn_id_found)
         # Parent publication
-        parent_source_pubs_by_spn_id_expected = set(
+        parent_source_pubs_by_spn_id_expected = {
             (dsd.source_package_name.id, dsd.parent_source_pub)
-            for dsd in dsds)
+            for dsd in dsds}
         parent_source_pubs_by_spn_id_found = most_recent_publications(
             dsds, in_parent=True, statuses=(
                 PackagePublishingStatus.PUBLISHED,

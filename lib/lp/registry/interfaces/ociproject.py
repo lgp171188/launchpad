@@ -12,6 +12,8 @@ __all__ = [
     'OCIProjectRecipeInvalid',
     ]
 
+import http.client
+
 from lazr.restful.declarations import (
     call_with,
     error_status,
@@ -29,7 +31,6 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -72,12 +73,12 @@ from lp.services.fields import (
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotDeleteOCIProject(Exception):
     """The OCIProject cannnot be deleted."""
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class OCIProjectRecipeInvalid(Unauthorized):
     """The given recipe is invalid for this OCI project."""
 
@@ -291,7 +292,7 @@ class IOCIProjectSet(Interface):
         """Preload data for the given list of OCIProject objects."""
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class OCIProjectCreateFeatureDisabled(Unauthorized):
     """Only certain users can create new OCI Projects."""
 

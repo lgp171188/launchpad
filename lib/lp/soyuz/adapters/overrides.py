@@ -270,12 +270,12 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
                         SourcePackagePublishingHistory.sourcepackagenameID,)),
             id_resolver((SourcePackageName, Component, Section, None, None)),
             pre_iter_hook=eager_load)
-        return dict(
-            (name, SourceOverride(
+        return {
+            name: SourceOverride(
                 component=component, section=section, version=version,
-                new=(status == PackagePublishingStatus.DELETED)))
+                new=(status == PackagePublishingStatus.DELETED))
             for (name, component, section, status, version)
-            in already_published)
+            in already_published}
 
     def calculateBinaryOverrides(self, binaries):
         def eager_load(rows):
@@ -348,7 +348,7 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
                     matching_keys.append((name, None))
             else:
                 matching_keys = [
-                    (name, archtag) for archtag in archtags | set((None,))]
+                    (name, archtag) for archtag in archtags | {None}]
             for key in matching_keys:
                 if key not in binaries:
                     continue
@@ -416,20 +416,20 @@ class UnknownOverridePolicy(BaseOverridePolicy):
             return override_component_name
 
     def calculateSourceOverrides(self, sources):
-        return dict(
-            (spn, SourceOverride(
+        return {
+            spn: SourceOverride(
                 component=UnknownOverridePolicy.getComponentOverride(
                     override.component, return_component=True),
-                new=True))
-            for spn, override in sources.items())
+                new=True)
+            for spn, override in sources.items()}
 
     def calculateBinaryOverrides(self, binaries):
         default_component = getUtility(IComponentSet)['universe']
-        return dict(
-            ((binary_package_name, architecture_tag), BinaryOverride(
+        return {
+            (binary_package_name, architecture_tag): BinaryOverride(
                 component=default_component, new=True,
-                phased_update_percentage=self.phased_update_percentage))
-            for binary_package_name, architecture_tag in binaries.keys())
+                phased_update_percentage=self.phased_update_percentage)
+            for binary_package_name, architecture_tag in binaries.keys()}
 
 
 class ConstantOverridePolicy(BaseOverridePolicy):
@@ -444,18 +444,18 @@ class ConstantOverridePolicy(BaseOverridePolicy):
         self.new = new
 
     def calculateSourceOverrides(self, sources):
-        return dict(
-            (key, SourceOverride(
+        return {
+            key: SourceOverride(
                 component=self.component, section=self.section,
-                new=self.new)) for key in sources.keys())
+                new=self.new) for key in sources.keys()}
 
     def calculateBinaryOverrides(self, binaries):
-        return dict(
-            (key, BinaryOverride(
+        return {
+            key: BinaryOverride(
                 component=self.component, section=self.section,
                 priority=self.priority,
                 phased_update_percentage=self.phased_update_percentage,
-                new=self.new)) for key in binaries.keys())
+                new=self.new) for key in binaries.keys()}
 
 
 class FallbackOverridePolicy(BaseOverridePolicy):
@@ -471,7 +471,7 @@ class FallbackOverridePolicy(BaseOverridePolicy):
             if not missing:
                 break
             these_overrides = policy.calculateSourceOverrides(
-                dict((spn, sources[spn]) for spn in missing))
+                {spn: sources[spn] for spn in missing})
             overrides.update(these_overrides)
             missing -= set(these_overrides.keys())
         return overrides
@@ -483,16 +483,16 @@ class FallbackOverridePolicy(BaseOverridePolicy):
             if not missing:
                 break
             these_overrides = policy.calculateBinaryOverrides(
-                dict((key, binaries[key]) for key in missing))
+                {key: binaries[key] for key in missing})
             overrides.update(these_overrides)
             missing -= set(these_overrides.keys())
         return overrides
 
 
 def calculate_target_das(distroseries, binaries):
-    arch_map = dict(
-        (arch.architecturetag, arch)
-        for arch in distroseries.enabled_architectures)
+    arch_map = {
+        arch.architecturetag: arch
+        for arch in distroseries.enabled_architectures}
 
     with_das = []
     for bpn, archtag in binaries:

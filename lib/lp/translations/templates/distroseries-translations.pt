@@ -111,7 +111,7 @@
                 <strong>Base pack:</strong>
                 <a class="sprite download"
                    tal:condition="context/language_pack_base"
-                   tal:attributes="href context/language_pack_base/file/http_url">
+                   tal:attributes="href context/language_pack_base/file/getURL">
                   <tal:export-date
                      replace="context/language_pack_base/date_exported/fmt:datetime" />
                 </a>
@@ -123,7 +123,7 @@
                 <strong>Update pack:</strong>
                 <a class="sprite download"
                    tal:condition="context/language_pack_delta"
-                   tal:attributes="href context/language_pack_delta/file/http_url">
+                   tal:attributes="href context/language_pack_delta/file/getURL">
                   <tal:export-date
                      replace="context/language_pack_delta/date_exported/fmt:datetime" />
                 </a>

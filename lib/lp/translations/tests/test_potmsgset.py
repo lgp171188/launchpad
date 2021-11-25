@@ -1312,9 +1312,9 @@ class TestSetCurrentTranslation(TestCaseWithFactory):
 
     def _makeTranslations(self, potmsgset, forms=1):
         """Produce a POTranslations dict of random translations."""
-        return dict(
-            (form, self.factory.getUniqueString())
-            for form in range(forms))
+        return {
+            form: self.factory.getUniqueString()
+            for form in range(forms)}
 
     def test_baseline(self):
         # setCurrentTranslation sets the current translation

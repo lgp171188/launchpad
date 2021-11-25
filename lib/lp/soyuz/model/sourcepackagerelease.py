@@ -20,11 +20,6 @@ from debian.changelog import (
     )
 import pytz
 import six
-from sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    StringCol,
-    )
 from storm.expr import Join
 from storm.locals import (
     Desc,
@@ -47,11 +42,16 @@ from lp.registry.interfaces.sourcepackage import (
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.sqlbase import (
     cursor,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    SQLMultipleJoin,
+    StringCol,
     )
 from lp.services.librarian.model import (
     LibraryFileAlias,
@@ -92,8 +92,9 @@ class SourcePackageRelease(SQLBase):
     signing_key_owner_id = Int(name="signing_key_owner")
     signing_key_owner = Reference(signing_key_owner_id, 'Person.id')
     signing_key_fingerprint = Unicode()
-    urgency = EnumCol(dbName='urgency', schema=SourcePackageUrgency,
-        default=SourcePackageUrgency.LOW, notNull=True)
+    urgency = DBEnum(
+        name='urgency', enum=SourcePackageUrgency,
+        default=SourcePackageUrgency.LOW, allow_none=False)
     dateuploaded = UtcDateTimeCol(dbName='dateuploaded', notNull=True,
         default=UTC_NOW)
     dsc = StringCol(dbName='dsc')
@@ -107,8 +108,9 @@ class SourcePackageRelease(SQLBase):
     build_conflicts_indep = StringCol(dbName='build_conflicts_indep')
     architecturehintlist = StringCol(dbName='architecturehintlist')
     homepage = StringCol(dbName='homepage')
-    format = EnumCol(dbName='format', schema=SourcePackageType,
-        default=SourcePackageType.DPKG, notNull=True)
+    format = DBEnum(
+        name='format', enum=SourcePackageType,
+        default=SourcePackageType.DPKG, allow_none=False)
     upload_distroseries = ForeignKey(foreignKey='DistroSeries',
         dbName='upload_distroseries')
     upload_archive = ForeignKey(
@@ -249,8 +251,8 @@ class SourcePackageRelease(SQLBase):
 
     @cachedproperty
     def published_archives(self):
-        archives = set(
-            pub.archive for pub in self.publishings.prejoin(['archive']))
+        archives = {
+            pub.archive for pub in self.publishings.prejoin(['archive'])}
         return sorted(archives, key=operator.attrgetter('id'))
 
     def addFile(self, file, filetype=None):

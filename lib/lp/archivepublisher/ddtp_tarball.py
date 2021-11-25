@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The processing of translated packages descriptions (ddtp) tarballs.
@@ -16,8 +16,13 @@ __all__ = [
 
 import os
 
+from zope.component import getUtility
+
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
+from lp.registry.interfaces.distroseries import IDistroSeriesSet
+from lp.services.features import getFeatureFlag
+from lp.soyuz.enums import ArchivePurpose
 
 
 class DdtpTarballUpload(CustomUpload):
@@ -59,6 +64,9 @@ class DdtpTarballUpload(CustomUpload):
 
     def setTargetDirectory(self, archive, tarfile_path, suite):
         self.setComponents(tarfile_path)
+        self.archive = archive
+        self.distro_series, _ = getUtility(IDistroSeriesSet).fromSuite(
+            archive.distribution, suite)
         pubconf = getPubConfig(archive)
         self.targetdir = os.path.join(
             pubconf.archiveroot, 'dists', suite, self.component)
@@ -76,7 +84,28 @@ class DdtpTarballUpload(CustomUpload):
 
     def shouldInstall(self, filename):
         # Ignore files outside of the i18n subdirectory
-        return filename.startswith('i18n/')
+        if not filename.startswith("i18n/"):
+            return False
+        # apt-ftparchive or the PPA publisher (with slightly different
+        # conditions depending on the archive purpose) may be configured to
+        # create its own Translation-en files.  If so, we must take care not
+        # to allow ddtp-tarball custom uploads to collide with those.
+        if (filename == "i18n/Translation-en" or
+                filename.startswith("i18n/Translation-en.")):
+            # Compare with the step C condition in
+            # PublishDistro.publishArchive.
+            if self.archive.purpose in (
+                    ArchivePurpose.PRIMARY, ArchivePurpose.COPY):
+                # See FTPArchiveHandler.writeAptConfig.
+                if not self.distro_series.include_long_descriptions:
+                    return False
+            else:
+                # See Publisher._writeComponentIndexes.
+                if (not self.distro_series.include_long_descriptions and
+                        getFeatureFlag(
+                            "soyuz.ppa.separate_long_descriptions")):
+                    return False
+        return True
 
     def fixCurrentSymlink(self):
         # There is no symlink to fix up for DDTP uploads

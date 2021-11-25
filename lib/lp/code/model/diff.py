@@ -26,11 +26,6 @@ from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
 from lazr.delegates import delegate_to
 import simplejson
 import six
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from storm.locals import (
     Int,
     Reference,
@@ -53,6 +48,11 @@ from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    IntCol,
+    StringCol,
+    )
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import (
     LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
@@ -77,9 +77,9 @@ class Diff(SQLBase):
     def _get_diffstat(self):
         if self._diffstat is None:
             return None
-        return dict((key, tuple(value))
+        return {key: tuple(value)
                     for key, value
-                    in simplejson.loads(self._diffstat).items())
+                    in simplejson.loads(self._diffstat).items()}
 
     def _set_diffstat(self, diffstat):
         if diffstat is None:
@@ -385,13 +385,13 @@ class PreviewDiff(Storm):
             source_revision = bmp.source_branch.getBranchRevision(
                 revision_id=self.source_revision_id)
             if source_revision and source_revision.sequence:
-                source_rev = u'r{0}'.format(source_revision.sequence)
+                source_rev = u'r{}'.format(source_revision.sequence)
             else:
                 source_rev = self.source_revision_id
             target_revision = bmp.target_branch.getBranchRevision(
                 revision_id=self.target_revision_id)
             if target_revision and target_revision.sequence:
-                target_rev = u'r{0}'.format(target_revision.sequence)
+                target_rev = u'r{}'.format(target_revision.sequence)
             else:
                 target_rev = self.target_revision_id
         else:
@@ -402,7 +402,7 @@ class PreviewDiff(Storm):
             source_rev = self.source_revision_id[:7]
             target_rev = self.target_revision_id[:7]
 
-        return u'{0} into {1}'.format(source_rev, target_rev)
+        return u'{} into {}'.format(source_rev, target_rev)
 
     @property
     def has_conflicts(self):

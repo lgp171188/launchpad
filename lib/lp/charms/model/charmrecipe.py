@@ -487,7 +487,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
             for charm_base in store.find(
                 CharmBase,
                 CharmBase.distro_series_id.is_in(
-                    set(das.distroseriesID for das in all_buildable_dases)))}
+                    {das.distroseriesID for das in all_buildable_dases}))}
         return [
             das for das in all_buildable_dases
             if self._isBuildableArchitectureAllowed(

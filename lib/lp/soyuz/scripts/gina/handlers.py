@@ -23,7 +23,6 @@ import os
 import re
 
 import six
-from sqlobject import SQLObjectNotFound
 from storm.exceptions import NotOneError
 from storm.expr import (
     Cast,
@@ -47,6 +46,7 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import quote
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.scripts import log
 from lp.soyuz.enums import (
@@ -503,9 +503,9 @@ class SourcePackageHandler:
         log.debug("Found a source package for %s (%s) in %s" % (sp_name,
             sp_version, sp_component))
         dsc_contents = parse_tagfile(dsc_path)
-        dsc_contents = dict([
-            (name.lower(), value) for
-            (name, value) in six.iteritems(dsc_contents)])
+        dsc_contents = {
+            name.lower(): value for
+            (name, value) in six.iteritems(dsc_contents)}
 
         # Since the dsc doesn't know, we add in the directory, package
         # component and section

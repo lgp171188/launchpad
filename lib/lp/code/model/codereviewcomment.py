@@ -122,7 +122,7 @@ class CodeReviewComment(StormBase):
         attachments = [chunk.blob for chunk in self.message.chunks
                        if chunk.blob is not None]
         # Attachments to show.
-        good_mimetypes = set(['text/plain', 'text/x-diff', 'text/x-patch'])
+        good_mimetypes = {'text/plain', 'text/x-diff', 'text/x-patch'}
         display_attachments = [
             attachment for attachment in attachments
             if ((attachment.mimetype in good_mimetypes) or

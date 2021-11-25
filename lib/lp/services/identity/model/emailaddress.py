@@ -13,15 +13,11 @@ import hashlib
 import operator
 
 import six
-from sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
 from storm.expr import Lower
 from zope.interface import implementer
 
 from lp.app.validators.email import valid_email
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -29,6 +25,10 @@ from lp.services.database.interfaces import (
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    ForeignKey,
+    StringCol,
     )
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressAlreadyTaken,
@@ -56,7 +56,7 @@ class EmailAddress(SQLBase, HasOwnerMixin):
 
     email = StringCol(
             dbName='email', notNull=True, unique=True, alternateID=True)
-    status = EnumCol(dbName='status', schema=EmailAddressStatus, notNull=True)
+    status = DBEnum(name='status', enum=EmailAddressStatus, allow_none=False)
     person = ForeignKey(dbName='person', foreignKey='Person', notNull=False)
 
     def __repr__(self):

@@ -1,15 +1,15 @@
 Storm Stores & Database Policies
 ================================
 
-Launchpad has multiple master and slave databases. Changes to data are
-made on the master and replicated asynchronously to the slave
-databases. Slave databases will usually lag a few seconds behind their
-master. Under high load they may lag a few minutes behind, during
+Launchpad has multiple primary and standby databases. Changes to data are
+made on the primary and replicated asynchronously to the standby
+databases. Standby databases will usually lag a few seconds behind their
+primary. Under high load they may lag a few minutes behind, during
 maintenance they may lag a few hours behind and if things explode
 while admins are on holiday they may lag days behind.
 
-If know your code needs to change data, or must have the latest posible
-information, you retrieve objects from the master databases that stores
+If you know your code needs to change data, or must have the latest possible
+information, you retrieve objects from the primary database that stores
 the data for your database class.
 
     >>> from lp.services.database.interfaces import IMasterStore
@@ -24,12 +24,12 @@ the data for your database class.
 
 Sometimes though we know we will not make changes and don't care much
 if the information is a little out of date. In these cases you should
-explicitly retrieve objects from a slave.
+explicitly retrieve objects from a standby.
 
-The more agressively we retrieve objects from slave databases instead
-of the master, the better the overall performance of Launchpad will be.
-We can distribute this load over many slave databases but are limited to
-a single master.
+The more aggressively we retrieve objects from standby databases instead
+of the primary, the better the overall performance of Launchpad will be.
+We can distribute this load over many standby databases but are limited to
+a single primary.
 
     >>> from lp.services.database.interfaces import ISlaveStore
     >>> ro_janitor = ISlaveStore(Person).find(
@@ -57,33 +57,33 @@ depends on the currently installed database policy.
     True
 
 As you can see, the default database policy retrieves objects from
-the master database. This allows our code written before database
+the primary database. This allows our code written before database
 replication was implemented to keep working.
 
 To alter this behaviour, you can install a different database policy.
 
-    >>> from lp.services.database.policy import SlaveDatabasePolicy
-    >>> with SlaveDatabasePolicy():
+    >>> from lp.services.database.policy import StandbyDatabasePolicy
+    >>> with StandbyDatabasePolicy():
     ...     default_janitor = IStore(Person).find(
     ...         Person, Person.name == 'janitor').one()
     >>> default_janitor is writable_janitor
     False
 
 The database policy can also affect what happens when objects are
-explicitly retrieved from a slave or master database. For example,
+explicitly retrieved from a standby or primary database. For example,
 if we have code that needs to run during database maintenance or
-code we want to prove only accesses slave database resources, we can
-raise an exception if an attempt is made to access master database
+code we want to prove only accesses standby database resources, we can
+raise an exception if an attempt is made to access primary database
 resources.
 
     >>> from lp.services.database.policy import (
-    ...     SlaveOnlyDatabasePolicy)
-    >>> with SlaveOnlyDatabasePolicy():
+    ...     StandbyOnlyDatabasePolicy)
+    >>> with StandbyOnlyDatabasePolicy():
     ...     whoops = IMasterStore(Person).find(
     ...         Person, Person.name == 'janitor').one()
     Traceback (most recent call last):
     ...
-    lp.services.database.interfaces.DisallowedStore: master
+    lp.services.database.interfaces.DisallowedStore: primary
 
 We can even ensure no database activity occurs at all, for instance
 if we need to guarantee a potentially long running call doesn't access
@@ -103,7 +103,7 @@ IStoreSelector utility for cases where the 'with' syntax cannot
 be used.
 
     >>> from lp.services.database.interfaces import IStoreSelector
-    >>> getUtility(IStoreSelector).push(SlaveDatabasePolicy())
+    >>> getUtility(IStoreSelector).push(StandbyDatabasePolicy())
     >>> try:
     ...     default_janitor = IStore(Person).find(
     ...         Person, Person.name == 'janitor').one()

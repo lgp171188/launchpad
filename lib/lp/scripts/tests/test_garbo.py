@@ -84,7 +84,6 @@ from lp.registry.enums import (
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
-from lp.registry.model.codeofconduct import SignedCodeOfConduct
 from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.teammembership import TeamMembership
 from lp.scripts.garbo import (
@@ -97,7 +96,6 @@ from lp.scripts.garbo import (
     load_garbo_job_state,
     LoginTokenPruner,
     OpenIDConsumerAssociationPruner,
-    PopulateSignedCodeOfConductAffirmed,
     PopulateSnapBuildStoreRevision,
     ProductVCSPopulator,
     save_garbo_job_state,
@@ -348,14 +346,14 @@ class TestSessionPruner(TestCase):
         finally:
             pruner.cleanUp()
 
-        expected_sessions = set([
+        expected_sessions = {
             'recent_auth',
             'recent_unauth',
             'yesterday_auth',
             'yesterday_unauth',
             # 'ancient_auth',
             # 'ancient_unauth',
-            ])
+            }
 
         found_sessions = set(
             IMasterStore(SessionData).find(SessionData.client_id))
@@ -371,14 +369,14 @@ class TestSessionPruner(TestCase):
         finally:
             pruner.cleanUp()
 
-        expected_sessions = set([
+        expected_sessions = {
             'recent_auth',
             'recent_unauth',
             'yesterday_auth',
             # 'yesterday_unauth',
             'ancient_auth',
             # 'ancient_unauth',
-            ])
+            }
 
         found_sessions = set(
             IMasterStore(SessionData).find(SessionData.client_id))
@@ -388,14 +386,14 @@ class TestSessionPruner(TestCase):
     def test_duplicate_session_pruner(self):
         # None of the sessions created in setUp() are duplicates, so
         # they will all survive the pruning.
-        expected_sessions = set([
+        expected_sessions = {
             'recent_auth',
             'recent_unauth',
             'yesterday_auth',
             'yesterday_unauth',
             'ancient_auth',
             'ancient_unauth',
-            ])
+            }
 
         now = datetime.now(UTC)
 
@@ -2046,21 +2044,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runDaily()
         switch_dbuser('testadmin')
         self.assertEqual(build1._store_upload_revision, 1)
-
-    def test_PopulateSignedCodeOfConductAffirmed(self):
-        switch_dbuser('testadmin')
-        populator = PopulateSignedCodeOfConductAffirmed(log=None)
-        for _ in range(5):
-            person = self.factory.makePerson()
-            SignedCodeOfConduct(owner=person).affirmed = None
-
-        result_set = populator.findSignedCodeOfConducts()
-        self.assertGreater(result_set.count(), 0)
-
-        self.runHourly()
-
-        result_set = populator.findSignedCodeOfConducts()
-        self.assertTrue(result_set.is_empty())
 
 
 class TestGarboTasks(TestCaseWithFactory):

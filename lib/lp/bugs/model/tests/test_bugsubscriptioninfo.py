@@ -61,9 +61,9 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
         super(TestSubscriptionRelatedSets, self).setUp()
         make_person = lambda displayname, name: (
             self.factory.makePerson(displayname=displayname, name=name))
-        subscribers = dict(
-            (name_pair, make_person(*name_pair))
-            for name_pair in self.name_pairs)
+        subscribers = {
+            name_pair: make_person(*name_pair)
+            for name_pair in self.name_pairs}
         self.subscribers_set = frozenset(six.itervalues(subscribers))
         self.subscribers_sorted = tuple(
             subscribers[name_pair] for name_pair in self.name_pairs_sorted)

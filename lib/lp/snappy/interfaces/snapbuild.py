@@ -12,6 +12,8 @@ __all__ = [
     'SnapBuildStoreUploadStatus',
     ]
 
+import http.client
+
 from lazr.enum import (
     EnumeratedType,
     Item,
@@ -29,12 +31,11 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
-from six.moves import http_client
-from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
     Interface,
     )
+from zope.interface.interfaces import IObjectEvent
 from zope.schema import (
     Bool,
     Choice,
@@ -62,7 +63,7 @@ from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class CannotScheduleStoreUpload(Exception):
     """This build cannot be uploaded to the store."""
 

@@ -8,7 +8,6 @@ __all__ = [
 
 from operator import itemgetter
 
-from sqlobject import ForeignKey
 from storm.expr import (
     And,
     Join,
@@ -26,6 +25,7 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
+from lp.services.database.sqlobject import ForeignKey
 from lp.translations.interfaces.pofiletranslator import (
     IPOFileTranslator,
     IPOFileTranslatorSet,
@@ -51,7 +51,7 @@ class POFileTranslatorSet:
 
     def prefetchPOFileTranslatorRelations(self, pofiletranslators):
         """See `IPOFileTranslatorSet`."""
-        ids = set(record.id for record in pofiletranslators)
+        ids = {record.id for record in pofiletranslators}
         if not ids:
             return None
 

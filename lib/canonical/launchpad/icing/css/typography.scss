@@ -54,6 +54,10 @@ h1, h2, h3, h4, h5, h6 {
     max-width: $wider-page;
   }
 
+  .full-width {
+    max-width: 100%;
+  }
+
   table.wide {
     width: $wider-page;
   }

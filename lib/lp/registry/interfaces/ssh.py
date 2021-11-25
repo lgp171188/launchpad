@@ -11,6 +11,8 @@ __all__ = [
     'SSHKeyType',
     ]
 
+import http.client
+
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -21,7 +23,6 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     )
 import six
-from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Choice,
@@ -124,7 +125,7 @@ class ISSHKeySet(Interface):
         """
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class SSHKeyAdditionError(Exception):
     """Raised when the SSH public key is invalid.
 

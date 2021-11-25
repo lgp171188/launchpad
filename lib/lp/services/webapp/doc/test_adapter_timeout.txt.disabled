@@ -29,7 +29,7 @@ exception, and a time machine.
     >>> from lp.services.config import config
     >>> import lp.services.webapp.adapter
     >>> from lp.services.webapp.interfaces import (
-    ...     IStoreSelector, MAIN_STORE, MASTER_FLAVOR)
+    ...     IStoreSelector, MAIN_STORE, PRIMARY_FLAVOR)
     >>> from lp.testing.pages import setupBrowser
 
     >>> config.push('set_timeout', dedent('''
@@ -53,7 +53,7 @@ exception, and a time machine.
     ...         return self, None
     ...     def __call__(self):
     ...         store = zope.component.getUtility(IStoreSelector).get(
-    ...             MAIN_STORE, MASTER_FLAVOR)
+    ...             MAIN_STORE, PRIMARY_FLAVOR)
     ...         time_travel(config.database.db_statement_timeout +
     ...                     config.database.db_statement_timeout_precision)
     ...         store.execute('SELECT TRUE', noresult=True)
@@ -63,7 +63,7 @@ exception, and a time machine.
     ...     def __call__(self):
     ...         global timeout_in_exception_view
     ...         store = zope.component.getUtility(IStoreSelector).get(
-    ...             MAIN_STORE, MASTER_FLAVOR)
+    ...             MAIN_STORE, PRIMARY_FLAVOR)
     ...         try:
     ...             store.execute('SELECT TRUE', noresult=True)
     ...         except TimeoutError:

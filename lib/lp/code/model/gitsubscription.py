@@ -21,7 +21,7 @@ from lp.code.security import GitSubscriptionEdit
 from lp.registry.interfaces.person import validate_person
 from lp.registry.interfaces.role import IPersonRoles
 from lp.services.database.constants import DEFAULT
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 
 
@@ -39,13 +39,13 @@ class GitSubscription(StormBase):
     repository_id = Int(name='repository', allow_none=False)
     repository = Reference(repository_id, 'GitRepository.id')
 
-    notification_level = EnumCol(
-        enum=BranchSubscriptionNotificationLevel, notNull=True,
+    notification_level = DBEnum(
+        enum=BranchSubscriptionNotificationLevel, allow_none=False,
         default=DEFAULT)
-    max_diff_lines = EnumCol(
-        enum=BranchSubscriptionDiffSize, notNull=False, default=DEFAULT)
-    review_level = EnumCol(
-        enum=CodeReviewNotificationLevel, notNull=True, default=DEFAULT)
+    max_diff_lines = DBEnum(
+        enum=BranchSubscriptionDiffSize, allow_none=True, default=DEFAULT)
+    review_level = DBEnum(
+        enum=CodeReviewNotificationLevel, allow_none=False, default=DEFAULT)
 
     subscribed_by_id = Int(
         name='subscribed_by', allow_none=False, validator=validate_person)

@@ -12,6 +12,8 @@ __all__ = [
     'BugNominationStatus',
     'NominationSeriesObsoleteError']
 
+import http.client
+
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -29,7 +31,6 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
-from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -52,17 +53,17 @@ from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import PublicPersonChoice
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NominationError(Exception):
     """The bug cannot be nominated for this release."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class NominationSeriesObsoleteError(Exception):
     """A bug cannot be nominated for an obsolete series."""
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http.client.BAD_REQUEST)
 class BugNominationStatusError(Exception):
     """A error occurred while trying to set a bug nomination status."""
 

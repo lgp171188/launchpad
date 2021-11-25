@@ -582,7 +582,7 @@ class TestFTPArchive(TestCaseWithFactory):
         #  * a-f runs based on this config without any errors
         #  * a-f *only* creates the wanted archive indexes.
         allowed_suites = set()
-        allowed_suites.add(('hoary-test', PackagePublishingPocket.UPDATES))
+        allowed_suites.add('hoary-test-updates')
 
         publisher = Publisher(
             self._logger, self._config, self._dp,

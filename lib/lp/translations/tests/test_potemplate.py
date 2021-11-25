@@ -267,7 +267,7 @@ class TestProductTemplateEquivalenceClasses(TestCaseWithFactory,
             productseries=self.stable, name='foo-other')
 
         templates = set(list(self.subset.getSharingPOTemplates('foo')))
-        self.assertEqual(set([trunk_template, stable_template]), templates)
+        self.assertEqual({trunk_template, stable_template}, templates)
 
 
 class TestDistroTemplateEquivalenceClasses(TestCaseWithFactory,
@@ -380,7 +380,7 @@ class TestDistroTemplateEquivalenceClasses(TestCaseWithFactory,
             distribution=self.ubuntu, sourcepackagename=self.package)
 
         templates = set(list(subset.getSharingPOTemplates(template_name)))
-        self.assertEqual(set([warty_template, hoary_template]), templates)
+        self.assertEqual({warty_template, hoary_template}, templates)
 
     def test_GetSharingPOTemplates(self):
         # getSharingTemplates returns all sharing templates named foo.
@@ -1042,19 +1042,18 @@ class TestPOTemplateSubset(TestCaseWithFactory):
         domain = self.factory.getUniqueString()
         series = self.factory.makeProductSeries()
 
-        templates = dict(
-            (iscurrent, [self.factory.makePOTemplate(
+        templates = {
+            iscurrent: [self.factory.makePOTemplate(
                 translation_domain=domain, productseries=series,
-                iscurrent=iscurrent)])
-            for iscurrent in [False, True])
+                iscurrent=iscurrent)]
+            for iscurrent in [False, True]}
 
         potset = getUtility(IPOTemplateSet)
-        found_templates = dict((
-            iscurrent,
+        found_templates = {
+            iscurrent:
             list(potset.getSubset(productseries=series, iscurrent=iscurrent
                 ).getPOTemplatesByTranslationDomain(domain),)
-            )
-            for iscurrent in [False, True])
+            for iscurrent in [False, True]}
 
         self.assertEqual(templates, found_templates)
 

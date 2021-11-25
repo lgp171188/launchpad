@@ -15,7 +15,6 @@ from breezy.revision import NULL_REVISION
 from breezy.url_policy_open import BadUrl
 from pytz import UTC
 import six
-from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
 from storm.locals import Store
 from testtools import ExpectedException
@@ -132,6 +131,7 @@ from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
+from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
@@ -1783,7 +1783,7 @@ class StackedBranches(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch()
         stacked_branch = self.factory.makeAnyBranch(stacked_on=branch)
         self.assertEqual(
-            set([stacked_branch]), set(branch.getStackedBranches()))
+            {stacked_branch}, set(branch.getStackedBranches()))
 
     def testMultipleBranchesStacked(self):
         # some_branch.getStackedBranches returns a collection of branches
@@ -1792,7 +1792,7 @@ class StackedBranches(TestCaseWithFactory):
         stacked_a = self.factory.makeAnyBranch(stacked_on=branch)
         stacked_b = self.factory.makeAnyBranch(stacked_on=branch)
         self.assertEqual(
-            set([stacked_a, stacked_b]), set(branch.getStackedBranches()))
+            {stacked_a, stacked_b}, set(branch.getStackedBranches()))
 
     def testNoBranchesStackedOn(self):
         # getStackedBranches returns an empty collection if there are no
@@ -1806,7 +1806,7 @@ class StackedBranches(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch()
         stacked_branch = self.factory.makeAnyBranch(stacked_on=branch)
         self.assertEqual(
-            set([branch]), set(stacked_branch.getStackedOnBranches()))
+            {branch}, set(stacked_branch.getStackedOnBranches()))
 
     def testMultipleBranchesStackedOn(self):
         # some_branch.getStackedOnBranches returns a collection of branches
@@ -1815,7 +1815,7 @@ class StackedBranches(TestCaseWithFactory):
         stacked_b = self.factory.makeAnyBranch(stacked_on=stacked_a)
         branch = self.factory.makeAnyBranch(stacked_on=stacked_b)
         self.assertEqual(
-            set([stacked_a, stacked_b]), set(branch.getStackedOnBranches()))
+            {stacked_a, stacked_b}, set(branch.getStackedOnBranches()))
 
 
 class BranchAddLandingTarget(TestCaseWithFactory):
@@ -1976,9 +1976,9 @@ class BranchAddLandingTarget(TestCaseWithFactory):
         bmp = self.source._createMergeProposal(
             self.user, self.target, reviewers=[person1, person2],
             review_types=['review1', 'review2'])
-        votes = set((vote.reviewer, vote.review_type) for vote in bmp.votes)
+        votes = {(vote.reviewer, vote.review_type) for vote in bmp.votes}
         self.assertEqual(
-            set([(person1, 'review1'), (person2, 'review2')]), votes)
+            {(person1, 'review1'), (person2, 'review2')}, votes)
 
 
 class TestLandingCandidates(TestCaseWithFactory):
@@ -3161,9 +3161,9 @@ class TestScheduleDiffUpdates(TestCaseWithFactory):
         removeSecurityProxy(bmp2).target_branch.last_scanned_id = 'rev2'
         jobs = bmp1.source_branch.scheduleDiffUpdates()
         self.assertEqual(2, len(jobs))
-        bmps_to_update = set(
-            removeSecurityProxy(job).branch_merge_proposal for job in jobs)
-        self.assertEqual(set([bmp1, bmp2]), bmps_to_update)
+        bmps_to_update = {
+            removeSecurityProxy(job).branch_merge_proposal for job in jobs}
+        self.assertEqual({bmp1, bmp2}, bmps_to_update)
 
     def test_scheduleDiffUpdates_ignores_final(self):
         """Diffs for proposals in final states aren't updated."""

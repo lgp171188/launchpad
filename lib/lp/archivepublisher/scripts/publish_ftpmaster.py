@@ -95,9 +95,9 @@ def map_distro_pubconfigs(distro):
     candidates = [
         (archive.purpose, getPubConfig(archive))
         for archive in get_publishable_archives(distro)]
-    return dict(
-        (purpose, config)
-        for purpose, config in candidates if config is not None)
+    return {
+        purpose: config
+        for purpose, config in candidates if config is not None}
 
 
 def newer_mtime(one_file, other_file):
@@ -185,9 +185,9 @@ class PublishFTPMaster(LaunchpadCronScript):
 
         So: getConfigs[distro][purpose] gives you a config.
         """
-        return dict(
-            (distro, map_distro_pubconfigs(distro))
-            for distro in self.distributions)
+        return {
+            distro: map_distro_pubconfigs(distro)
+            for distro in self.distributions}
 
     def locateIndexesMarker(self, distribution, suite):
         """Give path for marker file whose presence marks index creation.
@@ -266,9 +266,9 @@ class PublishFTPMaster(LaunchpadCronScript):
             only_unpublished=True))
         load_related(
             DistroArchSeries, pending_binaries, ['distroarchseriesID'])
-        return set(
+        return {
             pub.distroseries.name + pocketsuffix[pub.pocket]
-            for pub in pending_sources + pending_binaries)
+            for pub in pending_sources + pending_binaries}
 
     def getDirtySecuritySuites(self, distribution):
         """List security suites with pending publications."""
@@ -345,7 +345,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         arguments = (
             ['-d', distribution.name] +
             args +
-            sum([['-s', suite] for suite in suites], []))
+            sum((['-s', suite] for suite in suites), []))
 
         publish_distro = PublishDistro(
             test_args=arguments, logger=self.logger, ignore_cron_control=True)

@@ -3,12 +3,6 @@
 
 __all__ = ['GPGKey', 'GPGKeySet']
 
-from sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-    )
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -16,10 +10,16 @@ from lp.registry.interfaces.gpg import (
     IGPGKey,
     IGPGKeySet,
     )
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.sqlobject import (
+    BoolCol,
+    ForeignKey,
+    IntCol,
+    StringCol,
     )
 from lp.services.gpg.interfaces import (
     GPGKeyAlgorithm,
@@ -40,8 +40,8 @@ class GPGKey(SQLBase):
 
     keysize = IntCol(dbName='keysize', notNull=True)
 
-    algorithm = EnumCol(dbName='algorithm', notNull=True,
-                        enum=GPGKeyAlgorithm)
+    algorithm = DBEnum(name='algorithm', allow_none=False,
+                       enum=GPGKeyAlgorithm)
 
     active = BoolCol(dbName='active', notNull=True)
 

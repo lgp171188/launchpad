@@ -125,8 +125,8 @@ class TestGPGHandler(TestCase):
         self.populateKeyring()
 
         self.assertNotEqual([], list(self.gpg_handler.localKeys()))
-        fingerprints = set(key.fingerprint
-                           for key in self.gpg_handler.localKeys())
+        fingerprints = {key.fingerprint
+                           for key in self.gpg_handler.localKeys()}
         self.assertTrue("340CA3BB270E2716C9EE0B768E7EB7086C64A8C5"
                         in fingerprints)
         self.assertTrue("A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
@@ -276,7 +276,7 @@ class TestGPGHandler(TestCase):
         gpghandler = getUtility(IGPGHandler)
         self.assertEqual(
             fingerprint, gpghandler.retrieveKey(key_id).fingerprint)
-        fingerprints = set(key.fingerprint for key in gpghandler.localKeys())
+        fingerprints = {key.fingerprint for key in gpghandler.localKeys()}
         self.assertIn(fingerprint, fingerprints)
 
     def test_retrieveKey_checks_64bit_key_id(self):

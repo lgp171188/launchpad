@@ -8,12 +8,14 @@ __all__ = [
 import time as _time
 
 import fixtures
+from pymemcache.exceptions import MemcacheIllegalInputError
 
+from lp.services.memcache.client import MemcacheClient
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.testing.fixture import ZopeUtilityFixture
 
 
-class MemcacheFixture(fixtures.Fixture):
+class MemcacheFixture(fixtures.Fixture, MemcacheClient):
     """A trivial in-process memcache fixture."""
 
     def __init__(self):
@@ -22,7 +24,7 @@ class MemcacheFixture(fixtures.Fixture):
     def _setUp(self):
         self.useFixture(ZopeUtilityFixture(self, IMemcacheClient))
 
-    def get(self, key):
+    def get(self, key, default=None, logger=None):
         value, expiry_time = self._cache.get(key, (None, None))
         if expiry_time and _time.time() >= expiry_time:
             self.delete(key)
@@ -30,16 +32,21 @@ class MemcacheFixture(fixtures.Fixture):
         else:
             return value
 
-    def set(self, key, val, time=0):
+    def set(self, key, val, expire=0, logger=None):
         # memcached accepts either delta-seconds from the current time or
         # absolute epoch-seconds, and tells them apart using a magic
         # threshold.  See memcached/memcached.c:realtime.
-        if time and time <= 60 * 60 * 24 * 30:
-            time = _time.time() + time
-        self._cache[key] = (val, time)
+        MONTH_IN_SECONDS = 60 * 60 * 24 * 30
+        if expire:
+            if not isinstance(expire, int):
+                raise MemcacheIllegalInputError(
+                    "expire must be integer, got bad value: %r" % expire)
+            if expire <= MONTH_IN_SECONDS:
+                expire = int(_time.time()) + expire
+        self._cache[key] = (val, expire)
         return 1
 
-    def delete(self, key):
+    def delete(self, key, logger=None):
         self._cache.pop(key, None)
         return 1
 

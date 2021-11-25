@@ -1,19 +1,17 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-from storm import sqlobject
 from storm.properties import SimpleProperty
 from storm.variables import Variable
 from zope.security.proxy import isinstance as zope_isinstance
 
 
 __all__ = [
-'DBEnum',
-'EnumCol',
+    'DBEnum',
     ]
 
 
@@ -25,7 +23,8 @@ def check_enum_type(enum):
 
 def check_type(enum):
     if type(enum) in (list, tuple):
-        map(check_enum_type, enum)
+        for element in enum:
+            check_enum_type(element)
     else:
         check_enum_type(enum)
 
@@ -35,12 +34,8 @@ class DBEnumVariable(Variable):
     __slots__ = ("_enum",)
 
     def __init__(self, *args, **kwargs):
-        enum = kwargs.pop("enum")
-        if type(enum) not in (list, tuple):
-            enum = (enum,)
-        self._enum = enum
-        check_type(self._enum)
-        super(DBEnumVariable, self).__init__(*args, **kwargs)
+        self._enum = kwargs.pop("enum")
+        super().__init__(*args, **kwargs)
 
     def parse_set(self, value, from_db):
         if from_db:
@@ -69,18 +64,9 @@ class DBEnumVariable(Variable):
 class DBEnum(SimpleProperty):
     variable_class = DBEnumVariable
 
-
-class DBSchemaEnumCol(sqlobject.PropertyAdapter, DBEnum):
-    def __init__(self, **kw):
-        try:
-            enum = kw.pop('enum')
-        except KeyError:
-            enum = kw.pop('schema')
+    def __init__(self, *args, **kwargs):
+        enum = kwargs.pop("enum")
+        if type(enum) not in (list, tuple):
+            enum = (enum,)
         check_type(enum)
-        self._kwargs = {
-            'enum': enum,
-            }
-        super(DBSchemaEnumCol, self).__init__(**kw)
-
-
-EnumCol = DBSchemaEnumCol
+        super().__init__(enum=enum, *args, **kwargs)

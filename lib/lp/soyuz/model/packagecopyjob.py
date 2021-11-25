@@ -45,7 +45,7 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.services.config import config
 from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -108,9 +108,9 @@ class PackageCopyJob(StormBase):
     target_distroseries = Reference(target_distroseries_id, DistroSeries.id)
 
     package_name = Unicode('package_name')
-    copy_policy = EnumCol(enum=PackageCopyPolicy)
+    copy_policy = DBEnum(enum=PackageCopyPolicy)
 
-    job_type = EnumCol(enum=PackageCopyJobType, notNull=True)
+    job_type = DBEnum(enum=PackageCopyJobType, allow_none=False)
 
     metadata = JSON('json_data')
 

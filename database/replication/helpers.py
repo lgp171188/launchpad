@@ -78,7 +78,7 @@ LPMAIN_SEED = frozenset([
 # Explicitly list tables that should not be replicated. This includes the
 # session tables, as these might exist in developer databases but will not
 # exist in the production launchpad database.
-IGNORED_TABLES = set([
+IGNORED_TABLES = {
     # Session tables that in some situations will exist in the main lp
     # database.
     'public.secret', 'public.sessiondata', 'public.sessionpkgdata',
@@ -118,10 +118,10 @@ IGNORED_TABLES = set([
     'public.oauth_consumer_id_seq',
     'public.api_user_id_seq',
     'public.oauth_nonce_id_seq',
-    ])
+    }
 
 # Calculate IGNORED_SEQUENCES
-IGNORED_SEQUENCES = set('%s_id_seq' % table for table in IGNORED_TABLES)
+IGNORED_SEQUENCES = {'%s_id_seq' % table for table in IGNORED_TABLES}
 
 
 def slony_installed(con):
@@ -487,7 +487,7 @@ def calculate_replication_set(cur, seeds):
 
     # We can't easily convert the sequence name to (namespace, name) tuples,
     # so we might as well convert the tables to dot notation for consistancy.
-    tables = set(fqn(namespace, tablename) for namespace, tablename in tables)
+    tables = {fqn(namespace, tablename) for namespace, tablename in tables}
 
     return tables, sequences
 
@@ -503,24 +503,24 @@ def discover_unreplicated(cur):
 
     # Ignore any tables and sequences starting with temp_. These are
     # transient and not to be replicated per Bug #778338.
-    all_tables = set(
+    all_tables = {
         table for table in all_tables
-            if not table.startswith('public.temp_'))
-    all_sequences = set(
+            if not table.startswith('public.temp_')}
+    all_sequences = {
         sequence for sequence in all_sequences
-            if not sequence.startswith('public.temp_'))
+            if not sequence.startswith('public.temp_')}
 
     cur.execute("""
         SELECT tab_nspname, tab_relname FROM %s
         WHERE tab_nspname = 'public'
         """ % fqn(CLUSTER_NAMESPACE, "sl_table"))
-    replicated_tables = set(fqn(*row) for row in cur.fetchall())
+    replicated_tables = {fqn(*row) for row in cur.fetchall()}
 
     cur.execute("""
         SELECT seq_nspname, seq_relname FROM %s
         WHERE seq_nspname = 'public'
         """ % fqn(CLUSTER_NAMESPACE, "sl_sequence"))
-    replicated_sequences = set(fqn(*row) for row in cur.fetchall())
+    replicated_sequences = {fqn(*row) for row in cur.fetchall()}
 
     return (
         all_tables - replicated_tables - IGNORED_TABLES,

@@ -18,7 +18,6 @@ from debian.changelog import (
     )
 from lazr.enum import DBItem
 import six
-from sqlobject import StringCol
 from storm.expr import (
     And,
     Cast,
@@ -73,6 +72,7 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.database.sqlobject import StringCol
 from lp.services.database.stormbase import StormBase
 from lp.services.messages.model.message import (
     Message,
@@ -269,9 +269,9 @@ def eager_load_dsds(dsds):
             dsds, statuses=active_publishing_status,
             in_parent=True, match_version=True))
 
-    latest_comment_by_dsd_id = dict(
-        (comment.distro_series_difference_id, comment)
-        for comment in most_recent_comments(dsds))
+    latest_comment_by_dsd_id = {
+        comment.distro_series_difference_id: comment
+        for comment in most_recent_comments(dsds)}
     latest_comments = latest_comment_by_dsd_id.values()
 
     # SourcePackageReleases of the parent and source pubs are often
@@ -882,7 +882,7 @@ class DistroSeriesDifference(StormBase):
         return get_comment_with_status_change(
             self.status, new_status, comment)
 
-    def blacklist(self, commenter, all=False, comment=None):
+    def blocklist(self, commenter, all=False, comment=None):
         """See `IDistroSeriesDifference`."""
         if all:
             new_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
@@ -893,7 +893,7 @@ class DistroSeriesDifference(StormBase):
         self.status = new_status
         return dsd_comment
 
-    def unblacklist(self, commenter, comment=None):
+    def unblocklist(self, commenter, comment=None):
         """See `IDistroSeriesDifference`."""
         new_status = DistroSeriesDifferenceStatus.NEEDS_ATTENTION
         new_comment = self._getCommentWithStatusChange(new_status, comment)

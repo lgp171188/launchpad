@@ -199,7 +199,7 @@ class SignedCodeOfConduct(StormBase):
 
     active = Bool(name='active', allow_none=False, default=False)
 
-    affirmed = Bool(name='affirmed', allow_none=True, default=False,)
+    affirmed = Bool(name='affirmed', allow_none=False, default=False,)
 
     version = Unicode(name='version', allow_none=True, default=None)
 
