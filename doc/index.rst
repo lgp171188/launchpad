@@ -22,6 +22,14 @@ Overview
    values
    faq
 
+Tutorials
+=========
+
+.. toctree::
+   :maxdepth: 1
+
+   running
+
 Guides
 ======
 
