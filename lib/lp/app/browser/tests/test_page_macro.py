@@ -63,7 +63,7 @@ class PageMacroDispatcherTestCase(TestPageMacroDispatcherMixin, TestCase):
     layer = FunctionalLayer
 
     def setUp(self):
-        super(PageMacroDispatcherTestCase, self).setUp()
+        super().setUp()
         self._setUpView()
 
     def test_base_template(self):
@@ -152,7 +152,7 @@ class PageMacroDispatcherInteractionTestCase(TestPageMacroDispatcherMixin,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(PageMacroDispatcherInteractionTestCase, self).setUp()
+        super().setUp()
         self._setUpView()
         login_person(self.factory.makePerson())
 
@@ -165,7 +165,7 @@ class PageMacroDispatcherInteractionTestCase(TestPageMacroDispatcherMixin,
                 return FakeSecurityChecker(adaptee)
 
             def __init__(self, adaptee=None):
-                super(FakeSecurityChecker, self).__init__(adaptee)
+                super().__init__(adaptee)
 
             def checkUnauthenticated(self):
                 return has_permission

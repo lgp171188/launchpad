@@ -59,7 +59,7 @@ def registerFakeSecurityAdapter(interface, permission, adapter=None):
 class FakeSecurityAdapter(AuthorizationBase):
 
     def __init__(self, adaptee=None):
-        super(FakeSecurityAdapter, self).__init__(adaptee)
+        super().__init__(adaptee)
         self.checkAuthenticated = FakeMethod()
         self.checkUnauthenticated = FakeMethod()
 

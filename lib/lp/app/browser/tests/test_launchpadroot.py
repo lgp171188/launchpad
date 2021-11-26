@@ -127,7 +127,7 @@ class LaunchpadRootIndexViewTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(LaunchpadRootIndexViewTestCase, self).setUp()
+        super().setUp()
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.
         self.useFixture(FakeLogger())

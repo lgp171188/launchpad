@@ -33,7 +33,7 @@ class TestXHTMLRepresentations(TestCaseWithFactory):
 
     def test_text(self):
         # Test the XHTML representation of a text field.
-        text = u'\N{SNOWMAN} snowman@example.com bug 1'
+        text = '\N{SNOWMAN} snowman@example.com bug 1'
         # We need something that has an IPersonChoice, a project will do.
         product = self.factory.makeProduct()
         field = IProduct['description']
@@ -42,7 +42,7 @@ class TestXHTMLRepresentations(TestCaseWithFactory):
             (product, field, request), IFieldHTMLRenderer)
         # The representation is linkified html.
         self.assertEqual(
-            u'<p>\N{SNOWMAN} snowman@example.com '
+            '<p>\N{SNOWMAN} snowman@example.com '
             '<a href="/bugs/1" class="bug-link">bug 1</a></p>',
             renderer(text))
 

@@ -27,7 +27,7 @@ class TestMetaClass(InterfaceClass):
             "test_filtered.item": Choice(vocabulary='DistributionOrProduct'),
             "test_target": Choice(vocabulary='DistributionSourcePackage'),
             }
-        super(TestMetaClass, self).__init__(
+        super().__init__(
             name, bases=bases, attrs=attrs, __doc__=__doc__,
             __module__=__module__)
 
@@ -42,7 +42,7 @@ class TestVocabularyPickerWidget(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestVocabularyPickerWidget, self).setUp()
+        super().setUp()
         self.context = self.factory.makeTeam()
         self.vocabulary_registry = getVocabularyRegistry()
         self.vocabulary = self.vocabulary_registry.get(

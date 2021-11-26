@@ -48,15 +48,15 @@ class TestTextFieldMarshaller(TestCaseWithFactory):
     def test_unmarshall_obfuscated(self):
         # Data is obfuscated if the user is anonynous.
         marshaller = TextFieldMarshaller(None, WebServiceTestRequest())
-        result = marshaller.unmarshall(None, u"foo@example.com")
-        self.assertEqual(u"<email address hidden>", result)
+        result = marshaller.unmarshall(None, "foo@example.com")
+        self.assertEqual("<email address hidden>", result)
 
     def test_unmarshall_not_obfuscated(self):
         # Data is not obfuscated if the user is authenticated.
         marshaller = TextFieldMarshaller(None, WebServiceTestRequest())
         with person_logged_in(self.factory.makePerson()):
-            result = marshaller.unmarshall(None, u"foo@example.com")
-        self.assertEqual(u"foo@example.com", result)
+            result = marshaller.unmarshall(None, "foo@example.com")
+        self.assertEqual("foo@example.com", result)
 
 
 class TestWebServiceObfuscation(TestCaseWithFactory):

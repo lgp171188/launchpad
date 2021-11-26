@@ -64,7 +64,7 @@ class ObjectFormatterAPITestCase(TestCaseWithFactory, FakeAdapterMixin):
         view.request.traversed_objects = [project, bug.bugtasks[0], view]
         formatter = ObjectFormatterAPI(view)
         self.assertEqual(
-            u'%s \u201cbang\u201d : Bugs : Fnord' % bug.displayname,
+            '%s \u201cbang\u201d : Bugs : Fnord' % bug.displayname,
             formatter.pagetitle())
 
     def test_pagetitle_last_breadcrumb_detail_too_long(self):
@@ -76,8 +76,8 @@ class ObjectFormatterAPITestCase(TestCaseWithFactory, FakeAdapterMixin):
             current_request=True, server_url='https://bugs.launchpad.test/')
         view.request.traversed_objects = [project, bug.bugtasks[0], view]
         formatter = ObjectFormatterAPI(view)
-        detail = u'%s \u201c%s\u201d' % (bug.displayname, title)
-        expected_title = u'%s...\u201d : Bugs : Fnord' % detail[0:64]
+        detail = '%s \u201c%s\u201d' % (bug.displayname, title)
+        expected_title = '%s...\u201d : Bugs : Fnord' % detail[0:64]
         self.assertEqual(expected_title, formatter.pagetitle())
 
     def test_global_css(self):
@@ -97,10 +97,10 @@ class TestPillarFormatterAPI(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    FORMATTER_CSS_CLASS = u'sprite product'
+    FORMATTER_CSS_CLASS = 'sprite product'
 
     def setUp(self):
-        super(TestPillarFormatterAPI, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.formatter = PillarFormatterAPI(self.product)
         self.product_url = canonical_url(
@@ -111,7 +111,7 @@ class TestPillarFormatterAPI(TestCaseWithFactory):
         # current context, formatted to include a custom icon if the
         # context has one, and to display the context summary.
         link = self.formatter.link(None)
-        template = u'<a href="%(url)s" class="%(css_class)s">%(summary)s</a>'
+        template = '<a href="%(url)s" class="%(css_class)s">%(summary)s</a>'
         mapping = {
             'url': self.product_url,
             'summary': self.product.displayname,
@@ -126,8 +126,8 @@ class TestPillarFormatterAPI(TestCaseWithFactory):
         # (displayname and name of the context).
         link = self.formatter.link_with_displayname(None)
         template = (
-            u'<a href="%(url)s" class="%(css_class)s">%(summary)s</a>'
-            u'&nbsp;(<a href="%(url)s">%(name)s</a>)'
+            '<a href="%(url)s" class="%(css_class)s">%(summary)s</a>'
+            '&nbsp;(<a href="%(url)s">%(name)s</a>)'
             )
         mapping = {
             'url': self.product_url,

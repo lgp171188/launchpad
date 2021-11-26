@@ -44,4 +44,4 @@ class InformationTypeVocabulary(SimpleVocabulary):
             term.name = type.name
             term.description = type.description
             terms.append(term)
-        super(InformationTypeVocabulary, self).__init__(terms)
+        super().__init__(terms)
