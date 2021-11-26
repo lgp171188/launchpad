@@ -40,6 +40,7 @@ Technical
    :maxdepth: 1
 
    pip
+   security
 
 Possibly out-of-date
 --------------------
@@ -47,7 +48,6 @@ Possibly out-of-date
 .. toctree::
    :maxdepth: 1
 
-   security
    email
 
 Other
