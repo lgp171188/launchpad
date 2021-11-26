@@ -59,7 +59,6 @@ from operator import (
     )
 
 import apt_pkg
-import six
 from six.moves import (
     filter as ifilter,
     filterfalse as ifilterfalse,
@@ -668,7 +667,7 @@ class Dominator:
             bins = self.findBinariesForDomination(distroarchseries, pocket)
             sorted_packages = self._sortPackages(bins, generalization)
             self.logger.info("Planning domination of binaries...")
-            for name, pubs in six.iteritems(sorted_packages):
+            for name, pubs in sorted_packages.items():
                 self.logger.debug("Planning domination of %s" % name)
                 assert len(pubs) > 0, "Dominating zero binaries!"
                 live_versions = find_live_binary_versions_pass_1(pubs)
@@ -773,7 +772,7 @@ class Dominator:
         delete = []
 
         self.logger.debug("Dominating sources...")
-        for name, pubs in six.iteritems(sorted_packages):
+        for name, pubs in sorted_packages.items():
             self.logger.debug("Dominating %s" % name)
             assert len(pubs) > 0, "Dominating zero sources!"
             live_versions = find_live_source_versions(pubs)

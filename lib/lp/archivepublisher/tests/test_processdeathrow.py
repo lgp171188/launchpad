@@ -50,7 +50,7 @@ class TestProcessDeathRow(TestCaseWithFactory):
 
     def setUp(self):
         """Set up for a test death row run."""
-        super(TestProcessDeathRow, self).setUp()
+        super().setUp()
         self.setupPrimaryArchive()
         self.setupPPA()
 
@@ -61,7 +61,7 @@ class TestProcessDeathRow(TestCaseWithFactory):
         """Clean up after ourselves."""
         self.tearDownPrimaryArchive()
         self.tearDownPPA()
-        super(TestProcessDeathRow, self).tearDown()
+        super().tearDown()
 
     def setupPrimaryArchive(self):
         """Create pending removal publications in ubuntutest PRIMARY archive.

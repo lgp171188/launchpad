@@ -141,7 +141,7 @@ class TestPublisherSeries(TestNativePublishingBase):
     """Test the `Publisher` methods that publish individual series."""
 
     def setUp(self):
-        super(TestPublisherSeries, self).setUp()
+        super().setUp()
         self.publisher = None
 
     def _createLinkedPublication(self, name, pocket):
@@ -3025,8 +3025,7 @@ class TestUpdateByHashOverriddenDistsroot(TestUpdateByHash):
         os.rename(original_dists, temporary_dists)
         try:
             self.config.distsroot = temporary_dists
-            super(TestUpdateByHashOverriddenDistsroot, self).runSteps(
-                publisher, **kwargs)
+            super().runSteps(publisher, **kwargs)
         finally:
             self.config.distsroot = original_dists
             os.rename(temporary_dists, original_dists)
@@ -3049,7 +3048,7 @@ class TestPublisherRepositorySignatures(
         """Purge the archive root location. """
         if self.archive_publisher is not None:
             shutil.rmtree(self.archive_publisher._config.distsroot)
-        super(TestPublisherRepositorySignatures, self).tearDown()
+        super().tearDown()
 
     def setupPublisher(self, archive):
         """Setup a `Publisher` instance for the given archive."""
@@ -3327,7 +3326,7 @@ class TestPublisherLite(TestCaseWithFactory):
         purposes, the fake object will compare equal to a string holding
         this same text, encoded in the requested encoding.
         """
-        class FakeReleaseData(six.text_type):
+        class FakeReleaseData(str):
             def dump(self, output_file, encoding):
                 output_file.write(self.encode(encoding))
 
@@ -3421,7 +3420,7 @@ class TestDirectoryHashHelpers(TestCaseWithFactory):
         for dh_file in self.all_hash_files:
             checksum_file = os.path.join(rootdir, dh_file)
             if os.path.exists(checksum_file):
-                with open(checksum_file, "r") as sfd:
+                with open(checksum_file) as sfd:
                     for line in sfd:
                         result[dh_file].append(line.strip().split(' '))
         return result

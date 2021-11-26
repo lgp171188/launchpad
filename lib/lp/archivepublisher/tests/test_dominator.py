@@ -8,7 +8,6 @@ from functools import cmp_to_key
 from operator import attrgetter
 
 import apt_pkg
-import six
 from testtools.matchers import (
     GreaterThan,
     LessThan,
@@ -814,14 +813,14 @@ class TestDominatorMethods(TestCaseWithFactory):
         # Actually the "oldest to newest" order on the publications only
         # applies to their creation dates.  Their creation orders are
         # irrelevant.
-        for pubs_list in six.itervalues(pubs_by_version):
+        for pubs_list in pubs_by_version.values():
             alter_creation_dates(pubs_list, ages)
             pubs_list.sort(key=attrgetter('datecreated'))
 
         live_versions = ["1.1", "1.2"]
         last_version_alive = sorted(live_versions)[-1]
 
-        all_pubs = sum(six.itervalues(pubs_by_version), [])
+        all_pubs = sum(pubs_by_version.values(), [])
         dominator = Dominator(DevNullLogger(), series.main_archive)
         supersede, _, delete = dominator.planPackageDomination(
             generalization.sortPublications(all_pubs), live_versions,

@@ -125,7 +125,7 @@ def getPubConfig(archive):
     return pubconf
 
 
-class Config(object):
+class Config:
     """Manage a publisher configuration from the database. (Read Only)
     This class provides a useful abstraction so that if we change
     how the database stores configuration then the publisher will not
