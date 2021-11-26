@@ -315,8 +315,8 @@ class TestParseDiff(TestCase):
     def test_unicode(self):
         # Diffs containing Unicode work too.
         self.assertEqual(
-            [('text', 1, 0, 0, u'Unicode \u1010')],
-            list(parse_diff(u'Unicode \u1010')))
+            [('text', 1, 0, 0, 'Unicode \u1010')],
+            list(parse_diff('Unicode \u1010')))
 
     def assertParses(self, expected, diff):
         diff_lines = diff.splitlines()
@@ -488,10 +488,10 @@ class TestDiffFormatter(TestCase):
     def test_format_unicode(self):
         # Sometimes the strings contain unicode, those should work too.
         self.assertEqual(
-            u'<table class="diff unidiff"><tr id="diff-line-1">'
-            u'<td class="line-no unselectable">1</td><td class="text">'
-            u'Unicode \u1010</td></tr></table>',
-            FormattersAPI(u'Unicode \u1010').format_diff())
+            '<table class="diff unidiff"><tr id="diff-line-1">'
+            '<td class="line-no unselectable">1</td><td class="text">'
+            'Unicode \u1010</td></tr></table>',
+            FormattersAPI('Unicode \u1010').format_diff())
 
     def test_cssClasses(self):
         # Different parts of the diff have different css classes.
@@ -586,14 +586,14 @@ class TestSideBySideDiffFormatter(TestCase):
     def test_format_unicode(self):
         # Sometimes the strings contain unicode, those should work too.
         self.assertEqual(
-            u'<table class="diff ssdiff"><tr id="diff-line-1">'
-            u'<td class="line-no unselectable" style="display: none">1</td>'
-            u'<td class="ss-line-no unselectable">0</td>'
-            u'<td class="text">Unicode \u1010</td>'
-            u'<td class="ss-line-no unselectable">0</td>'
-            u'<td class="text">Unicode \u1010</td>'
-            u'</tr></table>',
-            FormattersAPI(u'Unicode \u1010').format_ssdiff())
+            '<table class="diff ssdiff"><tr id="diff-line-1">'
+            '<td class="line-no unselectable" style="display: none">1</td>'
+            '<td class="ss-line-no unselectable">0</td>'
+            '<td class="text">Unicode \u1010</td>'
+            '<td class="ss-line-no unselectable">0</td>'
+            '<td class="text">Unicode \u1010</td>'
+            '</tr></table>',
+            FormattersAPI('Unicode \u1010').format_ssdiff())
 
     def test_cssClasses(self):
         # Different parts of the diff have different css classes.
@@ -743,7 +743,7 @@ class TestMarkdownDisabled(TestCase):
     layer = DatabaseFunctionalLayer  # Fixtures need the database for now
 
     def setUp(self):
-        super(TestMarkdownDisabled, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({'markdown.enabled': None}))
 
     def test_plain_text(self):
@@ -762,7 +762,7 @@ class TestMarkdown(TestCase):
     layer = DatabaseFunctionalLayer  # Fixtures need the database for now
 
     def setUp(self):
-        super(TestMarkdown, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({'markdown.enabled': 'on'}))
 
     def test_plain_text(self):

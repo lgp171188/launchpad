@@ -22,7 +22,6 @@ from lazr.restful.utils import (
     safe_hasattr,
     )
 import simplejson
-import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.schema.interfaces import (
@@ -119,7 +118,7 @@ class TextWidgetBase(WidgetBase):
 
     def __init__(self, context, exported_field, title, content_box_id,
                  edit_view, edit_url, edit_title):
-        super(TextWidgetBase, self).__init__(
+        super().__init__(
             context, exported_field, content_box_id,
             edit_view, edit_url, edit_title)
         self.accept_empty = simplejson.dumps(self.optional_field)
@@ -181,7 +180,7 @@ class TextLineEditorWidget(TextWidgetBase, DefinedTagMixin):
             field value instead of the attribute's current value.
         :param width: Initial widget width.
         """
-        super(TextLineEditorWidget, self).__init__(
+        super().__init__(
             context, exported_field, title, content_box_id,
             edit_view, edit_url, edit_title)
         self.tag = tag
@@ -242,7 +241,7 @@ class TextAreaEditorWidget(TextWidgetBase):
         :param linkify_text: If True the HTML version of the text will have
             things that look like links made into anchors.
         """
-        super(TextAreaEditorWidget, self).__init__(
+        super().__init__(
             context, exported_field, title, content_box_id,
             edit_view, edit_url, edit_title)
         self.hide_empty = hide_empty
@@ -294,7 +293,7 @@ class InlineEditPickerWidget(WidgetBase):
             in and when JS is off.  Defaults to the edit_view on the context.
         :param edit_title: Used to set the title attribute of the anchor.
         """
-        super(InlineEditPickerWidget, self).__init__(
+        super().__init__(
             context, exported_field, content_box_id,
             edit_view, edit_url, edit_title)
         self.default_html = default_html
@@ -394,7 +393,7 @@ class InlinePersonEditPickerWidget(InlineEditPickerWidget):
         :param edit_title: Used to set the title attribute of the anchor.
         :param help_link: Used to set a link for help for the widget.
         """
-        super(InlinePersonEditPickerWidget, self).__init__(
+        super().__init__(
             context, exported_field, default_html, content_box_id, header,
             step_title, null_display_value,
             edit_view, edit_url, edit_title, help_link)
@@ -425,7 +424,7 @@ class InlinePersonEditPickerWidget(InlineEditPickerWidget):
         return self._show_create_team
 
     def getConfig(self):
-        config = super(InlinePersonEditPickerWidget, self).getConfig()
+        config = super().getConfig()
         config.update(dict(
             show_remove_button=self.optional_field,
             show_assign_me_button=self.show_assign_me_button,
@@ -477,7 +476,7 @@ class InlineMultiCheckboxWidget(WidgetBase):
         :param edit_title: Used to set the title attribute of the anchor.
 
         """
-        super(InlineMultiCheckboxWidget, self).__init__(
+        super().__init__(
             context, exported_field, content_box_id,
             edit_view, edit_url, edit_title)
 
@@ -502,7 +501,7 @@ class InlineMultiCheckboxWidget(WidgetBase):
             else:
                 vocabulary = exported_field.vocabularyName
 
-        if isinstance(vocabulary, six.string_types):
+        if isinstance(vocabulary, str):
             vocabulary = getVocabularyRegistry().get(context, vocabulary)
 
         # Construct checkbox data dict for each item in the vocabulary.
@@ -638,7 +637,7 @@ class BooleanChoiceWidget(WidgetBase, DefinedTagMixin):
             Automatically generated if this is not provided.
         :param header: The large text at the top of the choice popup.
         """
-        super(BooleanChoiceWidget, self).__init__(
+        super().__init__(
             context, exported_field, content_box_id,
             edit_view, edit_url, edit_title)
         self.header = header
@@ -698,7 +697,7 @@ class EnumChoiceWidget(WidgetBase):
         :param edit_title: Used to set the title attribute of the anchor.
         :param css_class_prefix: Added to the start of the enum titles.
         """
-        super(EnumChoiceWidget, self).__init__(
+        super().__init__(
             context, exported_field, content_box_id,
             edit_view, edit_url, edit_title)
         self.header = header

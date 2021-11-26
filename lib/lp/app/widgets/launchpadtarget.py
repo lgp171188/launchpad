@@ -66,14 +66,14 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
             return
         fields = [
             Choice(
-                __name__='product', title=u'Project',
+                __name__='product', title='Project',
                 required=True, vocabulary=self.getProductVocabulary()),
             Choice(
-                __name__='distribution', title=u"Distribution",
+                __name__='distribution', title="Distribution",
                 required=True, vocabulary=self.getDistributionVocabulary(),
                 default=getUtility(ILaunchpadCelebrities).ubuntu),
             Choice(
-                __name__='package', title=u"Package",
+                __name__='package', title="Package",
                 required=False, vocabulary=self.getPackageVocabularyName()),
             ]
         self.distribution_widget = CustomWidgetFactory(

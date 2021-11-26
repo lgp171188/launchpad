@@ -17,8 +17,8 @@ class TestDateTimeWidget(TestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDateTimeWidget, self).setUp()
-        field = Field(__name__='foo', title=u'Foo')
+        super().setUp()
+        field = Field(__name__='foo', title='Foo')
         request = LaunchpadTestRequest()
         self.widget = DateTimeWidget(field, request)
 

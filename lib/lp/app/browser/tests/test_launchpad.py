@@ -167,8 +167,7 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
             path, notification, BrowserNotificationLevel.ERROR)
 
     def traverse(self, path, **kwargs):
-        return super(TestBranchTraversal, self).traverse(
-            path, '+branch', **kwargs)
+        return super().traverse(path, '+branch', **kwargs)
 
     def test_unique_name_traversal(self):
         # Traversing to /+branch/<unique_name> redirects to the page for that
@@ -216,14 +215,14 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
             InformationType.USERDATA)
         login(ANONYMOUS)
         requiredMessage = (
-            u"The target %s does not have a linked branch." %
+            "The target %s does not have a linked branch." %
             naked_product.name)
         self.assertDisplaysNotice(naked_product.name, requiredMessage)
 
     def test_nonexistent_product(self):
         # Traversing to /+branch/<no-such-product> displays an error message.
         non_existent = 'non-existent'
-        required_message = u"No such product: '%s'." % non_existent
+        required_message = "No such product: '%s'." % non_existent
         self.assertDisplaysError(non_existent, html_escape(required_message))
 
     def test_nonexistent_product_without_referer(self):
@@ -249,7 +248,7 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
         # user message on the same page.
         product = self.factory.makeProduct()
         requiredMessage = (
-            u"The target %s does not have a linked branch." % product.name)
+            "The target %s does not have a linked branch." % product.name)
         self.assertDisplaysNotice(product.name, requiredMessage)
 
     def test_distro_package_alias(self):
@@ -279,7 +278,7 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
         login(ANONYMOUS)
         path = ICanHasLinkedBranch(distro_package).bzr_path
         requiredMessage = (
-            u"The target %s does not have a linked branch." % path)
+            "The target %s does not have a linked branch." % path)
         self.assertDisplaysNotice(path, requiredMessage)
 
     def test_trailing_path_redirect(self):
@@ -323,7 +322,7 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
         login(ANONYMOUS)
         path = ICanHasLinkedBranch(series).bzr_path
         requiredMessage = (
-            u"The target %s does not have a linked branch." % path)
+            "The target %s does not have a linked branch." % path)
         self.assertDisplaysNotice(path, requiredMessage)
 
     def test_too_short_branch_name(self):
@@ -331,13 +330,13 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
         # that's too short to be a real unique name.
         owner = self.factory.makePerson()
         requiredMessage = html_escape(
-            u"Cannot understand namespace name: '%s'" % owner.name)
+            "Cannot understand namespace name: '%s'" % owner.name)
         self.assertDisplaysError('~%s' % owner.name, requiredMessage)
 
     def test_invalid_product_name(self):
         # error notification if the thing following +branch has an invalid
         # product name.
-        self.assertDisplaysError('_foo', u"Invalid name for product: _foo.")
+        self.assertDisplaysError('_foo', "Invalid name for product: _foo.")
 
     def test_invalid_product_name_without_referer(self):
         # error notification if the thing following +branch has an invalid
@@ -350,8 +349,7 @@ class TestCodeTraversal(TestCaseWithFactory, TraversalMixin):
     layer = DatabaseFunctionalLayer
 
     def traverse(self, path, **kwargs):
-        return super(TestCodeTraversal, self).traverse(
-            path, '+code', **kwargs)
+        return super().traverse(path, '+code', **kwargs)
 
     def test_project_bzr_branch(self):
         branch = self.factory.makeAnyBranch()
@@ -603,7 +601,7 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonTraversal, self).setUp()
+        super().setUp()
         self.any_user = self.factory.makePerson()
         self.admin = getUtility(IPersonSet).getByName('name16')
         self.registry_expert = self.factory.makePerson()
@@ -638,7 +636,7 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
 
     def test_placeholder_person_visibility(self):
         # Verify a placeholder user is only traversable by an admin.
-        name = u'placeholder-person'
+        name = 'placeholder-person'
         person = getUtility(IPersonSet).createPlaceholderPerson(name, name)
         login_person(self.admin)
         segment = '~%s' % name
@@ -765,7 +763,7 @@ class TestProductTraversal(TestCaseWithFactory, TraversalMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductTraversal, self).setUp()
+        super().setUp()
         self.active_public_product = self.factory.makeProduct()
         self.inactive_public_product = self.factory.makeProduct()
         removeSecurityProxy(self.inactive_public_product).active = False

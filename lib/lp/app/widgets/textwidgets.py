@@ -3,7 +3,6 @@
 
 import re
 
-import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.textwidgets import (
     TextAreaWidget,
@@ -42,14 +41,14 @@ class TokensTextWidget(StrippedTextWidget):
         else is replaced with a single space.
         """
         normalised_text = re.sub(r'[^\w-]+', ' ', input)
-        return super(TokensTextWidget, self)._toFieldValue(normalised_text)
+        return super()._toFieldValue(normalised_text)
 
 
 class NoneableTextWidget(StrippedTextWidget):
     """A widget that that is None if it's value is empty or whitespace."""
 
     def _toFieldValue(self, input):
-        value = super(NoneableTextWidget, self)._toFieldValue(input)
+        value = super()._toFieldValue(input)
         if value == '':
             return None
         else:
@@ -63,13 +62,13 @@ class URIWidget(StrippedTextWidget):
     cssClass = 'urlTextType'
 
     def __init__(self, field, request):
-        super(URIWidget, self).__init__(field, request)
+        super().__init__(field, request)
         self.field = field
 
     def _toFieldValue(self, input):
         if isinstance(input, list):
             raise UnexpectedFormData('Only a single value is expected')
-        return super(URIWidget, self)._toFieldValue(input)
+        return super()._toFieldValue(input)
 
 
 class URIComponentWidget(LowerCaseTextWidget):
@@ -106,17 +105,17 @@ class DelimitedListWidget(TextAreaWidget):
 
     def __init__(self, field, value_type, request):
         # We don't use value_type.
-        super(DelimitedListWidget, self).__init__(field, request)
+        super().__init__(field, request)
 
     # The default splitting function, which splits on
     # white-space. Subclasses can override this if different
     # delimiting rules are needed.
-    split = staticmethod(six.text_type.split)
+    split = staticmethod(str.split)
 
     # The default joining function, which simply separates each list
     # item with a newline. Subclasses can override this if different
     # delimiters are needed.
-    join = staticmethod(u'\n'.join)
+    join = staticmethod('\n'.join)
 
     def _toFormValue(self, value):
         """Converts a list to a newline separated string.
@@ -134,7 +133,7 @@ class DelimitedListWidget(TextAreaWidget):
         By default, lists are displayed one item on a line:
 
           >>> names = ['fred', 'bob', 'harry']
-          >>> six.ensure_str(widget._toFormValue(names))
+          >>> widget._toFormValue(names)
           'fred\\r\\nbob\\r\\nharry'
         """
         if value == self.context.missing_value:
@@ -143,7 +142,7 @@ class DelimitedListWidget(TextAreaWidget):
             value = self._missing
         else:
             value = self.join(value)
-        return super(DelimitedListWidget, self)._toFormValue(value)
+        return super()._toFormValue(value)
 
     def _toFieldValue(self, value):
         """Convert the input string into a list.
@@ -166,8 +165,7 @@ class DelimitedListWidget(TextAreaWidget):
           'bob'
           'harry'
         """
-        value = super(
-            DelimitedListWidget, self)._toFieldValue(value)
+        value = super()._toFieldValue(value)
         if value == self.context.missing_value:
             return value
         else:
@@ -195,8 +193,7 @@ class NoneableDescriptionWidget(DescriptionWidget):
     """A widget that is None if it's value is empty or whitespace.."""
 
     def _toFieldValue(self, input):
-        value = super(
-            NoneableDescriptionWidget, self)._toFieldValue(input.strip())
+        value = super()._toFieldValue(input.strip())
         if value == '':
             return None
         else:

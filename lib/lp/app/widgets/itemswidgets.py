@@ -38,7 +38,7 @@ class LaunchpadDropdownWidget(DropdownWidget):
 class PlainMultiCheckBoxWidget(MultiCheckBoxWidget):
     """MultiCheckBoxWidget that copes with CustomWidgetFactory."""
 
-    _joinButtonToMessageTemplate = u'%s&nbsp;%s '
+    _joinButtonToMessageTemplate = '%s&nbsp;%s '
 
     def __init__(self, field, vocabulary, request):
         # XXX flacoste 2006-07-23 Workaround Zope3 bug #545:
@@ -70,7 +70,7 @@ class PlainMultiCheckBoxWidget(MultiCheckBoxWidget):
         text = html_escape(text)
         id = '%s.%s' % (name, index)
         element = renderElement(
-            u'input', value=value, name=name, id=id,
+            'input', value=value, name=name, id=id,
             cssClass=cssClass, type='checkbox', **kw)
         return self._joinButtonToMessageTemplate % (element, text)
 
@@ -81,7 +81,7 @@ class LabeledMultiCheckBoxWidget(PlainMultiCheckBoxWidget):
     """
 
     _joinButtonToMessageTemplate = (
-        u'<label for="%s" style="font-weight: normal">%s&nbsp;%s</label> ')
+        '<label for="%s" style="font-weight: normal">%s&nbsp;%s</label> ')
 
     def _renderItem(self, index, text, value, name, cssClass, checked=False):
         """Render a checkbox and text in a label with a style attribute."""
@@ -93,7 +93,7 @@ class LabeledMultiCheckBoxWidget(PlainMultiCheckBoxWidget):
         value = html_escape(value)
         text = html_escape(text)
         id = '%s.%s' % (name, index)
-        elem = renderElement(u'input',
+        elem = renderElement('input',
                              value=value,
                              name=name,
                              id=id,
@@ -119,7 +119,7 @@ class LaunchpadRadioWidget(RadioWidget):
         value = html_escape(value)
         text = html_escape(text)
         id = '%s.%s' % (name, index)
-        elem = renderElement(u'input',
+        elem = renderElement('input',
                              value=value,
                              name=name,
                              id=id,
@@ -129,7 +129,7 @@ class LaunchpadRadioWidget(RadioWidget):
         if '<label' in text:
             return '%s&nbsp;%s' % (elem, text)
         else:
-            return renderElement(u'label',
+            return renderElement('label',
                                  contents='%s&nbsp;%s' % (elem, text),
                                  **{'style': 'font-weight: normal'})
 
@@ -145,27 +145,26 @@ class LaunchpadRadioWidgetWithDescription(LaunchpadRadioWidget):
     """
 
     _labelWithDescriptionTemplate = (
-        u'''<tr>
-              <td rowspan="2">%s</td>
-              <td><label for="%s">%s</label></td>
-            </tr>
-            <tr>
-              <td class="formHelp">%s</td>
-            </tr>
-         ''')
+        '''<tr>
+             <td rowspan="2">%s</td>
+             <td><label for="%s">%s</label></td>
+           </tr>
+           <tr>
+             <td class="formHelp">%s</td>
+           </tr>
+        ''')
     _labelWithoutDescriptionTemplate = (
-        u'''<tr>
-              <td>%s</td>
-              <td><label for="%s">%s</label></td>
-            </tr>
-         ''')
+        '''<tr>
+             <td>%s</td>
+             <td><label for="%s">%s</label></td>
+           </tr>
+        ''')
 
     def __init__(self, field, vocabulary, request):
         """Initialize the widget."""
         assert IEnumeratedType.providedBy(vocabulary), (
             'The vocabulary must implement IEnumeratedType')
-        super(LaunchpadRadioWidgetWithDescription, self).__init__(
-            field, vocabulary, request)
+        super().__init__(field, vocabulary, request)
         self.extra_hint = None
         self.extra_hint_class = None
 
@@ -187,7 +186,7 @@ class LaunchpadRadioWidgetWithDescription(LaunchpadRadioWidget):
         """Render an item of the list."""
         text = html_escape(text)
         id = '%s.%s' % (name, index)
-        elem = renderElement(u'input',
+        elem = renderElement('input',
                              value=value,
                              name=name,
                              id=id,
@@ -199,7 +198,7 @@ class LaunchpadRadioWidgetWithDescription(LaunchpadRadioWidget):
         """Render a selected item of the list."""
         text = html_escape(text)
         id = '%s.%s' % (name, index)
-        elem = renderElement(u'input',
+        elem = renderElement('input',
                              value=value,
                              name=name,
                              id=id,
@@ -245,8 +244,7 @@ class LaunchpadBooleanRadioWidget(LaunchpadRadioWidget):
         """Initialize the widget."""
         vocabulary = SimpleVocabulary.fromItems(
             ((self.TRUE, True), (self.FALSE, False)))
-        super(LaunchpadBooleanRadioWidget, self).__init__(
-            field, vocabulary, request)
+        super().__init__(field, vocabulary, request)
         # Suppress the missing value behaviour; this is a boolean field.
         self.required = True
         self._displayItemForMissingValue = False
@@ -261,7 +259,7 @@ class LaunchpadBooleanRadioWidget(LaunchpadRadioWidget):
         else:
             # value == self.FALSE.
             text = self.false_label
-        return super(LaunchpadBooleanRadioWidget, self)._renderItem(
+        return super()._renderItem(
             index, text, value, name, cssClass, checked=checked)
 
 

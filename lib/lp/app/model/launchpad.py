@@ -37,7 +37,7 @@ class ExceptionPrivacy(Privacy):
             private = True
         else:
             private = False
-        super(ExceptionPrivacy, self).__init__(error, private)
+        super().__init__(error, private)
 
 
 class InformationTypeMixin:

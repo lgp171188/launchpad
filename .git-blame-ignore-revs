@@ -1,2 +1,6 @@
 # apply pyupgrade
 67e3b53a4375288983a72a7beb9a5a67ba739527
+# apply pyupgrade --py3-plus to lp.answers
+5d46ca0970916c2b161761aee29f46419dd3efea
+# apply pyupgrade --py3-plus to lp.app
+7fbeaae55d7d282ccda47c76a27c879e04ee14e9

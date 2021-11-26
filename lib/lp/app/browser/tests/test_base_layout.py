@@ -34,7 +34,7 @@ class TestBaseLayout(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBaseLayout, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson(name='waffles')
         self.context = None
 
@@ -116,8 +116,7 @@ class TestBaseLayout(TestCaseWithFactory):
         self.assertEqual(['watermark-apps-portlet'], watermark['class'])
         if self.context.is_team:
             self.assertEqual('/@@/team-logo', watermark.img['src'])
-            self.assertEqual(
-                u'\u201cWaffles\u201d team', watermark.h2.a.string)
+            self.assertEqual('\u201cWaffles\u201d team', watermark.h2.a.string)
         else:
             self.assertEqual('/@@/person-logo', watermark.img['src'])
             self.assertEqual('Waffles', watermark.h2.a.string)

@@ -128,7 +128,7 @@ class DateTimeWidget(TextWidget):
     __call__ = ViewPageTemplateFile('templates/datetime.pt')
 
     def __init__(self, context, request):
-        super(DateTimeWidget, self).__init__(context, request)
+        super().__init__(context, request)
         launchbag = getUtility(ILaunchBag)
         self.system_time_zone = launchbag.time_zone
 
@@ -313,7 +313,7 @@ class DateTimeWidget(TextWidget):
 
     def getInputValue(self):
         """Return the date, if it is in the allowed date range."""
-        value = super(DateTimeWidget, self).getInputValue()
+        value = super().getInputValue()
         if value is None:
             return None
         # Establish if the value is within the date range.
@@ -613,6 +613,6 @@ class DatetimeDisplayWidget(DisplayWidget):
         else:
             value = self.context.default
         if value == self.context.missing_value:
-            return u""
+            return ""
         value = value.astimezone(time_zone)
         return html_escape(value.strftime("%Y-%m-%d %H:%M:%S %Z"))
