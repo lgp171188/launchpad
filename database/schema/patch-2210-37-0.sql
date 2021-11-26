@@ -12,10 +12,9 @@ CREATE TABLE RevisionStatusReport (
     description text,
     result integer,
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
-    creator integer REFERENCES Person,
+    creator integer REFERENCES Person NOT NULL,
     date_started timestamp without time zone,
-    date_finished timestamp without time zone,
-    log integer
+    date_finished timestamp without time zone
 );
 
 COMMENT ON TABLE RevisionStatusReport IS 'A status check for a code revision.';
@@ -29,7 +28,6 @@ COMMENT ON COLUMN RevisionStatusReport.date_created IS 'DateTime that report was
 COMMENT ON COLUMN RevisionStatusReport.creator IS 'The person that created the report.';
 COMMENT ON COLUMN RevisionStatusReport.date_started IS 'DateTime that report was started.';
 COMMENT ON COLUMN RevisionStatusReport.date_finished IS 'DateTime that report was completed.';
-COMMENT ON COLUMN RevisionStatusReport.log IS 'The artifact produced for this report.';
 
 CREATE INDEX revisionstatusreport__git_repository__commit_sha1__idx
     ON RevisionStatusReport (git_repository, commit_sha1);
@@ -39,20 +37,19 @@ CREATE INDEX revisionstatusreport__creator__idx
 
 CREATE TABLE RevisionStatusArtifact (
     id serial PRIMARY KEY,
-    library_file integer REFERENCES libraryfilealias,
-    report integer REFERENCES RevisionStatusReport
+    report integer REFERENCES RevisionStatusReport NOT NULL,
+    library_file integer REFERENCES libraryfilealias NOT NULL,
+    type integer NOT NULL DEFAULT 0
 );
 
 COMMENT ON TABLE RevisionStatusArtifact IS 'An artifact produced by a status check for a code revision.';
 COMMENT ON COLUMN RevisionStatusArtifact.library_file IS 'LibraryFileAlias storing the contents of the artifact.';
 COMMENT ON COLUMN RevisionStatusArtifact.report IS 'A link back to the report that the artifact was produced by.';
+COMMENT ON COLUMN RevisionStatusArtifact.type IS 'The artifact type produced by the check job, for now only LOG.';
 
 CREATE INDEX revision_status_artifact__library_file__idx
     ON RevisionStatusArtifact (library_file);
-CREATE INDEX revision_status_artifact__report__idx
-    ON RevisionStatusArtifact (report);
-
-ALTER TABLE RevisionStatusReport
-    ADD CONSTRAINT log_fkey FOREIGN KEY (log) REFERENCES RevisionStatusArtifact (id);
+CREATE INDEX revision_status_artifact__report__type__idx
+    ON RevisionStatusArtifact (report, type);
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 37, 0);
