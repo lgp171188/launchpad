@@ -20,6 +20,7 @@ Overview
    strategy
    scope
    values
+   faq
 
 Guides
 ======
