@@ -106,6 +106,7 @@ from lp.code.interfaces.gitrepository import (
     ContributorGitIdentity,
     IGitRepository,
     IGitRepositorySet,
+    IRevisionStatusReportSet,
     )
 from lp.code.vocabularies.gitrule import GitPermissionsVocabulary
 from lp.registry.interfaces.person import (
@@ -189,6 +190,18 @@ class GitRepositoryBreadcrumb(Breadcrumb):
 class GitRepositoryNavigation(WebhookTargetNavigationMixin, Navigation):
 
     usedfor = IGitRepository
+
+    @stepthrough('+status')
+    def traverse_status(self, id):
+        try:
+            report_id = int(id)
+        except ValueError:
+            raise NotFoundError(report_id)
+        report = getUtility(
+            IRevisionStatusReportSet).findRevisionStatusReportByID(report_id)
+        if report is None:
+            raise NotFoundError(report_id)
+        return report
 
     @stepto("+ref")
     def traverse_ref(self):

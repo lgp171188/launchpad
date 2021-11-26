@@ -29,6 +29,7 @@ __all__ = [
     'GitRepositoryType',
     'NON_CVS_RCS_TYPES',
     'RevisionControlSystems',
+    'RevisionStatusArtifactType',
     'RevisionStatusResult',
     'TargetRevisionControlSystems',
     ]
@@ -251,6 +252,14 @@ class GitPermissionType(EnumeratedType):
     CAN_PUSH = Item("Can push")
 
     CAN_FORCE_PUSH = Item("Can force-push")
+
+
+class RevisionStatusArtifactType(DBEnumeratedType):
+    LOG = DBItem(0, """
+        Log
+
+        The log produced by the check job.
+        """)
 
 
 class RevisionStatusResult(DBEnumeratedType):

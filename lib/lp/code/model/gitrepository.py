@@ -6,6 +6,7 @@ __all__ = [
     'GitRepository',
     'GitRepositorySet',
     'parse_git_commits',
+    'RevisionStatusReport',
     ]
 
 from collections import (
@@ -86,6 +87,7 @@ from lp.app.enums import (
 from lp.app.errors import (
     SubscriptionPrivacyViolation,
     UserCannotUnsubscribePerson,
+    NotFoundError,
     )
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import (
@@ -103,6 +105,7 @@ from lp.code.enums import (
     GitPermissionType,
     GitRepositoryStatus,
     GitRepositoryType,
+    RevisionStatusArtifactType,
     RevisionStatusResult,
     )
 from lp.code.errors import (
@@ -183,6 +186,11 @@ from lp.registry.model.accesspolicy import (
     )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
+from lp.services.webapp import (
+    Navigation,
+    stepthrough,
+    )
+
 from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.auth.model import AccessTokenTargetMixin
 from lp.services.auth.utils import create_access_token_secret
@@ -225,12 +233,9 @@ from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.interfaces.snap import ISnapSet
 
-
 REVISION_STATUS_REPORT_ALLOW_CREATE = 'revision_status_report.allow_create'
 
-
 logger = logging.getLogger(__name__)
-
 
 object_type_map = {
     "commit": GitObjectType.COMMIT,
@@ -332,9 +337,6 @@ class RevisionStatusReport(StormBase):
     date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC,
                              allow_none=True)
 
-    log_id = Int(name='log', allow_none=True)
-    log = Reference(log_id, 'RevisionStatusArtifact.id')
-
     def __init__(self, git_repository, user, title, commit_sha1,
                  url, result_summary, result):
         super().__init__()
@@ -369,6 +371,22 @@ class RevisionStatusReport(StormBase):
         self.result = result
 
 
+class RevisionStatusReportNavigation(Navigation):
+
+    usedfor = IRevisionStatusReport
+
+    @stepthrough('+status')
+    def traverse_option(self, id):
+        try:
+            report_id = int(id)
+        except ValueError:
+            raise NotFoundError(id)
+        report = IStore(RevisionStatusReport).find(RevisionStatusReport, id=report_id).one()
+        if report is None:
+            raise NotFoundError(id)
+        return report
+
+
 @implementer(IRevisionStatusReportSet)
 class RevisionStatusReportSet:
 
@@ -384,7 +402,8 @@ class RevisionStatusReportSet:
         return report
 
     def findRevisionStatusReportByID(self, id):
-        return IStore(RevisionStatusReport).find(RevisionStatusReport, id=id)
+        return IStore(
+            RevisionStatusReport).find(RevisionStatusReport, id=id).one()
 
     def findRevisionStatusReportByCreator(self, creator):
         return IStore(RevisionStatusReport).find(
@@ -403,10 +422,14 @@ class RevisionStatusArtifact(StormBase):
     report_id = Int(name='report', allow_none=False)
     report = Reference(report_id, 'RevisionStatusReport.id')
 
+    artifact_type = DBEnum(name='type', allow_none=False,
+                           enum=RevisionStatusArtifactType)
+
     def __init__(self, library_file, report):
         super().__init__()
         self.library_file = library_file
         self.report = report
+        self.artifact_type = RevisionStatusArtifactType.LOG
 
 
 @implementer(IRevisionStatusArtifactSet)

@@ -535,8 +535,6 @@ patch_list_parameter_type(
 # IRevisionStatusReport
 patch_reference_property(
     IRevisionStatusReport, 'git_repository', IGitRepository)
-patch_reference_property(
-    IRevisionStatusReport, 'log_url', IRevisionStatusArtifact)
 
 # ILiveFSFile
 patch_reference_property(ILiveFSFile, 'livefsbuild', ILiveFSBuild)

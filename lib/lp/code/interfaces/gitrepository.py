@@ -80,6 +80,7 @@ from lp.code.enums import (
     GitListingSort,
     GitRepositoryStatus,
     GitRepositoryType,
+    RevisionStatusArtifactType,
     RevisionStatusResult,
     )
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
@@ -846,10 +847,6 @@ class IRevisionStatusReportView(Interface):
         title=_("When the report was started.")), readonly=False)
     date_finished = exported(Datetime(
         title=_("When the report has finished.")), readonly=False)
-    log_url = Reference(
-        title=_("The `RevisionStatusArtifact` for which "
-                "this report is built."),
-        schema=Interface)
 
 
 class IRevisionStatusReportEditableAttributes(Interface):
@@ -892,9 +889,6 @@ class IRevisionStatusReportEditableAttributes(Interface):
 
 class IRevisionStatusReportEdit(Interface):
     """`IRevisionStatusReport` attributes that require launchpad.Edit."""
-
-    def setLog(artifact):
-        """Sets the `RevisionStatusArtifact` for the `RevisionStatusReport`."""
 
     @operation_parameters(
         log_data=Bytes(title=_("The content of the artifact in bytes."),
@@ -966,12 +960,16 @@ class IRevisionStatusArtifactSet(Interface):
 class IRevisionStatusArtifact(Interface):
     id = Int(title=_("ID"), required=True, readonly=True)
 
+    report = Attribute(
+        "The `RevisionStatusReport` that this artifact is linked to.")
+
     library_file = Attribute(
         "The `LibraryFileAlias` object containing information for "
         "a revision status report.")
 
-    report = Attribute(
-        "The `RevisionStatusReport` that this artifact is linked to.")
+    artifact_type = Choice(
+        title=_('The type of artifact, only log for now.'),
+        vocabulary=RevisionStatusArtifactType)
 
 
 class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):

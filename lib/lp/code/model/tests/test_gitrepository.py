@@ -593,15 +593,11 @@ class TestGitRepository(TestCaseWithFactory):
             result_summary=result_summary,
             result=RevisionStatusResult.SUCCEEDED)
 
-        artifact = self.factory.makeRevisionStatusArtifact(lfa, report)
-
         with person_logged_in(repository.owner):
-            results = getUtility(
+            result = getUtility(
                 IRevisionStatusReportSet).findRevisionStatusReportByID(
                 report.id)
-            report.setLog(artifact)
-            self.assertEqual([report], list(results))
-            self.assertEqual(removeSecurityProxy(report).log, artifact)
+            self.assertEqual(report, result)
 
 
 class TestGitIdentityMixin(TestCaseWithFactory):
@@ -4957,13 +4953,12 @@ class TestRevisionStatusReport(TestCaseWithFactory):
                 scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
             header = {'Authorization': 'Token %s' % secret}
 
-        response = self.webservice.get(url, 'application/xhtml+xml',
-                                       headers=header)
-        self.assertEqual(response.status, 301)
-        self.assertEqual(
-                'http://api.launchpad.test/devel/%s/+status/%d' % (
-                    self.git_repository, self.report.id),
-                response.getheader('Location'))
+        response = self.webservice.get(url, headers=header)
+        self.assertEqual(response.status, 200)
+        with person_logged_in(self.requester):
+            self.assertThat(response.jsonBody(), ContainsDict({
+                'self_link': Equals(url),
+                }))
 
 
 class TestRevisionStatusReportWebserviceFunctionalLayer(TestCaseWithFactory):
