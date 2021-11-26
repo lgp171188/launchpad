@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Launchpad documentation build configuration file, created by
 # sphinx-quickstart on Thu Feb  3 16:06:09 2011.
 #
