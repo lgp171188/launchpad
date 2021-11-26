@@ -38,18 +38,18 @@ CREATE INDEX revisionstatusreport__creator__idx
 CREATE TABLE RevisionStatusArtifact (
     id serial PRIMARY KEY,
     report integer REFERENCES RevisionStatusReport NOT NULL,
-    library_file integer REFERENCES libraryfilealias NOT NULL,
-    type integer NOT NULL DEFAULT 0
+    type integer NOT NULL,
+    library_file integer REFERENCES libraryfilealias NOT NULL
 );
 
 COMMENT ON TABLE RevisionStatusArtifact IS 'An artifact produced by a status check for a code revision.';
-COMMENT ON COLUMN RevisionStatusArtifact.library_file IS 'LibraryFileAlias storing the contents of the artifact.';
 COMMENT ON COLUMN RevisionStatusArtifact.report IS 'A link back to the report that the artifact was produced by.';
-COMMENT ON COLUMN RevisionStatusArtifact.type IS 'The artifact type produced by the check job, for now only LOG.';
+COMMENT ON COLUMN RevisionStatusArtifact.type IS 'The artifact type produced by the check job.';
+COMMENT ON COLUMN RevisionStatusArtifact.library_file IS 'LibraryFileAlias storing the contents of the artifact.';
 
-CREATE INDEX revision_status_artifact__library_file__idx
+CREATE INDEX revisionstatusartifact__library_file__idx
     ON RevisionStatusArtifact (library_file);
-CREATE INDEX revision_status_artifact__report__type__idx
+CREATE INDEX revisionstatusartifact__report__type__idx
     ON RevisionStatusArtifact (report, type);
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 37, 0);
