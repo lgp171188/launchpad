@@ -47,6 +47,7 @@ Technical
 .. toctree::
    :maxdepth: 1
 
+   running-details
    pip
    security
 
