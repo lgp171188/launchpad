@@ -48,7 +48,7 @@ DIFF = SourcePackageFileType.DIFF
 class TestDscFile(TestCase):
 
     def setUp(self):
-        super(TestDscFile, self).setUp()
+        super().setUp()
         self.tmpdir = self.makeTemporaryDirectory()
         self.dir_path = os.path.join(self.tmpdir, "foo", "debian")
         os.makedirs(self.dir_path)
@@ -105,7 +105,7 @@ class TestDscFile(TestCase):
         changelog and copyright files. 10MiB was set as a sane lower limit
         which is incredibly unlikely to be hit by normal files in the
         archive"""
-        dev_zero = open("/dev/zero", "r")
+        dev_zero = open("/dev/zero")
         ten_MiB = 10 * (2 ** 20)
         empty_file = dev_zero.read(ten_MiB + 1)
         dev_zero.close()
@@ -185,10 +185,10 @@ class TestSignableTagFile(TestCaseWithFactory):
             self.makeSignableTagFile().parseAddress, "invalid@bad@address")
 
     def test_parseAddress_decodes_utf8(self):
-        name = u'B\u0105r'
-        email = u'bar@example.com'
+        name = 'B\u0105r'
+        email = 'bar@example.com'
         results = self.makeSignableTagFile().parseAddress(
-            (u'%s <%s>' % (name, email)).encode('utf-8'))
+            ('%s <%s>' % (name, email)).encode('utf-8'))
         self.assertEqual(email, results['email'])
         self.assertEqual(name, results['name'])
         self.assertEqual(name, results['person'].displayname)

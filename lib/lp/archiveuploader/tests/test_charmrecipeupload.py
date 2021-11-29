@@ -25,7 +25,7 @@ class TestCharmRecipeUploads(TestUploadProcessorBase):
     """End-to-end tests of charm recipe uploads."""
 
     def setUp(self):
-        super(TestCharmRecipeUploads, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
         self.setupBreezy()

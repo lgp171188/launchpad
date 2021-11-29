@@ -169,7 +169,7 @@ class ChangesFileTests(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(ChangesFileTests, self).setUp()
+        super().setUp()
         self.logger = BufferLogger()
         self.policy = AbsolutelyAnythingGoesUploadPolicy()
 
@@ -265,9 +265,9 @@ class ChangesFileTests(TestCase):
         self.assertThat(
             changes.changed_by,
             MatchesDict({
-                "name": Equals(u"Somebody"),
-                "email": Equals(u"somebody@ubuntu.com"),
-                "person": MatchesStructure.byEquality(displayname=u"Somebody"),
+                "name": Equals("Somebody"),
+                "email": Equals("somebody@ubuntu.com"),
+                "person": MatchesStructure.byEquality(displayname="Somebody"),
                 }))
 
     def test_simulated_changelog(self):
@@ -358,7 +358,7 @@ class TestSignatureVerification(TestCase):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSignatureVerification, self).setUp()
+        super().setUp()
         self.useFixture(KeyServerTac())
         import_public_test_keys()
 

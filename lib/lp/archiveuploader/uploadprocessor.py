@@ -555,7 +555,7 @@ class BuildUploadHandler(UploadHandler):
             will be retrieved using the id in the upload.
         :raises: CannotGetBuild if the build could not be retrieved.
         """
-        super(BuildUploadHandler, self).__init__(processor, fsroot, upload)
+        super().__init__(processor, fsroot, upload)
         self.build = build
         if self.build is None:
             self.build = self._getBuild()

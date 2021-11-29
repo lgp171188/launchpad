@@ -137,7 +137,7 @@ class SignableTagFile:
         try:
             with open(self.filepath, 'rb') as f:
                 self.raw_content = f.read()
-        except IOError as error:
+        except OSError as error:
             raise UploadError(
                 "Unable to read %s: %s" % (self.filename, error))
 
@@ -212,7 +212,7 @@ class SignableTagFile:
         try:
             (name, email) = parse_maintainer_bytes(addr, fieldname)
         except ParseMaintError as error:
-            raise UploadError(six.text_type(error))
+            raise UploadError(str(error))
 
         person = getUtility(IPersonSet).getByEmail(email)
         if person and person.private:

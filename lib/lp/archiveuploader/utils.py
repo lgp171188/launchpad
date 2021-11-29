@@ -56,7 +56,7 @@ class DpkgSourceError(Exception):
     _fmt = "Unable to unpack source package (%(result)s): %(output)s"
 
     def __init__(self, command, output, result):
-        super(DpkgSourceError, self).__init__(
+        super().__init__(
             self._fmt % {
                 "output": output, "result": result, "command": command})
         self.output = output
@@ -179,14 +179,14 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
     """
     maintainer = maintainer.strip()
     if not maintainer:
-        return (u'', u'')
+        return ('', '')
 
-    if maintainer.find(u"<") == -1:
+    if maintainer.find("<") == -1:
         email = maintainer
-        name = u""
-    elif (maintainer[0] == u"<" and maintainer[-1:] == u">"):
+        name = ""
+    elif (maintainer[0] == "<" and maintainer[-1:] == ">"):
         email = maintainer[1:-1]
-        name = u""
+        name = ""
     else:
         m = re_parse_maintainer.match(maintainer)
         if not m:
@@ -195,10 +195,10 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
         name = m.group(1)
         email = m.group(2)
         # Just in case the maintainer ended up with nested angles; check...
-        while email.startswith(u"<"):
+        while email.startswith("<"):
             email = email[1:]
 
-    if email.find(u"@") == -1 and email.find(u"buildd_") != 0:
+    if email.find("@") == -1 and email.find("buildd_") != 0:
         raise ParseMaintError("%s: no @ found in email address part."
                               % maintainer)
 
@@ -211,7 +211,7 @@ def parse_maintainer_bytes(content, fieldname):
     It verifies the content type and transforms it to text with
     guess().  Then we can safely call parse_maintainer().
     """
-    if not isinstance(content, six.text_type):
+    if not isinstance(content, str):
         content = guess_encoding(content)
     return parse_maintainer(content, fieldname)
 
@@ -231,10 +231,10 @@ def rfc822_encode_address(name, email):
     # not work directly as an email address due to a misfeature in the syntax
     # specified in RFC822; see Debian policy 5.6.2 (Maintainer field syntax)
     # for details.
-    if name.find(u',') != -1 or name.find(u'.') != -1:
-        return u"%s (%s)" % (email, name)
+    if name.find(',') != -1 or name.find('.') != -1:
+        return "%s (%s)" % (email, name)
     else:
-        return u"%s <%s>" % (name, email)
+        return "%s <%s>" % (name, email)
 
 
 def extract_dpkg_source(dsc_filepath, target, vendor=None):
@@ -324,7 +324,7 @@ def merge_file_lists(files, checksums_sha1, checksums_sha256, changes=True):
                 (filename, file_hashes[filename], size))
 
     # Ensure that each filename was only listed in Files once.
-    if set(six.itervalues(file_counter)) - {1}:
+    if set(file_counter.values()) - {1}:
         raise UploadError("Duplicate filenames in Files field.")
 
     # Ensure that the Checksums-Sha1 and Checksums-Sha256 fields, if
