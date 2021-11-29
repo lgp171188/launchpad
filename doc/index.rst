@@ -20,6 +20,15 @@ Overview
    strategy
    scope
    values
+   faq
+
+Tutorials
+=========
+
+.. toctree::
+   :maxdepth: 1
+
+   running
 
 Guides
 ======
@@ -30,6 +39,7 @@ Guides
    guides/architecture
    guides/python
    guides/tests
+   guides/exceptions
 
 Technical
 =========
@@ -37,7 +47,9 @@ Technical
 .. toctree::
    :maxdepth: 1
 
+   running-details
    pip
+   security
 
 Possibly out-of-date
 --------------------
@@ -45,7 +57,6 @@ Possibly out-of-date
 .. toctree::
    :maxdepth: 1
 
-   security
    email
 
 Other

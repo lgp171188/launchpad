@@ -152,7 +152,7 @@ class StepView(LaunchpadFormView):
 
     _field_names = []
     step_name = ''
-    main_action_label = u'Continue'
+    main_action_label = 'Continue'
     next_step = None
 
     # Step information.  These get filled in by the controller view.
@@ -201,7 +201,7 @@ class StepView(LaunchpadFormView):
         `validateStep()` if they have any custom validation they need to
         perform.
         """
-        super(StepView, self).validate(data)
+        super().validate(data)
         if self.shouldProcess(data):
             self.validateStep(data)
 
@@ -243,7 +243,7 @@ class StepView(LaunchpadFormView):
                 operation.label = self.main_action_label
             actions.append(operation)
         self.actions = actions
-        return super(StepView, self).render()
+        return super().render()
 
     @property
     def cancel_url(self):

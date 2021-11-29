@@ -49,7 +49,7 @@ class ItemWidgetTestCase(TestCaseWithFactory):
     UNSAFE_TERM = SimpleTerm('object-2', 'token-2', '<unsafe> &nbsp; title')
 
     def setUp(self):
-        super(ItemWidgetTestCase, self).setUp()
+        super().setUp()
         self.request = LaunchpadTestRequest()
         self.vocabulary = SimpleVocabulary([self.SAFE_TERM, self.UNSAFE_TERM])
         field = Choice(__name__='test_field', vocabulary=self.vocabulary)
@@ -186,7 +186,7 @@ class TestLaunchpadRadioWidgetWithDescription(TestCaseWithFactory):
         UNSAFE_TERM = Item('item-<2>', description='<unsafe> &nbsp; title')
 
     def setUp(self):
-        super(TestLaunchpadRadioWidgetWithDescription, self).setUp()
+        super().setUp()
         self.request = LaunchpadTestRequest()
         field = Choice(__name__='test_field', vocabulary=self.TestEnum)
         self.field = field.bind(object())

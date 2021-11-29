@@ -487,7 +487,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(HugeVocabularyJSONViewTestCase, self).setUp()
+        super().setUp()
         test_persons = []
         for name in range(1, 7):
             test_persons.append(

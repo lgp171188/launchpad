@@ -41,11 +41,11 @@ from lp.testing.layers import (
 class TestInterface(Interface):
     """Test interface for the view below."""
 
-    normal = Text(title=u'normal', description=u'plain text')
+    normal = Text(title='normal', description='plain text')
 
     structured = has_structured_doc(
-        Text(title=u'structured',
-             description=u'<strong>structured text</strong'))
+        Text(title='structured',
+             description='<strong>structured text</strong'))
 
 
 class TestView(LaunchpadFormView):
@@ -90,9 +90,9 @@ class TestQueryTalesForHasStructuredDoc(TestCase):
 class TestHelpLinksInterface(Interface):
     """Test interface for the view below."""
 
-    nickname = Text(title=u'nickname')
+    nickname = Text(title='nickname')
 
-    displayname = Text(title=u'displayname')
+    displayname = Text(title='displayname')
 
 
 class TestHelpLinksView(LaunchpadFormView):
@@ -100,13 +100,13 @@ class TestHelpLinksView(LaunchpadFormView):
 
     schema = TestHelpLinksInterface
 
-    page_title = u"TestHelpLinksView"
+    page_title = "TestHelpLinksView"
     template = ViewPageTemplateFile(
         config.root + '/lib/lp/app/templates/generic-edit.pt')
 
     help_links = {
-        "nickname": u"http://widget.example.com/name",
-        "displayname": u"http://widget.example.com/displayname",
+        "nickname": "http://widget.example.com/name",
+        "displayname": "http://widget.example.com/displayname",
         }
 
 
@@ -122,10 +122,10 @@ class TestHelpLinks(TestCaseWithFactory):
         view.initialize()
         nickname_widget, displayname_widget = view.widgets
         self.assertEqual(
-            u"http://widget.example.com/name",
+            "http://widget.example.com/name",
             nickname_widget.help_link)
         self.assertEqual(
-            u"http://widget.example.com/displayname",
+            "http://widget.example.com/displayname",
             displayname_widget.help_link)
 
     def test_help_links_render(self):
@@ -140,20 +140,20 @@ class TestHelpLinks(TestCaseWithFactory):
         [nickname_help_link] = root.cssselect(
             "label[for$=nickname] ~ a[target=help]")
         self.assertEqual(
-            u"http://widget.example.com/name",
+            "http://widget.example.com/name",
             nickname_help_link.get("href"))
         [displayname_help_link] = root.cssselect(
             "label[for$=displayname] ~ a[target=help]")
         self.assertEqual(
-            u"http://widget.example.com/displayname",
+            "http://widget.example.com/displayname",
             displayname_help_link.get("href"))
 
 
 class TestWidgetDivInterface(Interface):
     """Test interface for the view below."""
 
-    single_line = TextLine(title=u'single_line')
-    multi_line = Text(title=u'multi_line')
+    single_line = TextLine(title='single_line')
+    multi_line = Text(title='multi_line')
     checkbox = Choice(
         vocabulary=SimpleVocabulary.fromItems(
             (('yes', True), ('no', False))))

@@ -84,7 +84,7 @@ class TestSuggestionWidget(TestCaseWithFactory):
             self.other_selection_widget.onKeyPress = on_key_press
 
     def setUp(self):
-        super(TestSuggestionWidget, self).setUp()
+        super().setUp()
         request = LaunchpadTestRequest()
         vocabulary = SimpleHugeVocabulary(
             [self.SAFE_TERM, self.UNSAFE_TERM])
@@ -234,13 +234,13 @@ class TestTargetGitRepositoryWidget(TestCaseWithFactory):
         owner = self.factory.makePerson()
         this_source, this_target = self.factory.makeGitRefs(
             owner=owner, target=owner,
-            paths=[u"refs/heads/source", u"refs/heads/target"])
+            paths=["refs/heads/source", "refs/heads/target"])
         bmp = self.factory.makeBranchMergeProposalForGit(
             source_ref=this_source, target_ref=this_target,
             date_created=datetime.now(utc) - timedelta(days=1))
         other_source, other_target = self.factory.makeGitRefs(
             owner=owner, target=owner,
-            paths=[u"refs/heads/source", u"refs/heads/target"])
+            paths=["refs/heads/source", "refs/heads/target"])
         self.factory.makeBranchMergeProposalForGit(
             source_ref=other_source, target_ref=other_target,
             date_created=datetime.now(utc) - timedelta(days=1))
@@ -272,7 +272,7 @@ class TestTargetGitRepositoryWidget(TestCaseWithFactory):
         owner = self.factory.makePerson()
         source, target = self.factory.makeGitRefs(
             owner=owner, target=owner,
-            paths=[u"refs/heads/source", u"refs/heads/target"])
+            paths=["refs/heads/source", "refs/heads/target"])
         bmp = self.factory.makeBranchMergeProposalForGit(
             source_ref=source, target_ref=target,
             date_created=datetime.now(utc) - timedelta(days=1))

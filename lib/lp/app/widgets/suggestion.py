@@ -141,7 +141,7 @@ class SuggestionWidget(LaunchpadRadioWidget):
     def _renderLabel(self, text, index):
         """Render a label for the option with the specified index."""
         label = structured(
-            u'<label for="%s" style="font-weight: normal">%s</label>',
+            '<label for="%s" style="font-weight: normal">%s</label>',
             self._optionId(index), text)
         return label
 
@@ -183,7 +183,7 @@ class SuggestionWidget(LaunchpadRadioWidget):
         other_selection_onclick = (
             "this.form['%s'].focus()" % self.other_selection_widget.name)
 
-        elem = renderElement(u'input',
+        elem = renderElement('input',
                              value="other",
                              name=self.name,
                              id='%s.%s' % (self.name, index),
@@ -264,13 +264,13 @@ class TargetBranchWidget(SuggestionWidget):
         # radio buttons that is not a hyperlink in order to select the radio
         # button.  It was decided not to have the entire text as a link, but
         # instead to have a separate link to the branch details.
-        text = u'%s (<a href="%s">branch details</a>)'
+        text = '%s (<a href="%s">branch details</a>)'
         # If the branch is the development focus, say so.
         if branch == self.context.context.target.default_merge_target:
-            text += u"&ndash; <em>development focus</em>"
+            text += "&ndash; <em>development focus</em>"
         label = (
-            u'<label for="%s" style="font-weight: normal">' + text +
-            u'</label>')
+            '<label for="%s" style="font-weight: normal">' + text +
+            '</label>')
         return structured(
             label, self._optionId(index), branch.displayname,
             canonical_url(branch))
@@ -345,17 +345,17 @@ class TargetGitRepositoryWidget(SuggestionWidget):
         # radio buttons that is not a hyperlink in order to select the radio
         # button.  It was decided not to have the entire text as a link, but
         # instead to have a separate link to the repository details.
-        text = u'%s (<a href="%s">repository details</a>)'
+        text = '%s (<a href="%s">repository details</a>)'
         # If the repository is the default for the target, say so.
         if not IPerson.providedBy(repository.target):
             repository_set = getUtility(IGitRepositorySet)
             default_target = repository_set.getDefaultRepository(
                 repository.target)
             if repository == default_target:
-                text += u"&ndash; <em>default repository</em>"
+                text += "&ndash; <em>default repository</em>"
         label = (
-            u'<label for="%s" style="font-weight: normal">' + text +
-            u'</label>')
+            '<label for="%s" style="font-weight: normal">' + text +
+            '</label>')
         return structured(
             label, self._optionId(index), repository.display_name,
             canonical_url(repository))

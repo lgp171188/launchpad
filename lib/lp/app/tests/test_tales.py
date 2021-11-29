@@ -162,7 +162,7 @@ class TestTeamFormatterAPI(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestTeamFormatterAPI, self).setUp()
+        super().setUp()
         icon = self.factory.makeLibraryFileAlias(
             filename='smurf.png', content_type='image/png')
         self.team = self.factory.makeTeam(
@@ -227,7 +227,7 @@ class TestTeamFormatterAPI(TestCaseWithFactory):
 
     def test_can_view_link(self):
         self._test_can_view_attribute(
-            'link', u'<span class="sprite team">&lt;hidden&gt;</span>')
+            'link', '<span class="sprite team">&lt;hidden&gt;</span>')
 
     def test_can_view_api_url(self):
         self._test_can_view_attribute('api_url')
@@ -396,7 +396,7 @@ class TestIRCNicknameFormatterAPI(TestCaseWithFactory):
         expected_html = test_tales(
             'nick/fmt:formatted_displayname', nick=ircID)
         self.assertEqual(
-            u'<strong>fred</strong>\n'
+            '<strong>fred</strong>\n'
             '<span class="lesser"> on </span>\n'
             '<strong>&lt;b&gt;irc.canonical.com&lt;/b&gt;</strong>\n',
             expected_html)

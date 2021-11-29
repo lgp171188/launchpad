@@ -21,7 +21,6 @@ from lazr.enum import enumerated_type_registry
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import pytz
-import six
 from six.moves.urllib.parse import quote
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
@@ -688,9 +687,9 @@ class ObjectFormatterAPI:
         text = breadcrumb.detail
         if len(text) > 64:
             truncated = '%s...' % text[0:64]
-            if truncated.count(u'\u201c') > truncated.count(u'\u201cd'):
+            if truncated.count('\u201c') > truncated.count('\u201cd'):
                 # Close the open smartquote if it was dropped.
-                truncated += u'\u201d'
+                truncated += '\u201d'
             return truncated
         return text
 
@@ -1252,7 +1251,7 @@ class PersonFormatterAPI(ObjectFormatterAPI):
 
         The default URL for a person is to the mainsite.
         """
-        return super(PersonFormatterAPI, self).url(view_name, rootsite)
+        return super().url(view_name, rootsite)
 
     def _makeLink(self, view_name, rootsite, text):
         person = self._context
@@ -1315,7 +1314,7 @@ class MixedVisibilityError(Exception):
 class TeamFormatterAPI(PersonFormatterAPI):
     """Adapter for `ITeam` objects to a formatted string."""
 
-    hidden = u'<hidden>'
+    hidden = '<hidden>'
 
     def url(self, view_name=None, rootsite='mainsite'):
         """See `ObjectFormatterAPI`.
@@ -1327,7 +1326,7 @@ class TeamFormatterAPI(PersonFormatterAPI):
             # This person has no permission to view the team details.
             self._report_visibility_leak()
             return None
-        return super(TeamFormatterAPI, self).url(view_name, rootsite)
+        return super().url(view_name, rootsite)
 
     def api_url(self, context):
         """See `ObjectFormatterAPI`."""
@@ -1335,7 +1334,7 @@ class TeamFormatterAPI(PersonFormatterAPI):
             # This person has no permission to view the team details.
             self._report_visibility_leak()
             return None
-        return super(TeamFormatterAPI, self).api_url(context)
+        return super().api_url(context)
 
     def link(self, view_name, rootsite='mainsite'):
         """See `ObjectFormatterAPI`.
@@ -1349,7 +1348,7 @@ class TeamFormatterAPI(PersonFormatterAPI):
             self._report_visibility_leak()
             return structured(
                 '<span class="sprite team">%s</span>', self.hidden).escapedtext
-        return super(TeamFormatterAPI, self).link(view_name, rootsite)
+        return super().link(view_name, rootsite)
 
     def icon(self, view_name):
         team = self._context
@@ -1357,7 +1356,7 @@ class TeamFormatterAPI(PersonFormatterAPI):
             css_class = ObjectImageDisplayAPI(team).sprite_css()
             return '<span class="' + css_class + '"></span>'
         else:
-            return super(TeamFormatterAPI, self).icon(view_name)
+            return super().icon(view_name)
 
     def displayname(self, view_name, rootsite=None):
         """See `PersonFormatterAPI`."""
@@ -1366,7 +1365,7 @@ class TeamFormatterAPI(PersonFormatterAPI):
             # This person has no permission to view the team details.
             self._report_visibility_leak()
             return self.hidden
-        return super(TeamFormatterAPI, self).displayname(view_name, rootsite)
+        return super().displayname(view_name, rootsite)
 
     def unique_displayname(self, view_name):
         """See `PersonFormatterAPI`."""
@@ -1375,7 +1374,7 @@ class TeamFormatterAPI(PersonFormatterAPI):
             # This person has no permission to view the team details.
             self._report_visibility_leak()
             return self.hidden
-        return super(TeamFormatterAPI, self).unique_displayname(view_name)
+        return super().unique_displayname(view_name)
 
     def _report_visibility_leak(self):
         request = get_current_browser_request()
@@ -1426,7 +1425,7 @@ class CustomizableFormatter(ObjectFormatterAPI):
         """
         values = {
             k: v if v is not None else ''
-            for k, v in six.iteritems(self._link_summary_values())}
+            for k, v in self._link_summary_values().items()}
         return structured(self._link_summary_template, **values).escapedtext
 
     def _title_values(self):
@@ -1448,7 +1447,7 @@ class CustomizableFormatter(ObjectFormatterAPI):
             return None
         values = {
             k: v if v is not None else ''
-            for k, v in six.iteritems(self._title_values())}
+            for k, v in self._title_values().items()}
         return structured(title_template, **values).escapedtext
 
     def sprite_css(self):
@@ -1512,7 +1511,7 @@ class PillarFormatterAPI(CustomizableFormatter):
 
         The default URL for a pillar is to the mainsite.
         """
-        return super(PillarFormatterAPI, self).url(view_name, rootsite)
+        return super().url(view_name, rootsite)
 
     def _getLinkHTML(self, view_name, rootsite,
         template, custom_icon_template):
@@ -1550,11 +1549,11 @@ class PillarFormatterAPI(CustomizableFormatter):
         In the case of Products or ProjectGroups we display the custom
         icon, if one exists. The default URL for a pillar is to the mainsite.
         """
-        super(PillarFormatterAPI, self).link(view_name)
-        template = u'<a href="%(url)s" class="%(css_class)s">%(summary)s</a>'
+        super().link(view_name)
+        template = '<a href="%(url)s" class="%(css_class)s">%(summary)s</a>'
         custom_icon_template = (
-            u'<a href="%(url)s" class="bg-image" '
-            u'style="background-image: url(%(custom_icon)s)">%(summary)s</a>'
+            '<a href="%(url)s" class="bg-image" '
+            'style="background-image: url(%(custom_icon)s)">%(summary)s</a>'
             )
         return self._getLinkHTML(
             view_name, rootsite, template, custom_icon_template)
@@ -1566,15 +1565,15 @@ class PillarFormatterAPI(CustomizableFormatter):
         In the case of Products or ProjectGroups we display the custom
         icon, if one exists. The default URL for a pillar is to the mainsite.
         """
-        super(PillarFormatterAPI, self).link(view_name)
+        super().link(view_name)
         template = (
-            u'<a href="%(url)s" class="%(css_class)s">%(displayname)s</a>'
-            u'&nbsp;(<a href="%(url)s">%(name)s</a>)'
+            '<a href="%(url)s" class="%(css_class)s">%(displayname)s</a>'
+            '&nbsp;(<a href="%(url)s">%(name)s</a>)'
             )
         custom_icon_template = (
-            u'<a href="%(url)s" class="bg-image" '
-            u'style="background-image: url(%(custom_icon)s)">'
-            u'%(displayname)s</a>&nbsp;(<a href="%(url)s">%(name)s</a>)'
+            '<a href="%(url)s" class="bg-image" '
+            'style="background-image: url(%(custom_icon)s)">'
+            '%(displayname)s</a>&nbsp;(<a href="%(url)s">%(name)s</a>)'
             )
         return self._getLinkHTML(
             view_name, rootsite, template, custom_icon_template)
@@ -1739,7 +1738,7 @@ class GitRefFormatterAPI(CustomizableFormatter):
         """
         if self._context.repository_url is not None:
             return None
-        return super(GitRefFormatterAPI, self).url(view_name, rootsite)
+        return super().url(view_name, rootsite)
 
     def _link_summary_values(self):
         return {'display_name': self._context.display_name}
@@ -2085,7 +2084,7 @@ class BugTrackerFormatterAPI(ObjectFormatterAPI):
         """
         url = self._context.baseurl
         if url.startswith('mailto:') and getUtility(ILaunchBag).user is None:
-            return html_escape(u'mailto:<email address hidden>')
+            return html_escape('mailto:<email address hidden>')
         else:
             return structured(
                 '<a class="link-external" href="%(url)s">%(url)s</a>',
@@ -2118,7 +2117,7 @@ class BugTrackerFormatterAPI(ObjectFormatterAPI):
         anonymous = getUtility(ILaunchBag).user is None
         for alias in self._context.aliases:
             if anonymous and alias.startswith('mailto:'):
-                yield u'mailto:<email address hidden>'
+                yield 'mailto:<email address hidden>'
             else:
                 yield alias
 
@@ -2141,7 +2140,7 @@ class BugWatchFormatterAPI(ObjectFormatterAPI):
         an email address, only the summary is returned (i.e. no link).
         """
         if summary is None or len(summary) == 0:
-            summary = structured(u'&mdash;')
+            summary = structured('&mdash;')
         url = self._context.url
         if url.startswith('mailto:') and getUtility(ILaunchBag).user is None:
             return html_escape(summary)
@@ -2159,7 +2158,7 @@ class BugWatchFormatterAPI(ObjectFormatterAPI):
         summary = self._context.bugtracker.name
         remotebug = self._context.remotebug
         if remotebug is not None and len(remotebug) > 0:
-            summary = u'%s #%s' % (summary, remotebug)
+            summary = '%s #%s' % (summary, remotebug)
         return self._make_external_link(summary)
 
     def external_link_short(self):
@@ -2584,7 +2583,7 @@ class LinkFormatterAPI(ObjectFormatterAPI):
         if self._context.enabled:
             return self._context.url
         else:
-            return u''
+            return ''
 
 
 class RevisionAuthorFormatterAPI(ObjectFormatterAPI):
@@ -2629,7 +2628,7 @@ class PermissionRequiredQuery:
 
 
 class IMainTemplateFile(Interface):
-    path = TextLine(title=u'The absolute path to this main template.')
+    path = TextLine(title='The absolute path to this main template.')
 
 
 @adapter(LaunchpadLayer)
@@ -2776,8 +2775,7 @@ class TranslationGroupFormatterAPI(ObjectFormatterAPI):
 
     def url(self, view_name=None, rootsite='translations'):
         """See `ObjectFormatterAPI`."""
-        return super(TranslationGroupFormatterAPI, self).url(
-            view_name, rootsite)
+        return super().url(view_name, rootsite)
 
     def link(self, view_name, rootsite='translations'):
         """See `ObjectFormatterAPI`."""
@@ -2800,7 +2798,7 @@ class LanguageFormatterAPI(ObjectFormatterAPI):
 
     def url(self, view_name=None, rootsite='translations'):
         """See `ObjectFormatterAPI`."""
-        return super(LanguageFormatterAPI, self).url(view_name, rootsite)
+        return super().url(view_name, rootsite)
 
     def link(self, view_name, rootsite='translations'):
         """See `ObjectFormatterAPI`."""
@@ -2825,7 +2823,7 @@ class POFileFormatterAPI(ObjectFormatterAPI):
 
     def url(self, view_name=None, rootsite='translations'):
         """See `ObjectFormatterAPI`."""
-        return super(POFileFormatterAPI, self).url(view_name, rootsite)
+        return super().url(view_name, rootsite)
 
     def link(self, view_name, rootsite='translations'):
         """See `ObjectFormatterAPI`."""

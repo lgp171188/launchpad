@@ -26,7 +26,7 @@ class ServiceFactory(Navigation):
     """
 
     def __init__(self):
-        super(ServiceFactory, self).__init__(None)
+        super().__init__(None)
 
     def traverse(self, name):
         return self.getService(name)

@@ -17,7 +17,6 @@ __all__ = [
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import simplejson
-import six
 import transaction
 from zope.event import notify
 from zope.formlib import form
@@ -212,7 +211,7 @@ class LaunchpadFormView(LaunchpadView):
             self.form_fields, self.prefix, context, self.request,
             data=self.initial_values, adapters=self.adapters,
             ignore_request=False)
-        for field_name, help_link in six.iteritems(self.help_links):
+        for field_name, help_link in self.help_links.items():
             self.widgets[field_name].help_link = help_link
 
     @property
