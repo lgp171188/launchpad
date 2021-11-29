@@ -38,7 +38,7 @@ repos:
         alias: pyupgrade-py3
         name: pyupgrade (--py3-plus)
         args: [--keep-percent-format, --py3-plus]
-        files: ^lib/lp/(answers|app)/
+        files: ^lib/lp/(answers|app|archivepublisher)/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
     hooks:

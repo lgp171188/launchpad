@@ -95,7 +95,7 @@ class SignedMatches(Matcher):
 class FakeMethodCallLog(FakeMethod):
     """Fake execution general commands."""
     def __init__(self, upload=None, *args, **kwargs):
-        super(FakeMethodCallLog, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.upload = upload
         self.callers = {
             "UEFI signing": 0,
@@ -114,7 +114,7 @@ class FakeMethodCallLog(FakeMethod):
             }
 
     def __call__(self, *args, **kwargs):
-        super(FakeMethodCallLog, self).__call__(*args, **kwargs)
+        super().__call__(*args, **kwargs)
 
         description = args[0]
         cmdl = args[1]
@@ -189,7 +189,7 @@ class TestSigningHelpers(TestCaseWithFactory):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(TestSigningHelpers, self).setUp()
+        super().setUp()
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
@@ -1521,7 +1521,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSigningUploadWithSigningService, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({PUBLISHER_USES_SIGNING_SERVICE: True}))
 
         self.signing_service_client = self.useFixture(
@@ -2124,7 +2124,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.assertEqual(1, self.signing_service_client.inject.call_count)
         self.assertEqual(
             (SigningKeyType.OPAL, private_key, public_key,
-             u"OPAL key for %s" % self.archive.reference,
+             "OPAL key for %s" % self.archive.reference,
              now.replace(tzinfo=utc)),
             self.signing_service_client.inject.call_args[0])
 

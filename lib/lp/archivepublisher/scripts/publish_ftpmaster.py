@@ -13,7 +13,6 @@ import os
 import shutil
 
 from pytz import utc
-import six
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -284,7 +283,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         :param archive_purpose: The (purpose of the) archive to copy.
         """
         for purpose, archive_config in (
-                six.iteritems(self.configs[distribution])):
+                self.configs[distribution].items()):
             dists = get_dists(archive_config)
             backup_dists = get_backup_dists(archive_config)
             execute_subprocess(
@@ -314,15 +313,14 @@ class PublishFTPMaster(LaunchpadCronScript):
         run died while in this state, restore the directory to its
         permanent location.
         """
-        for distro_configs in six.itervalues(self.configs):
-            for archive_config in six.itervalues(distro_configs):
+        for distro_configs in self.configs.values():
+            for archive_config in distro_configs.values():
                 self.recoverArchiveWorkingDir(archive_config)
 
     def setUpDirs(self):
         """Create archive roots and such if they did not yet exist."""
-        for distro_configs in six.itervalues(self.configs):
-            for archive_purpose, archive_config in (
-                    six.iteritems(distro_configs)):
+        for distro_configs in self.configs.values():
+            for archive_purpose, archive_config in distro_configs.items():
                 archiveroot = archive_config.archiveroot
                 if not file_exists(archiveroot):
                     self.logger.debug(
@@ -403,7 +401,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         backup dists directory around.
         """
         self.logger.debug("Moving the new dists into place...")
-        for archive_config in six.itervalues(self.configs[distribution]):
+        for archive_config in self.configs[distribution].values():
             # Use the dists "working location" as a temporary place to
             # move the current dists out of the way for the switch.  If
             # we die in this state, the next run will know to move the
@@ -418,7 +416,7 @@ class PublishFTPMaster(LaunchpadCronScript):
 
     def clearEmptyDirs(self, distribution):
         """Clear out any redundant empty directories."""
-        for archive_config in six.itervalues(self.configs[distribution]):
+        for archive_config in self.configs[distribution].values():
             execute_subprocess(
                 ["find", archive_config.archiveroot, "-type", "d", "-empty",
                  "-delete"],
@@ -428,7 +426,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         """Run the finalize.d parts to finalize publication."""
         archive_roots = ' '.join([
             archive_config.archiveroot
-            for archive_config in six.itervalues(self.configs[distribution])])
+            for archive_config in self.configs[distribution].values()])
 
         env = {
             'SECURITY_UPLOAD_ONLY': 'yes' if security_only else 'no',

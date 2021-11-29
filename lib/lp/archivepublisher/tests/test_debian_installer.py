@@ -33,7 +33,7 @@ class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestDebianInstaller, self).setUp()
+        super().setUp()
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(

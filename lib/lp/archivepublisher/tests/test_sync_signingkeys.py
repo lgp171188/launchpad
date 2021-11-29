@@ -64,7 +64,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(TestSyncSigningKeysScript, self).setUp()
+        super().setUp()
         self.signing_root_dir = self.useFixture(TempDir()).path
         # Add our local configuration to an on-disk configuration file so
         # that it can be used by subprocesses.
@@ -465,7 +465,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         self.assertEqual(
             (SigningKeyType.UEFI, b"Private key content",
              b"Public key content",
-             u"UEFI key for %s" % archive.reference, now.replace(tzinfo=utc)),
+             "UEFI key for %s" % archive.reference, now.replace(tzinfo=utc)),
             signing_service_client.inject.call_args[0])
 
         with dbuser(config.archivepublisher.dbuser):
@@ -487,7 +487,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         self.assertEqual(
             (SigningKeyType.UEFI, b"Private key content",
              b"Public key content",
-             u"UEFI key for %s" % archive.reference, now.replace(tzinfo=utc)),
+             "UEFI key for %s" % archive.reference, now.replace(tzinfo=utc)),
             signing_service_client.inject.call_args[0])
 
     def test_inject_existing_key(self):
