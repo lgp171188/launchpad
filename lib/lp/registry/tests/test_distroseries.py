@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for distroseries."""
@@ -357,6 +357,16 @@ class TestDistroSeries(TestCaseWithFactory):
         naked_distroseries = removeSecurityProxy(distroseries)
         self.assertTrue(
             naked_distroseries.publishing_options["backports_not_automatic"])
+
+    def test_proposed_not_automatic(self):
+        distroseries = self.factory.makeDistroSeries()
+        self.assertFalse(distroseries.proposed_not_automatic)
+        with admin_logged_in():
+            distroseries.proposed_not_automatic = True
+        self.assertTrue(distroseries.proposed_not_automatic)
+        naked_distroseries = removeSecurityProxy(distroseries)
+        self.assertTrue(
+            naked_distroseries.publishing_options["proposed_not_automatic"])
 
     def test_include_long_descriptions(self):
         distroseries = self.factory.makeDistroSeries()
