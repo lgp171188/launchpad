@@ -85,7 +85,7 @@ class TestFTPArchive(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestFTPArchive, self).setUp()
+        super().setUp()
         switch_dbuser(config.archivepublisher.dbuser)
 
         self._distribution = getUtility(IDistributionSet)['ubuntutest']
@@ -106,7 +106,7 @@ class TestFTPArchive(TestCaseWithFactory):
         self._publisher = SamplePublisher(self._archive)
 
     def tearDown(self):
-        super(TestFTPArchive, self).tearDown()
+        super().tearDown()
         shutil.rmtree(self._config.distroroot)
 
     def _verifyFile(self, filename, directory):

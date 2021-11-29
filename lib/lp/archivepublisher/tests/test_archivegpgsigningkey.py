@@ -66,7 +66,7 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def setUp(self):
-        super(TestSignableArchiveWithSigningKey, self).setUp()
+        super().setUp()
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
@@ -202,7 +202,7 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSignableArchiveWithRunParts, self).setUp()
+        super().setUp()
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
@@ -300,7 +300,7 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
 
     @defer.inlineCallbacks
     def setUp(self):
-        super(TestArchiveGPGSigningKey, self).setUp()
+        super().setUp()
         self.temp_dir = self.makeTemporaryDirectory()
         self.pushConfig("personalpackagearchive", root=self.temp_dir)
         self.keyserver = self.useFixture(InProcessKeyServerFixture())

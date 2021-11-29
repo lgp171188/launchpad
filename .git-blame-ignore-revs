@@ -4,3 +4,5 @@
 5d46ca0970916c2b161761aee29f46419dd3efea
 # apply pyupgrade --py3-plus to lp.app
 7fbeaae55d7d282ccda47c76a27c879e04ee14e9
+# apply pyupgrade --py3-plus to lp.archivepublisher
+c348b945c29c723201380d9aca0e0c0298037c8c
