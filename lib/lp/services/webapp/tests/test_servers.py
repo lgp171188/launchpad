@@ -897,6 +897,14 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
             repository,
             ["repository:build_status", "repository:another_scope"])
 
+    def test_checkRequest_contains_context(self):
+        [ref] = self.factory.makeGitRefs()
+        self._makeAccessTokenVerifiedRequest(
+            target=ref.repository,
+            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+        getUtility(IWebServiceConfiguration).checkRequest(
+            ref, ["repository:build_status", "repository:another_scope"])
+
     def test_checkRequest_bad_context(self):
         repository = self.factory.makeGitRepository()
         self._makeAccessTokenVerifiedRequest(

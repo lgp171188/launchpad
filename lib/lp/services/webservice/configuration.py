@@ -15,8 +15,13 @@ from zope.security.interfaces import Unauthorized
 from lp.app import versioninfo
 from lp.services.config import config
 from lp.services.database.sqlbase import block_implicit_flushes
+from lp.services.webapp.canonicalurl import nearest_adapter
 from lp.services.webapp.interaction import get_interaction_extras
-from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.interfaces import (
+    ILaunchBag,
+    ILaunchpadContainer,
+    )
+from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import (
     WebServiceClientRequest,
     WebServicePublication,
@@ -102,9 +107,19 @@ class LaunchpadWebServiceConfiguration(BaseWebServiceConfiguration):
         access_token = get_interaction_extras().access_token
         if access_token is None:
             return
-        if access_token.target != context:
-            raise Unauthorized(
-                "Current authentication does not allow access to this object.")
+
+        # The access token must be for a target that either exactly matches
+        # or contains the context object.
+        if access_token.target == context:
+            pass
+        else:
+            container = nearest_adapter(context, ILaunchpadContainer)
+            if not container.isWithin(
+                    canonical_url(access_token.target, force_local_path=True)):
+                raise Unauthorized(
+                    "Current authentication does not allow access to this "
+                    "object.")
+
         if not required_scopes:
             raise Unauthorized(
                 "Current authentication only allows calling scoped methods.")
