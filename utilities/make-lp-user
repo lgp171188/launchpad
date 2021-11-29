@@ -192,7 +192,11 @@ def parse_args(arguments):
     parser = OptionParser(description="Create a local Launchpad user.")
     parser.add_option(
         '-e', '--email', action='store', dest='email', default=None,
-        help="Email address; set to use real GPG key for this address.")
+        help="Email address")
+    parser.add_option(
+        '-g', '--gpg', action='store_true', dest='gpg',
+        help="Use real GPG key"
+    )
 
     options, args = parser.parse_args(arguments)
     if len(args) == 0:
@@ -220,8 +224,8 @@ def main(arguments):
     add_person_to_teams(person, options.teams)
     add_ssh_public_keys(person)
 
-    if options.email is not None:
-        attach_gpg_keys(options.email, person)
+    if options.gpg:
+        attach_gpg_keys(email, person)
 
     transaction.commit()
 
