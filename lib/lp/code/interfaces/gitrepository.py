@@ -833,7 +833,7 @@ class RevisionStatusReportsFeatureDisabled(Unauthorized):
 
     def __init__(self):
         super(RevisionStatusReportsFeatureDisabled, self).__init__(
-            "You do not have permission to create revision status reports")
+            "You do not have permission to create/view status reports.")
 
 
 class IRevisionStatusReportView(Interface):
@@ -933,10 +933,13 @@ class IRevisionStatusReportSet(Interface):
         """
 
     def findRevisionStatusReportByID(id):
-        """Returns the RevisionStatusReport for a given ID."""
+        """Returns the `RevisionStatusReport` for a given ID."""
 
     def findRevisionStatusReportByCreator(creator):
-        """Returns the RevisionStatusReport for a creator."""
+        """Returns the `RevisionStatusReport` for a creator."""
+
+    def findRevisionStatusReportsByCommit(commmit_sha1):
+        """Returns the list of `RevisionStatusReport` for a commit."""
 
 
 class IRevisionStatusArtifactSet(Interface):
@@ -1192,6 +1195,18 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         :param url: The external link of the status report.
         :param result_summary: The description of the new report.
         :param result: The result of the new report.
+        """
+
+    @operation_parameters(
+        commit_sha1=TextLine(title=_("The commit sha1 of the status report.")))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @operation_returns_collection_of(Interface)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getStatusReports(commit_sha1):
+        """Retrieves the list of reports that exist for the sha1 commit.
+
+        :param commit_sha1: The commit sha1 for the report.
         """
 
 

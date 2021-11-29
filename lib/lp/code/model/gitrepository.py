@@ -85,9 +85,9 @@ from lp.app.enums import (
     PUBLIC_INFORMATION_TYPES,
     )
 from lp.app.errors import (
+    NotFoundError,
     SubscriptionPrivacyViolation,
     UserCannotUnsubscribePerson,
-    NotFoundError,
     )
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import (
@@ -186,11 +186,6 @@ from lp.registry.model.accesspolicy import (
     )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
-from lp.services.webapp import (
-    Navigation,
-    stepthrough,
-    )
-
 from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.auth.model import AccessTokenTargetMixin
 from lp.services.auth.utils import create_access_token_secret
@@ -227,11 +222,16 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
+from lp.services.webapp import (
+    Navigation,
+    stepthrough,
+    )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.interfaces.snap import ISnapSet
+
 
 REVISION_STATUS_REPORT_ALLOW_CREATE = 'revision_status_report.allow_create'
 
@@ -381,7 +381,9 @@ class RevisionStatusReportNavigation(Navigation):
             report_id = int(id)
         except ValueError:
             raise NotFoundError(id)
-        report = IStore(RevisionStatusReport).find(RevisionStatusReport, id=report_id).one()
+        report = IStore(
+            RevisionStatusReport).find(
+            RevisionStatusReport, id=report_id).one()
         if report is None:
             raise NotFoundError(id)
         return report
@@ -409,6 +411,12 @@ class RevisionStatusReportSet:
         return IStore(RevisionStatusReport).find(
             RevisionStatusReport,
             creator=creator)
+
+    def findRevisionStatusReportsByCommit(self, commit_sha1):
+        """Returns a list of `RevisionStatusReport` for a commit."""
+        return IStore(RevisionStatusReport).find(
+            RevisionStatusReport,
+            commit_sha1=commit_sha1)
 
 
 class RevisionStatusArtifact(StormBase):
@@ -671,6 +679,17 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         report = RevisionStatusReport(self, user, title, commit_sha1,
                                       url, result_summary, result)
         return report
+
+    def getStatusReports(self, commit_sha1):
+
+        if not getFeatureFlag(REVISION_STATUS_REPORT_ALLOW_CREATE):
+            raise RevisionStatusReportsFeatureDisabled()
+
+        reports = getUtility(
+                IRevisionStatusReportSet).findRevisionStatusReportsByCommit(
+                commit_sha1)
+        return reports
+
 
     @property
     def namespace(self):
