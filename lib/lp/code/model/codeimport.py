@@ -246,6 +246,9 @@ class CodeImport(StormBase):
             code_import_updated(self, event, new_whiteboard, user)
         return event
 
+    def setURL(self, url, user):
+        self.updateURL(url, user)
+
     def updateURL(self, new_url, user):
         if self.url != new_url:
             data = {"url": new_url}
