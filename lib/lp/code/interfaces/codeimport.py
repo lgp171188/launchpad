@@ -15,9 +15,13 @@ from lazr.restful.declarations import (
     export_write_operation,
     exported,
     exported_as_webservice_entry,
+    mutator_for,
+    operation_for_version,
+    operation_parameters,
     REQUEST_USER,
     )
 from lazr.restful.fields import ReferenceChoice
+from lazr.restful.interface import copy_field
 from zope.interface import (
     Attribute,
     Interface,
@@ -226,6 +230,20 @@ class ICodeImport(Interface):
             `CodeImportEvent`.  May be ``None``.
         :return: The MODIFY `CodeImportEvent`, if any changes were made, or
             None if no changes were made.
+        """
+
+    @mutator_for(url)
+    @call_with(user=REQUEST_USER)
+    @operation_parameters(url=copy_field(url))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setURL(url, user):
+        """
+        Set the code import URL.
+
+        :param url: The URL for the code import.
+        :param user: The user setting the URL.
+        :return: None.
         """
 
     def updateURL(new_url, user):

@@ -660,7 +660,7 @@
                        getImportDetailsForDisplay"/>
     <require
        permission="launchpad.Edit"
-       attributes="updateURL"/>
+       attributes="updateURL setURL"/>
 
     <require
        permission="launchpad.AnyPerson"
