@@ -349,9 +349,6 @@ class RevisionStatusReport(StormBase):
         self.result = result
         self.date_created = UTC_NOW
 
-    def setLog(self, artifact):
-        self.log = artifact
-
     def api_setLog(self, log_data):
         filename = '%s-%s.txt' % (self.title, self.commit_sha1)
 
@@ -359,8 +356,7 @@ class RevisionStatusReport(StormBase):
             name=filename, size=len(log_data),
             file=io.BytesIO(log_data), contentType='text/plain')
 
-        artifact = getUtility(IRevisionStatusArtifactSet).new(lfa, self)
-        self.setLog(artifact)
+        getUtility(IRevisionStatusArtifactSet).new(lfa, self)
 
     def transitionToNewResult(self, result):
         if self.result == RevisionStatusResult.WAITING:
@@ -369,24 +365,6 @@ class RevisionStatusReport(StormBase):
         else:
             self.date_finished = UTC_NOW
         self.result = result
-
-
-class RevisionStatusReportNavigation(Navigation):
-
-    usedfor = IRevisionStatusReport
-
-    @stepthrough('+status')
-    def traverse_option(self, id):
-        try:
-            report_id = int(id)
-        except ValueError:
-            raise NotFoundError(id)
-        report = IStore(
-            RevisionStatusReport).find(
-            RevisionStatusReport, id=report_id).one()
-        if report is None:
-            raise NotFoundError(id)
-        return report
 
 
 @implementer(IRevisionStatusReportSet)
@@ -403,14 +381,14 @@ class RevisionStatusReportSet:
         store.add(report)
         return report
 
-    def findRevisionStatusReportByID(self, id):
+    def getByID(self, id):
         return IStore(
             RevisionStatusReport).find(RevisionStatusReport, id=id).one()
 
-    def findRevisionStatusReportByCreator(self, creator):
+    def findByRepository(self, repository):
         return IStore(RevisionStatusReport).find(
             RevisionStatusReport,
-            creator=creator)
+            RevisionStatusReport.git_repository == repository)
 
     def findRevisionStatusReportsByCommit(self, commit_sha1):
         """Returns a list of `RevisionStatusReport` for a commit."""
@@ -450,12 +428,12 @@ class RevisionStatusArtifactSet:
         store.add(artifact)
         return artifact
 
-    def findRevisionStatusArtifactById(self, id):
+    def getById(self, id):
         return IStore(RevisionStatusArtifact).find(
             RevisionStatusArtifact,
-            RevisionStatusArtifact.id == id)
+            RevisionStatusArtifact.id == id).one()
 
-    def findArtifactsByReport(self, report):
+    def findByReport(self, report):
         return IStore(RevisionStatusArtifact).find(
             RevisionStatusArtifact,
             RevisionStatusArtifact.report == report)

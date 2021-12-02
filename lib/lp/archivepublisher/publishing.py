@@ -34,7 +34,6 @@ from debian.deb822 import (
     _multivalued,
     Release,
     )
-import six
 from storm.expr import Desc
 from zope.component import getUtility
 from zope.interface import (
@@ -403,7 +402,7 @@ class ByHashes:
             child.prune()
 
 
-class Publisher(object):
+class Publisher:
     """Publisher is the class used to provide the facility to publish
     files in the pool of a Distribution. The publisher objects will be
     instantiated by the archive build scripts and will be used throughout
@@ -748,9 +747,9 @@ class Publisher(object):
 
         archive_file_suites = set()
         for container in getUtility(IArchiveFileSet).getContainersToReap(
-                self.archive, container_prefix=u"release:"):
+                self.archive, container_prefix="release:"):
             distroseries, pocket = self.distro.getDistroSeriesAndPocket(
-                container[len(u"release:"):])
+                container[len("release:"):])
             archive_file_suites.add(distroseries.getSuite(pocket))
 
         for distroseries in self.distro:
@@ -829,7 +828,7 @@ class Publisher(object):
                     with open_func(index) as index_file:
                         if index_file.read(1):
                             return distroseries
-                except IOError:
+                except OSError:
                     pass
 
     def createSeriesAliases(self):
@@ -966,7 +965,7 @@ class Publisher(object):
                             translation_stanza.makeOutput().encode('utf-8')
                             + b'\n\n')
 
-            for index in six.itervalues(indices):
+            for index in indices.values():
                 index.close()
 
         if separate_long_descriptions:
@@ -1236,8 +1235,10 @@ class Publisher(object):
         release_file["Components"] = " ".join(
             reorder_components(all_components))
         release_file["Description"] = drsummary
-        if (pocket == PackagePublishingPocket.BACKPORTS and
-            distroseries.backports_not_automatic):
+        if ((pocket == PackagePublishingPocket.BACKPORTS and
+             distroseries.backports_not_automatic) or
+            (pocket == PackagePublishingPocket.PROPOSED and
+             distroseries.proposed_not_automatic)):
             release_file["NotAutomatic"] = "yes"
             release_file["ButAutomaticUpgrades"] = "yes"
 

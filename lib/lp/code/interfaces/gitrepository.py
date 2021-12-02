@@ -21,6 +21,7 @@ __all__ = [
     'user_has_special_git_repository_access',
     ]
 
+import http.client
 import re
 from textwrap import dedent
 
@@ -50,7 +51,6 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
-from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -827,7 +827,7 @@ class IGitRepositoryExpensiveRequest(Interface):
         that is not an admin or a registry expert."""
 
 
-@error_status(http_client.UNAUTHORIZED)
+@error_status(http.client.UNAUTHORIZED)
 class RevisionStatusReportsFeatureDisabled(Unauthorized):
     """Only certain users can access APIs for revision status reports."""
 
@@ -895,6 +895,7 @@ class IRevisionStatusReportEdit(Interface):
                        constraint=attachment_size_constraint))
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @export_write_operation()
+    @export_operation_as(name="setLog")
     @operation_for_version("devel")
     def api_setLog(log_data):
         """Set a new log on an existing status report.
@@ -932,14 +933,11 @@ class IRevisionStatusReportSet(Interface):
         :param log: Stores the content of the artifact for this report.
         """
 
-    def findRevisionStatusReportByID(id):
-        """Returns the `RevisionStatusReport` for a given ID."""
+    def getByID(id):
+        """Returns the RevisionStatusReport for a given ID."""
 
-    def findRevisionStatusReportByCreator(creator):
-        """Returns the `RevisionStatusReport` for a creator."""
-
-    def findRevisionStatusReportsByCommit(commmit_sha1):
-        """Returns the list of `RevisionStatusReport` for a commit."""
+    def findByRepository(repository):
+        """Returns the set of RevisionStatusReport for a repository."""
 
 
 class IRevisionStatusArtifactSet(Interface):
@@ -953,11 +951,11 @@ class IRevisionStatusArtifactSet(Interface):
             artifact is being created.
         """
 
-    def findRevisionStatusArtifactByID(id):
+    def getByID(id):
         """Returns the RevisionStatusArtifact for a given ID."""
 
-    def findArtifactByReport(report):
-        """Returns the artifact for a given report."""
+    def findByReport(report):
+        """Returns the set of artifacts for a given report."""
 
 
 class IRevisionStatusArtifact(Interface):

@@ -8,6 +8,7 @@ from datetime import (
     timedelta,
     )
 from functools import partial
+import json
 
 import pytz
 from storm.store import Store
@@ -45,10 +46,14 @@ from lp.code.tests.codeimporthelpers import make_running_import
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.interfaces import IStore
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    ANONYMOUS,
+    api_url,
     login,
     login_person,
     logout,
+    person_logged_in,
     TestCaseWithFactory,
     time_counter,
     )
@@ -57,6 +62,7 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
+from lp.testing.pages import webservice_for_person
 
 
 class TestCodeImportBase(WithScenarios, TestCaseWithFactory):
@@ -827,6 +833,62 @@ class TestRequestImport(TestCodeImportBase):
         self.assertRaises(
             CodeImportAlreadyRunning, code_import.requestImport,
             requester)
+
+
+class TestCodeImportWebservice(TestCodeImportBase):
+    """Tests for the web service."""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_codeimport_owner_can_set_url(self):
+        # Repository owner can set the code import URL.
+        owner_db = self.factory.makePerson()
+        initial_import_url = self.factory.getUniqueURL()
+        code_import = self.factory.makeCodeImport(
+            owner=owner_db,
+            registrant=owner_db,
+            git_repo_url=initial_import_url,
+            rcs_type=RevisionControlSystems.GIT,
+            target_rcs_type=self.target_rcs_type,
+        )
+        webservice = webservice_for_person(
+            owner_db, permission=OAuthPermission.WRITE_PRIVATE)
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            code_import_url = api_url(code_import)
+
+        new_url = "https://example.com/foo/bar.git"
+        response = webservice.patch(
+            code_import_url, "application/json",
+            json.dumps({"url": new_url})
+        )
+        self.assertEqual(209, response.status)
+        code_import_json = webservice.get(code_import_url).jsonBody()
+        self.assertEqual(new_url, code_import_json['url'])
+
+    def test_codeimport_users_without_permission_cannot_set_url(self):
+        # The users without the launchpad.Edit permission cannot set the
+        # code import URL.
+        owner_db = self.factory.makePerson()
+        code_import = self.factory.makeCodeImport(
+            owner=owner_db,
+            registrant=owner_db,
+            target_rcs_type=self.target_rcs_type
+        )
+        another_person = self.factory.makePerson()
+        webservice = webservice_for_person(
+            another_person, permission=OAuthPermission.WRITE_PRIVATE)
+        webservice.default_api_version = "devel"
+
+        with person_logged_in(ANONYMOUS):
+            code_import_url = api_url(code_import)
+
+        new_url = "https://example.com/foo/bar.git"
+        response = webservice.patch(
+            code_import_url, "application/json",
+            json.dumps({"url": new_url}),
+        )
+        self.assertEqual(401, response.status)
 
 
 load_tests = load_tests_apply_scenarios

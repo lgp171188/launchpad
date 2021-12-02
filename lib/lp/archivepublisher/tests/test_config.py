@@ -24,7 +24,7 @@ class TestGetPubConfig(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestGetPubConfig, self).setUp()
+        super().setUp()
         self.ubuntutest = getUtility(IDistributionSet)['ubuntutest']
         self.root = "/var/tmp/archive"
 
@@ -112,7 +112,7 @@ class TestGetPubConfigPPA(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestGetPubConfigPPA, self).setUp()
+        super().setUp()
         self.ubuntutest = getUtility(IDistributionSet)['ubuntutest']
         self.ppa = self.factory.makeArchive(
             distribution=self.ubuntutest, purpose=ArchivePurpose.PPA)
@@ -200,7 +200,7 @@ class TestGetPubConfigPPACompatUefi(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestGetPubConfigPPACompatUefi, self).setUp()
+        super().setUp()
         self.ubuntutest = getUtility(IDistributionSet)['ubuntutest']
         self.ppa = self.factory.makeArchive(
             distribution=self.ubuntutest, purpose=ArchivePurpose.PPA)

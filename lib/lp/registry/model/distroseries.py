@@ -279,6 +279,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
         if "publishing_options" not in kwargs:
             kwargs["publishing_options"] = {
                 "backports_not_automatic": False,
+                "proposed_not_automatic": False,
                 "include_long_descriptions": True,
                 "index_compressors": [
                     compressor.title
@@ -826,6 +827,15 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
     def backports_not_automatic(self, value):
         assert isinstance(value, bool)
         self.publishing_options["backports_not_automatic"] = value
+
+    @property
+    def proposed_not_automatic(self):
+        return self.publishing_options.get("proposed_not_automatic", False)
+
+    @proposed_not_automatic.setter
+    def proposed_not_automatic(self, value):
+        assert isinstance(value, bool)
+        self.publishing_options["proposed_not_automatic"] = value
 
     @property
     def include_long_descriptions(self):

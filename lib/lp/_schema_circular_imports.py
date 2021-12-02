@@ -704,9 +704,6 @@ patch_collection_property(
 # IAccessToken
 patch_reference_property(IAccessToken, 'git_repository', IGitRepository)
 
-# IRevisionStatusReport
-patch_reference_property(
-    IRevisionStatusReport, 'git_repository', IGitRepository)
 
 ###
 #

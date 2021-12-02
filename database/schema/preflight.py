@@ -74,20 +74,20 @@ MAX_LAG = timedelta(seconds=60)
 
 class DatabasePreflight:
     def __init__(self, log, controller, replication_paused=False):
-        master_con = psycopg2.connect(str(controller.master))
-        master_con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        primary_con = psycopg2.connect(str(controller.primary))
+        primary_con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
         self.log = log
         self.replication_paused = replication_paused
 
         node = Node(None, None, None, True)
-        node.con = master_con
+        node.con = primary_con
         self.nodes = {node}
         self.lpmain_nodes = self.nodes
-        self.lpmain_master_node = node
+        self.lpmain_primary_node = node
 
         # Add streaming replication standbys.
-        standbys = set(controller.slaves.values())
+        standbys = set(controller.standbys.values())
         self._num_standbys = len(standbys)
         for standby in standbys:
             standby_node = Node(None, None, standby, False)
@@ -99,7 +99,7 @@ class DatabasePreflight:
     def check_standby_count(self):
         # We sanity check the options as best we can to protect against
         # operator error.
-        cur = self.lpmain_master_node.con.cursor()
+        cur = self.lpmain_primary_node.con.cursor()
         cur.execute("SELECT COUNT(*) FROM pg_stat_replication")
         required_standbys = cur.fetchone()[0]
 
@@ -237,7 +237,7 @@ class DatabasePreflight:
         """Return False if the replication cluster is badly lagged."""
         # Do something harmless to force changes to be streamed in case
         # system is idle.
-        self.lpmain_master_node.con.cursor().execute(
+        self.lpmain_primary_node.con.cursor().execute(
             'ANALYZE LaunchpadDatabaseRevision')
         start_time = time.time()
         # Keep looking for low lag for 30 seconds, in case the system
@@ -279,7 +279,7 @@ class DatabasePreflight:
         cluster to be quiescent.
         """
         # PG 9.1 streaming replication, or no replication.
-        streaming_success = streaming_sync(self.lpmain_master_node.con, 30)
+        streaming_success = streaming_sync(self.lpmain_primary_node.con, 30)
         if streaming_success:
             self.log.info("Streaming replicas syncing.")
         else:
@@ -289,7 +289,7 @@ class DatabasePreflight:
 
     def report_patches(self):
         """Report what patches are due to be applied from this tree."""
-        con = self.lpmain_master_node.con
+        con = self.lpmain_primary_node.con
         upgrade.log = self.log
         for patch_num, patch_file in upgrade.get_patchlist(con):
             self.log.info("%s is pending", os.path.basename(patch_file))
@@ -333,7 +333,7 @@ class KillConnectionsPreflight(DatabasePreflight):
     def check_open_connections(self):
         """Kill all non-system connections to Launchpad databases.
 
-        If replication is paused, only connections on the master database
+        If replication is paused, only connections on the primary database
         are killed.
 
         System users are defined by SYSTEM_USERS.
@@ -343,7 +343,7 @@ class KillConnectionsPreflight(DatabasePreflight):
         num_tries = 100
         seconds_to_pause = 0.1
         if self.replication_paused:
-            nodes = {self.lpmain_master_node}
+            nodes = {self.lpmain_primary_node}
         else:
             nodes = self.lpmain_nodes
 
