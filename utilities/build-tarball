@@ -1,0 +1,39 @@
+#! /bin/sh
+#
+# Copyright 2021 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+set -e
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 OUTPUT-DIRECTORY" >&2
+    exit 2
+fi
+output_dir="$1"
+
+# Build wheels to include in the distributed tarball.
+make build_wheels_only
+
+# Ensure that we have an updated idea of this tree's version.
+scripts/update-version-info.sh
+
+echo "Creating deployment tarball in $output_dir"
+
+# Prepare a file list.
+mkdir -p "$output_dir"
+(
+    git ls-files | sed 's,^,./,'
+    # Most of download-cache is unnecessary since we include a wheelhouse
+    # instead, but JavaScript-enabled builds need yarn.
+    find ./download-cache/dist/ -name yarn-\*.tar.gz
+    # The subdirectories of sourcecode may be symlinks.  Force tar to
+    # include the actual files instead.
+    find ./sourcecode/*/ \
+        \( -name .bzr -o -name __pycache__ \) -prune -o -type f -print
+    echo ./version-info.py
+    find ./wheels/ -name \*.whl -print
+) | sort >"$output_dir/.files"
+
+# Create the tarball.
+tar -czf "$output_dir/launchpad.tar.gz" --no-recursion \
+    --files-from "$output_dir/.files"

@@ -15,6 +15,8 @@ PY=$(WD)/bin/py
 PYTHONPATH:=$(WD)/lib:${PYTHONPATH}
 VERBOSITY=-vv
 
+DEPENDENCY_REPO ?= https://git.launchpad.net/lp-source-dependencies
+
 # virtualenv and pip fail if setlocale fails, so force a valid locale.
 PIP_ENV := LC_ALL=C.UTF-8
 # Run with "make PIP_NO_INDEX=" if you want pip to find software
@@ -95,6 +97,21 @@ PIP_BIN = \
     bin/watch_jsbuild \
     bin/with-xvfb
 
+# Create archives in labelled directories (e.g.
+# <rev-id>/$(PROJECT_NAME).tar.gz)
+TARBALL_BUILD_LABEL ?= $(shell git rev-parse HEAD)
+TARBALL_FILE_NAME = launchpad.tar.gz
+TARBALL_BUILDS_DIR ?= dist
+TARBALL_BUILD_DIR = $(TARBALL_BUILDS_DIR)/$(TARBALL_BUILD_LABEL)
+TARBALL_BUILD_PATH = $(TARBALL_BUILD_DIR)/$(TARBALL_FILE_NAME)
+
+SWIFT_CONTAINER_NAME ?= launchpad-builds
+# This must match the object path used by fetch_payload in the ols charm
+# layer.
+SWIFT_OBJECT_PATH = \
+       launchpad-builds/$(TARBALL_BUILD_LABEL)/$(TARBALL_FILE_NAME)
+
+
 # DO NOT ALTER : this should just build by default
 .PHONY: default
 default: inplace
@@ -172,6 +189,17 @@ inplace: build logs clean_logs codehosting-dir
 
 .PHONY: build
 build: compile apidoc jsbuild css_combine
+
+# Bootstrap download-cache and sourcecode.  Useful for CI jobs that want to
+# set these up from scratch.
+.PHONY: bootstrap
+bootstrap:
+	if [ -d download-cache/.git ]; then \
+		git -C download-cache pull; \
+	else \
+		git clone --depth=1 $(DEPENDENCY_REPO) download-cache; \
+	fi
+	utilities/update-sourcecode
 
 # LP_SOURCEDEPS_PATH should point to the sourcecode directory, but we
 # want the parent directory where the download-cache and env directories
@@ -258,28 +286,47 @@ requirements/combined.txt: \
 		--include requirements/launchpad.txt \
 		>"$@"
 
-# This target is used by LOSAs to prepare a build to be pushed out to
-# destination machines.  We only want wheels: they are the expensive bits,
-# and the other bits might run into problems like bug 575037.  This target
-# runs pip, builds a wheelhouse with predictable paths that can be used even
-# if the build is pushed to a different path on the destination machines,
-# and then removes everything created except for the wheels.
-#
 # It doesn't seem to be straightforward to build a wheelhouse of all our
 # dependencies without also building a useless wheel of Launchpad itself;
 # fortunately that doesn't take too long, and we just remove it afterwards.
-.PHONY: build_wheels
-build_wheels: $(PIP_BIN) requirements/combined.txt
+.PHONY: build_wheels_only
+build_wheels_only: $(PIP_BIN) requirements/combined.txt
 	$(RM) -r wheelhouse wheels
+	$(SHHH) $(PIP) wheel -w wheels -r requirements/setup.txt
 	$(SHHH) $(PIP) wheel \
 		-c requirements/setup.txt -c requirements/combined.txt \
 		-w wheels .
 	$(RM) wheels/lp-[0-9]*.whl
-	$(MAKE) clean_pip
+
+# This target is used by deployment machinery to prepare a build to be
+# pushed out to destination machines.  We only want wheels: they are the
+# expensive bits, and the other bits might run into problems like bug
+# 575037.  This target runs pip, builds a wheelhouse with predictable paths
+# that can be used even if the build is pushed to a different path on the
+# destination machines, and then removes everything created except for the
+# wheels.
+.PHONY: build_wheels
+build_wheels: build_wheels_only
+	$(MAKE) clean_js clean_pip
 
 # Compatibility
 .PHONY: build_eggs
 build_eggs: build_wheels
+
+# Build a tarball that can be unpacked and built on another machine,
+# including all the wheels we need.  This will eventually supersede
+# build_wheels.
+.PHONY: build-tarball
+build-tarball:
+	utilities/build-tarball $(TARBALL_BUILD_DIR)
+
+# Publish a buildable tarball to Swift.
+.PHONY: publish-tarball
+publish-tarball: build-tarball
+	[ ! -e ~/.config/swift/launchpad ] || . ~/.config/swift/launchpad; \
+	utilities/publish-to-swift --debug \
+		$(SWIFT_CONTAINER_NAME) $(SWIFT_OBJECT_PATH) \
+		$(TARBALL_BUILD_PATH)
 
 # setuptools won't touch files that would have the same contents, but for
 # Make's sake we need them to get fresh timestamps, so we touch them after
