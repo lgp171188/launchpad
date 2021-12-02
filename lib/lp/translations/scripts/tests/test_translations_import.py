@@ -188,6 +188,25 @@ class TestTranslationsImport(TestCaseWithFactory):
         self.assertEqual(
             [self.owner.preferredemail.email], self._getEmailRecipients())
 
+    def test_notifies_uploader_separately(self):
+        """Do not put several addresses into one `to`-field"""
+        p1 = self.factory.makePerson()
+        p2 = self.factory.makePerson()
+        uploader = self.factory.makeTeam(
+            members=[p1, p2],
+        )
+        entry = self._makeApprovedEntry(uploader=uploader)
+        transaction.commit()
+        self.script._importEntry(entry)
+        transaction.commit()
+
+        # three emails get generated
+        # and each has only one recipient
+        self.assertEqual(3, len(stub.test_emails))
+        for email in stub.test_emails:
+            number_of_to_addresses = len(email[1])
+            self.assertEqual(1, number_of_to_addresses)
+
     def test_does_not_notify_vcs_imports(self):
         vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
         entry = self._makeApprovedEntry(vcs_imports)

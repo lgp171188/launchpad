@@ -140,11 +140,8 @@ class TranslationsImport(LaunchpadCronScript):
             katie = getUtility(ILaunchpadCelebrities).katie
             if entry.importer == katie:
                 # Email import state to Debian imports email.
-                to_email = None
-            else:
-                to_email = get_contact_email_addresses(entry.importer)
-
-            if to_email:
+                return
+            for to_email in get_contact_email_addresses(entry.importer):
                 text = MailWrapper().format(mail_body)
                 simple_sendmail(from_email, to_email, mail_subject, text)
 
