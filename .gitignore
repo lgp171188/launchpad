@@ -1,6 +1,7 @@
 *.pyc
 .tags
 version-info.py
+version-info.txt
 logs/*
 +*
 /botmaster

@@ -314,7 +314,7 @@ compile: $(VENV_PYTHON)
 	$(PYTHON) utilities/link-system-packages.py \
 		"$(SITE_PACKAGES)" system-packages.txt
 	${SHHH} bin/build-twisted-plugin-cache
-	scripts/update-version-info.sh
+	[ ! -d .git ] || scripts/update-version-info.sh
 
 .PHONY: test_build
 test_build: build
