@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Initialize a distroseries from its parent distroseries."""
@@ -382,6 +382,9 @@ class InitializeDistroSeries:
         log.info("Copying distroseries configuration from parents.")
         self.distroseries.backports_not_automatic = any(
             parent.backports_not_automatic
+                for parent in self.derivation_parents)
+        self.distroseries.proposed_not_automatic = any(
+            parent.proposed_not_automatic
                 for parent in self.derivation_parents)
         self.distroseries.include_long_descriptions = any(
             parent.include_long_descriptions

@@ -231,7 +231,7 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(TestSigning, self).setUp()
+        super().setUp()
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(

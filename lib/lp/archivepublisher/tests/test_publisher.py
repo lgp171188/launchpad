@@ -116,6 +116,7 @@ from lp.testing.matchers import FileContainsBytes
 
 
 RELEASE = PackagePublishingPocket.RELEASE
+PROPOSED = PackagePublishingPocket.PROPOSED
 BACKPORTS = PackagePublishingPocket.BACKPORTS
 
 
@@ -141,7 +142,7 @@ class TestPublisherSeries(TestNativePublishingBase):
     """Test the `Publisher` methods that publish individual series."""
 
     def setUp(self):
-        super(TestPublisherSeries, self).setUp()
+        super().setUp()
         self.publisher = None
 
     def _createLinkedPublication(self, name, pocket):
@@ -2064,6 +2065,45 @@ class TestPublisher(TestPublisherBase):
         self.assertIn("NotAutomatic: yes", get_release(BACKPORTS))
         self.assertIn("ButAutomaticUpgrades: yes", get_release(BACKPORTS))
 
+    def testReleaseFileForNotAutomaticProposed(self):
+        # Test Release file writing for series with NotAutomatic -proposed.
+        publisher = Publisher(
+            self.logger, self.config, self.disk_pool,
+            self.ubuntutest.main_archive)
+        self.getPubSource(filecontent=b'Hello world', pocket=RELEASE)
+        self.getPubSource(filecontent=b'Hello world', pocket=PROPOSED)
+
+        # Make everything other than breezy-autotest OBSOLETE so that they
+        # aren't republished.
+        for series in self.ubuntutest.series:
+            if series.name != "breezy-autotest":
+                series.status = SeriesStatus.OBSOLETE
+
+        publisher.A_publish(True)
+        publisher.C_writeIndexes(False)
+
+        def get_release(pocket):
+            release_path = os.path.join(
+                publisher._config.distsroot,
+                'breezy-autotest%s' % pocketsuffix[pocket], 'Release')
+            with open(release_path) as release_file:
+                return release_file.read().splitlines()
+
+        # When proposed_not_automatic is unset, no Release files have
+        # NotAutomatic: yes.
+        self.assertEqual(False, self.breezy_autotest.proposed_not_automatic)
+        publisher.D_writeReleaseFiles(False)
+        self.assertNotIn("NotAutomatic: yes", get_release(RELEASE))
+        self.assertNotIn("NotAutomatic: yes", get_release(PROPOSED))
+
+        # But with the flag set, -proposed Release files gain
+        # NotAutomatic: yes and ButAutomaticUpgrades: yes.
+        self.breezy_autotest.proposed_not_automatic = True
+        publisher.D_writeReleaseFiles(False)
+        self.assertNotIn("NotAutomatic: yes", get_release(RELEASE))
+        self.assertIn("NotAutomatic: yes", get_release(PROPOSED))
+        self.assertIn("ButAutomaticUpgrades: yes", get_release(PROPOSED))
+
     def testReleaseFileForI18n(self):
         """Test Release file writing for translated package descriptions."""
         publisher = Publisher(
@@ -3025,8 +3065,7 @@ class TestUpdateByHashOverriddenDistsroot(TestUpdateByHash):
         os.rename(original_dists, temporary_dists)
         try:
             self.config.distsroot = temporary_dists
-            super(TestUpdateByHashOverriddenDistsroot, self).runSteps(
-                publisher, **kwargs)
+            super().runSteps(publisher, **kwargs)
         finally:
             self.config.distsroot = original_dists
             os.rename(temporary_dists, original_dists)
@@ -3049,7 +3088,7 @@ class TestPublisherRepositorySignatures(
         """Purge the archive root location. """
         if self.archive_publisher is not None:
             shutil.rmtree(self.archive_publisher._config.distsroot)
-        super(TestPublisherRepositorySignatures, self).tearDown()
+        super().tearDown()
 
     def setupPublisher(self, archive):
         """Setup a `Publisher` instance for the given archive."""
@@ -3327,7 +3366,7 @@ class TestPublisherLite(TestCaseWithFactory):
         purposes, the fake object will compare equal to a string holding
         this same text, encoded in the requested encoding.
         """
-        class FakeReleaseData(six.text_type):
+        class FakeReleaseData(str):
             def dump(self, output_file, encoding):
                 output_file.write(self.encode(encoding))
 
@@ -3421,7 +3460,7 @@ class TestDirectoryHashHelpers(TestCaseWithFactory):
         for dh_file in self.all_hash_files:
             checksum_file = os.path.join(rootdir, dh_file)
             if os.path.exists(checksum_file):
-                with open(checksum_file, "r") as sfd:
+                with open(checksum_file) as sfd:
                     for line in sfd:
                         result[dh_file].append(line.strip().split(' '))
         return result

@@ -329,7 +329,7 @@ class SigningUpload(CustomUpload):
         """
 
         if not self.keyFilesExist(key_type):
-            raise IOError(
+            raise OSError(
                 "Could not fallback to local signing keys: the key files "
                 "were not found.")
         return handler(filename)
@@ -369,7 +369,7 @@ class SigningUpload(CustomUpload):
             if not self.autokey:
                 raise NoSigningKeyError("No signing key for %s" % filename)
             description = (
-                u"%s key for %s" % (key_type.name, self.archive.reference))
+                "%s key for %s" % (key_type.name, self.archive.reference))
             try:
                 signing_key = getUtility(IArchiveSigningKeySet).generate(
                     key_type, description, self.archive).signing_key
@@ -480,7 +480,7 @@ class SigningUpload(CustomUpload):
 
         now = datetime.now().replace(tzinfo=utc)
         description = (
-                u"%s key for %s" % (key_type.name, self.archive.reference))
+                "%s key for %s" % (key_type.name, self.archive.reference))
         key_set.inject(
             key_type, private_key, public_key,
             description, now, self.archive, earliest_distro_series=None)
@@ -715,7 +715,7 @@ class SigningUpload(CustomUpload):
 
         No actual extraction is required.
         """
-        super(SigningUpload, self).extract()
+        super().extract()
         self.setSigningOptions()
         for filename, handler, fallback_handler in self.findSigningHandlers():
             try:
@@ -743,7 +743,7 @@ class SigningUpload(CustomUpload):
         # Avoid circular import.
         from lp.archivepublisher.publishing import DirectoryHash
 
-        super(SigningUpload, self).installFiles(archive, suite)
+        super().installFiles(archive, suite)
 
         versiondir = os.path.join(self.targetdir, self.version)
         with DirectoryHash(versiondir, self.temproot) as hasher:

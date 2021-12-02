@@ -1,4 +1,4 @@
-# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the initialize_distroseries script machinery."""
@@ -93,6 +93,7 @@ class InitializationHelperTestCase(TestCaseWithFactory):
         if existing_format_selection is None:
             spfss_utility.add(parent, format_selection)
         parent.backports_not_automatic = True
+        parent.proposed_not_automatic = True
         parent.include_long_descriptions = False
         parent.index_compressors = [IndexCompressionType.XZ]
         parent.publish_by_hash = True
@@ -685,6 +686,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             SourcePackageFormat.FORMAT_1_0))
         # Other configuration bits are copied too.
         self.assertTrue(child.backports_not_automatic)
+        self.assertTrue(child.proposed_not_automatic)
         self.assertFalse(child.include_long_descriptions)
         self.assertEqual([IndexCompressionType.XZ], child.index_compressors)
         self.assertTrue(child.publish_by_hash)

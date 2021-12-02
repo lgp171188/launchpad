@@ -200,7 +200,7 @@ class FTPArchiveHandler:
         stderr_handler.finalize()
         failures = sorted(
             (tag, receiver.returncode)
-            for tag, receiver in six.iteritems(returncodes)
+            for tag, receiver in returncodes.items()
                 if receiver.returncode != 0)
         if len(failures) > 0:
             by_arch = ["%s (returned %d)" % failure for failure in failures]
@@ -531,7 +531,7 @@ class FTPArchiveHandler:
 
         if os.path.exists(extra_extra_overrides):
             # XXX kiko 2006-08-24: This is untested.
-            eef = open(extra_extra_overrides, "r")
+            eef = open(extra_extra_overrides)
             extras = {}
             for line in eef:
                 line = line.strip()
@@ -627,7 +627,7 @@ class FTPArchiveHandler:
             SourcePackageName.name,
             LibraryFileAlias.filename,
             Component.name,
-            Concatenate(u"binary-", DistroArchSeries.architecturetag),
+            Concatenate("binary-", DistroArchSeries.architecturetag),
             )
         join_conditions = [
             BinaryPackageRelease.id ==
@@ -712,8 +712,8 @@ class FTPArchiveHandler:
             updateFileList(*file_details)
 
         self.log.debug("Writing file lists for %s" % suite)
-        for component, architectures in six.iteritems(filelist):
-            for architecture, file_names in six.iteritems(architectures):
+        for component, architectures in filelist.items():
+            for architecture, file_names in architectures.items():
                 # XXX wgrant 2010-10-06: There must be a better place to do
                 # this.
                 if architecture == "source":

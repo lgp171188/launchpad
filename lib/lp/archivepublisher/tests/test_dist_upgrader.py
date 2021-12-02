@@ -36,7 +36,7 @@ class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestDistUpgrader, self).setUp()
+        super().setUp()
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(

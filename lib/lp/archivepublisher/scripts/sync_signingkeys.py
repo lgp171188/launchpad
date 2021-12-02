@@ -186,7 +186,7 @@ class SyncSigningKeysScript(LaunchpadScript):
                 public_key = fd.read()
 
             now = datetime.now().replace(tzinfo=utc)
-            description = u"%s key for %s" % (key_type.name, archive.reference)
+            description = "%s key for %s" % (key_type.name, archive.reference)
             return arch_signing_key_set.inject(
                 key_type, private_key, public_key,
                 description, now, archive,
