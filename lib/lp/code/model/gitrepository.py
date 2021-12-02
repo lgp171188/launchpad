@@ -85,7 +85,6 @@ from lp.app.enums import (
     PUBLIC_INFORMATION_TYPES,
     )
 from lp.app.errors import (
-    NotFoundError,
     SubscriptionPrivacyViolation,
     UserCannotUnsubscribePerson,
     )
@@ -221,10 +220,6 @@ from lp.services.mail.notificationrecipientset import NotificationRecipientSet
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
-    )
-from lp.services.webapp import (
-    Navigation,
-    stepthrough,
     )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchBag
@@ -390,10 +385,11 @@ class RevisionStatusReportSet:
             RevisionStatusReport,
             RevisionStatusReport.git_repository == repository)
 
-    def findRevisionStatusReportsByCommit(self, commit_sha1):
-        """Returns a list of `RevisionStatusReport` for a commit."""
+    def findByCommit(self, repository, commit_sha1):
+        """Returns all `RevisionStatusReport` for a repository and commit."""
         return IStore(RevisionStatusReport).find(
             RevisionStatusReport,
+            git_repository=repository,
             commit_sha1=commit_sha1)
 
 
@@ -659,15 +655,8 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         return report
 
     def getStatusReports(self, commit_sha1):
-
-        if not getFeatureFlag(REVISION_STATUS_REPORT_ALLOW_CREATE):
-            raise RevisionStatusReportsFeatureDisabled()
-
-        reports = getUtility(
-                IRevisionStatusReportSet).findRevisionStatusReportsByCommit(
-                commit_sha1)
-        return reports
-
+        return getUtility(
+                IRevisionStatusReportSet).findByCommit(self, commit_sha1)
 
     @property
     def namespace(self):

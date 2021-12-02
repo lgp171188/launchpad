@@ -4287,7 +4287,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
         self.assertEqual(401, response.status)
         self.assertIn(
-            b'You do not have permission to create/view status reports',
+            b'You do not have permission to create revision status reports',
             response.body)
 
     def test_newRevisionStatusReport(self):
@@ -4326,10 +4326,12 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
     def test_getRevisionStatusReports(self):
         repository = self.factory.makeGitRepository()
+        repository2 = self.factory.makeGitRepository()
         requester = repository.owner
         title = self.factory.getUniqueUnicode('report-title')
         result_summary = "120/120 tests passed"
-        commit_sha1 = hashlib.sha1(b"First she").hexdigest()
+        commit_sha1 = hashlib.sha1(b"First sha1").hexdigest()
+        commit_sha3 = hashlib.sha1(b"Third sha1").hexdigest()
 
         result_summary2 = "Lint"
         title2 = "Invalid import in test_file.py"
@@ -4342,6 +4344,18 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
         report2 = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
+            title=title2, commit_sha1=commit_sha1,
+            result_summary=result_summary2,
+            result=RevisionStatusResult.FAILED)
+
+        report3 = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title=title2, commit_sha1=commit_sha3,
+            result_summary=result_summary2,
+            result=RevisionStatusResult.FAILED)
+
+        report4 = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository2,
             title=title2, commit_sha1=commit_sha1,
             result_summary=result_summary2,
             result=RevisionStatusResult.FAILED)
@@ -4365,10 +4379,18 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             result = getUtility(
-                IRevisionStatusReportSet).findRevisionStatusReportsByCommit(
-                commit_sha1)
+                IRevisionStatusReportSet).findByCommit(repository, commit_sha1)
 
-        self.assertEqual(list(result), [report1, report2])
+        self.assertIn(report1, list(result))
+        self.assertIn(report2, list(result))
+
+        # a report with a different commit_sha1 in the same repository
+        # should not show up in the results
+        self.assertNotIn(report3, list(result))
+
+        # a report with the same commit_sha1 but in a different repository
+        # should not show up in the results
+        self.assertNotIn(report4, list(result))
 
     def test_set_target(self):
         # The repository owner can move the repository to another target;
