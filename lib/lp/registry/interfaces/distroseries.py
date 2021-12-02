@@ -365,22 +365,22 @@ class IDistroSeriesPublic(
     language_packs = Attribute(
         "All language packs associated with this distribution series.")
 
-    backports_not_automatic = Bool(
+    backports_not_automatic = exported(Bool(
         title=_("Don't upgrade to backports automatically"), required=True,
         description=_("""
             Set NotAutomatic: yes and ButAutomaticUpgrades: yes in Release
             files generated for the backports pocket. This tells apt to
             automatically upgrade within backports, but not into it.
-            """))
+            """)))
 
-    proposed_not_automatic = Bool(
+    proposed_not_automatic = exported(Bool(
         title=_("Don't upgrade to proposed updates automatically"),
         required=True,
         description=_("""
             Set NotAutomatic: yes and ButAutomaticUpgrades: yes in Release
             files generated for the proposed pocket. This tells apt to
             automatically upgrade within proposed, but not into it.
-            """))
+            """)))
 
     include_long_descriptions = exported(
         Bool(
