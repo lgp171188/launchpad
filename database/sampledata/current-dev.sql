@@ -3266,8 +3266,8 @@ ALTER TABLE codereviewvote ENABLE TRIGGER ALL;
 
 ALTER TABLE commercialsubscription DISABLE TRIGGER ALL;
 
-INSERT INTO commercialsubscription (id, date_created, date_last_modified, date_starts, date_expires, status, product, registrant, purchaser, whiteboard, sales_system_id) VALUES (1, '2012-10-08 11:09:37.75983', '2012-10-08 11:09:37.75983', '2012-10-08 11:09:37.838229', '2022-01-01 00:00:00', 10, 16, 65, 65, 'Complimentary 30 day subscription. -- Launchpad 2012-10-08', 'complimentary-30-day-2012-10-08 11:09:37.838229+00:00');
-INSERT INTO commercialsubscription (id, date_created, date_last_modified, date_starts, date_expires, status, product, registrant, purchaser, whiteboard, sales_system_id) VALUES (2, '2012-10-08 11:09:46.861812', '2012-10-08 11:09:46.861812', '2012-10-08 11:09:46.912691', '2022-01-01 00:00:00', 10, 17, 65, 65, 'Complimentary 30 day subscription. -- Launchpad 2012-10-08', 'complimentary-30-day-2012-10-08 11:09:46.912691+00:00');
+INSERT INTO commercialsubscription (id, date_created, date_last_modified, date_starts, date_expires, status, product, registrant, purchaser, whiteboard, sales_system_id) VALUES (1, '2012-10-08 11:09:37.75983', '2012-10-08 11:09:37.75983', '2012-10-08 11:09:37.838229', '2032-01-01 00:00:00', 10, 16, 65, 65, 'Complimentary 30 day subscription. -- Launchpad 2012-10-08', 'complimentary-30-day-2012-10-08 11:09:37.838229+00:00');
+INSERT INTO commercialsubscription (id, date_created, date_last_modified, date_starts, date_expires, status, product, registrant, purchaser, whiteboard, sales_system_id) VALUES (2, '2012-10-08 11:09:46.861812', '2012-10-08 11:09:46.861812', '2012-10-08 11:09:46.912691', '2032-01-01 00:00:00', 10, 17, 65, 65, 'Complimentary 30 day subscription. -- Launchpad 2012-10-08', 'complimentary-30-day-2012-10-08 11:09:46.912691+00:00');
 
 
 ALTER TABLE commercialsubscription ENABLE TRIGGER ALL;
