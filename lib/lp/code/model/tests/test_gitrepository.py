@@ -580,7 +580,6 @@ class TestGitRepository(TestCaseWithFactory):
         repository = removeSecurityProxy(self.factory.makeGitRepository())
         title = self.factory.getUniqueUnicode('report-title')
         commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
-        lfa = self.factory.makeLibraryFileAlias(db_only=True)
         result_summary = "120/120 tests passed"
 
         report = self.factory.makeRevisionStatusReport(
@@ -591,7 +590,7 @@ class TestGitRepository(TestCaseWithFactory):
 
         with person_logged_in(repository.owner):
             result = getUtility(
-                IRevisionStatusReportSet).findRevisionStatusReportByID(
+                IRevisionStatusReportSet).getByID(
                 report.id)
             self.assertEqual(report, result)
 
@@ -4318,14 +4317,12 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
         with person_logged_in(requester):
             results = getUtility(
-                IRevisionStatusReportSet).findRevisionStatusReportByCreator(
-                requester)
-            report = list(results)[0]
-            self.assertEqual(
-                webservice.getAbsoluteUrl('%s/+status/%s' % (
-                    api_url(repository),
-                    report.id)),
-                response.getHeader("Location"))
+                IRevisionStatusReportSet).findByRepository(repository)
+            reports = list(results)
+            urls = [webservice.getAbsoluteUrl('%s/+status/%s' % (
+                api_url(repository),
+                report.id)) for report in reports]
+            self.assertIn(response.getHeader("Location"), urls)
 
     def test_set_target(self):
         # The repository owner can move the repository to another target;
@@ -4917,12 +4914,11 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             response.body)
 
 
-class TestRevisionStatusReport(TestCaseWithFactory):
-
-    layer = DatabaseFunctionalLayer
+class TestRevisionStatusReportWebservice(TestCaseWithFactory):
+    layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestRevisionStatusReport, self).setUp()
+        super(TestRevisionStatusReportWebservice, self).setUp()
         self.repository = self.factory.makeGitRepository()
         self.requester = self.repository.owner
         title = self.factory.getUniqueUnicode('report-title')
@@ -4937,68 +4933,39 @@ class TestRevisionStatusReport(TestCaseWithFactory):
 
         self.webservice = webservice_for_person(
             None, default_api_version="devel")
-
-    def test_top_level_revisionStatusReport_get(self):
-
         with person_logged_in(self.requester):
-            url = self.webservice.getAbsoluteUrl('%s/+status/%s' % (
-                    api_url(self.repository),
-                    self.report.id))
+            self.report_url = api_url(self.report)
+
             secret, _ = self.factory.makeAccessToken(
                 owner=self.requester, target=self.repository,
                 scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
-            header = {'Authorization': 'Token %s' % secret}
-
-        response = self.webservice.get(url, headers=header)
-        self.assertEqual(response.status, 200)
-        with person_logged_in(self.requester):
-            self.assertThat(response.jsonBody(), ContainsDict({
-                'self_link': Equals(url),
-                }))
-
-
-class TestRevisionStatusReportWebserviceFunctionalLayer(TestCaseWithFactory):
-
-    layer = LaunchpadFunctionalLayer
+            self.header = {'Authorization': 'Token %s' % secret}
 
     def test_setLogOnRevisionStatusReport(self):
-        repository = self.factory.makeGitRepository()
-        requester = repository.owner
-        title = self.factory.getUniqueUnicode('report-title')
-        commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
-        result_summary = "120/120 tests passed"
-
-        report = self.factory.makeRevisionStatusReport(
-            user=repository.owner, git_repository=repository,
-            title=title, commit_sha1=commit_sha1,
-            result_summary=result_summary,
-            result=RevisionStatusResult.SUCCEEDED)
-
-        webservice = webservice_for_person(
-            None, default_api_version="devel")
-        with person_logged_in(requester):
-            report_url = api_url(report)
-
-            secret, _ = self.factory.makeAccessToken(
-                owner=requester, target=repository,
-                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
-            header = {'Authorization': 'Token %s' % secret}
         content = b'log_content_data'
-        response = webservice.named_post(
-            report_url, "api_setLog",
-            headers=header,
-            log_data=io.BytesIO(content))
-        self.assertEqual(200, response.status)
-        with person_logged_in(requester):
-            artifact = removeSecurityProxy(
-                getUtility(
-                    IRevisionStatusArtifactSet).findArtifactByReport(report))
         filesize = len(content)
         sha1 = hashlib.sha1(content).hexdigest()
         md5 = hashlib.md5(content).hexdigest()
-        self.assertEqual(artifact.library_file.content.sha1, sha1)
-        self.assertEqual(artifact.library_file.content.md5, md5)
-        self.assertEqual(artifact.library_file.content.filesize, filesize)
+        response = self.webservice.named_post(
+            self.report_url, "setLog",
+            headers=self.header,
+            log_data=io.BytesIO(content))
+        self.assertEqual(200, response.status)
+
+        # A report may have multiple artifacts.
+        # We verify that the content we just submitted via API now
+        # matches one of the artifacts in the DB for the report.
+        with person_logged_in(self.requester):
+            artifacts = list(getUtility(
+                IRevisionStatusArtifactSet).findByReport(self.report))
+            lfcs = [artifact.library_file.content for artifact in artifacts]
+            sha1_of_all_artifacts = [lfc.sha1 for lfc in lfcs]
+            md5_of_all_artifacts = [lfc.md5 for lfc in lfcs]
+            filesizes_of_all_artifacts = [lfc.filesize for lfc in lfcs]
+
+            self.assertIn(sha1, sha1_of_all_artifacts)
+            self.assertIn(md5, md5_of_all_artifacts)
+            self.assertIn(filesize, filesizes_of_all_artifacts)
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):

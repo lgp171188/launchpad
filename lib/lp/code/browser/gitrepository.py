@@ -198,7 +198,7 @@ class GitRepositoryNavigation(WebhookTargetNavigationMixin, Navigation):
         except ValueError:
             raise NotFoundError(report_id)
         report = getUtility(
-            IRevisionStatusReportSet).findRevisionStatusReportByID(report_id)
+            IRevisionStatusReportSet).getByID(report_id)
         if report is None:
             raise NotFoundError(report_id)
         return report

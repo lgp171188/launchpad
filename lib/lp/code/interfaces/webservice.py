@@ -24,7 +24,6 @@ __all__ = [
     'ICodeImport',
     'ICodeReviewComment',
     'ICodeReviewVoteReference',
-    'IRevisionStatusReport',
     'IDiff',
     'IGitRef',
     'IGitRepository',
@@ -32,6 +31,7 @@ __all__ = [
     'IGitSubscription',
     'IHasGitRepositories',
     'IPreviewDiff',
+    'IRevisionStatusReport',
     'ISourcePackageRecipe',
     'ISourcePackageRecipeBuild',
     ]
