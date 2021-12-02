@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """
@@ -34,7 +34,6 @@ special_test_layer = {
     'milestone-views.txt': LaunchpadFunctionalLayer,
     'person-views.txt': LaunchpadFunctionalLayer,
     'product-edit-people-view.txt': LaunchpadFunctionalLayer,
-    'product-files-views.txt': LaunchpadFunctionalLayer,
     'product-views.txt': LaunchpadFunctionalLayer,
     'productseries-views.txt': LaunchpadFunctionalLayer,
     'projectgroup-views.txt': LaunchpadFunctionalLayer,
