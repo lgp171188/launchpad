@@ -1235,8 +1235,10 @@ class Publisher:
         release_file["Components"] = " ".join(
             reorder_components(all_components))
         release_file["Description"] = drsummary
-        if (pocket == PackagePublishingPocket.BACKPORTS and
-            distroseries.backports_not_automatic):
+        if ((pocket == PackagePublishingPocket.BACKPORTS and
+             distroseries.backports_not_automatic) or
+            (pocket == PackagePublishingPocket.PROPOSED and
+             distroseries.proposed_not_automatic)):
             release_file["NotAutomatic"] = "yes"
             release_file["ButAutomaticUpgrades"] = "yes"
 
