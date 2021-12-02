@@ -170,14 +170,22 @@ class TestDistributionMirror(TestCaseWithFactory):
         mirror.disable(notify_owner=True, log=log)
         # A notification was sent to the owner and other to the mirror admins.
         transaction.commit()
-        self.assertEqual(len(stub.test_emails), 2)
+        self.assertEqual(len(stub.test_emails), 3)
+
+        # In order to prevent data disclosure, emails have to be sent to one
+        # person each, ie it is not allowed to have multiple recipients in an
+        # email's `to` field.
+        for email in stub.test_emails:
+            number_of_to_addresses = len(email[1])
+            self.assertLess(number_of_to_addresses, 2)
+
         stub.test_emails = []
 
         mirror.disable(notify_owner=True, log=log)
         # Again, a notification was sent to the owner and other to the mirror
         # admins.
         transaction.commit()
-        self.assertEqual(len(stub.test_emails), 2)
+        self.assertEqual(len(stub.test_emails), 3)
         stub.test_emails = []
 
         # For mirrors that have been probed more than once, we'll only notify
@@ -187,7 +195,7 @@ class TestDistributionMirror(TestCaseWithFactory):
         mirror.disable(notify_owner=True, log=log)
         # A notification was sent to the owner and other to the mirror admins.
         transaction.commit()
-        self.assertEqual(len(stub.test_emails), 2)
+        self.assertEqual(len(stub.test_emails), 3)
         stub.test_emails = []
 
         # We can always disable notifications to the owner by passing
@@ -195,7 +203,7 @@ class TestDistributionMirror(TestCaseWithFactory):
         mirror.enabled = True
         mirror.disable(notify_owner=False, log=log)
         transaction.commit()
-        self.assertEqual(len(stub.test_emails), 1)
+        self.assertEqual(len(stub.test_emails), 2)
         stub.test_emails = []
 
         mirror.enabled = False
@@ -217,12 +225,12 @@ class TestDistributionMirror(TestCaseWithFactory):
         transaction.commit()
         stub.test_emails = []
 
-        # Disabling the mirror results in a single notification to the
-        # mirror admins.
+        # Disabling the mirror results in one notification for each of
+        # the three mirror admins.
         self.factory.makeMirrorProbeRecord(mirror)
         mirror.disable(notify_owner=True, log="It broke.")
         transaction.commit()
-        self.assertEqual(len(stub.test_emails), 1)
+        self.assertEqual(len(stub.test_emails), 3)
 
     def test_permissions_for_resubmit(self):
         self.assertRaises(
