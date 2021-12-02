@@ -71,6 +71,7 @@ from lp.testing import (
     login_celebrity,
     login_person,
     person_logged_in,
+    record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -856,9 +857,9 @@ class TestProductDownloadFilesView(TestCaseWithFactory):
         return product
 
     def test_series_and_releases_batch(self):
+        self.pushConfig("launchpad", download_batch_size=4)
         product = self.makeProductAndReleases()
         view = create_initialized_view(product, "+download")
-        self.assertEqual(4, view.batch_size)  # development config
         batch = view.series_and_releases_batch.currentBatch()
         self.assertEqual(
             [("4.3", "s4"), ("4.2", "s4"), ("4.1", "s4"), ("3.3", "s3")],
@@ -867,6 +868,23 @@ class TestProductDownloadFilesView(TestCaseWithFactory):
         self.assertEqual(
             [("3.2", "s3"), ("3.1", "s3"), ("2.3", "s2"), ("2.2", "s2")],
             [(sr.release.name_with_codename, sr.series.name) for sr in batch])
+
+    def test_query_count(self):
+        self.pushConfig("launchpad", download_batch_size=20)
+        product = self.factory.makeProduct()
+
+        def create_series_and_releases():
+            productseries = self.factory.makeProductSeries(product=product)
+            for _ in range(3):
+                self.factory.makeProductReleaseFile(
+                    product=product, productseries=productseries)
+
+        def render_product():
+            create_initialized_view(product, "+download").render()
+
+        recorder1, recorder2 = record_two_runs(
+            render_product, create_series_and_releases, 2)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_add_download_file_links(self):
         # Project administrators have links at the bottom of each batched
