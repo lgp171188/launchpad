@@ -10,6 +10,7 @@ from datetime import (
 import email
 from functools import partial
 import hashlib
+import io
 import json
 
 from breezy import urlutils
@@ -65,6 +66,7 @@ from lp.code.enums import (
     GitObjectType,
     GitRepositoryStatus,
     GitRepositoryType,
+    RevisionStatusResult,
     TargetRevisionControlSystems,
     )
 from lp.code.errors import (
@@ -95,6 +97,8 @@ from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositorySet,
     IGitRepositoryView,
+    IRevisionStatusArtifactSet,
+    IRevisionStatusReportSet,
     )
 from lp.code.interfaces.gitrule import (
     IGitNascentRule,
@@ -121,6 +125,7 @@ from lp.code.model.gitrepository import (
     DeletionCallable,
     DeletionOperation,
     GitRepository,
+    REVISION_STATUS_REPORT_ALLOW_CREATE,
     )
 from lp.code.tests.helpers import GitHostingFixture
 from lp.code.xmlrpc.git import GitAPI
@@ -570,6 +575,24 @@ class TestGitRepository(TestCaseWithFactory):
 
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
         self.assertEqual(7, recorder1.count)
+
+    def test_findRevisionStatusReport(self):
+        repository = removeSecurityProxy(self.factory.makeGitRepository())
+        title = self.factory.getUniqueUnicode('report-title')
+        commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
+        result_summary = "120/120 tests passed"
+
+        report = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title=title, commit_sha1=commit_sha1,
+            result_summary=result_summary,
+            result=RevisionStatusResult.SUCCEEDED)
+
+        with person_logged_in(repository.owner):
+            result = getUtility(
+                IRevisionStatusReportSet).getByID(
+                report.id)
+            self.assertEqual(report, result)
 
 
 class TestGitIdentityMixin(TestCaseWithFactory):
@@ -4241,6 +4264,66 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             self.assertEqual(
                 InformationType.PUBLIC, repository_db.information_type)
 
+    def test_newRevisionStatusReport_featureFlagDisabled(self):
+        repository = self.factory.makeGitRepository()
+        requester = repository.owner
+        webservice = webservice_for_person(None, default_api_version="devel")
+        with person_logged_in(requester):
+            repository_url = api_url(repository)
+
+            secret, _ = self.factory.makeAccessToken(
+                owner=requester, target=repository,
+                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+            header = {'Authorization': 'Token %s' % secret}
+
+        response = webservice.named_post(
+            repository_url, "newStatusReport",
+            headers=header, title="CI",
+            commit_sha1=hashlib.sha1(
+                self.factory.getUniqueBytes()).hexdigest(),
+            url='https://launchpad.net/',
+            result_summary="120/120 tests passed",
+            result="Succeeded")
+
+        self.assertEqual(401, response.status)
+        self.assertIn(
+            b'You do not have permission to create revision status reports',
+            response.body)
+
+    def test_newRevisionStatusReport(self):
+        repository = self.factory.makeGitRepository()
+        requester = repository.owner
+        webservice = webservice_for_person(None, default_api_version="devel")
+        with person_logged_in(requester):
+            repository_url = api_url(repository)
+
+            secret, _ = self.factory.makeAccessToken(
+                owner=requester, target=repository,
+                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+            header = {'Authorization': 'Token %s' % secret}
+
+        self.useFixture(FeatureFixture(
+            {REVISION_STATUS_REPORT_ALLOW_CREATE: "on"}))
+
+        response = webservice.named_post(
+            repository_url, "newStatusReport",
+            headers=header, title="CI",
+            commit_sha1=hashlib.sha1(
+                self.factory.getUniqueBytes()).hexdigest(),
+            url='https://launchpad.net/',
+            result_summary="120/120 tests passed",
+            result="Succeeded")
+        self.assertEqual(201, response.status)
+
+        with person_logged_in(requester):
+            results = getUtility(
+                IRevisionStatusReportSet).findByRepository(repository)
+            reports = list(results)
+            urls = [webservice.getAbsoluteUrl('%s/+status/%s' % (
+                api_url(repository),
+                report.id)) for report in reports]
+            self.assertIn(response.getHeader("Location"), urls)
+
     def test_set_target(self):
         # The repository owner can move the repository to another target;
         # this redirects to the new location.
@@ -4829,6 +4912,60 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(
             b"Personal access tokens may only be issued for a logged-in user.",
             response.body)
+
+
+class TestRevisionStatusReportWebservice(TestCaseWithFactory):
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super(TestRevisionStatusReportWebservice, self).setUp()
+        self.repository = self.factory.makeGitRepository()
+        self.requester = self.repository.owner
+        title = self.factory.getUniqueUnicode('report-title')
+        commit_sha1 = hashlib.sha1(b"Some content").hexdigest()
+        result_summary = "120/120 tests passed"
+
+        self.report = self.factory.makeRevisionStatusReport(
+            user=self.repository.owner, git_repository=self.repository,
+            title=title, commit_sha1=commit_sha1,
+            result_summary=result_summary,
+            result=RevisionStatusResult.SUCCEEDED)
+
+        self.webservice = webservice_for_person(
+            None, default_api_version="devel")
+        with person_logged_in(self.requester):
+            self.report_url = api_url(self.report)
+
+            secret, _ = self.factory.makeAccessToken(
+                owner=self.requester, target=self.repository,
+                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+            self.header = {'Authorization': 'Token %s' % secret}
+
+    def test_setLogOnRevisionStatusReport(self):
+        content = b'log_content_data'
+        filesize = len(content)
+        sha1 = hashlib.sha1(content).hexdigest()
+        md5 = hashlib.md5(content).hexdigest()
+        response = self.webservice.named_post(
+            self.report_url, "setLog",
+            headers=self.header,
+            log_data=io.BytesIO(content))
+        self.assertEqual(200, response.status)
+
+        # A report may have multiple artifacts.
+        # We verify that the content we just submitted via API now
+        # matches one of the artifacts in the DB for the report.
+        with person_logged_in(self.requester):
+            artifacts = list(getUtility(
+                IRevisionStatusArtifactSet).findByReport(self.report))
+            lfcs = [artifact.library_file.content for artifact in artifacts]
+            sha1_of_all_artifacts = [lfc.sha1 for lfc in lfcs]
+            md5_of_all_artifacts = [lfc.md5 for lfc in lfcs]
+            filesizes_of_all_artifacts = [lfc.filesize for lfc in lfcs]
+
+            self.assertIn(sha1, sha1_of_all_artifacts)
+            self.assertIn(md5, md5_of_all_artifacts)
+            self.assertIn(filesize, filesizes_of_all_artifacts)
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):

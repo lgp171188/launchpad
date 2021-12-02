@@ -29,6 +29,8 @@ __all__ = [
     'GitRepositoryType',
     'NON_CVS_RCS_TYPES',
     'RevisionControlSystems',
+    'RevisionStatusArtifactType',
+    'RevisionStatusResult',
     'TargetRevisionControlSystems',
     ]
 
@@ -250,6 +252,54 @@ class GitPermissionType(EnumeratedType):
     CAN_PUSH = Item("Can push")
 
     CAN_FORCE_PUSH = Item("Can force-push")
+
+
+class RevisionStatusArtifactType(DBEnumeratedType):
+    LOG = DBItem(0, """
+        Log
+
+        The log produced by the check job.
+        """)
+
+
+class RevisionStatusResult(DBEnumeratedType):
+    """Revision Status Result"""
+
+    WAITING = DBItem(0, """
+        Waiting
+
+        The check job is waiting to be run.
+        """)
+
+    RUNNING = DBItem(1, """
+        Running
+
+        The check job is currently running.
+        """)
+
+    SUCCEEDED = DBItem(2, """
+        Succeeded
+
+        The check job ran successfully.
+        """)
+
+    FAILED = DBItem(3, """
+        Failed
+
+        The check job failed.
+        """)
+
+    SKIPPED = DBItem(4, """
+        Skipped
+
+        The check job was skipped.
+        """)
+
+    CANCELLED = DBItem(5, """
+        Cancelled
+
+        The check job was cancelled.
+        """)
 
 
 class BranchLifecycleStatusFilter(EnumeratedType):
