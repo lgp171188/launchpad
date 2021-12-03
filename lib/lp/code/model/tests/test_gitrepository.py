@@ -4330,33 +4330,33 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         requester = repository.owner
         title = self.factory.getUniqueUnicode('report-title')
         result_summary = "120/120 tests passed"
-        commit_sha1 = hashlib.sha1(b"First sha1").hexdigest()
-        commit_sha3 = hashlib.sha1(b"Third sha1").hexdigest()
+        commit_sha1s = [hashlib.sha1(
+            self.factory.getUniqueBytes()).hexdigest() for _ in range(2)]
 
         result_summary2 = "Lint"
         title2 = "Invalid import in test_file.py"
 
         report1 = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
-            title=title, commit_sha1=commit_sha1,
+            title=title, commit_sha1=commit_sha1s[0],
             result_summary=result_summary,
             result=RevisionStatusResult.SUCCEEDED)
 
         report2 = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
-            title=title2, commit_sha1=commit_sha1,
+            title=title2, commit_sha1=commit_sha1s[0],
             result_summary=result_summary2,
             result=RevisionStatusResult.FAILED)
 
-        report3 = self.factory.makeRevisionStatusReport(
+        self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
-            title=title2, commit_sha1=commit_sha3,
+            title=title2, commit_sha1=commit_sha1s[1],
             result_summary=result_summary2,
             result=RevisionStatusResult.FAILED)
 
-        report4 = self.factory.makeRevisionStatusReport(
+        self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository2,
-            title=title2, commit_sha1=commit_sha1,
+            title=title2, commit_sha1=commit_sha1s[0],
             result_summary=result_summary2,
             result=RevisionStatusResult.FAILED)
 
@@ -4375,22 +4375,14 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_get(
             repository_url, "getStatusReports",
             headers=header,
-            commit_sha1=commit_sha1)
+            commit_sha1=commit_sha1s[0])
         self.assertEqual(200, response.status)
         with person_logged_in(requester):
             result = getUtility(
-                IRevisionStatusReportSet).findByCommit(repository, commit_sha1)
+                IRevisionStatusReportSet).findByCommit(
+                repository, commit_sha1s[0])
 
-        self.assertIn(report1, list(result))
-        self.assertIn(report2, list(result))
-
-        # a report with a different commit_sha1 in the same repository
-        # should not show up in the results
-        self.assertNotIn(report3, list(result))
-
-        # a report with the same commit_sha1 but in a different repository
-        # should not show up in the results
-        self.assertNotIn(report4, list(result))
+        self.assertContentEqual([report1, report2], result)
 
     def test_set_target(self):
         # The repository owner can move the repository to another target;
