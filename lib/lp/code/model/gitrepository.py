@@ -385,6 +385,13 @@ class RevisionStatusReportSet:
             RevisionStatusReport,
             RevisionStatusReport.git_repository == repository)
 
+    def findByCommit(self, repository, commit_sha1):
+        """Returns all `RevisionStatusReport` for a repository and commit."""
+        return IStore(RevisionStatusReport).find(
+            RevisionStatusReport,
+            git_repository=repository,
+            commit_sha1=commit_sha1)
+
 
 class RevisionStatusArtifact(StormBase):
     __storm_table__ = 'RevisionStatusArtifact'
@@ -646,6 +653,10 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         report = RevisionStatusReport(self, user, title, commit_sha1,
                                       url, result_summary, result)
         return report
+
+    def getStatusReports(self, commit_sha1):
+        return getUtility(
+                IRevisionStatusReportSet).findByCommit(self, commit_sha1)
 
     @property
     def namespace(self):

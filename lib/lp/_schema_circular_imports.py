@@ -520,6 +520,8 @@ patch_entry_return_type(IGitRepository, 'subscribe', IGitSubscription)
 patch_entry_return_type(IGitRepository, 'getSubscription', IGitSubscription)
 patch_reference_property(IGitRepository, 'code_import', ICodeImport)
 patch_entry_return_type(IGitRepository, 'getRefByPath', IGitRef)
+patch_collection_return_type(
+    IGitRepository, 'getStatusReports', IRevisionStatusReport)
 patch_collection_property(
     IGitRepository, '_api_landing_targets', IBranchMergeProposal)
 patch_collection_property(

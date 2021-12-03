@@ -4324,6 +4324,66 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                 report.id)) for report in reports]
             self.assertIn(response.getHeader("Location"), urls)
 
+    def test_getRevisionStatusReports(self):
+        repository = self.factory.makeGitRepository()
+        repository2 = self.factory.makeGitRepository()
+        requester = repository.owner
+        title = self.factory.getUniqueUnicode('report-title')
+        result_summary = "120/120 tests passed"
+        commit_sha1s = [hashlib.sha1(
+            self.factory.getUniqueBytes()).hexdigest() for _ in range(2)]
+
+        result_summary2 = "Lint"
+        title2 = "Invalid import in test_file.py"
+
+        report1 = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title=title, commit_sha1=commit_sha1s[0],
+            result_summary=result_summary,
+            result=RevisionStatusResult.SUCCEEDED)
+
+        report2 = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title=title2, commit_sha1=commit_sha1s[0],
+            result_summary=result_summary2,
+            result=RevisionStatusResult.FAILED)
+
+        self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title=title2, commit_sha1=commit_sha1s[1],
+            result_summary=result_summary2,
+            result=RevisionStatusResult.FAILED)
+
+        self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository2,
+            title=title2, commit_sha1=commit_sha1s[0],
+            result_summary=result_summary2,
+            result=RevisionStatusResult.FAILED)
+
+        webservice = webservice_for_person(None, default_api_version="devel")
+        with person_logged_in(requester):
+            repository_url = api_url(repository)
+
+            secret, _ = self.factory.makeAccessToken(
+                owner=requester, target=repository,
+                scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+            header = {'Authorization': 'Token %s' % secret}
+
+        self.useFixture(FeatureFixture(
+            {REVISION_STATUS_REPORT_ALLOW_CREATE: "on"}))
+
+        response = webservice.named_get(
+            repository_url, "getStatusReports",
+            headers=header,
+            commit_sha1=commit_sha1s[0])
+        self.assertEqual(200, response.status)
+        with person_logged_in(requester):
+            result = getUtility(
+                IRevisionStatusReportSet).findByCommit(
+                repository, commit_sha1s[0])
+
+        self.assertContentEqual([report1, report2], result)
+
     def test_set_target(self):
         # The repository owner can move the repository to another target;
         # this redirects to the new location.
