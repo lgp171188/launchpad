@@ -4,13 +4,18 @@
   xmlns:i18n="http://xml.zope.org/namespaces/i18n"
   id="portlet-product-branchstatistics">
 
-    <p id="active-review-count"
-       tal:define="count context/menu:branches/active_review_count;
-                   link context/menu:branches/active_reviews"
-       tal:condition="python: count &gt; 0">
-      <tal:project replace="context/displayname"/> has
-      <tal:active-count replace="count"/>
-      <tal:link replace="structure python: link.render().lower()"/>.
+    <p>
+        <span id="active-review-count"
+            tal:define="count context/menu:branches/active_review_count;
+                        link context/menu:branches/active_reviews"
+            tal:condition="python: count &gt; 0">
+            <tal:project replace="context/displayname"/> has
+            <tal:active-count replace="count"/>
+            <tal:link replace="structure python: link.render().lower()"/>.
+        </span>
+        <span id="all-merges">
+            <a href="+merges">See all merge proposals</a>.
+        </span>
     </p>
 
     <!--branches-->
