@@ -371,7 +371,7 @@ class ChangesFile(SignableTagFile):
         """
         changes_author = rfc822_encode_address(
             self.changed_by['name'], self.changed_by['email'])
-        return (u'%s\n\n -- %s  %s' % (
+        return ('%s\n\n -- %s  %s' % (
             self.changes_comment, changes_author, self.date)).encode('UTF-8')
 
 

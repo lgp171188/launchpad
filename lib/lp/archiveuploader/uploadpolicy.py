@@ -190,7 +190,7 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
     accepted_type = ArchiveUploadType.SOURCE_ONLY
 
     def __init__(self):
-        super(InsecureUploadPolicy, self).__init__()
+        super().__init__()
         # Signatures on source buildinfo files aren't a big deal, and older
         # versions of debsign didn't produce them.
         self.unsigned_buildinfo_ok = True
@@ -201,7 +201,7 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
         The insecure policy redirects uploads to a different pocket if
         Distribution.redirect_release_uploads is set.
         """
-        super(InsecureUploadPolicy, self).setDistroSeriesAndPocket(dr_name)
+        super().setDistroSeriesAndPocket(dr_name)
         if (self.archive.purpose == ArchivePurpose.PRIMARY and
             self.distro.redirect_release_uploads and
             self.pocket == PackagePublishingPocket.RELEASE):
@@ -292,7 +292,7 @@ class BuildDaemonUploadPolicy(AbstractUploadPolicy):
     name = 'buildd'
 
     def __init__(self):
-        super(BuildDaemonUploadPolicy, self).__init__()
+        super().__init__()
         # We permit unsigned uploads because we trust our build daemons
         self.unsigned_changes_ok = True
         self.unsigned_dsc_ok = True
@@ -300,7 +300,7 @@ class BuildDaemonUploadPolicy(AbstractUploadPolicy):
 
     def setOptions(self, options):
         """Store the options for later."""
-        super(BuildDaemonUploadPolicy, self).setOptions(options)
+        super().setOptions(options)
         options.builds = True
 
     def policySpecificChecks(self, upload):

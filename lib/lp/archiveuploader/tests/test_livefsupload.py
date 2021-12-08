@@ -27,9 +27,9 @@ class TestLiveFSBuildUploads(TestUploadProcessorBase):
     """End-to-end tests of LiveFS build uploads."""
 
     def setUp(self):
-        super(TestLiveFSBuildUploads, self).setUp()
+        super().setUp()
 
-        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: u"on"}))
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.setupBreezy()
 
         self.switchToAdmin()

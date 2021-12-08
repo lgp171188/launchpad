@@ -46,7 +46,7 @@ class OCIRecipeUpload:
             # Open the digest file
             digest_path = os.path.join(dirpath, 'digests.json')
             self.logger.debug("Digest path: {}".format(digest_path))
-            with open(digest_path, 'r') as digest_fp:
+            with open(digest_path) as digest_fp:
                 digests = json.load(digest_fp)
 
             # Foreach id in digest file, find matching layer

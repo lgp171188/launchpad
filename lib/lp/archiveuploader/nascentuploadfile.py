@@ -219,7 +219,7 @@ class NascentUploadFile:
         with open(self.filepath, "rb") as ckfile:
             size = 0
             for chunk in filechunks(ckfile):
-                for digester in six.itervalues(digesters):
+                for digester in digesters.values():
                     digester.update(chunk)
                 size += len(chunk)
 
@@ -329,7 +329,7 @@ class PackageUploadFile(NascentUploadFile):
         SourcePackageRelease creation, so component and section need to exist.
         Even if they might be overridden in the future.
         """
-        super(PackageUploadFile, self).__init__(
+        super().__init__(
             filepath, md5, size, component_and_section, priority_name,
             policy, logger)
         self.package = package
@@ -551,8 +551,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
             ]
         checks = mandatory_checks + self.local_checks
         for check in checks:
-            for error in check():
-                yield error
+            yield from check()
 
     def extractAndParseControl(self):
         """Extract and parse control information."""
