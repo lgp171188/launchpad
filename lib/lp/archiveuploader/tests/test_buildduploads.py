@@ -72,7 +72,7 @@ class TestStagedBinaryUploadBase(TestUploadProcessorBase):
         6. Clean log messages.
         7. Commit transaction, so the upload source can be seen.
         """
-        super(TestStagedBinaryUploadBase, self).setUp()
+        super().setUp()
         self.options.context = self.policy
         self.options.nomails = self.no_mails
         # Set up the uploadprocessor with appropriate options and logger
@@ -198,7 +198,7 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
 
         real_policy = self.policy
         self.policy = 'insecure'
-        super(TestBuilddUploads, self).setUp()
+        super().setUp()
         # Publish the source package release so it can be found by
         # NascentUploadFile.findSourcePackageRelease().
         spr = self.source_queue.sources[0].sourcepackagerelease
@@ -241,7 +241,7 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
         self.assertEqual(build_used.id, build_candidate.id)
         self.assertBuildsCreated(1)
         self.assertEqual(
-            u'i386 build of foo 1.0-1 in ubuntu breezy RELEASE',
+            'i386 build of foo 1.0-1 in ubuntu breezy RELEASE',
             build_used.title)
         self.assertEqual('FULLYBUILT', build_used.status.name)
 
@@ -258,6 +258,6 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
         self.assertEqual(build_used.id, build_candidate.id)
         self.assertBuildsCreated(2)
         self.assertEqual(
-            u'powerpc build of foo 1.0-1 in ubuntu breezy RELEASE',
+            'powerpc build of foo 1.0-1 in ubuntu breezy RELEASE',
             build_used.title)
         self.assertEqual('FULLYBUILT', build_used.status.name)

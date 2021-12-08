@@ -26,7 +26,7 @@ class TestSnapBuildUploads(TestUploadProcessorBase):
     """End-to-end tests of Snap build uploads."""
 
     def setUp(self):
-        super(TestSnapBuildUploads, self).setUp()
+        super().setUp()
 
         self.setupBreezy()
 

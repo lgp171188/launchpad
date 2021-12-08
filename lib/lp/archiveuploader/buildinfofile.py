@@ -22,7 +22,7 @@ class BuildInfoFile(PackageUploadFile, SignableTagFile):
 
     def __init__(self, filepath, checksums, size, component_and_section,
                  priority_name, package, version, changes, policy, logger):
-        super(BuildInfoFile, self).__init__(
+        super().__init__(
             filepath, checksums, size, component_and_section, priority_name,
             package, version, changes, policy, logger)
         self.parse(verify_signature=not policy.unsigned_buildinfo_ok)

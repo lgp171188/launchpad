@@ -58,7 +58,7 @@ class NascentUploadFileTestCase(TestCaseWithFactory):
     """Base class for all tests of classes deriving from NascentUploadFile."""
 
     def setUp(self):
-        super(NascentUploadFileTestCase, self).setUp()
+        super().setUp()
         self.logger = BufferLogger()
         self.policy = AbsolutelyAnythingGoesUploadPolicy()
         self.distro = self.factory.makeDistribution()
@@ -188,7 +188,7 @@ class PackageUploadFileTestCase(NascentUploadFileTestCase):
     """Base class for all tests of classes deriving from PackageUploadFile."""
 
     def setUp(self):
-        super(PackageUploadFileTestCase, self).setUp()
+        super().setUp()
         self.policy.distroseries = self.factory.makeDistroSeries(
             distribution=self.distro)
 
@@ -301,7 +301,7 @@ class DSCFileTests(PackageUploadFileTestCase):
         release = uploadfile.storeInDatabase(None)
         # DSCFile lowercases the field names
         self.assertEqual(
-            [["Python-Version", u"2.5"]], release.user_defined_fields)
+            [["Python-Version", "2.5"]], release.user_defined_fields)
 
     def test_homepage(self):
         # storeInDatabase updates homepage.
@@ -314,7 +314,7 @@ class DSCFileTests(PackageUploadFileTestCase):
         uploadfile.changelog = b"DUMMY"
         uploadfile.files = []
         release = uploadfile.storeInDatabase(None)
-        self.assertEqual(u"http://samba.org/~jelmer/bzr", release.homepage)
+        self.assertEqual("http://samba.org/~jelmer/bzr", release.homepage)
 
     def test_checkBuild(self):
         # checkBuild() verifies consistency with a build.
@@ -554,14 +554,14 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         uploadfile.parseControl(control)
         build = self.factory.makeBinaryPackageBuild()
         bpr = uploadfile.storeInDatabase(build)
-        self.assertEqual(u'python (<< 2.7), python (>= 2.5)', bpr.depends)
+        self.assertEqual('python (<< 2.7), python (>= 2.5)', bpr.depends)
         self.assertEqual(
-            u" Dulwich is a Python implementation of the file formats and"
-            u" protocols", bpr.description)
+            " Dulwich is a Python implementation of the file formats and"
+            " protocols", bpr.description)
         self.assertEqual(False, bpr.essential)
         self.assertEqual(524, bpr.installedsize)
         self.assertEqual(True, bpr.architecturespecific)
-        self.assertEqual(u"", bpr.recommends)
+        self.assertEqual("", bpr.recommends)
         self.assertEqual("0.42", bpr.version)
 
     def test_user_defined_fields(self):
@@ -575,7 +575,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         build = self.factory.makeBinaryPackageBuild()
         bpr = uploadfile.storeInDatabase(build)
         self.assertEqual(
-            [[u"Python-Version", u"2.5"]], bpr.user_defined_fields)
+            [["Python-Version", "2.5"]], bpr.user_defined_fields)
 
     def test_user_defined_fields_newlines(self):
         # storeInDatabase stores user defined fields and keeps newlines.
@@ -589,7 +589,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         bpr = uploadfile.storeInDatabase(build)
         self.assertEqual(
             [
-                [u"RandomData", u"Foo\nbar\nbla\n"],
+                ["RandomData", "Foo\nbar\nbla\n"],
             ], bpr.user_defined_fields)
 
     def test_built_using(self):
@@ -615,7 +615,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
                     reference_type=BinarySourceReferenceType.BUILT_USING,
                     )))
         self.assertEqual(
-            [[u"Built-Using", u"bar (= 0.1)"]], bpr.user_defined_fields)
+            [["Built-Using", "bar (= 0.1)"]], bpr.user_defined_fields)
 
     def test_homepage(self):
         # storeInDatabase stores homepage field.
@@ -628,7 +628,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         build = self.factory.makeBinaryPackageBuild()
         bpr = uploadfile.storeInDatabase(build)
         self.assertEqual(
-            u"http://samba.org/~jelmer/dulwich", bpr.homepage)
+            "http://samba.org/~jelmer/dulwich", bpr.homepage)
 
     def test_checkBuild(self):
         # checkBuild() verifies consistency with a build.

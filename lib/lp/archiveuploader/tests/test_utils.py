@@ -5,8 +5,6 @@
 
 import os
 
-import six
-
 from lp.archiveuploader.tests import datadir
 from lp.archiveuploader.utils import (
     determine_binary_file_type,
@@ -170,54 +168,54 @@ class TestUtilities(TestCase):
             )
         cases = (
             (b"No\xc3\xa8l K\xc3\xb6the <noel@debian.org>",
-             u"No\xe8l K\xf6the <noel@debian.org>",
-             u"No\xe8l K\xf6the",
-             u"noel@debian.org"),
+             "No\xe8l K\xf6the <noel@debian.org>",
+             "No\xe8l K\xf6the",
+             "noel@debian.org"),
 
             (b"No\xe8l K\xf6the <noel@debian.org>",
-             u"No\xe8l K\xf6the <noel@debian.org>",
-             u"No\xe8l K\xf6the",
-             u"noel@debian.org"),
+             "No\xe8l K\xf6the <noel@debian.org>",
+             "No\xe8l K\xf6the",
+             "noel@debian.org"),
 
             ("James Troup <james@nocrew.org>",
-             u"James Troup <james@nocrew.org>",
-             u"James Troup",
-             u"james@nocrew.org"),
+             "James Troup <james@nocrew.org>",
+             "James Troup",
+             "james@nocrew.org"),
 
             ("James J. Troup <james@nocrew.org>",
-             u"james@nocrew.org (James J. Troup)",
-             u"James J. Troup",
-             u"james@nocrew.org"),
+             "james@nocrew.org (James J. Troup)",
+             "James J. Troup",
+             "james@nocrew.org"),
 
             ("James J, Troup <james@nocrew.org>",
-             u"james@nocrew.org (James J, Troup)",
-             u"James J, Troup",
-             u"james@nocrew.org"),
+             "james@nocrew.org (James J, Troup)",
+             "James J, Troup",
+             "james@nocrew.org"),
 
             ("james@nocrew.org",
-             u" <james@nocrew.org>",
-             u"",
-             u"james@nocrew.org"),
+             " <james@nocrew.org>",
+             "",
+             "james@nocrew.org"),
 
             ("<james@nocrew.org>",
-             u" <james@nocrew.org>",
-             u"",
-             u"james@nocrew.org"),
+             " <james@nocrew.org>",
+             "",
+             "james@nocrew.org"),
 
             ("Cris van Pelt <\"Cris van Pelt\"@tribe.eu.org>",
-             u"Cris van Pelt <\"Cris van Pelt\"@tribe.eu.org>",
-             u"Cris van Pelt",
-             u"\"Cris van Pelt\"@tribe.eu.org"),
+             "Cris van Pelt <\"Cris van Pelt\"@tribe.eu.org>",
+             "Cris van Pelt",
+             "\"Cris van Pelt\"@tribe.eu.org"),
 
             ("Zak B. Elep <zakame@ubuntu.com>",
-             u"zakame@ubuntu.com (Zak B. Elep)",
-             u"Zak B. Elep",
-             u"zakame@ubuntu.com"),
+             "zakame@ubuntu.com (Zak B. Elep)",
+             "Zak B. Elep",
+             "zakame@ubuntu.com"),
 
             ("zakame@ubuntu.com (Zak B. Elep)",
-             u" <zakame@ubuntu.com (Zak B. Elep)>",
-             u"",
-             u"zakame@ubuntu.com (Zak B. Elep)"),
+             " <zakame@ubuntu.com (Zak B. Elep)>",
+             "",
+             "zakame@ubuntu.com (Zak B. Elep)"),
              )
 
         for case in cases:
@@ -253,7 +251,7 @@ class TestUtilities(TestCase):
             try:
                 parse_maintainer_bytes(case[0], 'Maintainer')
             except ParseMaintError as e:
-                self.assertEqual(case[1], six.text_type(e))
+                self.assertEqual(case[1], str(e))
             else:
                 self.fail('ParseMaintError not raised')
 

@@ -35,7 +35,7 @@ class TestMatchDDEBs(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestMatchDDEBs, self).setUp()
+        super().setUp()
         self.changes = FakeChangesFile()
         self.upload = NascentUpload(self.changes, None, DevNullLogger())
 

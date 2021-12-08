@@ -24,7 +24,7 @@ from lp.code.interfaces.sourcepackagerecipebuild import (
 class TestSourcePackageRecipeBuildUploads(TestUploadProcessorBase):
 
     def setUp(self):
-        super(TestSourcePackageRecipeBuildUploads, self).setUp()
+        super().setUp()
 
         self.setupBreezy()
 

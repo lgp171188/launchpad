@@ -26,7 +26,7 @@ from lp.services.propertycache import get_property_cache
 class TestOCIRecipeUploads(OCIConfigHelperMixin, TestUploadProcessorBase):
 
     def setUp(self):
-        super(TestOCIRecipeUploads, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
         self.setupBreezy()
