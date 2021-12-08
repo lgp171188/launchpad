@@ -36,7 +36,7 @@ class SpecificationSubscription(StormBase):
     essential = Bool(allow_none=False, default=False)
 
     def __init__(self, specification, person, essential=False):
-        super(SpecificationSubscription, self).__init__()
+        super().__init__()
         self.specification = specification
         self.person = person
         self.essential = essential

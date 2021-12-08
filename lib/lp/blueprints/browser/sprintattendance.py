@@ -170,9 +170,7 @@ class SprintAttendanceRegisterView(BaseSprintAttendanceAddView):
 
     @property
     def field_names(self):
-        return (
-            ['attendee'] +
-            super(SprintAttendanceRegisterView, self).field_names)
+        return ['attendee'] + super().field_names
 
     @property
     def initial_values(self):

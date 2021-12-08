@@ -761,8 +761,8 @@ class ISpecificationSet(IHasSpecifications):
     @operation_parameters(
         target=Reference(
             schema=ISpecificationTarget, required=True,
-            title=(u"The product or distribution context of this "
-                   u"specification.")))
+            title=("The product or distribution context of this "
+                   "specification.")))
     @export_factory_operation(
         ISpecification, ['name', 'title', 'specurl', 'summary',
                          'definition_status', 'assignee', 'drafter',

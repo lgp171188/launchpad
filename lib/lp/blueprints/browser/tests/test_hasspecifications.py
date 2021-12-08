@@ -14,7 +14,7 @@ class TestPersonSpecWorkloadView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonSpecWorkloadView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name='blue')
         login_person(self.owner)
         self.team = self.factory.makeTeam(name='square', owner='blue')

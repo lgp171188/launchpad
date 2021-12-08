@@ -221,7 +221,7 @@ class NewSpecificationView(LaunchpadFormView):
     def initialize(self):
         cache = IJSONRequestCache(self.request)
         json_dump_information_types(cache, self.info_types)
-        super(NewSpecificationView, self).initialize()
+        super().initialize()
 
     @action(_('Register Blueprint'), name='register')
     def register(self, action, data):
@@ -300,7 +300,7 @@ class NewSpecificationView(LaunchpadFormView):
 
     def validate(self, data):
         """See `LaunchpadFormView`.`"""
-        super(NewSpecificationView, self).validate(data)
+        super().validate(data)
         information_type = data.get('information_type', None)
         if information_type is None:
             # We rely on the model to set the correct default value.
@@ -324,7 +324,7 @@ class NewSpecificationView(LaunchpadFormView):
                     self.setFieldError('information_type', error)
 
     def setUpWidgets(self):
-        super(NewSpecificationView, self).setUpWidgets()
+        super().setUpWidgets()
         widget = self.widgets['drafter']
         widget.setRenderedValue(self.user)
 
@@ -378,7 +378,7 @@ class NewSpecificationFromDistroSeriesView(NewSpecificationFromSeriesView):
     """A view for creating a specification from a distro series."""
 
     def transform(self, data):
-        super(NewSpecificationFromDistroSeriesView, self).transform(data)
+        super().transform(data)
         data['distribution'] = self.context.distribution
 
 
@@ -386,7 +386,7 @@ class NewSpecificationFromProductSeriesView(NewSpecificationFromSeriesView):
     """A view for creating a specification from a product series."""
 
     def transform(self, data):
-        super(NewSpecificationFromProductSeriesView, self).transform(data)
+        super().transform(data)
         data['product'] = self.context.product
 
 
@@ -407,7 +407,7 @@ class NewSpecificationFromNonTargetView(NewSpecificationView):
 
         The name must be unique within the context of the chosen target.
         """
-        super(NewSpecificationFromNonTargetView, self).validate(data)
+        super().validate(data)
         name = data.get('name')
         target = data.get('target')
         if name is not None and target is not None:
@@ -447,7 +447,7 @@ class NewSpecificationFromSprintView(NewSpecificationFromNonTargetView):
         return self.append_info_type(fields)
 
     def transform(self, data):
-        super(NewSpecificationFromSprintView, self).transform(data)
+        super().transform(data)
         data['sprint'] = self.context
 
     @property
@@ -660,7 +660,7 @@ class SpecificationView(SpecificationSimpleView):
         return self.context.summary
 
     def initialize(self):
-        super(SpecificationView, self).initialize()
+        super().initialize()
         # The review that the user requested on this spec, if any.
         self.notices = []
 
@@ -1049,7 +1049,7 @@ class SpecificationSupersedingView(LaunchpadFormView):
 
     def validate(self, data):
         """See `LaunchpadFormView`.`"""
-        super(SpecificationSupersedingView, self).validate(data)
+        super().validate(data)
         if data['superseded_by']:
             spec = getUtility(ISpecificationSet).getByName(
                 self.context.target, data['superseded_by'])
@@ -1264,7 +1264,7 @@ class SpecGraph:
             L.append('%s -> %s' % (
                 to_DOT_ID(from_node.name), to_DOT_ID(to_node.name)))
         L.append('}')
-        return u'\n'.join(L)
+        return '\n'.join(L)
 
 
 class SpecificationSprintAddView(LaunchpadFormView):
@@ -1342,7 +1342,7 @@ class SpecGraphNode:
             # except the one that were currently on the page of.
             attrnames.append('URL')
         attrdict = {name: getattr(self, name) for name in attrnames}
-        return u'%s\n%s' % (to_DOT_ID(self.name), dict_to_DOT_attrs(attrdict))
+        return '%s\n%s' % (to_DOT_ID(self.name), dict_to_DOT_attrs(attrdict))
 
 
 def dict_to_DOT_attrs(some_dict, indent='    '):
@@ -1354,7 +1354,7 @@ def dict_to_DOT_attrs(some_dict, indent='    '):
     The attributes are sorted by dict key.
     """
     if not some_dict:
-        return u''
+        return ''
     L = []
     L.append('[')
     for key, value in sorted(some_dict.items()):
@@ -1363,7 +1363,7 @@ def dict_to_DOT_attrs(some_dict, indent='    '):
     lastitem = L.pop()
     L.append(lastitem[:-1])
     L.append(']')
-    return u'\n'.join('%s%s' % (indent, line) for line in L)
+    return '\n'.join('%s%s' % (indent, line) for line in L)
 
 
 def to_DOT_ID(value):
@@ -1378,10 +1378,10 @@ def to_DOT_ID(value):
     if isinstance(value, bytes):
         unitext = six.ensure_text(value, encoding='ascii')
     else:
-        unitext = six.text_type(value)
-    output = unitext.replace(u'"', u'\\"')
-    output = output.replace(u'\n', u'\\n')
-    return u'"%s"' % output
+        unitext = str(value)
+    output = unitext.replace('"', '\\"')
+    output = output.replace('\n', '\\n')
+    return '"%s"' % output
 
 
 class ProblemRenderingGraph(Exception):
@@ -1481,14 +1481,14 @@ class SpecificationTreeImageTag(SpecificationTreeGraphView):
             if isinstance(error, OSError):
                 # An OSError can be random. The image map may generate
                 # if the user reloads the page.
-                extra_help = u' Reload the page to link the image.'
+                extra_help = ' Reload the page to link the image.'
             else:
-                extra_help = u''
+                extra_help = ''
             image_map = (
-                u'<p class="error message">'
-                u'There was an error linking the dependency tree to its '
-                u'specs.' + extra_help + u'</p>')
-        return (u'<img src="deptree.png" usemap="#deptree" />\n' + image_map)
+                '<p class="error message">'
+                'There was an error linking the dependency tree to its '
+                'specs.' + extra_help + '</p>')
+        return ('<img src="deptree.png" usemap="#deptree" />\n' + image_map)
 
 
 class SpecificationTreeDotOutput(SpecificationTreeGraphView):

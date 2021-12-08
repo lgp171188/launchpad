@@ -36,7 +36,7 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(Test_getWorkItemsDueBefore, self).setUp()
+        super().setUp()
         self.today = datetime.today().date()
         current_milestone = self.factory.makeMilestone(
             dateexpected=self.today)
@@ -171,7 +171,7 @@ class TestGenericWorkItem(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGenericWorkItem, self).setUp()
+        super().setUp()
         today = datetime.today().date()
         self.milestone = self.factory.makeMilestone(dateexpected=today)
 
@@ -236,7 +236,7 @@ class TestPersonUpcomingWork(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonUpcomingWork, self).setUp()
+        super().setUp()
         self.today = datetime.today().date()
         self.tomorrow = self.today + timedelta(days=1)
         self.today_milestone = self.factory.makeMilestone(
@@ -413,7 +413,7 @@ class TestPersonUpcomingWorkView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonUpcomingWorkView, self).setUp()
+        super().setUp()
         self.today = datetime.today().date()
         self.tomorrow = self.today + timedelta(days=1)
         self.today_milestone = self.factory.makeMilestone(

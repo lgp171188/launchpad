@@ -35,7 +35,7 @@ class TestSpecifications(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSpecifications, self).setUp()
+        super().setUp()
         self.date_decided = datetime.datetime.now(utc)
 
     def makeSpec(self, sprint=None, date_decided=0, date_created=0,

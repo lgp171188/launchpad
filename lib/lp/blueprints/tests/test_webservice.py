@@ -591,7 +591,7 @@ class TestSpecificationGoalHandling(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSpecificationGoalHandling, self).setUp()
+        super().setUp()
         self.driver = self.factory.makePerson()
         self.proposer = self.factory.makePerson()
         self.product = self.factory.makeProduct(driver=self.driver)

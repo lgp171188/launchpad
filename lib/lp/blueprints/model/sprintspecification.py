@@ -51,7 +51,7 @@ class SprintSpecification(StormBase):
     date_decided = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
 
     def __init__(self, sprint, specification, registrant):
-        super(SprintSpecification, self).__init__()
+        super().__init__()
         self.sprint = sprint
         self.specification = specification
         self.registrant = registrant

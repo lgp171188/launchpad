@@ -558,7 +558,7 @@ class TestSpecificationSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSpecificationSet, self).setUp()
+        super().setUp()
         self.specification_set = getUtility(ISpecificationSet)
         self.new_names = NewSpecificationDefinitionStatus.items.mapping.keys()
 
@@ -600,7 +600,7 @@ class TestSpecifications(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSpecifications, self).setUp()
+        super().setUp()
         self.date_created = datetime.now(pytz.utc)
 
     def makeSpec(self, product=None, date_created=0, title=None,

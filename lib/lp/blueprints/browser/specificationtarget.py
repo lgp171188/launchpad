@@ -162,7 +162,7 @@ class HasSpecificationsView(LaunchpadView):
         # mixed in by the browser:page zcml directive the template defined in
         # the directive should be used.
         if safe_hasattr(self, 'index'):
-            return super(HasSpecificationsView, self).template
+            return super().template
 
         # Sprints and Persons don't have a usage enum for blueprints, so we
         # have to fallback to the default.

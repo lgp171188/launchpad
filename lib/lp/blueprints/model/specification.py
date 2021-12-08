@@ -14,7 +14,6 @@ import operator
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.objectdelta import ObjectDelta
-import six
 from storm.locals import (
     Count,
     Desc,
@@ -801,7 +800,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         from lp.bugs.model.bug import Bug
         bug_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'specification', six.text_type(self.id)), types=[u'bug'])]
+                ('specification', str(self.id)), types=['bug'])]
         return list(sorted(
             bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
 
@@ -811,14 +810,12 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {(u'specification', six.text_type(self.id)):
-                {(u'bug', six.text_type(bug.id)): props}})
+            {('specification', str(self.id)): {('bug', str(bug.id)): props}})
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {(u'specification', six.text_type(self.id)):
-                [(u'bug', six.text_type(bug.id))]})
+            {('specification', str(self.id)): [('bug', str(bug.id))]})
 
     # sprint linking
     def linkSprint(self, sprint, user):
