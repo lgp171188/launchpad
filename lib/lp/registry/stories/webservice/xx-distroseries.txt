@@ -63,6 +63,7 @@ For distroseries we publish a subset of its attributes.
     advertise_by_hash: False
     all_milestones_collection_link: 'http://.../ubuntu/hoary/all_milestones'
     architectures_collection_link: 'http://.../ubuntu/hoary/architectures'
+    backports_not_automatic: False
     bug_reported_acknowledgement: None
     bug_reporting_guidelines: None
     changeslist: 'hoary-changes@ubuntu.com'
@@ -84,6 +85,7 @@ For distroseries we publish a subset of its attributes.
     official_bug_tags: []
     owner_link: 'http://.../~ubuntu-team'
     parent_series_link: 'http://.../ubuntu/warty'
+    proposed_not_automatic: False
     publish_by_hash: False
     registrant_link: 'http://.../~mark'
     resource_type_link: ...
