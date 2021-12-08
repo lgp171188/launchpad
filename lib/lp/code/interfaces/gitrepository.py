@@ -13,9 +13,15 @@ __all__ = [
     'IGitRepositoryExpensiveRequest',
     'IGitRepositorySet',
     'IHasGitRepositoryURL',
+    'IRevisionStatusArtifact',
+    'IRevisionStatusArtifactSet',
+    'IRevisionStatusReport',
+    'IRevisionStatusReportSet',
+    'RevisionStatusReportsFeatureDisabled',
     'user_has_special_git_repository_access',
     ]
 
+import http.client
 import re
 from textwrap import dedent
 
@@ -23,6 +29,7 @@ from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
+    error_status,
     export_destructor_operation,
     export_factory_operation,
     export_operation_as,
@@ -37,6 +44,7 @@ from lazr.restful.declarations import (
     operation_returns_collection_of,
     operation_returns_entry,
     REQUEST_USER,
+    scoped,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -50,6 +58,7 @@ from zope.interface import (
     )
 from zope.schema import (
     Bool,
+    Bytes,
     Choice,
     Datetime,
     Int,
@@ -57,10 +66,12 @@ from zope.schema import (
     Text,
     TextLine,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.enums import InformationType
 from lp.app.validators import LaunchpadValidationError
+from lp.app.validators.attachment import attachment_size_constraint
 from lp.code.enums import (
     BranchMergeProposalStatus,
     BranchSubscriptionDiffSize,
@@ -69,6 +80,8 @@ from lp.code.enums import (
     GitListingSort,
     GitRepositoryStatus,
     GitRepositoryType,
+    RevisionStatusArtifactType,
+    RevisionStatusResult,
     )
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
@@ -91,6 +104,7 @@ from lp.services.fields import (
     InlineObject,
     PersonChoice,
     PublicPersonChoice,
+    URIField,
     )
 from lp.services.webhooks.interfaces import IWebhookTarget
 
@@ -813,6 +827,155 @@ class IGitRepositoryExpensiveRequest(Interface):
         that is not an admin or a registry expert."""
 
 
+@error_status(http.client.UNAUTHORIZED)
+class RevisionStatusReportsFeatureDisabled(Unauthorized):
+    """Only certain users can access APIs for revision status reports."""
+
+    def __init__(self):
+        super(RevisionStatusReportsFeatureDisabled, self).__init__(
+            "You do not have permission to create revision status reports")
+
+
+class IRevisionStatusReportView(Interface):
+    """`IRevisionStatusReport` attributes that require launchpad.View."""
+
+    id = Int(title=_("ID"), required=True, readonly=True)
+
+    date_created = exported(Datetime(
+        title=_("When the report was created."), required=True, readonly=True))
+    date_started = exported(Datetime(
+        title=_("When the report was started.")), readonly=False)
+    date_finished = exported(Datetime(
+        title=_("When the report has finished.")), readonly=False)
+
+
+class IRevisionStatusReportEditableAttributes(Interface):
+    """`IRevisionStatusReport` attributes that can be edited.
+
+    These attributes need launchpad.View to see, and launchpad.Edit to change.
+    """
+
+    title = exported(TextLine(
+        title=_("A short title for the report."), required=True))
+
+    git_repository = exported(Reference(
+        title=_("The Git repository for which this report is built."),
+        # Really IGitRepository, patched in _schema_circular_imports.py.
+        schema=Interface, required=True, readonly=True))
+
+    commit_sha1 = exported(TextLine(
+        title=_("The Git commit for which this report is built."),
+        required=True, readonly=True))
+
+    url = exported(URIField(title=_("URL"), required=False, readonly=True,
+                            description=_("The external url of the report.")))
+
+    result_summary = exported(TextLine(
+        title=_("A short summary of the result."), required=False))
+
+    result = exported(Choice(
+        title=_('Result of the report'),  readonly=True,
+        required=False, vocabulary=RevisionStatusResult))
+
+    @mutator_for(result)
+    @operation_parameters(result=copy_field(result))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def transitionToNewResult(result):
+        """Set the RevisionStatusReport result.
+
+        Set the revision status report result."""
+
+
+class IRevisionStatusReportEdit(Interface):
+    """`IRevisionStatusReport` attributes that require launchpad.Edit."""
+
+    @operation_parameters(
+        log_data=Bytes(title=_("The content of the artifact in bytes."),
+                       constraint=attachment_size_constraint))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @export_write_operation()
+    @export_operation_as(name="setLog")
+    @operation_for_version("devel")
+    def api_setLog(log_data):
+        """Set a new log on an existing status report.
+
+        :param log_data: The contents (in bytes) of the log.
+        """
+
+
+@exported_as_webservice_entry(as_of="beta")
+class IRevisionStatusReport(IRevisionStatusReportView,
+                            IRevisionStatusReportEditableAttributes,
+                            IRevisionStatusReportEdit):
+    """An revision status report for a Git commit."""
+
+
+class IRevisionStatusReportSet(Interface):
+    """The set of all revision status reports."""
+
+    def new(creator, title, git_repository, commit_sha1, date_created=None,
+            url=None, result_summary=None, result=None, date_started=None,
+            date_finished=None, log=None):
+        """Return a new revision status report.
+
+        :param title: A text string.
+        :param git_repository: An `IGitRepository` for which the report
+            is being created.
+        :param commit_sha1: The sha1 of the commit for which the report
+            is being created.
+        :param date_created: The date when the report is being created.
+        :param url: External URL to view result of report.
+        :param result_summary: A short summary of the result.
+        :param result: The result of the check job for this revision.
+        :param date_started: DateTime that report was started.
+        :param date_finished: DateTime that report was completed.
+        :param log: Stores the content of the artifact for this report.
+        """
+
+    def getByID(id):
+        """Returns the RevisionStatusReport for a given ID."""
+
+    def findByRepository(repository):
+        """Returns all `RevisionStatusReport` for a repository."""
+
+    def findByCommit(repository, commit_sha1):
+        """Returns all `RevisionStatusReport` for a repository and commit."""
+
+
+class IRevisionStatusArtifactSet(Interface):
+    """The set of all revision status artifacts."""
+
+    def new(lfa, report):
+        """Return a new revision status artifact.
+
+        :param lfa: An `ILibraryFileAlias`.
+        :param report: An `IRevisionStatusReport` for which the
+            artifact is being created.
+        """
+
+    def getByID(id):
+        """Returns the RevisionStatusArtifact for a given ID."""
+
+    def findByReport(report):
+        """Returns the set of artifacts for a given report."""
+
+
+class IRevisionStatusArtifact(Interface):
+    id = Int(title=_("ID"), required=True, readonly=True)
+
+    report = Attribute(
+        "The `RevisionStatusReport` that this artifact is linked to.")
+
+    library_file = Attribute(
+        "The `LibraryFileAlias` object containing information for "
+        "a revision status report.")
+
+    artifact_type = Choice(
+        title=_('The type of artifact, only log for now.'),
+        vocabulary=RevisionStatusArtifactType)
+
+
 class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
     """IGitRepository methods that require launchpad.Edit permission."""
 
@@ -1013,6 +1176,38 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
             repository by deleting items with mandatory references and
             NULLing other references.
         :raise: CannotDeleteGitRepository if the repository cannot be deleted.
+        """
+
+    @operation_parameters(
+        title=copy_field(IRevisionStatusReport["title"]),
+        commit_sha1=copy_field(IRevisionStatusReport["commit_sha1"]),
+        url=copy_field(IRevisionStatusReport["url"]),
+        result_summary=copy_field(IRevisionStatusReport["result_summary"]),
+        result=copy_field(IRevisionStatusReport["result"]))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @call_with(user=REQUEST_USER)
+    @export_factory_operation(IRevisionStatusReport, [])
+    @operation_for_version("devel")
+    def newStatusReport(title, commit_sha1, url, result_summary, result, user):
+        """Create a new status report.
+
+        :param title: The name of the new report.
+        :param commit_sha1: The commit sha1 for the report.
+        :param url: The external link of the status report.
+        :param result_summary: The description of the new report.
+        :param result: The result of the new report.
+        """
+
+    @operation_parameters(
+        commit_sha1=copy_field(IRevisionStatusReport["commit_sha1"]))
+    @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
+    @operation_returns_collection_of(Interface)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getStatusReports(commit_sha1):
+        """Retrieves the list of reports that exist for a commit.
+
+        :param commit_sha1: The commit sha1 for the report.
         """
 
 

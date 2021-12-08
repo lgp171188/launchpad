@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IDistroSeries."""
@@ -371,6 +371,15 @@ class IDistroSeriesPublic(
             Set NotAutomatic: yes and ButAutomaticUpgrades: yes in Release
             files generated for the backports pocket. This tells apt to
             automatically upgrade within backports, but not into it.
+            """))
+
+    proposed_not_automatic = Bool(
+        title=_("Don't upgrade to proposed updates automatically"),
+        required=True,
+        description=_("""
+            Set NotAutomatic: yes and ButAutomaticUpgrades: yes in Release
+            files generated for the proposed pocket. This tells apt to
+            automatically upgrade within proposed, but not into it.
             """))
 
     include_long_descriptions = exported(

@@ -96,15 +96,19 @@ PIP_BIN = \
     bin/with-xvfb
 
 # DO NOT ALTER : this should just build by default
+.PHONY: default
 default: inplace
 
+.PHONY: schema
 schema: build
 	$(MAKE) -C database/schema
 	$(RM) -r /var/tmp/fatsam
 
+.PHONY: newsampledata
 newsampledata:
 	$(MAKE) -C database/schema newsampledata
 
+.PHONY: hosted_branches
 hosted_branches: $(PY)
 	$(PY) ./utilities/make-dummy-hosted-branches
 
@@ -115,6 +119,7 @@ $(API_INDEX): $(VERSION_INFO) $(PY)
 	    --force "$(APIDOC_TMPDIR)"
 	mv $(APIDOC_TMPDIR) $(APIDOC_DIR)
 
+.PHONY: apidoc
 ifdef LP_MAKE_NO_WADL
 apidoc:
 	@echo "Skipping WADL generation."
@@ -123,15 +128,18 @@ apidoc: compile $(API_INDEX)
 endif
 
 # Used to generate HTML developer documentation for Launchpad.
+.PHONY: doc
 doc:
 	$(MAKE) -C doc/ html
 
 # Run by PQM.
+.PHONY: check_config
 check_config: build
 	bin/test -m lp.services.config.tests -vvt test_config
 
 # Clean before running the test suite, since the build might fail depending
 # what source changes happened. (e.g. apidoc depends on interfaces)
+.PHONY: check
 check: clean build
 	# Run all tests. test_on_merge.py takes care of setting up the
 	# database.
@@ -141,6 +149,7 @@ check: clean build
 logs:
 	mkdir logs
 
+.PHONY: codehosting-dir
 codehosting-dir:
 	mkdir -p $(CODEHOSTING_ROOT)
 	mkdir -p $(CODEHOSTING_ROOT)/mirrors
@@ -155,11 +164,13 @@ ifneq ($(SUDO_UID),)
 	fi
 endif
 
+.PHONY: inplace
 inplace: build logs clean_logs codehosting-dir
 	if [ -d /srv/launchpad.test ]; then \
 		ln -sfn $(WD)/build/js $(CONVOY_ROOT); \
 	fi
 
+.PHONY: build
 build: compile apidoc jsbuild css_combine
 
 # LP_SOURCEDEPS_PATH should point to the sourcecode directory, but we
@@ -174,6 +185,7 @@ else
 	@exit 1
 endif
 
+.PHONY: css_combine
 css_combine: jsbuild_widget_css
 	${SHHH} bin/sprite-util create-image
 	${SHHH} bin/sprite-util create-css
@@ -184,18 +196,20 @@ css_combine: jsbuild_widget_css
 	# XXX 2020-06-12 twom This should have `--output-style compressed`. Removed for debugging purposes
 	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/combo.scss
 
+.PHONY: css_watch
 css_watch: jsbuild_widget_css
 	${SHHH} bin/sprite-util create-image
 	${SHHH} bin/sprite-util create-css
 	ln -sfn ../../../../yarn/node_modules/yui $(ICING)/yui
 	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/ --watch --recursive
 
-
+.PHONY: jsbuild_widget_css
 jsbuild_widget_css: bin/jsbuild
 	${SHHH} bin/jsbuild \
 	    --srcdir lib/lp/app/javascript \
 	    --builddir $(LP_BUILT_JS_ROOT)
 
+.PHONY: jsbuild_watch
 jsbuild_watch:
 	$(PY) bin/watch_jsbuild
 
@@ -218,6 +232,7 @@ $(JS_BUILD_DIR)/.production: yarn/package.json | $(YARN_BUILD)
 $(YUI_SYMLINK): $(JS_BUILD_DIR)/.production
 	ln -sfn ../../yarn/node_modules/yui $@
 
+.PHONY: $(LP_JS_BUILD)
 $(LP_JS_BUILD): | $(JS_BUILD_DIR)
 	mkdir -p $@/services
 	for jsdir in lib/lp/*/javascript lib/lp/services/*/javascript; do \
@@ -227,6 +242,7 @@ $(LP_JS_BUILD): | $(JS_BUILD_DIR)
 	find $@ -name 'tests' -type d | xargs rm -rf
 	LC_ALL=C.UTF-8 bin/lpjsmin -p $@
 
+.PHONY: jsbuild
 jsbuild: $(LP_JS_BUILD) $(YUI_SYMLINK)
 	LC_ALL=C.UTF-8 utilities/js-deps -n LP_MODULES -s build/js/lp \
 		-x '-min.js' -o build/js/lp/meta.js >/dev/null
@@ -252,6 +268,7 @@ requirements/combined.txt: \
 # It doesn't seem to be straightforward to build a wheelhouse of all our
 # dependencies without also building a useless wheel of Launchpad itself;
 # fortunately that doesn't take too long, and we just remove it afterwards.
+.PHONY: build_wheels
 build_wheels: $(PIP_BIN) requirements/combined.txt
 	$(RM) -r wheelhouse wheels
 	$(SHHH) $(PIP) wheel \
@@ -261,6 +278,7 @@ build_wheels: $(PIP_BIN) requirements/combined.txt
 	$(MAKE) clean_pip
 
 # Compatibility
+.PHONY: build_eggs
 build_eggs: build_wheels
 
 # setuptools won't touch files that would have the same contents, but for
@@ -290,6 +308,7 @@ $(subst $(VENV_PYTHON),,$(PIP_BIN)): $(VENV_PYTHON)
 
 # Explicitly update version-info.py rather than declaring $(VERSION_INFO) as
 # a prerequisite, to make sure it's up to date when doing deployments.
+.PHONY: compile
 compile: $(VENV_PYTHON)
 	${SHHH} utilities/relocate-virtualenv env
 	$(PYTHON) utilities/link-system-packages.py \
@@ -297,22 +316,28 @@ compile: $(VENV_PYTHON)
 	${SHHH} bin/build-twisted-plugin-cache
 	scripts/update-version-info.sh
 
+.PHONY: test_build
 test_build: build
 	bin/test $(TESTFLAGS) $(TESTOPTS)
 
+.PHONY: test_inplace
 test_inplace: inplace
 	bin/test $(TESTFLAGS) $(TESTOPTS)
 
+.PHONY: ftest_build
 ftest_build: build
 	bin/test -f $(TESTFLAGS) $(TESTOPTS)
 
+.PHONY: ftest_inplace
 ftest_inplace: inplace
 	bin/test -f $(TESTFLAGS) $(TESTOPTS)
 
+.PHONY: run
 run: build inplace stop
 	bin/run -r librarian,bing-webservice,memcached,rabbitmq \
 	-i $(LPCONFIG)
 
+.PHONY: run-testapp
 run-testapp: LPCONFIG=testrunner-appserver
 run-testapp: build inplace stop
 	LPCONFIG=$(LPCONFIG) INTERACTIVE_TESTS=1 bin/run-testapp \
@@ -321,40 +346,50 @@ run-testapp: build inplace stop
 run.gdb:
 	echo 'run' > run.gdb
 
+.PHONY: start-gdb
 start-gdb: build inplace stop support_files run.gdb
 	nohup gdb -x run.gdb --args bin/run -i $(LPCONFIG) \
 		-r librarian,bing-webservice
 		> ${LPCONFIG}-nohup.out 2>&1 &
 
+.PHONY: run_all
 run_all: build inplace stop
 	bin/run \
 	 -r librarian,sftp,codebrowse,bing-webservice,\
 	memcached,rabbitmq -i $(LPCONFIG)
 
+.PHONY: run_codebrowse
 run_codebrowse: compile
 	BRZ_PLUGIN_PATH=brzplugins $(PY) scripts/start-loggerhead.py
 
+.PHONY: start_codebrowse
 start_codebrowse: compile
 	BRZ_PLUGIN_PATH=$(shell pwd)/brzplugins $(PY) scripts/start-loggerhead.py --daemon
 
+.PHONY: stop_codebrowse
 stop_codebrowse:
 	$(PY) scripts/stop-loggerhead.py
 
+.PHONY: run_codehosting
 run_codehosting: build inplace stop
 	bin/run -r librarian,sftp,codebrowse,rabbitmq -i $(LPCONFIG)
 
+.PHONY: start_librarian
 start_librarian: compile
 	bin/start_librarian
 
+.PHONY: stop_librarian
 stop_librarian:
 	bin/killservice librarian
 
 $(VERSION_INFO):
 	scripts/update-version-info.sh
 
+.PHONY: support_files
 support_files: $(API_INDEX) $(VERSION_INFO)
 
 # Intended for use on developer machines
+.PHONY: start
 start: inplace stop support_files initscript-start
 
 # Run as a daemon - hack using nohup until we move back to using zdaemon
@@ -363,42 +398,52 @@ start: inplace stop support_files initscript-start
 # will not work as expected. For use on production servers, where
 # we know we don't need the extra steps in a full "make start"
 # because of how the code is deployed/built.
+.PHONY: initscript-start
 initscript-start:
 	nohup bin/run -i $(LPCONFIG) > ${LPCONFIG}-nohup.out 2>&1 &
 
 # Intended for use on developer machines
+.PHONY: stop
 stop: build initscript-stop
 
 # Kill launchpad last - other services will probably shutdown with it,
 # so killing them after is a race condition. For use on production
 # servers, where we know we don't need the extra steps in a full
 # "make stop" because of how the code is deployed/built.
+.PHONY: initscript-stop
 initscript-stop:
 	bin/killservice librarian launchpad
 
+.PHONY: shutdown
 shutdown: scheduleoutage stop
 	$(RM) +maintenancetime.txt
 
+.PHONY: scheduleoutage
 scheduleoutage:
 	echo Scheduling outage in ${MINS_TO_SHUTDOWN} mins
 	date --iso-8601=minutes -u -d +${MINS_TO_SHUTDOWN}mins > +maintenancetime.txt
 	echo Sleeping ${MINS_TO_SHUTDOWN} mins
 	sleep ${MINS_TO_SHUTDOWN}m
 
+.PHONY: harness
 harness: bin/harness
 	bin/harness
 
+.PHONY: iharness
 iharness: bin/iharness
 	bin/iharness
 
+.PHONY: rebuildfti
 rebuildfti:
 	@echo Rebuilding FTI indexes on launchpad_dev database
 	$(PY) database/schema/fti.py -d launchpad_dev --force
 
+.PHONY: clean_js
 clean_js:
 	$(RM) -r $(JS_BUILD_DIR)
 	$(RM) -r yarn/node_modules
 
+.PHONY: clean_pip
 clean_pip:
 	$(RM) -r build
 	if [ -d $(CONVOY_ROOT) ]; then $(RM) -r $(CONVOY_ROOT) ; fi
@@ -408,11 +453,14 @@ clean_pip:
 	$(RM) .installed.cfg
 
 # Compatibility.
+.PHONY: clean_buildout
 clean_buildout: clean_pip
 
+.PHONY: clean_logs
 clean_logs:
 	$(RM) logs/thread*.request
 
+.PHONY: lxc-clean
 lxc-clean: clean_js clean_pip clean_logs
 	# XXX: BradCrittenden 2012-05-25 bug=1004514:
 	# It is important for parallel tests inside LXC that the
@@ -446,31 +494,38 @@ lxc-clean: clean_js clean_pip clean_logs
 		$(RM) -r /var/tmp/launchpad_mailqueue; \
 	fi
 
+.PHONY: clean
 clean: lxc-clean
 	$(RM) -r $(CODEHOSTING_ROOT)
 
+.PHONY: realclean
 realclean: clean
 	$(RM) TAGS tags
 
+.PHONY: potemplates
 potemplates: launchpad.pot
 
 # Generate launchpad.pot by extracting message ids from the source
 # XXX cjwatson 2017-09-04: This was previously done using i18nextract from
 # z3c.recipe.i18n, but has been broken for some time.  The place to start in
 # putting this together again is probably zope.app.locales.
+.PHONY: launchpad.pot
 launchpad.pot:
 	echo "POT generation not currently supported; help us fix this!" >&2
 	exit 1
 
 # Called by the rocketfuel-setup script. You probably don't want to run this
 # on its own.
+.PHONY: install
 install: reload-apache
 
+.PHONY: copy-certificates
 copy-certificates:
 	mkdir -p /etc/apache2/ssl
 	cp configs/$(LPCONFIG)/launchpad.crt /etc/apache2/ssl/
 	cp configs/$(LPCONFIG)/launchpad.key /etc/apache2/ssl/
 
+.PHONY: copy-apache-config
 copy-apache-config: codehosting-dir
 	# Byte-compile scripts/_pythonpath.py first, otherwise Apache may do
 	# so as root and cause permission problems.
@@ -494,19 +549,23 @@ copy-apache-config: codehosting-dir
 		chown $(SUDO_UID):$(SUDO_GID) /srv/launchpad.test; \
 	fi
 
+.PHONY: enable-apache-launchpad
 enable-apache-launchpad: copy-apache-config copy-certificates
 	[ ! -e /etc/apache2/mods-available/version.load ] || a2enmod version
 	a2ensite local-launchpad
 
+.PHONY: reload-apache
 reload-apache: enable-apache-launchpad
 	service apache2 restart
 
+.PHONY: TAGS
 TAGS: compile
 	# emacs tags
 	ctags -R -e --languages=-JavaScript --python-kinds=-i -f $@.new \
 		$(CURDIR)/lib "$(SITE_PACKAGES)"
 	mv $@.new $@
 
+.PHONY: tags
 tags: compile
 	# vi tags
 	ctags -R --languages=-JavaScript --python-kinds=-i -f $@.new \
@@ -516,16 +575,9 @@ tags: compile
 PYDOCTOR = pydoctor
 PYDOCTOR_OPTIONS =
 
+.PHONY: pydoctor
 pydoctor:
 	$(PYDOCTOR) --make-html --html-output=apidocs --add-package=lib/lp \
 		--add-package=lib/canonical --project-name=Launchpad \
 		--docformat restructuredtext --verbose-about epytext-summary \
 		$(PYDOCTOR_OPTIONS)
-
-.PHONY: apidoc build_eggs build_wheels check check_config		\
-	clean clean_buildout clean_js clean_logs clean_pip compile	\
-	css_combine debug default doc ftest_build ftest_inplace		\
-	hosted_branches jsbuild jsbuild_widget_css launchpad.pot	\
-	pydoctor realclean reload-apache run run-testapp runner schema	\
-	sprite_css sprite_image start stop TAGS tags test_build		\
-	test_inplace $(LP_JS_BUILD)

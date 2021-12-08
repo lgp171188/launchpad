@@ -953,6 +953,40 @@
     <allow interface="lp.code.interfaces.gitref.IGitRefRemoteSet" />
   </securedutility>
 
+  <!-- RevisionStatusReport -->
+
+  <class class="lp.code.model.gitrepository.RevisionStatusReport">
+    <require
+        permission="launchpad.View"
+        interface="lp.code.interfaces.gitrepository.IRevisionStatusReportView
+                   lp.code.interfaces.gitrepository.IRevisionStatusReportEditableAttributes" />
+    <require
+        permission="launchpad.Edit"
+        interface="lp.code.interfaces.gitrepository.IRevisionStatusReportEdit"
+        set_schema="lp.code.interfaces.gitrepository.IRevisionStatusReportEditableAttributes" />
+  </class>
+  <class class="lp.code.model.gitrepository.RevisionStatusArtifact">
+    <require
+        permission="launchpad.View"
+        interface="lp.code.interfaces.gitrepository.IRevisionStatusArtifact" />
+  </class>
+  <class class="lp.code.model.gitrepository.RevisionStatusReportSet">
+    <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusReportSet" />
+  </class>
+  <securedutility
+      class="lp.code.model.gitrepository.RevisionStatusReportSet"
+      provides="lp.code.interfaces.gitrepository.IRevisionStatusReportSet">
+     <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusReportSet" />
+  </securedutility>
+  <class class="lp.code.model.gitrepository.RevisionStatusArtifactSet">
+    <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusArtifactSet" />
+  </class>
+  <securedutility
+      class="lp.code.model.gitrepository.RevisionStatusArtifactSet"
+      provides="lp.code.interfaces.gitrepository.IRevisionStatusArtifactSet">
+     <allow interface="lp.code.interfaces.gitrepository.IRevisionStatusArtifactSet" />
+  </securedutility>
+
   <!-- Git repository access rules -->
 
   <class class="lp.code.model.gitrule.GitRule">

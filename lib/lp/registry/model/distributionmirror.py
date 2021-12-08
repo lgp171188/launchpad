@@ -385,13 +385,14 @@ class DistributionMirror(SQLBase):
         message = template % replacements
         subject = "Launchpad: Verification of %s failed" % self.name
 
-        mirror_admin_address = get_contact_email_addresses(
+        mirror_admin_addresses = get_contact_email_addresses(
             self.distribution.mirror_admin)
-        simple_sendmail(fromaddress, mirror_admin_address, subject, message)
+        for admin_address in mirror_admin_addresses:
+            simple_sendmail(fromaddress, admin_address, subject, message)
 
         if notify_owner:
-            owner_address = get_contact_email_addresses(self.owner)
-            if len(owner_address) > 0:
+            owner_addresses = get_contact_email_addresses(self.owner)
+            for owner_address in owner_addresses:
                 simple_sendmail(fromaddress, owner_address, subject, message)
 
     def newProbeRecord(self, log_file):

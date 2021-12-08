@@ -99,6 +99,8 @@ from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
+    IRevisionStatusArtifact,
+    IRevisionStatusReport,
     user_has_special_git_repository_access,
     )
 from lp.code.interfaces.gitrule import (
@@ -681,6 +683,23 @@ class EditSpecificationByRelatedPeople(AuthorizationBase):
                 user.isDriver(self.obj.target) or
                 user.isOneOf(
                     self.obj, ['owner', 'drafter', 'assignee', 'approver']))
+
+
+class EditRevisionStatusReport(AuthorizationBase):
+    """The owner of a Git repository can edit its status reports."""
+    permission = 'launchpad.Edit'
+    usedfor = IRevisionStatusReport
+
+    def checkAuthenticated(self, user):
+        return user.isOwner(self.obj.git_repository)
+
+
+class EditRevisionStatusArtifact(DelegatedAuthorization):
+    permission = 'launchpad.Edit'
+    usedfor = IRevisionStatusArtifact
+
+    def __init__(self, obj):
+        super().__init__(obj, obj.report, 'launchpad.Edit')
 
 
 class AdminSpecification(AuthorizationBase):

@@ -367,11 +367,14 @@ up on the public mirror listings.
     >>> import email
     >>> from lp.services.mail import stub
     >>> len(stub.test_emails)
-    2
+    3
     >>> stub.test_emails.sort(key=lambda e: sorted(e[1]))  # sort by to_addr
     >>> from_addr, to_addrs, raw_message = stub.test_emails.pop(0)
     >>> print(pretty(sorted(to_addrs)))
-    ['karl@canonical.com', 'mark@example.com']
+    ['karl@canonical.com']
+    >>> from_addr, to_addrs, raw_message = stub.test_emails.pop(0)
+    >>> print(pretty(sorted(to_addrs)))
+    ['mark@example.com']
     >>> from_addr, to_addrs, raw_message = stub.test_emails.pop(0)
     >>> print(pretty(sorted(to_addrs)))
     ['mark@example.com']
@@ -401,10 +404,14 @@ single notification to the distribution's mirror admins.
     >>> valid_mirror.disable(notify_owner=False, log=log)
     >>> transaction.commit()
     >>> len(stub.test_emails)
-    1
-    >>> from_addr, to_addrs, raw_message = stub.test_emails.pop()
+    2
+    >>> stub.test_emails.sort(key=lambda e: sorted(e[1]))  # sort by to_addr
+    >>> from_addr, to_addrs, raw_message = stub.test_emails.pop(0)
     >>> print(pretty(sorted(to_addrs)))
-    ['karl@canonical.com', 'mark@example.com']
+    ['karl@canonical.com']
+    >>> from_addr, to_addrs, raw_message = stub.test_emails.pop(0)
+    >>> print(pretty(sorted(to_addrs)))
+    ['mark@example.com']
 
     Now we delete the MirrorProbeRecord we've just created, to make
     sure this mirror is probed by our prober script.

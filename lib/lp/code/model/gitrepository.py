@@ -6,6 +6,7 @@ __all__ = [
     'GitRepository',
     'GitRepositorySet',
     'parse_git_commits',
+    'RevisionStatusReport',
     ]
 
 from collections import (
@@ -19,6 +20,7 @@ from datetime import (
 import email
 from fnmatch import fnmatch
 from functools import partial
+import io
 from itertools import (
     chain,
     groupby,
@@ -102,6 +104,8 @@ from lp.code.enums import (
     GitPermissionType,
     GitRepositoryStatus,
     GitRepositoryType,
+    RevisionStatusArtifactType,
+    RevisionStatusResult,
     )
 from lp.code.errors import (
     CannotDeleteGitRepository,
@@ -131,6 +135,10 @@ from lp.code.interfaces.gitrepository import (
     GitIdentityMixin,
     IGitRepository,
     IGitRepositorySet,
+    IRevisionStatusArtifactSet,
+    IRevisionStatusReport,
+    IRevisionStatusReportSet,
+    RevisionStatusReportsFeatureDisabled,
     user_has_special_git_repository_access,
     )
 from lp.code.interfaces.gitrule import (
@@ -205,6 +213,7 @@ from lp.services.identity.interfaces.account import (
     )
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
+from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.mail.notificationrecipientset import NotificationRecipientSet
@@ -219,8 +228,9 @@ from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.interfaces.snap import ISnapSet
 
 
-logger = logging.getLogger(__name__)
+REVISION_STATUS_REPORT_ALLOW_CREATE = 'revision_status_report.allow_create'
 
+logger = logging.getLogger(__name__)
 
 object_type_map = {
     "commit": GitObjectType.COMMIT,
@@ -290,6 +300,139 @@ def git_repository_modified(repository, event):
     if event.edited_fields:
         repository.date_last_modified = UTC_NOW
     send_git_repository_modified_notifications(repository, event)
+
+
+@implementer(IRevisionStatusReport)
+class RevisionStatusReport(StormBase):
+    __storm_table__ = 'RevisionStatusReport'
+
+    id = Int(primary=True)
+
+    creator_id = Int(name="creator", allow_none=False)
+    creator = Reference(creator_id, "Person.id")
+
+    title = Unicode(name='name', allow_none=False)
+
+    git_repository_id = Int(name='git_repository', allow_none=False)
+    git_repository = Reference(git_repository_id, 'GitRepository.id')
+
+    commit_sha1 = Unicode(name='commit_sha1', allow_none=False)
+
+    url = Unicode(name='url', allow_none=True)
+
+    result_summary = Unicode(name='description', allow_none=True)
+
+    result = DBEnum(name='result', allow_none=True, enum=RevisionStatusResult)
+
+    date_created = DateTime(
+        name='date_created', tzinfo=pytz.UTC, allow_none=False)
+
+    date_started = DateTime(name='date_started', tzinfo=pytz.UTC,
+                            allow_none=True)
+    date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC,
+                             allow_none=True)
+
+    def __init__(self, git_repository, user, title, commit_sha1,
+                 url, result_summary, result):
+        super().__init__()
+        self.creator = user
+        self.git_repository = git_repository
+        self.title = title
+        self.commit_sha1 = commit_sha1
+        self.url = url
+        self.result_summary = result_summary
+        self.result = result
+        self.date_created = UTC_NOW
+
+    def api_setLog(self, log_data):
+        filename = '%s-%s.txt' % (self.title, self.commit_sha1)
+
+        lfa = getUtility(ILibraryFileAliasSet).create(
+            name=filename, size=len(log_data),
+            file=io.BytesIO(log_data), contentType='text/plain')
+
+        getUtility(IRevisionStatusArtifactSet).new(lfa, self)
+
+    def transitionToNewResult(self, result):
+        if self.result == RevisionStatusResult.WAITING:
+            if result == RevisionStatusResult.RUNNING:
+                self.date_started == UTC_NOW
+        else:
+            self.date_finished = UTC_NOW
+        self.result = result
+
+
+@implementer(IRevisionStatusReportSet)
+class RevisionStatusReportSet:
+
+    def new(self, creator, title, git_repository, commit_sha1,
+            url=None, result_summary=None, result=None,
+            date_started=None, date_finished=None, log=None):
+        """See `IRevisionStatusReportSet`."""
+        store = IStore(RevisionStatusReport)
+        report = RevisionStatusReport(git_repository, creator, title,
+                                      commit_sha1, url, result_summary,
+                                      result)
+        store.add(report)
+        return report
+
+    def getByID(self, id):
+        return IStore(
+            RevisionStatusReport).find(RevisionStatusReport, id=id).one()
+
+    def findByRepository(self, repository):
+        return IStore(RevisionStatusReport).find(
+            RevisionStatusReport,
+            RevisionStatusReport.git_repository == repository)
+
+    def findByCommit(self, repository, commit_sha1):
+        """Returns all `RevisionStatusReport` for a repository and commit."""
+        return IStore(RevisionStatusReport).find(
+            RevisionStatusReport,
+            git_repository=repository,
+            commit_sha1=commit_sha1)
+
+
+class RevisionStatusArtifact(StormBase):
+    __storm_table__ = 'RevisionStatusArtifact'
+
+    id = Int(primary=True)
+
+    library_file_id = Int(name='library_file', allow_none=False)
+    library_file = Reference(library_file_id, 'LibraryFileAlias.id')
+
+    report_id = Int(name='report', allow_none=False)
+    report = Reference(report_id, 'RevisionStatusReport.id')
+
+    artifact_type = DBEnum(name='type', allow_none=False,
+                           enum=RevisionStatusArtifactType)
+
+    def __init__(self, library_file, report):
+        super().__init__()
+        self.library_file = library_file
+        self.report = report
+        self.artifact_type = RevisionStatusArtifactType.LOG
+
+
+@implementer(IRevisionStatusArtifactSet)
+class RevisionStatusArtifactSet:
+
+    def new(self, lfa, report):
+        """See `IRevisionStatusArtifactSet`."""
+        store = IStore(RevisionStatusArtifact)
+        artifact = RevisionStatusArtifact(lfa, report)
+        store.add(artifact)
+        return artifact
+
+    def getById(self, id):
+        return IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            RevisionStatusArtifact.id == id).one()
+
+    def findByReport(self, report):
+        return IStore(RevisionStatusArtifact).find(
+            RevisionStatusArtifact,
+            RevisionStatusArtifact.report == report)
 
 
 @implementer(IGitRepository, IHasOwner, IPrivacy, IInformationType)
@@ -500,6 +643,20 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
 
     def collectGarbage(self):
         getUtility(IGitHostingClient).collectGarbage(self.getInternalPath())
+
+    def newStatusReport(self, user, title, commit_sha1, url=None,
+                        result_summary=None, result=None):
+
+        if not getFeatureFlag(REVISION_STATUS_REPORT_ALLOW_CREATE):
+            raise RevisionStatusReportsFeatureDisabled()
+
+        report = RevisionStatusReport(self, user, title, commit_sha1,
+                                      url, result_summary, result)
+        return report
+
+    def getStatusReports(self, commit_sha1):
+        return getUtility(
+                IRevisionStatusReportSet).findByCommit(self, commit_sha1)
 
     @property
     def namespace(self):
