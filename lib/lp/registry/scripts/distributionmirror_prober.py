@@ -772,9 +772,7 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
         if failure.check(*self.expected_failures) is not None:
             self.logMessage(msg)
         else:
-            # This is not an error we expect from an HTTP server, so we log it
-            # using the cronscript's logger and wait for kiko to complain
-            # about it.
+            # This is not an error we expect from an HTTP server.
             logger = logging.getLogger('distributionmirror-prober')
             logger.error(msg)
         return None
@@ -814,9 +812,7 @@ class MirrorCDImageProberCallbacks(LoggingMixin):
                     msg = ("%s on mirror %s. Check its logfile for more "
                            "details.\n"
                            % (response.getErrorMessage(), self.mirror.name))
-                    # This is not an error we expect from an HTTP server, so
-                    # we log it using the cronscript's logger and wait for
-                    # kiko to complain about it.
+                    # This is not an error we expect from an HTTP server.
                     logger = logging.getLogger('distributionmirror-prober')
                     logger.error(msg)
                 return None

@@ -313,9 +313,9 @@
             permission="launchpad.LanguagePacksAdmin"
             set_attributes="language_pack_base language_pack_delta                                                                                                 language_pack_proposed                                                                                                 language_pack_full_export_requested"/>
 
-        <!-- NB: check with SABDFL before modifying these, there is potential to
-                                 make a huge mess if these get changed and Soyuz has to republish
-                                 shedloads of data. -->
+        <!-- NB: check carefully before modifying these, there is potential to
+             make a huge mess if these get changed and Soyuz has to republish
+             shedloads of data. -->
 
         <require
             permission="launchpad.Edit"
@@ -334,9 +334,9 @@
                 strict_supported_component_dependencies
                 inherit_overrides_from_parents"/>
 
-        <!-- NB: check with SABDFL before modifying these, there is potential to
-                                 make a huge mess if these get changed and Soyuz has to republish
-                                 shedloads of data. -->
+        <!-- NB: check carefully before modifying these, there is potential to
+             make a huge mess if these get changed and Soyuz has to republish
+             shedloads of data. -->
 
         <require
             permission="launchpad.Moderate"
