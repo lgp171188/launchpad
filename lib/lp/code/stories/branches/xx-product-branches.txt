@@ -263,6 +263,7 @@ shows correct singular and plural forms.
 
     >>> setup_code_hosting('gnome-terminal')
     >>> print_portlet('gnome-terminal')
+    See all merge proposals.
     GNOME Terminal has 9 active branches owned by 2 people and 2 teams.
     There were 0 commits in the last month.
 
@@ -273,10 +274,12 @@ shows correct singular and plural forms.
     >>> logout()
     >>> setup_code_hosting('fooix')
     >>> print_portlet('fooix')
+    See all merge proposals.
     Fooix has 2 active branches owned by 2 people.
     There were 0 commits in the last month.
 
     >>> print_portlet('evolution')
+    See all merge proposals.
     Evolution has 3 active branches owned by 1 person and 1 team.
     There were 0 commits in the last month.
 
@@ -285,8 +288,9 @@ shows correct singular and plural forms.
     >>> logout()
     >>> setup_code_hosting('dinky')
     >>> print_portlet('dinky')
-    Dinky has 1 active branch owned by 1 person. There were 0 commits in
-    the last month.
+    See all merge proposals.
+    Dinky has 1 active branch owned by 1 person.
+    There were 0 commits in the last month.
 
 
 Product has Branches, but none initially visible
