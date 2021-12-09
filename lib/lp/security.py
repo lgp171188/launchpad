@@ -1358,10 +1358,10 @@ class AdminDistroSeries(AdminByAdminsTeam):
     so for the moment we are locking down admin and edit on distributions
     and distroseriess to the Launchpad admin team.
 
-    NB: Please consult with SABDFL before modifying this permission because
+    NB: Please consult carefully before modifying this permission because
         changing it could cause the archive to get rearranged, with tons of
         files moved to the new namespace, and mirrors would get very very
-        upset. Then James T would be on your case.
+        upset.
     """
     permission = 'launchpad.Admin'
     usedfor = IDistroSeries
@@ -1372,9 +1372,8 @@ class EditDistroSeriesByReleaseManagerOrDistroOwnersOrAdmins(
     """The owner of the distro series (i.e. the owner of the distribution)
     should be able to modify some of the fields on the IDistroSeries
 
-    NB: there is potential for a great mess if this is not done correctly so
-    please consult with Kiko and MDZ on the mailing list before modifying
-    these permissions.
+    NB: there is potential for a great mess if this is not done correctly,
+    so please consult carefully before modifying these permissions.
     """
     permission = 'launchpad.Edit'
     usedfor = IDistroSeries
