@@ -74,13 +74,18 @@ git push --set-upstream origin master
           <tal:repository-management
             replace="structure repository/@@++repository-management" />
         </div>
-        <p id="active-review-count"
-          tal:define="count context/menu:branches/active_review_count|nothing;
-                      link context/menu:branches/active_reviews|nothing"
-          tal:condition="python: count is not None and count &gt; 0">
-          <tal:project replace="context/display_name"/> has
-          <tal:active-count replace="count"/>
-          <tal:link replace="structure python: link.render().lower()"/>.
+        <p>
+            <span id="active-review-count"
+                tal:define="count context/menu:branches/active_review_count|nothing;
+                            link context/menu:branches/active_reviews|nothing"
+                tal:condition="python: count is not None and count &gt; 0">
+                <tal:project replace="context/display_name"/> has
+                <tal:active-count replace="count"/>
+                <tal:link replace="structure python: link.render().lower()"/>.
+            </span>
+            <span id="all-merges">
+                <a href="+merges">See all merge proposals</a>.
+            </span>
         </p>
       </div>
 
