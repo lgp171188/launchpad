@@ -27,9 +27,12 @@ dbconfig.override(dbuser='buildd_manager', isolation_level='read_committed')
 # Should be removed from callsites verified to not need it.
 set_immediate_mail_delivery(True)
 
-# Allow generous slack for database connections, idle download connections,
-# etc.
-soft_nofile = config.builddmaster.download_connections + 1024
+# ampoule uses five file descriptors per subprocess (i.e.
+# 5 * config.builddmaster.download_connections); we also need at least three
+# per active builder for resuming virtualized builders or making XML-RPC
+# calls, and we also need to allow slack for odds and ends like database
+# connections.
+soft_nofile = 5 * config.builddmaster.download_connections + 2048
 _, hard_nofile = resource.getrlimit(resource.RLIMIT_NOFILE)
 resource.setrlimit(resource.RLIMIT_NOFILE, (soft_nofile, hard_nofile))
 
