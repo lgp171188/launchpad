@@ -47,3 +47,8 @@ else
         mv ${newfile} version-info.py
     fi
 fi
+
+# talisker.config uses version-info.txt instead, so update that too.  We
+# don't need to be particularly careful about file modification times here,
+# since there are no Makefile dependencies on this.
+echo "$revision_id" >version-info.txt
