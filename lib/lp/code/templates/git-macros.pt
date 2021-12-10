@@ -216,7 +216,36 @@
     <tal:commit-message
       replace="structure commit_message/fmt:obfuscate-email/fmt:text-to-html" />
   </dd>
-
+  <dd class="collapsible"
+      tal:define="
+        sha1 python:commit_info['sha1'];
+        status_result python:ref.getCommitStatus(sha1)">
+      <div class="sprite treeCollapsed">
+        <span tal:condition="not:status_result">&#10060;</span>
+        <span tal:condition="status_result">&#9989;</span>
+        <span> Revision Status</span>
+      </div>
+      <table class="listing">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Url</th>
+            <th>Summary</th>
+            <th>Passed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tal:reports repeat="report python: ref.getStatusReports(sha1)">
+            <tr>
+              <td tal:content="report/title"/>
+              <td tal:content="report/url"/>
+              <td tal:content="report/result_summary"/>
+              <td tal:content="python: ref.getIndividualReportStatus(report)"/>
+            </tr>
+          </tal:reports>
+        </tbody>
+      </table>
+  </dd>
   <div tal:define="merge_proposal python:commit_info.get('merge_proposal')"
        tal:condition="merge_proposal">
     <dd class="subordinate commit-comment"

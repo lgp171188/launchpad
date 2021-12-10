@@ -149,6 +149,15 @@ class IGitRefView(IHasMergeProposals, IHasRecipes, IPrivacy, IInformationType):
     def getCodebrowseUrlForRevision(commit):
         """Construct a browsing URL for this Git at the given commit"""
 
+    def getStatusReports(commit):
+        """Get status reports for this repository at the given commit"""
+
+    def getCommitStatus(sha1):
+        """Help to show red or green icon at the top of the commit."""
+
+    def getIndividualReportStatus(report):
+        """Help to show status for each report."""
+
     information_type = Attribute(
         "The type of information contained in the repository containing this "
         "reference.")

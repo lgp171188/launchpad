@@ -43,6 +43,7 @@ from lp.code.enums import (
     BranchMergeProposalStatus,
     GitObjectType,
     GitRepositoryType,
+    RevisionStatusResult,
     )
 from lp.code.errors import (
     BranchMergeProposalExists,
@@ -178,6 +179,23 @@ class GitRefMixin:
     def getCodebrowseUrlForRevision(self, commit):
         """See `IGitRef`."""
         return self.repository.getCodebrowseUrlForRevision(commit)
+
+    def getStatusReports(self, commit):
+        return self.repository.getStatusReports(commit)
+
+    def getCommitStatus(self, sha1):
+        """Help to show red or green icon at the top of the commit."""
+        reports = self.repository.getStatusReports(sha1)
+        for report in reports:
+            if report.result != RevisionStatusResult.SUCCEEDED:
+                return False
+        return True
+
+    def getIndividualReportStatus(self, report):
+        """Help to show status for each report."""
+        if report.result == RevisionStatusResult.SUCCEEDED:
+            return True
+        return False
 
     @property
     def information_type(self):
