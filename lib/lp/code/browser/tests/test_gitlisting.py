@@ -346,6 +346,22 @@ class TestProductGitListingView(TestTargetGitListingView,
         view = create_initialized_view(self.target, '+git')
         self.assertIsNotNone(find_tag_by_id(view(), 'active-review-count'))
 
+    def test_all_merges_link(self):
+        main_repo = self.factory.makeGitRepository(
+            owner=self.owner, target=self.target, name="foo")
+        git_refs = self.factory.makeGitRefs(
+            main_repo,
+            paths=["refs/heads/master", "refs/heads/1.0", "refs/tags/1.1"])
+
+        with admin_logged_in():
+            self.setDefaultRepository(target=self.target, repository=main_repo)
+
+        self.factory.makeBranchMergeProposalForGit(
+            target_ref=git_refs[0],
+            set_state=BranchMergeProposalStatus.NEEDS_REVIEW)
+        view = create_initialized_view(self.target, '+git')
+        self.assertIsNotNone(find_tag_by_id(view(), 'all-merges'))
+
     def test_personal_git_instructions_not_present(self):
         with person_logged_in(self.owner):
             view = create_initialized_view(
