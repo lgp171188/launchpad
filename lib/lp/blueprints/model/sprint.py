@@ -98,7 +98,7 @@ class Sprint(StormBase, HasDriversMixin, HasSpecificationsMixin):
     def __init__(self, owner, name, title, time_zone, time_starts, time_ends,
                  summary, address=None, driver=None, home_page=None,
                  mugshot=None, logo=None, icon=None, is_physical=True):
-        super(Sprint, self).__init__()
+        super().__init__()
         self.owner = owner
         self.name = name
         self.title = title

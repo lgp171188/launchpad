@@ -457,7 +457,7 @@ class SprintTopicSetView(HasSpecificationsView, LaunchpadView):
                 action = 'Declined'
 
         selected_specs = form['speclink']
-        if isinstance(selected_specs, six.text_type):
+        if isinstance(selected_specs, str):
             # only a single item was selected, but we want to deal with a
             # list for the general case, so convert it to a list
             selected_specs = [selected_specs]
@@ -534,7 +534,7 @@ class SprintMeetingExportView(LaunchpadView):
     def render(self):
         self.request.response.setHeader(
             'content-type', 'application/xml;charset=utf-8')
-        body = super(SprintMeetingExportView, self).render()
+        body = super().render()
         return body.encode('utf-8')
 
 

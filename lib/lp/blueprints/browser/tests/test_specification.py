@@ -507,7 +507,7 @@ class TestNewSpecificationInformationType(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestNewSpecificationInformationType, self).setUp()
+        super().setUp()
         it_field = soupmatchers.Tag(
             'it-field', True, attrs=dict(name='field.information_type'))
         self.match_it = soupmatchers.HTMLContains(it_field)

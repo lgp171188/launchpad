@@ -301,7 +301,7 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSpecificationWorkItems, self).setUp()
+        super().setUp()
         self.wi_header = self.factory.makeMilestone(
             name='none-milestone-as-header')
 

@@ -33,7 +33,7 @@ class PersonUpcomingWorkView(LaunchpadView):
     DAYS = 180
 
     def initialize(self):
-        super(PersonUpcomingWorkView, self).initialize()
+        super().initialize()
         self.workitem_counts = {}
         self.bugtask_counts = {}
         self.milestones_per_date = {}
@@ -79,7 +79,7 @@ class PersonUpcomingWorkView(LaunchpadView):
         return sorted(result.items(), key=itemgetter(0))
 
 
-class WorkItemContainer(object):
+class WorkItemContainer:
     """A container of work items, assigned to a person (or a team's
     participatns), whose milestone is due on a certain date.
     """
@@ -140,7 +140,7 @@ class SpecWorkItemContainer(WorkItemContainer):
     """A container of SpecificationWorkItems wrapped with GenericWorkItem."""
 
     def __init__(self, spec):
-        super(SpecWorkItemContainer, self).__init__()
+        super().__init__()
         self.spec = spec
         self.priority = spec.priority
         self.target = spec.target

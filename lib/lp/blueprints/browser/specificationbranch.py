@@ -38,7 +38,7 @@ class SpecificationBranchURL:
 
     @property
     def path(self):
-        return u'+branch/%s' % self.branch.unique_name[1:]
+        return '+branch/%s' % self.branch.unique_name[1:]
 
 
 class SpecificationBranchStatusView(LaunchpadEditFormView):
@@ -50,7 +50,7 @@ class SpecificationBranchStatusView(LaunchpadEditFormView):
 
     def initialize(self):
         self.specification = self.context.specification
-        super(SpecificationBranchStatusView, self).initialize()
+        super().initialize()
 
     @property
     def next_url(self):
