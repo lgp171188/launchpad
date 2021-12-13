@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from fixtures import FakeLogger
-import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -127,7 +126,7 @@ class TestAssignments(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestAssignments, self).setUp()
+        super().setUp()
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.
         self.useFixture(FakeLogger())
@@ -151,7 +150,7 @@ class TestHasSpecificationsTemplates(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestHasSpecificationsTemplates, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         login_person(self.user)
 
@@ -249,7 +248,7 @@ class TestSpecificationsRobots(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSpecificationsRobots, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.naked_product = removeSecurityProxy(self.product)
         # Use a FakeLogger fixture to prevent Memcached warnings to be
@@ -306,7 +305,7 @@ class SpecificationSetViewTestCase(TestCaseWithFactory):
         target_widget = view.widgets['scope'].target_widget
         self.assertIsNot(
             None, content.find(True, id=target_widget.show_widget_id))
-        text = six.text_type(content)
+        text = str(content)
         picker_vocab = 'DistributionOrProductOrProjectGroup'
         self.assertIn(picker_vocab, text)
         focus_script = "setFocusByName('field.search_text')"

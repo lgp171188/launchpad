@@ -10,7 +10,7 @@ class TestHasSpecificationsBreadcrumbOnBlueprintsFacet(
     """Test Breadcrumbs for IHasSpecifications on the blueprints vhost."""
 
     def setUp(self):
-        super(TestHasSpecificationsBreadcrumbOnBlueprintsFacet, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.person_specs_url = canonical_url(
             self.person, rootsite='blueprints')
@@ -38,7 +38,7 @@ class TestSpecificationBreadcrumb(BaseBreadcrumbTestCase):
     """Test breadcrumbs for an `ISpecification`."""
 
     def setUp(self):
-        super(TestSpecificationBreadcrumb, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct(
             name='crumb-tester', displayname="Crumb Tester")
         self.specification = self.factory.makeSpecification(

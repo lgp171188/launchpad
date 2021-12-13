@@ -47,7 +47,7 @@ class SpecificationBranch(StormBase):
     registrant = Reference(registrant_id, 'Person.id')
 
     def __init__(self, specification, branch, registrant):
-        super(SpecificationBranch, self).__init__()
+        super().__init__()
         self.specification = specification
         self.branch = branch
         self.registrant = registrant

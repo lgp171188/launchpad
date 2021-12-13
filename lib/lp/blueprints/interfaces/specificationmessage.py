@@ -20,9 +20,9 @@ class ISpecificationMessage(Interface):
     """A link between a specification and a message."""
 
     specification = Reference(schema=ISpecification,
-        title=u"The specification.")
-    message = Reference(schema=IMessage, title=u"The message.")
-    visible = Bool(title=u"Is this message visible?", required=False,
+        title="The specification.")
+    message = Reference(schema=IMessage, title="The message.")
+    visible = Bool(title="Is this message visible?", required=False,
         default=True)
 
 

@@ -19,4 +19,4 @@ class TargetAlreadyHasSpecification(Exception):
     def __init__(self, target, name):
         msg = "There is already a blueprint named %s for %s." % (
                 name, target.displayname)
-        super(TargetAlreadyHasSpecification, self).__init__(msg)
+        super().__init__(msg)

@@ -33,7 +33,7 @@ class TestAssignments(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestAssignments, self).setUp()
+        super().setUp()
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.
         self.useFixture(FakeLogger())
