@@ -19,7 +19,7 @@ class TestBugTargetPatchCountBase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBugTargetPatchCountBase, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
         self.product = self.factory.makeProduct()
 

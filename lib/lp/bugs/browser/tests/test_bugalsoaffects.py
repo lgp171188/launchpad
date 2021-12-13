@@ -19,7 +19,7 @@ class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugAlsoAffectsDistribution, self).setUp()
+        super().setUp()
         self.distribution = self.factory.makeDistribution(displayname='Distro')
         removeSecurityProxy(self.distribution).official_malone = True
 
@@ -57,7 +57,7 @@ class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
             bug.addTask(bug.owner, dsp1)
         dsp2 = self.factory.makeDSPCache(
             distroseries=distroseries, sourcepackagename='snarf')
-        with FeatureFixture({u"disclosure.dsp_picker.enabled": u"on"}):
+        with FeatureFixture({"disclosure.dsp_picker.enabled": "on"}):
             browser = self.openBugPage(bug)
             browser.getLink(url='+distrotask').click()
             browser.getControl('Distribution').value = [self.distribution.name]
@@ -81,8 +81,8 @@ class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
         browser.getControl('Source Package Name').value = 'does-not-exist'
         browser.getControl('Continue').click()
         expected = [
-            u'There is 1 error.',
-            u'There is no package in %s named "does-not-exist".' % (
+            'There is 1 error.',
+            'There is no package in %s named "does-not-exist".' % (
                 self.distribution.displayname)]
         self.assertEqual(expected, get_feedback_messages(browser.contents))
 
@@ -95,8 +95,8 @@ class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
         browser.getControl('Source Package Name').value = 'does-not-exist'
         browser.getControl('Continue').click()
         expected = [
-            u'There is 1 error.',
-            u'There is no package in %s named "does-not-exist". Launchpad '
+            'There is 1 error.',
+            'There is no package in %s named "does-not-exist". Launchpad '
             'does not track binary package names in %s.' % (
                 self.distribution.displayname,
                 self.distribution.displayname)]

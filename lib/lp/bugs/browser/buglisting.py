@@ -315,7 +315,7 @@ class BugTaskListingView(LaunchpadView):
 
     def render(self):
         """Make rendering this template-less view not crash."""
-        return u""
+        return ""
 
 
 class BugsInfoMixin:
@@ -1031,7 +1031,7 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
         if self.request.get('QUERY_STRING', '') == '':
             # There is no query in this request, so it's okay for this page to
             # have its feed links.
-            return super(BugTaskSearchListingView, self).feed_links
+            return super().feed_links
         else:
             # The query changes the results so that they would not match the
             # feed.  In this case, suppress the feed links.
@@ -1139,7 +1139,7 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
         if 'batch_request' in query_params:
             return self.bugtask_table_template
         else:
-            return super(BugTaskSearchListingView, self).template
+            return super().template
 
     def validate_search_params(self):
         """Validate the params passed for the search.
@@ -1708,7 +1708,7 @@ class TextualBugTaskSearchListingView(BugTaskSearchListingView):
         search_params = self.buildSearchParams()
         search_params.setTarget(self.context)
 
-        return u"".join("%d\n" % bug_id for bug_id in
+        return "".join("%d\n" % bug_id for bug_id in
             getUtility(IBugTaskSet).searchBugIds(search_params))
 
 

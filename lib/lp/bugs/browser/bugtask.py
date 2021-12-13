@@ -548,7 +548,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
         # after unsubscribing from a private bug, because rendering the
         # bug page would raise Unauthorized errors!
         if self._redirecting_to_bug_list:
-            return u''
+            return ''
         else:
             return LaunchpadView.render(self)
 
@@ -1126,7 +1126,7 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
         # Initialize user_is_subscribed, if it hasn't already been set.
         if self.user_is_subscribed is None:
             self.user_is_subscribed = self.context.bug.isSubscribed(self.user)
-        super(BugTaskEditView, self).initialize()
+        super().initialize()
 
     page_title = 'Edit status'
 
@@ -1236,7 +1236,7 @@ class BugTaskEditView(LaunchpadEditFormView, BugTaskBugWatchMixin,
 
         See `LaunchpadFormView`.
         """
-        super(BugTaskEditView, self).setUpFields()
+        super().setUpFields()
         read_only_field_names = self._getReadOnlyFieldNames()
 
         if 'target' in self.editable_field_names:
@@ -2051,7 +2051,7 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
         '../templates/bugtask-tasks-and-nominations-table-row.pt')
 
     def __init__(self, context, request):
-        super(BugTaskTableRowView, self).__init__(context, request)
+        super().__init__(context, request)
         self.milestone_source = BugTaskMilestoneVocabulary
 
     @cachedproperty
@@ -2059,7 +2059,7 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
         return IWebServiceClientRequest(self.request)
 
     def initialize(self):
-        super(BugTaskTableRowView, self).initialize()
+        super().initialize()
         link = canonical_url(self.context)
         task_link = edit_link = canonical_url(
                                     self.context, view_name='+editstatus')
@@ -2564,7 +2564,7 @@ class BugTaskBreadcrumb(Breadcrumb):
     """Breadcrumb for an `IBugTask`."""
 
     def __init__(self, context):
-        super(BugTaskBreadcrumb, self).__init__(context)
+        super().__init__(context)
         # If the user does not have permission to view the bug for
         # whatever reason, raise ComponentLookupError.
         try:

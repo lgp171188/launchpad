@@ -48,7 +48,7 @@ class GitLab(ExternalBugTracker):
             raise BadGitLabURL(baseurl)
         path = "/api/v4/projects/%s" % quote(path[:-len("/issues")], safe="")
         baseurl = urlunsplit(("https", host, path, query, fragment))
-        super(GitLab, self).__init__(baseurl)
+        super().__init__(baseurl)
         self.cached_bugs = {}
 
     @property
@@ -145,7 +145,7 @@ class GitLab(ExternalBugTracker):
         token = self.credentials["token"]
         if token is not None:
             headers["Private-Token"] = token
-        return super(GitLab, self).makeRequest(method, url, headers=headers)
+        return super().makeRequest(method, url, headers=headers)
 
     def _getCollection(self, base_page, last_accessed=None):
         """Yield each item from a batched remote collection.
@@ -164,8 +164,7 @@ class GitLab(ExternalBugTracker):
                     return
                 else:
                     raise
-            for item in response.json():
-                yield item
+            yield from response.json()
             if "next" in response.links:
                 page = response.links["next"]["url"]
             else:

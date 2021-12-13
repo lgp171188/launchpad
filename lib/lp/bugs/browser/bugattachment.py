@@ -113,7 +113,7 @@ class BugAttachmentURL:
     @property
     def path(self):
         """Return the path component of the URL."""
-        return u"+attachment/%d" % self.context.id
+        return "+attachment/%d" % self.context.id
 
 
 class BugAttachmentEditView(LaunchpadFormView, BugAttachmentContentCheck):
@@ -207,7 +207,7 @@ class BugAttachmentPatchConfirmationView(LaunchpadFormView):
             canonical_url(ICanonicalUrlData(context).inside))
 
     def initialize(self):
-        super(BugAttachmentPatchConfirmationView, self).initialize()
+        super().initialize()
         self.widgets['patch'].setRenderedValue(self.is_patch)
 
     @property

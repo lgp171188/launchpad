@@ -24,7 +24,7 @@ class TestBugContextMenu(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugContextMenu, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         # We need to put the Bug and default BugTask into the LaunchBag
         # because BugContextMenu relies on the LaunchBag to populate its

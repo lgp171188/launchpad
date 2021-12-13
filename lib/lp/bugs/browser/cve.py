@@ -134,7 +134,7 @@ class CveUnlinkView(CveLinkView):
 class CveSetView(LaunchpadView):
 
     def __init__(self, context, request):
-        super(CveSetView, self).__init__(context, request)
+        super().__init__(context, request)
         self.notices = []
         self.results = None
         self.text = self.request.form.get('text', None)

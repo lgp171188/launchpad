@@ -18,7 +18,7 @@ class TestProductBugConfigurationView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductBugConfigurationView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name='boing-owner')
         self.bug_supervisor = self.factory.makePerson(
             name='boing-bug-supervisor')

@@ -25,7 +25,7 @@ class TestBugWatchEditView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBugWatchEditView, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
 
         login_person(self.person)

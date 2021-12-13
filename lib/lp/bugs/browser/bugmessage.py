@@ -54,13 +54,13 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
         # Ensure either a comment or filecontent was provide, but only
         # if no errors have already been noted.
         if len(self.errors) == 0:
-            comment = data.get('comment') or u''
+            comment = data.get('comment') or ''
             filecontent = data.get('filecontent', None)
             if not comment.strip() and not filecontent:
                 self.addError("Either a comment or attachment "
                               "must be provided.")
 
-    @action(u"Post Comment", name='save')
+    @action("Post Comment", name='save')
     def save_action(self, action, data):
         """Add the comment and/or attachment."""
 

@@ -201,8 +201,7 @@ class FilteredSearchListingViewMixin(RelevantMilestonesMixin,
         context = context or self.context
         extra_params = extra_params or {}
         extra_params.update(self.getExtraParams(context))
-        return super(FilteredSearchListingViewMixin, self).searchUnbatched(
-            searchtext, context, extra_params)
+        return super().searchUnbatched(searchtext, context, extra_params)
 
 
 class PersonAssignedBugTaskSearchListingView(FilteredSearchListingViewMixin):

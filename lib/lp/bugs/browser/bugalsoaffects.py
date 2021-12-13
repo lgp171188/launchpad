@@ -14,7 +14,6 @@ from lazr.enum import (
     Item,
     )
 from lazr.lifecycle.event import ObjectCreatedEvent
-import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.event import notify
@@ -126,7 +125,7 @@ class ChooseProductStep(LinkPackgingMixin, AlsoAffectsStep):
         '../templates/bugtask-choose-affected-product.pt')
 
     custom_widget_product = SearchForUpstreamPopupWidget
-    label = u"Record as affecting another project"
+    label = "Record as affecting another project"
     step_name = "choose_product"
 
     @property
@@ -138,7 +137,7 @@ class ChooseProductStep(LinkPackgingMixin, AlsoAffectsStep):
         return names
 
     def initialize(self):
-        super(ChooseProductStep, self).initialize()
+        super().initialize()
         if (self.widgets['product'].hasInput() or
             not IDistributionSourcePackage.providedBy(self.context.target)):
             return
@@ -235,12 +234,12 @@ class BugTaskCreationStep(AlsoAffectsStep):
     task_added = None
 
     def __init__(self, context, request):
-        super(BugTaskCreationStep, self).__init__(context, request)
+        super().__init__(context, request)
         self.notifications = []
         self._field_names = ['bug_url'] + list(self.target_field_names)
 
     def setUpWidgets(self):
-        super(BugTaskCreationStep, self).setUpWidgets()
+        super().setUpWidgets()
         self.target_widgets = [
             self.widgets[field_name]
             for field_name in self.field_names
@@ -410,7 +409,7 @@ class DistroBugTaskCreationStep(BugTaskCreationStep):
                 confirm_button).escapedtext)
             return None
         # Create the task.
-        return super(DistroBugTaskCreationStep, self).main_action(data)
+        return super().main_action(data)
 
     def validateStep(self, data):
         """Check that
@@ -462,7 +461,7 @@ class DistroBugTaskCreationStep(BugTaskCreationStep):
                 else:
                     self.setFieldError('distribution', e.args[0])
 
-        super(DistroBugTaskCreationStep, self).validateStep(data)
+        super().validateStep(data)
 
     def render(self):
         for bugtask in IBug(self.context).bugtasks:
@@ -475,7 +474,7 @@ class DistroBugTaskCreationStep(BugTaskCreationStep):
                 self.widgets['sourcepackagename'].setRenderedValue(
                     bugtask.sourcepackagename.name)
                 break
-        return super(DistroBugTaskCreationStep, self).render()
+        return super().render()
 
 
 class LinkUpstreamHowOptions(EnumeratedType):
@@ -560,7 +559,7 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
 
     label = "Confirm project"
     target_field_names = ('product', 'add_packaging')
-    main_action_label = u'Add to Bug Report'
+    main_action_label = 'Add to Bug Report'
     schema = IAddBugTaskWithUpstreamLinkForm
 
     custom_widget_link_upstream_how = CustomWidgetFactory(
@@ -573,7 +572,7 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
     @property
     def field_names(self):
         return ['link_upstream_how', 'upstream_email_address_done'] + (
-            super(ProductBugTaskCreationStep, self).field_names)
+            super().field_names)
 
     def validate_widgets(self, data, names=None):
         # The form is essentially just a radio group, with zero or one
@@ -604,7 +603,7 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
 
             # Don't request validation for text widgets that are not
             # related to the current radio selection.
-            for option, name in six.iteritems(link_upstream_options):
+            for option, name in link_upstream_options.items():
                 if link_upstream_how != option:
                     names.discard(name)
                 elif self.widgets[name].hasValidInput():
@@ -618,10 +617,9 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
         else:
             # Don't validate these widgets when we don't yet know how
             # we intend to link upstream.
-            names.difference_update(six.itervalues(link_upstream_options))
+            names.difference_update(link_upstream_options.values())
 
-        return super(ProductBugTaskCreationStep,
-                     self).validate_widgets(data, names)
+        return super().validate_widgets(data, names)
 
     def getTarget(self, data=None):
         if data is not None:
@@ -677,7 +675,7 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
                     sourcepackagename=self.context.target.sourcepackagename,
                     distroseries=series, packaging=PackagingType.PRIME,
                     owner=self.user)
-        return super(ProductBugTaskCreationStep, self).main_action(data)
+        return super().main_action(data)
 
     @property
     def upstream_bugtracker_links(self):
@@ -694,7 +692,7 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
 
         bug = self.context.bug
         title = bug.title
-        description = u"Originally reported at:\n  %s\n\n%s" % (
+        description = "Originally reported at:\n  %s\n\n%s" % (
             canonical_url(bug), bug.description)
         return target.bugtracker.getBugFilingAndSearchLinks(
             target.remote_product, title, description)
@@ -711,7 +709,7 @@ class BugTrackerCreationStep(AlsoAffectsStep):
     custom_widget_bug_url = CustomWidgetFactory(
         StrippedTextWidget, displayWidth=62)
     step_name = "bugtracker_creation"
-    main_action_label = u'Register Bug Tracker and Add to Bug Report'
+    main_action_label = 'Register Bug Tracker and Add to Bug Report'
     _next_step = None
 
     def main_action(self, data):
@@ -821,8 +819,7 @@ class BugAlsoAffectsProductWithProductCreationView(LinkPackgingMixin,
         This extra field is setup only if there is one or more products using
         that bugtracker.
         """
-        super(
-            BugAlsoAffectsProductWithProductCreationView, self).setUpFields()
+        super().setUpFields()
         self._loadProductsUsingBugTracker()
         if self.existing_products is None or len(self.existing_products) < 1:
             # No need to setup any extra fields.

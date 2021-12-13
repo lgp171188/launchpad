@@ -24,7 +24,7 @@ class TestMantisBugBatchParser(TestCase):
     """Test the MantisBugBatchParser class."""
 
     def setUp(self):
-        super(TestMantisBugBatchParser, self).setUp()
+        super().setUp()
         self.logger = BufferLogger()
 
     def test_empty(self):

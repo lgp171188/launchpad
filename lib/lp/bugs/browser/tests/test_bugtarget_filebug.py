@@ -69,7 +69,7 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTargetFileBugConfirmationMessage, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
         self.product = self.factory.makeProduct()
 
@@ -79,17 +79,17 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
         product = self.factory.makeProduct()
         view = create_initialized_view(product, name='+filebug')
         self.assertEqual(
-            u"Thank you for your bug report.",
+            "Thank you for your bug report.",
             view.getAcknowledgementMessage(product))
 
         # If a product contains a customized bug filing confirmation
         # message, it is retrieved by
         # FilebugViewBase.bug_reported_acknowledgement
         product.bug_reported_acknowledgement = (
-            u"We really appreciate your bug report")
+            "We really appreciate your bug report")
         view = create_initialized_view(product, name='+filebug')
         self.assertEqual(
-            u"We really appreciate your bug report",
+            "We really appreciate your bug report",
             view.getAcknowledgementMessage(product))
 
         # If the custom message is set to a string containing only white,
@@ -97,7 +97,7 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
         product.bug_reported_acknowledgement = ' \t'
         view = create_initialized_view(product, name='+filebug')
         self.assertEqual(
-            u"Thank you for your bug report.",
+            "Thank you for your bug report.",
             view.getAcknowledgementMessage(product))
 
     def test_getAcknowledgementMessage_product_in_project_group(self):
@@ -111,7 +111,7 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
         # default message is used.
         view = create_initialized_view(product, name='+filebug')
         self.assertEqual(
-            u"Thank you for your bug report.",
+            "Thank you for your bug report.",
             view.getAcknowledgementMessage(product))
 
         # If the project group has a customized message, it is used.
@@ -119,16 +119,16 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
             "Thanks for filing a bug for one of our many products.")
         view = create_initialized_view(product, name='+filebug')
         self.assertEqual(
-            u"Thanks for filing a bug for one of our many products.",
+            "Thanks for filing a bug for one of our many products.",
             view.getAcknowledgementMessage(product))
 
         # But if the product itself has a customized message too, this
         # message is used instead of the project group's message.
         product.bug_reported_acknowledgement = (
-            u"Thanks for filing a bug for this very special product.")
+            "Thanks for filing a bug for this very special product.")
         view = create_initialized_view(product, name='+filebug')
         self.assertEqual(
-            u"Thanks for filing a bug for this very special product.",
+            "Thanks for filing a bug for this very special product.",
             view.getAcknowledgementMessage(product))
 
     def test_getAcknowledgementMessage_product_series_in_project_group(self):
@@ -143,24 +143,24 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
         # default message is used.
         view = create_initialized_view(product, name='+filebug')
         self.assertEqual(
-            u"Thank you for your bug report.",
+            "Thank you for your bug report.",
             view.getAcknowledgementMessage(product_series))
 
         # If the project group has a customized message, it is used.
         project_group.bug_reported_acknowledgement = (
-            u"Thanks for filing a bug for one of our many product_seriess.")
+            "Thanks for filing a bug for one of our many product_seriess.")
         view = create_initialized_view(product, name='+filebug')
         self.assertEqual(
-            u"Thanks for filing a bug for one of our many product_seriess.",
+            "Thanks for filing a bug for one of our many product_seriess.",
             view.getAcknowledgementMessage(product_series))
 
         # But if the product has a customized message too, this
         # message is used instead of the project group's message.
         product.bug_reported_acknowledgement = (
-            u"Thanks for filing a bug for this very special product.")
+            "Thanks for filing a bug for this very special product.")
         view = create_initialized_view(product, name='+filebug')
         self.assertEqual(
-            u"Thanks for filing a bug for this very special product.",
+            "Thanks for filing a bug for this very special product.",
             view.getAcknowledgementMessage(product_series))
 
     def test_getAcknowledgementMessage_distribution(self):
@@ -169,17 +169,17 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         view = create_initialized_view(distribution, name='+filebug')
         self.assertEqual(
-            u"Thank you for your bug report.",
+            "Thank you for your bug report.",
             view.getAcknowledgementMessage(distribution))
 
         # If a distribution contains a customized bug filing confirmation
         # message, it is retrieved by
         # FilebugViewBase.bug_reported_acknowledgement
         distribution.bug_reported_acknowledgement = (
-            u"We really appreciate your bug report")
+            "We really appreciate your bug report")
         view = create_initialized_view(distribution, name='+filebug')
         self.assertEqual(
-            u"We really appreciate your bug report",
+            "We really appreciate your bug report",
             view.getAcknowledgementMessage(distribution))
 
     def test_getAcknowledgementMessage_distributionsourcepackage(self):
@@ -188,16 +188,16 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage()
         view = create_initialized_view(dsp, name='+filebug')
         self.assertEqual(
-            u"Thank you for your bug report.",
+            "Thank you for your bug report.",
             view.getAcknowledgementMessage(dsp))
 
         # If a custom message is defined for a DSP, it is used instead of
         # the default message.
         dsp.bug_reported_acknowledgement = (
-            u"We really appreciate your bug report")
+            "We really appreciate your bug report")
         view = create_initialized_view(dsp, name='+filebug')
         self.assertEqual(
-            u"We really appreciate your bug report",
+            "We really appreciate your bug report",
             view.getAcknowledgementMessage(dsp))
 
     def test_getAcknowledgementMessage_dsp_custom_distro_message(self):
@@ -205,19 +205,19 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
         # is used for bugs filed on DistributionSourcePackages.
         dsp = self.factory.makeDistributionSourcePackage()
         dsp.distribution.bug_reported_acknowledgement = (
-            u"Thank you for filing a bug in our distribution")
+            "Thank you for filing a bug in our distribution")
         view = create_initialized_view(dsp, name='+filebug')
         self.assertEqual(
-            u"Thank you for filing a bug in our distribution",
+            "Thank you for filing a bug in our distribution",
             view.getAcknowledgementMessage(dsp))
 
         # Bug if a custom message is defined for a DSP, it is used instead of
         # the message for the distribution.
         dsp.bug_reported_acknowledgement = (
-            u"Thank you for filing a bug for this DSP")
+            "Thank you for filing a bug for this DSP")
         view = create_initialized_view(dsp, name='+filebug')
         self.assertEqual(
-            u"Thank you for filing a bug for this DSP",
+            "Thank you for filing a bug for this DSP",
             view.getAcknowledgementMessage(dsp))
 
     def test_bug_filed_acknowlegdgement_notification(self):
@@ -239,11 +239,11 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
 
         # This message can be customized.
         product.bug_reported_acknowledgement = (
-            u"We really appreciate your bug report")
+            "We really appreciate your bug report")
         view = create_initialized_view(product, name='+filebug')
         view.submit_bug_action.success(form_data)
         self.assertEqual(
-            [u'<p class="last">We really appreciate your bug report</p>'],
+            ['<p class="last">We really appreciate your bug report</p>'],
             [notification.message
              for notification in view.request.response.notifications])
 
@@ -303,7 +303,7 @@ class FileBugViewMixin:
             pass
 
     def setUp(self):
-        super(FileBugViewMixin, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         transaction.commit()
         login_person(self.target.owner)
@@ -369,7 +369,7 @@ class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
         product.bug_reporting_guidelines = "Include bug details"
         view = create_initialized_view(product, '+filebug')
         expected_guidelines = [{
-            "source": product.displayname, "content": u"Include bug details",
+            "source": product.displayname, "content": "Include bug details",
             }]
         self.assertEqual(expected_guidelines, view.bug_reporting_guidelines)
 
@@ -757,7 +757,7 @@ class FileBugViewBaseExtraDataTestCase(FileBugViewMixin, TestCaseWithFactory):
         view.publishTraverse(view.request, token)
         view.validate(self.get_form())
         expected = [
-            u'The description and the additional information is too long. '
+            'The description and the additional information is too long. '
             'If you have lots of text to add, attach a file to the bug '
             'instead.']
         self.assertContentEqual(expected, view.errors)
@@ -827,13 +827,11 @@ class TestFileBugSourcePackage(WithScenarios, TestCaseWithFactory):
 
     scenarios = [
         ("bspn_picker", {"features": {}}),
-        ("dsp_picker", {
-            "features": {u"disclosure.dsp_picker.enabled": u"on"},
-            }),
+        ("dsp_picker", {"features": {"disclosure.dsp_picker.enabled": "on"}}),
         ]
 
     def setUp(self):
-        super(TestFileBugSourcePackage, self).setUp()
+        super().setUp()
         if self.features:
             self.useFixture(FeatureFixture(self.features))
 
@@ -912,7 +910,7 @@ class ProjectGroupFileBugGuidedViewTestCase(TestCaseWithFactory):
 
     def test_redirect_to_project(self):
         # The view redirects to the select sub project.
-        view = self.makeProjectGroupFileBugView('fnord', 'A bug', u'is os')
+        view = self.makeProjectGroupFileBugView('fnord', 'A bug', 'is os')
         response = view.request.response
         self.assertEqual(302, response.getStatus())
         self.assertEqual(
@@ -923,7 +921,7 @@ class ProjectGroupFileBugGuidedViewTestCase(TestCaseWithFactory):
 
     def test_redirect_to_project_unicode_summary(self):
         # The summary is reencoded properly when it contains unicode.
-        view = self.makeProjectGroupFileBugView('fnord', u'caf\xe9', '')
+        view = self.makeProjectGroupFileBugView('fnord', 'caf\xe9', '')
         response = view.request.response
         self.assertEqual(
             'http://bugs.launchpad.test/fnord/+filebug?'

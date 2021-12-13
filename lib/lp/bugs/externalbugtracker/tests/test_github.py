@@ -65,7 +65,7 @@ class TestGitHubRateLimit(TestCase):
     layer = ZopelessLayer
 
     def setUp(self):
-        super(TestGitHubRateLimit, self).setUp()
+        super().setUp()
         self.rate_limit = getUtility(IGitHubRateLimit)
         self.addCleanup(self.rate_limit.clearCache)
 
@@ -131,7 +131,7 @@ class TestGitHub(TestCase):
     layer = ZopelessLayer
 
     def setUp(self):
-        super(TestGitHub, self).setUp()
+        super().setUp()
         self.addCleanup(getUtility(IGitHubRateLimit).clearCache)
         self.sample_bugs = [
             {"id": 101, "number": 1, "state": "open", "labels": []},

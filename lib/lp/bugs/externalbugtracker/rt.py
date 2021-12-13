@@ -36,7 +36,7 @@ class RequestTracker(ExternalBugTracker):
     batch_query_threshold = 1
 
     def __init__(self, baseurl, cookie_jar=None):
-        super(RequestTracker, self).__init__(baseurl)
+        super().__init__(baseurl)
 
         if cookie_jar is None:
             cookie_jar = RequestsCookieJar()
@@ -66,7 +66,7 @@ class RequestTracker(ExternalBugTracker):
             # To log in to an RT instance we must pass a username and
             # password to its login form, as a user would from the web.
             try:
-                super(RequestTracker, self).makeRequest(
+                super().makeRequest(
                     'GET', '%s/' % self.baseurl,
                     params=self.credentials, cookies=self._cookie_jar)
             except requests.RequestException as e:
@@ -74,7 +74,7 @@ class RequestTracker(ExternalBugTracker):
                     "Unable to authenticate with remote RT service: "
                     "Could not submit login form: %s" % e)
             self._logged_in = True
-        return super(RequestTracker, self).makeRequest(
+        return super().makeRequest(
             method, url, cookies=self._cookie_jar, **kwargs)
 
     def getRemoteBug(self, bug_id):

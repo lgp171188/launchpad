@@ -36,7 +36,7 @@ class StructuralSubscriptionTraversalTestBase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(StructuralSubscriptionTraversalTestBase, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
         self.eric = self.factory.makePerson(name='eric')
         self.michael = self.factory.makePerson(name='michael')
@@ -84,7 +84,7 @@ class StructuralSubscriptionTraversalTestBase(TestCaseWithFactory):
 
     def tearDown(self):
         logout()
-        super(StructuralSubscriptionTraversalTestBase, self).tearDown()
+        super().tearDown()
 
 
 class TestProductSeriesStructuralSubscriptionTraversal(
@@ -171,7 +171,7 @@ class TestStructuralSubscribersPortletViewBase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscribersPortletViewBase, self).setUp()
+        super().setUp()
         self.setUpTarget()
         self.view = create_initialized_view(
             self.target, name='+portlet-structural-subscribers')
@@ -217,10 +217,9 @@ class TestStructuralSubscriptionAPI(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscriptionAPI, self).setUp()
-        self.owner = self.factory.makePerson(name=u"foo")
-        self.structure = self.factory.makeProduct(
-            owner=self.owner, name=u"bar")
+        super().setUp()
+        self.owner = self.factory.makePerson(name="foo")
+        self.structure = self.factory.makeProduct(owner=self.owner, name="bar")
         with person_logged_in(self.owner):
             self.subscription = self.structure.addBugSubscription(
                 self.owner, self.owner)

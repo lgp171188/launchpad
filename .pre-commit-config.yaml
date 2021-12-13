@@ -45,6 +45,7 @@ repos:
             |archivepublisher
             |archiveuploader
             |blueprints
+            |bugs/(browser|externalbugtracker)
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

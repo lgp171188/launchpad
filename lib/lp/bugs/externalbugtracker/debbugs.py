@@ -73,7 +73,7 @@ class DebBugs(ExternalBugTracker):
     batch_size = BATCH_SIZE_UNLIMITED
 
     def __init__(self, baseurl, db_location=None):
-        super(DebBugs, self).__init__(baseurl)
+        super().__init__(baseurl)
         # debbugs syncing can be enabled/disabled separately.
         self.sync_comments = (
             self.sync_comments and

@@ -19,7 +19,6 @@ import xmlrpc.client
 from defusedxml import minidom
 import pytz
 import requests
-import six
 from zope.component import getUtility
 from zope.interface import (
     alsoProvides,
@@ -66,7 +65,7 @@ class Bugzilla(ExternalBugTracker):
     _test_xmlrpc_proxy = None
 
     def __init__(self, baseurl, version=None):
-        super(Bugzilla, self).__init__(baseurl)
+        super().__init__(baseurl)
         self.version = self._parseVersion(version)
         self.is_issuezilla = False
         self.remote_bug_status = {}
@@ -185,7 +184,7 @@ class Bugzilla(ExternalBugTracker):
         # high bit set for non-ASCII characters, we can now strip out any
         # ASCII control characters without touching encoded Unicode
         # characters.
-        bad_chars = b''.join(six.int2byte(i) for i in range(0, 32))
+        bad_chars = b''.join(bytes((i,)) for i in range(0, 32))
         for char in b'\n', b'\r', b'\t':
             bad_chars = bad_chars.replace(char, b'')
         trans_map = bytes.maketrans(bad_chars, b' ' * len(bad_chars))
@@ -333,7 +332,7 @@ class Bugzilla(ExternalBugTracker):
         if self.version is None:
             self.version = self._probe_version()
 
-        super(Bugzilla, self).initializeRemoteBugDB(bug_ids)
+        super().initializeRemoteBugDB(bug_ids)
 
     def getRemoteBug(self, bug_id):
         """See `ExternalBugTracker`."""
@@ -561,7 +560,7 @@ class BugzillaAPI(Bugzilla):
 
     def __init__(self, baseurl, xmlrpc_transport=None,
                  internal_xmlrpc_transport=None):
-        super(BugzillaAPI, self).__init__(baseurl)
+        super().__init__(baseurl)
         self._bugs = {}
         self._bug_aliases = {}
 
@@ -639,7 +638,7 @@ class BugzillaAPI(Bugzilla):
             # Some versions of Bugzilla return a single alias string,
             # others return a (possibly empty) list.
             aliases = remote_bug.get('alias', '')
-            if isinstance(aliases, six.string_types):
+            if isinstance(aliases, str):
                 aliases = [] if not aliases else [aliases]
             for alias in aliases:
                 self._bug_aliases[alias] = remote_bug['id']
