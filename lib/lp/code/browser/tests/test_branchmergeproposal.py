@@ -68,6 +68,7 @@ from lp.code.browser.gitref import GitRefRegisterMergeProposalView
 from lp.code.enums import (
     BranchMergeProposalStatus,
     CodeReviewVote,
+    RevisionStatusResult,
     )
 from lp.code.errors import (
     GitRepositoryScanFault,
@@ -1632,6 +1633,52 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                 name='description',
                 content=description[:497] + '...'))
         self.assertThat(browser.contents, HTMLContains(expected_meta))
+
+    def test_revisionStatusReports_display(self):
+        bmp = self.factory.makeBranchMergeProposalForGit()
+        sha1 = six.ensure_text(hashlib.sha1(b'0').hexdigest())
+        commit_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        report1 = self.factory.makeRevisionStatusReport(
+            user=bmp.source_git_repository.owner,
+            git_repository=bmp.source_git_repository,
+            title="CI", commit_sha1=sha1,
+            result_summary="120/120 tests passed",
+            url="https://foo.com",
+            result=RevisionStatusResult.SUCCEEDED)
+
+        self.useFixture(GitHostingFixture(log=[
+            {
+                'sha1': sha1,
+                'message': 'Sample message',
+                'author': {
+                    'name': 'Example Person',
+                    'email': 'person@example.org',
+                    'time': int(seconds_since_epoch(commit_date)),
+                    },
+                }
+            ]))
+
+        browser = self.getUserBrowser(canonical_url(bmp, rootsite='code'),
+                                      user=bmp.source_git_repository.owner)
+
+        reports_section = find_tags_by_class(browser.contents,
+                                             "status-reports-table")
+        with person_logged_in(bmp.source_git_repository.owner):
+            self.assertThat(
+                reports_section[0],
+                Tag(
+                    "first report title", "td",
+                    text=report1.title))
+            self.assertThat(
+                reports_section[0],
+                Tag(
+                    "first report summary", "td",
+                    text=report1.result_summary))
+            self.assertThat(
+                reports_section[0],
+                Tag(
+                    "first report url", "td",
+                    text=report1.url))
 
     def test_unmerged_commits_from_deleted_git_ref(self):
         # Even if the source Git ref has been deleted, we still know its tip
