@@ -29,7 +29,7 @@ class CveReference(StormBase):
     url = Unicode(allow_none=True, default=None)
 
     def __init__(self, cve, source, content, url=None):
-        super(CveReference, self).__init__()
+        super().__init__()
         self.cve = cve
         self.source = source
         self.content = content

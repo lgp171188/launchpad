@@ -772,8 +772,7 @@ class BugTrackerSet:
             return item
 
     def __iter__(self):
-        for row in self.table.select(orderBy="title"):
-            yield row
+        yield from self.table.select(orderBy="title")
 
     def queryByBaseURL(self, baseurl):
         """See `IBugTrackerSet`."""

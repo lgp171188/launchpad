@@ -5,7 +5,6 @@
 
 from contextlib import contextmanager
 
-import six
 from six.moves.collections_abc import Set
 from storm.store import Store
 from testtools.matchers import Equals
@@ -58,13 +57,13 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
     name_pairs_sorted = ("A", "xa"), ("B", "xb"), ("C", "xc"), ("C", "xd")
 
     def setUp(self):
-        super(TestSubscriptionRelatedSets, self).setUp()
+        super().setUp()
         make_person = lambda displayname, name: (
             self.factory.makePerson(displayname=displayname, name=name))
         subscribers = {
             name_pair: make_person(*name_pair)
             for name_pair in self.name_pairs}
-        self.subscribers_set = frozenset(six.itervalues(subscribers))
+        self.subscribers_set = frozenset(subscribers.values())
         self.subscribers_sorted = tuple(
             subscribers[name_pair] for name_pair in self.name_pairs_sorted)
 
@@ -120,7 +119,7 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionInfo, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct(
             bug_supervisor=self.factory.makePerson())
         self.bug = self.factory.makeBug(target=self.target)
@@ -428,7 +427,7 @@ class TestBugSubscriptionInfoPermissions(TestCaseWithFactory):
         self.assertEqual({}, checker.set_permissions)
 
         # All attributes require launchpad.View.
-        permissions = set(six.itervalues(checker.get_permissions))
+        permissions = set(checker.get_permissions.values())
         self.assertContentEqual(["launchpad.View"], permissions)
 
         # The security adapter for launchpad.View lets anyone reference the
@@ -444,7 +443,7 @@ class TestBugSubscriptionInfoQueries(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionInfoQueries, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.bug = self.factory.makeBug(target=self.target)
         self.info = BugSubscriptionInfo(
