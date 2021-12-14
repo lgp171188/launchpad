@@ -66,7 +66,6 @@ class TestBugzillaRemoteComponentScraper(TestCaseWithFactory):
             ("'b\\!ah'",     {'b!ah':    {'name': 'b!ah'}}),
             ("42",           {'42':      {'name': '42'}}),
             ("''",           {'':        {'name': ''}}),
-            (u"uni",         {'uni':     {'name': 'uni'}}),
             ("'a', 'b','c'", {'a':       {'name': 'a'},
                               'b':       {'name': 'b'},
                               'c':       {'name': 'c'},
