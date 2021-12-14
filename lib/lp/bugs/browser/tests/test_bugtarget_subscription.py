@@ -18,7 +18,7 @@ class TargetSubscriptionViewTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TargetSubscriptionViewTestCase, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct(
             name='widgetsrus', displayname='Widgets R Us')
         self.subscriber = self.factory.makePerson()

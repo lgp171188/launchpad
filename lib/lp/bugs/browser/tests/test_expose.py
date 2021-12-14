@@ -92,7 +92,7 @@ class TestExposeAdministeredTeams(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestExposeAdministeredTeams, self).setUp()
+        super().setUp()
         self.request = FakeRequest()
         self.user = self.factory.makePerson()
 
@@ -123,9 +123,9 @@ class TestExposeAdministeredTeams(TestCaseWithFactory):
         expose_user_administered_teams_to_js(self.request, self.user, context,
             absoluteURL=fake_absoluteURL)
         team_info = self.request.objects['administratedTeams']
-        self.assertThat(team_info[0]['title'], Equals(u'Team 1 (team-1)'))
+        self.assertThat(team_info[0]['title'], Equals('Team 1 (team-1)'))
         self.assertThat(team_info[0]['has_preferredemail'], Equals(False))
-        self.assertThat(team_info[1]['title'], Equals(u'Team 2 (team-2)'))
+        self.assertThat(team_info[1]['title'], Equals('Team 2 (team-2)'))
         self.assertThat(team_info[1]['has_preferredemail'], Equals(True))
 
     def test_teams_for_non_distro(self):
@@ -154,15 +154,15 @@ class TestExposeAdministeredTeams(TestCaseWithFactory):
         # The link is the unique display name of the team.
         self.assertThat(
             team_info[0]['title'],
-            Equals(u'Bug Supervisor Sub Team (bug-supervisor-sub-team)'))
+            Equals('Bug Supervisor Sub Team (bug-supervisor-sub-team)'))
         self.assertThat(
             team_info[1]['title'],
-            Equals(u'Bug Supervisor Team (bug-supervisor-team)'))
+            Equals('Bug Supervisor Team (bug-supervisor-team)'))
         self.assertThat(
-            team_info[2]['title'], Equals(u'Unrelated Team (unrelated-team)'))
+            team_info[2]['title'], Equals('Unrelated Team (unrelated-team)'))
         # The link is the API link to the team.
         self.assertThat(team_info[0]['link'],
-            Equals(u'http://example.com/bug-supervisor-sub-team'))
+            Equals('http://example.com/bug-supervisor-sub-team'))
 
     def test_query_count(self):
         # The function issues a constant number of queries regardless of
@@ -265,13 +265,13 @@ class TestExposeAdministeredTeams(TestCaseWithFactory):
         # The link is the unique display name of the team.
         self.assertThat(
             team_info[0]['title'],
-            Equals(u'Bug Supervisor Sub Team (bug-supervisor-sub-team)'))
+            Equals('Bug Supervisor Sub Team (bug-supervisor-sub-team)'))
         self.assertThat(
             team_info[1]['title'],
-            Equals(u'Bug Supervisor Team (bug-supervisor-team)'))
+            Equals('Bug Supervisor Team (bug-supervisor-team)'))
         # The link is the API link to the team.
         self.assertThat(team_info[0]['link'],
-            Equals(u'http://example.com/bug-supervisor-sub-team'))
+            Equals('http://example.com/bug-supervisor-sub-team'))
 
     def test_teams_for_distro_with_no_bug_super(self):
         self._setup_teams(self.user)
@@ -297,15 +297,15 @@ class TestExposeAdministeredTeams(TestCaseWithFactory):
         # The link is the unique display name of the team.
         self.assertThat(
             team_info[0]['title'],
-            Equals(u'Bug Supervisor Sub Team (bug-supervisor-sub-team)'))
+            Equals('Bug Supervisor Sub Team (bug-supervisor-sub-team)'))
         self.assertThat(
             team_info[1]['title'],
-            Equals(u'Bug Supervisor Team (bug-supervisor-team)'))
+            Equals('Bug Supervisor Team (bug-supervisor-team)'))
         self.assertThat(
-            team_info[2]['title'], Equals(u'Unrelated Team (unrelated-team)'))
+            team_info[2]['title'], Equals('Unrelated Team (unrelated-team)'))
         # The link is the API link to the team.
         self.assertThat(team_info[0]['link'],
-            Equals(u'http://example.com/bug-supervisor-sub-team'))
+            Equals('http://example.com/bug-supervisor-sub-team'))
 
 
 class TestStructuralSubscriptionHelpers(TestCase):

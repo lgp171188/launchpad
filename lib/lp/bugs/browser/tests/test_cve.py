@@ -31,7 +31,7 @@ class TestCVEReportView(TestCaseWithFactory):
 
     def setUp(self):
         """Create a few bugtasks and CVEs."""
-        super(TestCVEReportView, self).setUp()
+        super().setUp()
         distroseries = self.factory.makeDistroSeries()
         self.resolved_bugtasks = []
         self.unresolved_bugtasks = []

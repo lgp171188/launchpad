@@ -218,7 +218,7 @@ class BugNominationEditView(LaunchpadFormView):
 
     def initialize(self):
         self.current_bugtask = getUtility(ILaunchBag).bugtask
-        super(BugNominationEditView, self).initialize()
+        super().initialize()
 
     @property
     def action_url(self):

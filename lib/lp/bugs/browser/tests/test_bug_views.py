@@ -217,7 +217,7 @@ class TestBugPortletSubscribers(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugPortletSubscribers, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         bug_owner = self.factory.makePerson(name="bug-owner")
         self.bug = self.factory.makeBug(owner=bug_owner, target=self.target)
@@ -536,8 +536,7 @@ class TestBugSecrecyViews(TestCaseWithFactory):
                 principal=bug.owner)
             html = view.render()
             soup = BeautifulSoup(html)
-        self.assertEqual(
-            u'Private', soup.find('label', text="Private").string)
+        self.assertEqual('Private', soup.find('label', text="Private").string)
 
     def test_bugtask_view_user_with_grant_on_bug_for_private_product(self):
         # The regular bug view is properly rendered even if the user
@@ -557,7 +556,7 @@ class TestBugSecrecyViews(TestCaseWithFactory):
             launchbag.add(bug.default_bugtask)
         with person_logged_in(user):
             view = create_initialized_view(
-                bug.default_bugtask, name=u'+index', principal=user)
+                bug.default_bugtask, name='+index', principal=user)
             contents = view.render()
             self.assertTrue(bug.title in contents)
 
@@ -664,12 +663,12 @@ class TestBugMessageAddFormView(TestCaseWithFactory):
         # considered valid.
         bug = self.factory.makeBug()
         form = {
-            'field.comment': u' ',
-            'field.actions.save': u'Post Comment',
+            'field.comment': ' ',
+            'field.actions.save': 'Post Comment',
             }
         view = create_initialized_view(
             bug.default_bugtask, '+addcomment', form=form)
-        expected_error = u'Either a comment or attachment must be provided.'
+        expected_error = 'Either a comment or attachment must be provided.'
         self.assertEqual(view.errors[0], expected_error)
 
     def test_whitespaces_message_with_attached_file(self):
@@ -677,10 +676,10 @@ class TestBugMessageAddFormView(TestCaseWithFactory):
         # is attached then the request has to be considered valid.
         bug = self.factory.makeBug()
         form = {
-            'field.comment': u' ',
-            'field.actions.save': u'Post Comment',
+            'field.comment': ' ',
+            'field.actions.save': 'Post Comment',
             'field.filecontent': self.factory.makeFakeFileUpload(),
-            'field.patch.used': u'',
+            'field.patch.used': '',
             }
         login_person(self.factory.makePerson())
         view = create_initialized_view(
@@ -694,7 +693,7 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugMarkAsDuplicateView, self).setUp()
+        super().setUp()
         self.bug_owner = self.factory.makePerson()
         self.bug = self.factory.makeBug(owner=self.bug_owner)
         self.duplicate_bug = self.factory.makeBug(owner=self.bug_owner)
@@ -720,8 +719,8 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
     def test_create_duplicate(self):
         with person_logged_in(self.bug_owner):
             form = {
-                'field.actions.change': u'Set Duplicate',
-                'field.duplicateof': u'%s' % self.duplicate_bug.id
+                'field.actions.change': 'Set Duplicate',
+                'field.duplicateof': '%s' % self.duplicate_bug.id
                 }
             create_initialized_view(
                 self.bug.default_bugtask, name="+duplicate",
@@ -732,7 +731,7 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
         with person_logged_in(self.bug_owner):
             self.bug.markAsDuplicate(self.duplicate_bug)
             form = {
-                'field.actions.remove': u'Remove Duplicate',
+                'field.actions.remove': 'Remove Duplicate',
                 }
             create_initialized_view(
                 self.bug.default_bugtask, name="+duplicate",
@@ -746,8 +745,8 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
                 }
             form = {
-                'field.actions.change': u'Set Duplicate',
-                'field.duplicateof': u'%s' % self.duplicate_bug.id
+                'field.actions.change': 'Set Duplicate',
+                'field.duplicateof': '%s' % self.duplicate_bug.id
                 }
             view = create_initialized_view(
                 self.bug.default_bugtask, name="+duplicate",
@@ -771,7 +770,7 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
                 }
             form = {
-                'field.actions.remove': u'Remove Duplicate',
+                'field.actions.remove': 'Remove Duplicate',
                 }
 
             view = create_initialized_view(
@@ -817,7 +816,7 @@ class TestMainBugView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestMainBugView, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.product_owner = self.factory.makePerson()
         self.proprietary_product = self.factory.makeProduct(

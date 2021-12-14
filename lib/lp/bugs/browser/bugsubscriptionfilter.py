@@ -62,7 +62,7 @@ class BugSubscriptionFilterView(LaunchpadView):
         set the empty string is returned.
         """
         description = self.context.description
-        return u"" if description is None else description.strip()
+        return "" if description is None else description.strip()
 
     # At the moment, we never filter everything.
     # We could turn it into a property and check more later--
@@ -72,9 +72,9 @@ class BugSubscriptionFilterView(LaunchpadView):
     def _add_english_condition(self, conditions, variable, description):
         if len(variable) > 0:
             conditions.append(
-                u"the %s is %s" % (description, english_list(
+                "the %s is %s" % (description, english_list(
                     (kind.title for kind in sorted(variable)),
-                    conjunction=u"or")))
+                    conjunction="or")))
 
     @property
     def conditions(self):
@@ -93,9 +93,9 @@ class BugSubscriptionFilterView(LaunchpadView):
         tags = self.context.tags
         if len(tags) > 0:
             conditions.append(
-                u"the bug is tagged with %s" % english_list(
+                "the bug is tagged with %s" % english_list(
                     sorted(tags), conjunction=(
-                        u"and" if self.context.find_all_tags else u"or")))
+                        "and" if self.context.find_all_tags else "or")))
         self._add_english_condition(
             conditions, self.context.information_types, 'information type')
         return conditions
@@ -139,7 +139,7 @@ class BugSubscriptionFilterEditViewBase(LaunchpadEditFormView,
         """Set up fields for form.
 
         Overrides the usual implementation to also set up bug notification."""
-        super(BugSubscriptionFilterEditViewBase, self).setUpFields()
+        super().setUpFields()
         self._setUpBugNotificationLevelField()
 
     @property
@@ -158,7 +158,7 @@ class BugSubscriptionFilterEditView(
     :ivar context: A provider of `IBugSubscriptionFilter`.
     """
 
-    page_title = u"Edit filter"
+    page_title = "Edit filter"
 
     @action("Update", name="update")
     def update_action(self, action, data):
@@ -187,7 +187,7 @@ class BugSubscriptionFilterCreateView(
     :ivar context: A provider of `IStructuralSubscription`.
     """
 
-    page_title = u"Create new filter"
+    page_title = "Create new filter"
 
     # The context does not correspond to the thing we're creating - which,
     # somewhat obviously, doesn't exist yet - so don't even try to render it.

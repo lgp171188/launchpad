@@ -217,7 +217,7 @@ class BugComment(MessageComment):
             comment_limit = config.malone.max_comment_size
         else:
             comment_limit = None
-        super(BugComment, self).__init__(comment_limit)
+        super().__init__(comment_limit)
 
         self.index = index
         self.bugtask = bugtask
@@ -261,7 +261,7 @@ class BugComment(MessageComment):
         if self.hide_text:
             return ''
         else:
-            return super(BugComment, self).text_for_display
+            return super().text_for_display
 
     def isIdenticalTo(self, other):
         """Compare this BugComment to another and return True if they are
@@ -316,7 +316,7 @@ class BugCommentView(LaunchpadView):
         """View redirects to +download if comment is too long to render."""
         if self.comment.too_long_to_render:
             return self.request.response.redirect(self.comment.download_url)
-        return super(BugCommentView, self).__call__()
+        return super().__call__()
 
     def download(self):
         return download_body(self.comment, self.request)
@@ -391,7 +391,7 @@ class BugCommentBreadcrumb(Breadcrumb):
     """Breadcrumb for an `IBugComment`."""
 
     def __init__(self, context):
-        super(BugCommentBreadcrumb, self).__init__(context)
+        super().__init__(context)
 
     @property
     def text(self):

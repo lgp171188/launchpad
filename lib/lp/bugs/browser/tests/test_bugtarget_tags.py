@@ -45,7 +45,7 @@ class TestBugTargetTags(WithScenarios, TestCaseWithFactory):
         return ociproject, ociproject
 
     def setUp(self):
-        super(TestBugTargetTags, self).setUp()
+        super().setUp()
         builder = getattr(self, self.factory_name)
         self.view_context, self.bug_target = builder()
 
@@ -57,26 +57,26 @@ class TestBugTargetTags(WithScenarios, TestCaseWithFactory):
         self.assertEqual([], [tag['tag'] for tag in view.tags_cloud_data])
 
     def test_tags(self):
-        self.factory.makeBug(target=self.bug_target, tags=[u'foo'])
+        self.factory.makeBug(target=self.bug_target, tags=['foo'])
         view = create_view(
             self.view_context,
             name="+bugtarget-portlet-tags-content")
         self.assertEqual(
-            [u'foo'],
+            ['foo'],
             [tag['tag'] for tag in view.tags_cloud_data])
 
     def test_tags_order(self):
         """Test that the tags are ordered by most used first"""
-        self.factory.makeBug(target=self.bug_target, tags=[u'tag-last'])
+        self.factory.makeBug(target=self.bug_target, tags=['tag-last'])
         for counter in range(0, 2):
             self.factory.makeBug(
-                target=self.bug_target, tags=[u'tag-middle'])
+                target=self.bug_target, tags=['tag-middle'])
         for counter in range(0, 3):
             self.factory.makeBug(
-                target=self.bug_target, tags=[u'tag-first'])
+                target=self.bug_target, tags=['tag-first'])
         view = create_view(
             self.view_context,
             name="+bugtarget-portlet-tags-content")
         self.assertEqual(
-            [u'tag-first', u'tag-middle', u'tag-last'],
+            ['tag-first', 'tag-middle', 'tag-last'],
             [tag['tag'] for tag in view.tags_cloud_data])

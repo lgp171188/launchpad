@@ -41,7 +41,7 @@ class TestAccessToBugAttachmentFiles(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestAccessToBugAttachmentFiles, self).setUp()
+        super().setUp()
         self.bug_owner = self.factory.makePerson()
         getUtility(ILaunchBag).clear()
         login_person(self.bug_owner)
@@ -121,7 +121,7 @@ class TestWebserviceAccessToBugAttachmentFiles(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestWebserviceAccessToBugAttachmentFiles, self).setUp()
+        super().setUp()
         self.bug_owner = self.factory.makePerson()
         getUtility(ILaunchBag).clear()
         login_person(self.bug_owner)

@@ -86,7 +86,7 @@ class TestGroupCommentsWithActivities(TestCase):
     """Tests for `group_comments_with_activities`."""
 
     def setUp(self):
-        super(TestGroupCommentsWithActivities, self).setUp()
+        super().setUp()
         self.now = datetime.now(utc)
         self.time_index = (
             (self.now + timedelta(minutes=counter), counter)

@@ -17,7 +17,6 @@ from lazr.restful.interfaces import (
     IWebServiceClientRequest,
     )
 from simplejson import dumps
-import six
 from zope import formlib
 from zope.formlib.itemswidgets import RadioWidget
 from zope.formlib.widget import CustomWidgetFactory
@@ -67,7 +66,7 @@ class BugSubscriptionAddView(LaunchpadFormView):
 
     def setUpFields(self):
         """Set up 'person' as an input field."""
-        super(BugSubscriptionAddView, self).setUpFields()
+        super().setUpFields()
         self.form_fields['person'].for_input = True
 
     @action('Subscribe user', name='add')
@@ -77,7 +76,7 @@ class BugSubscriptionAddView(LaunchpadFormView):
             self.context.bug.subscribe(
                 person, self.user, suppress_notify=False)
         except SubscriptionPrivacyViolation as error:
-            self.setFieldError('person', six.text_type(error))
+            self.setFieldError('person', str(error))
         else:
             if person.is_team:
                 message = '%s team has been subscribed to this bug.'
@@ -208,7 +207,7 @@ class BugSubscriptionSubscribeSelfView(LaunchpadFormView,
     def initialize(self):
         """See `LaunchpadFormView`."""
         self._redirecting_to_bug_list = False
-        super(BugSubscriptionSubscribeSelfView, self).initialize()
+        super().initialize()
 
     @cachedproperty
     def current_user_subscription(self):
@@ -300,7 +299,7 @@ class BugSubscriptionSubscribeSelfView(LaunchpadFormView,
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
-        super(BugSubscriptionSubscribeSelfView, self).setUpFields()
+        super().setUpFields()
         if self.user is None:
             return
 
@@ -311,7 +310,7 @@ class BugSubscriptionSubscribeSelfView(LaunchpadFormView,
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
-        super(BugSubscriptionSubscribeSelfView, self).setUpWidgets()
+        super().setUpWidgets()
         self.widgets['subscription'].widget_class = 'bug-subscription-basic'
         self.widgets['bug_notification_level'].widget_class = (
             'bug-notification-level-field')
@@ -631,7 +630,7 @@ class BugSubscriptionListView(LaunchpadView):
     """A view to show all a person's subscriptions to a bug."""
 
     def initialize(self):
-        super(BugSubscriptionListView, self).initialize()
+        super().initialize()
         subscriptions = list(get_structural_subscriptions_for_bug(
             self.context.bug, self.user))
         expose_structural_subscription_data_to_js(
@@ -674,7 +673,7 @@ class BugMuteSelfView(LaunchpadFormView):
 
     def initialize(self):
         self.is_muted = self.context.bug.isMuted(self.user)
-        super(BugMuteSelfView, self).initialize()
+        super().initialize()
 
     @action('Mute bug mail',
             name='mute',

@@ -21,7 +21,7 @@ class TestProductBugTaskCreationStep(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductBugTaskCreationStep, self).setUp()
+        super().setUp()
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.ubuntu_series = ubuntu['hoary']
         self.sourcepackagename = self.factory.makeSourcePackageName('bat')

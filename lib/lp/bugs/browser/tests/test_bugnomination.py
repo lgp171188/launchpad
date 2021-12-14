@@ -33,7 +33,7 @@ class TestBugNominationView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugNominationView, self).setUp()
+        super().setUp()
         self.distribution = self.factory.makeDistribution()
         owner = self.distribution.owner
         bug_team = self.factory.makeTeam(owner=owner)

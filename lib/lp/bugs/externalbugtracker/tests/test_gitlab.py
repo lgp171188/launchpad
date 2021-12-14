@@ -51,7 +51,7 @@ class TestGitLab(TestCase):
     layer = ZopelessLayer
 
     def setUp(self):
-        super(TestGitLab, self).setUp()
+        super().setUp()
         self.sample_bugs = [
             {"id": 101, "iid": 1, "state": "opened", "labels": []},
             {"id": 102, "iid": 2, "state": "opened", "labels": ["feature"]},
