@@ -55,7 +55,7 @@ class TestBuildCancellation(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestBuildCancellation, self).setUp()
+        super().setUp()
         self.builder = self.factory.makeBuilder()
 
     def test_buildqueue_cancel_waiting(self):
@@ -140,7 +140,7 @@ class TestPlatformData(TestCaseWithFactory):
 
     def setUp(self):
         """Set up a native x86 build for the test archive."""
-        super(TestPlatformData, self).setUp()
+        super().setUp()
 
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()

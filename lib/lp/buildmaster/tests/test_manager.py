@@ -9,7 +9,6 @@ import time
 from unittest import mock
 import xmlrpc.client
 
-import six
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
@@ -107,7 +106,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         Also adjust the sampledata in a way a build can be dispatched to
         'bob' builder.
         """
-        super(TestSlaveScannerScan, self).setUp()
+        super().setUp()
         # Creating the required chroots needed for dispatching.
         self.test_publisher = make_publisher()
         ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
@@ -314,9 +313,8 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         class BrokenUTF8Slave(BuildingSlave):
             @defer.inlineCallbacks
             def status(self):
-                status = yield super(BrokenUTF8Slave, self).status()
-                status["logtail"] = xmlrpc.client.Binary(
-                    u"───".encode("UTF-8")[1:])
+                status = yield super().status()
+                status["logtail"] = xmlrpc.client.Binary("───".encode()[1:])
                 return status
 
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
@@ -335,7 +333,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         scanner = self._getScanner()
         yield scanner.scan()
         scanner.manager.flushLogTails()
-        self._checkJobUpdated(builder, job, logtail=u"\uFFFD\uFFFD──")
+        self._checkJobUpdated(builder, job, logtail="\uFFFD\uFFFD──")
 
     @defer.inlineCallbacks
     def test_scan_of_logtail_containing_nul(self):
@@ -344,7 +342,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         class NULSlave(BuildingSlave):
             @defer.inlineCallbacks
             def status(self):
-                status = yield super(NULSlave, self).status()
+                status = yield super().status()
                 status["logtail"] = xmlrpc.client.Binary(b"foo\0bar\0baz")
                 return status
 
@@ -364,7 +362,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         scanner = self._getScanner()
         yield scanner.scan()
         scanner.manager.flushLogTails()
-        self._checkJobUpdated(builder, job, logtail=u"foobarbaz")
+        self._checkJobUpdated(builder, job, logtail="foobarbaz")
 
     @defer.inlineCallbacks
     def test_scan_calls_builder_factory_prescanUpdate(self):
@@ -425,7 +423,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
 
             @defer.inlineCallbacks
             def status(self):
-                status = yield super(SnapBuildingSlave, self).status()
+                status = yield super().status()
                 status["revision_id"] = self.revision_id
                 return status
 
@@ -592,7 +590,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
     def test_update_slave_version(self):
         # If the reported slave version differs from the DB's record of it,
         # then scanning the builder updates the DB.
-        slave = OkSlave(version=six.ensure_str("100"))
+        slave = OkSlave(version="100")
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         builder.version = "99"
         self._resetBuilder(builder)
@@ -610,8 +608,7 @@ class TestSlaveScannerScan(StatsMixin, TestCaseWithFactory):
         vitals = extract_vitals_from_db(builder)
         scanner = self._getScanner()
         with StormStatementRecorder() as recorder:
-            scanner.updateVersion(
-                vitals, {"builder_version": six.ensure_str("100")})
+            scanner.updateVersion(vitals, {"builder_version": "100"})
         self.assertThat(recorder, HasQueryCount(Equals(0)))
 
     @defer.inlineCallbacks
@@ -673,7 +670,7 @@ class TestSlaveScannerWithLibrarian(TestCaseWithFactory):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
     def setUp(self):
-        super(TestSlaveScannerWithLibrarian, self).setUp()
+        super().setUp()
         self.addCleanup(shut_down_default_process_pool)
 
     @defer.inlineCallbacks
@@ -932,7 +929,7 @@ class TestSlaveScannerWithoutDB(TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(TestSlaveScannerWithoutDB, self).setUp()
+        super().setUp()
         self.addCleanup(shut_down_default_process_pool)
 
     def getScanner(self, builder_factory=None, interactor=None, slave=None,
@@ -1126,7 +1123,7 @@ class TestCancellationChecking(TestCaseWithFactory):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
     def setUp(self):
-        super(TestCancellationChecking, self).setUp()
+        super().setUp()
         builder_name = BOB_THE_BUILDER_NAME
         self.builder = getUtility(IBuilderSet)[builder_name]
         self.builder.virtualized = True

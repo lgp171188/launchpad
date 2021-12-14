@@ -288,7 +288,7 @@ class TestGetUploadMethodsMixin:
         raise NotImplementedError
 
     def setUp(self):
-        super(TestGetUploadMethodsMixin, self).setUp()
+        super().setUp()
         self.build = self.makeBuild()
         self.behaviour = IBuildFarmJobBehaviour(
             self.build.buildqueue_record.specific_build)
@@ -316,7 +316,7 @@ class TestVerifySuccessfulBuildMixin:
         raise NotImplementedError
 
     def setUp(self):
-        super(TestVerifySuccessfulBuildMixin, self).setUp()
+        super().setUp()
         self.factory = LaunchpadObjectFactory()
 
     def test_verifySuccessfulBuild_allows_modifiable_suite(self):
@@ -347,7 +347,7 @@ class TestHandleStatusMixin:
         raise NotImplementedError
 
     def setUp(self):
-        super(TestHandleStatusMixin, self).setUp()
+        super().setUp()
         self.factory = LaunchpadObjectFactory()
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that

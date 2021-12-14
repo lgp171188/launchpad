@@ -24,7 +24,7 @@ class TestPackageBuildMixin(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPackageBuildMixin, self).setUp()
+        super().setUp()
         # BuildFarmJobMixin only operates as part of a concrete
         # IBuildFarmJob implementation. Here we use
         # SourcePackageRecipeBuild.
@@ -40,8 +40,8 @@ class TestPackageBuildMixin(TestCaseWithFactory):
     def test_updateStatus_MANUALDEPWAIT_sets_dependencies(self):
         # updateStatus sets dependencies for a MANUALDEPWAIT build.
         self.package_build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': u'deps'})
-        self.assertEqual(u'deps', self.package_build.dependencies)
+            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': 'deps'})
+        self.assertEqual('deps', self.package_build.dependencies)
         self.package_build.updateStatus(
             BuildStatus.MANUALDEPWAIT, slave_status={})
         self.assertEqual(None, self.package_build.dependencies)
@@ -50,8 +50,8 @@ class TestPackageBuildMixin(TestCaseWithFactory):
         # updateStatus unsets existing dependencies when transitioning
         # to another state.
         self.package_build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': u'deps'})
-        self.assertEqual(u'deps', self.package_build.dependencies)
+            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': 'deps'})
+        self.assertEqual('deps', self.package_build.dependencies)
         self.package_build.updateStatus(BuildStatus.NEEDSBUILD)
         self.assertEqual(None, self.package_build.dependencies)
 
@@ -86,7 +86,7 @@ class TestPackageBuildMixin(TestCaseWithFactory):
 
     def test_storeUploadLog_unicode(self):
         # Unicode upload logs are uploaded as UTF-8.
-        unicode_content = u"Some content \N{SNOWMAN}"
+        unicode_content = "Some content \N{SNOWMAN}"
         self.package_build.storeUploadLog(unicode_content)
         self.assertIsNotNone(self.package_build.upload_log)
         self.assertEqual(

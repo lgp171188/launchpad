@@ -31,7 +31,7 @@ class TestBuildersCollection(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBuildersCollection, self).setUp()
+        super().setUp()
         self.webservice = LaunchpadWebServiceCaller()
 
     def test_list(self):
@@ -128,7 +128,7 @@ class TestBuilderEntry(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBuilderEntry, self).setUp()
+        super().setUp()
         self.webservice = LaunchpadWebServiceCaller()
 
     def test_security(self):

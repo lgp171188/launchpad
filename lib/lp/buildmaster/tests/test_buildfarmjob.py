@@ -44,7 +44,7 @@ class TestBuildFarmJobBase:
 
     def setUp(self):
         """Create a build farm job with which to test."""
-        super(TestBuildFarmJobBase, self).setUp()
+        super().setUp()
         self.build_farm_job = self.makeBuildFarmJob()
 
     def makeBuildFarmJob(self, builder=None,
@@ -112,7 +112,7 @@ class TestBuildFarmJobMixin(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBuildFarmJobMixin, self).setUp()
+        super().setUp()
         # BuildFarmJobMixin only operates as part of a concrete
         # IBuildFarmJob implementation. Here we use BinaryPackageBuild.
         self.build_farm_job = self.factory.makeBinaryPackageBuild()
@@ -225,7 +225,7 @@ class TestBuildFarmJobSet(TestBuildFarmJobBase, TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBuildFarmJobSet, self).setUp()
+        super().setUp()
         self.builder = self.factory.makeBuilder()
         self.build_farm_job_set = getUtility(IBuildFarmJobSet)
 

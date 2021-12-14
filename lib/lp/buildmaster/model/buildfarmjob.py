@@ -96,7 +96,7 @@ class BuildFarmJob(Storm):
 
     def __init__(self, job_type, status=BuildStatus.NEEDSBUILD,
                  date_created=None, builder=None, archive=None):
-        super(BuildFarmJob, self).__init__()
+        super().__init__()
         (self.job_type, self.status, self.builder, self.archive) = (
              job_type, status, builder, archive)
         if date_created is not None:

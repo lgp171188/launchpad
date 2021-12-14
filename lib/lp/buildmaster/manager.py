@@ -251,7 +251,7 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
     """
 
     def __init__(self, *args, **kwargs):
-        super(PrefetchedBuilderFactory, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # This needs to exist to avoid race conditions between
         # `updateStats` and `update`.
         self.vitals_map = {}
@@ -286,7 +286,7 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
 
     def iterVitals(self):
         """See `BaseBuilderFactory`."""
-        return (b for n, b in sorted(six.iteritems(self.vitals_map)))
+        return (b for n, b in sorted(self.vitals_map.items()))
 
     def findBuildCandidate(self, vitals):
         """See `BaseBuilderFactory`."""
@@ -401,7 +401,7 @@ def recover_failure(logger, vitals, builder, retry, exception):
         # We've already tried resetting it enough times, so we have
         # little choice but to give up.
         logger.info("Failing builder %s.", builder.name)
-        builder.failBuilder(six.text_type(exception))
+        builder.failBuilder(str(exception))
     elif builder_action == True:
         # Dirty the builder to attempt recovery. In the virtual case,
         # the dirty idleness will cause a reset, giving us a good chance
