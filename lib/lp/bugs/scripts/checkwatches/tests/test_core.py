@@ -92,7 +92,7 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCheckwatchesWithSyncableGnomeProducts, self).setUp()
+        super().setUp()
         transaction.commit()
 
         # We monkey-patch externalbugtracker.get_external_bugtracker()
@@ -110,7 +110,7 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
     def tearDown(self):
         checkwatches.externalbugtracker.get_external_bugtracker = (
             self.original_get_external_bug_tracker)
-        super(TestCheckwatchesWithSyncableGnomeProducts, self).tearDown()
+        super().tearDown()
 
     def test_bug_496988(self):
         # Regression test for bug 496988. KeyErrors when looking for the
@@ -176,7 +176,7 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCheckwatchesMaster, self).setUp()
+        super().setUp()
         transaction.abort()
 
     def test_bug_497141(self):
@@ -279,7 +279,7 @@ class TestUpdateBugsWithLinkedQuestions(unittest.TestCase):
 
     def setUp(self):
         """Set up bugs, watches and questions to test with."""
-        super(TestUpdateBugsWithLinkedQuestions, self).setUp()
+        super().setUp()
 
         # For test_can_update_bug_with_questions we need a bug that has
         # a question linked to it.
@@ -398,7 +398,7 @@ class TestTwistedThreadScheduler(TestSchedulerBase, TestCase):
     run_tests_with = RunIsolatedTest
 
     def setUp(self):
-        super(TestTwistedThreadScheduler, self).setUp()
+        super().setUp()
         self.scheduler = checkwatches.TwistedThreadScheduler(
             num_threads=5, install_signal_handlers=False)
 
@@ -423,7 +423,7 @@ class ExternalBugTrackerForThreads(TestExternalBugTracker):
     """Fake which records interesting activity to a file."""
 
     def __init__(self, output_file):
-        super(ExternalBugTrackerForThreads, self).__init__()
+        super().__init__()
         self.output_file = output_file
 
     def getRemoteStatus(self, bug_id):
@@ -444,8 +444,7 @@ class CheckwatchesMasterForThreads(CheckwatchesMaster):
 
     def __init__(self, output_file):
         logger = BufferLogger()
-        super(CheckwatchesMasterForThreads, self).__init__(
-            transaction.manager, logger)
+        super().__init__(transaction.manager, logger)
         self.output_file = output_file
 
     def _getExternalBugTrackersAndWatches(self, bug_trackers, bug_watches):

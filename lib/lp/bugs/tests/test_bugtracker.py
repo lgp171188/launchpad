@@ -107,7 +107,7 @@ class BugTrackerTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(BugTrackerTestCase, self).setUp()
+        super().setUp()
         self.bug_tracker = self.factory.makeBugTracker()
         for i in range(5):
             self.factory.makeBugWatch(bugtracker=self.bug_tracker)
@@ -274,7 +274,7 @@ class TestMantis(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestMantis, self).setUp()
+        super().setUp()
         # We need to commit to avoid there being errors from the
         # checkwatches isolation protection code.
         transaction.commit()

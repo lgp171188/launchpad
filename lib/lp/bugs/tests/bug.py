@@ -87,7 +87,7 @@ def print_bug_affects_table(content, highlighted_only=False):
             # Don't print the bugtask edit form.
             continue
         # Strip zero-width white-spaces.
-        print(extract_text(tr).replace(u'\u200B', u''))
+        print(extract_text(tr).replace('\u200B', ''))
 
 
 def print_remote_bugtasks(content):
@@ -115,7 +115,7 @@ def print_bugs_list(content, list_id):
         None, {'class': 'similar-bug'})
     for node in bugs_list:
         # Also strip zero-width spaces out.
-        print(extract_text(node).replace(u'\u200B', u''))
+        print(extract_text(node).replace('\u200B', ''))
 
 
 def print_bugtasks(text, show_heat=None):

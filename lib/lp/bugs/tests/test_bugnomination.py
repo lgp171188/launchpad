@@ -204,14 +204,14 @@ class CanBeNominatedForTestMixin:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(CanBeNominatedForTestMixin, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
         self.eric = self.factory.makePerson(name='eric')
         self.setUpTarget()
 
     def tearDown(self):
         logout()
-        super(CanBeNominatedForTestMixin, self).tearDown()
+        super().tearDown()
 
     def test_canBeNominatedFor_series(self):
         # A bug may be nominated for a series of a product with an existing

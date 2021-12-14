@@ -21,8 +21,7 @@ class TestDeletionNotification(TestCaseWithFactory):
 
     def setUp(self):
         # Run the tests as a logged-in user.
-        super(TestDeletionNotification, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         self.user = getUtility(ILaunchBag).user
         product = self.factory.makeProduct(owner=self.user)
         self.bug_task = self.factory.makeBugTask(target=product)

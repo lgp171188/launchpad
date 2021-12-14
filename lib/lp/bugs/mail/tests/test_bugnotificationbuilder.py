@@ -24,8 +24,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
 
     def setUp(self):
         # Run the tests as a logged-in user.
-        super(TestBugNotificationBuilder, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         self.bug = self.factory.makeBug()
         self.builder = BugNotificationBuilder(self.bug)
 
@@ -41,9 +40,9 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
         """Filters are added."""
         utc_now = datetime.now(pytz.UTC)
         message = self.builder.build('from', self.bug.owner, 'body', 'subject',
-                                     utc_now, filters=[u"Testing filter"])
+                                     utc_now, filters=["Testing filter"])
         self.assertContentEqual(
-            [u"Testing filter"],
+            ["Testing filter"],
             message.get_all("X-Launchpad-Subscription"))
 
     def test_build_filters_multiple(self):
@@ -51,9 +50,9 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
         utc_now = datetime.now(pytz.UTC)
         message = self.builder.build(
             'from', self.bug.owner, 'body', 'subject', utc_now,
-            filters=[u"Testing filter", u"Second testing filter"])
+            filters=["Testing filter", "Second testing filter"])
         self.assertContentEqual(
-            [u"Testing filter", u"Second testing filter"],
+            ["Testing filter", "Second testing filter"],
             message.get_all("X-Launchpad-Subscription"))
 
     def test_mails_contain_notification_type_header(self):

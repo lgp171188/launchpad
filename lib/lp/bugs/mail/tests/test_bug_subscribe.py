@@ -17,8 +17,7 @@ class TestSubscribedBySomeoneElseNotification(TestCaseWithFactory):
 
     def setUp(self):
         # Run the tests as a logged-in user.
-        super(TestSubscribedBySomeoneElseNotification, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
 
     def test_suppress_notify_false_does_notify(self):
         """Test notifications are sent when suppress_notify is False."""

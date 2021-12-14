@@ -36,7 +36,7 @@ class TestDistribution(BugTargetBugFilingDuplicateSearchAlwaysOn,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistribution, self).setUp()
+        super().setUp()
         self.bugtarget = self.factory.makeDistribution()
 
     def test_pillar(self):
@@ -50,7 +50,7 @@ class TestDistroSeries(BugTargetBugFilingDuplicateSearchAlwaysOn,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSeries, self).setUp()
+        super().setUp()
         self.bugtarget = self.factory.makeDistroSeries()
 
     def test_bugtarget_parent(self):
@@ -72,7 +72,7 @@ class TestProjectGroup(BugTargetBugFilingDuplicateSearchAlwaysOn,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectGroup, self).setUp()
+        super().setUp()
         self.bugtarget = self.factory.makeProject()
 
 
@@ -98,7 +98,7 @@ class TestProduct(BugTargetBugFilingDuplicateSearchSettable,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProduct, self).setUp()
+        super().setUp()
         self.bug_supervisor = self.factory.makePerson()
         self.bugtarget = self.factory.makeProduct(
             bug_supervisor=self.bug_supervisor)
@@ -114,7 +114,7 @@ class TestDistributionSourcePackage(BugTargetBugFilingDuplicateSearchSettable,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionSourcePackage, self).setUp()
+        super().setUp()
         self.bug_supervisor = self.factory.makePerson()
         distribution = self.factory.makeDistribution(
             bug_supervisor=self.bug_supervisor)
@@ -150,7 +150,7 @@ class TestProductSeries(BugTargetBugFilingDuplicateSearchInherited,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductSeries, self).setUp()
+        super().setUp()
         self.bug_supervisor = self.factory.makePerson()
         self.bugtarget = self.factory.makeProductSeries(
             product=self.factory.makeProduct(
@@ -175,7 +175,7 @@ class TestSourcePackage(BugTargetBugFilingDuplicateSearchInherited,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSourcePackage, self).setUp()
+        super().setUp()
         self.bug_supervisor = self.factory.makePerson()
         distribution = self.factory.makeDistribution(
             bug_supervisor=self.bug_supervisor)

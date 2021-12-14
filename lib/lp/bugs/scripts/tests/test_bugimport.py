@@ -444,11 +444,11 @@ class ImportBugTestCase(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(ImportBugTestCase, self).setUp()
+        super().setUp()
         login('bug-importer@launchpad.net')
 
     def tearDown(self):
-        super(ImportBugTestCase, self).tearDown()
+        super().tearDown()
         logout()
 
     def assertNoPendingNotifications(self, bug):
@@ -649,7 +649,7 @@ class BugImportCacheTestCase(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(BugImportCacheTestCase, self).setUp()
+        super().setUp()
         self.tmpdir = self.makeTemporaryDirectory()
 
     def test_load_no_cache(self):
@@ -733,7 +733,7 @@ class BugImportScriptTestCase(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(BugImportScriptTestCase, self).setUp()
+        super().setUp()
         self.tmpdir = self.makeTemporaryDirectory()
         # We'll be running subprocesses that may change the database, so force
         # the test system to treat it as dirty.
@@ -942,7 +942,7 @@ class TestRemoteBugUpdater(RemoteBugUpdater):
     def __init__(self, parent, external_bugtracker, remote_bug,
                  bug_watch_ids, unmodified_remote_ids, server_time,
                  bugtracker):
-        super(TestRemoteBugUpdater, self). __init__(
+        super(). __init__(
             parent, external_bugtracker, remote_bug, bug_watch_ids,
             unmodified_remote_ids, server_time)
         self.bugtracker = bugtracker
@@ -970,7 +970,7 @@ class TestCheckwatchesMaster(CheckwatchesMaster):
         reload = core.reload
         try:
             core.reload = lambda objects: objects
-            super(TestCheckwatchesMaster, self)._updateBugTracker(bug_tracker)
+            super()._updateBugTracker(bug_tracker)
         finally:
             core.reload = reload
 

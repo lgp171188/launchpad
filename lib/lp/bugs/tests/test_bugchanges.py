@@ -42,7 +42,7 @@ class TestBugChanges(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBugChanges, self).setUp('foo.bar@canonical.com')
+        super().setUp('foo.bar@canonical.com')
         self.user = self.factory.makePerson(
             displayname='Arthur Dent', selfgenerated_bugnotifications=True)
         self.product = self.factory.makeProduct(
@@ -234,7 +234,7 @@ class TestBugChanges(TestCaseWithFactory):
         self.saveOldChanges(bug=bug)
         bug.unsubscribe(subscriber, subscriber)
         unsubscribe_activity = dict(
-            whatchanged=u'removed subscriber Mom', person=subscriber)
+            whatchanged='removed subscriber Mom', person=subscriber)
         self.assertRecordedChange(
             expected_activity=unsubscribe_activity, bug=bug)
 
@@ -1005,7 +1005,7 @@ class TestBugChanges(TestCaseWithFactory):
         # This checks the activity's attribute and target attributes.
         activity = self.bug.activity[-1]
         self.assertEqual(activity.attribute, 'importance')
-        self.assertThat(activity.target, StartsWith(u'product-name'))
+        self.assertThat(activity.target, StartsWith('product-name'))
 
         expected_activity = {
             'person': self.user,
@@ -1017,7 +1017,7 @@ class TestBugChanges(TestCaseWithFactory):
 
         expected_notification = {
             'text': (
-                u'** Changed in: %s\n   Importance: Undecided => High' %
+                '** Changed in: %s\n   Importance: Undecided => High' %
                 self.bug_task.bugtargetname),
             'person': self.user,
             }
@@ -1043,7 +1043,7 @@ class TestBugChanges(TestCaseWithFactory):
 
         expected_notification = {
             'text': (
-                u'** Changed in: %s\n       Status: New => Fix Committed' %
+                '** Changed in: %s\n       Status: New => Fix Committed' %
                 self.bug_task.bugtargetname),
             'person': self.user,
             }
@@ -1071,7 +1071,7 @@ class TestBugChanges(TestCaseWithFactory):
             }
 
         expected_notification = {
-            'text': u"** Project changed: %s => %s" % (
+            'text': "** Project changed: %s => %s" % (
                 bug_task_before_modification.bugtargetname,
                 self.bug_task.bugtargetname),
             'person': self.user,
@@ -1123,7 +1123,7 @@ class TestBugChanges(TestCaseWithFactory):
             for bug_task in source_package_bug.bugtasks
             if bug_task.pillar.official_malone)
         expected_notification = {
-            'text': u"** Package changed: %s => %s" % (
+            'text': "** Package changed: %s => %s" % (
                 bug_task_before_modification.bugtargetname,
                 source_package_bug_task.bugtargetname),
             'person': self.user,
@@ -1167,7 +1167,7 @@ class TestBugChanges(TestCaseWithFactory):
 
         expected_notification = {
             'text': (
-                u'** Changed in: %s\n Remote watch: None => %s' % (
+                '** Changed in: %s\n Remote watch: None => %s' % (
                 self.bug_task.bugtargetname, bug_watch.title)),
             'person': self.user,
             }
@@ -1194,7 +1194,7 @@ class TestBugChanges(TestCaseWithFactory):
 
         expected_notification = {
             'text': (
-                u'** Changed in: %s\n Remote watch: %s => None' % (
+                '** Changed in: %s\n Remote watch: %s => None' % (
                 self.bug_task.bugtargetname, bug_watch.title)),
             'person': self.user,
             }
@@ -1219,8 +1219,8 @@ class TestBugChanges(TestCaseWithFactory):
 
         expected_notification = {
             'text': (
-                u'** Changed in: %s\n'
-                u'     Assignee: (unassigned) => %s' % (
+                '** Changed in: %s\n'
+                '     Assignee: (unassigned) => %s' % (
                     self.bug_task.bugtargetname,
                     self.user.unique_displayname)),
             'person': self.user,
@@ -1250,8 +1250,8 @@ class TestBugChanges(TestCaseWithFactory):
 
         expected_notification = {
             'text': (
-                u'** Changed in: %s\n'
-                u'     Assignee: %s => (unassigned)' % (
+                '** Changed in: %s\n'
+                '     Assignee: %s => (unassigned)' % (
                     bug_task.bugtargetname,
                     old_assignee.unique_displayname)),
             'person': self.user,
@@ -1291,7 +1291,7 @@ class TestBugChanges(TestCaseWithFactory):
 
         expected_notification = {
             'text': (
-                u'** Changed in: %s\n    Milestone: None => %s' % (
+                '** Changed in: %s\n    Milestone: None => %s' % (
                 self.bug_task.bugtargetname, milestone.name)),
             'person': self.user,
             }
@@ -1322,7 +1322,7 @@ class TestBugChanges(TestCaseWithFactory):
 
         expected_notification = {
             'text': (
-                u'** Changed in: %s\n    Milestone: %s => None' % (
+                '** Changed in: %s\n    Milestone: %s => None' % (
                 self.bug_task.bugtargetname, milestone.name)),
             'person': self.user,
             'recipients': [
@@ -1360,8 +1360,8 @@ class TestBugChanges(TestCaseWithFactory):
 
         expected_notification = {
             'text': (
-                u'** Changed in: %s\n'
-                u'    Milestone: %s => %s' % (
+                '** Changed in: %s\n'
+                '    Milestone: %s => %s' % (
                     self.bug_task.bugtargetname,
                     old_milestone.name, new_milestone.name)),
             'person': self.user,
@@ -1772,12 +1772,12 @@ class TestBugChanges(TestCaseWithFactory):
         expected_activity = {
             'person': self.user,
             'whatchanged': 'bug',
-            'message': u"added bug",
+            'message': "added bug",
             }
 
         expected_notification = {
             'person': self.user,
-            'text': u"ENOTOWEL",
+            'text': "ENOTOWEL",
             'is_comment': True,
             'recipients': new_bug.getBugNotificationRecipients(
                 level=BugNotificationLevel.LIFECYCLE),

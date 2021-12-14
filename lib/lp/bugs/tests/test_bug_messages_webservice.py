@@ -122,7 +122,7 @@ class TestSetCommentVisibility(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSetCommentVisibility, self).setUp()
+        super().setUp()
         self.person_set = getUtility(IPersonSet)
         admins = self.person_set.getByName('admins')
         self.admin = admins.teamowner

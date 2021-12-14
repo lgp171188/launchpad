@@ -51,7 +51,7 @@ class TestStructuralSubscription(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscription, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         with person_logged_in(self.product.owner):
             self.subscription = self.product.addSubscription(
@@ -146,7 +146,7 @@ class FilteredStructuralSubscriptionTestBase:
         return self.factory.makeBugTask(target=self.target)
 
     def setUp(self):
-        super(FilteredStructuralSubscriptionTestBase, self).setUp()
+        super().setUp()
         self.ordinary_subscriber = self.factory.makePerson()
         login_person(self.ordinary_subscriber)
         self.target = self.makeTarget()
@@ -239,7 +239,7 @@ class FilteredStructuralSubscriptionTestBase:
         self.assertSubscribers([])
 
         # With any tag the subscription is found.
-        self.bug.tags = [u'foo']
+        self.bug.tags = ['foo']
         self.assertSubscribers([self.ordinary_subscriber])
 
     def test_getStructuralSubscribers_with_filter_exclude_any_tags(self):
@@ -252,7 +252,7 @@ class FilteredStructuralSubscriptionTestBase:
         self.assertSubscribers([self.ordinary_subscriber])
 
         # With any tag the subscription is not found.
-        self.bug.tags = [u'foo']
+        self.bug.tags = ['foo']
         self.assertSubscribers([])
 
     def test_getStructuralSubscribers_with_filter_for_any_tag(self):
@@ -260,14 +260,14 @@ class FilteredStructuralSubscriptionTestBase:
         # tags must be present, bugs with any of those tags are matched.
 
         # Looking for either the "foo" or the "bar" tag.
-        self.initial_filter.tags = [u'foo', u'bar']
+        self.initial_filter.tags = ['foo', 'bar']
         self.initial_filter.find_all_tags = False
 
         # Without either tag the subscription is not found.
         self.assertSubscribers([])
 
         # With either tag the subscription is found.
-        self.bug.tags = [u'bar', u'baz']
+        self.bug.tags = ['bar', 'baz']
         self.assertSubscribers([self.ordinary_subscriber])
 
     def test_getStructuralSubscribers_with_filter_for_all_tags(self):
@@ -275,18 +275,18 @@ class FilteredStructuralSubscriptionTestBase:
         # tags must be present, bugs with all of those tags are matched.
 
         # Looking for both the "foo" and the "bar" tag.
-        self.initial_filter.tags = [u'foo', u'bar']
+        self.initial_filter.tags = ['foo', 'bar']
         self.initial_filter.find_all_tags = True
 
         # Without either tag the subscription is not found.
         self.assertSubscribers([])
 
         # Without only one of the required tags the subscription is not found.
-        self.bug.tags = [u'foo']
+        self.bug.tags = ['foo']
         self.assertSubscribers([])
 
         # With both required tags the subscription is found.
-        self.bug.tags = [u'foo', u'bar']
+        self.bug.tags = ['foo', 'bar']
         self.assertSubscribers([self.ordinary_subscriber])
 
     def test_getStructuralSubscribers_with_filter_for_not_any_tag(self):
@@ -295,18 +295,18 @@ class FilteredStructuralSubscriptionTestBase:
         # matched.
 
         # Looking to exclude the "foo" or "bar" tags.
-        self.initial_filter.tags = [u"-foo", u"-bar"]
+        self.initial_filter.tags = ["-foo", "-bar"]
         self.initial_filter.find_all_tags = False
 
         # Without either tag the subscription is found.
         self.assertSubscribers([self.ordinary_subscriber])
 
         # With both tags, the subscription is omitted.
-        self.bug.tags = [u'foo', u'bar']
+        self.bug.tags = ['foo', 'bar']
         self.assertSubscribers([])
 
         # With only one tag, the subscription is found again.
-        self.bug.tags = [u'foo']
+        self.bug.tags = ['foo']
         self.assertSubscribers([self.ordinary_subscriber])
 
         # However, if find_all_tags is True, even a single excluded tag
@@ -315,7 +315,7 @@ class FilteredStructuralSubscriptionTestBase:
         self.assertSubscribers([])
 
         # This is also true, of course, if the bug has both tags.
-        self.bug.tags = [u'foo', u'bar']
+        self.bug.tags = ['foo', 'bar']
         self.assertSubscribers([])
 
     def test_getStructuralSubscribers_with_filter_for_not_all_tags(self):
@@ -324,7 +324,7 @@ class FilteredStructuralSubscriptionTestBase:
         # matched.
 
         # Looking to exclude the "foo" and "bar" tags.
-        self.initial_filter.tags = [u'-foo', u'-bar']
+        self.initial_filter.tags = ['-foo', '-bar']
         self.initial_filter.find_all_tags = True
 
         # Without either tag the subscription is found.
@@ -333,11 +333,11 @@ class FilteredStructuralSubscriptionTestBase:
         # With only one of the excluded tags the subscription is not
         # found--we are saying that we want to find both an absence of foo
         # and an absence of bar, and yet foo exists.
-        self.bug.tags = [u'foo']
+        self.bug.tags = ['foo']
         self.assertSubscribers([])
 
         # With both tags the subscription is also not found.
-        self.bug.tags = [u'foo', u'bar']
+        self.bug.tags = ['foo', 'bar']
         self.assertSubscribers([])
 
     def test_getStructuralSubscribers_with_multiple_filters(self):
@@ -345,7 +345,7 @@ class FilteredStructuralSubscriptionTestBase:
         # match.
 
         # Add the "foo" tag to the bug.
-        self.bug.tags = [u'foo']
+        self.bug.tags = ['foo']
         self.assertSubscribers([self.ordinary_subscriber])
 
         # Filter the subscription to bugs in the CRITICAL state.
@@ -367,13 +367,13 @@ class FilteredStructuralSubscriptionTestBase:
 
         # If the filter is given some tag criteria, the subscription is not
         # found.
-        self.initial_filter.tags = [u'-foo', u'bar', u'baz']
+        self.initial_filter.tags = ['-foo', 'bar', 'baz']
         self.initial_filter.find_all_tags = False
         self.assertSubscribers([])
 
         # After removing the "foo" tag and adding the "bar" tag, the
         # subscription is found.
-        self.bug.tags = [u'bar']
+        self.bug.tags = ['bar']
         self.assertSubscribers([self.ordinary_subscriber])
 
         # Requiring that all tag criteria are fulfilled causes the
@@ -382,7 +382,7 @@ class FilteredStructuralSubscriptionTestBase:
         self.assertSubscribers([])
 
         # After adding the "baz" tag, the subscription is found again.
-        self.bug.tags = [u'bar', u'baz']
+        self.bug.tags = ['bar', 'baz']
         self.assertSubscribers([self.ordinary_subscriber])
 
     def test_getStructuralSubscribers_any_filter_is_a_match(self):
@@ -392,7 +392,7 @@ class FilteredStructuralSubscriptionTestBase:
         subscription_filter1 = self.initial_filter
         subscription_filter1.statuses = [BugTaskStatus.CONFIRMED]
         subscription_filter2 = self.subscription.newBugFilter()
-        subscription_filter2.tags = [u'foo']
+        subscription_filter2.tags = ['foo']
 
         # With the filter the subscription is not found.
         self.assertSubscribers([])
@@ -405,7 +405,7 @@ class FilteredStructuralSubscriptionTestBase:
 
         # If the filter is adjusted to also match the criteria of the second
         # filter, the subscription is still found.
-        self.bugtask.bug.tags = [u'foo']
+        self.bugtask.bug.tags = ['foo']
         self.assertSubscribers([self.ordinary_subscriber])
 
         # If the bugtask is adjusted to no longer match the criteria of the
@@ -550,7 +550,7 @@ class TestGetStructuralSubscriptionsForBug(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetStructuralSubscriptionsForBug, self).setUp()
+        super().setUp()
         self.subscriber = self.factory.makePerson()
         self.team = self.factory.makeTeam(members=[self.subscriber])
         login_person(self.subscriber)
@@ -800,9 +800,9 @@ class TestGetStructuralSubscribers(TestCaseWithFactory):
         reason, header = recipients.getReason(subscriber)
         self.assertThat(
             reason, StartsWith(
-                u"You received this bug notification because "
-                u"you are subscribed to "))
-        self.assertThat(header, StartsWith(u"Subscriber "))
+                "You received this bug notification because "
+                "you are subscribed to "))
+        self.assertThat(header, StartsWith("Subscriber "))
 
     def test_getStructuralSubscribers_level(self):
         # get_structural_subscribers() respects the given level.
@@ -829,7 +829,7 @@ class TestBugSubscriptionFilterMute(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionFilterMute, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.team = self.factory.makeTeam()
         self.team_member = self.factory.makePerson()

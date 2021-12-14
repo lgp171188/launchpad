@@ -111,7 +111,7 @@ class SourceForgeRemoteProductFinder:
             # None.
             return None
 
-        return u'%s&%s' % (group_id, atid)
+        return '%s&%s' % (group_id, atid)
 
     def setRemoteProductsFromSourceForge(self):
         """Find and set the remote product for SF-linked Products."""

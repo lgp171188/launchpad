@@ -34,7 +34,7 @@ class BugWatchScheduler(TunableLoop):
 
     def __init__(self, log, abort_time=None, max_delay_days=None,
                  max_sample_size=None):
-        super(BugWatchScheduler, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.transaction = transaction
         self.store = IMasterStore(BugWatch)
 

@@ -86,7 +86,7 @@ def get_text(node):
         raise BugXMLSyntaxError('No child nodes are expected for <%s>'
                                 % node.tag)
     if node.text is None:
-        return u''
+        return ''
     return six.ensure_text(node.text.strip())
 
 

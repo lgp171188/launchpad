@@ -201,7 +201,7 @@ class ExtractBugTrackerAndBugTest(WithScenarios, TestCase):
     already_registered = False
 
     def setUp(self):
-        super(ExtractBugTrackerAndBugTest, self).setUp()
+        super().setUp()
         login(ANONYMOUS)
         self.bugwatch_set = getUtility(IBugWatchSet)
         self.bugtracker_set = getUtility(IBugTrackerSet)
@@ -509,7 +509,7 @@ class TestBugWatchSetBulkOperations(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestBugWatchSetBulkOperations, self).setUp()
+        super().setUp()
         self.bug_watches = [
             self.factory.makeBugWatch(remote_bug='alice'),
             self.factory.makeBugWatch(remote_bug='bob'),
@@ -594,7 +594,7 @@ class TestBugWatchBugTasks(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugWatchBugTasks, self).setUp('test@canonical.com')
+        super().setUp('test@canonical.com')
         self.bug_watch = self.factory.makeBugWatch()
 
     def test_bugtasks(self):
@@ -609,8 +609,7 @@ class TestBugWatchActivityPruner(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestBugWatchActivityPruner, self).setUp(
-            'foo.bar@canonical.com')
+        super().setUp('foo.bar@canonical.com')
         self.bug_watch = self.factory.makeBugWatch()
         for i in range(MAX_SAMPLE_SIZE + 1):
             self.bug_watch.addActivity()
@@ -650,7 +649,7 @@ class TestBugWatchResetting(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBugWatchResetting, self).setUp(user=ADMIN_EMAIL)
+        super().setUp(user=ADMIN_EMAIL)
         self.bug_watch = self.factory.makeBugWatch()
         naked = removeSecurityProxy(self.bug_watch)
         naked.last_error_type = BugWatchActivityStatus.BUG_NOT_FOUND

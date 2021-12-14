@@ -42,8 +42,7 @@ class TestNotificationsSentForBugExpiration(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestNotificationsSentForBugExpiration, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         # We need a product, a bug for this product, a question linked
         # to the bug and a subscriber.
         self.product = self.factory.makeProduct()
@@ -75,7 +74,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestNotificationsLinkToFilters, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         self.subscriber = self.factory.makePerson()
         self.subscription = self.bug.default_bugtask.target.addSubscription(
@@ -87,7 +86,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
         # construct_email_notifications to work.
         BugNotificationRecipient(
             bug_notification=notification, person=person,
-            reason_header=u'reason header', reason_body=u'reason body')
+            reason_header='reason header', reason_body='reason body')
 
     def addNotification(self, person, bug=None):
         # Add a notification along with recipient data.
@@ -121,10 +120,10 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
 
     def prepareTwoNotificationsWithFilters(self):
         # Set up first notification and filter.
-        self.includeFilterInNotification(description=u'Special Filter!')
+        self.includeFilterInNotification(description='Special Filter!')
         # Set up second notification and filter.
         self.notification2 = self.addNotification(self.subscriber)
-        self.includeFilterInNotification(description=u'Another Filter!',
+        self.includeFilterInNotification(description='Another Filter!',
                                          create_new_filter=True,
                                          notification=self.notification2)
 
@@ -173,7 +172,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
             subscriber2, subscriber2)
         notification2 = self.addNotification(subscriber2)
         self.includeFilterInNotification(subscription=subscription2,
-                                         description=u'Special Filter!',
+                                         description='Special Filter!',
                                          notification=notification2)
         sources = list(self.notification.recipients)
         sources2 = list(notification2.recipients)
@@ -181,7 +180,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
             {self.subscriber: {'sources': sources,
                                'filter descriptions': []},
              subscriber2: {'sources': sources2,
-                           'filter descriptions': [u'Special Filter!']}},
+                           'filter descriptions': ['Special Filter!']}},
             BugNotificationSet().getRecipientFilterData(
                 self.bug, {self.subscriber: sources, subscriber2: sources2},
                 [self.notification, notification2]))
@@ -189,7 +188,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
     def test_getRecipientFilterData_match(self):
         # When there are bug filters for the recipient,
         # only those filters are returned.
-        self.includeFilterInNotification(description=u'Special Filter!')
+        self.includeFilterInNotification(description='Special Filter!')
         sources = list(self.notification.recipients)
         self.assertEqual(
             {self.subscriber: {'sources': sources,
@@ -215,7 +214,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
     def test_getRecipientFilterData_mute(self):
         # When there are bug filters for the recipient,
         # only those filters are returned.
-        self.includeFilterInNotification(description=u'Special Filter!')
+        self.includeFilterInNotification(description='Special Filter!')
         # Mute the first filter.
         BugSubscriptionFilterMute(
             person=self.subscriber,
@@ -237,13 +236,13 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
             subscriber2, subscriber2)
         notification2 = self.addNotification(subscriber2)
         self.includeFilterInNotification(subscription=subscription2,
-                                         description=u'Special Filter!',
+                                         description='Special Filter!',
                                          notification=notification2)
         sources = list(self.notification.recipients)
         sources2 = list(notification2.recipients)
         self.assertEqual(
             {subscriber2: {'sources': sources2,
-                           'filter descriptions': [u'Special Filter!']}},
+                           'filter descriptions': ['Special Filter!']}},
             BugNotificationSet().getRecipientFilterData(
                 self.bug, {self.subscriber: sources, subscriber2: sources2},
                 [self.notification, notification2]))
@@ -318,7 +317,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
     def test_getRecipientFilterData_mute_bug_mutes_filter(self):
         # Mute the bug for the subscriber.
         self.bug.mute(self.subscriber, self.subscriber)
-        self.includeFilterInNotification(description=u'Special Filter!')
+        self.includeFilterInNotification(description='Special Filter!')
         sources = list(self.notification.recipients)
         self.assertEqual(
             {},
@@ -357,8 +356,7 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestNotificationsForDuplicates, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         self.bug = self.factory.makeBug()
         self.dupe_bug = self.factory.makeBug()
         self.dupe_bug.markAsDuplicate(self.bug)
@@ -467,7 +465,7 @@ class TestGetDeferredNotifications(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetDeferredNotifications, self).setUp()
+        super().setUp()
         self.bns = BugNotificationSet()
 
     def test_no_deferred_notifications(self):
