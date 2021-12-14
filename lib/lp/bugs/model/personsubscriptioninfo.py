@@ -92,8 +92,7 @@ class VirtualSubscriptionInfoCollection(AbstractSubscriptionInfoCollection):
     """See `IVirtualSubscriptionInfoCollection`"""
 
     def __init__(self, person, administrated_team_ids):
-        super(VirtualSubscriptionInfoCollection, self).__init__(
-            person, administrated_team_ids)
+        super().__init__(person, administrated_team_ids)
         self._principal_pillar_to_info = {}
 
     def _add_item_to_collection(self, collection, principal, bug, pillar,
@@ -113,8 +112,7 @@ class RealSubscriptionInfoCollection(
     """Core functionality for Duplicate and Direct"""
 
     def __init__(self, person, administrated_team_ids):
-        super(RealSubscriptionInfoCollection, self).__init__(
-            person, administrated_team_ids)
+        super().__init__(person, administrated_team_ids)
         self._principal_bug_to_infos = {}
 
     def _add_item_to_collection(self, collection, principal, bug,
@@ -146,7 +144,7 @@ class RealSubscriptionInfoCollection(
 
 
 @implementer(IPersonSubscriptions)
-class PersonSubscriptions(object):
+class PersonSubscriptions:
     """See `IPersonSubscriptions`."""
 
     def __init__(self, person, bug):

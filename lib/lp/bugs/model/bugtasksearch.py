@@ -430,9 +430,9 @@ def _build_query(params):
 
     if params.has_cve:
         where = [
-            XRef.from_type == u'bug',
+            XRef.from_type == 'bug',
             XRef.from_id_int == BugTaskFlat.bug_id,
-            XRef.to_type == u'cve',
+            XRef.to_type == 'cve',
             ]
         extra_clauses.append(Exists(Select(
             1, tables=[XRef], where=And(*where))))
@@ -643,8 +643,8 @@ def _build_query(params):
                         # doesn't really give us any better way to exclude
                         # the bug creation event.
                         Or(
-                            BugActivity.whatchanged != u'bug',
-                            BugActivity.message != u'added bug')))))))
+                            BugActivity.whatchanged != 'bug',
+                            BugActivity.message != 'added bug')))))))
         with_clauses.append(convert_storm_clause_to_string(
             With('commented_bugtask_ids',
                 Select(
@@ -707,9 +707,9 @@ def _build_query(params):
 
     def make_merge_proposal_clause(merge_proposals=None):
         where = [
-            XRef.from_type == u'bug',
+            XRef.from_type == 'bug',
             XRef.from_id_int == BugTaskFlat.bug_id,
-            XRef.to_type == u'merge_proposal',
+            XRef.to_type == 'merge_proposal',
             ]
         if merge_proposals is not None:
             where.append(
@@ -839,7 +839,7 @@ def _process_order_by(params):
             orderby_arg.append(orderby_col)
             continue
         desc_search = False
-        if orderby_col.startswith(u"-"):
+        if orderby_col.startswith("-"):
             orderby_col = orderby_col[1:]
             desc_search = True
         if orderby_col not in orderby_expression:
@@ -1006,9 +1006,9 @@ def _build_blueprint_related_clause(params):
 
     def make_clause(blueprints=None):
         where = [
-            XRef.from_type == u'bug',
+            XRef.from_type == 'bug',
             XRef.from_id_int == BugTaskFlat.bug_id,
-            XRef.to_type == u'specification',
+            XRef.to_type == 'specification',
             ]
         if blueprints is not None:
             where.append(

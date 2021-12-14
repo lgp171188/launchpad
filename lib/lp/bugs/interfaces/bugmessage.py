@@ -39,24 +39,24 @@ from lp.services.messages.interfaces.message import (
 class IBugMessageView(IMessageView, IHasBug):
     """Public attributes for a link between a bug and a message."""
 
-    bug = Object(schema=IBug, title=u"The bug.")
+    bug = Object(schema=IBug, title="The bug.")
     # The index field is being populated in the DB; once complete it will be
     # made required. Whether to make it readonly or not is dependent on UI
     # considerations. If, once populated, it becomes read-write, we probably
     # want to ensure that only actions like bug import or spam hiding can
     # change it, rather than arbitrary API scripts.
-    index = Int(title=u'The comment number', required=False, readonly=False,
+    index = Int(title='The comment number', required=False, readonly=False,
         default=None)
-    message_id = Int(title=u"The message id.", readonly=True)
-    message = Object(schema=IMessage, title=u"The message.")
+    message_id = Int(title="The message id.", readonly=True)
+    message = Object(schema=IMessage, title="The message.")
     bugwatch = Object(schema=IBugWatch,
-        title=u"A bugwatch to which the message pertains.")
-    bugwatch_id = Int(title=u'The bugwatch id.', readonly=True)
+        title="A bugwatch to which the message pertains.")
+    bugwatch_id = Int(title='The bugwatch id.', readonly=True)
     remote_comment_id = TextLine(
-        title=u"The id this comment has in the bugwatch's bug tracker.")
+        title="The id this comment has in the bugwatch's bug tracker.")
     owner_id = Attribute("The ID of the owner mirrored from the message")
     owner = Object(schema=IPerson,
-        title=u"The Message owner mirrored from the message.", readonly=True)
+        title="The Message owner mirrored from the message.", readonly=True)
 
 
 class IBugMessage(IBugMessageView, IMessage):
@@ -100,20 +100,20 @@ class IBugMessageSet(Interface):
 class IBugMessageAddForm(Interface):
     """Schema used to build the add form for bug comment/attachment."""
 
-    subject = Title(title=u"Subject", required=True)
-    comment = Text(title=u"Comment", required=False)
+    subject = Title(title="Subject", required=True)
+    comment = Text(title="Comment", required=False)
     filecontent = Bytes(
-        title=u"Attachment", required=False,
+        title="Attachment", required=False,
         constraint=attachment_size_constraint)
     patch = Bool(
-        title=u"This attachment contains a solution (patch) for this bug",
+        title="This attachment contains a solution (patch) for this bug",
         required=False, default=False)
-    attachment_description = Title(title=u'Description', required=False)
+    attachment_description = Title(title='Description', required=False)
     email_me = Bool(
-        title=u"Email me about changes to this bug report",
+        title="Email me about changes to this bug report",
         required=False, default=False)
     bugwatch_id = Int(
-        title=(u"Synchronize this comment with a remote bug "
+        title=("Synchronize this comment with a remote bug "
                "tracker using the bug watch with this id."),
         required=False, default=None)
 
@@ -129,7 +129,7 @@ class IBugComment(IMessage, IComment):
         """)
     bugwatch = Attribute('The bugwatch to which the comment pertains.')
     show_for_admin = Bool(
-        title=u'A hidden comment still displayed for admins.',
+        title='A hidden comment still displayed for admins.',
         readonly=True)
     display_title = Attribute('Whether or not to show the title.')
     synchronized = Attribute(

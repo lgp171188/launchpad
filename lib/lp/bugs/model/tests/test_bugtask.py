@@ -133,7 +133,7 @@ class TestBugTaskAdaptation(TestCase):
         bugtask_four = getUtility(IBugTaskSet).get(4)
         bug = IBug(bugtask_four)
         self.assertEqual(bug.title,
-                         u'Firefox does not support SVG')
+                         'Firefox does not support SVG')
 
 
 class TestBugTaskCreation(TestCaseWithFactory):
@@ -372,16 +372,16 @@ class TestBugTaskTargets(TestCase):
             IDistributionSourcePackage.providedBy(debian_ff_task.target))
 
         target = debian_ff_task.target
-        self.assertEqual(target.distribution.name, u'debian')
-        self.assertEqual(target.sourcepackagename.name, u'mozilla-firefox')
+        self.assertEqual(target.distribution.name, 'debian')
+        self.assertEqual(target.sourcepackagename.name, 'mozilla-firefox')
 
         ubuntu_linux_task = bugtaskset.get(25)
         self.assertTrue(
             IDistributionSourcePackage.providedBy(ubuntu_linux_task.target))
 
         target = ubuntu_linux_task.target
-        self.assertEqual(target.distribution.name, u'ubuntu')
-        self.assertEqual(target.sourcepackagename.name, u'linux-source-2.6.15')
+        self.assertEqual(target.distribution.name, 'ubuntu')
+        self.assertEqual(target.sourcepackagename.name, 'linux-source-2.6.15')
 
     def test_bugtask_target_distroseries_sourcepackage(self):
         """The 'target' of a task can be a distroseries sourcepackage"""
@@ -413,9 +413,9 @@ class TestBugTaskTargetName(TestCase):
         bugtask = bugtaskset.get(17)
 
         self.assertEqual(bugtask.bugtargetdisplayname,
-            u'mozilla-firefox (Ubuntu)')
+            'mozilla-firefox (Ubuntu)')
         self.assertEqual(bugtask.bugtargetname,
-            u'mozilla-firefox (Ubuntu)')
+            'mozilla-firefox (Ubuntu)')
 
     def test_targetname_series_product(self):
         """The targetname for distro series/product versions will be name of
@@ -424,8 +424,8 @@ class TestBugTaskTargetName(TestCase):
         bugtaskset = getUtility(IBugTaskSet)
         bugtask = bugtaskset.get(2)
 
-        self.assertEqual(bugtask.bugtargetdisplayname, u'Mozilla Firefox')
-        self.assertEqual(bugtask.bugtargetname, u'firefox')
+        self.assertEqual(bugtask.bugtargetdisplayname, 'Mozilla Firefox')
+        self.assertEqual(bugtask.bugtargetname, 'firefox')
 
 
 class TestEditingBugTask(TestCase):
@@ -502,14 +502,14 @@ class TestBugTaskTags(TestCase):
         bug_three = getUtility(IBugSet).get(3)
         another_bugtask = bug_three.bugtasks[0]
 
-        some_bugtask.bug.tags = [u'foo', u'bar']
-        another_bugtask.bug.tags = [u'baz', u'bop']
+        some_bugtask.bug.tags = ['foo', 'bar']
+        another_bugtask.bug.tags = ['baz', 'bop']
         tags_by_task = getUtility(IBugTaskSet).getBugTaskTags([
             some_bugtask, another_bugtask])
 
         self.assertEqual(
             tags_by_task,
-            {3: [u'bar', u'foo'], 6: [u'baz', u'bop']})
+            {3: ['bar', 'foo'], 6: ['baz', 'bop']})
 
 
 class TestBugTaskBadges(TestCaseWithFactory):
@@ -744,7 +744,7 @@ class TestBugTaskDelta(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTaskDelta, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
 
     def test_get_empty_delta(self):
@@ -951,7 +951,7 @@ class TestBugTaskPermissionsToSetAssigneeMixin:
           owners, bug supervisors, drivers
         - bug tasks for the targets
         """
-        super(TestBugTaskPermissionsToSetAssigneeMixin, self).setUp()
+        super().setUp()
         self.target_owner_member = self.factory.makePerson()
         self.target_owner_team = self.factory.makeTeam(
             owner=self.target_owner_member,
@@ -1518,7 +1518,7 @@ class TestStatusCountsForProductSeries(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestStatusCountsForProductSeries, self).setUp()
+        super().setUp()
         self.bugtask_set = getUtility(IBugTaskSet)
         self.owner = self.factory.makePerson()
         login_person(self.owner)
@@ -1610,7 +1610,7 @@ class TestBugTaskMilestones(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTaskMilestones, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.product_bug = self.factory.makeBug(target=self.product)
         self.product_milestone = self.factory.makeMilestone(
@@ -2003,8 +2003,8 @@ class TestAutoConfirmBugTasksFlagForProduct(TestCaseWithFactory):
     def makeTarget(self):
         return self.factory.makeProduct()
 
-    flag = u'bugs.autoconfirm.enabled_product_names'
-    alt_flag = u'bugs.autoconfirm.enabled_distribution_names'
+    flag = 'bugs.autoconfirm.enabled_product_names'
+    alt_flag = 'bugs.autoconfirm.enabled_distribution_names'
 
     def test_False(self):
         # With no feature flags turned on, we do not auto-confirm.
@@ -2014,7 +2014,7 @@ class TestAutoConfirmBugTasksFlagForProduct(TestCaseWithFactory):
 
     def test_flag_False(self):
         bug_task = self.factory.makeBugTask(target=self.makeTarget())
-        with FeatureFixture({self.flag: u'   '}):
+        with FeatureFixture({self.flag: '   '}):
             self.assertFalse(
                 removeSecurityProxy(bug_task)._checkAutoconfirmFeatureFlag())
 
@@ -2026,14 +2026,14 @@ class TestAutoConfirmBugTasksFlagForProduct(TestCaseWithFactory):
 
     def test_explicit_flag_of_many(self):
         bug_task = self.factory.makeBugTask(target=self.makeTarget())
-        flag_value = u'  foo bar  ' + bug_task.pillar.name + '    baz '
+        flag_value = '  foo bar  ' + bug_task.pillar.name + '    baz '
         with FeatureFixture({self.flag: flag_value}):
             self.assertTrue(
                 removeSecurityProxy(bug_task)._checkAutoconfirmFeatureFlag())
 
     def test_match_all_flag(self):
         bug_task = self.factory.makeBugTask(target=self.makeTarget())
-        with FeatureFixture({self.flag: u'*'}):
+        with FeatureFixture({self.flag: '*'}):
             self.assertTrue(
                 removeSecurityProxy(bug_task)._checkAutoconfirmFeatureFlag())
 
@@ -2103,7 +2103,7 @@ class TestAutoConfirmBugTasksTransitionToTarget(TestCaseWithFactory):
         autoconfirm_product = self.factory.makeProduct(owner=person)
         no_autoconfirm_product = self.factory.makeProduct(owner=person)
         with FeatureFixture({
-            u'bugs.autoconfirm.enabled_product_names':
+            'bugs.autoconfirm.enabled_product_names':
             autoconfirm_product.name}):
             bug_task = self.factory.makeBugTask(
                 target=no_autoconfirm_product, owner=person)
@@ -2120,7 +2120,7 @@ class TestAutoConfirmBugTasksTransitionToTarget(TestCaseWithFactory):
         autoconfirm_product = self.factory.makeProduct(owner=person)
         no_autoconfirm_product = self.factory.makeProduct(owner=person)
         with FeatureFixture({
-            u'bugs.autoconfirm.enabled_product_names':
+            'bugs.autoconfirm.enabled_product_names':
             autoconfirm_product.name}):
             bug_task = self.factory.makeBugTask(
                 target=no_autoconfirm_product, owner=person)
@@ -2147,7 +2147,7 @@ class TestAutoConfirmBugTasks(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag(u'bugs.autoconfirm.enabled_product_names', u'*')
+            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
             bug_task = self.factory.makeBugTask()
             bug = bug_task.bug
             self.assertEqual(BugTaskStatus.NEW, bug_task.status)
@@ -2167,7 +2167,7 @@ class TestAutoConfirmBugTasks(TestCaseWithFactory):
                 self.assertEqual(
                     original_comment_count + 1, bug.messages.count())
                 self.assertEqual(
-                    u"Status changed to 'Confirmed' because the bug affects "
+                    "Status changed to 'Confirmed' because the bug affects "
                     "multiple users.",
                     bug.messages[-1].text_contents)
 
@@ -2176,7 +2176,7 @@ class TestAutoConfirmBugTasks(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag(u'bugs.autoconfirm.enabled_product_names', u'*')
+            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
             product = self.factory.makeProduct()
             with person_logged_in(product.owner):
                 bug = self.factory.makeBug(
@@ -2195,7 +2195,7 @@ class TestAutoConfirmBugTasks(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag(u'bugs.autoconfirm.enabled_product_names', u'*')
+            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
             bug_task = self.factory.makeBugTask()
             removeSecurityProxy(bug_task).transitionToStatus(
                 BugTaskStatus.CONFIRMED, bug_task.bug.owner)
@@ -2575,7 +2575,7 @@ class TestTransitionsRemovesSubscribersJob(TestCaseWithFactory):
         self.useFixture(FeatureFixture({
             'jobs.celery.enabled_classes': 'RemoveArtifactSubscriptionsJob',
         }))
-        super(TestTransitionsRemovesSubscribersJob, self).setUp()
+        super().setUp()
 
     def _assert_bug_change_unsubscribes(self, change_callback,
                                         ignore_policy_grantee_check=False):
@@ -3106,7 +3106,7 @@ class TestBugTaskUserHasBugSupervisorPrivileges(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTaskUserHasBugSupervisorPrivileges, self).setUp()
+        super().setUp()
         self.celebrities = getUtility(ILaunchpadCelebrities)
 
     def test_admin_is_allowed(self):
@@ -3257,13 +3257,13 @@ class TestTargetNameCache(TestCase):
         upstream_task = getUtility(IBugTaskSet).createTask(
             bug_one, mark, netapplet,
             status=BugTaskStatus.NEW, importance=BugTaskImportance.MEDIUM)
-        self.assertEqual(upstream_task.bugtargetdisplayname, u'NetApplet')
+        self.assertEqual(upstream_task.bugtargetdisplayname, 'NetApplet')
 
         thunderbird = getUtility(IProductSet).get(8)
         upstream_task_id = upstream_task.id
         upstream_task.transitionToTarget(thunderbird, bug_one.owner)
         self.assertEqual(upstream_task.bugtargetdisplayname,
-                         u'Mozilla Thunderbird')
+                         'Mozilla Thunderbird')
 
         thunderbird.name = 'thunderbird-ng'
         thunderbird.display_name = 'Mozilla Thunderbird NG'
@@ -3288,7 +3288,7 @@ class TestTargetNameCache(TestCase):
         self.assertTrue('INFO    Calculating targets.' in err)
         self.assertTrue('INFO    Will check ' in err)
         self.assertTrue(
-            ('INFO    Updating ' + repr((u'Mozilla Thunderbird',))) in err)
+            ('INFO    Updating ' + repr(('Mozilla Thunderbird',))) in err)
         self.assertTrue('INFO    Updated 1 target names.' in err)
         self.assertTrue('INFO    Finished updating targetname cache' in err)
 
@@ -3302,7 +3302,7 @@ class TestTargetNameCache(TestCase):
 
         self.assertEqual(
             getUtility(IBugTaskSet).get(upstream_task_id).bugtargetdisplayname,
-            u'Mozilla Thunderbird NG')
+            'Mozilla Thunderbird NG')
 
         # With sourcepackage bugtasks that have accepted nominations to a
         # series, additional sourcepackage bugtasks are automatically
@@ -3349,7 +3349,7 @@ class TestTargetNameCache(TestCase):
         transaction.commit()
 
         self.assertEqual(upstream_task.bugtargetdisplayname,
-            u'Mozilla Thunderbird NG')
+            'Mozilla Thunderbird NG')
 
         logger = DevNullLogger()
         updater = BugTaskTargetNameCacheUpdater(transaction, logger)
@@ -3358,4 +3358,4 @@ class TestTargetNameCache(TestCase):
         flush_database_caches()
         transaction.commit()
         self.assertEqual(upstream_task.bugtargetdisplayname,
-            u'Mozilla Thunderbird')
+            'Mozilla Thunderbird')

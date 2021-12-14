@@ -34,7 +34,7 @@ class TestBugSummary(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestBugSummary, self).setUp()
+        super().setUp()
 
         # Some things we are testing are impossible as mere mortals,
         # but might happen from the SQL command line.
@@ -67,7 +67,7 @@ class TestBugSummary(TestCaseWithFactory):
         self.assertTrue(IBugSummary.providedBy(bug_summary))
 
     def test_addTag(self):
-        tag = u'pustular'
+        tag = 'pustular'
 
         # Ensure nothing using our tag yet.
         self.assertCount(0, tag=tag)
@@ -86,8 +86,8 @@ class TestBugSummary(TestCaseWithFactory):
         self.assertCount(3, tag=tag)
 
     def test_changeTag(self):
-        old_tag = u'pustular'
-        new_tag = u'flatulent'
+        old_tag = 'pustular'
+        new_tag = 'flatulent'
 
         # Ensure nothing using our tags yet.
         self.assertCount(0, tag=old_tag)
@@ -115,7 +115,7 @@ class TestBugSummary(TestCaseWithFactory):
         self.assertCount(3, tag=new_tag)
 
     def test_removeTag(self):
-        tag = u'pustular'
+        tag = 'pustular'
 
         # Ensure nothing using our tags yet.
         self.assertCount(0, tag=tag)

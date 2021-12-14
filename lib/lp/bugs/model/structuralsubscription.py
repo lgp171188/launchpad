@@ -14,7 +14,6 @@ __all__ = [
 from collections import defaultdict
 
 import pytz
-import six
 from storm.base import Storm
 from storm.expr import (
     And,
@@ -139,7 +138,7 @@ class StructuralSubscription(Storm):
     def __init__(self, subscriber, subscribed_by, **kwargs):
         self.subscriber = subscriber
         self.subscribed_by = subscribed_by
-        for arg, value in six.iteritems(kwargs):
+        for arg, value in kwargs.items():
             setattr(self, arg, value)
 
     @property
@@ -486,7 +485,7 @@ class StructuralSubscriptionTargetMixin:
         """See `IStructuralSubscriptionTarget`."""
         from lp.registry.model.person import Person
         clauses = [StructuralSubscription.subscriberID == Person.id]
-        for key, value in six.iteritems(self._target_args):
+        for key, value in self._target_args.items():
             clauses.append(
                 getattr(StructuralSubscription, key) == value)
 
@@ -951,7 +950,7 @@ def _calculate_tag_query(conditions, tags):
         # space as, effectively, NULL.  This is safe because a
         # single space is not an acceptable tag.  Again, the
         # clearest alternative is defining a custom Postgres aggregator.
-        tags_array = Cast(Array(tuple(tags) + (u" ",)), "text[]")
+        tags_array = Cast(Array(tuple(tags) + (" ",)), "text[]")
         # Now let's build the select itself.
         second_select = Select(
             BugSubscriptionFilter.id,

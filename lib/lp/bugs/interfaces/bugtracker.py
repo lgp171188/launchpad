@@ -93,7 +93,7 @@ class BugTrackerURL(URIField):
 
     def _validate(self, input):
         """Check that the URL is not already in use by another bugtracker."""
-        super(BugTrackerURL, self)._validate(input)
+        super()._validate(input)
         bugtracker = getUtility(IBugTrackerSet).queryByBaseURL(input)
         if bugtracker is not None and bugtracker != self.context:
             raise LaunchpadValidationError(
@@ -391,7 +391,7 @@ class IBugTracker(Interface):
 
     @operation_parameters(
         component_group_name=TextLine(
-            title=u"The name of the remote component group", required=True))
+            title="The name of the remote component group", required=True))
     @operation_returns_entry(Interface)
     @export_write_operation()
     def addRemoteComponentGroup(component_group_name):
@@ -404,7 +404,7 @@ class IBugTracker(Interface):
 
     @operation_parameters(
         component_group_name=TextLine(
-            title=u"The name of the remote component group",
+            title="The name of the remote component group",
             required=True))
     @operation_returns_entry(Interface)
     @export_read_operation()
@@ -416,10 +416,10 @@ class IBugTracker(Interface):
 
     @operation_parameters(
         distribution=TextLine(
-            title=u"The distribution for the source package",
+            title="The distribution for the source package",
             required=True),
         sourcepackagename=TextLine(
-            title=u"The source package name",
+            title="The source package name",
             required=True))
     @operation_returns_entry(Interface)
     @export_read_operation()
@@ -457,7 +457,7 @@ class IBugTrackerSet(Interface):
         """
 
     @operation_parameters(
-        name=TextLine(title=u"The bug tracker name", required=True))
+        name=TextLine(title="The bug tracker name", required=True))
     @operation_returns_entry(IBugTracker)
     @export_read_operation()
     def getByName(name, default=None):
@@ -479,7 +479,7 @@ class IBugTrackerSet(Interface):
     @rename_parameters_as(baseurl='base_url')
     @operation_parameters(
         baseurl=TextLine(
-            title=u"The base URL of the bug tracker", required=True))
+            title="The base URL of the bug tracker", required=True))
     @operation_returns_entry(IBugTracker)
     @export_read_operation()
     def queryByBaseURL(baseurl):
@@ -613,7 +613,7 @@ class IBugTrackerComponentGroup(Interface):
 
     @operation_parameters(
         component_name=TextLine(
-            title=u"The name of the remote software component to be added",
+            title="The name of the remote software component to be added",
             required=True))
     @export_write_operation()
     def addComponent(component_name):

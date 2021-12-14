@@ -85,7 +85,7 @@ class BugSubscriptionFilter(StormBase):
                  find_all_tags=False,
                  include_any_tags=False, exclude_any_tags=False,
                  other_parameters=None, description=None):
-        super(BugSubscriptionFilter, self).__init__()
+        super().__init__()
         self.structural_subscription = structural_subscription
         self.bug_notification_level = bug_notification_level
         self.find_all_tags = find_all_tags
@@ -147,9 +147,9 @@ class BugSubscriptionFilter(StormBase):
         """Return a frozenset of tags to filter on."""
         wildcards = []
         if self.include_any_tags:
-            wildcards.append(u"*")
+            wildcards.append("*")
         if self.exclude_any_tags:
-            wildcards.append(u"-*")
+            wildcards.append("-*")
         tags = (
             tag_filter.qualified_tag
             for tag_filter in IStore(BugSubscriptionFilterTag).find(
@@ -179,7 +179,7 @@ class BugSubscriptionFilter(StormBase):
         else:
             # Leave find_all_tags unchanged.
             tags = frozenset(tags)
-        wildcards = frozenset((u"*", u"-*")).intersection(tags)
+        wildcards = frozenset(("*", "-*")).intersection(tags)
         # Set wildcards.
         self.include_any_tags = "*" in wildcards
         self.exclude_any_tags = "-*" in wildcards
@@ -380,7 +380,7 @@ class BugSubscriptionFilterTag(StormBase):
         if self.include:
             return self.tag
         else:
-            return u"-" + self.tag
+            return "-" + self.tag
 
 
 class BugSubscriptionFilterInformationType(StormBase):

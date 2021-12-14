@@ -32,7 +32,7 @@ class TestPersonSubscriptionInfo(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonSubscriptionInfo, self).setUp()
+        super().setUp()
         self.subscriber = self.factory.makePerson()
         self.bug = self.factory.makeBug()
         self.subscriptions = PersonSubscriptions(self.subscriber, self.bug)

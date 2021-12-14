@@ -96,22 +96,22 @@ search_tasks_params_common = {
     "has_no_package": copy_field(IBugTaskSearch['has_no_package']),
     "linked_branches": Choice(
         title=_(
-            u"Search for bugs that are linked to branches or for bugs "
+            "Search for bugs that are linked to branches or for bugs "
             "that are not linked to branches."),
         vocabulary=BugBranchSearch, required=False),
     "modified_since": Datetime(
         title=_(
-            u"Search for bugs that have been modified since the given "
+            "Search for bugs that have been modified since the given "
             "date."),
         required=False),
     "created_since": Datetime(
         title=_(
-            u"Search for bugs that have been created since the given "
+            "Search for bugs that have been created since the given "
             "date."),
         required=False),
     "created_before": Datetime(
         title=_(
-            u"Search for bugs that were created before the given "
+            "Search for bugs that were created before the given "
             "date."),
         required=False),
     }
@@ -127,8 +127,8 @@ search_tasks_params_for_api_devel = dict(
         IBugTaskSearch['omit_targeted'], default=False),
     linked_blueprints=Choice(
         title=_(
-            u"Search for bugs that are linked to blueprints or for "
-            u"bugs that are not linked to blueprints."),
+            "Search for bugs that are linked to blueprints or for "
+            "bugs that are not linked to blueprints."),
         vocabulary=BugBlueprintSearch, required=False))
 
 
@@ -227,9 +227,9 @@ class IBugTarget(IHasBugs):
     bug_reporting_guidelines = exported(
         Text(
             title=(
-                u"Helpful guidelines for reporting a bug"),
+                "Helpful guidelines for reporting a bug"),
             description=(
-                u"These guidelines will be shown to "
+                "These guidelines will be shown to "
                 "everyone reporting a bug and should be "
                 "text or a bulleted list with your particular "
                 "requirements, if any."),
@@ -239,22 +239,22 @@ class IBugTarget(IHasBugs):
     bug_reported_acknowledgement = exported(
         Text(
             title=(
-                u"After reporting a bug, I can expect the following."),
+                "After reporting a bug, I can expect the following."),
             description=(
-                u"This message of acknowledgement will be displayed "
+                "This message of acknowledgement will be displayed "
                 "to anyone after reporting a bug."),
             required=False,
             max_length=50000))
 
     enable_bugfiling_duplicate_search = Bool(
-        title=u"Search for possible duplicate bugs when a new bug is filed",
+        title="Search for possible duplicate bugs when a new bug is filed",
         description=(
-            u"If enabled, Launchpad searches the project for bugs which "
-            u"could match the summary given by the bug reporter. However, "
-            u"this can lead users to mistake an existing bug as the one "
-            u"they want to report. This can happen for example for hardware "
-            u"related bugs where the one symptom can be caused by "
-            u"completely different hardware and drivers."),
+            "If enabled, Launchpad searches the project for bugs which "
+            "could match the summary given by the bug reporter. However, "
+            "this can lead users to mistake an existing bug as the one "
+            "they want to report. This can happen for example for hardware "
+            "related bugs where the one symptom can be caused by "
+            "completely different hardware and drivers."),
         required=False)
 
     def createBug(bug_params):
@@ -308,14 +308,14 @@ class IOfficialBugTagTargetRestricted(Interface):
     """Restricted methods for `IOfficialBugTagTarget`."""
 
     @operation_parameters(
-        tag=Tag(title=u'The official bug tag', required=True))
+        tag=Tag(title='The official bug tag', required=True))
     @export_write_operation()
     @operation_for_version('beta')
     def addOfficialBugTag(tag):
         """Add tag to the official bug tags of this target."""
 
     @operation_parameters(
-        tag=Tag(title=u'The official bug tag', required=True))
+        tag=Tag(title='The official bug tag', required=True))
     @export_write_operation()
     @operation_for_version('beta')
     def removeOfficialBugTag(tag):
@@ -334,13 +334,13 @@ class IOfficialBugTagTarget(IOfficialBugTagTargetPublic,
 class IOfficialBugTag(Interface):
     """Official bug tags for a product, a project or a distribution."""
     tag = Tag(
-        title=u'The official bug tag', required=True)
+        title='The official bug tag', required=True)
 
     target = Object(
-        title=u'The target of this bug tag.',
+        title='The target of this bug tag.',
         schema=IOfficialBugTagTarget,
         description=(
-            u'The distribution or product having this official bug tag.'))
+            'The distribution or product having this official bug tag.'))
 
 
 class ISeriesBugTarget(Interface):

@@ -72,7 +72,7 @@ class BugAttachment(SQLBase):
         # in order to avoid problems with not deleted files as described
         # in bug 387188.
         self.libraryfile.content = None
-        super(BugAttachment, self).destroySelf()
+        super().destroySelf()
 
     def getFileByName(self, filename):
         """See IBugAttachment."""

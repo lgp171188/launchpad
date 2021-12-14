@@ -281,7 +281,7 @@ class IBugView(Interface):
             title=_('CVE entries related to this bug.'),
             value_type=Reference(schema=ICve),
             readonly=True))
-    has_cves = Bool(title=u"True if the bug has cve entries.")
+    has_cves = Bool(title="True if the bug has cve entries.")
     duplicates = exported(doNotSnapshot(
         CollectionField(
             title=_("MultiJoin of bugs which are dupes of this one."),
@@ -1106,11 +1106,11 @@ class IBugAddForm(IBug):
         title=_("This bug has already been reported as ..."), required=False,
         vocabulary="Bug")
     filecontent = Bytes(
-        title=u"Attachment", required=False,
+        title="Attachment", required=False,
         constraint=attachment_size_constraint)
-    patch = Bool(title=u"This attachment is a patch", required=False,
+    patch = Bool(title="This attachment is a patch", required=False,
         default=False)
-    attachment_description = Title(title=u'Description', required=False)
+    attachment_description = Title(title='Description', required=False)
     status = Choice(
         title=_('Status'),
         values=list(
@@ -1130,7 +1130,7 @@ class IBugAddForm(IBug):
         title=_('Assign to'), required=False,
         vocabulary='ValidAssignee')
     subscribe_to_existing_bug = Choice(
-        title=u'Subscribe to this bug',
+        title='Subscribe to this bug',
         vocabulary=SUBSCRIBE_TO_BUG_VOCABULARY,
         required=True, default=False)
 

@@ -182,18 +182,18 @@ class IBugAttachmentEditForm(Interface):
 
     title = IBugAttachment['title']
     contenttype = TextLine(
-        title=u'Content Type',
+        title='Content Type',
         description=(
-            u"The content type is only settable if the attachment isn't "
+            "The content type is only settable if the attachment isn't "
             "a patch. If it's a patch, the content type will be set to "
             "text/plain"),
         required=True)
     patch = Bool(
-        title=u"This attachment contains a solution (patch) for this bug",
+        title="This attachment contains a solution (patch) for this bug",
         required=True, default=False)
 
 
 class IBugAttachmentIsPatchConfirmationForm(Interface):
     """Schema used to confirm the setting of the "patch" flag."""
 
-    patch = Bool(title=u"Is this file a patch", required=True, default=False)
+    patch = Bool(title="Is this file a patch", required=True, default=False)

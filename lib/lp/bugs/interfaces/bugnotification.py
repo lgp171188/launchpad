@@ -41,14 +41,14 @@ class IBugNotification(IHasOwner):
         "be None for older notification objects, and will be None if the "
         "bugchange object that provides the data for the change returns None "
         "for getBugActivity.")
-    bug = BugField(title=u"The bug this notification is for.",
+    bug = BugField(title="The bug this notification is for.",
                    required=True)
     is_comment = Bool(
-        title=u"Comment", description=u"Is the message a comment?",
+        title="Comment", description="Is the message a comment?",
         required=True)
     date_emailed = Datetime(
-        title=u"Date emailed",
-        description=u"When was the notification sent? None, if it hasn't"
+        title="Date emailed",
+        description="When was the notification sent? None, if it hasn't"
                      " been sent yet.",
         required=False)
     recipients = Attribute(

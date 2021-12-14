@@ -47,7 +47,7 @@ class BugBranch(StormBase):
     registrant = Reference(registrant_id, 'Person.id')
 
     def __init__(self, branch, bug, registrant):
-        super(BugBranch, self).__init__()
+        super().__init__()
         self.branch = branch
         self.bug = bug
         self.registrant = registrant
