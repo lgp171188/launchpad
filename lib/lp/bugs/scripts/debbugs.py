@@ -9,8 +9,6 @@ import re
 import subprocess
 import sys
 
-import six
-
 
 class Bug:
     def __init__(self, db, id, package=None, date=None, status=None,
@@ -100,7 +98,7 @@ class Database:
         self.debbugs_pl = debbugs_pl
         self.subdir = subdir
 
-    class bug_iterator(six.Iterator):
+    class bug_iterator:
         index_record = re.compile(
             r'^(?P<package>\S+) (?P<bugid>\d+) (?P<date>\d+) (?P<status>\w+) '
             r'\[(?P<originator>.*)\] (?P<severity>\w+)(?: (?P<tags>.*))?$')
@@ -154,7 +152,7 @@ class Database:
 
         try:
             fd = open(summary)
-        except IOError as e:
+        except OSError as e:
             if e.errno == 2:
                 raise SummaryMissing(summary)
             raise
@@ -197,7 +195,7 @@ class Database:
 
         try:
             fd = open(report, 'rb')
-        except IOError as e:
+        except OSError as e:
             if e.errno == 2:
                 raise ReportMissing(report)
             raise
@@ -247,7 +245,7 @@ class Database:
             if process.returncode != 0:
                 raise LogParseFailed(errors)
 
-        except IOError as e:
+        except OSError as e:
             if e.errno == 2:
                 raise LogMissing(log)
             raise

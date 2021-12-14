@@ -147,7 +147,7 @@ class TestBugBranch(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugBranch, self).setUp()
+        super().setUp()
         # Bug branch linking is generally available to any logged in user.
         self.factory.loginAsAnyone()
 

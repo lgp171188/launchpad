@@ -23,7 +23,7 @@ class TestCveSet(TestCaseWithFactory):
 
     def setUp(self):
         """Create a few bugtasks and CVEs."""
-        super(TestCveSet, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeDistroSeries()
         self.bugs = []
         self.cves = []
@@ -73,8 +73,8 @@ class TestCveSet(TestCaseWithFactory):
         cve_data = [cve for bug, cve in bug_cves]
         self.assertEqual(self.bugs, found_bugs)
         expected = [
-            u'CVE-2000-0001', u'CVE-2000-0002', u'CVE-2000-0003',
-            u'CVE-2000-0004']
+            'CVE-2000-0001', 'CVE-2000-0002', 'CVE-2000-0003',
+            'CVE-2000-0004']
         self.assertEqual(expected, cve_data)
 
     def test_getBugCveCount(self):

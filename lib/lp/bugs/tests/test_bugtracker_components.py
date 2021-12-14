@@ -23,7 +23,7 @@ class BugTrackerComponentTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(BugTrackerComponentTestCase, self).setUp()
+        super().setUp()
 
         regular_user = self.factory.makePerson()
         login_person(regular_user)
@@ -31,15 +31,15 @@ class BugTrackerComponentTestCase(TestCaseWithFactory):
         self.bug_tracker = self.factory.makeBugTracker()
 
         self.comp_group = self.factory.makeBugTrackerComponentGroup(
-            u'alpha',
+            'alpha',
             self.bug_tracker)
 
     def test_component_creation(self):
         """Verify a component can be created"""
         component = self.factory.makeBugTrackerComponent(
-            u'example', self.comp_group)
+            'example', self.comp_group)
         self.assertIsNot(None, component)
-        self.assertEqual(component.name, u'example')
+        self.assertEqual(component.name, 'example')
 
     def test_set_visibility(self):
         """Users can delete components
@@ -50,7 +50,7 @@ class BugTrackerComponentTestCase(TestCaseWithFactory):
         show up again when we re-sync from the remote bug tracker.
         """
         component = self.factory.makeBugTrackerComponent(
-            u'example', self.comp_group)
+            'example', self.comp_group)
         self.assertEqual(component.is_visible, True)
 
         component.is_visible = False
@@ -66,18 +66,18 @@ class BugTrackerComponentTestCase(TestCaseWithFactory):
         from the remote bug tracker.  This gives users a way to correct
         the omissions."""
         custom_component = self.factory.makeBugTrackerComponent(
-            u'example', self.comp_group, custom=True)
+            'example', self.comp_group, custom=True)
         self.assertIsNot(None, custom_component)
         self.assertEqual(custom_component.is_custom, True)
 
     def test_multiple_component_creation(self):
         """Verify several components can be created at once"""
         comp_a = self.factory.makeBugTrackerComponent(
-            u'example-a', self.comp_group)
+            'example-a', self.comp_group)
         comp_b = self.factory.makeBugTrackerComponent(
-            u'example-b', self.comp_group)
+            'example-b', self.comp_group)
         comp_c = self.factory.makeBugTrackerComponent(
-            u'example-c', self.comp_group, True)
+            'example-c', self.comp_group, True)
 
         self.assertIsNot(None, comp_a)
         self.assertIsNot(None, comp_b)
@@ -86,8 +86,8 @@ class BugTrackerComponentTestCase(TestCaseWithFactory):
     def test_link_distro_source_package(self):
         """Check that a link can be set to a distro source package"""
         example_component = self.factory.makeBugTrackerComponent(
-            u'example', self.comp_group)
-        dsp = self.factory.makeDistributionSourcePackage(u'example')
+            'example', self.comp_group)
+        dsp = self.factory.makeDistributionSourcePackage('example')
 
         example_component.distro_source_package = dsp
         self.assertEqual(dsp, example_component.distro_source_package)
@@ -101,7 +101,7 @@ class TestBugTrackerWithComponents(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTrackerWithComponents, self).setUp()
+        super().setUp()
 
         regular_user = self.factory.makePerson()
         login_person(regular_user)
@@ -113,7 +113,7 @@ class TestBugTrackerWithComponents(TestCaseWithFactory):
         self.assertTrue(self.bug_tracker is not None)
 
         # Empty bugtrackers shouldn't return component groups
-        comp_group = self.bug_tracker.getRemoteComponentGroup(u'non-existant')
+        comp_group = self.bug_tracker.getRemoteComponentGroup('non-existant')
         self.assertEqual(comp_group, None)
 
         # Verify it contains no component groups
@@ -125,19 +125,19 @@ class TestBugTrackerWithComponents(TestCaseWithFactory):
         """
         # Add a component group and fill it with some components
         default_comp_group = self.bug_tracker.addRemoteComponentGroup(
-            u'alpha')
-        default_comp_group.addComponent(u'example-a')
-        default_comp_group.addComponent(u'example-b')
-        default_comp_group.addComponent(u'example-c')
+            'alpha')
+        default_comp_group.addComponent('example-a')
+        default_comp_group.addComponent('example-b')
+        default_comp_group.addComponent('example-c')
 
         # Verify that retrieving an invalid component group returns nothing
-        comp_group = self.bug_tracker.getRemoteComponentGroup(u'non-existant')
+        comp_group = self.bug_tracker.getRemoteComponentGroup('non-existant')
         self.assertEqual(comp_group, None)
 
         # Now retrieve the component group we added
-        comp_group = self.bug_tracker.getRemoteComponentGroup(u'alpha')
+        comp_group = self.bug_tracker.getRemoteComponentGroup('alpha')
         self.assertEqual(comp_group, default_comp_group)
-        self.assertEqual(comp_group.name, u'alpha')
+        self.assertEqual(comp_group.name, 'alpha')
 
         # Verify there is only the one component group in the tracker
         comp_groups = self.bug_tracker.getAllRemoteComponentGroups()
@@ -146,22 +146,22 @@ class TestBugTrackerWithComponents(TestCaseWithFactory):
     def test_multiple_product_bugtracker(self):
         """Bug tracker with multiple products and components"""
         # Create several component groups with varying numbers of components
-        self.bug_tracker.addRemoteComponentGroup(u'alpha')
+        self.bug_tracker.addRemoteComponentGroup('alpha')
 
-        comp_group_ii = self.bug_tracker.addRemoteComponentGroup(u'beta')
-        comp_group_ii.addComponent(u'example-beta-1')
+        comp_group_ii = self.bug_tracker.addRemoteComponentGroup('beta')
+        comp_group_ii.addComponent('example-beta-1')
 
-        comp_group_iii = self.bug_tracker.addRemoteComponentGroup(u'gamma')
-        comp_group_iii.addComponent(u'example-gamma-1')
-        comp_group_iii.addComponent(u'example-gamma-2')
-        comp_group_iii.addComponent(u'example-gamma-3')
+        comp_group_iii = self.bug_tracker.addRemoteComponentGroup('gamma')
+        comp_group_iii.addComponent('example-gamma-1')
+        comp_group_iii.addComponent('example-gamma-2')
+        comp_group_iii.addComponent('example-gamma-3')
 
         # Retrieving a non-existant component group returns nothing
-        comp_group = self.bug_tracker.getRemoteComponentGroup(u'non-existant')
+        comp_group = self.bug_tracker.getRemoteComponentGroup('non-existant')
         self.assertEqual(comp_group, None)
 
         # Now retrieve one of the real component groups
-        comp_group = self.bug_tracker.getRemoteComponentGroup(u'beta')
+        comp_group = self.bug_tracker.getRemoteComponentGroup('beta')
         self.assertEqual(comp_group, comp_group_ii)
 
         # Check the correct number of component groups are in the bug tracker
@@ -172,18 +172,18 @@ class TestBugTrackerWithComponents(TestCaseWithFactory):
         """Retrieve a set of components from a given product"""
         # Create a component group with some components
         default_comp_group = self.bug_tracker.addRemoteComponentGroup(
-            u'alpha')
-        default_comp_group.addComponent(u'example-a')
-        default_comp_group.addComponent(u'example-b')
-        default_comp_group.addComponent(u'example-c')
+            'alpha')
+        default_comp_group.addComponent('example-a')
+        default_comp_group.addComponent('example-b')
+        default_comp_group.addComponent('example-c')
 
         # Verify group has the correct number of components
-        comp_group = self.bug_tracker.getRemoteComponentGroup(u'alpha')
+        comp_group = self.bug_tracker.getRemoteComponentGroup('alpha')
         self.assertEqual(len(list(comp_group.components)), 3)
 
         # Check one of the components, that it is what we expect
-        comp = comp_group.getComponent(u'example-b')
-        self.assertEqual(comp.name, u'example-b')
+        comp = comp_group.getComponent('example-b')
+        self.assertEqual(comp.name, 'example-b')
 
 
 class TestWebservice(TestCaseWithFactory):
@@ -191,7 +191,7 @@ class TestWebservice(TestCaseWithFactory):
     layer = AppServerLayer
 
     def setUp(self):
-        super(TestWebservice, self).setUp()
+        super().setUp()
 
         regular_user = self.factory.makePerson()
         login_person(regular_user)
@@ -212,17 +212,17 @@ class TestWebservice(TestCaseWithFactory):
 
     def test_retrieve_component_group_from_bug_tracker(self):
         """Looks up specific component group in bug tracker"""
-        self.bug_tracker.addRemoteComponentGroup(u'alpha')
+        self.bug_tracker.addRemoteComponentGroup('alpha')
 
         bug_tracker = ws_object(self.launchpad, self.bug_tracker)
         comp_group = bug_tracker.getRemoteComponentGroup(
-            component_group_name=u'alpha')
+            component_group_name='alpha')
         self.assertIsNot(None, comp_group)
 
     def test_list_component_groups_for_bug_tracker(self):
         """Retrieve the component groups for a bug tracker"""
-        self.bug_tracker.addRemoteComponentGroup(u'alpha')
-        self.bug_tracker.addRemoteComponentGroup(u'beta')
+        self.bug_tracker.addRemoteComponentGroup('alpha')
+        self.bug_tracker.addRemoteComponentGroup('beta')
 
         bug_tracker = ws_object(self.launchpad, self.bug_tracker)
         comp_groups = bug_tracker.getAllRemoteComponentGroups()
@@ -230,10 +230,9 @@ class TestWebservice(TestCaseWithFactory):
 
     def test_list_components_for_component_group(self):
         """Retrieve the components for a given group"""
-        db_comp_group_alpha = self.bug_tracker.addRemoteComponentGroup(
-            u'alpha')
-        db_comp_group_alpha.addComponent(u'1')
-        db_comp_group_alpha.addComponent(u'2')
+        db_comp_group_alpha = self.bug_tracker.addRemoteComponentGroup('alpha')
+        db_comp_group_alpha.addComponent('1')
+        db_comp_group_alpha.addComponent('2')
         transaction.commit()
 
         comp_group = ws_object(self.launchpad, db_comp_group_alpha)
@@ -241,10 +240,9 @@ class TestWebservice(TestCaseWithFactory):
 
     def test_add_component(self):
         """Add a custom (local) component to the component group"""
-        db_comp_group = self.bug_tracker.addRemoteComponentGroup(
-            u'alpha')
+        db_comp_group = self.bug_tracker.addRemoteComponentGroup('alpha')
         comp_group = ws_object(self.launchpad, db_comp_group)
-        comp_group.addComponent(component_name=u'c')
+        comp_group.addComponent(component_name='c')
         self.assertEqual(1, len(comp_group.components))
 
     def test_remove_component(self):

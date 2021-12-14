@@ -19,7 +19,7 @@ class TestBugTrackerVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTrackerVocabulary, self).setUp()
+        super().setUp()
         vocabulary_registry = getVocabularyRegistry()
         self.vocab = vocabulary_registry.get(None, 'BugTracker')
 
@@ -100,7 +100,7 @@ class TestWebBugTrackerVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestWebBugTrackerVocabulary, self).setUp()
+        super().setUp()
         vocabulary_registry = getVocabularyRegistry()
         self.vocab = vocabulary_registry.get(None, 'WebBugTracker')
 

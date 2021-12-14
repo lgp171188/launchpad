@@ -17,7 +17,6 @@ import time
 import xmlrpc.client
 
 import responses
-import six
 from six.moves.urllib_parse import (
     parse_qs,
     urljoin,
@@ -192,7 +191,7 @@ class TestExternalBugTracker(ExternalBugTracker):
     batch_size = BATCH_SIZE_UNLIMITED
 
     def __init__(self, baseurl='http://example.com/'):
-        super(TestExternalBugTracker, self).__init__(baseurl)
+        super().__init__(baseurl)
 
     def getRemoteBug(self, remote_bug):
         """Return the tuple (None, None) as a representation of a remote bug.
@@ -720,7 +719,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
     def _copy_comment(self, comment, fields_to_return=None):
         # Copy wanted fields.
         return {
-            key: value for (key, value) in six.iteritems(comment)
+            key: value for (key, value) in comment.items()
             if fields_to_return is None or key in fields_to_return}
 
     def comments(self, arguments):
@@ -1682,7 +1681,7 @@ class TestDebBugs(DebBugs):
     sync_comments = False
 
     def __init__(self, baseurl, bugs):
-        super(TestDebBugs, self).__init__(baseurl)
+        super().__init__(baseurl)
         self.bugs = bugs
         self.debbugs_db = TestDebBugsDB()
 

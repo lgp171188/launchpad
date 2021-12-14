@@ -175,7 +175,7 @@ class FakeNotification:
     Used by TestGetActivityKey, TestNotificationCommentBatches and
     TestNotificationBatches."""
 
-    class Message(object):
+    class Message:
         pass
 
     def __init__(self, is_comment=False, bug=None, owner=None):
@@ -247,7 +247,7 @@ class TestGetEmailNotifications(TestCase):
 
     def setUp(self):
         """Set up some mock bug notifications to use."""
-        super(TestGetEmailNotifications, self).setUp()
+        super().setUp()
         switch_dbuser(config.malone.bugnotification_dbuser)
         sample_person = getUtility(IPersonSet).getByEmail(
             'test@canonical.com')
@@ -294,7 +294,7 @@ class TestGetEmailNotifications(TestCase):
         self.logger = self.useFixture(FakeLogger())
 
     def tearDown(self):
-        super(TestGetEmailNotifications, self).tearDown()
+        super().tearDown()
         sm = getSiteManager()
         sm.unregisterUtility(self._fake_utility)
         sm.registerUtility(self._original_utility)
@@ -641,7 +641,7 @@ class EmailNotificationTestBase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(EmailNotificationTestBase, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
         self.product_owner = self.factory.makePerson(name="product-owner")
         self.person = self.factory.makePerson(name="sample-person")
@@ -672,7 +672,7 @@ class EmailNotificationTestBase(TestCaseWithFactory):
         for notification in self.notification_set.getNotificationsToSend():
             notification.date_emailed = self.now
         flush_database_updates()
-        super(EmailNotificationTestBase, self).tearDown()
+        super().tearDown()
 
     def get_messages(self):
         notifications = self.notification_set.getNotificationsToSend()
@@ -994,7 +994,7 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestEmailNotificationsWithFilters, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         subscriber = self.factory.makePerson()
         self.subscription = self.bug.default_bugtask.target.addSubscription(
@@ -1087,18 +1087,18 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
     def test_header_single(self):
         # A single filter with a description makes all emails
         # include that particular filter description in a header.
-        self.addFilter(u"Test filter")
+        self.addFilter("Test filter")
 
-        self.assertContentEqual([u"Test filter"],
+        self.assertContentEqual(["Test filter"],
                                 self.getSubscriptionEmailHeaders())
 
     def test_header_multiple(self):
         # Multiple filters with a description make all emails
         # include all filter descriptions in the header.
-        self.addFilter(u"First filter")
-        self.addFilter(u"Second filter")
+        self.addFilter("First filter")
+        self.addFilter("Second filter")
 
-        self.assertContentEqual([u"First filter", u"Second filter"],
+        self.assertContentEqual(["First filter", "Second filter"],
                                 self.getSubscriptionEmailHeaders())
 
     def test_header_other_subscriber_by_person(self):
@@ -1108,15 +1108,15 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
         other_person = self.factory.makePerson()
         other_subscription = self.bug.default_bugtask.target.addSubscription(
             other_person, other_person)
-        self.addFilter(u"Someone's filter", other_subscription)
+        self.addFilter("Someone's filter", other_subscription)
         self.addNotificationRecipient(self.notification, other_person)
 
-        self.addFilter(u"Test filter")
+        self.addFilter("Test filter")
 
         the_subscriber = self.subscription.subscriber
         self.assertEqual(
-            {other_person.preferredemail.email: [u"Someone's filter"],
-             the_subscriber.preferredemail.email: [u"Test filter"]},
+            {other_person.preferredemail.email: ["Someone's filter"],
+             the_subscriber.preferredemail.email: ["Test filter"]},
             self.getSubscriptionEmailHeaders(by_person=True))
 
     def test_body_empty(self):
@@ -1128,23 +1128,23 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
     def test_body_single(self):
         # A single filter with a description makes all emails
         # include that particular filter description in the body.
-        self.addFilter(u"Test filter")
+        self.addFilter("Test filter")
 
-        self.assertContentEqual([u"Matching subscriptions: Test filter"],
+        self.assertContentEqual(["Matching subscriptions: Test filter"],
                                 self.getSubscriptionEmailBody())
 
     def test_body_multiple(self):
         # Multiple filters with description make all emails
         # include them in the email body.
-        self.addFilter(u"First filter")
-        self.addFilter(u"Second filter")
+        self.addFilter("First filter")
+        self.addFilter("Second filter")
 
         self.assertContentEqual(
-            [u"Matching subscriptions: First filter, Second filter"],
+            ["Matching subscriptions: First filter, Second filter"],
             self.getSubscriptionEmailBody())
 
     def test_muted(self):
-        self.addFilter(u"Test filter")
+        self.addFilter("Test filter")
         BugSubscriptionFilterMute(
             person=self.subscription.subscriber,
             filter=self.notification.bug_filters.one())
@@ -1155,13 +1155,13 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
     def test_header_multiple_one_muted(self):
         # Multiple filters with a description make all emails
         # include all filter descriptions in the header.
-        self.addFilter(u"First filter")
-        self.addFilter(u"Second filter")
+        self.addFilter("First filter")
+        self.addFilter("Second filter")
         BugSubscriptionFilterMute(
             person=self.subscription.subscriber,
             filter=self.notification.bug_filters[0])
 
-        self.assertContentEqual([u"Second filter"],
+        self.assertContentEqual(["Second filter"],
                                 self.getSubscriptionEmailHeaders())
 
 
@@ -1179,7 +1179,7 @@ class TestEmailNotificationsWithFiltersWhenBugCreated(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestEmailNotificationsWithFiltersWhenBugCreated, self).setUp()
+        super().setUp()
         self.subscriber = self.factory.makePerson()
         self.submitter = self.factory.makePerson()
         self.product = self.factory.makeProduct(
@@ -1187,13 +1187,13 @@ class TestEmailNotificationsWithFiltersWhenBugCreated(TestCaseWithFactory):
         self.subscription = self.product.addSubscription(
             self.subscriber, self.subscriber)
         self.filter = self.subscription.bug_filters[0]
-        self.filter.description = u'Needs triage'
+        self.filter.description = 'Needs triage'
         self.filter.statuses = [BugTaskStatus.NEW, BugTaskStatus.INCOMPLETE]
 
     def test_filters_match_when_bug_is_created(self):
-        message = u"this is an unfiltered comment"
+        message = "this is an unfiltered comment"
         params = CreateBugParams(
-            title=u"crashes all the time",
+            title="crashes all the time",
             comment=message, owner=self.submitter,
             status=BugTaskStatus.NEW)
         bug = self.product.createBug(params)
@@ -1201,9 +1201,9 @@ class TestEmailNotificationsWithFiltersWhenBugCreated(TestCaseWithFactory):
         self.assertEqual(notification.message.text_contents, message)
 
     def test_filters_do_not_match_when_bug_is_created(self):
-        message = u"this is a filtered comment"
+        message = "this is a filtered comment"
         params = CreateBugParams(
-            title=u"crashes all the time",
+            title="crashes all the time",
             comment=message, owner=self.submitter,
             status=BugTaskStatus.TRIAGED,
             importance=BugTaskImportance.HIGH)
@@ -1277,7 +1277,7 @@ class TestDeferredNotifications(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestDeferredNotifications, self).setUp()
+        super().setUp()
         self.notification_set = getUtility(IBugNotificationSet)
         # Ensure there are no outstanding notifications.
         for notification in self.notification_set.getNotificationsToSend():
@@ -1319,7 +1319,7 @@ class BrokenMailer(TestMailer):
     def send(self, from_addr, to_addrs, message):
         if any(to_addr in self.broken for to_addr in to_addrs):
             raise SMTPException("test requested delivery failure")
-        return super(BrokenMailer, self).send(from_addr, to_addrs, message)
+        return super().send(from_addr, to_addrs, message)
 
 
 class TestSendBugNotifications(TestCaseWithFactory):
@@ -1327,7 +1327,7 @@ class TestSendBugNotifications(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestSendBugNotifications, self).setUp()
+        super().setUp()
         self.notification_set = getUtility(IBugNotificationSet)
         # Ensure there are no outstanding notifications.
         for notification in self.notification_set.getNotificationsToSend():

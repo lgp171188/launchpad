@@ -20,15 +20,15 @@ def generate_bug_add_email(bug, new_recipients=False, reason=None,
     that the new recipients have been subscribed to the bug. Otherwise
     it's just a notification of a new bug report.
     """
-    subject = u"[Bug %d] [NEW] %s" % (bug.id, bug.title)
+    subject = "[Bug %d] [NEW] %s" % (bug.id, bug.title)
     contents = ''
 
     if bug.private:
         # This is a confidential bug.
-        visibility = u"Private"
+        visibility = "Private"
     else:
         # This is a public bug.
-        visibility = u"Public"
+        visibility = "Public"
 
     if bug.security_related:
         visibility += ' security'
@@ -37,15 +37,15 @@ def generate_bug_add_email(bug, new_recipients=False, reason=None,
     bug_info = []
     # Add information about the affected upstreams and packages.
     for bugtask in bug.bugtasks:
-        bug_info.append(u"** Affects: %s" % bugtask.bugtargetname)
-        bug_info.append(u"     Importance: %s" % bugtask.importance.title)
+        bug_info.append("** Affects: %s" % bugtask.bugtargetname)
+        bug_info.append("     Importance: %s" % bugtask.importance.title)
 
         if bugtask.assignee:
             # There's a person assigned to fix this task, so show that
             # information too.
             bug_info.append(
-                u"     Assignee: %s" % bugtask.assignee.unique_displayname)
-        bug_info.append(u"         Status: %s\n" % bugtask.status.title)
+                "     Assignee: %s" % bugtask.assignee.unique_displayname)
+        bug_info.append("         Status: %s\n" % bugtask.status.title)
 
     if bug.tags:
         bug_info.append('\n** Tags: %s' % ' '.join(bug.tags))

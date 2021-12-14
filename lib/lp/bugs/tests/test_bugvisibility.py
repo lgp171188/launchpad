@@ -20,7 +20,7 @@ class TestPublicBugVisibility(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPublicBugVisibility, self).setUp()
+        super().setUp()
         owner = self.factory.makePerson(name="bugowner")
         self.bug = self.factory.makeBug(owner=owner)
 
@@ -40,7 +40,7 @@ class TestPrivateBugVisibility(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestPrivateBugVisibility, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name="bugowner")
         self.product_owner = self.factory.makePerson(name="productowner")
         self.product = self.factory.makeProduct(

@@ -47,7 +47,7 @@ class BugFeedContentView(LaunchpadView):
     """View for a bug feed contents."""
 
     def __init__(self, context, request, feed):
-        super(BugFeedContentView, self).__init__(context, request)
+        super().__init__(context, request)
         self.feed = feed
 
     def render(self):
@@ -65,7 +65,7 @@ class BugsFeedBase(FeedBase):
 
     def initialize(self):
         """See `LaunchpadView`."""
-        super(BugsFeedBase, self).initialize()
+        super().initialize()
         self.setupColumns()
 
     def setupColumns(self):
@@ -168,7 +168,7 @@ class BugFeed(BugsFeedBase):
     def initialize(self):
         """See `IFeed`."""
         # For a `BugFeed` we must ensure that the bug is not private.
-        super(BugFeed, self).initialize()
+        super().initialize()
         if self.context.private:
             if check_permission("launchpad.View", self.context):
                 message_prefix = "This bug is private."
@@ -215,7 +215,7 @@ class BugTargetBugsFeed(BugsFeedBase):
         Since this feed is for a specific IHasBugs it is redundant to
         include the name in the output.
         """
-        super(BugTargetBugsFeed, self).setupColumns()
+        super().setupColumns()
         if 'bugtargetdisplayname' in self.show_column:
             del self.show_column['bugtargetdisplayname']
 

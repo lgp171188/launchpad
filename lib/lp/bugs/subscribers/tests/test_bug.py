@@ -30,7 +30,7 @@ class BugSubscriberTestCase(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(BugSubscriberTestCase, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         self.bugtask = self.bug.default_bugtask
         self.user = self.factory.makePerson()

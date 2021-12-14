@@ -63,7 +63,7 @@ class TestBugSubscriptionMethods(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionMethods, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         self.person = self.factory.makePerson()
 
@@ -172,7 +172,7 @@ class TestBugSnapshotting(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSnapshotting, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         self.person = self.factory.makePerson()
 
@@ -338,7 +338,7 @@ class TestBugPermissions(TestCaseWithFactory, KarmaTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugPermissions, self).setUp()
+        super().setUp()
         self.pushConfig(
             'launchpad', min_legitimate_karma=5, min_legitimate_account_age=5)
         self.bug = self.factory.makeBug()

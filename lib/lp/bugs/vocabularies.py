@@ -88,7 +88,7 @@ class UsesBugsDistributionVocabulary(DistributionVocabulary):
     """
 
     def __init__(self, context=None):
-        super(UsesBugsDistributionVocabulary, self).__init__(context=context)
+        super().__init__(context=context)
         self.distribution = IDistribution(self.context, None)
 
     @property

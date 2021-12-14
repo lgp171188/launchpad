@@ -168,7 +168,7 @@ class AttributeChange(BugChangeBase):
     """A mixin class that provides basic functionality for `IBugChange`s."""
 
     def __init__(self, when, person, what_changed, old_value, new_value):
-        super(AttributeChange, self).__init__(when, person)
+        super().__init__(when, person)
         self.new_value = new_value
         self.old_value = old_value
         self.what_changed = what_changed
@@ -186,7 +186,7 @@ class UnsubscribedFromBug(BugChangeBase):
     """A user got unsubscribed from a bug."""
 
     def __init__(self, when, person, unsubscribed_user, **kwargs):
-        super(UnsubscribedFromBug, self).__init__(when, person)
+        super().__init__(when, person)
         self.unsubscribed_user = unsubscribed_user
         self.send_notification = kwargs.get('send_notification', False)
         self.notification_text = kwargs.get('notification_text')
@@ -210,7 +210,7 @@ class BugConvertedToQuestion(BugChangeBase):
     """A bug got converted into a question."""
 
     def __init__(self, when, person, question):
-        super(BugConvertedToQuestion, self).__init__(when, person)
+        super().__init__(when, person)
         self.question = question
 
     def getBugActivity(self):
@@ -234,7 +234,7 @@ class BugTaskAdded(BugChangeBase):
     change_level = BugNotificationLevel.LIFECYCLE
 
     def __init__(self, when, person, bug_task):
-        super(BugTaskAdded, self).__init__(when, person)
+        super().__init__(when, person)
         self.bug_task = bug_task
 
     def getBugActivity(self):
@@ -247,20 +247,20 @@ class BugTaskAdded(BugChangeBase):
         """See `IBugChange`."""
         lines = []
         if self.bug_task.bugwatch:
-            lines.append(u"** Also affects: %s via" % (
+            lines.append("** Also affects: %s via" % (
                 self.bug_task.bugtargetname))
-            lines.append(u"   %s" % self.bug_task.bugwatch.url)
+            lines.append("   %s" % self.bug_task.bugwatch.url)
         else:
-            lines.append(u"** Also affects: %s" % (
+            lines.append("** Also affects: %s" % (
                 self.bug_task.bugtargetname))
-        lines.append(u"%13s: %s" % (
-            u"Importance", self.bug_task.importance.title))
+        lines.append("%13s: %s" % (
+            "Importance", self.bug_task.importance.title))
         if self.bug_task.assignee:
             assignee = self.bug_task.assignee
-            lines.append(u"%13s: %s" % (
-                u"Assignee", assignee.unique_displayname))
-        lines.append(u"%13s: %s" % (
-            u"Status", self.bug_task.status.title))
+            lines.append("%13s: %s" % (
+                "Assignee", assignee.unique_displayname))
+        lines.append("%13s: %s" % (
+            "Status", self.bug_task.status.title))
         return {
             'text': '\n'.join(lines),
             }
@@ -272,7 +272,7 @@ class BugTaskDeleted(BugChangeBase):
     change_level = BugNotificationLevel.LIFECYCLE
 
     def __init__(self, when, person, bugtask):
-        super(BugTaskDeleted, self).__init__(when, person)
+        super().__init__(when, person)
         self.targetname = bugtask.bugtargetname
 
     def getBugActivity(self):
@@ -293,7 +293,7 @@ class SeriesNominated(BugChangeBase):
     """A user nominated the bug to be fixed in a series."""
 
     def __init__(self, when, person, series):
-        super(SeriesNominated, self).__init__(when, person)
+        super().__init__(when, person)
         self.series = series
 
     def getBugActivity(self):
@@ -311,7 +311,7 @@ class BugWatchAdded(BugChangeBase):
     """A bug watch was added to the bug."""
 
     def __init__(self, when, person, bug_watch):
-        super(BugWatchAdded, self).__init__(when, person)
+        super().__init__(when, person)
         self.bug_watch = bug_watch
 
     def getBugActivity(self):
@@ -335,7 +335,7 @@ class BugWatchRemoved(BugChangeBase):
     """A bug watch was removed from the bug."""
 
     def __init__(self, when, person, bug_watch):
-        super(BugWatchRemoved, self).__init__(when, person)
+        super().__init__(when, person)
         self.bug_watch = bug_watch
 
     def getBugActivity(self):
@@ -359,7 +359,7 @@ class BranchLinkedToBug(BugChangeBase):
     """A branch got linked to the bug."""
 
     def __init__(self, when, person, branch, bug):
-        super(BranchLinkedToBug, self).__init__(when, person)
+        super().__init__(when, person)
         self.branch = branch
         self.bug = bug
 
@@ -382,7 +382,7 @@ class BranchUnlinkedFromBug(BugChangeBase):
     """A branch got unlinked from the bug."""
 
     def __init__(self, when, person, branch, bug):
-        super(BranchUnlinkedFromBug, self).__init__(when, person)
+        super().__init__(when, person)
         self.branch = branch
         self.bug = bug
 
@@ -405,7 +405,7 @@ class MergeProposalLinkedToBug(BugChangeBase):
     """A merge proposal got linked to the bug."""
 
     def __init__(self, when, person, merge_proposal, bug):
-        super(MergeProposalLinkedToBug, self).__init__(when, person)
+        super().__init__(when, person)
         self.merge_proposal = merge_proposal
         self.bug = bug
 
@@ -432,7 +432,7 @@ class MergeProposalUnlinkedFromBug(BugChangeBase):
     """A merge proposal got unlinked from the bug."""
 
     def __init__(self, when, person, merge_proposal, bug):
-        super(MergeProposalUnlinkedFromBug, self).__init__(when, person)
+        super().__init__(when, person)
         self.merge_proposal = merge_proposal
         self.bug = bug
 
@@ -463,7 +463,7 @@ class BugDescriptionChange(AttributeChange):
         description_diff = get_unified_diff(
             self.old_value, self.new_value, 72)
         notification_text = (
-            u"** Description changed:\n\n%s" % description_diff)
+            "** Description changed:\n\n%s" % description_diff)
         return {'text': notification_text}
 
 
@@ -584,7 +584,7 @@ class BugTitleChange(AttributeChange):
     """Describes a change to a bug's title, aka summary."""
 
     def getBugActivity(self):
-        activity = super(BugTitleChange, self).getBugActivity()
+        activity = super().getBugActivity()
 
         # We return 'summary' instead of 'title' for title changes
         # because the bug's title is referred to as its summary in the
@@ -703,7 +703,7 @@ class CveLinkedToBug(BugChangeBase):
     """Used to represent the linking of a CVE to a bug."""
 
     def __init__(self, when, person, cve):
-        super(CveLinkedToBug, self).__init__(when, person)
+        super().__init__(when, person)
         self.cve = cve
 
     def getBugActivity(self):
@@ -721,7 +721,7 @@ class CveUnlinkedFromBug(BugChangeBase):
     """Used to represent the unlinking of a CVE from a bug."""
 
     def __init__(self, when, person, cve):
-        super(CveUnlinkedFromBug, self).__init__(when, person)
+        super().__init__(when, person)
         self.cve = cve
 
     def getBugActivity(self):
@@ -749,8 +749,7 @@ class BugTaskAttributeChange(AttributeChange):
 
     def __init__(self, bug_task, when, person, what_changed, old_value,
                  new_value):
-        super(BugTaskAttributeChange, self).__init__(
-            when, person, what_changed, old_value, new_value)
+        super().__init__(when, person, what_changed, old_value, new_value)
         self.bug_task = bug_task
 
         if self.old_value is None:
@@ -802,7 +801,7 @@ class BugTaskAttributeChange(AttributeChange):
         make it clear in which task the change was made.
         """
         text = (
-            u"** Changed in: %(bug_target_name)s\n"
+            "** Changed in: %(bug_target_name)s\n"
             "%(label)13s: %(oldval)s => %(newval)s\n" % {
                 'bug_target_name': self.bug_task.bugtargetname,
                 'label': self.display_notification_label,
@@ -862,8 +861,7 @@ class BugTaskAssigneeChange(AttributeChange):
 
     def __init__(self, bug_task, when, person,
                  what_changed, old_value, new_value):
-        super(BugTaskAssigneeChange, self).__init__(
-            when, person, what_changed, old_value, new_value)
+        super().__init__(when, person, what_changed, old_value, new_value)
         self.bug_task = bug_task
 
     def getBugActivity(self):
@@ -892,8 +890,8 @@ class BugTaskAssigneeChange(AttributeChange):
 
         return {
             'text': (
-                u"** Changed in: %s\n"
-                u"     Assignee: %s => %s" % (
+                "** Changed in: %s\n"
+                "     Assignee: %s => %s" % (
                     self.bug_task.bugtargetname,
                     assignee_for_display(self.old_value),
                     assignee_for_display(self.new_value))),
@@ -907,8 +905,7 @@ class BugTaskTargetChange(AttributeChange):
 
     def __init__(self, bug_task, when, person,
                  what_changed, old_value, new_value):
-        super(BugTaskTargetChange, self).__init__(
-            when, person, what_changed, old_value, new_value)
+        super().__init__(when, person, what_changed, old_value, new_value)
         self.bug_task = bug_task
 
     def getBugActivity(self):
@@ -922,9 +919,9 @@ class BugTaskTargetChange(AttributeChange):
     def getBugNotification(self):
         """See `IBugChange`."""
         if IProduct.providedBy(self.old_value):
-            template = u"** Project changed: %s => %s"
+            template = "** Project changed: %s => %s"
         else:
-            template = u"** Package changed: %s => %s"
+            template = "** Package changed: %s => %s"
         text = template % (
             self.old_value.bugtargetname,
             self.new_value.bugtargetname)

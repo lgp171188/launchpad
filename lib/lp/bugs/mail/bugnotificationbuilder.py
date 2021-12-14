@@ -57,7 +57,7 @@ def get_bugmail_replyto_address(bug):
 
         From: Foo Bar via Malone <123@bugs...>
     """
-    return u"Bug %d <%s@%s>" % (bug.id, bug.id, config.launchpad.bugs_domain)
+    return "Bug %d <%s@%s>" % (bug.id, bug.id, config.launchpad.bugs_domain)
 
 
 def get_bugmail_error_address():

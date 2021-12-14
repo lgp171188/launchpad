@@ -11,7 +11,6 @@ __all__ = [
 import re
 
 import requests
-import six
 import transaction
 from zope.component import getUtility
 
@@ -106,8 +105,8 @@ class BugzillaRemoteComponentFinder:
 
     # Names of bug trackers we should not pull data from
     _BLACKLIST = [
-        u"ubuntu-bugzilla",
-        u"mozilla.org",
+        "ubuntu-bugzilla",
+        "mozilla.org",
         ]
 
     def __init__(self, logger=None):
@@ -164,7 +163,7 @@ class BugzillaRemoteComponentFinder:
     def storeRemoteProductsAndComponents(self, bz_bugtracker, lp_bugtracker):
         """Stores parsed product/component data from bz_bugtracker"""
         components_to_add = []
-        for product in six.itervalues(bz_bugtracker.products):
+        for product in bz_bugtracker.products.values():
             # Look up the component group id from Launchpad for the product
             # if it already exists.  Otherwise, add it.
             lp_component_group = lp_bugtracker.getRemoteComponentGroup(

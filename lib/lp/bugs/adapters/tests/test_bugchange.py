@@ -23,7 +23,7 @@ class BugChangeTestCase(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(BugChangeTestCase, self).setUp()
+        super().setUp()
 
     def test_get_bug_change_class(self):
         # get_bug_change_class() should return whatever is contained
@@ -44,7 +44,7 @@ class BugChangeLevelTestCase(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(BugChangeLevelTestCase, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         self.bugtask = self.bug.default_bugtask
         self.user = self.factory.makePerson()

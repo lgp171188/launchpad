@@ -29,7 +29,7 @@ class TestBugWatchScheduler(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugWatchScheduler, self).setUp('foo.bar@canonical.com')
+        super().setUp('foo.bar@canonical.com')
         # We'll make sure that all the other bug watches look like
         # they've been scheduled so that only our watch gets scheduled.
         for watch in getUtility(IBugWatchSet).search():

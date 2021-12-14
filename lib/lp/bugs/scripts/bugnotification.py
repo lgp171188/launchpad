@@ -200,10 +200,10 @@ def construct_email_notifications(bug_notifications):
         if data['filter descriptions']:
             # There are some filter descriptions as well. Add them to
             # the email body.
-            filters_text = u"\nMatching subscriptions: %s" % ", ".join(
+            filters_text = "\nMatching subscriptions: %s" % ", ".join(
                 data['filter descriptions'])
         else:
-            filters_text = u""
+            filters_text = ""
 
         # In the rare case of a bug with no bugtasks, we can't generate the
         # subscription management URL so just leave off the subscription

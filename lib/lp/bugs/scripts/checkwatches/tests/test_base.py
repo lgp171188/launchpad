@@ -38,7 +38,7 @@ class TestWorkingBase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestWorkingBase, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.email = self.person.preferredemail.email
         self.logger = BufferLogger()

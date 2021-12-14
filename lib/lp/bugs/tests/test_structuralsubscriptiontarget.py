@@ -59,7 +59,7 @@ class RestrictedStructuralSubscriptionTestBase:
     """Tests suitable for a target that restricts structural subscriptions."""
 
     def setUp(self):
-        super(RestrictedStructuralSubscriptionTestBase, self).setUp()
+        super().setUp()
         self.ordinary_subscriber = self.factory.makePerson()
         self.bug_supervisor_subscriber = self.factory.makePerson()
         self.team_owner = self.factory.makePerson()
@@ -177,7 +177,7 @@ class TestStructuralSubscriptionForDistro(
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscriptionForDistro, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistribution()
         naked_distro = removeSecurityProxy(self.target)
         naked_distro.bug_supervisor = self.bug_supervisor_subscriber
@@ -241,7 +241,7 @@ class TestStructuralSubscriptionForProduct(
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscriptionForProduct, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
 
 
@@ -251,7 +251,7 @@ class TestStructuralSubscriptionForDistroSourcePackage(
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscriptionForDistroSourcePackage, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistributionSourcePackage()
         self.target = ProxyFactory(self.target)
 
@@ -262,7 +262,7 @@ class TestStructuralSubscriptionForMilestone(
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscriptionForMilestone, self).setUp()
+        super().setUp()
         self.target = self.factory.makeMilestone()
         self.target = ProxyFactory(self.target)
 
@@ -273,7 +273,7 @@ class TestStructuralSubscriptionForDistroSeries(
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscriptionForDistroSeries, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistroSeries()
         self.target = ProxyFactory(self.target)
 
@@ -284,7 +284,7 @@ class TestStructuralSubscriptionForProjectGroup(
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscriptionForProjectGroup, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProject()
         self.target = ProxyFactory(self.target)
 
@@ -295,7 +295,7 @@ class TestStructuralSubscriptionForProductSeries(
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestStructuralSubscriptionForProductSeries, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProductSeries()
         self.target = ProxyFactory(self.target)
 
@@ -306,7 +306,7 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestStructuralSubscriptionTargetHelper, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         login_person(self.person)
 
@@ -320,7 +320,7 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual({"distroseries": target}, helper.target_arguments)
         self.assertEqual(target.distribution, helper.pillar)
         self.assertEqual(
-            u"StructuralSubscription.distroseries = ?",
+            "StructuralSubscription.distroseries = ?",
             compile_storm(helper.join))
 
     def test_project_group(self):
@@ -333,7 +333,7 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target, helper.pillar)
         self.assertEqual({"projectgroup": target}, helper.target_arguments)
         self.assertEqual(
-            u"StructuralSubscription.project = ?",
+            "StructuralSubscription.project = ?",
             compile_storm(helper.join))
 
     def test_distribution_source_package(self):
@@ -351,8 +351,8 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
              "sourcepackagename": target.sourcepackagename},
             helper.target_arguments)
         self.assertEqual(
-            u"StructuralSubscription.distribution = ? AND "
-            u"StructuralSubscription.sourcepackagename = ?",
+            "StructuralSubscription.distribution = ? AND "
+            "StructuralSubscription.sourcepackagename = ?",
             compile_storm(helper.join))
 
     def test_milestone(self):
@@ -367,7 +367,7 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target.target, helper.pillar)
         self.assertEqual({"milestone": target}, helper.target_arguments)
         self.assertEqual(
-            u"StructuralSubscription.milestone = ?",
+            "StructuralSubscription.milestone = ?",
             compile_storm(helper.join))
 
     def test_product(self):
@@ -380,7 +380,7 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target, helper.pillar)
         self.assertEqual({"product": target}, helper.target_arguments)
         self.assertEqual(
-            u"StructuralSubscription.product = ?",
+            "StructuralSubscription.product = ?",
             compile_storm(helper.join))
 
     def test_product_in_group(self):
@@ -394,7 +394,7 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target, helper.pillar)
         self.assertEqual({"product": target}, helper.target_arguments)
         self.assertEqual(
-            u"StructuralSubscription.product = ? OR "
+            "StructuralSubscription.product = ? OR "
             "StructuralSubscription.project = ?",
             compile_storm(helper.join))
 
@@ -410,7 +410,7 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target.product, helper.pillar)
         self.assertEqual({"productseries": target}, helper.target_arguments)
         self.assertEqual(
-            u"StructuralSubscription.productseries = ?",
+            "StructuralSubscription.productseries = ?",
             compile_storm(helper.join))
 
     def test_distribution(self):
@@ -426,8 +426,8 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
              "sourcepackagename": None},
             helper.target_arguments)
         self.assertEqual(
-            u"StructuralSubscription.distribution = ? AND "
-            u"StructuralSubscription.sourcepackagename IS NULL",
+            "StructuralSubscription.distribution = ? AND "
+            "StructuralSubscription.sourcepackagename IS NULL",
             compile_storm(helper.join))
 
 
@@ -436,7 +436,7 @@ class TestGetAllStructuralSubscriptionsForTarget(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetAllStructuralSubscriptionsForTarget, self).setUp()
+        super().setUp()
         self.subscriber = self.factory.makePerson()
         self.team = self.factory.makeTeam(members=[self.subscriber])
         login_person(self.subscriber)

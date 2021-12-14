@@ -84,17 +84,17 @@ class BugTaskCommandGroup:
 class BugCommandGroup(BugTaskCommandGroup):
 
     def __init__(self, command=None):
-        super(BugCommandGroup, self).__init__(command=command)
+        super().__init__(command=command)
         self._groups = []
 
     def __bool__(self):
         if len(self._groups) > 0:
             return True
         else:
-            return super(BugCommandGroup, self).__bool__()
+            return super().__bool__()
 
     def __str__(self):
-        text_commands = [super(BugCommandGroup, self).__str__()]
+        text_commands = [super().__str__()]
         for group in self.groups:
             text_commands += [str(group)]
         return '\n'.join(text_commands).strip()
@@ -126,13 +126,13 @@ class BugCommandGroup(BugTaskCommandGroup):
             if command_or_group:
                 self._groups.append(command_or_group)
         else:
-            super(BugCommandGroup, self).add(command_or_group)
+            super().add(command_or_group)
 
 
 class BugCommandGroups(BugCommandGroup):
 
     def __init__(self, commands):
-        super(BugCommandGroups, self).__init__(command=None)
+        super().__init__(command=None)
         self._groups = []
         this_bug = BugCommandGroup()
         this_bugtask = BugTaskCommandGroup()
@@ -157,11 +157,9 @@ class BugCommandGroups(BugCommandGroup):
 
     def __iter__(self):
         for bug_group in self.groups:
-            for command in bug_group.commands:
-                yield command
+            yield from bug_group.commands
             for bugtask_group in bug_group.groups:
-                for command in bugtask_group.commands:
-                    yield command
+                yield from bugtask_group.commands
 
     def add(self, command_or_group):
         """Add a `BugCommandGroup` to the groups of commands.

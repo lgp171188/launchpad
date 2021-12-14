@@ -23,8 +23,7 @@ class TestModificationNotification(TestCaseWithFactory):
 
     def setUp(self):
         # Run the tests as a logged-in user.
-        super(TestModificationNotification, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         self.user = getUtility(ILaunchBag).user
         self.product = self.factory.makeProduct(owner=self.user)
         self.bug = self.factory.makeBug(target=self.product)

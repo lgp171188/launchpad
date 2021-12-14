@@ -19,7 +19,7 @@ class TestOmitTargetedParameter(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOmitTargetedParameter, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         with person_logged_in(self.owner):
             self.distro = self.factory.makeDistribution(name='mebuntu')
@@ -47,7 +47,7 @@ class TestProductSearchTasks(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductSearchTasks, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         with person_logged_in(self.owner):
             self.product = self.factory.makeProduct()
@@ -104,7 +104,7 @@ class TestProductSearchTasks(TestCaseWithFactory):
             api_version='devel', order_by='date_created')
         self.assertEqual(400, response.status)
         self.assertRaisesWithContent(
-            ValueError, "Unrecognized order_by: %r" % u'date_created',
+            ValueError, "Unrecognized order_by: %r" % 'date_created',
             response.jsonBody)
 
     def test_search_incomplete_status_results(self):
@@ -129,17 +129,17 @@ class TestMaloneApplicationSearchTasks(TestCaseWithFactory):
     def test_global_search_by_tag(self):
         project1 = self.factory.makeProduct()
         project2 = self.factory.makeProduct()
-        bug1 = self.factory.makeBug(target=project1, tags=[u'foo'])
-        self.factory.makeBug(target=project1, tags=[u'bar'])
-        bug3 = self.factory.makeBug(target=project2, tags=[u'foo'])
-        self.factory.makeBug(target=project2, tags=[u'baz'])
+        bug1 = self.factory.makeBug(target=project1, tags=['foo'])
+        self.factory.makeBug(target=project1, tags=['bar'])
+        bug3 = self.factory.makeBug(target=project2, tags=['foo'])
+        self.factory.makeBug(target=project2, tags=['baz'])
         webservice = LaunchpadWebServiceCaller(
             "launchpad-library", "salgado-change-anything")
         response = webservice.named_get(
             "/bugs",
             "searchTasks",
             api_version="devel",
-            tags=u'foo').jsonBody()
+            tags='foo').jsonBody()
         self.assertEqual(2, response["total_size"])
         self.assertContentEqual(
             [bug1.id, bug3.id],
@@ -153,7 +153,7 @@ class TestGetBugData(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetBugData, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         with person_logged_in(self.owner):
             self.product = self.factory.makeProduct()
