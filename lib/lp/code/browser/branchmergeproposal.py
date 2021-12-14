@@ -127,6 +127,7 @@ from lp.services.webapp import (
     stepthrough,
     )
 from lp.services.webapp.authorization import check_permission
+from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import ILaunchBag
@@ -664,6 +665,9 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
             except ClaimReviewFailed as e:
                 self.request.response.addErrorNotification(six.text_type(e))
         self.next_url = canonical_url(self.context)
+
+    def getStatusReportsBatchNav(self, reports):
+        return BatchNavigator(reports, self.request, size=3)
 
     @property
     def comment_location(self):

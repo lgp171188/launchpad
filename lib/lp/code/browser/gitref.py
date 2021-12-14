@@ -66,6 +66,7 @@ from lp.services.webapp import (
     Link,
     )
 from lp.services.webapp.authorization import check_permission
+from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.escaping import structured
 from lp.snappy.browser.hassnaps import (
     HasSnapsMenuMixin,
@@ -274,6 +275,9 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin, HasCharmRecipesViewMixin):
             return structured(
                 '<a href="+recipes">%s recipes</a> using this branch.',
                 count).escapedtext
+
+    def getStatusReportsBatchNav(self, reports):
+        return BatchNavigator(reports, self.request, size=3)
 
 
 class GitRefRegisterMergeProposalSchema(Interface):
