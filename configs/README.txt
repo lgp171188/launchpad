@@ -89,7 +89,7 @@ The config can be accessed as a dictionary...
 
 You can learn more about lp.services.config in the doctest located at
 
-    lib/canonical/launchpad/doc/canonical-config.txt
+    lib/lp/services/config/doc/canonical-config.txt
 
 
 Testing with LaunchpadConfig
