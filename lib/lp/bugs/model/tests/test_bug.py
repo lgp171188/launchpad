@@ -976,7 +976,7 @@ class TestBugActivityMethods(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugActivityMethods, self).setUp()
+        super().setUp()
         self.now = datetime.now(UTC)
 
     def _makeActivityForBug(self, bug, activity_ages):
@@ -1067,7 +1067,7 @@ class TestBugAutoConfirmation(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag(u'bugs.autoconfirm.enabled_product_names', u'*')
+            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
             bug = self.factory.makeBug()
             person = self.factory.makePerson()
             with person_logged_in(person):
@@ -1079,7 +1079,7 @@ class TestBugAutoConfirmation(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag(u'bugs.autoconfirm.enabled_product_names', u'*')
+            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
             bug = self.factory.makeBug()
             person = self.factory.makePerson()
             with person_logged_in(bug.owner):
@@ -1093,7 +1093,7 @@ class TestBugAutoConfirmation(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag(u'bugs.autoconfirm.enabled_product_names', u'*')
+            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
             bug = self.factory.makeBug()
             duplicate_bug = self.factory.makeBug()
             with person_logged_in(duplicate_bug.owner):
@@ -1105,7 +1105,7 @@ class TestBugAutoConfirmation(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag(u'bugs.autoconfirm.enabled_product_names', u'*')
+            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
             bug = self.factory.makeBug()
             with person_logged_in(bug.owner):
                 duplicate_bug = self.factory.makeBug(owner=bug.owner)

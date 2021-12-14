@@ -9,7 +9,6 @@ __all__ = [
 import operator
 
 import pytz
-import six
 from storm.locals import (
     DateTime,
     Desc,
@@ -62,7 +61,7 @@ class Cve(StormBase, BugLinkTargetMixin):
         id, 'CveReference.cve_id', order_by='CveReference.id')
 
     def __init__(self, sequence, status, description):
-        super(Cve, self).__init__()
+        super().__init__()
         self.sequence = sequence
         self.status = status
         self.description = description
@@ -85,7 +84,7 @@ class Cve(StormBase, BugLinkTargetMixin):
     def bugs(self):
         bug_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'cve', self.sequence), types=[u'bug'])]
+                ('cve', self.sequence), types=['bug'])]
         return list(sorted(
             bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
 
@@ -105,13 +104,12 @@ class Cve(StormBase, BugLinkTargetMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {(u'cve', self.sequence): {
-                (u'bug', six.text_type(bug.id)): props}})
+            {('cve', self.sequence): {('bug', str(bug.id)): props}})
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {(u'cve', self.sequence): [(u'bug', six.text_type(bug.id))]})
+            {('cve', self.sequence): [('bug', str(bug.id))]})
 
 
 @implementer(ICveSet)
@@ -191,7 +189,7 @@ class CveSet:
         store = Store.of(bugtasks[0])
 
         xrefs = getUtility(IXRefSet).findFromMany(
-            [(u'bug', six.text_type(bug.id)) for bug in bugs], types=[u'cve'])
+            [('bug', str(bug.id)) for bug in bugs], types=['cve'])
         bugcve_ids = set()
         for bug_key in xrefs:
             for cve_key in xrefs[bug_key]:
@@ -215,4 +213,4 @@ class CveSet:
     def getBugCveCount(self):
         """See ICveSet."""
         return IStore(XRef).find(
-            XRef, XRef.from_type == u'bug', XRef.to_type == u'cve').count()
+            XRef, XRef.from_type == 'bug', XRef.to_type == 'cve').count()

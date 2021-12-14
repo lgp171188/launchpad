@@ -107,7 +107,7 @@ def get_bug_watch_ids(references):
     for reference in references:
         if IBugWatch.providedBy(reference):
             yield reference.id
-        elif isinstance(reference, six.integer_types):
+        elif isinstance(reference, int):
             yield reference
         else:
             raise AssertionError(

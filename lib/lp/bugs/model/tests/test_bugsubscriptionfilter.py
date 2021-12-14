@@ -37,7 +37,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionFilter, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.subscriber = self.target.owner
         login_person(self.subscriber)
@@ -53,8 +53,8 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
             find_all_tags=True,
             include_any_tags=True,
             exclude_any_tags=True,
-            other_parameters=u"foo",
-            description=u"bar")
+            other_parameters="foo",
+            description="bar")
         # Flush and reload.
         IStore(bug_subscription_filter).flush()
         IStore(bug_subscription_filter).reload(bug_subscription_filter)
@@ -72,15 +72,15 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         self.assertEqual(
             BugNotificationLevel.METADATA,
             bug_subscription_filter.bug_notification_level)
-        self.assertEqual(u"foo", bug_subscription_filter.other_parameters)
-        self.assertEqual(u"bar", bug_subscription_filter.description)
+        self.assertEqual("foo", bug_subscription_filter.other_parameters)
+        self.assertEqual("bar", bug_subscription_filter.description)
 
     def test_description(self):
         """Test the description property."""
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
             target=self.target)
-        bug_subscription_filter.description = u"foo"
-        self.assertEqual(u"foo", bug_subscription_filter.description)
+        bug_subscription_filter.description = "foo"
+        self.assertEqual("foo", bug_subscription_filter.description)
 
     def test_defaults(self):
         """Test the default values of `BugSubscriptionFilter` objects."""
@@ -108,7 +108,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
             structural_subscription=self.subscription)
         bug_subscription_filter.importances = [BugTaskImportance.LOW]
         bug_subscription_filter.statuses = [BugTaskStatus.NEW]
-        bug_subscription_filter.tags = [u"foo"]
+        bug_subscription_filter.tags = ["foo"]
         IStore(bug_subscription_filter).flush()
         self.assertIsNot(None, Store.of(bug_subscription_filter))
         # Delete.
@@ -126,10 +126,10 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         bug_subscription_filter.find_all_tags = True
         bug_subscription_filter.exclude_any_tags = True
         bug_subscription_filter.include_any_tags = True
-        bug_subscription_filter.description = u"Description"
+        bug_subscription_filter.description = "Description"
         bug_subscription_filter.importances = [BugTaskImportance.LOW]
         bug_subscription_filter.statuses = [BugTaskStatus.NEW]
-        bug_subscription_filter.tags = [u"foo"]
+        bug_subscription_filter.tags = ["foo"]
         IStore(bug_subscription_filter).flush()
         self.assertIsNot(None, Store.of(bug_subscription_filter))
 
@@ -279,14 +279,14 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         # Assigning any iterable to tags updates the database.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
             target=self.target)
-        bug_subscription_filter.tags = [u"foo", u"-bar"]
+        bug_subscription_filter.tags = ["foo", "-bar"]
         self.assertEqual(
-            frozenset((u"foo", u"-bar")),
+            frozenset(("foo", "-bar")),
             bug_subscription_filter.tags)
         # Assigning a subset causes the other tag filters to be removed.
-        bug_subscription_filter.tags = [u"foo"]
+        bug_subscription_filter.tags = ["foo"]
         self.assertEqual(
-            frozenset((u"foo",)),
+            frozenset(("foo",)),
             bug_subscription_filter.tags)
 
     def test_tags_set_empty(self):
@@ -305,19 +305,19 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         self.assertFalse(bug_subscription_filter.include_any_tags)
         self.assertFalse(bug_subscription_filter.exclude_any_tags)
 
-        bug_subscription_filter.tags = [u"*"]
-        self.assertEqual(frozenset((u"*",)), bug_subscription_filter.tags)
+        bug_subscription_filter.tags = ["*"]
+        self.assertEqual(frozenset(("*",)), bug_subscription_filter.tags)
         self.assertTrue(bug_subscription_filter.include_any_tags)
         self.assertFalse(bug_subscription_filter.exclude_any_tags)
 
-        bug_subscription_filter.tags = [u"-*"]
-        self.assertEqual(frozenset((u"-*",)), bug_subscription_filter.tags)
+        bug_subscription_filter.tags = ["-*"]
+        self.assertEqual(frozenset(("-*",)), bug_subscription_filter.tags)
         self.assertFalse(bug_subscription_filter.include_any_tags)
         self.assertTrue(bug_subscription_filter.exclude_any_tags)
 
-        bug_subscription_filter.tags = [u"*", u"-*"]
+        bug_subscription_filter.tags = ["*", "-*"]
         self.assertEqual(
-            frozenset((u"*", u"-*")), bug_subscription_filter.tags)
+            frozenset(("*", "-*")), bug_subscription_filter.tags)
         self.assertTrue(bug_subscription_filter.include_any_tags)
         self.assertTrue(bug_subscription_filter.exclude_any_tags)
 
@@ -334,18 +334,18 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         self.assertEqual(frozenset(), bug_subscription_filter.tags)
         self.assertFalse(bug_subscription_filter.find_all_tags)
 
-        bug_subscription_filter.tags = searchbuilder.all(u"foo")
-        self.assertEqual(frozenset((u"foo",)), bug_subscription_filter.tags)
+        bug_subscription_filter.tags = searchbuilder.all("foo")
+        self.assertEqual(frozenset(("foo",)), bug_subscription_filter.tags)
         self.assertTrue(bug_subscription_filter.find_all_tags)
 
         # Not using `searchbuilder.any` or `.all` leaves find_all_tags
         # unchanged.
-        bug_subscription_filter.tags = [u"-bar"]
-        self.assertEqual(frozenset((u"-bar",)), bug_subscription_filter.tags)
+        bug_subscription_filter.tags = ["-bar"]
+        self.assertEqual(frozenset(("-bar",)), bug_subscription_filter.tags)
         self.assertTrue(bug_subscription_filter.find_all_tags)
 
-        bug_subscription_filter.tags = searchbuilder.any(u"baz")
-        self.assertEqual(frozenset((u"baz",)), bug_subscription_filter.tags)
+        bug_subscription_filter.tags = searchbuilder.any("baz")
+        self.assertEqual(frozenset(("baz",)), bug_subscription_filter.tags)
         self.assertFalse(bug_subscription_filter.find_all_tags)
 
 
@@ -354,7 +354,7 @@ class TestBugSubscriptionFilterPermissions(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionFilterPermissions, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.subscriber = self.target.owner
         with person_logged_in(self.subscriber):
@@ -415,7 +415,7 @@ class TestBugSubscriptionFilterImportance(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionFilterImportance, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.subscriber = self.target.owner
         login_person(self.subscriber)
@@ -447,7 +447,7 @@ class TestBugSubscriptionFilterStatus(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionFilterStatus, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.subscriber = self.target.owner
         login_person(self.subscriber)
@@ -478,7 +478,7 @@ class TestBugSubscriptionFilterTag(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionFilterTag, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.subscriber = self.target.owner
         login_person(self.subscriber)
@@ -493,7 +493,7 @@ class TestBugSubscriptionFilterTag(TestCaseWithFactory):
         bug_sub_filter_tag = BugSubscriptionFilterTag()
         bug_sub_filter_tag.filter = self.subscription_filter
         bug_sub_filter_tag.include = True
-        bug_sub_filter_tag.tag = u"foo"
+        bug_sub_filter_tag.tag = "foo"
         # Flush and reload.
         IStore(bug_sub_filter_tag).flush()
         IStore(bug_sub_filter_tag).reload(bug_sub_filter_tag)
@@ -506,7 +506,7 @@ class TestBugSubscriptionFilterTag(TestCaseWithFactory):
             self.subscription_filter,
             bug_sub_filter_tag.filter)
         self.assertIs(True, bug_sub_filter_tag.include)
-        self.assertEqual(u"foo", bug_sub_filter_tag.tag)
+        self.assertEqual("foo", bug_sub_filter_tag.tag)
 
     def test_qualified_tag(self):
         """
@@ -514,11 +514,11 @@ class TestBugSubscriptionFilterTag(TestCaseWithFactory):
         preceding hyphen if `include` is `False`.
         """
         bug_sub_filter_tag = BugSubscriptionFilterTag()
-        bug_sub_filter_tag.tag = u"foo"
+        bug_sub_filter_tag.tag = "foo"
         bug_sub_filter_tag.include = True
-        self.assertEqual(u"foo", bug_sub_filter_tag.qualified_tag)
+        self.assertEqual("foo", bug_sub_filter_tag.qualified_tag)
         bug_sub_filter_tag.include = False
-        self.assertEqual(u"-foo", bug_sub_filter_tag.qualified_tag)
+        self.assertEqual("-foo", bug_sub_filter_tag.qualified_tag)
 
 
 class TestBugSubscriptionFilterInformationType(TestCaseWithFactory):
@@ -526,7 +526,7 @@ class TestBugSubscriptionFilterInformationType(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscriptionFilterInformationType, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
         self.subscriber = self.target.owner
         login_person(self.subscriber)

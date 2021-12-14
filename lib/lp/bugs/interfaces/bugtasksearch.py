@@ -631,7 +631,7 @@ class IUpstreamProductBugTaskSearch(IBugTaskSearch):
 class IFrontPageBugTaskSearch(IBugTaskSearch):
     """Additional search options for the front page of bugs."""
     scope = Choice(
-        title=u"Search Scope", required=False,
+        title="Search Scope", required=False,
         vocabulary="DistributionOrProductOrProjectGroup")
 
 

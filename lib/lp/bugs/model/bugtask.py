@@ -30,7 +30,6 @@ import re
 
 from lazr.lifecycle.event import ObjectDeletedEvent
 import pytz
-import six
 from storm.expr import (
     And,
     Cast,
@@ -1177,7 +1176,7 @@ class BugTask(StormBase):
             new_key['sourcepackagename'] != self.sourcepackagename):
             self._syncSourcePackages(new_key['sourcepackagename'], user)
 
-        for name, value in six.iteritems(new_key):
+        for name, value in new_key.items():
             setattr(self, name, value)
         self.updateTargetNameCache()
         self.bug._reconcileAccess()
@@ -1430,8 +1429,8 @@ class BugTaskSet:
         bug_ids = {bugtask.bug_id for bugtask in bugtasks}
         bug_ids_with_specifications = {
             int(id) for _, id in getUtility(IXRefSet).findFromMany(
-                [(u'bug', six.text_type(bug_id)) for bug_id in bug_ids],
-                types=[u'specification']).keys()}
+                [('bug', str(bug_id)) for bug_id in bug_ids],
+                types=['specification']).keys()}
         bug_ids_with_branches = set(IStore(BugBranch).find(
                 BugBranch.bug_id, BugBranch.bug_id.is_in(bug_ids)))
         # Badging looks up milestones too : eager load into the storm cache.
@@ -1770,7 +1769,7 @@ class BugTaskSet:
             BugTaskFlat.milestone == None,
             BugTaskFlat.duplicateof == None,
             BugTaskFlat.date_last_updated <
-                UTC_NOW - SQL("INTERVAL ?", (u'%d days' % min_days_old,)),
+                UTC_NOW - SQL("INTERVAL ?", ('%d days' % min_days_old,)),
             Not(Exists(Select(
                 1, tables=[BugWatch],
                 where=[BugWatch.bugID == BugTaskFlat.bug_id]))),

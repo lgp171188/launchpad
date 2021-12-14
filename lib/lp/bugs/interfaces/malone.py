@@ -69,8 +69,8 @@ class IMaloneApplication(ILaunchpadApplication, IHasBugs):
     @operation_parameters(
         target=Reference(
             schema=IBugTarget, required=True,
-            title=u"The project, distribution or source package that has "
-                   "this bug."))
+            title="The project, distribution or source package that has "
+                  "this bug."))
     @export_factory_operation(
         IBug, ['title', 'description', 'tags', 'information_type',
                'security_related', 'private'])

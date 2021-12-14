@@ -89,7 +89,7 @@ class ApportJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(ApportJob, self).__init__()
+        super().__init__()
         json_data = simplejson.dumps(metadata)
         self.job = Job()
         self.blob = blob
@@ -193,7 +193,7 @@ class ProcessApportBlobJob(ApportJobDerived):
         if job_for_blob is not None:
             return cls(job_for_blob)
         else:
-            return super(ProcessApportBlobJob, cls).create(blob)
+            return super().create(blob)
 
     @classmethod
     def getByBlobUUID(cls, uuid):

@@ -27,7 +27,6 @@ import re
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
-import six
 from six.moves.collections_abc import (
     Iterable,
     Set,
@@ -398,7 +397,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.bugs.model.cve import Cve
         xref_cve_sequences = [
             sequence for _, sequence in getUtility(IXRefSet).findFrom(
-                (u'bug', six.text_type(self.id)), types=[u'cve'])]
+                ('bug', str(self.id)), types=['cve'])]
         expr = Cve.sequence.is_in(xref_cve_sequences)
         return list(sorted(
             IStore(Cve).find(Cve, expr), key=operator.attrgetter('sequence')))
@@ -408,7 +407,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.answers.model.question import Question
         question_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', six.text_type(self.id)), types=[u'question'])]
+                ('bug', str(self.id)), types=['question'])]
         return list(sorted(
             bulk.load(Question, question_ids), key=operator.attrgetter('id')))
 
@@ -417,7 +416,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.blueprints.model.specification import Specification
         spec_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', six.text_type(self.id)), types=[u'specification'])]
+                ('bug', str(self.id)), types=['specification'])]
         return list(sorted(
             bulk.load(Specification, spec_ids), key=operator.attrgetter('id')))
 
@@ -1424,7 +1423,7 @@ class Bug(SQLBase, InformationTypeMixin):
         from lp.code.model.branchmergeproposal import BranchMergeProposal
         merge_proposal_ids = [
             int(id) for _, id in getUtility(IXRefSet).findFrom(
-                (u'bug', six.text_type(self.id)), types=[u'merge_proposal'])]
+                ('bug', str(self.id)), types=['merge_proposal'])]
         return list(sorted(
             bulk.load(BranchMergeProposal, merge_proposal_ids),
             key=operator.attrgetter('id')))
@@ -2851,7 +2850,7 @@ class BugAffectsPerson(StormBase):
     affected = Bool(allow_none=False, default=True)
 
     def __init__(self, bug, person, affected=True):
-        super(BugAffectsPerson, self).__init__()
+        super().__init__()
         self.bug = bug
         self.person = person
         self.affected = affected

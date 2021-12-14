@@ -27,7 +27,7 @@ class TestBugTaskStatusTransitionForUser(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTaskStatusTransitionForUser, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.task = self.factory.makeBugTask()
 
@@ -186,7 +186,7 @@ class TestBugTaskStatusTransitionForReporter(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTaskStatusTransitionForReporter, self).setUp()
+        super().setUp()
         self.task = self.factory.makeBugTask()
         self.reporter = self.task.bug.owner
 
@@ -236,7 +236,7 @@ class TestBugTaskStatusTransitionForPrivilegedUserBase:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTaskStatusTransitionForPrivilegedUserBase, self).setUp()
+        super().setUp()
         # Creation of task and target are deferred to subclasses.
         self.task = None
         self.person = None

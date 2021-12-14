@@ -49,7 +49,7 @@ class BugSubscription(StormBase):
 
     def __init__(self, bug=None, person=None, subscribed_by=None,
                  bug_notification_level=BugNotificationLevel.COMMENTS):
-        super(BugSubscription, self).__init__()
+        super().__init__()
         self.bug = bug
         self.person = person
         self.subscribed_by = subscribed_by
@@ -59,18 +59,18 @@ class BugSubscription(StormBase):
     def display_subscribed_by(self):
         """See `IBugSubscription`."""
         if self.person_id == self.subscribed_by_id:
-            return u'Self-subscribed'
+            return 'Self-subscribed'
         else:
-            return u'Subscribed by %s (%s)' % (
+            return 'Subscribed by %s (%s)' % (
                 self.subscribed_by.displayname, self.subscribed_by.name)
 
     @property
     def display_duplicate_subscribed_by(self):
         """See `IBugSubscription`."""
         if self.person == self.subscribed_by:
-            return u'Self-subscribed to bug %s' % (self.bug_id)
+            return 'Self-subscribed to bug %s' % (self.bug_id)
         else:
-            return u'Subscribed to bug %s by %s (%s)' % (
+            return 'Subscribed to bug %s by %s (%s)' % (
                 self.bug_id, self.subscribed_by.displayname,
                 self.subscribed_by.name)
 

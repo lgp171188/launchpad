@@ -25,7 +25,7 @@ from lp.bugs.interfaces.buglink import (
 class ObjectLinkedEvent(lazr.lifecycle.event.LifecyleEventBase):
 
     def __init__(self, object, other_object, user=None):
-        super(ObjectLinkedEvent, self).__init__(object, user=user)
+        super().__init__(object, user=user)
         self.other_object = other_object
 
 
@@ -33,7 +33,7 @@ class ObjectLinkedEvent(lazr.lifecycle.event.LifecyleEventBase):
 class ObjectUnlinkedEvent(lazr.lifecycle.event.LifecyleEventBase):
 
     def __init__(self, object, other_object, user=None):
-        super(ObjectUnlinkedEvent, self).__init__(object, user=user)
+        super().__init__(object, user=user)
         self.other_object = other_object
 
 
