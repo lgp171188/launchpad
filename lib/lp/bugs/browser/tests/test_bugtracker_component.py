@@ -20,13 +20,13 @@ class BugTrackerEditComponentViewTextCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(BugTrackerEditComponentViewTextCase, self).setUp()
+        super().setUp()
         regular_user = self.factory.makePerson()
         login_person(regular_user)
 
         self.bug_tracker = self.factory.makeBugTracker()
         self.comp_group = self.factory.makeBugTrackerComponentGroup(
-            u'alpha', self.bug_tracker)
+            'alpha', self.bug_tracker)
 
     def _makeForm(self, sourcepackage):
         if sourcepackage is None:
@@ -47,7 +47,7 @@ class BugTrackerEditComponentViewTextCase(TestCaseWithFactory):
             distroseries=distro.currentseries, sourcepackagename=package_name)
 
     def test_view_attributes(self):
-        component = self._makeComponent(u'Example')
+        component = self._makeComponent('Example')
         dsp = self._makeUbuntuSourcePackage('example')
         form = self._makeForm(dsp)
         view = create_initialized_view(
@@ -61,7 +61,7 @@ class BugTrackerEditComponentViewTextCase(TestCaseWithFactory):
         self.assertEqual(url, view.cancel_url)
 
     def test_linking(self):
-        component = self._makeComponent(u'Example')
+        component = self._makeComponent('Example')
         dsp = self._makeUbuntuSourcePackage('example')
         form = self._makeForm(dsp)
 
@@ -70,7 +70,7 @@ class BugTrackerEditComponentViewTextCase(TestCaseWithFactory):
         self.assertEqual(dsp, component.distro_source_package)
 
     def test_linking_notifications(self):
-        component = self._makeComponent(u'Example')
+        component = self._makeComponent('Example')
         dsp = self._makeUbuntuSourcePackage('example')
         form = self._makeForm(dsp)
 
@@ -85,7 +85,7 @@ class BugTrackerEditComponentViewTextCase(TestCaseWithFactory):
             expected, notifications.pop().message)
 
     def test_unlinking(self):
-        component = self._makeComponent(u'Example')
+        component = self._makeComponent('Example')
         dsp = self._makeUbuntuSourcePackage('example')
         component.distro_source_package = dsp
         form = self._makeForm(None)
@@ -106,8 +106,8 @@ class BugTrackerEditComponentViewTextCase(TestCaseWithFactory):
         # to make multiple components linked to the same source package,
         # so the view needs to be sure to not allow this to be done and
         # pop up a friendly error message instead.
-        component_a = self._makeComponent(u'a')
-        component_b = self._makeComponent(u'b')
+        component_a = self._makeComponent('a')
+        component_b = self._makeComponent('b')
         package = self._makeUbuntuSourcePackage('example')
         form = self._makeForm(package)
 

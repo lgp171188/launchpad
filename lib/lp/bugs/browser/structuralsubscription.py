@@ -141,8 +141,8 @@ class StructuralSubscriptionView(LaunchpadFormView):
         team_vocabulary = SimpleVocabulary(terms)
         team_subscriptions_field = List(
             __name__='subscriptions_team',
-            title=u'Team subscriptions',
-            description=(u'You can subscribe the teams of '
+            title='Team subscriptions',
+            description=('You can subscribe the teams of '
                           'which you are an administrator.'),
             value_type=Choice(vocabulary=team_vocabulary),
             required=False)
@@ -178,7 +178,7 @@ class StructuralSubscriptionView(LaunchpadFormView):
         subscriptions_vocabulary = SimpleVocabulary(terms)
         other_subscriptions_field = List(
             __name__='remove_other_subscriptions',
-            title=u'Unsubscribe',
+            title='Unsubscribe',
             value_type=Choice(vocabulary=subscriptions_vocabulary),
             required=False)
         return form.FormField(other_subscriptions_field)
@@ -187,7 +187,7 @@ class StructuralSubscriptionView(LaunchpadFormView):
         """Create a field for a new subscription."""
         new_subscription_field = Choice(
             __name__='new_subscription',
-            title=u'Subscribe someone else',
+            title='Subscribe someone else',
             vocabulary='ValidPersonOrTeam',
             required=False)
         return form.FormField(new_subscription_field)
@@ -220,7 +220,7 @@ class StructuralSubscriptionView(LaunchpadFormView):
         if self.context.userCanAlterBugSubscription(self.user, self.user):
             return True
 
-    @action(u'Save these changes', name='save')
+    @action('Save these changes', name='save')
     def save_action(self, action, data):
         """Process the subscriptions submitted by the user."""
         self._handleUserSubscription(data)

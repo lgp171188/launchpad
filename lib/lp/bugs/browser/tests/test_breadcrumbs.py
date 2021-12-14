@@ -12,7 +12,7 @@ from lp.testing.breadcrumbs import BaseBreadcrumbTestCase
 class TestBugTaskBreadcrumb(BaseBreadcrumbTestCase):
 
     def setUp(self):
-        super(TestBugTaskBreadcrumb, self).setUp()
+        super().setUp()
         product = self.factory.makeProduct(
             name='crumb-tester', displayname="Crumb Tester")
         self.bug = self.factory.makeBug(target=product, title='borked')
@@ -25,7 +25,7 @@ class TestBugTaskBreadcrumb(BaseBreadcrumbTestCase):
         self.assertEqual(self.bugtask_url, last_crumb.url)
         self.assertEqual("Bug #%d" % self.bug.id, last_crumb.text)
         self.assertEqual(
-            u"Bug #%d \u201cborked\u201d" % self.bug.id, last_crumb.detail)
+            "Bug #%d \u201cborked\u201d" % self.bug.id, last_crumb.detail)
 
     def test_bugtask_child(self):
         crumbs = self.getBreadcrumbsForObject(
@@ -54,7 +54,7 @@ class TestBugTaskBreadcrumb(BaseBreadcrumbTestCase):
 class TestBugTrackerBreadcrumbs(BaseBreadcrumbTestCase):
 
     def setUp(self):
-        super(TestBugTrackerBreadcrumbs, self).setUp()
+        super().setUp()
         self.bug_tracker_set = getUtility(IBugTrackerSet)
         self.bug_tracker_set_url = canonical_url(
             self.bug_tracker_set, rootsite='bugs')

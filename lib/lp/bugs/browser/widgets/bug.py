@@ -88,7 +88,7 @@ class BugTagsWidgetBase:
         if tags is None:
             return self._missing
         else:
-            return u" ".join(tags)
+            return " ".join(tags)
 
     def _toFieldValue(self, input):
         """Convert a space separated string to a list of strings."""
@@ -139,7 +139,7 @@ class BugTagsWidget(BugTagsWidgetBase, TextWidget):
 
     def __call__(self):
         """Return the input with a script."""
-        input_markup = super(BugTagsWidget, self).__call__()
+        input_markup = super().__call__()
         script_markup = """
             <a href="/+help-bugs/tag-search.html"
                class="sprite maybe action-icon"

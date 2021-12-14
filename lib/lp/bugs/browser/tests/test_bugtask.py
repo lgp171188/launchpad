@@ -186,7 +186,7 @@ class TestBugTaskView(TestCaseWithFactory):
         # `BugActivityItem`s.
         bug = self.factory.makeBug()
         view = create_initialized_view(
-            bug.default_bugtask, name=u'+index', rootsite='bugs')
+            bug.default_bugtask, name='+index', rootsite='bugs')
 
         def add_activity(what, old=None, new=None, message=None):
             getUtility(IBugActivitySet).new(
@@ -268,7 +268,7 @@ class TestBugTaskView(TestCaseWithFactory):
                 '%s.actions.save' % product.name: 'Save Changes',
                 }
             view = create_initialized_view(
-                bug.default_bugtask, name=u'+editstatus',
+                bug.default_bugtask, name='+editstatus',
                 form=form_data)
             # The bugtask's target won't have changed, since an error
             # happend. The error will be listed in the view.
@@ -304,9 +304,9 @@ class TestBugTaskView(TestCaseWithFactory):
         product = self.factory.makeProduct(name='foobar')
         bug = self.factory.makeBug(target=product, tags=['depends-on+987'])
         getUtility(ILaunchBag).add(bug.default_bugtask)
-        view = create_initialized_view(bug.default_bugtask, name=u'+index')
-        expected = [(u'depends-on+987',
-            u'/foobar/+bugs?field.tag=depends-on%2B987')]
+        view = create_initialized_view(bug.default_bugtask, name='+index')
+        expected = [('depends-on+987',
+            '/foobar/+bugs?field.tag=depends-on%2B987')]
         self.assertEqual(expected, view.unofficial_tags)
         browser = self.getUserBrowser(canonical_url(bug), bug.owner)
         self.assertIn(
@@ -367,7 +367,7 @@ class TestBugTasksNominationsView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTasksNominationsView, self).setUp()
+        super().setUp()
         login(ADMIN_EMAIL)
         self.bug = self.factory.makeBug()
         self.view = BugTasksNominationsView(self.bug, LaunchpadTestRequest())
@@ -602,7 +602,7 @@ class TestBugTasksTableView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTasksTableView, self).setUp()
+        super().setUp()
         login(ADMIN_EMAIL)
         self.bug = self.factory.makeBug()
         self.view = BugTasksTableView(self.bug, LaunchpadTestRequest())
@@ -1198,7 +1198,7 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTaskEditViewStatusField, self).setUp()
+        super().setUp()
         bug_supervisor = self.factory.makePerson(name='bug-supervisor')
         product = self.factory.makeProduct(bug_supervisor=bug_supervisor)
         self.bug = self.factory.makeBug(target=product)
@@ -1282,7 +1282,7 @@ class TestBugTaskEditViewAssigneeField(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugTaskEditViewAssigneeField, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.product = self.factory.makeProduct(owner=self.owner)
         self.bugtask = self.factory.makeBug(
@@ -1331,13 +1331,13 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
     scenarios = [
         ("spn_picker", {"features": {}, "allow_binarypackagename": True}),
         ("dsp_picker", {
-            "features": {u"disclosure.dsp_picker.enabled": u"on"},
+            "features": {"disclosure.dsp_picker.enabled": "on"},
             "allow_binarypackagename": False,
             }),
         ]
 
     def setUp(self):
-        super(TestBugTaskEditView, self).setUp()
+        super().setUp()
         if self.features:
             self.useFixture(FeatureFixture(self.features))
 
@@ -1601,12 +1601,12 @@ class BugTaskViewTestMixin():
 
     def _assert_shouldShowStructuralSubscriberWidget(self, show=True):
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs')
+            self.target, name='+bugs', rootsite='bugs')
         self.assertEqual(show, view.shouldShowStructuralSubscriberWidget())
 
     def _assert_structural_subscriber_label(self, label):
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs')
+            self.target, name='+bugs', rootsite='bugs')
         self.assertEqual(label, view.structural_subscriber_label)
 
     def test_mustache_cache_is_none_for_feed(self):
@@ -1618,7 +1618,7 @@ class BugTaskViewTestMixin():
         """No mustache model for the advanced search form."""
         form = {'advanced': 1}
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs', form=form)
+            self.target, name='+bugs', rootsite='bugs', form=form)
         cache = IJSONRequestCache(view.request)
         self.assertIsNone(cache.objects.get('mustache_model'))
 
@@ -1629,7 +1629,7 @@ class TestPersonBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonBugs, self).setUp()
+        super().setUp()
         self.target = self.factory.makePerson()
 
     def test_shouldShowStructuralSubscriberWidget(self):
@@ -1646,7 +1646,7 @@ class TestDistributionBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionBugs, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistribution()
 
     def test_structural_subscriber_label(self):
@@ -1663,7 +1663,7 @@ class TestOCIProjectOfProductBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIProjectOfProductBugs, self).setUp()
+        super().setUp()
         self.initTarget()
 
     def initTarget(self):
@@ -1694,7 +1694,7 @@ class TestDistroSeriesBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSeriesBugs, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistroSeries()
 
     def test_shouldShowStructuralSubscriberWidget(self):
@@ -1711,7 +1711,7 @@ class TestDistributionSourcePackageBugs(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionSourcePackageBugs, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistributionSourcePackage()
 
     def test_shouldShowStructuralSubscriberWidget(self):
@@ -1725,7 +1725,7 @@ class TestDistroSeriesSourcePackageBugs(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSeriesSourcePackageBugs, self).setUp()
+        super().setUp()
         self.target = self.factory.makeSourcePackage()
 
     def test_shouldShowStructuralSubscriberWidget(self):
@@ -1738,7 +1738,7 @@ class TestProductBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductBugs, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
 
     def test_shouldShowStructuralSubscriberWidget(self):
@@ -1754,7 +1754,7 @@ class TestProductSeriesBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductSeriesBugs, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProductSeries()
 
 
@@ -1764,7 +1764,7 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectGroupBugs, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name='bob')
         self.target = self.factory.makeProject(
             name='container', owner=self.owner)
@@ -1778,7 +1778,7 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
     def test_empty_project_group(self):
         # An empty project group does not use Launchpad for bugs.
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs')
+            self.target, name='+bugs', rootsite='bugs')
         self.assertFalse(self.target.hasProducts())
         self.assertFalse(view.should_show_bug_information)
 
@@ -1788,7 +1788,7 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
         self.makeSubordinateProduct(False)
         self.assertTrue(self.target.hasProducts())
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs')
+            self.target, name='+bugs', rootsite='bugs')
         self.assertFalse(view.should_show_bug_information)
 
     def test_project_group_with_subordinate_using_launchpad(self):
@@ -1797,7 +1797,7 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
         self.makeSubordinateProduct(True)
         self.assertTrue(self.target.hasProducts())
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs')
+            self.target, name='+bugs', rootsite='bugs')
         self.assertTrue(view.should_show_bug_information)
 
     def test_project_group_with_mixed_subordinates(self):
@@ -1807,7 +1807,7 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
         self.makeSubordinateProduct(True)
         self.assertTrue(self.target.hasProducts())
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs')
+            self.target, name='+bugs', rootsite='bugs')
         self.assertTrue(view.should_show_bug_information)
 
     def test_project_group_has_no_portlets_if_not_using_LP(self):
@@ -1815,7 +1815,7 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
         # bug portlets.
         self.makeSubordinateProduct(False)
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs', current_request=True)
+            self.target, name='+bugs', rootsite='bugs', current_request=True)
         self.assertFalse(view.should_show_bug_information)
         contents = view.render()
         report_a_bug = find_tag_by_id(contents, 'bug-portlets')
@@ -1826,7 +1826,7 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
         # portlets.
         self.makeSubordinateProduct(True)
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs', current_request=True)
+            self.target, name='+bugs', rootsite='bugs', current_request=True)
         self.assertTrue(view.should_show_bug_information)
         contents = view.render()
         report_a_bug = find_tag_by_id(contents, 'bug-portlets')
@@ -1837,7 +1837,7 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
         # a 'Getting started' help link.
         self.makeSubordinateProduct(False)
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs', current_request=True)
+            self.target, name='+bugs', rootsite='bugs', current_request=True)
         contents = view.render()
         help_link = find_tag_by_id(contents, 'getting-started-help')
         self.assertIsNot(None, help_link)
@@ -1847,7 +1847,7 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
         # a 'Getting started' help link.
         self.makeSubordinateProduct(True)
         view = create_initialized_view(
-            self.target, name=u'+bugs', rootsite='bugs', current_request=True)
+            self.target, name='+bugs', rootsite='bugs', current_request=True)
         contents = view.render()
         help_link = find_tag_by_id(contents, 'getting-started-help')
         self.assertIs(None, help_link)
@@ -2524,7 +2524,7 @@ class TestBugTaskSearchListingView(BrowserTestCase):
             canonical_url(product, view_name='+bugs') +
             '/?field.tag=depends-on%2B987')
         self.assertEqual(
-            [{'url': expected_url, 'tag': u'depends-on+987'}], tags)
+            [{'url': expected_url, 'tag': 'depends-on+987'}], tags)
 
 
 class TestBugTaskExpirableListingView(BrowserTestCase):
@@ -2543,7 +2543,7 @@ class TestBugTaskExpirableListingView(BrowserTestCase):
         title = bug.title
         content = self.getMainContent(
             bug.default_bugtask.target, "+expirable-bugs")
-        self.assertIn(title, six.text_type(content))
+        self.assertIn(title, str(content))
 
 
 class TestBugListingBatchNavigator(TestCaseWithFactory):

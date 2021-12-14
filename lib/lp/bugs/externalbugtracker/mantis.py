@@ -175,7 +175,7 @@ class Mantis(ExternalBugTracker):
     """
 
     def __init__(self, baseurl):
-        super(Mantis, self).__init__(baseurl)
+        super().__init__(baseurl)
         self._cookie_jar = RequestsCookieJar()
         self._logger = logging.getLogger()
 
@@ -185,7 +185,7 @@ class Mantis(ExternalBugTracker):
         if not isinstance(hooks.setdefault('response', []), list):
             hooks['response'] = [hooks['response']]
         hooks['response'].append(mantis_login_hook)
-        return super(Mantis, self).makeRequest(
+        return super().makeRequest(
             method, url, cookies=self._cookie_jar, hooks=hooks, **kwargs)
 
     @cachedproperty

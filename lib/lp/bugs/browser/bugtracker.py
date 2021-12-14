@@ -109,7 +109,7 @@ class BugTrackerSetContextMenu(ContextMenu):
 
 class BugTrackerAddView(LaunchpadFormView):
 
-    page_title = u"Register an external bug tracker"
+    page_title = "Register an external bug tracker"
     schema = IBugTracker
     label = page_title
     field_names = ['bugtrackertype', 'name', 'title', 'baseurl', 'summary',
@@ -132,7 +132,7 @@ class BugTrackerAddView(LaunchpadFormView):
             else:
                 fields.append(self.form_fields[field_name])
         self.form_fields = form.Fields(*fields)
-        super(BugTrackerAddView, self).setUpWidgets(context=context)
+        super().setUpWidgets(context=context)
 
     @action(_('Add'), name='add')
     def add(self, action, data):
@@ -156,7 +156,7 @@ class BugTrackerAddView(LaunchpadFormView):
 class BugTrackerSetView(LaunchpadView):
     """View for actions on the bugtracker index pages."""
 
-    page_title = u"Bug trackers registered in Launchpad"
+    page_title = "Bug trackers registered in Launchpad"
     pillar_limit = 3
 
     def initialize(self):
@@ -213,7 +213,7 @@ class BugTrackerView(LaunchpadView):
     @property
     def page_title(self):
         return smartquote(
-            u'The "%s" bug tracker in Launchpad' % self.context.title)
+            'The "%s" bug tracker in Launchpad' % self.context.title)
 
     def initialize(self):
         self.batchnav = BatchNavigator(self.context.watches, self.request)
@@ -251,7 +251,7 @@ class BugTrackerEditView(LaunchpadEditFormView):
     @property
     def page_title(self):
         return smartquote(
-            u'Change details for the "%s" bug tracker' % self.context.title)
+            'Change details for the "%s" bug tracker' % self.context.title)
 
     @cachedproperty
     def field_names(self):
@@ -279,7 +279,7 @@ class BugTrackerEditView(LaunchpadEditFormView):
 
         See `LaunchpadFormView`.
         """
-        super(BugTrackerEditView, self).setUpFields()
+        super().setUpFields()
 
         # If we're displaying the 'active' field we need to swap it out
         # and replace it with a field that uses our custom vocabulary.
@@ -545,7 +545,7 @@ class BugTrackerSetBreadcrumb(Breadcrumb):
 
     @property
     def text(self):
-        return u"Bug trackers"
+        return "Bug trackers"
 
 
 @implementer(IRemoteBug)

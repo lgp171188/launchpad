@@ -328,7 +328,7 @@ class TracLPPlugin(Trac):
 
     def __init__(self, baseurl, xmlrpc_transport=None,
                  internal_xmlrpc_transport=None, cookie_jar=None):
-        super(TracLPPlugin, self).__init__(baseurl)
+        super().__init__(baseurl)
 
         if cookie_jar is None:
             cookie_jar = RequestsCookieJar()
@@ -345,7 +345,7 @@ class TracLPPlugin(Trac):
 
     def makeRequest(self, method, url, **kwargs):
         """See `ExternalBugTracker`."""
-        return super(TracLPPlugin, self).makeRequest(
+        return super().makeRequest(
             method, url, cookies=self._cookie_jar, **kwargs)
 
     @ensure_no_transaction

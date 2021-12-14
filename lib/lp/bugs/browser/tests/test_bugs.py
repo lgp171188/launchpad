@@ -26,7 +26,7 @@ class TestMaloneView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestMaloneView, self).setUp()
+        super().setUp()
         self.application = getUtility(IMaloneApplication)
 
     def test_redirect_id_success(self):

@@ -23,7 +23,7 @@ class TestConfigureBugTrackerBase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestConfigureBugTrackerBase, self).setUp()
+        super().setUp()
         login('test@canonical.com')
         self.target = self.makeTarget()
         self.menu = self.getMenu()

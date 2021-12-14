@@ -39,7 +39,7 @@ class BugTagsWidgetTestCase(TestCaseWithFactory):
         # Products with tags have a list of tags.
         product = self.factory.makeProduct()
         with person_logged_in(product.owner):
-            product.official_bug_tags = [u'cows', u'pigs', u'sheep']
+            product.official_bug_tags = ['cows', 'pigs', 'sheep']
         widget = self.get_widget(product)
         js = widget.official_tags_js
         self.assertEqual('var official_tags = ["cows", "pigs", "sheep"];', js)
@@ -55,7 +55,7 @@ class BugTagsWidgetTestCase(TestCaseWithFactory):
         # Distributions with tags have a list of tags.
         distribution = self.factory.makeDistribution()
         with person_logged_in(distribution.owner):
-            distribution.official_bug_tags = [u'cows', u'pigs', u'sheep']
+            distribution.official_bug_tags = ['cows', 'pigs', 'sheep']
         widget = self.get_widget(distribution)
         js = widget.official_tags_js
         self.assertEqual('var official_tags = ["cows", "pigs", "sheep"];', js)
@@ -65,7 +65,7 @@ class BugTagsWidgetTestCase(TestCaseWithFactory):
         # Products with tags have a list of tags.
         product = self.factory.makeProduct()
         with person_logged_in(product.owner):
-            product.official_bug_tags = [u'cows', u'pigs', u'sheep']
+            product.official_bug_tags = ['cows', 'pigs', 'sheep']
         widget = self.get_widget(product)
         markup = widget()
         self.assertIn(

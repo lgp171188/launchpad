@@ -44,11 +44,11 @@ class TestRequestsTransport(TestCase):
             "socket.getaddrinfo",
             side_effect=socket.gaierror(
                 socket.EAI_NONAME, "Name or service not known")))
-        transport = RequestsTransport(u"http://test.invalid/")
+        transport = RequestsTransport("http://test.invalid/")
         for proxy in (None, "http://squid.internal:3128/"):
             self.pushConfig("launchpad", http_proxy=proxy)
             e = self.assertRaises(
                 requests.ConnectionError,
-                transport.request, u"test.invalid", u"xmlrpc",
-                u"\N{SNOWMAN}".encode('utf-8'))
+                transport.request, "test.invalid", "xmlrpc",
+                "\N{SNOWMAN}".encode())
             self.assertIn("Name or service not known", str(e))

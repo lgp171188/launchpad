@@ -324,7 +324,7 @@ class LookupBranch(treelookup.LookupBranch):
             raise TypeError(
                 'Result is not a member of BugTaskStatus: %r' % (
                     self.result))
-        super(LookupBranch, self)._verify()
+        super()._verify()
 
     def _describe_result(self, result):
         """See `treelookup.LookupBranch._describe_result`."""

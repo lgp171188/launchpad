@@ -16,7 +16,6 @@ __all__ = [
     "NewLineToSpacesWidget",
     ]
 
-import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import (
@@ -378,8 +377,7 @@ class BugTaskBugWatchWidget(RadioWidget):
         #      value instead of a valid field value.
         if value == self._missing:
             value = self.context.missing_value
-        elif (isinstance(value, six.string_types) and
-              value != self._new_bugwatch_value):
+        elif isinstance(value, str) and value != self._new_bugwatch_value:
             value = self._toFieldValue(value)
         # check if we want to select first item, the previously selected item
         # or the "nothing selected" item.
@@ -434,7 +432,7 @@ class BugTaskBugWatchWidget(RadioWidget):
         access to the id.
         """
         id = '%s.%s' % (name, index)
-        elem = renderElement(u'input',
+        elem = renderElement('input',
                              value=value,
                              name=name,
                              id=id,
@@ -450,7 +448,7 @@ class BugTaskBugWatchWidget(RadioWidget):
         access to the id.
         """
         id = '%s.%s' % (name, index)
-        elem = renderElement(u'input',
+        elem = renderElement('input',
                              value=value,
                              name=name,
                              id=id,
@@ -522,7 +520,7 @@ class BugTaskTargetWidget(LaunchpadTargetWidget):
                         " Launchpad" % entered_name))
                 raise self._error
             return self.package_widget.getInputValue() or distribution
-        return super(BugTaskTargetWidget, self).getInputValue()
+        return super().getInputValue()
 
     def setRenderedValue(self, value):
         self.setUpSubWidgets()
@@ -539,7 +537,7 @@ class BugTaskTargetWidget(LaunchpadTargetWidget):
                 self.package_widget.setRenderedValue(value)
                 self._syncPackageVocabularyDistribution(value.pillar)
         else:
-            super(BugTaskTargetWidget, self).setRenderedValue(value)
+            super().setRenderedValue(value)
 
 
 class BugTaskSourcePackageNameWidget(SourcePackageNameWidgetBase):
@@ -601,8 +599,7 @@ class FileBugSourcePackageNameWidget(SourcePackageNameWidgetBase):
 
     def _toFieldValue(self, input):
         """See `SourcePackageNameWidgetBase`."""
-        source = super(FileBugSourcePackageNameWidget, self)._toFieldValue(
-            input)
+        source = super()._toFieldValue(input)
         if (source is not None and
                 not bool(getFeatureFlag('disclosure.dsp_picker.enabled'))):
             # XXX cjwatson 2016-07-25: Convert to a value that the
@@ -623,7 +620,7 @@ class AssigneeDisplayWidget(BrowserWidget):
     """A widget for displaying an assignee."""
 
     def __init__(self, context, vocabulary, request):
-        super(AssigneeDisplayWidget, self).__init__(context, request)
+        super().__init__(context, request)
 
     def __call__(self):
         assignee_field = self.context
@@ -651,7 +648,7 @@ class DBItemDisplayWidget(BrowserWidget):
     """A widget for displaying a bugtask dbitem."""
 
     def __init__(self, context, vocabulary, request):
-        super(DBItemDisplayWidget, self).__init__(context, request)
+        super().__init__(context, request)
 
     def __call__(self):
         dbitem_field = self.context

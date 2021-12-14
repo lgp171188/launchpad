@@ -44,7 +44,7 @@ class BugsubscriptionPrivacyTests(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(BugsubscriptionPrivacyTests, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.bug = self.factory.makeBug(owner=self.user)
         removeSecurityProxy(self.bug).setPrivate(True, self.user)
@@ -58,7 +58,7 @@ class BugsubscriptionPrivacyTests(TestCaseWithFactory):
         subscription = removeSecurityProxy(self.bug).getSubscriptionForPerson(
             team)
         error_msg = harness.getFieldError('person')
-        expected_msg = (u'Open and delegated teams cannot be subscribed to '
+        expected_msg = ('Open and delegated teams cannot be subscribed to '
             'private bugs.')
         self.assertEqual(expected_msg, error_msg)
         self.assertIs(None, subscription)
@@ -79,7 +79,7 @@ class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(BugSubscriptionAdvancedFeaturesTestCase, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         self.person = self.factory.makePerson()
 
@@ -399,7 +399,7 @@ class BugSubscriptionsListViewTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(BugSubscriptionsListViewTestCase, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct(
             name='widgetsrus', displayname='Widgets R Us')
         self.bug = self.factory.makeBug(target=self.product)
@@ -421,7 +421,7 @@ class BugMuteSelfViewTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(BugMuteSelfViewTestCase, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         self.person = self.factory.makePerson()
 

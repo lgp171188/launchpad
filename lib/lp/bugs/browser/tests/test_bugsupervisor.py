@@ -24,7 +24,7 @@ class TestBugSupervisorEditView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSupervisorEditView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(
             name='splat', displayname='<splat />')
         self.product = self.factory.makeProduct(

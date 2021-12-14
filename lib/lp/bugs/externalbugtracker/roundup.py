@@ -161,7 +161,7 @@ class Roundup(ExternalBugTracker):
         The fields/columns to fetch from the remote bug tracker are
         derived based on the host part of the baseurl.
         """
-        super(Roundup, self).__init__(baseurl)
+        super().__init__(baseurl)
         self.host = URI(self.baseurl).host
 
         self._status_fields = (

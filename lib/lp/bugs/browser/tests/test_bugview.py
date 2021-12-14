@@ -25,7 +25,7 @@ class TestBugView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBugView, self).setUp()
+        super().setUp()
         login('test@canonical.com')
         self.bug = self.factory.makeBug()
         self.view = BugView(self.bug, LaunchpadTestRequest())
@@ -67,7 +67,7 @@ class TestBugInformationTypePortletView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugInformationTypePortletView, self).setUp()
+        super().setUp()
         login('test@canonical.com')
         self.bug = self.factory.makeBug()
         self.view = BugInformationTypePortletView(

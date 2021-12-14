@@ -64,7 +64,7 @@ class CVEReportView(LaunchpadView):
 
     def initialize(self):
         """See `LaunchpadView`."""
-        super(CVEReportView, self).initialize()
+        super().initialize()
         search_params = BugTaskSearchParams(
             self.user, has_cve=True)
         bugtasks = shortlist(

@@ -32,7 +32,7 @@ from lp.testing import TestCase
 class TestDebBugs(TestCase):
 
     def setUp(self):
-        super(TestDebBugs, self).setUp()
+        super().setUp()
         self.tempdir = self.makeTemporaryDirectory()
 
     def get_tracker(self):

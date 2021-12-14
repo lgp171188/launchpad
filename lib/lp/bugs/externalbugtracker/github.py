@@ -134,7 +134,7 @@ class GitHub(ExternalBugTracker):
             raise BadGitHubURL(baseurl)
         path = "/repos" + path[:-len("/issues")]
         baseurl = urlunsplit(("https", host, path, query, fragment))
-        super(GitHub, self).__init__(baseurl)
+        super().__init__(baseurl)
         self.cached_bugs = {}
 
     @property
@@ -220,7 +220,7 @@ class GitHub(ExternalBugTracker):
 
     def _getHeaders(self):
         """See `ExternalBugTracker`."""
-        headers = super(GitHub, self)._getHeaders()
+        headers = super()._getHeaders()
         headers["Accept"] = "application/vnd.github.v3+json"
         return headers
 
@@ -237,12 +237,11 @@ class GitHub(ExternalBugTracker):
                 url, self.timeout,
                 token=self.credentials["token"]) as auth_header:
             headers["Authorization"] = auth_header
-            return super(GitHub, self).makeRequest(
-                method, url, headers=headers)
+            return super().makeRequest(method, url, headers=headers)
 
     def _getPage(self, page, last_accessed=None, **kwargs):
         """See `ExternalBugTracker`."""
-        return super(GitHub, self)._getPage(
+        return super()._getPage(
             page, last_accessed=last_accessed, token=self.credentials["token"])
 
     def _getCollection(self, base_page, last_accessed=None):
@@ -262,8 +261,7 @@ class GitHub(ExternalBugTracker):
                     return
                 else:
                     raise
-            for item in response.json():
-                yield item
+            yield from response.json()
             if "next" in response.links:
                 page = response.links["next"]["url"]
             else:

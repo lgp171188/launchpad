@@ -26,7 +26,6 @@ from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import timezone
 from simplejson import dumps
-import six
 from six.moves.urllib.parse import (
     quote,
     urlencode,
@@ -205,7 +204,7 @@ class ProductConfigureBugTrackerView(ProductConfigureBase):
 
     def validate(self, data):
         """Constrain bug expiration to Launchpad Bugs tracker."""
-        super(ProductConfigureBugTrackerView, self).validate(data)
+        super().validate(data)
         # enable_bug_expiration is disabled by JavaScript when bugtracker
         # is not 'In Launchpad'. The constraint is enforced here in case the
         # JavaScript fails to activate or run. Note that the bugtracker
@@ -234,7 +233,7 @@ class FileBugViewBase(LaunchpadFormView):
     extra_data_token = None
 
     def __init__(self, context, request):
-        super(FileBugViewBase, self).__init__(context, request)
+        super().__init__(context, request)
         self.extra_data = FileBugData()
 
     def initialize(self):
@@ -278,7 +277,7 @@ class FileBugViewBase(LaunchpadFormView):
         cache.objects['enable_bugfiling_duplicate_search'] = (
             self.context.enable_bugfiling_duplicate_search)
 
-        super(FileBugViewBase, self).initialize()
+        super().initialize()
 
         if (self.extra_data_token is not None and
             not self.extra_data_to_process):
@@ -452,7 +451,7 @@ class FileBugViewBase(LaunchpadFormView):
 
     def setUpWidgets(self):
         """Customize the onKeyPress event of the package name chooser."""
-        super(FileBugViewBase, self).setUpWidgets()
+        super().setUpWidgets()
 
         if "packagename" in self.field_names:
             self.widgets["packagename"].onKeyPress = (
@@ -460,7 +459,7 @@ class FileBugViewBase(LaunchpadFormView):
 
     def setUpFields(self):
         """Set up the form fields. See `LaunchpadFormView`."""
-        super(FileBugViewBase, self).setUpFields()
+        super().setUpFields()
 
         if self.is_bug_supervisor:
             info_type_vocab = InformationTypeVocabulary(
@@ -480,7 +479,7 @@ class FileBugViewBase(LaunchpadFormView):
         # field.
         subscribe_field = Choice(
             __name__='subscribe_to_existing_bug',
-            title=u'Subscribe to this bug',
+            title='Subscribe to this bug',
             vocabulary=SUBSCRIBE_TO_BUG_VOCABULARY,
             required=True, default=False)
 
@@ -1006,7 +1005,7 @@ class FileBugGuidedView(FilebugShowSimilarBugsView):
     show_summary_in_results = True
 
     def initialize(self):
-        super(FileBugGuidedView, self).initialize()
+        super().initialize()
         if self.redirect_ubuntu_filebug:
             # The user is trying to file a new Ubuntu bug via the web
             # interface and without using apport. Redirect to a page
@@ -1227,7 +1226,7 @@ class BugTargetBugTagsView(LaunchpadView):
                 count=count,
                 url=self._getSearchURL(tag),
                 )
-            for (tag, count) in six.iteritems(tags)),
+            for (tag, count) in tags.items()),
             key=lambda item: (-item['count'], item['tag']))
 
     @property
@@ -1371,7 +1370,7 @@ class TargetSubscriptionView(LaunchpadView):
             return "Your subscriptions to %s" % self.context.displayname
 
     def initialize(self):
-        super(TargetSubscriptionView, self).initialize()
+        super().initialize()
         expose_structural_subscription_data_to_js(
             self.context, self.request, self.user, self.subscriptions)
 

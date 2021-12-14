@@ -40,7 +40,6 @@ from lazr.restful import (
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from simplejson import dumps
-import six
 from zope import formlib
 from zope.component import (
     getMultiAdapter,
@@ -408,7 +407,7 @@ class MaloneView(LaunchpadFormView):
 
     def _redirectToBug(self, bug_id):
         """Redirect to the specified bug id."""
-        if not isinstance(bug_id, six.string_types):
+        if not isinstance(bug_id, str):
             self.error_message = "Bug %r is not registered." % bug_id
             return
         if bug_id.startswith("#"):
@@ -708,7 +707,7 @@ class BugWithoutContextView(RedirectionView):
         viewname = getDefaultViewName(redirected_context, request)
         cache_view = getMultiAdapter(
             (redirected_context, request), name=viewname)
-        super(BugWithoutContextView, self).__init__(
+        super().__init__(
             canonical_url(redirected_context), request, cache_view=cache_view)
 
 
@@ -764,7 +763,7 @@ class BugMarkAsDuplicateView(BugEditViewBase):
 
     def setUpFields(self):
         """Make the readonly version of duplicateof available."""
-        super(BugMarkAsDuplicateView, self).setUpFields()
+        super().setUpFields()
 
         duplicateof_field = DuplicateBug(
             __name__='duplicateof', title=_('Duplicate Of'), required=True)
@@ -786,7 +785,7 @@ class BugMarkAsDuplicateView(BugEditViewBase):
 
     def _validate(self, action, data):
         if action.name != 'remove':
-            return super(BugMarkAsDuplicateView, self)._validate(action, data)
+            return super()._validate(action, data)
         return []
 
     @action('Set Duplicate', name='change',
@@ -856,7 +855,7 @@ class BugSecrecyEditView(LaunchpadFormView, BugSubscriptionPortletDetails):
             # should be validated to ensure the bug does not become invisible
             # after the change.
             validate_change = Bool(
-                title=u"Validate change", required=False, default=False)
+                title="Validate change", required=False, default=False)
         return information_type_schema
 
     @property
@@ -997,7 +996,7 @@ class DeprecatedAssignedBugsView(RedirectionView):
     def __call__(self):
         self.target = canonical_url(
             getUtility(ILaunchBag).user, view_name='+assignedbugs')
-        super(DeprecatedAssignedBugsView, self).__call__()
+        super().__call__()
 
     @property
     def context(self):
@@ -1193,7 +1192,7 @@ class BugURL:
     @property
     def path(self):
         """Return the path component of the URL."""
-        return u"bugs/%d" % self.context.id
+        return "bugs/%d" % self.context.id
 
 
 class BugAffectingUserChoice(EnumeratedType):

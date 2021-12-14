@@ -196,7 +196,7 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
         form = {'search': 'Search'}
         with person_logged_in(product.owner):
             product.official_malone = True
-        flags = {u"ajax.batch_navigator.enabled": u"true"}
+        flags = {"ajax.batch_navigator.enabled": "true"}
         with FeatureFixture(flags):
             view = create_initialized_view(product, '+bugs', form=form)
             self.assertTrue(
@@ -445,7 +445,7 @@ class TestPersonBugListing(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonBugListing, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.private_product_owner = self.factory.makePerson()
         self.private_product = self.factory.makeProduct(

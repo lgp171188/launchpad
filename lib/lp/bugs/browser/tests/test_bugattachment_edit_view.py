@@ -28,7 +28,7 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         }
 
     def setUp(self):
-        super(TestBugAttachmentEditView, self).setUp()
+        super().setUp()
         self.bug_owner = self.factory.makePerson()
         self.registry_expert = self.factory.makePerson()
         registry = getUtility(ILaunchpadCelebrities).registry_experts
