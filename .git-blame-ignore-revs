@@ -18,3 +18,5 @@ c348b945c29c723201380d9aca0e0c0298037c8c
 7f2f3372cfc3b59e805ddce7434757f068adcd26
 # apply pyupgrade --py3-plus to lp.buildmaster
 b6725842a2470e3927bb73bf400c4476a06ee3ba
+# apply pyupgrade --py3-plus to lp.charms
+474f07ab7c3f28d8b6b8e4f1bd4c56832cec3fab
