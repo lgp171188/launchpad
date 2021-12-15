@@ -250,7 +250,7 @@ class TestSimplifiedPersonBranchesView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestSimplifiedPersonBranchesView, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.person = self.factory.makePerson(name='barney')
         self.team = self.factory.makeTeam(owner=self.person)
@@ -327,7 +327,7 @@ class TestSimplifiedPersonProductBranchesView(
     TestSimplifiedPersonBranchesView):
 
     def setUp(self):
-        super(TestSimplifiedPersonProductBranchesView, self).setUp()
+        super().setUp()
         self.person_product = getUtility(IPersonProductFactory).create(
             self.person, self.product)
         self.team_product = getUtility(IPersonProductFactory).create(
@@ -669,7 +669,7 @@ class TestProjectGroupBranches(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectGroupBranches, self).setUp()
+        super().setUp()
         self.projectgroup = self.factory.makeProject()
 
     def test_no_branches_gets_message_not_listing(self):

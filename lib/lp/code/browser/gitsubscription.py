@@ -252,7 +252,7 @@ class GitSubscriptionEditView(LaunchpadEditFormView):
     def initialize(self):
         self.repository = self.context.repository
         self.person = self.context.person
-        super(GitSubscriptionEditView, self).initialize()
+        super().initialize()
 
     @action("Change", name="change")
     def change_action(self, action, data):

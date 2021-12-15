@@ -112,7 +112,7 @@ class CodeImportSetNavigation(Navigation):
 
 class CodeImportSetBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `ICodeImportSet`."""
-    text = u'Code Import System'
+    text = 'Code Import System'
 
 
 class DropdownWidgetWithAny(LaunchpadDropdownWidget):
@@ -381,7 +381,7 @@ class CodeImportNewView(CodeImportBaseView, CodeImportNameValidationMixin):
             self.form_fields = any_owner_field + self.form_fields
 
     def setUpWidgets(self):
-        super(CodeImportNewView, self).setUpWidgets()
+        super().setUpWidgets()
 
         # Extract the radio buttons from the rcs_type widget, so we can
         # display them separately in the form.
@@ -478,7 +478,7 @@ class CodeImportNewView(CodeImportBaseView, CodeImportNameValidationMixin):
         """See `LaunchpadFormView`."""
         self.widgets['git_target_rcs_type'].context.required = (
             data.get('rcs_type') == RevisionControlSystems.GIT)
-        super(CodeImportNewView, self).validate_widgets(data, names=names)
+        super().validate_widgets(data, names=names)
 
     def validate(self, data):
         """See `LaunchpadFormView`."""
@@ -615,7 +615,7 @@ class CodeImportEditView(CodeImportBaseView):
             raise Unauthorized
         # The next and cancel location is the target details page.
         self.cancel_url = self.next_url = canonical_url(self.context)
-        super(CodeImportEditView, self).initialize()
+        super().initialize()
 
     @property
     def adapters(self):

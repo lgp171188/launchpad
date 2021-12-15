@@ -102,8 +102,7 @@ class TestProposalVoteSummaryMixin:
     def setUp(self):
         # Use an admin so we don't have to worry about launchpad.Edit
         # permissions on the merge proposals for adding comments.
-        super(TestProposalVoteSummaryMixin, self).setUp(
-            user="admin@canonical.com")
+        super().setUp(user="admin@canonical.com")
 
     def _createComment(self, proposal, reviewer=None, vote=None,
                        comment=_default):
@@ -437,7 +436,7 @@ class ProductContextMixin:
     label_describes_context = False
 
     def setUp(self):
-        super(ProductContextMixin, self).setUp()
+        super().setUp()
         self.git_target = self.bzr_target = self.context = (
             self.factory.makeProduct())
         self.user = self.git_target.owner
@@ -449,7 +448,7 @@ class ProjectGroupContextMixin:
     label_describes_context = False
 
     def setUp(self):
-        super(ProjectGroupContextMixin, self).setUp()
+        super().setUp()
         self.context = self.factory.makeProject()
         self.git_target = self.bzr_target = self.factory.makeProduct(
             projectgroup=self.context)
@@ -464,7 +463,7 @@ class DistributionSourcePackageContextMixin:
     label_describes_context = False
 
     def setUp(self):
-        super(DistributionSourcePackageContextMixin, self).setUp()
+        super().setUp()
         self.git_target = self.context = (
             self.factory.makeDistributionSourcePackage())
         with admin_logged_in():
@@ -487,7 +486,7 @@ class SourcePackageContextMixin:
     supports_git = False
 
     def setUp(self):
-        super(SourcePackageContextMixin, self).setUp()
+        super().setUp()
         self.bzr_target = self.context = self.factory.makeSourcePackage()
         self.user = self.context.distribution.owner
         self.owner = None
@@ -498,7 +497,7 @@ class PersonContextMixin:
     label_describes_context = False
 
     def setUp(self):
-        super(PersonContextMixin, self).setUp()
+        super().setUp()
         self.context = self.factory.makePerson()
         self.bzr_target = self.git_target = self.factory.makeProduct()
         self.user = self.bzr_target.owner
@@ -510,7 +509,7 @@ class PersonProductContextMixin:
     label_describes_context = False
 
     def setUp(self):
-        super(PersonProductContextMixin, self).setUp()
+        super().setUp()
         self.context = PersonProduct(
             self.factory.makePerson(), self.factory.makeProduct())
         self.bzr_target = self.git_target = self.context.product
@@ -523,7 +522,7 @@ class BranchContextMixin:
     supports_git = False
 
     def setUp(self):
-        super(BranchContextMixin, self).setUp()
+        super().setUp()
         self.bzr_target = self.factory.makeProduct()
         self.context = self.bzr_branch = self.factory.makeBranch(
             target=self.bzr_target)
@@ -536,7 +535,7 @@ class GitRefContextMixin:
     supports_bzr = False
 
     def setUp(self):
-        super(GitRefContextMixin, self).setUp()
+        super().setUp()
         self.git_target = self.factory.makeProduct()
         self.context = self.git_ref = self.factory.makeGitRefs(
             target=self.git_target)[0]
@@ -657,7 +656,7 @@ class ActiveReviewGroupsTestMixin:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(ActiveReviewGroupsTestMixin, self).setUp()
+        super().setUp()
         self.bmp = self._makeBranchMergeProposal(
             set_state=BranchMergeProposalStatus.NEEDS_REVIEW)
 

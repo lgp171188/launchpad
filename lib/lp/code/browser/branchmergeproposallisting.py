@@ -134,7 +134,7 @@ class BranchMergeProposalListingBatchNavigator(TableBatchNavigator):
     """Batch up the branch listings."""
 
     def __init__(self, view):
-        super(BranchMergeProposalListingBatchNavigator, self).__init__(
+        super().__init__(
             view.getVisibleProposalsForUser(), view.request,
             columns_to_show=view.extra_columns,
             size=config.launchpad.branchlisting_batch_size)
@@ -463,8 +463,7 @@ class PersonProductActiveReviewsView(PersonActiveReviewsView):
         return self.context.person
 
     def getProposals(self):
-        return super(PersonProductActiveReviewsView, self).getProposals(
-            project=self.context.product)
+        return super().getProposals(project=self.context.product)
 
     @property
     def no_proposal_message(self):

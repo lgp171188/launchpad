@@ -5,7 +5,6 @@ __all__ = [
     'GitRefWidget',
     ]
 
-import six
 from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import (
     ConversionError,
@@ -48,7 +47,7 @@ class GitRepositoryField(Choice):
     """
 
     def __init__(self, allow_external=False, **kwargs):
-        super(GitRepositoryField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if allow_external:
             self._uri_field = URIField(
                 __name__=self.__name__, title=self.title,
@@ -62,22 +61,22 @@ class GitRepositoryField(Choice):
             self._uri_field = None
 
     def set(self, object, value):
-        if self._uri_field is not None and isinstance(value, six.string_types):
+        if self._uri_field is not None and isinstance(value, str):
             try:
                 self._uri_field.set(object, value)
                 return
             except LaunchpadValidationError:
                 pass
-        super(GitRepositoryField, self).set(object, value)
+        super().set(object, value)
 
     def _validate(self, value):
-        if self._uri_field is not None and isinstance(value, six.string_types):
+        if self._uri_field is not None and isinstance(value, str):
             try:
                 self._uri_field._validate(value)
                 return
             except LaunchpadValidationError:
                 pass
-        super(GitRepositoryField, self)._validate(value)
+        super()._validate(value)
 
 
 class GitRepositoryPickerWidget(VocabularyPickerWidget):
@@ -89,8 +88,7 @@ class GitRepositoryPickerWidget(VocabularyPickerWidget):
                 return [tokens[0]]
             except LaunchpadValidationError:
                 pass
-        return super(GitRepositoryPickerWidget, self).convertTokensToValues(
-            tokens)
+        return super().convertTokensToValues(tokens)
 
 
 @implementer(IMultiLineWidgetLayout, IAlwaysSubmittedWidget, IInputWidget)
@@ -113,11 +111,11 @@ class GitRefWidget(BrowserWidget, InputWidget):
         path_vocabulary = "GitBranch" if self.require_branch else "GitRef"
         fields = [
             GitRepositoryField(
-                __name__="repository", title=u"Repository",
+                __name__="repository", title="Repository",
                 required=self.context.required, vocabulary="GitRepository",
                 allow_external=self.allow_external),
             Choice(
-                __name__="path", title=u"Branch",
+                __name__="path", title="Branch",
                 required=self.context.required,
                 vocabulary=path_vocabulary),
             ]
@@ -227,7 +225,7 @@ class GitRefWidget(BrowserWidget, InputWidget):
                 self.getInputValue()
         except InputErrors as error:
             self._error = error
-        return super(GitRefWidget, self).error()
+        return super().error()
 
     def __call__(self):
         """See `IBrowserWidget`."""

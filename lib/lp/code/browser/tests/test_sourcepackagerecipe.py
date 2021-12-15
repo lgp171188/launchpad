@@ -239,7 +239,7 @@ class TestCaseForRecipe(BrowserTestCase):
 
     def setUp(self):
         """Provide useful defaults."""
-        super(TestCaseForRecipe, self).setUp()
+        super().setUp()
         self.chef = self.factory.makePerson(
             displayname='Master Chef', name='chef')
         self.user = self.chef
@@ -844,7 +844,7 @@ class TestSourcePackageRecipeAddViewGit(
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestSourcePackageRecipeAddViewGit, self).setUp()
+        super().setUp()
         self.useFixture(GitHostingFixture())
 
     def makeBranchAndPackage(self):
@@ -1699,7 +1699,7 @@ class TestSourcePackageRecipeBuildViewMixin:
 
     def setUp(self):
         """Provide useful defaults."""
-        super(TestSourcePackageRecipeBuildViewMixin, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson(
             displayname='Owner', name='build-owner')
 

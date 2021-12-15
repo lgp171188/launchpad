@@ -31,7 +31,6 @@ from lazr.enum import (
     EnumeratedType,
     Item,
     )
-import six
 from six.moves.urllib.parse import parse_qs
 from storm.expr import Desc
 from zope.browserpage import ViewPageTemplateFile
@@ -137,7 +136,7 @@ class BranchBadges(HasBadgeBase):
             return Badge('/@@/warning', '/@@/warning-large', '',
                          'Branch has errors')
         else:
-            return super(BranchBadges, self).getBadge(badge_name)
+            return super().getBadge(badge_name)
 
 
 @delegate_to(IBranch, context='context')
@@ -500,7 +499,7 @@ class BranchListingView(LaunchpadFormView, FeedsMixin):
         if render_table_only:
             return self.table_only_template
         else:
-            return super(BranchListingView, self).template
+            return super().template
 
     @property
     def initial_values(self):
@@ -658,7 +657,7 @@ class BranchListingView(LaunchpadFormView, FeedsMixin):
                 field = self.form_fields[field_name]
             fields.append(field)
         self.form_fields = form.Fields(*fields)
-        super(BranchListingView, self).setUpWidgets(context)
+        super().setUpWidgets(context)
 
     @cachedproperty
     def default_information_type(self):
@@ -814,7 +813,7 @@ class PersonBaseBranchListingView(BranchListingView):
 
     @property
     def initial_values(self):
-        values = super(PersonBaseBranchListingView, self).initial_values
+        values = super().initial_values
         values['sort_by'] = BranchListingSort.MOST_RECENTLY_CHANGED_FIRST
         return values
 
@@ -887,7 +886,7 @@ class PersonProductBranchesView(PersonBranchesView):
             self.context.product.displayname, self.context.person.displayname)
 
     def _getCollection(self):
-        coll = super(PersonProductBranchesView, self)._getCollection()
+        coll = super()._getCollection()
         return coll.inProduct(self.context.product)
 
 
@@ -1029,12 +1028,12 @@ class ProductBranchStatisticsView(BranchCountSummaryView,
 
     @property
     def branch_text(self):
-        text = super(ProductBranchStatisticsView, self).branch_text
+        text = super().branch_text
         return text.capitalize()
 
     @property
     def commit_text(self):
-        text = super(ProductBranchStatisticsView, self).commit_text
+        text = super().commit_text
         return text.capitalize()
 
 
@@ -1162,7 +1161,7 @@ class ProductBranchesView(ProductBranchListingView, SortSeriesMixin,
     def initial_branches(self):
         """Return the series branches, followed by most recently changed."""
         series_branches = self._getSeriesBranches()
-        branch_query = super(ProductBranchesView, self)._branches(
+        branch_query = super()._branches(
             self.selected_lifecycle_status,
             sort_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST)
         # We don't want the initial branch listing to be batched, so only get
@@ -1182,7 +1181,7 @@ class ProductBranchesView(ProductBranchListingView, SortSeriesMixin,
         # The params are ignored, and only used by the listing view.
         if self.sort_by == BranchListingSort.DEFAULT:
             return self.initial_branches
-        return super(ProductBranchesView, self)._branches(lifecycle_status)
+        return super()._branches(lifecycle_status)
 
     @property
     def has_development_focus_branch(self):
@@ -1226,7 +1225,7 @@ class BaseSourcePackageBranchesView(BranchListingView):
 
     @property
     def initial_values(self):
-        values = super(BaseSourcePackageBranchesView, self).initial_values
+        values = super().initial_values
         values['sort_by'] = BranchListingSort.MOST_RECENTLY_CHANGED_FIRST
         return values
 
@@ -1305,7 +1304,7 @@ class GroupedDistributionSourcePackageBranchesView(LaunchpadView,
         # For each distro series, we only want the "best" pocket if one branch
         # is linked to more than one pocket.  Best here means smaller value.
         official_branches = {}
-        for key, value in six.iteritems(distro_links):
+        for key, value in distro_links.items():
             ordered = sorted(value, key=attrgetter('pocket'))
             seen_branches = set()
             branches = []
@@ -1362,7 +1361,7 @@ class GroupedDistributionSourcePackageBranchesView(LaunchpadView,
         and merge proposal links for badges.
         """
         visible_branches = []
-        for branches, count in six.itervalues(self.series_branches_map):
+        for branches, count in self.series_branches_map.values():
             visible_branches.extend(branches)
         return visible_branches
 

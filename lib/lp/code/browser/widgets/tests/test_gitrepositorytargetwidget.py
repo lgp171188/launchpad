@@ -55,15 +55,14 @@ class TestGitRepositoryTargetWidgetBase:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitRepositoryTargetWidgetBase, self).setUp()
+        super().setUp()
         self.distribution = self.factory.makeDistribution(name="fnord")
         distroseries = self.factory.makeDistroSeries(
             distribution=self.distribution)
         self.package = self.factory.makeDSPCache(
             distroseries=distroseries, sourcepackagename="snarf")
         self.project = self.factory.makeProduct("pting")
-        field = Reference(
-            __name__="target", schema=Interface, title=u"target")
+        field = Reference(__name__="target", schema=Interface, title="target")
         self.context = Thing()
         field = field.bind(self.context)
         request = LaunchpadTestRequest()
@@ -110,7 +109,7 @@ class TestGitRepositoryTargetWidgetBase:
     def test_setUpSubWidgets_dsp_picker_feature_flag(self):
         # The DistributionSourcePackageVocabulary is used when the
         # disclosure.dsp_picker.enabled is true.
-        with FeatureFixture({u"disclosure.dsp_picker.enabled": u"on"}):
+        with FeatureFixture({"disclosure.dsp_picker.enabled": "on"}):
             self.widget.setUpSubWidgets()
         self.assertIsInstance(
             self.widget.package_widget.context.vocabulary,
@@ -338,7 +337,7 @@ class TestGitRepositoryTargetWidget(
         form = self.form
         form["field.target"] = "package"
         self.widget.request = LaunchpadTestRequest(form=form)
-        with FeatureFixture({u"disclosure.dsp_picker.enabled": u"on"}):
+        with FeatureFixture({"disclosure.dsp_picker.enabled": "on"}):
             self.widget.setUpSubWidgets()
             self.assertEqual(self.package, self.widget.getInputValue())
 

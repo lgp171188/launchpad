@@ -47,7 +47,7 @@ class DecoratedBranch(BzrIdentityMixin):
         The property is defined in the bzrIdentityMixin class.  This uses the
         associatedProductSeries and associatedSuiteSourcePackages methods.
         """
-        return super(DecoratedBranch, self).bzr_identity
+        return super().bzr_identity
 
     @cachedproperty
     def is_series_branch(self):

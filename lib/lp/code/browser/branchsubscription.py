@@ -249,7 +249,7 @@ class BranchSubscriptionEditView(LaunchpadEditFormView):
     def initialize(self):
         self.branch = self.context.branch
         self.person = self.context.person
-        super(BranchSubscriptionEditView, self).initialize()
+        super().initialize()
 
     @action("Change", name="change")
     def change_action(self, action, data):
