@@ -98,7 +98,7 @@ class CharmRecipeBuildJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(CharmRecipeBuildJob, self).__init__()
+        super().__init__()
         self.job = Job(**job_args)
         self.build = build
         self.job_type = job_type
@@ -151,7 +151,7 @@ class CharmRecipeBuildJobDerived(
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        oops_vars = super(CharmRecipeBuildJobDerived, self).getOopsVars()
+        oops_vars = super().getOopsVars()
         recipe = self.context.build.recipe
         oops_vars.extend([
             ("job_id", self.context.job.id),
@@ -271,7 +271,7 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
                       *args, **kwargs):
         edited_fields = set()
         with notify_modified(self.build, edited_fields) as before_modification:
-            getattr(super(CharmhubUploadJob, self), method_name)(
+            getattr(super(), method_name)(
                 *args, manage_transaction=manage_transaction, **kwargs)
             upload_status = self.build.store_upload_status
             if upload_status != before_modification.store_upload_status:
@@ -299,7 +299,7 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        oops_vars = super(CharmhubUploadJob, self).getOopsVars()
+        oops_vars = super().getOopsVars()
         oops_vars.append(("error_detail", self.error_detail))
         return oops_vars
 

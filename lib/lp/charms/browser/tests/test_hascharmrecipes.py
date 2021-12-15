@@ -44,7 +44,7 @@ class TestHasCharmRecipesView(WithScenarios, TestCaseWithFactory):
         ]
 
     def setUp(self):
-        super(TestHasCharmRecipesView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def makeCharmRecipe(self, context):
@@ -91,7 +91,7 @@ class TestHasCharmRecipesMenu(WithScenarios, TestCaseWithFactory):
         ]
 
     def setUp(self):
-        super(TestHasCharmRecipesMenu, self).setUp()
+        super().setUp()
         self.useFixture(GitHostingFixture())
 
     def makeCharmRecipe(self, context):

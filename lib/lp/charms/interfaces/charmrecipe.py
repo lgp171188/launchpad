@@ -106,7 +106,7 @@ class CharmRecipeFeatureDisabled(Unauthorized):
     """Only certain users can create new charm recipes."""
 
     def __init__(self):
-        super(CharmRecipeFeatureDisabled, self).__init__(
+        super().__init__(
             "You do not have permission to create new charm recipes.")
 
 
@@ -115,7 +115,7 @@ class CharmRecipePrivateFeatureDisabled(Unauthorized):
     """Only certain users can create private charm recipes."""
 
     def __init__(self):
-        super(CharmRecipePrivateFeatureDisabled, self).__init__(
+        super().__init__(
             "You do not have permission to create private charm recipes.")
 
 
@@ -124,7 +124,7 @@ class DuplicateCharmRecipeName(Exception):
     """Raised for charm recipes with duplicate project/owner/name."""
 
     def __init__(self):
-        super(DuplicateCharmRecipeName, self).__init__(
+        super().__init__(
             "There is already a charm recipe with the same project, owner, "
             "and name.")
 
@@ -144,8 +144,7 @@ class NoSourceForCharmRecipe(Exception):
     """Charm recipes must have a source (Git branch)."""
 
     def __init__(self):
-        super(NoSourceForCharmRecipe, self).__init__(
-            "New charm recipes must have a Git branch.")
+        super().__init__("New charm recipes must have a Git branch.")
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -158,7 +157,7 @@ class CharmRecipePrivacyMismatch(Exception):
     """Charm recipe privacy does not match its content."""
 
     def __init__(self, message=None):
-        super(CharmRecipePrivacyMismatch, self).__init__(
+        super().__init__(
             message or
             "Charm recipe contains private information and cannot be public.")
 
@@ -176,8 +175,7 @@ class MissingCharmcraftYaml(Exception):
     """The repository for this charm recipe does not have a charmcraft.yaml."""
 
     def __init__(self, branch_name):
-        super(MissingCharmcraftYaml, self).__init__(
-            "Cannot find charmcraft.yaml in %s" % branch_name)
+        super().__init__("Cannot find charmcraft.yaml in %s" % branch_name)
 
 
 class CannotFetchCharmcraftYaml(Exception):
@@ -193,7 +191,7 @@ class CharmRecipeBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
     def __init__(self):
-        super(CharmRecipeBuildAlreadyPending, self).__init__(
+        super().__init__(
             "An identical build of this charm recipe is already pending.")
 
 
@@ -202,7 +200,7 @@ class CharmRecipeBuildDisallowedArchitecture(Exception):
     """A build was requested for a disallowed architecture."""
 
     def __init__(self, das):
-        super(CharmRecipeBuildDisallowedArchitecture, self).__init__(
+        super().__init__(
             "This charm recipe is not allowed to build for %s/%s." %
             (das.distroseries.name, das.architecturetag))
 

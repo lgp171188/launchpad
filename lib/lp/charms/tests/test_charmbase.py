@@ -3,8 +3,6 @@
 
 """Test bases for charms."""
 
-__metaclass__ = type
-
 from testtools.matchers import (
     ContainsDict,
     Equals,

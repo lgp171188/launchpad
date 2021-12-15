@@ -35,7 +35,7 @@ class CharmRecipeBuildChannelsWidget(BrowserWidget, InputWidget):
     _widgets_set_up = False
 
     def __init__(self, context, request):
-        super(CharmRecipeBuildChannelsWidget, self).__init__(context, request)
+        super().__init__(context, request)
         self.hint = (
             "The channels to use for build tools when building the charm "
             "recipe.")
@@ -97,7 +97,7 @@ class CharmRecipeBuildChannelsWidget(BrowserWidget, InputWidget):
                 self.getInputValue()
         except InputErrors as error:
             self._error = error
-        return super(CharmRecipeBuildChannelsWidget, self).error()
+        return super().error()
 
     def __call__(self):
         """See `IBrowserWidget`."""

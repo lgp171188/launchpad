@@ -152,7 +152,7 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
                  store_upload_metadata=None, date_created=DEFAULT):
         """Construct a `CharmRecipeBuild`."""
         requester = build_request.requester
-        super(CharmRecipeBuild, self).__init__()
+        super().__init__()
         self.build_farm_job = build_farm_job
         self.build_request_id = build_request.id
         self.requester = requester
@@ -455,7 +455,7 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
         with notify_modified(
                 self, edited_fields,
                 snapshot_names=("status", "revision_id")) as previous_obj:
-            super(CharmRecipeBuild, self).updateStatus(
+            super().updateStatus(
                 status, builder=builder, slave_status=slave_status,
                 date_started=date_started, date_finished=date_finished,
                 force_invalid_transition=force_invalid_transition)
@@ -576,6 +576,6 @@ class CharmFile(StormBase):
 
     def __init__(self, build, library_file):
         """Construct a `CharmFile`."""
-        super(CharmFile, self).__init__()
+        super().__init__()
         self.build = build
         self.library_file = library_file
