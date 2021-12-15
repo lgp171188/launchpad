@@ -50,7 +50,7 @@ class PackageBuildMixin(BuildFarmJobMixin):
     def updateStatus(self, status, builder=None, slave_status=None,
                      date_started=None, date_finished=None,
                      force_invalid_transition=False):
-        super(PackageBuildMixin, self).updateStatus(
+        super().updateStatus(
             status, builder=builder, slave_status=slave_status,
             date_started=date_started, date_finished=date_finished,
             force_invalid_transition=force_invalid_transition)

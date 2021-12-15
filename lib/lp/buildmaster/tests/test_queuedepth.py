@@ -8,7 +8,6 @@ from datetime import (
     )
 
 from pytz import utc
-import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -127,7 +126,7 @@ class TestBuildQueueBase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestBuildQueueBase, self).setUp()
+        super().setUp()
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
 
@@ -246,7 +245,7 @@ class SingleArchBuildsBase(TestBuildQueueBase):
 
     def setUp(self):
         """Set up some native x86 builds for the test archive."""
-        super(SingleArchBuildsBase, self).setUp()
+        super().setUp()
         # The builds will be set up as follows:
         #
         #      gedit, p:  386, v:False e:0:01:00 *** s: 1001
@@ -517,7 +516,7 @@ class TestMinTimeToNextBuilder(SingleArchBuildsBase):
 
         # The following job can only run on a native builder.
         job = self.makeCustomBuildQueue(
-            estimated_duration=111, sourcename=u'xxr-gftp', score=1055,
+            estimated_duration=111, sourcename='xxr-gftp', score=1055,
             virtualized=False)
         self.builds.append(job.specific_build)
 
@@ -538,7 +537,7 @@ class MultiArchBuildsBase(TestBuildQueueBase):
 
     def setUp(self):
         """Set up some native x86 builds for the test archive."""
-        super(MultiArchBuildsBase, self).setUp()
+        super().setUp()
         # The builds will be set up as follows:
         #
         #      gedit, p: hppa, v:False e:0:01:00 *** s: 1001
@@ -697,7 +696,7 @@ class TestMinTimeToNextBuilderMulti(MultiArchBuildsBase):
         check_mintime_to_builder(self, job, 0)
 
         # Let's disable all builders.
-        for builders in six.itervalues(self.builders):
+        for builders in self.builders.values():
             for builder in builders:
                 builder.builderok = False
 
@@ -767,15 +766,15 @@ class TestMultiArchJobDelayEstimation(MultiArchBuildsBase):
 
          p=processor, v=virtualized, e=estimated_duration, s=score
         """
-        super(TestMultiArchJobDelayEstimation, self).setUp()
+        super().setUp()
 
         job = self.makeCustomBuildQueue(
             virtualized=False, estimated_duration=22,
-            sourcename=u'xx-recipe-bash', score=1025)
+            sourcename='xx-recipe-bash', score=1025)
         self.builds.append(job.specific_build)
         job = self.makeCustomBuildQueue(
             virtualized=False, estimated_duration=222,
-            sourcename=u'xx-recipe-zsh', score=1053)
+            sourcename='xx-recipe-zsh', score=1053)
         self.builds.append(job.specific_build)
 
         # Assign the same score to the '386' vim and apg build jobs.
@@ -897,33 +896,33 @@ class TestJobDispatchTimeEstimation(MultiArchBuildsBase):
 
          p=processor, v=virtualized, e=estimated_duration, s=score
         """
-        super(TestJobDispatchTimeEstimation, self).setUp()
+        super().setUp()
 
         job = self.makeCustomBuildQueue(
             virtualized=False, estimated_duration=332,
-            sourcename=u'xxr-aptitude', score=1025)
+            sourcename='xxr-aptitude', score=1025)
         self.builds.append(job.specific_build)
         job = self.makeCustomBuildQueue(
             virtualized=False, estimated_duration=443,
-            sourcename=u'xxr-auto-apt', score=1053)
+            sourcename='xxr-auto-apt', score=1053)
         self.builds.append(job.specific_build)
         job = self.makeCustomBuildQueue(
-            estimated_duration=554, sourcename=u'xxr-daptup', score=1051)
+            estimated_duration=554, sourcename='xxr-daptup', score=1051)
         self.builds.append(job.specific_build)
         job = self.makeCustomBuildQueue(
-            estimated_duration=665, sourcename=u'xxr-cron-apt', score=1043)
+            estimated_duration=665, sourcename='xxr-cron-apt', score=1043)
         self.builds.append(job.specific_build)
         job = self.makeCustomBuildQueue(
-            estimated_duration=776, sourcename=u'xxr-apt-build', score=1043)
+            estimated_duration=776, sourcename='xxr-apt-build', score=1043)
         self.builds.append(job.specific_build)
         job = self.makeCustomBuildQueue(
-            estimated_duration=887, sourcename=u'xxr-debdelta', score=1044)
+            estimated_duration=887, sourcename='xxr-debdelta', score=1044)
         self.builds.append(job.specific_build)
         job = self.makeCustomBuildQueue(
-            estimated_duration=998, sourcename=u'xxr-apt', score=1044)
+            estimated_duration=998, sourcename='xxr-apt', score=1044)
         self.builds.append(job.specific_build)
         job = self.makeCustomBuildQueue(
-            estimated_duration=1110, sourcename=u'xxr-cupt', score=1044)
+            estimated_duration=1110, sourcename='xxr-cupt', score=1044)
         self.builds.append(job.specific_build)
 
         # Assign the same score to the '386' vim and apg build jobs.

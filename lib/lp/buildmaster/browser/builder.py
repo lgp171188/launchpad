@@ -23,7 +23,6 @@ import operator
 
 from lazr.restful.utils import smartquote
 import pytz
-import six
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib.widget import CustomWidgetFactory
@@ -308,7 +307,7 @@ class BuilderCategory:
                 else:
                     grouped_builders[processor] = [builder]
 
-        for processor, builders in six.iteritems(grouped_builders):
+        for processor, builders in grouped_builders.items():
             virt_str = 'virt' if self.virtualized else 'nonvirt'
             processor_name = processor.name if processor else None
             queue_size, duration = build_queue_sizes[virt_str].get(

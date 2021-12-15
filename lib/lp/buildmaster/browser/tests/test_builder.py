@@ -122,7 +122,7 @@ class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBuildersHomepage, self).setUp()
+        super().setUp()
         # Create a non-buildfarm job to ensure that the BuildQueue and
         # Job IDs differ, detecting bug #919116.
         Job()

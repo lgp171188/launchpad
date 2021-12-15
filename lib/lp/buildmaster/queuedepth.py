@@ -12,7 +12,6 @@ from datetime import (
     )
 
 from pytz import utc
-import six
 from storm.expr import Count
 
 from lp.buildmaster.enums import BuildQueueStatus
@@ -274,7 +273,7 @@ def estimate_job_delay(bq, builder_stats):
 
     sum_of_delays = 0
     # Now devide the delays based on a jobs/builders comparison.
-    for platform, duration in six.iteritems(delays):
+    for platform, duration in delays.items():
         jobs = job_counts[platform]
         builders = builder_stats[platform]
         # If there are less jobs than builders that can take them on,
