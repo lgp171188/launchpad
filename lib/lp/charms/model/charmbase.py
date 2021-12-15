@@ -3,7 +3,6 @@
 
 """Bases for charms."""
 
-__metaclass__ = type
 __all__ = [
     "CharmBase",
     ]

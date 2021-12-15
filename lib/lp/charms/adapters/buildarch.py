@@ -11,8 +11,6 @@ from collections import (
     )
 import json
 
-import six
-
 from lp.services.helpers import english_list
 
 
@@ -24,7 +22,7 @@ class MissingPropertyError(CharmBasesParserError):
     """Error for when an expected property is not present in the YAML."""
 
     def __init__(self, prop):
-        super(MissingPropertyError, self).__init__(
+        super().__init__(
             "Base specification is missing the {!r} property".format(prop))
         self.property = prop
 
@@ -37,19 +35,18 @@ class DuplicateRunOnError(CharmBasesParserError):
     """Error for when multiple `run-on`s include the same architecture."""
 
     def __init__(self, duplicates):
-        super(DuplicateRunOnError, self).__init__(
+        super().__init__(
             "{} {} present in the 'run-on' of multiple items".format(
                 english_list([str(d) for d in duplicates]),
                 "is" if len(duplicates) == 1 else "are"))
 
 
-@six.python_2_unicode_compatible
 class CharmBase:
     """A single base in charmcraft.yaml."""
 
     def __init__(self, name, channel, architectures=None):
         self.name = name
-        if not isinstance(channel, six.string_types):
+        if not isinstance(channel, str):
             raise BadPropertyError(
                 "Channel {!r} is not a string (missing quotes?)".format(
                     channel))

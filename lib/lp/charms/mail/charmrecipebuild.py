@@ -90,15 +90,14 @@ class CharmRecipeBuildMailer(BaseMailer):
 
     def __init__(self, subject, template_name, recipients, from_address,
                  notification_type, build):
-        super(CharmRecipeBuildMailer, self).__init__(
+        super().__init__(
             subject, template_name, recipients, from_address,
             notification_type=notification_type)
         self.build = build
 
     def _getHeaders(self, email, recipient):
         """See `BaseMailer`."""
-        headers = super(CharmRecipeBuildMailer, self)._getHeaders(
-            email, recipient)
+        headers = super()._getHeaders(email, recipient)
         headers["X-Launchpad-Build-State"] = self.build.status.name
         return headers
 
@@ -110,8 +109,7 @@ class CharmRecipeBuildMailer(BaseMailer):
             error_message = ""
         else:
             error_message = upload_job.error_message or ""
-        params = super(CharmRecipeBuildMailer, self)._getTemplateParams(
-            email, recipient)
+        params = super()._getTemplateParams(email, recipient)
         params.update({
             "architecturetag": build.distro_arch_series.architecturetag,
             "build_duration": "",

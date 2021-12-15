@@ -93,7 +93,7 @@ class TestCharmRecipeBuildBehaviourBase(TestCaseWithFactory):
 
     def setUp(self):
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
-        super(TestCharmRecipeBuildBehaviourBase, self).setUp()
+        super().setUp()
 
     def makeJob(self, distribution=None, **kwargs):
         """Create a sample `ICharmRecipeBuildBehaviour`."""
@@ -174,7 +174,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def setUp(self):
-        super(TestAsyncCharmRecipeBuildBehaviour, self).setUp()
+        super().setUp()
         build_username = 'OCIBUILD-1'
         self.token = {'secret': uuid.uuid4().hex,
                       'username': build_username,
@@ -195,7 +195,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
     def makeJob(self, **kwargs):
         # We need a builder in these tests, in order that requesting a proxy
         # token can piggyback on its reactor and pool.
-        job = super(TestAsyncCharmRecipeBuildBehaviour, self).makeJob(**kwargs)
+        job = super().makeJob(**kwargs)
         builder = MockBuilder()
         builder.processor = job.build.processor
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()

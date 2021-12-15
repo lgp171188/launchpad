@@ -329,7 +329,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         """Construct a `CharmRecipe`."""
         if not getFeatureFlag(CHARM_RECIPE_ALLOW_CREATE):
             raise CharmRecipeFeatureDisabled()
-        super(CharmRecipe, self).__init__()
+        super().__init__()
 
         # Set this first for use by other validators.
         self.information_type = information_type
