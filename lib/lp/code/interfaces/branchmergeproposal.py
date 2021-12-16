@@ -518,6 +518,8 @@ class IBranchMergeProposalView(Interface):
     def getLatestDiffUpdateJob():
         """Return the latest IUpdatePreviewDiffJob for this MP."""
 
+    def getStatusReports(commit_sha1):
+        """Get status reports for the source repository at the given commit"""
 
 class IBranchMergeProposalEdit(Interface):
 
