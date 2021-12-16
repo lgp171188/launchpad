@@ -31,7 +31,6 @@ from lazr.restful.interface import (
     copy_field,
     use_template,
     )
-import six
 from six.moves.urllib_parse import (
     urlsplit,
     urlunsplit,
@@ -362,7 +361,7 @@ class GitRefBatchNavigator(TableBatchNavigator):
 
     def __init__(self, view, context):
         self.context = context
-        super(GitRefBatchNavigator, self).__init__(
+        super().__init__(
             self.context.branches_by_date, view.request,
             size=config.launchpad.branchlisting_batch_size)
         self.view = view
@@ -391,7 +390,7 @@ class GitRepositoryView(InformationTypePortletMixin, LaunchpadView,
     show_merge_links = True
 
     def initialize(self):
-        super(GitRepositoryView, self).initialize()
+        super().initialize()
         # Cache permission so that the private team owner can be rendered.  The
         # security adapter will do the job also but we don't want or need the
         # expense of running several complex SQL queries.
@@ -523,14 +522,14 @@ class GitRepositoryForkView(LaunchpadEditFormView):
     def initialize(self):
         if not getFeatureFlag(GIT_REPOSITORY_FORK_ENABLED):
             raise Unauthorized()
-        super(GitRepositoryForkView, self).initialize()
+        super().initialize()
 
     def setUpFields(self):
-        super(GitRepositoryForkView, self).setUpFields()
+        super().setUpFields()
         owner_field = Choice(
             vocabulary='AllUserTeamsParticipationPlusSelf',
-            title=u'Fork to the following owner', required=True,
-            __name__=u'owner')
+            title='Fork to the following owner', required=True,
+            __name__='owner')
         self.form_fields += FormFields(owner_field)
 
     @property
@@ -746,7 +745,7 @@ class GitRepositoryEditView(CodeEditOwnerMixin, GitRepositoryEditFormView):
         "person or team.")
 
     def setUpFields(self):
-        super(GitRepositoryEditView, self).setUpFields()
+        super().setUpFields()
         repository = self.context
         # If the user can administer repositories, then they should be able
         # to assign the ownership of the repository to any valid person or
@@ -794,7 +793,7 @@ class GitRepositoryEditView(CodeEditOwnerMixin, GitRepositoryEditFormView):
             target_field.custom_widget = GitRepositoryTargetWidget
 
     def setUpWidgets(self, context=None):
-        super(GitRepositoryEditView, self).setUpWidgets(context=context)
+        super().setUpWidgets(context=context)
         if self.context.target_default:
             self.widgets["target"].hint = (
                 "This is the default repository for this target, so it "
@@ -858,7 +857,7 @@ class GitRepositoryDiffView(DataDownloadView):
     charset = "UTF-8"
 
     def __init__(self, context, request, old, new):
-        super(GitRepositoryDiffView, self).__init__(context, request)
+        super().__init__(context, request)
         self.context = context
         self.request = request
         self.old = old
@@ -900,7 +899,7 @@ class GitRulePatternField(UniqueField):
     def __init__(self, ref_prefix, rule=None, *args, **kwargs):
         self.ref_prefix = ref_prefix
         self.rule = rule
-        super(GitRulePatternField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _getByAttribute(self, ref_pattern):
         """See `UniqueField`."""
@@ -919,14 +918,14 @@ class GitRulePatternField(UniqueField):
         """See `IField`."""
         if value is not None:
             value = value.strip()
-        super(GitRulePatternField, self).set(object, value)
+        super().set(object, value)
 
 
 class GitRepositoryPermissionsView(LaunchpadFormView):
     """A view to manage repository permissions."""
 
-    heads_prefix = u"refs/heads/"
-    tags_prefix = u"refs/tags/"
+    heads_prefix = "refs/heads/"
+    tags_prefix = "refs/tags/"
 
     @property
     def label(self):
@@ -975,7 +974,7 @@ class GitRepositoryPermissionsView(LaunchpadFormView):
         for prefix in (self.heads_prefix, self.tags_prefix):
             if ref_pattern.startswith(prefix):
                 return prefix, ref_pattern[len(prefix):]
-        return u"", ref_pattern
+        return "", ref_pattern
 
     def _getFieldName(self, name, ref_pattern, grantee=None):
         """Get the combined field name for a ref pattern and optional grantee.
@@ -1132,8 +1131,7 @@ class GitRepositoryPermissionsView(LaunchpadFormView):
 
     def setUpWidgets(self, context=None):
         """See `LaunchpadFormView`."""
-        super(GitRepositoryPermissionsView, self).setUpWidgets(
-            context=context)
+        super().setUpWidgets(context=context)
         for widget in self.widgets:
             widget.display_label = False
             widget.hint = None
@@ -1378,8 +1376,8 @@ class GitRepositoryDeletionView(LaunchpadFormView):
         :return: A list of tuples of (item, operation, reason, allowed)
         """
         reqs = []
-        for item, (operation, reason) in six.iteritems(
-                self.context.getDeletionRequirements(eager_load=True)):
+        for item, (operation, reason) in self.context.getDeletionRequirements(
+                eager_load=True).items():
             allowed = check_permission("launchpad.Edit", item)
             reqs.append((item, operation, reason, allowed))
         return reqs

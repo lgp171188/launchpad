@@ -78,7 +78,7 @@ class TestBranchMirrorHidden(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBranchMirrorHidden, self).setUp()
+        super().setUp()
         config.push(
             "test", dedent("""\
                 [codehosting]
@@ -87,7 +87,7 @@ class TestBranchMirrorHidden(TestCaseWithFactory):
 
     def tearDown(self):
         config.pop("test")
-        super(TestBranchMirrorHidden, self).tearDown()
+        super().tearDown()
 
     def testNormalBranch(self):
         # A branch from a normal location is fine.

@@ -92,7 +92,7 @@ class TestGitRefNavigation(TestCaseWithFactory):
 class MissingCommitsNote(soupmatchers.Tag):
 
     def __init__(self):
-        super(MissingCommitsNote, self).__init__(
+        super().__init__(
             "missing commits note", "div",
             text="Some recent commit information could not be fetched.")
 
@@ -102,7 +102,7 @@ class TestGitRefView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestGitRefView, self).setUp()
+        super().setUp()
         self.hosting_fixture = self.useFixture(GitHostingFixture())
 
     def _test_rendering(self, branch_name):

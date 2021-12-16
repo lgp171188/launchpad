@@ -95,7 +95,7 @@ class CodeReviewDisplayComment(MessageComment):
             comment_limit = config.malone.max_comment_size
         else:
             comment_limit = None
-        super(CodeReviewDisplayComment, self).__init__(comment_limit)
+        super().__init__(comment_limit)
         self.comment = comment
         get_property_cache(self).has_body = bool(self.comment.message_body)
         self.has_footer = self.comment.vote is not None
@@ -109,8 +109,7 @@ class CodeReviewDisplayComment(MessageComment):
 
     @property
     def extra_css_class(self):
-        css_classes = (
-            super(CodeReviewDisplayComment, self).extra_css_class.split())
+        css_classes = super().extra_css_class.split()
         if self.from_superseded:
             css_classes.append('from-superseded')
         return ' '.join(css_classes)
@@ -230,7 +229,7 @@ class CodeReviewCommentIndexView(CodeReviewCommentView):
         """View redirects to +download if comment is too long to render."""
         if self.comment.too_long_to_render:
             return self.request.response.redirect(self.comment.download_url)
-        return super(CodeReviewCommentIndexView, self).__call__()
+        return super().__call__()
 
 
 class IEditCodeReviewComment(Interface):
@@ -240,8 +239,8 @@ class IEditCodeReviewComment(Interface):
 
     review_type = copy_field(
         ICodeReviewVoteReference['review_type'],
-        description=u'Lowercase keywords describing the type of review you '
-                     'are performing.')
+        description='Lowercase keywords describing the type of review you '
+                    'are performing.')
 
     comment = Text(title=_('Comment'), required=False)
 

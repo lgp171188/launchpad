@@ -34,7 +34,7 @@ class TestGitGranteeWidgetBase:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitGranteeWidgetBase, self).setUp()
+        super().setUp()
         [self.ref] = self.factory.makeGitRefs()
         self.rule = self.factory.makeGitRule(
             repository=self.ref.repository, ref_pattern=self.ref.path)
@@ -192,7 +192,7 @@ class TestGitGranteeWidget(TestGitGranteeWidgetBase, TestCaseWithFactory):
         ]
 
     def setUp(self):
-        super(TestGitGranteeWidget, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
 
     def test_show_options_repository_owner_grant_already_exists(self):

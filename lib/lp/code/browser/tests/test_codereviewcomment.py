@@ -193,7 +193,7 @@ class TestCodeReviewCommentHtmlMixin:
         """The download view has the expected contents and header."""
         comment = self.makeCodeReviewComment(body='\u1234')
         browser = self.getViewBrowser(comment, view_name='+download')
-        contents = '\u1234'.encode('utf-8')
+        contents = '\u1234'.encode()
         self.assertEqual(contents, six.ensure_binary(browser.contents))
         self.assertEqual(
             'text/plain;charset=utf-8', browser.headers['Content-type'])

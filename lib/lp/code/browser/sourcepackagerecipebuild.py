@@ -148,14 +148,14 @@ class SourcePackageRecipeBuildRescoreView(LaunchpadFormView):
     class schema(Interface):
         """Schema for deleting a build."""
         score = Int(
-            title=u'Score', required=True,
-            description=u'The score of the recipe.')
+            title='Score', required=True,
+            description='The score of the recipe.')
 
     page_title = label = "Rescore build"
 
     def __call__(self):
         if self.context.buildqueue_record is not None:
-            return super(SourcePackageRecipeBuildRescoreView, self).__call__()
+            return super().__call__()
         self.request.response.addWarningNotification(
             'Cannot rescore this build because it is not queued.')
         self.request.response.redirect(canonical_url(self.context))

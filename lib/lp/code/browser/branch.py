@@ -34,7 +34,6 @@ from lazr.restful.interface import (
 from lazr.uri import URI
 import pytz
 import simplejson
-import six
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
@@ -418,7 +417,7 @@ class BranchView(InformationTypePortletMixin, FeedsMixin, BranchMirrorMixin,
     label = page_title
 
     def initialize(self):
-        super(BranchView, self).initialize()
+        super().initialize()
         self.branch = self.context
         self.notices = []
         # Cache permission so private team owner can be rendered.
@@ -953,8 +952,8 @@ class BranchDeletionView(LaunchpadFormView):
         :return: A list of tuples of (item, operation, reason, allowed)
         """
         reqs = []
-        for item, (operation, reason) in six.iteritems(
-                self.context.deletionRequirements(eager_load=True)):
+        for item, (operation, reason) in self.context.deletionRequirements(
+                eager_load=True).items():
             allowed = check_permission('launchpad.Edit', item)
             reqs.append((item, operation, reason, allowed))
         return reqs
@@ -1054,7 +1053,7 @@ class CodeEditOwnerMixin:
     """A mixin to adjust owner vocabularies for admins."""
 
     def setUpFields(self):
-        super(CodeEditOwnerMixin, self).setUpFields()
+        super().setUpFields()
         # If the user can administer the relevant object type, then they
         # should be able to assign the ownership of the object to any valid
         # person or team.
@@ -1114,7 +1113,7 @@ class BranchEditView(CodeEditOwnerMixin, BranchEditFormView):
         "person or team.")
 
     def setUpFields(self):
-        super(BranchEditView, self).setUpFields()
+        super().setUpFields()
         branch = self.context
         if branch.branch_type in (BranchType.HOSTED, BranchType.IMPORTED):
             self.form_fields = self.form_fields.omit('url')
@@ -1208,8 +1207,8 @@ class RegisterProposalSchema(Interface):
 
     review_type = copy_field(
         ICodeReviewVoteReference['review_type'],
-        description=u'Lowercase keywords describing the type of review you '
-                     'would like to be performed.')
+        description='Lowercase keywords describing the type of review you '
+                    'would like to be performed.')
 
     commit_message = IBranchMergeProposal['commit_message']
 
@@ -1331,15 +1330,15 @@ class BranchDiffView(DataDownloadView):
     content_type = "text/x-patch"
 
     def __init__(self, context, request, new, old=None):
-        super(BranchDiffView, self).__init__(context, request)
+        super().__init__(context, request)
         self.new = new
         self.old = old
 
     def __call__(self):
-        if getFeatureFlag(u"code.bzr.diff.disable_proxy"):
+        if getFeatureFlag("code.bzr.diff.disable_proxy"):
             self.request.response.setStatus(401)
             return "Proxying of branch diffs is disabled.\n"
-        return super(BranchDiffView, self).__call__()
+        return super().__call__()
 
     @property
     def filename(self):

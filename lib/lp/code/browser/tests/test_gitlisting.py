@@ -323,7 +323,7 @@ class TestProductGitListingView(TestTargetGitListingView,
                                 TestCaseWithFactory):
 
     def setUp(self):
-        super(TestProductGitListingView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name="foowner")
         self.target = self.factory.makeProduct(name="foo", owner=self.owner,
                                                vcs=VCSType.GIT)
@@ -380,7 +380,7 @@ class TestPersonProductGitListingView(TestPersonTargetGitListingView,
                                       TestCaseWithFactory):
 
     def setUp(self):
-        super(TestPersonProductGitListingView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name="dev")
         self.target = self.factory.makeProduct(name="foo")
         self.target_path = "foo"
@@ -392,7 +392,7 @@ class TestDistributionSourcePackageGitListingView(TestTargetGitListingView,
                                                   TestCaseWithFactory):
 
     def setUp(self):
-        super(TestDistributionSourcePackageGitListingView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name="foowner")
         distro = self.factory.makeDistribution(name="foo", owner=self.owner)
         self.target = self.factory.makeDistributionSourcePackage(
@@ -406,7 +406,7 @@ class TestPersonDistributionSourcePackageGitListingView(
         TestPersonTargetGitListingView, TestCaseWithFactory):
 
     def setUp(self):
-        super(TestPersonDistributionSourcePackageGitListingView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name="dev")
         distro = self.factory.makeDistribution(name="foo", owner=self.owner)
         self.target = self.factory.makeDistributionSourcePackage(
@@ -433,7 +433,7 @@ class TestOCIProjectGitListingView(
         TestTargetGitListingView, TestCaseWithFactory):
 
     def setUp(self):
-        super(TestOCIProjectGitListingView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name="foowner")
         distro = self.factory.makeDistribution(name="foo", owner=self.owner)
         self.target = self.factory.makeOCIProject(
@@ -451,7 +451,7 @@ class TestPersonOCIProjectGitListingView(
         TestPersonTargetGitListingView, TestCaseWithFactory):
 
     def setUp(self):
-        super(TestPersonOCIProjectGitListingView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name="dev")
         distro = self.factory.makeDistribution(name="foo", owner=self.owner)
         self.target = self.factory.makeOCIProject(
@@ -548,7 +548,7 @@ class TestPlainGitListingView:
 class TestPersonGitListingView(TestPlainGitListingView, TestCaseWithFactory):
 
     def setUp(self):
-        super(TestPersonGitListingView, self).setUp()
+        super().setUp()
         self.context = self.user = self.owner = self.factory.makePerson()
         self.target = self.branch_target = None
 
@@ -570,7 +570,7 @@ class TestDistributionGitListingView(TestPlainGitListingView,
                                      TestCaseWithFactory):
 
     def setUp(self):
-        super(TestDistributionGitListingView, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistributionSourcePackage()
         self.factory.makeDistroSeries(distribution=self.target.distribution)
         self.branch_target = self.target.development_version

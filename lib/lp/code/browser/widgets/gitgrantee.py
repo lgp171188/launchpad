@@ -62,7 +62,7 @@ class GitGranteeField(Field):
     """A field that holds a Git access grantee."""
 
     def __init__(self, rule, *args, **kwargs):
-        super(GitGranteeField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.rule = rule
 
     def constraint(self, value):
@@ -78,7 +78,7 @@ class GitGranteeField(Field):
 class GitGranteePersonDisplayWidget(BrowserWidget):
 
     def __init__(self, context, vocabulary, request):
-        super(GitGranteePersonDisplayWidget, self).__init__(context, request)
+        super().__init__(context, request)
 
     def __call__(self):
         if self._renderedValueSet():
@@ -99,7 +99,7 @@ class GitGranteeWidgetBase(BrowserWidget):
             return
         fields = [
             Choice(
-                __name__="person", title=u"Person",
+                __name__="person", title="Person",
                 required=False, vocabulary="ValidPersonOrTeam"),
             ]
         if self._read_only:
@@ -181,7 +181,7 @@ class GitGranteeWidget(GitGranteeWidgetBase, InputWidget):
 
     @property
     def show_options(self):
-        show_options = super(GitGranteeWidget, self).show_options
+        show_options = super().show_options
         # Hide options that indicate unique grantee_types (e.g.
         # repository_owner) if they already exist for the context rule.
         if (show_options["repository_owner"] and
@@ -241,4 +241,4 @@ class GitGranteeWidget(GitGranteeWidgetBase, InputWidget):
                 self.getInputValue()
         except InputErrors as error:
             self._error = error
-        return super(GitGranteeWidget, self).error()
+        return super().error()

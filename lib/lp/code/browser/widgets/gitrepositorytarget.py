@@ -64,14 +64,14 @@ class GitRepositoryTargetWidgetBase(BrowserWidget):
             package_vocab = "BinaryAndSourcePackageName"
         fields = [
             Choice(
-                __name__="project", title=u"Project",
+                __name__="project", title="Project",
                 required=True, vocabulary="Product"),
             Choice(
-                __name__="distribution", title=u"Distribution",
+                __name__="distribution", title="Distribution",
                 required=True, vocabulary="Distribution",
                 default=getUtility(ILaunchpadCelebrities).ubuntu),
             Choice(
-                __name__="package", title=u"Package",
+                __name__="package", title="Package",
                 required=False, vocabulary=package_vocab),
             ]
         if not self._read_only:
@@ -227,4 +227,4 @@ class GitRepositoryTargetWidget(GitRepositoryTargetWidgetBase, InputWidget):
                 self.getInputValue()
         except InputErrors as error:
             self._error = error
-        return super(GitRepositoryTargetWidget, self).error()
+        return super().error()

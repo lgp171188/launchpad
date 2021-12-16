@@ -34,7 +34,6 @@ from lazr.restful.interfaces import (
     IWebServiceClientRequest,
     )
 import simplejson
-import six
 from six.moves.urllib_parse import (
     urlsplit,
     urlunsplit,
@@ -157,7 +156,7 @@ def latest_proposals_for_each_branch(proposals):
             targets[target] = (proposal, date_created)
 
     return sorted(
-        (proposal for proposal, date_created in six.itervalues(targets)),
+        (proposal for proposal, date_created in targets.values()),
         key=operator.attrgetter('date_created'), reverse=True)
 
 
@@ -640,7 +639,7 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
     schema = ClaimButton
 
     def initialize(self):
-        super(BranchMergeProposalView, self).initialize()
+        super().initialize()
         cache = IJSONRequestCache(self.request)
         cache.objects['branch_name'] = self.context.merge_source.name
         if (IBranch.providedBy(self.context.merge_source) and
@@ -662,7 +661,7 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
             try:
                 request.claimReview(self.user)
             except ClaimReviewFailed as e:
-                self.request.response.addErrorNotification(six.text_type(e))
+                self.request.response.addErrorNotification(str(e))
         self.next_url = canonical_url(self.context)
 
     @property
@@ -1030,8 +1029,8 @@ class IReviewRequest(Interface):
 
     review_type = copy_field(
         ICodeReviewVoteReference['review_type'],
-        description=u'Lowercase keywords describing the type of review you '
-                     'would like to be performed.')
+        description='Lowercase keywords describing the type of review you '
+                    'would like to be performed.')
 
 
 class BranchMergeProposalRequestReviewView(LaunchpadEditFormView):
@@ -1091,15 +1090,15 @@ class MergeProposalEditView(LaunchpadEditFormView,
         # Record next_url and cancel url now
         self.next_url = canonical_url(self.context)
         self.cancel_url = self.next_url
-        super(MergeProposalEditView, self).initialize()
+        super().initialize()
 
 
 class ResubmitSchema(IBranchMergeProposal):
 
     break_link = Bool(
-        title=u'Start afresh',
+        title='Start afresh',
         description=(
-            u'Do not show old conversation and do not link to superseded'
+            'Do not show old conversation and do not link to superseded'
             ' proposal.'),
         default=False,)
 
@@ -1121,7 +1120,7 @@ class BranchMergeProposalResubmitView(LaunchpadFormView,
 
     def initialize(self):
         self.cancel_url = canonical_url(self.context)
-        super(BranchMergeProposalResubmitView, self).initialize()
+        super().initialize()
 
     @property
     def field_names(self):
@@ -1234,7 +1233,7 @@ class BranchMergeProposalDeleteView(MergeProposalEditView):
         # it is available in the situation where the merge proposal
         # is deleted.
         self.merge_source = self.context.merge_source
-        super(BranchMergeProposalDeleteView, self).initialize()
+        super().initialize()
 
     @action('Delete proposal', name='delete')
     def delete_action(self, action, data):
@@ -1401,7 +1400,7 @@ class IAddVote(Interface):
 
     review_type = copy_field(
         ICodeReviewVoteReference['review_type'],
-        description=u'Lowercase keywords describing the type of review you '
+        description='Lowercase keywords describing the type of review you '
                      'are performing.')
 
     comment = Text(title=_('Comment'), required=False)
@@ -1441,10 +1440,10 @@ class BranchMergeProposalAddVoteView(LaunchpadFormView):
         if self.user is None:
             # Anonymous users are not valid voters.
             raise AssertionError('Invalid voter')
-        super(BranchMergeProposalAddVoteView, self).initialize()
+        super().initialize()
 
     def setUpFields(self):
-        super(BranchMergeProposalAddVoteView, self).setUpFields()
+        super().setUpFields()
         self.reviewer = self.user.name
         # claim_review is set in situations where a user is reviewing on
         # behalf of a team.

@@ -431,7 +431,7 @@ class TestProductOverviewLinks(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self, user=ANONYMOUS):
-        super(TestProductOverviewLinks, self).setUp(user)
+        super().setUp(user)
         self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: True}))
 
     def test_displays_create_and_list_snaps(self):

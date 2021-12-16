@@ -47,7 +47,7 @@ class GitRepositoryBatchNavigator(TableBatchNavigator):
     variable_name_prefix = 'repo'
 
     def __init__(self, view, repo_collection):
-        super(GitRepositoryBatchNavigator, self).__init__(
+        super().__init__(
             repo_collection.getRepositories(
                 eager_load=True,
                 sort_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST),

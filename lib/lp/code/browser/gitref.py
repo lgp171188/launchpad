@@ -302,8 +302,8 @@ class GitRefRegisterMergeProposalSchema(Interface):
 
     review_type = copy_field(
         ICodeReviewVoteReference['review_type'],
-        description=u'Lowercase keywords describing the type of review you '
-                     'would like to be performed.')
+        description='Lowercase keywords describing the type of review you '
+                    'would like to be performed.')
 
     commit_message = IBranchMergeProposal['commit_message']
 
@@ -338,11 +338,10 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
         """Show a 404 if the repository namespace doesn't support proposals."""
         if not self.context.namespace.supports_merge_proposals:
             raise NotFound(self.context, '+register-merge')
-        super(GitRefRegisterMergeProposalView, self).initialize()
+        super().initialize()
 
     def setUpWidgets(self, context=None):
-        super(GitRefRegisterMergeProposalView, self).setUpWidgets(
-            context=context)
+        super().setUpWidgets(context=context)
 
         if not self.widgets['target_git_ref'].hasInput():
             if self.context.repository.namespace.has_defaults:
