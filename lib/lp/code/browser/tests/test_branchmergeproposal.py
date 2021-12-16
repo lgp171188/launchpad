@@ -1674,11 +1674,6 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                 Tag(
                     "first report summary", "td",
                     text=report1.result_summary))
-            self.assertThat(
-                reports_section[0],
-                Tag(
-                    "first report url", "td",
-                    text=report1.url))
 
     def test_unmerged_commits_from_deleted_git_ref(self):
         # Even if the source Git ref has been deleted, we still know its tip
@@ -1698,7 +1693,8 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                 }
             ]))
         bmp.source_git_repository.removeRefs([bmp.source_git_path])
-        browser = self.getUserBrowser(canonical_url(bmp, rootsite='code'))
+        browser = self.getUserBrowser(canonical_url(bmp, rootsite='code'),
+                                      user=bmp.source_git_repository.owner)
         tag = first_tag_by_class(browser.contents, 'commit-details')
         self.assertEqual(
             "%.7s...\nby\nExample Person &lt;person@example.org&gt;\n"

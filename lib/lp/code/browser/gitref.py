@@ -276,7 +276,8 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin, HasCharmRecipesViewMixin):
                 '<a href="+recipes">%s recipes</a> using this branch.',
                 count).escapedtext
 
-    def getStatusReportsBatchNav(self, reports):
+    def getStatusReports(self, commit_sha1):
+        reports = self.context.getStatusReports(commit_sha1)
         return BatchNavigator(reports, self.request, size=3)
 
 

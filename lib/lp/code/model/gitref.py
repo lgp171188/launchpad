@@ -180,22 +180,16 @@ class GitRefMixin:
         """See `IGitRef`."""
         return self.repository.getCodebrowseUrlForRevision(commit)
 
-    def getStatusReports(self, commit):
-        return self.repository.getStatusReports(commit)
+    def getStatusReports(self, commit_sha1):
+        return self.repository.getStatusReports(commit_sha1)
 
-    def getCommitStatus(self, sha1):
+    def getCommitStatus(self, commit_sha1):
         """Help to show red or green icon at the top of the commit."""
-        reports = self.repository.getStatusReports(sha1)
+        reports = self.repository.getStatusReports(commit_sha1)
         for report in reports:
             if report.result != RevisionStatusResult.SUCCEEDED:
                 return False
         return True
-
-    def getIndividualReportStatus(self, report):
-        """Help to show status for each report."""
-        if report.result == RevisionStatusResult.SUCCEEDED:
-            return True
-        return False
 
     @property
     def information_type(self):

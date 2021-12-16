@@ -10,7 +10,8 @@
 
   <tal:history-available condition="context/has_commits"
                          define="ref view/context;
-                                 commit_infos view/commit_infos">
+                                 commit_infos view/commit_infos;
+                                 show_status_reports python:True">
     <metal:landing-target use-macro="ref/@@+macros/ref-commits"/>
 
     <div tal:define="link context_menu/browse_commits">

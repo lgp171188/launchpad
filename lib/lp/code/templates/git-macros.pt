@@ -217,45 +217,32 @@
       replace="structure commit_message/fmt:obfuscate-email/fmt:text-to-html" />
   </dd>
   <dd class="subordinate collapsible status-reports-table"
+      tal:condition="show_status_reports | nothing"
       tal:define="
-        sha1 python:commit_info['sha1'];
-        status_result python:ref.getCommitStatus(sha1);
-        reports python:ref.getStatusReports(sha1)">
+        commit_sha1 python:commit_info['sha1'];
+        status_result python:True">
       <div class="sprite treeCollapsed">
-        <span tal:condition="not:status_result">&#10060;</span>
-        <span tal:condition="status_result">&#9989;</span>
-        <span> Revision Status</span>
+        <span tal:replace="structure status_result/image:boolean" />
       </div>
       <tal:batch
-        define="batchnav python:view.getStatusReportsBatchNav(reports);
+        define="batchnav python:view.getStatusReports(commit_sha1);
                 batch batchnav/currentBatch">
         <table class="listing" tal:condition="batch">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Url</th>
-              <th>Summary</th>
-              <th>Passed</th>
-            </tr>
-          </thead>
           <tbody>
-            <tal:reports repeat="report batch">
-              <tr>
-                <td tal:content="report/title"/>
-                <td tal:content="report/url"/>
-                <td tal:content="report/result_summary"/>
-                <td tal:content="python: ref.getIndividualReportStatus(report)"/>
-              </tr>
-            </tal:reports>
+            <tr tal:repeat="report batch">
+                <td tal:content="structure report/result/enumvalue:SUCCEEDED/image:boolean" />
+                <td><a tal:attributes="href report/url|nothing" tal:content="report/title" /></td>
+              <td tal:content="report/result_summary" />
+            </tr>
           </tbody>
         </table>
-      <div class="lower-batch-nav">
-        <tal:navigation
-          replace="structure batchnav/@@+navigation-links-lower" />
-      </div>
+        <div class="lower-batch-nav">
+          <tal:navigation
+            replace="structure batchnav/@@+navigation-links-lower" />
+        </div>
       </tal:batch>
   </dd>
-  <div tal:define="merge_proposal python:commit_info.get('merge_proposal')"
+  <div tal:define="merge_proposal python:commit_info.get('merge_proposal');"
        tal:condition="merge_proposal">
     <dd class="subordinate commit-comment"
         tal:define="committer_date merge_proposal/merge_source/committer_date|nothing">

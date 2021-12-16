@@ -666,7 +666,9 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
                 self.request.response.addErrorNotification(six.text_type(e))
         self.next_url = canonical_url(self.context)
 
-    def getStatusReportsBatchNav(self, reports):
+    def getStatusReports(self, commit_sha1):
+        reports = self.context.source_git_repository.getStatusReports(
+            commit_sha1)
         return BatchNavigator(reports, self.request, size=3)
 
     @property

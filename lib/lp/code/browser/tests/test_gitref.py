@@ -177,7 +177,7 @@ class TestGitRefView(BrowserTestCase):
                                          paths=["refs/heads/branch"])
         log = self.makeCommitLog()
 
-        # create 2 status reposts for 2 of the 5 commits available here
+        # create 2 status reports for 2 of the 5 commits available here
         report1 = self.factory.makeRevisionStatusReport(
             user=repository.owner, git_repository=repository,
             title="CI", commit_sha1=log[0]["sha1"],
@@ -211,11 +211,6 @@ class TestGitRefView(BrowserTestCase):
                     "first report summary", "td",
                     text=report1.result_summary))
             self.assertThat(
-                reports_section[0],
-                soupmatchers.Tag(
-                    "first report url", "td",
-                    text=report1.url))
-            self.assertThat(
                 reports_section[1],
                 soupmatchers.Tag(
                     "second report title", "td",
@@ -225,11 +220,6 @@ class TestGitRefView(BrowserTestCase):
                 soupmatchers.Tag(
                     "second report summary", "td",
                     text=report2.result_summary))
-            self.assertThat(
-                reports_section[1],
-                soupmatchers.Tag(
-                    "second report url", "td",
-                    text=report2.url))
 
     def test_clone_instructions(self):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
