@@ -8,6 +8,7 @@ import socket
 from textwrap import dedent
 import threading
 import xmlrpc.client
+import xmlrpc.server
 
 from fixtures import (
     MonkeyPatch,
@@ -18,7 +19,6 @@ from requests.exceptions import (
     ConnectionError,
     InvalidSchema,
     )
-from six.moves import xmlrpc_server
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -51,7 +51,7 @@ def no_default_timeout():
     pass
 
 
-class EchoOrWaitXMLRPCReqHandler(xmlrpc_server.SimpleXMLRPCRequestHandler):
+class EchoOrWaitXMLRPCReqHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
     """The request handler will respond to 'echo' requests normally but will
     hang indefinitely for all other requests.  This allows us to show a
     successful request followed by one that times out.
@@ -65,7 +65,7 @@ class EchoOrWaitXMLRPCReqHandler(xmlrpc_server.SimpleXMLRPCRequestHandler):
             self.connection.recv(1024)
 
 
-class MySimpleXMLRPCServer(xmlrpc_server.SimpleXMLRPCServer):
+class MySimpleXMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
     """Create a simple XMLRPC server to listen for requests."""
     allow_reuse_address = True
 
