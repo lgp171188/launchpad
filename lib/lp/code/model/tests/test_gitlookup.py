@@ -38,7 +38,7 @@ class TestGetByHostingPath(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetByHostingPath, self).setUp()
+        super().setUp()
         self.lookup = getUtility(IGitLookup)
 
     def test_exists(self):
@@ -57,7 +57,7 @@ class TestGetByUniqueName(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetByUniqueName, self).setUp()
+        super().setUp()
         self.lookup = getUtility(IGitLookup)
 
     def test_not_found(self):
@@ -121,7 +121,7 @@ class TestGetByPath(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetByPath, self).setUp()
+        super().setUp()
         self.lookup = getUtility(IGitLookup)
 
     def test_project(self):
@@ -213,7 +213,7 @@ class TestGetByUrl(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetByUrl, self).setUp()
+        super().setUp()
         self.lookup = getUtility(IGitLookup)
 
     def makeProjectRepository(self):
@@ -309,7 +309,7 @@ class TestGitTraverser(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitTraverser, self).setUp()
+        super().setUp()
         self.traverser = getUtility(IGitTraverser)
 
     def assertTraverses(self, path, owner, target, repository=None):

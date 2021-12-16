@@ -27,7 +27,7 @@ class TestCodeReviewKarma(TestCaseWithFactory):
     def setUp(self):
         # Use an admin to get launchpad.Edit on all the branches to easily
         # approve and reject the proposals.
-        super(TestCodeReviewKarma, self).setUp('admin@canonical.com')
+        super().setUp('admin@canonical.com')
         self.useFixture(ZopeEventHandlerFixture(
             self._on_karma_assigned, (IPerson, IKarmaAssignedEvent)))
         self.karma_events = []

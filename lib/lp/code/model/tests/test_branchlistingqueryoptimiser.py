@@ -37,8 +37,7 @@ class TestGetProductSeriesForBranches(TestCaseWithFactory):
     def setUp(self):
         # Log in as an admin as we are setting series branches, which is a
         # protected activity.
-        super(TestGetProductSeriesForBranches, self).setUp(
-            'admin@canonical.com')
+        super().setUp('admin@canonical.com')
         self.product = self.factory.makeProduct()
         self.branches = [
             self.factory.makeProductBranch(product=self.product)
@@ -114,8 +113,7 @@ class TestGetOfficialSourcePackageLinksForBranches(TestCaseWithFactory):
     def setUp(self):
         # Log in an admin as we are setting official branches, which is a
         # protected activity.
-        super(TestGetOfficialSourcePackageLinksForBranches, self).setUp(
-            'admin@canonical.com')
+        super().setUp('admin@canonical.com')
 
     def test_with_branches(self):
         # Test the selection of the links.

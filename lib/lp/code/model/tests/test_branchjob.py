@@ -917,7 +917,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestRosettaUploadJob, self).setUp()
+        super().setUp()
         self.series = None
 
     def _makeBranchWithTreeAndFile(self, file_name, file_content=None):

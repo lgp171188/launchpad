@@ -281,7 +281,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
     id = Int(title=_('ID'), readonly=True, required=True)
 
     @operation_parameters(
-        scheme=TextLine(title=_("URL scheme"), default=u'http'))
+        scheme=TextLine(title=_("URL scheme"), default='http'))
     @export_read_operation()
     @operation_for_version('beta')
     def composePublicURL(scheme='http'):
@@ -1376,11 +1376,11 @@ class IBranchSet(Interface):
 
     @operation_parameters(
         urls=List(
-            title=u'A list of URLs of branches',
+            title='A list of URLs of branches',
             description=(
-                u'These can be URLs external to '
-                u'Launchpad, lp: URLs, or http://bazaar.launchpad.net/ URLs, '
-                u'or any mix of all these different kinds.'),
+                'These can be URLs external to '
+                'Launchpad, lp: URLs, or http://bazaar.launchpad.net/ URLs, '
+                'or any mix of all these different kinds.'),
             value_type=TextLine(),
             required=True))
     @export_read_operation()

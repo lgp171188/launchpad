@@ -197,8 +197,7 @@ class TestMergeProposalNeedsReviewEmailJobBzr(
 
     def test_run_sends_email(self):
         self.useBzrBranches(direct_database=True)
-        parent = super(TestMergeProposalNeedsReviewEmailJobBzr, self)
-        parent.test_run_sends_email()
+        super().test_run_sends_email()
 
     def test_MergeProposalCreateJob_with_sourcepackage_branch(self):
         """Jobs for merge proposals with sourcepackage branches work."""

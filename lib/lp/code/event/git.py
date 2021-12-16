@@ -18,6 +18,6 @@ class GitRefsUpdatedEvent(ObjectEvent):
     """See `IGitRefsUpdatedEvent`."""
 
     def __init__(self, repository, paths, logger):
-        super(GitRefsUpdatedEvent, self).__init__(repository)
+        super().__init__(repository)
         self.paths = paths
         self.logger = logger

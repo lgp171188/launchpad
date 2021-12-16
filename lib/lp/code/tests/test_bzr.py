@@ -9,7 +9,6 @@ from breezy.tests import (
     TestCaseInTempDir,
     TestCaseWithTransport,
     )
-import six
 
 from lp.code.bzr import (
     branch_revision_history,
@@ -46,7 +45,7 @@ class TestGetBranchFormats(TestCaseInTempDir):
 
     def test_get_branch_format_2a(self):
         # Test the 2a branch format.
-        branch = self.make_branch('test', six.ensure_str('2a'))
+        branch = self.make_branch('test', '2a')
         formats = get_branch_formats(branch)
         self.assertEqual(ControlFormat.BZR_METADIR_1, formats[0])
         self.assertEqual(BranchFormat.BZR_BRANCH_7, formats[1])
@@ -54,7 +53,7 @@ class TestGetBranchFormats(TestCaseInTempDir):
 
     def test_get_branch_format_1_9(self):
         # Test the 1.9 branch format.
-        branch = self.make_branch('test', six.ensure_str('1.9'))
+        branch = self.make_branch('test', '1.9')
         formats = get_branch_formats(branch)
         self.assertEqual(ControlFormat.BZR_METADIR_1, formats[0])
         self.assertEqual(BranchFormat.BZR_BRANCH_7, formats[1])
@@ -62,7 +61,7 @@ class TestGetBranchFormats(TestCaseInTempDir):
 
     def test_get_branch_format_packs(self):
         # Test the packs branch format.
-        branch = self.make_branch('test', six.ensure_str('pack-0.92'))
+        branch = self.make_branch('test', 'pack-0.92')
         formats = get_branch_formats(branch)
         self.assertEqual(ControlFormat.BZR_METADIR_1, formats[0])
         self.assertEqual(BranchFormat.BZR_BRANCH_6, formats[1])
@@ -70,7 +69,7 @@ class TestGetBranchFormats(TestCaseInTempDir):
 
     def test_get_branch_format_knits(self):
         # Test the knits branch format.
-        branch = self.make_branch('test', six.ensure_str('knit'))
+        branch = self.make_branch('test', 'knit')
         formats = get_branch_formats(branch)
         self.assertEqual(ControlFormat.BZR_METADIR_1, formats[0])
         self.assertEqual(BranchFormat.BZR_BRANCH_5, formats[1])

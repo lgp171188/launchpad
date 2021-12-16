@@ -59,7 +59,7 @@ class GitRefVocabulary(StormVocabularyBase):
     step_title = "Search"
 
     def __init__(self, context):
-        super(GitRefVocabulary, self).__init__(context=context)
+        super().__init__(context=context)
         if IReference.providedBy(context):
             context = context.context
         try:
@@ -135,7 +135,7 @@ class GitRefVocabulary(StormVocabularyBase):
         # remote refs aren't database backed
         if zope_isinstance(value, GitRefRemote):
             return self.toTerm(value)
-        return super(GitRefVocabulary, self).getTerm(value)
+        return super().getTerm(value)
 
     def __len__(self):
         """See `IVocabulary`."""

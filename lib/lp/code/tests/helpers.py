@@ -150,8 +150,7 @@ def consistent_branch_names():
 
     This generator does not finish!
     """
-    for name in ['trunk', 'testing', 'feature-x', 'feature-y', 'feature-z']:
-        yield name
+    yield from ['trunk', 'testing', 'feature-x', 'feature-y', 'feature-z']
     index = count(1)
     while True:
         yield "branch-%s" % next(index)

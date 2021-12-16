@@ -22,3 +22,5 @@ b6725842a2470e3927bb73bf400c4476a06ee3ba
 474f07ab7c3f28d8b6b8e4f1bd4c56832cec3fab
 # apply pyupgrade --py3-plus to lp.code.browser
 47ee1259461aa54ad7ee967e85f6131be2b74125
+# apply pyupgrade --py3-plus to lp.code
+cee9b128d3e49ca814464eeeeec50e6bcabcc4ba

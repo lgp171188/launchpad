@@ -48,7 +48,7 @@ class BranchSubscription(StormBase):
 
     def __init__(self, person, branch, notification_level, max_diff_lines,
                  review_level, subscribed_by):
-        super(BranchSubscription, self).__init__()
+        super().__init__()
         self.person = person
         self.branch = branch
         self.notification_level = notification_level

@@ -188,7 +188,7 @@ class TestCodeImport(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCodeImport, self).setUp()
+        super().setUp()
         login('test@canonical.com')
         self.factory = LaunchpadObjectFactory()
 
@@ -1468,7 +1468,7 @@ class TestBranchDeletionConsequences(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestBranchDeletionConsequences, self).setUp()
+        super().setUp()
         login('test@canonical.com')
         self.factory = LaunchpadObjectFactory()
         # Has to be a product branch because of merge proposals.
@@ -1823,7 +1823,7 @@ class BranchAddLandingTarget(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(BranchAddLandingTarget, self).setUp('admin@canonical.com')
+        super().setUp('admin@canonical.com')
         self.product = self.factory.makeProduct()
 
         self.user = self.factory.makePerson()
@@ -1837,7 +1837,7 @@ class BranchAddLandingTarget(TestCaseWithFactory):
 
     def tearDown(self):
         logout()
-        super(BranchAddLandingTarget, self).tearDown()
+        super().tearDown()
 
     def assertOnePendingReview(self, proposal, reviewer, review_type=None):
         # There should be one pending vote for the reviewer with the specified
@@ -3099,7 +3099,7 @@ class TestGetMergeProposals(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetMergeProposals, self).setUp()
+        super().setUp()
         self.branch_set = BranchSet()
 
     def test_getMergeProposals_with_no_merged_revno(self):
@@ -3549,7 +3549,7 @@ class TestWebservice(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestWebservice, self).setUp()
+        super().setUp()
         self.branch_db = self.factory.makeBranch()
         self.branch_url = api_url(self.branch_db)
         self.webservice = webservice_for_person(

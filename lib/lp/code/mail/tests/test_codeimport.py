@@ -110,7 +110,7 @@ class TestNewCodeImports(TestCaseWithFactory):
         login_person(eric)
         self.factory.makeProductCodeImport(
             git_repo_url='git://git.example.com/fooix.git',
-            branch_name=u'master', product=fooix, registrant=eric,
+            branch_name='master', product=fooix, registrant=eric,
             target_rcs_type=TargetRevisionControlSystems.GIT)
         transaction.commit()
         msg = email.message_from_bytes(stub.test_emails[0][2])

@@ -105,7 +105,7 @@ class _SourcePackageRecipeDataInstruction(Storm):
     def __init__(self, name, type, comment, line_number, branch_or_repository,
                  revspec, directory, recipe_data, parent_instruction,
                  source_directory):
-        super(_SourcePackageRecipeDataInstruction, self).__init__()
+        super().__init__()
         self.name = six.ensure_text(name)
         self.type = type
         self.comment = comment
@@ -431,13 +431,13 @@ class SourcePackageRecipeData(Storm):
         else:
             self.deb_version_template = six.ensure_text(
                 builder_recipe.deb_version)
-        self.recipe_format = six.text_type(builder_recipe.format)
+        self.recipe_format = str(builder_recipe.format)
 
     def __init__(self, recipe, recipe_branch_type, sourcepackage_recipe=None,
                  sourcepackage_recipe_build=None):
         """Initialize from the bzr-builder recipe and link it to a db recipe.
         """
-        super(SourcePackageRecipeData, self).__init__()
+        super().__init__()
         self.setRecipe(recipe, recipe_branch_type)
         self.sourcepackage_recipe = sourcepackage_recipe
         self.sourcepackage_recipe_build = sourcepackage_recipe_build

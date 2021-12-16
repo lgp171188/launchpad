@@ -811,7 +811,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         hosting_client = getUtility(IBranchHostingClient)
         if enable_memcache is None:
             enable_memcache = not getFeatureFlag(
-                u'code.bzr.blob.disable_memcache')
+                'code.bzr.blob.disable_memcache')
         if revision_id is None:
             revision_id = self.last_scanned_id
         if revision_id is None:
@@ -1138,7 +1138,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
 
     def removeBranchRevisions(self, revision_ids):
         """See `IBranch`."""
-        if isinstance(revision_ids, six.string_types):
+        if isinstance(revision_ids, str):
             revision_ids = [revision_ids]
         IMasterStore(BranchRevision).find(
             BranchRevision,

@@ -306,7 +306,7 @@ class TestBranchMailerDiffMixin:
 
     def test_generateEmail_with_diff(self):
         """When there is a diff, it should be an attachment, not inline."""
-        ctrl = self.makeBobMailController(diff=u'hello \u03A3')
+        ctrl = self.makeBobMailController(diff='hello \u03A3')
         self.assertEqual(1, len(ctrl.attachments))
         diff = ctrl.attachments[0]
         self.assertEqual(b'hello \xce\xa3', diff.get_payload(decode=True))

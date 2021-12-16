@@ -12,7 +12,6 @@ __all__ = [
 
 from lazr.enum import DBItem
 import pytz
-import six
 from storm.locals import (
     DateTime,
     Int,
@@ -65,7 +64,7 @@ class CodeImportEvent(StormBase):
 
     def __init__(self, event_type, code_import=None, person=None,
                  machine=None, date_created=DEFAULT):
-        super(CodeImportEvent, self).__init__()
+        super().__init__()
         self.event_type = event_type
         self.code_import = code_import
         self.person = person
@@ -97,7 +96,7 @@ class _CodeImportEventData(StormBase):
     data_value = Unicode(allow_none=True)
 
     def __init__(self, event, data_type, data_value):
-        super(_CodeImportEventData, self).__init__()
+        super().__init__()
         self.event = event
         self.data_type = data_type
         self.data_value = data_value
@@ -200,7 +199,7 @@ class CodeImportEventSet:
         IStore(CodeImportEvent).add(event)
         IStore(_CodeImportEventData).add(_CodeImportEventData(
             event=event, data_type=CodeImportEventDataType.OFFLINE_REASON,
-            data_value=six.text_type(reason.name)))
+            data_value=str(reason.name)))
         self._recordMessage(event, message)
         return event
 
@@ -257,7 +256,7 @@ class CodeImportEventSet:
         IStore(CodeImportEvent).add(event)
         IStore(_CodeImportEventData).add(_CodeImportEventData(
             event=event, data_type=CodeImportEventDataType.RECLAIMED_JOB_ID,
-            data_value=six.text_type(job_id)))
+            data_value=str(job_id)))
         return event
 
     def _recordSnapshot(self, event, code_import):
@@ -278,18 +277,17 @@ class CodeImportEventSet:
     def _iterItemsForSnapshot(self, code_import):
         """Yield key-value tuples to save a snapshot of the code import."""
         yield self._getCodeImportItem(code_import)
-        yield 'REVIEW_STATUS', six.text_type(code_import.review_status.name)
-        yield 'OWNER', six.text_type(code_import.owner.id)
+        yield 'REVIEW_STATUS', str(code_import.review_status.name)
+        yield 'OWNER', str(code_import.owner.id)
         yield 'UPDATE_INTERVAL', self._getNullableValue(
             code_import.update_interval)
         yield 'ASSIGNEE', self._getNullableValue(
             code_import.assignee, use_id=True)
-        for detail in self._iterSourceDetails(code_import):
-            yield detail
+        yield from self._iterSourceDetails(code_import)
 
     def _getCodeImportItem(self, code_import):
         """Return the key-value tuple for the code import id."""
-        return 'CODE_IMPORT', six.text_type(code_import.id)
+        return 'CODE_IMPORT', str(code_import.id)
 
     def _getNullableValue(self, value, use_id=False):
         """Return the string value for a nullable value.
@@ -301,9 +299,9 @@ class CodeImportEventSet:
         if value is None:
             return None
         elif use_id:
-            return six.text_type(value.id)
+            return str(value.id)
         else:
-            return six.text_type(value)
+            return str(value)
 
     def _iterSourceDetails(self, code_import):
         """Yield key-value tuples describing the source of the import."""

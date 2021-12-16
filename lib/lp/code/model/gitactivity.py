@@ -60,7 +60,7 @@ class GitActivity(StormBase):
 
     def __init__(self, repository, changer, what_changed, changee=None,
                  old_value=None, new_value=None, date_changed=DEFAULT):
-        super(GitActivity, self).__init__()
+        super().__init__()
         self.repository = repository
         self.date_changed = date_changed
         self.changer = changer

@@ -120,7 +120,7 @@ class TestGenericGitCollection(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGenericGitCollection, self).setUp()
+        super().setUp()
         self.store = IStore(GitRepository)
 
     def test_provides_gitcollection(self):

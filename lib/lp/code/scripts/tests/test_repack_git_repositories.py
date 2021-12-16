@@ -52,7 +52,7 @@ class FakeTurnipServer(threading.Thread):
     """Thread that runs a fake turnip server."""
 
     def __init__(self):
-        super(FakeTurnipServer, self).__init__()
+        super().__init__()
         self.name = 'FakeTurnipServer'
         self.app = FakeTurnipApplication()
         self.server = make_server(
@@ -74,7 +74,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
     layer = ZopelessAppServerLayer
 
     def setUp(self):
-        super(TestRequestGitRepack, self).setUp()
+        super().setUp()
         self.log = logging.getLogger('repack')
 
     def runScript_no_Turnip(self):

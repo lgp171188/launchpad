@@ -175,7 +175,7 @@ class TestBranchDeletes(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBranchDeletes, self).setUp()
+        super().setUp()
         self.branch_owner = self.factory.makePerson(name='jimhenson')
         self.branch = self.factory.makeBranch(
             owner=self.branch_owner,

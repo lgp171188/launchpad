@@ -562,7 +562,7 @@ class GenericBranchCollection:
                 bugtasks_for_branch[bugbranch.branch].append(bugtask)
 
             # Now filter those down to one bugtask per branch
-            for branch, tasks in six.iteritems(bugtasks_for_branch):
+            for branch, tasks in bugtasks_for_branch.items():
                 linked_bugtasks[branch.id].extend(
                     filter_bugtasks_by_context(branch.target.context, tasks))
 
@@ -786,7 +786,7 @@ class VisibleBranchCollection(GenericBranchCollection):
     def __init__(self, user, store=None, branch_filter_expressions=None,
                  tables=None,
                  asymmetric_filter_expressions=None, asymmetric_tables=None):
-        super(VisibleBranchCollection, self).__init__(
+        super().__init__(
             store=store, branch_filter_expressions=branch_filter_expressions,
             tables=tables,
             asymmetric_filter_expressions=asymmetric_filter_expressions,

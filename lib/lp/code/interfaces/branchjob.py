@@ -91,13 +91,13 @@ class IBranchUpgradeJobSource(IJobSource):
 class IRevisionMailJob(IRunnableJob):
     """A Job to send email a revision change in a branch."""
 
-    revno = Int(title=u'The revno to send mail about.')
+    revno = Int(title='The revno to send mail about.')
 
-    from_address = Bytes(title=u'The address to send mail from.')
+    from_address = Bytes(title='The address to send mail from.')
 
-    body = Text(title=u'The main text of the email to send.')
+    body = Text(title='The main text of the email to send.')
 
-    subject = Text(title=u'The subject of the email to send.')
+    subject = Text(title='The subject of the email to send.')
 
 
 class IRevisionMailJobSource(IJobSource):

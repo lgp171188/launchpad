@@ -129,13 +129,13 @@ class TestCodeHandler(TestCaseWithFactory):
     layer = ZopelessAppServerLayer
 
     def setUp(self):
-        super(TestCodeHandler, self).setUp(user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         self.code_handler = CodeHandler()
         self._old_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
 
     def tearDown(self):
         setSecurityPolicy(self._old_policy)
-        super(TestCodeHandler, self).tearDown()
+        super().tearDown()
 
     def test_get(self):
         handler = mail_handlers.get(config.launchpad.code_domain)
@@ -453,7 +453,7 @@ class TestVoteEmailCommand(TestCase):
     # We don't need no stinking layer.
 
     def setUp(self):
-        super(TestVoteEmailCommand, self).setUp()
+        super().setUp()
 
         class FakeExecutionContext:
             vote = None
@@ -555,8 +555,7 @@ class TestUpdateStatusEmailCommand(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestUpdateStatusEmailCommand, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         self._old_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
         self.merge_proposal = self.factory.makeBranchMergeProposal()
         # Default the user to be the target branch owner, so they are
@@ -568,7 +567,7 @@ class TestUpdateStatusEmailCommand(TestCaseWithFactory):
 
     def tearDown(self):
         setSecurityPolicy(self._old_policy)
-        super(TestUpdateStatusEmailCommand, self).tearDown()
+        super().tearDown()
 
     def test_numberOfArguments(self):
         # The command needs one and only one arg.
@@ -678,8 +677,7 @@ class TestAddReviewerEmailCommand(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestAddReviewerEmailCommand, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         self._old_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
         self.merge_proposal = (
             make_merge_proposal_without_reviewers(self.factory))
@@ -692,7 +690,7 @@ class TestAddReviewerEmailCommand(TestCaseWithFactory):
 
     def tearDown(self):
         setSecurityPolicy(self._old_policy)
-        super(TestAddReviewerEmailCommand, self).tearDown()
+        super().tearDown()
 
     def test_numberOfArguments(self):
         # The command needs at least one arg.

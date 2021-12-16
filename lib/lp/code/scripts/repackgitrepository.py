@@ -6,7 +6,6 @@
 from datetime import timedelta
 
 from psycopg2.extensions import TransactionRollbackError
-import six
 from storm.expr import (
     Cast,
     Or,
@@ -33,7 +32,7 @@ class RepackTunableLoop(TunableLoop):
     targets = 1000
 
     def __init__(self, log, dry_run, abort_time=None):
-        super(RepackTunableLoop, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.dry_run = dry_run
         self.start_at = 0
         self.logger = log
@@ -103,7 +102,7 @@ class RepackTunableLoop(TunableLoop):
             except TransactionRollbackError as error:
                 self.logger.error(
                     'An error occurred while requesting repository repack %s'
-                    % six.text_type(error))
+                    % str(error))
                 if transaction is not None:
                     transaction.abort()
                 continue

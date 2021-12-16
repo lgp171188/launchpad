@@ -5,7 +5,6 @@
 
 from unittest import mock
 
-import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -954,8 +953,7 @@ class TestProjectGitNamespaceCanCreateBranches(
 
     def setUp(self):
         # Setting visibility policies is an admin-only task.
-        super(TestProjectGitNamespaceCanCreateBranches, self).setUp(
-            "admin@canonical.com")
+        super().setUp("admin@canonical.com")
 
     def test_any_person(self):
         # If there is no privacy set up, any person can create a personal
@@ -1117,7 +1115,7 @@ class BaseValidateNewRepositoryMixin:
         # The first character of a repository name must be a letter or a
         # number.
         namespace = self._getNamespace(self.factory.makePerson())
-        for c in [six.unichr(i) for i in range(128)]:
+        for c in [chr(i) for i in range(128)]:
             if c.isalnum():
                 namespace.validateRepositoryName(c)
             else:
@@ -1129,7 +1127,7 @@ class BaseValidateNewRepositoryMixin:
         # After the first character, letters, numbers and certain
         # punctuation is permitted.
         namespace = self._getNamespace(self.factory.makePerson())
-        for c in [six.unichr(i) for i in range(128)]:
+        for c in [chr(i) for i in range(128)]:
             if c.isalnum() or c in "+-_@.":
                 namespace.validateRepositoryName("a" + c)
             else:

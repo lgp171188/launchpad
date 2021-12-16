@@ -35,7 +35,7 @@ class TestRevisionEmailExtraction(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestRevisionEmailExtraction, self).setUp()
+        super().setUp()
         switch_dbuser("branchscanner")
 
     def test_email_extracted_from_name(self):
@@ -134,7 +134,7 @@ class TestNewlyValidatedEmailsLinkRevisionAuthors(MakeHarryTestCase):
 
     def setUp(self):
         # Create a revision author that doesn't have a user yet.
-        super(TestNewlyValidatedEmailsLinkRevisionAuthors, self).setUp()
+        super().setUp()
         with dbuser("branchscanner"):
             self.author = RevisionSet()._createRevisionAuthor(
                 '"Harry Potter" <harry@canonical.com>')
@@ -171,35 +171,35 @@ class TestRevisionAuthor(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestRevisionAuthor, self).setUp()
+        super().setUp()
         switch_dbuser("branchscanner")
 
     def testGetNameWithoutEmailReturnsNamePart(self):
         # name_without_email is equal to the 'name' part of the revision
         # author information.
-        author = RevisionAuthor(name=u'Jonathan Lange <jml@canonical.com>')
-        self.assertEqual(u'Jonathan Lange', author.name_without_email)
+        author = RevisionAuthor(name='Jonathan Lange <jml@canonical.com>')
+        self.assertEqual('Jonathan Lange', author.name_without_email)
 
     def testGetNameWithoutEmailWithNoName(self):
         # If there is no name in the revision author information,
         # name_without_email is an empty string.
-        author = RevisionAuthor(name=u'jml@mumak.net')
+        author = RevisionAuthor(name='jml@mumak.net')
         self.assertEqual('', author.name_without_email)
 
     def testGetNameWithoutEmailWithNoEmail(self):
         # If there is no email in the revision author information,
         # name_without_email is the name.
-        author = RevisionAuthor(name=u'Jonathan Lange')
+        author = RevisionAuthor(name='Jonathan Lange')
         self.assertEqual('Jonathan Lange', author.name_without_email)
 
     def testGetNameWithoutEmailWithOneWord(self):
         # If there is no email in the revision author information,
         # name_without_email is the name.
-        author = RevisionAuthor(name=u'Jonathan.Lange')
+        author = RevisionAuthor(name='Jonathan.Lange')
         self.assertEqual('Jonathan.Lange', author.name_without_email)
 
     def testGetNameWithoutEmailWithBadEmail(self):
         # If there is an invalid email in the revision author information,
         # name_without_email is an empty string.
-        author = RevisionAuthor(name=u'jml@localhost')
+        author = RevisionAuthor(name='jml@localhost')
         self.assertEqual('', author.name_without_email)

@@ -53,7 +53,7 @@ class GitSubscription(StormBase):
 
     def __init__(self, person, repository, notification_level, max_diff_lines,
                  review_level, subscribed_by):
-        super(GitSubscription, self).__init__()
+        super().__init__()
         self.person = person
         self.repository = repository
         self.notification_level = notification_level

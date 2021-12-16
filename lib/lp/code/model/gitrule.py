@@ -111,7 +111,7 @@ class GitRule(StormBase):
 
     def __init__(self, repository, position, ref_pattern, creator,
                  date_created):
-        super(GitRule, self).__init__()
+        super().__init__()
         self.repository = repository
         self.position = position
         self.ref_pattern = ref_pattern

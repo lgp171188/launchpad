@@ -63,8 +63,7 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
                  self.build.distroseries.displayname))
 
         # Build extra arguments.
-        args = yield super(RecipeBuildBehaviour, self).extraBuildArgs(
-            logger=logger)
+        args = yield super().extraBuildArgs(logger=logger)
         args['suite'] = self.build.distroseries.getSuite(self.build.pocket)
         requester = self.build.requester
         if requester.preferredemail is None:
