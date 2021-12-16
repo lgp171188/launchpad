@@ -219,7 +219,7 @@
   <dd class="subordinate collapsible status-reports-table"
       tal:condition="show_status_reports | nothing"
       tal:define="
-        commit_sha1 python:commit_info['sha1'];
+        commit_sha1 commit_info/sha1;
         status_result python:ref.getCommitStatus(commit_sha1)">
       <div class="sprite treeCollapsed">
         <span tal:replace="structure status_result/image:boolean" />
@@ -230,8 +230,8 @@
         <table class="listing" tal:condition="batch">
           <tbody>
             <tr tal:repeat="report batch">
-                <td tal:content="structure report/result/enumvalue:SUCCEEDED/image:boolean" />
-                <td><a tal:attributes="href report/url|nothing" tal:content="report/title" /></td>
+              <td tal:content="structure report/result/enumvalue:SUCCEEDED/image:boolean" />
+              <td><a tal:attributes="href report/url|nothing" tal:content="report/title" /></td>
               <td tal:content="report/result_summary" />
             </tr>
           </tbody>
@@ -242,7 +242,7 @@
         </div>
       </tal:batch>
   </dd>
-  <div tal:define="merge_proposal python:commit_info.get('merge_proposal');"
+  <div tal:define="merge_proposal python:commit_info.get('merge_proposal')"
        tal:condition="merge_proposal">
     <dd class="subordinate commit-comment"
         tal:define="committer_date merge_proposal/merge_source/committer_date|nothing">

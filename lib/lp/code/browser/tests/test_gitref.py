@@ -202,9 +202,11 @@ class TestGitRefView(BrowserTestCase):
         with person_logged_in(repository.owner):
             self.assertThat(
                 reports_section[0],
-                soupmatchers.Tag(
-                    "first report title", "td",
-                    text=report1.title))
+                soupmatchers.Within(
+                    soupmatchers.Tag("first report title", "td"),
+                    soupmatchers.Tag(
+                        "first report link", "a", text=report1.title,
+                        attrs={"href": report1.url})))
             self.assertThat(
                 reports_section[0],
                 soupmatchers.Tag(
@@ -212,9 +214,11 @@ class TestGitRefView(BrowserTestCase):
                     text=report1.result_summary))
             self.assertThat(
                 reports_section[1],
-                soupmatchers.Tag(
-                    "second report title", "td",
-                    text=report2.title))
+                soupmatchers.Within(
+                    soupmatchers.Tag("second report title", "td"),
+                    soupmatchers.Tag(
+                        "second report link", "a", text=report2.title,
+                        attrs={"href": report2.url})))
             self.assertThat(
                 reports_section[1],
                 soupmatchers.Tag(

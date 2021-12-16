@@ -186,10 +186,9 @@ class GitRefMixin:
     def getCommitStatus(self, commit_sha1):
         """Help to show red or green icon at the top of the commit."""
         reports = self.repository.getStatusReports(commit_sha1)
-        for report in reports:
-            if report.result != RevisionStatusResult.SUCCEEDED:
-                return False
-        return True
+        return all(
+            report.result == RevisionStatusResult.SUCCEEDED
+            for report in reports)
 
     @property
     def information_type(self):

@@ -1666,9 +1666,12 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         with person_logged_in(bmp.source_git_repository.owner):
             self.assertThat(
                 reports_section[0],
-                Tag(
-                    "first report title", "td",
-                    text=report1.title))
+                Within(
+                    Tag("first report title", "td"),
+                    Tag(
+                        "first report link", "a", text=report1.title,
+                        attrs={"href": report1.url})))
+
             self.assertThat(
                 reports_section[0],
                 Tag(

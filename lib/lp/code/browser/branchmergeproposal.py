@@ -669,7 +669,7 @@ class BranchMergeProposalView(LaunchpadFormView, UnmergedRevisionsMixin,
     def getStatusReports(self, commit_sha1):
         reports = self.context.getStatusReports(
             commit_sha1)
-        return BatchNavigator(reports, self.request, size=3)
+        return BatchNavigator(reports, self.request)
 
     @property
     def comment_location(self):
