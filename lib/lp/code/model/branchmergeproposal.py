@@ -1426,6 +1426,10 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
 
+    def getStatusReports(self, commit_sha1):
+        return self.source_git_repository.getStatusReports(
+            commit_sha1)
+
 
 @implementer(IBranchMergeProposalGetter)
 class BranchMergeProposalGetter:

@@ -220,7 +220,7 @@
       tal:condition="show_status_reports | nothing"
       tal:define="
         commit_sha1 python:commit_info['sha1'];
-        status_result python:True">
+        status_result python:ref.getCommitStatus(commit_sha1)">
       <div class="sprite treeCollapsed">
         <span tal:replace="structure status_result/image:boolean" />
       </div>
