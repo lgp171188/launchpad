@@ -204,7 +204,7 @@ class TestRevisionSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestRevisionSet, self).setUp()
+        super().setUp()
         self.revision_set = getUtility(IRevisionSet)
 
     def test_getRevisionById_existing(self):

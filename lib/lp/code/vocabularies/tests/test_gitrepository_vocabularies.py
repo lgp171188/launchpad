@@ -20,7 +20,7 @@ class TestGitRepositoryVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitRepositoryVocabulary, self).setUp()
+        super().setUp()
         self._createRepositories()
         self.vocab = GitRepositoryVocabulary(context=None)
 
@@ -29,17 +29,17 @@ class TestGitRepositoryVocabulary(TestCaseWithFactory):
         sprocket = self.factory.makeProduct(name="sprocket")
         scotty = self.factory.makePerson(name="scotty")
         self.factory.makeGitRepository(
-            owner=scotty, target=widget, name=u"fizzbuzz")
+            owner=scotty, target=widget, name="fizzbuzz")
         self.factory.makeGitRepository(
-            owner=scotty, target=widget, name=u"mountain")
+            owner=scotty, target=widget, name="mountain")
         self.factory.makeGitRepository(
-            owner=scotty, target=sprocket, name=u"fizzbuzz")
+            owner=scotty, target=sprocket, name="fizzbuzz")
 
     def test_fizzbuzzRepositories(self):
         """Return repositories that match the string 'fizzbuzz'."""
         results = self.vocab.searchForTerms("fizzbuzz")
         expected = [
-            u"~scotty/sprocket/+git/fizzbuzz", u"~scotty/widget/+git/fizzbuzz"]
+            "~scotty/sprocket/+git/fizzbuzz", "~scotty/widget/+git/fizzbuzz"]
         repository_names = sorted(repository.token for repository in results)
         self.assertEqual(expected, repository_names)
 
@@ -67,7 +67,7 @@ class TestRestrictedGitRepositoryVocabularyOnProduct(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestRestrictedGitRepositoryVocabularyOnProduct, self).setUp()
+        super().setUp()
         self._createRepositories()
         self.vocab = GitRepositoryRestrictedOnProductVocabulary(
             context=self._getVocabRestriction())
@@ -79,11 +79,11 @@ class TestRestrictedGitRepositoryVocabularyOnProduct(TestCaseWithFactory):
     def _createRepositories(self):
         test_product = self.factory.makeProduct(name='widget')
         other_product = self.factory.makeProduct(name='sprocket')
-        person = self.factory.makePerson(name=u'scotty')
+        person = self.factory.makePerson(name='scotty')
         self.factory.makeGitRepository(
-            owner=person, target=test_product, name=u'mountain')
+            owner=person, target=test_product, name='mountain')
         self.factory.makeGitRepository(
-            owner=person, target=other_product, name=u'mountain')
+            owner=person, target=other_product, name='mountain')
         self.product = test_product
         self.other_product = test_product
 
@@ -93,7 +93,7 @@ class TestRestrictedGitRepositoryVocabularyOnProduct(TestCaseWithFactory):
         The result set should not show ~scotty/sprocket/mountain.
         """
         results = self.vocab.searchForTerms('mountain')
-        expected = [u'~scotty/widget/+git/mountain']
+        expected = ['~scotty/widget/+git/mountain']
         repo_names = sorted(repo.token for repo in results)
         self.assertEqual(expected, repo_names)
 
@@ -102,7 +102,7 @@ class TestRestrictedGitRepositoryVocabularyOnProduct(TestCaseWithFactory):
         # as the result.
         term = self.vocab.getTermByToken('mountain')
         self.assertEqual(
-            u'~scotty/widget/+git/mountain', term.value.unique_name)
+            '~scotty/widget/+git/mountain', term.value.unique_name)
 
     def test_multipleQueryResult(self):
         # If there are more than one search result, a LookupError is still

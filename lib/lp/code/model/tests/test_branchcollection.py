@@ -106,7 +106,7 @@ class TestGenericBranchCollection(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGenericBranchCollection, self).setUp()
+        super().setUp()
         remove_all_sample_data_branches()
         self.store = IStore(Branch)
 

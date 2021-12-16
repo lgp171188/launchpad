@@ -23,8 +23,7 @@ class TestCodeImportMachineShouldLookForJob(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportMachineShouldLookForJob, self).setUp(
-            'admin@canonical.com')
+        super().setUp('admin@canonical.com')
         self.machine = self.factory.makeCodeImportMachine(set_online=True)
 
     def createJobRunningOnMachine(self, machine):

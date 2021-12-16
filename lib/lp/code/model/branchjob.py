@@ -227,7 +227,7 @@ class BranchJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(BranchJob, self).__init__()
+        super().__init__()
         self.job = Job(**job_args)
         self.branch = branch
         self.job_type = job_type
@@ -329,7 +329,7 @@ class BranchScanJob(BranchJobDerived):
         return cls(branch_job)
 
     def __init__(self, branch_job):
-        super(BranchScanJob, self).__init__(branch_job)
+        super().__init__(branch_job)
         self._cached_branch_name = self.metadata['branch_name']
 
     @staticmethod
@@ -507,7 +507,7 @@ class RevisionsAddedJob(BranchJobDerived):
         return RevisionsAddedJob(branch_job)
 
     def __init__(self, context):
-        super(RevisionsAddedJob, self).__init__(context)
+        super().__init__(context)
         self._bzr_branch = None
         self._tree_cache = {}
 
@@ -690,7 +690,7 @@ class RevisionsAddedJob(BranchJobDerived):
                 proposals[source_id] = (proposal, date_created)
 
         return sorted(
-            (proposal for proposal, date_created in six.itervalues(proposals)),
+            (proposal for proposal, date_created in proposals.values()),
             key=operator.attrgetter('date_created'), reverse=True)
 
     def getRevisionMessage(self, revision_id, revno):
@@ -763,7 +763,7 @@ class RosettaUploadJob(BranchJobDerived):
     config = config.IRosettaUploadJobSource
 
     def __init__(self, branch_job):
-        super(RosettaUploadJob, self).__init__(branch_job)
+        super().__init__(branch_job)
 
         self.template_file_names = []
         self.template_files_changed = []

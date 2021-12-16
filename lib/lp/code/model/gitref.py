@@ -333,10 +333,10 @@ class GitRefMixin:
                 enable_hosting=None, enable_memcache=None, logger=None):
         if enable_hosting is None:
             enable_hosting = not getFeatureFlag(
-                u"code.git.log.disable_hosting")
+                "code.git.log.disable_hosting")
         if enable_memcache is None:
             enable_memcache = not getFeatureFlag(
-                u"code.git.log.disable_memcache")
+                "code.git.log.disable_memcache")
         path = self.repository.getInternalPath()
         if (union_repository is not None and
                 union_repository != self.repository):
@@ -636,9 +636,9 @@ class GitRef(GitRefMixin, StormBase):
     def findByReposAndPaths(cls, repos_and_paths):
         """See `IGitRefSet`"""
         def full_path(path):
-            if path.startswith(u"refs/heads/"):
+            if path.startswith("refs/heads/"):
                 return path
-            return u"refs/heads/%s" % path
+            return "refs/heads/%s" % path
 
         condition = None
         for repo, path in repos_and_paths:
@@ -702,7 +702,7 @@ class GitRefDefault(GitRefDatabaseBackedMixin):
     def __init__(self, repository):
         self.repository_id = repository.id
         self.repository = repository
-        self.path = u"HEAD"
+        self.path = "HEAD"
 
     _non_database_attributes = ("repository_id", "repository", "path")
 

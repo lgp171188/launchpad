@@ -131,7 +131,7 @@ class GitAPI(LaunchpadXMLRPCView):
     """See `IGitAPI`."""
 
     def __init__(self, *args, **kwargs):
-        super(GitAPI, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.repository_set = getUtility(IGitRepositorySet)
 
     def _verifyMacaroon(self, macaroon_raw, repository=None, user=None):
@@ -326,7 +326,7 @@ class GitAPI(LaunchpadXMLRPCView):
     def _reportError(self, path, exception, hosting_path=None):
         properties = [
             ("path", path),
-            ("error-explanation", six.text_type(exception)),
+            ("error-explanation", str(exception)),
             ]
         if hosting_path is not None:
             properties.append(("hosting_path", hosting_path))
@@ -360,9 +360,9 @@ class GitAPI(LaunchpadXMLRPCView):
                 raise faults.InvalidSourcePackageName(e.name)
             return self._createRepository(requester, path)
         except NameLookupFailed as e:
-            raise faults.NotFound(six.text_type(e))
+            raise faults.NotFound(str(e))
         except GitRepositoryCreationForbidden as e:
-            raise faults.PermissionDenied(six.text_type(e))
+            raise faults.PermissionDenied(str(e))
 
         try:
             try:
@@ -391,7 +391,7 @@ class GitAPI(LaunchpadXMLRPCView):
                 # private repository).  Log an OOPS for investigation.
                 self._reportError(path, e)
             except (GitRepositoryCreationException, Unauthorized) as e:
-                raise faults.PermissionDenied(six.text_type(e))
+                raise faults.PermissionDenied(str(e))
             except GitRepositoryCreationFault as e:
                 # The hosting service failed.  Log an OOPS for investigation.
                 self._reportError(path, e, hosting_path=e.path)

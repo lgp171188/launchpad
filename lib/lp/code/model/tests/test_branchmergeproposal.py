@@ -1027,7 +1027,7 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestMergeProposalWebhooks, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(
             {BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"}))
 
@@ -1509,7 +1509,7 @@ class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBranchMergeProposalBugs, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         login_person(self.user)
         if self.git:
@@ -1690,16 +1690,15 @@ class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
         bmp.updateRelatedBugsFromSource()
         self.assertEqual([bug], bmp.bugs)
         matches_expected_xref = MatchesDict(
-            {("bug", six.text_type(bug.id)):
-                ContainsDict({"metadata": Is(None)})})
+            {("bug", str(bug.id)): ContainsDict({"metadata": Is(None)})})
         self.assertThat(
             getUtility(IXRefSet).findFrom(
-                ("merge_proposal", six.text_type(bmp.id)), types=["bug"]),
+                ("merge_proposal", str(bmp.id)), types=["bug"]),
             matches_expected_xref)
         self._setUpLog([bug])
         self.assertThat(
             getUtility(IXRefSet).findFrom(
-                ("merge_proposal", six.text_type(bmp.id)), types=["bug"]),
+                ("merge_proposal", str(bmp.id)), types=["bug"]),
             matches_expected_xref)
 
     def test_updateRelatedBugsFromSource_honours_limit(self):
@@ -2252,7 +2251,7 @@ class TestScheduleDiffUpdates(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestScheduleDiffUpdates, self).setUp()
+        super().setUp()
         self.job_source = removeSecurityProxy(
             getUtility(IBranchMergeProposalJobSource))
 
@@ -2511,7 +2510,7 @@ class TestBranchMergeProposalInlineComments(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBranchMergeProposalInlineComments, self).setUp()
+        super().setUp()
         # Create a testing IPerson, IPreviewDiff and IBranchMergeProposal
         # for tests. Log in as the testing IPerson.
         self.person = self.factory.makePerson()

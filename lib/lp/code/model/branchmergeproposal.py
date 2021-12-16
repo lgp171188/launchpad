@@ -18,7 +18,6 @@ from lazr.lifecycle.event import (
     ObjectCreatedEvent,
     ObjectDeletedEvent,
     )
-import six
 from storm.expr import (
     And,
     Desc,
@@ -392,8 +391,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         else:
             bug_ids = [
                 int(id) for _, id in getUtility(IXRefSet).findFrom(
-                    (u'merge_proposal', six.text_type(self.id)),
-                    types=[u'bug'])]
+                    ('merge_proposal', str(self.id)), types=['bug'])]
             bugs = load(Bug, bug_ids)
         return list(sorted(bugs, key=attrgetter('id')))
 
@@ -420,14 +418,12 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             props = {}
         # XXX cjwatson 2016-06-11: Should set creator.
         getUtility(IXRefSet).create(
-            {(u'merge_proposal', six.text_type(self.id)):
-                {(u'bug', six.text_type(bug.id)): props}})
+            {('merge_proposal', str(self.id)): {('bug', str(bug.id)): props}})
 
     def deleteBugLink(self, bug):
         """See `BugLinkTargetMixin`."""
         getUtility(IXRefSet).delete(
-            {(u'merge_proposal', six.text_type(self.id)):
-                [(u'bug', six.text_type(bug.id))]})
+            {('merge_proposal', str(self.id)): [('bug', str(bug.id))]})
 
     def linkBug(self, bug, user=None, check_permissions=True, props=None):
         """See `BugLinkTargetMixin`."""
@@ -436,7 +432,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             return self.source_branch.linkBug(bug, user)
         else:
             # Otherwise, link the bug to the merge proposal directly.
-            return super(BranchMergeProposal, self).linkBug(
+            return super().linkBug(
                 bug, user=user, check_permissions=check_permissions,
                 props=props)
 
@@ -451,7 +447,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             return self.source_branch.unlinkBug(bug, user)
         else:
             # Otherwise, unlink the bug from the merge proposal directly.
-            return super(BranchMergeProposal, self).unlinkBug(
+            return super().unlinkBug(
                 bug, user=user, check_permissions=check_permissions)
 
     def _reportTooManyRelatedBugs(self):
@@ -505,8 +501,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         current_bug_ids_from_source = {
             int(id): (props['metadata'] or {}).get('from_source', False)
             for (_, id), props in getUtility(IXRefSet).findFrom(
-                (u'merge_proposal', six.text_type(self.id)),
-                types=[u'bug']).items()}
+                ('merge_proposal', str(self.id)), types=['bug']).items()}
         current_bug_ids = set(current_bug_ids_from_source)
         new_bug_ids = self._fetchRelatedBugIDsFromSource()
         # Only remove links marked as originating in the source branch.

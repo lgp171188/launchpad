@@ -97,7 +97,7 @@ class TestCodeImportJob(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJob, self).setUp()
+        super().setUp()
         login_for_code_imports()
 
     def assertArgumentsMatch(self, code_import, matcher, start_job=False):
@@ -211,7 +211,7 @@ class TestCodeImportJobSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJobSet, self).setUp()
+        super().setUp()
         login_for_code_imports()
 
     def test_getByIdExisting(self):
@@ -256,7 +256,7 @@ class TestCodeImportJobSetGetJobForMachine(TestCaseWithFactory):
     def setUp(self):
         # Login so we can access the code import system, delete all jobs in
         # the sample data and set up some objects.
-        super(TestCodeImportJobSetGetJobForMachine, self).setUp()
+        super().setUp()
         login_for_code_imports()
         for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
@@ -370,7 +370,7 @@ class ReclaimableJobTests(TestCaseWithFactory):
     LIMIT = config.codeimportworker.maximum_heartbeat_interval
 
     def setUp(self):
-        super(ReclaimableJobTests, self).setUp()
+        super().setUp()
         login_for_code_imports()
         for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
@@ -461,7 +461,7 @@ class AssertFailureMixin:
             self.fail("AssertionError was not raised")
 
 
-class NewEvents(object):
+class NewEvents:
     """Help in testing the creation of CodeImportEvent objects.
 
     To test that an operation creates CodeImportEvent objects, create an
@@ -527,7 +527,7 @@ class TestCodeImportJobWorkflowNewJob(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJobWorkflowNewJob, self).setUp()
+        super().setUp()
         login_for_code_imports()
 
     def test_wrongReviewStatus(self):
@@ -631,7 +631,7 @@ class TestCodeImportJobWorkflowDeletePendingJob(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJobWorkflowDeletePendingJob, self).setUp()
+        super().setUp()
         self.import_admin = login_for_code_imports()
 
     def test_wrongReviewStatus(self):
@@ -687,7 +687,7 @@ class TestCodeImportJobWorkflowRequestJob(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJobWorkflowRequestJob, self).setUp()
+        super().setUp()
         login_for_code_imports()
 
     def test_wrongJobState(self):
@@ -779,7 +779,7 @@ class TestCodeImportJobWorkflowStartJob(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJobWorkflowStartJob, self).setUp()
+        super().setUp()
         login_for_code_imports()
 
     def test_wrongJobState(self):
@@ -832,7 +832,7 @@ class TestCodeImportJobWorkflowUpdateHeartbeat(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJobWorkflowUpdateHeartbeat, self).setUp()
+        super().setUp()
         login_for_code_imports()
 
     def test_wrongJobState(self):
@@ -867,7 +867,7 @@ class TestCodeImportJobWorkflowFinishJob(TestCaseWithFactory,
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJobWorkflowFinishJob, self).setUp()
+        super().setUp()
         self.vcs_imports = login_for_code_imports()
         self.machine = self.factory.makeCodeImportMachine(set_online=True)
 
@@ -1165,7 +1165,7 @@ class TestCodeImportJobWorkflowReclaimJob(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJobWorkflowReclaimJob, self).setUp()
+        super().setUp()
         login_for_code_imports()
         self.machine = self.factory.makeCodeImportMachine(set_online=True)
 
@@ -1300,7 +1300,7 @@ class TestCodeImportJobMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportJobMacaroonIssuer, self).setUp()
+        super().setUp()
         login_for_code_imports()
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")

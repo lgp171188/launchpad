@@ -42,8 +42,7 @@ class SourcePackageRecipeBuildMailer(BaseMailer):
 
     def _getHeaders(self, email, recipient):
         """See `BaseMailer`"""
-        headers = super(
-            SourcePackageRecipeBuildMailer, self)._getHeaders(email, recipient)
+        headers = super()._getHeaders(email, recipient)
         headers.update({
             'X-Launchpad-Archive': self.build.archive.reference,
             'X-Launchpad-Build-State': self.build.status.name,
@@ -52,9 +51,7 @@ class SourcePackageRecipeBuildMailer(BaseMailer):
 
     def _getTemplateParams(self, email, recipient):
         """See `BaseMailer`"""
-        params = super(
-            SourcePackageRecipeBuildMailer, self)._getTemplateParams(
-                email, recipient)
+        params = super()._getTemplateParams(email, recipient)
         params.update({
             'status': self.build.status.title,
             'build_id': self.build.id,

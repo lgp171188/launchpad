@@ -12,7 +12,6 @@ import sys
 
 from lazr.restful.utils import get_current_browser_request
 import requests
-from six import reraise
 from six.moves.urllib_parse import (
     quote,
     urljoin,
@@ -72,9 +71,7 @@ class BranchHostingClient:
         except Exception:
             _, val, tb = sys.exc_info()
             try:
-                reraise(
-                    RequestExceptionWrapper,
-                    RequestExceptionWrapper(*val.args), tb)
+                raise RequestExceptionWrapper(*val.args).with_traceback(tb)
             finally:
                 # Avoid traceback reference cycles.
                 del val, tb

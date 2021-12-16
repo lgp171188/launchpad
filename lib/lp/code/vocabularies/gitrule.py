@@ -102,4 +102,4 @@ class GitPermissionsVocabulary(SimpleVocabulary):
                 terms.append(SimpleTerm(
                     grant_permissions,
                     "custom", "Custom permissions: %s" % ", ".join(names)))
-        super(GitPermissionsVocabulary, self).__init__(terms)
+        super().__init__(terms)

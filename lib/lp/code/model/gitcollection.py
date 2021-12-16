@@ -622,7 +622,7 @@ class VisibleGitCollection(GenericGitCollection):
 
     def __init__(self, user, store=None, filter_expressions=None, tables=None,
                  asymmetric_filter_expressions=None, asymmetric_tables=None):
-        super(VisibleGitCollection, self).__init__(
+        super().__init__(
             store=store, filter_expressions=filter_expressions, tables=tables,
             asymmetric_filter_expressions=asymmetric_filter_expressions,
             asymmetric_tables=asymmetric_tables)

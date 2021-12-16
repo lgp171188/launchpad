@@ -69,13 +69,13 @@ from lp.services.fields import (
 from lp.soyuz.interfaces.archive import IArchive
 
 
-MINIMAL_RECIPE_TEXT_BZR = dedent(u'''\
+MINIMAL_RECIPE_TEXT_BZR = dedent('''\
     # bzr-builder format 0.3 deb-version {debupstream}-0~{revno}
     %s
     ''')
 
 
-MINIMAL_RECIPE_TEXT_GIT = dedent(u'''\
+MINIMAL_RECIPE_TEXT_GIT = dedent('''\
     # git-build-recipe format 0.4 deb-version {debupstream}-0~{revtime}
     %s %s
     ''')

@@ -55,7 +55,7 @@ class CVSRootError(Exception):
     """Raised when trying to use a CVSROOT with invalid syntax."""
 
     def __init__(self, root):
-        super(CVSRootError, self).__init__(self, 'bad CVSROOT: %r' % root)
+        super().__init__(self, 'bad CVSROOT: %r' % root)
 
 
 _cvs_root_parser = re.compile(r"""

@@ -22,7 +22,7 @@ class TestBranchVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBranchVocabulary, self).setUp()
+        super().setUp()
         self._createBranches()
         self.vocab = BranchVocabulary(context=None)
 
@@ -40,8 +40,7 @@ class TestBranchVocabulary(TestCaseWithFactory):
     def test_fizzbuzzBranches(self):
         """Return branches that match the string 'fizzbuzz'."""
         results = self.vocab.searchForTerms('fizzbuzz')
-        expected = [
-            u'~scotty/sprocket/fizzbuzz', u'~scotty/widget/fizzbuzz']
+        expected = ['~scotty/sprocket/fizzbuzz', '~scotty/widget/fizzbuzz']
         branch_names = sorted(branch.token for branch in results)
         self.assertEqual(expected, branch_names)
 
@@ -68,7 +67,7 @@ class TestRestrictedBranchVocabularyOnProduct(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestRestrictedBranchVocabularyOnProduct, self).setUp()
+        super().setUp()
         self._createBranches()
         self.vocab = BranchRestrictedOnProductVocabulary(
             context=self._getVocabRestriction())
@@ -98,7 +97,7 @@ class TestRestrictedBranchVocabularyOnProduct(TestCaseWithFactory):
         The result set should not show ~scotty/sprocket/main.
         """
         results = self.vocab.searchForTerms('main')
-        expected = [u'~scotty/widget/main']
+        expected = ['~scotty/widget/main']
         branch_names = sorted(branch.token for branch in results)
         self.assertEqual(expected, branch_names)
 

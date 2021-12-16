@@ -104,7 +104,7 @@ class CodeImportJob(StormBase):
     date_started = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
 
     def __init__(self, code_import, date_due):
-        super(CodeImportJob, self).__init__()
+        super().__init__()
         self.code_import = code_import
         self.date_due = date_due
 
@@ -179,7 +179,7 @@ class CodeImportJob(StormBase):
 
 
 @implementer(ICodeImportJobSet, ICodeImportJobSetPublic)
-class CodeImportJobSet(object):
+class CodeImportJobSet:
     """See `ICodeImportJobSet`."""
 
     # CodeImportJob database objects are created using

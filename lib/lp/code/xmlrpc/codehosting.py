@@ -109,7 +109,7 @@ def run_with_login(login_id, function, *args, **kwargs):
         # Don't pass in an actual user. Instead pass in LAUNCHPAD_SERVICES
         # and expect `function` to use `removeSecurityProxy` or similar.
         return function(login_id, *args, **kwargs)
-    if isinstance(login_id, (six.binary_type, six.text_type)):
+    if isinstance(login_id, (bytes, str)):
         login_id = six.ensure_text(login_id)
         # OpenID identifiers must contain a slash, while names must not.
         if "/" in login_id:

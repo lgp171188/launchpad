@@ -57,7 +57,7 @@ class TestMergeProposalMailing(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestMergeProposalMailing, self).setUp('admin@canonical.com')
+        super().setUp('admin@canonical.com')
 
     def makeProposalWithSubscriber(self, diff_text=None, initial_comment=None,
                                    prerequisite=False, needs_review=True,

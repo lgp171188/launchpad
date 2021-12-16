@@ -30,7 +30,7 @@ class DirectBranchCommitTestCase:
     committer = None
 
     def setUp(self):
-        super(DirectBranchCommitTestCase, self).setUp()
+        super().setUp()
         self.useBzrBranches(direct_database=True)
 
         self.series = self.factory.makeProductSeries()
@@ -292,7 +292,7 @@ class TestGetBzrCommitterID(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetBzrCommitterID, self).setUp()
+        super().setUp()
         self.useBzrBranches(direct_database=True)
 
     def _makeBranch(self, **kwargs):

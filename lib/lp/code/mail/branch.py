@@ -58,8 +58,7 @@ class RecipientReason(basemailer.RecipientReason):
                  max_diff_lines=BranchSubscriptionDiffSize.WHOLEDIFF,
                  branch_identity_cache=None,
                  review_level=CodeReviewNotificationLevel.FULL):
-        super(RecipientReason, self).__init__(subscriber, recipient,
-              mail_header, reason_template)
+        super().__init__(subscriber, recipient, mail_header, reason_template)
         self.branch = branch
         self.merge_proposal = merge_proposal
         self.max_diff_lines = max_diff_lines
@@ -150,7 +149,7 @@ class RecipientReason(basemailer.RecipientReason):
                      branch_identity_cache=branch_identity_cache)
 
     def _getTemplateValues(self):
-        template_values = super(RecipientReason, self)._getTemplateValues()
+        template_values = super()._getTemplateValues()
         template_values['branch_name'] = self._getBranchIdentity(self.branch)
         if self.merge_proposal is not None:
             source = self._getBranchIdentity(self.merge_proposal.merge_source)
@@ -169,7 +168,7 @@ class BranchMailer(BaseMailer):
                  delta=None, delta_for_editors=None, contents=None, diff=None,
                  message_id=None, revno=None, revision_id=None,
                  notification_type=None, **kwargs):
-        super(BranchMailer, self).__init__(
+        super().__init__(
             subject, template_name, recipients, from_address,
             message_id=message_id, notification_type=notification_type)
         self.delta_text = delta
