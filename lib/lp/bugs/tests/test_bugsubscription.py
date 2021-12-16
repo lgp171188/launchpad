@@ -28,7 +28,7 @@ class TestBugSubscription(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugSubscription, self).setUp()
+        super().setUp()
         self.bug = self.factory.makeBug()
         self.subscriber = self.factory.makePerson()
 

@@ -52,9 +52,9 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         ]
 
     def setUp(self):
-        super(TestGitRefWidget, self).setUp()
+        super().setUp()
         field = Reference(
-            __name__="git_ref", schema=Interface, title=u"Git reference")
+            __name__="git_ref", schema=Interface, title="Git reference")
         self.context = Thing()
         field = field.bind(self.context)
         request = LaunchpadTestRequest()
@@ -202,7 +202,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
         [ref] = self.factory.makeGitRefs()
         form = {
             "field.git_ref.repository": ref.repository.unique_name,
-            "field.git_ref.path": u"non-existent",
+            "field.git_ref.path": "non-existent",
             }
         self.assertGetInputValueError(
             form,

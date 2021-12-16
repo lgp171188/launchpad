@@ -45,7 +45,10 @@ repos:
             |archivepublisher
             |archiveuploader
             |blueprints
-            |bugs/(browser|externalbugtracker|interfaces|model)
+            |bugs
+            |buildmaster
+            |charms
+            |code/browser
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

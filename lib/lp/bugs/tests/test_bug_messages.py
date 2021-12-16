@@ -26,7 +26,7 @@ class TestBugIndexedMessages(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugIndexedMessages, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
 
         bug_1 = self.factory.makeBug()

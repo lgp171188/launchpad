@@ -94,7 +94,7 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCharmRecipeBuild, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         self.build = self.factory.makeCharmRecipeBuild()
 
@@ -671,7 +671,7 @@ class TestCharmRecipeBuildSet(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCharmRecipeBuildSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_getByBuildFarmJob_works(self):

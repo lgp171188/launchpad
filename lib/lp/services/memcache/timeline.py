@@ -7,8 +7,6 @@ __all__ = [
     'TimelineRecordingClient',
     ]
 
-import logging
-
 from lazr.restful.utils import get_current_browser_request
 
 from lp.services import features
@@ -45,11 +43,6 @@ class TimelineRecordingClient(MemcacheClient):
             return None
         action = self.__get_timeline_action("set", key)
         try:
-            success = super().set(key, value, expire=expire, logger=logger)
-            if success:
-                logging.debug("Memcache set succeeded for %s", key)
-            else:
-                logging.warning("Memcache set failed for %s", key)
-            return success
+            return super().set(key, value, expire=expire, logger=logger)
         finally:
             action.finish()

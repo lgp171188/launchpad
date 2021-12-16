@@ -24,7 +24,6 @@ import xmlrpc.client
 
 import fixtures
 from lpbuildd.tests.harness import BuilddSlaveTestSetup
-import six
 from testtools.content import attach_file
 from twisted.internet import defer
 from twisted.web.xmlrpc import Proxy
@@ -154,7 +153,7 @@ class BuildingSlave(OkSlave):
     """A mock slave that looks like it's currently building."""
 
     def __init__(self, build_id='1-1'):
-        super(BuildingSlave, self).__init__()
+        super().__init__()
         self.build_id = build_id
         self.status_count = 0
 
@@ -172,7 +171,7 @@ class BuildingSlave(OkSlave):
     def getFile(self, sum, file_to_write):
         self.call_log.append('getFile')
         if sum == "buildlog":
-            if isinstance(file_to_write, six.string_types):
+            if isinstance(file_to_write, str):
                 file_to_write = open(file_to_write, 'wb')
             file_to_write.write(b"This is a build log")
             file_to_write.close()
@@ -184,7 +183,7 @@ class WaitingSlave(OkSlave):
 
     def __init__(self, state='BuildStatus.OK', dependencies=None,
                  build_id='1-1', filemap=None):
-        super(WaitingSlave, self).__init__()
+        super().__init__()
         self.state = state
         self.dependencies = dependencies
         self.build_id = build_id
@@ -211,7 +210,7 @@ class WaitingSlave(OkSlave):
     def getFile(self, hash, file_to_write):
         self.call_log.append('getFile')
         if hash in self.valid_files:
-            if isinstance(file_to_write, six.string_types):
+            if isinstance(file_to_write, str):
                 file_to_write = open(file_to_write, 'wb')
             if not self.valid_files[hash]:
                 content = ("This is a %s" % hash).encode("ASCII")
@@ -289,7 +288,7 @@ class LPBuilddSlaveTestSetup(BuilddSlaveTestSetup):
     """A BuilddSlaveTestSetup that uses the LP virtualenv."""
 
     def setUp(self):
-        super(LPBuilddSlaveTestSetup, self).setUp(
+        super().setUp(
             python_path=sys.executable,
             twistd_script=twistd_script)
 

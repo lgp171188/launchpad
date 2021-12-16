@@ -3,7 +3,6 @@
 
 """Interfaces for bases for charms."""
 
-__metaclass__ = type
 __all__ = [
     "DuplicateCharmBase",
     "ICharmBase",

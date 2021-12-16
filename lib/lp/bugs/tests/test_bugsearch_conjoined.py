@@ -42,7 +42,7 @@ class TestProjectExcludeConjoinedMasterSearch(TestSearchBase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectExcludeConjoinedMasterSearch, self).setUp()
+        super().setUp()
         self.bugtask_set = getUtility(IBugTaskSet)
         self.product = self.factory.makeProduct()
         self.milestone = self.factory.makeMilestone(
@@ -135,7 +135,7 @@ class TestProjectGroupExcludeConjoinedMasterSearch(TestSearchBase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectGroupExcludeConjoinedMasterSearch, self).setUp()
+        super().setUp()
         self.bugtask_set = getUtility(IBugTaskSet)
         self.projectgroup = self.factory.makeProject()
         self.bug_count = 2
@@ -249,7 +249,7 @@ class TestDistributionExcludeConjoinedMasterSearch(TestSearchBase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionExcludeConjoinedMasterSearch, self).setUp()
+        super().setUp()
         self.bugtask_set = getUtility(IBugTaskSet)
         self.distro = getUtility(ILaunchpadCelebrities).ubuntu
         self.milestone = self.factory.makeMilestone(

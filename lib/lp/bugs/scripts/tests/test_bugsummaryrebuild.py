@@ -212,11 +212,11 @@ class TestCalculateBugSummaryRows(TestCaseWithFactory):
         # untagged row.
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(
-            target=product, tags=[u'foo', u'bar']).default_bugtask
+            target=product, tags=['foo', 'bar']).default_bugtask
         self.assertContentEqual(
             [(bug.status, None, bug.importance, False, None, None, None, 1),
-             (bug.status, None, bug.importance, False, u'foo', None, None, 1),
-             (bug.status, None, bug.importance, False, u'bar', None, None, 1),
+             (bug.status, None, bug.importance, False, 'foo', None, None, 1),
+             (bug.status, None, bug.importance, False, 'bar', None, None, 1),
             ], calculate_bugsummary_rows(product))
 
     def test_private_untagged(self):
@@ -242,17 +242,17 @@ class TestCalculateBugSummaryRows(TestCaseWithFactory):
         product = self.factory.makeProduct()
         o = self.factory.makePerson()
         bug = self.factory.makeBug(
-            target=product, owner=o, tags=[u'foo', u'bar'],
+            target=product, owner=o, tags=['foo', 'bar'],
             information_type=InformationType.USERDATA).default_bugtask
         [ap] = getUtility(IAccessPolicySource).find(
             [(product, InformationType.USERDATA)])
         self.assertContentEqual(
             [(bug.status, None, bug.importance, False, None, o.id, None, 1),
-             (bug.status, None, bug.importance, False, u'foo', o.id, None, 1),
-             (bug.status, None, bug.importance, False, u'bar', o.id, None, 1),
+             (bug.status, None, bug.importance, False, 'foo', o.id, None, 1),
+             (bug.status, None, bug.importance, False, 'bar', o.id, None, 1),
              (bug.status, None, bug.importance, False, None, None, ap.id, 1),
-             (bug.status, None, bug.importance, False, u'foo', None, ap.id, 1),
-             (bug.status, None, bug.importance, False, u'bar', None, ap.id, 1),
+             (bug.status, None, bug.importance, False, 'foo', None, ap.id, 1),
+             (bug.status, None, bug.importance, False, 'bar', None, ap.id, 1),
             ],
             calculate_bugsummary_rows(product))
 

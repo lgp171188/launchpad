@@ -105,7 +105,7 @@ class TestFindBuildCandidatesBase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestFindBuildCandidatesBase, self).setUp()
+        super().setUp()
         self.publisher = make_publisher()
         self.publisher.prepareBreezyAutotest()
 
@@ -277,7 +277,7 @@ class TestFindBuildCandidatesPPABase(TestFindBuildCandidatesBase):
 
     def setUp(self):
         """Publish some builds for the test archive."""
-        super(TestFindBuildCandidatesPPABase, self).setUp()
+        super().setUp()
 
         # Create two PPAs and add some builds to each.
         self.ppa_joe = self.factory.makeArchive(
@@ -370,7 +370,7 @@ class TestFindBuildCandidatesDistroArchive(TestFindBuildCandidatesBase):
 
     def setUp(self):
         """Publish some builds for the test archive."""
-        super(TestFindBuildCandidatesDistroArchive, self).setUp()
+        super().setUp()
         # Create a primary archive and publish some builds for the
         # queue.
         self.non_ppa = self.factory.makeArchive(
@@ -432,7 +432,7 @@ class TestFindRecipeBuildCandidates(TestFindBuildCandidatesBase):
 
     def setUp(self):
         """Publish some builds for the test archive."""
-        super(TestFindRecipeBuildCandidates, self).setUp()
+        super().setUp()
         # Create a primary archive and publish some builds for the
         # queue.
         self.non_ppa = self.factory.makeArchive(

@@ -147,7 +147,7 @@ def update_one_cve(cve_node, log):
 
 
 @implementer(ITunableLoop)
-class CveUpdaterTunableLoop(object):
+class CveUpdaterTunableLoop:
     """An `ITunableLoop` for updating CVEs."""
 
     total_updated = 0
@@ -207,7 +207,7 @@ class CVEUpdater(LaunchpadCronScript):
             try:
                 with open(self.options.cvefile) as f:
                     cve_db = f.read()
-            except IOError:
+            except OSError:
                 raise LaunchpadScriptFailure(
                     'Unable to open CVE database in %s'
                     % self.options.cvefile)

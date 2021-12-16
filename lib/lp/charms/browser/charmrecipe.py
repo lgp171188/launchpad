@@ -356,12 +356,11 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
         if self.widgets.get("store_upload") is not None:
             # Set widgets as required or optional depending on the
             # store_upload field.
-            super(CharmRecipeAddView, self).validate_widgets(
-                data, ["store_upload"])
+            super().validate_widgets(data, ["store_upload"])
             store_upload = data.get("store_upload", False)
             self.widgets["store_name"].context.required = store_upload
             self.widgets["store_channels"].context.required = store_upload
-        super(CharmRecipeAddView, self).validate_widgets(data, names=names)
+        super().validate_widgets(data, names=names)
 
     @action("Create charm recipe", name="create")
     def create_action(self, action, data):
@@ -387,7 +386,7 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
             self.next_url = canonical_url(recipe)
 
     def validate(self, data):
-        super(CharmRecipeAddView, self).validate(data)
+        super().validate(data)
         owner = data.get("owner", None)
         if self.is_project_context:
             project = self.context
@@ -416,16 +415,14 @@ class BaseCharmRecipeEditView(
         if self.widgets.get("store_upload") is not None:
             # Set widgets as required or optional depending on the
             # store_upload field.
-            super(BaseCharmRecipeEditView, self).validate_widgets(
-                data, ["store_upload"])
+            super().validate_widgets(data, ["store_upload"])
             store_upload = data.get("store_upload", False)
             self.widgets["store_name"].context.required = store_upload
             self.widgets["store_channels"].context.required = store_upload
-        super(BaseCharmRecipeEditView, self).validate_widgets(
-            data, names=names)
+        super().validate_widgets(data, names=names)
 
     def validate(self, data):
-        super(BaseCharmRecipeEditView, self).validate(data)
+        super().validate(data)
         # These are the requirements for public snaps.
         if "owner" in data:
             owner = data.get("owner", self.context.owner)
@@ -511,7 +508,7 @@ class CharmRecipeEditView(BaseCharmRecipeEditView):
     custom_widget_store_channels = StoreChannelsWidget
 
     def validate(self, data):
-        super(CharmRecipeEditView, self).validate(data)
+        super().validate(data)
         owner = data.get("owner", None)
         project = data.get("project", None)
         name = data.get("name", None)

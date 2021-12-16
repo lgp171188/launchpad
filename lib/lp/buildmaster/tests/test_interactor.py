@@ -118,7 +118,7 @@ class TestBuilderInteractor(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(TestBuilderInteractor, self).setUp()
+        super().setUp()
         self.addCleanup(shut_down_default_process_pool)
 
     def test_extractBuildStatus_baseline(self):
@@ -505,7 +505,7 @@ class TestSlave(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(TestSlave, self).setUp()
+        super().setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.addCleanup(shut_down_default_process_pool)
 
@@ -700,7 +700,7 @@ class TestSlaveTimeouts(TestCase):
         timeout=30)
 
     def setUp(self):
-        super(TestSlaveTimeouts, self).setUp()
+        super().setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.clock = Clock()
         self.proxy = DeadProxy(b"url")
@@ -747,7 +747,7 @@ class TestSlaveConnectionTimeouts(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(TestSlaveConnectionTimeouts, self).setUp()
+        super().setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.clock = Clock()
         self.addCleanup(shut_down_default_process_pool)
@@ -779,7 +779,7 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         timeout=30)
 
     def setUp(self):
-        super(TestSlaveWithLibrarian, self).setUp()
+        super().setUp()
         self.slave_helper = self.useFixture(SlaveTestHelpers())
         self.addCleanup(shut_down_default_process_pool)
 

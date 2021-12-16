@@ -30,7 +30,6 @@ import time
 from xmlrpc.client import ProtocolError
 
 import pytz
-import six
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 from twisted.internet.threads import deferToThreadPool
@@ -257,7 +256,7 @@ class CheckwatchesMaster(WorkingBase):
         """
         with self.transaction:
             # Get the bug tracker.
-            if isinstance(bug_tracker, six.integer_types):
+            if isinstance(bug_tracker, int):
                 bug_tracker = getUtility(IBugTrackerSet).get(bug_tracker)
             # Save the name and url for later, since we might need it
             # to report an error after a transaction has been aborted.

@@ -12,7 +12,6 @@ import logging
 from operator import attrgetter
 
 import pytz
-import six
 from storm.expr import (
     And,
     Desc,
@@ -92,7 +91,7 @@ class BuildQueue(StormBase):
 
     def __init__(self, build_farm_job, estimated_duration=DEFAULT,
                  virtualized=DEFAULT, processor=DEFAULT, lastscore=None):
-        super(BuildQueue, self).__init__()
+        super().__init__()
         self._build_farm_job = build_farm_job
         self.estimated_duration = estimated_duration
         self.virtualized = virtualized
@@ -250,7 +249,7 @@ class BuildQueue(StormBase):
 
 
 @implementer(IBuildQueueSet)
-class BuildQueueSet(object):
+class BuildQueueSet:
     """Utility to deal with BuildQueue content class."""
 
     def get(self, buildqueue_id):
@@ -309,7 +308,7 @@ class BuildQueueSet(object):
 
         job_type_conditions = []
         job_sources = specific_build_farm_job_sources()
-        for job_type, job_source in six.iteritems(job_sources):
+        for job_type, job_source in job_sources.items():
             query = job_source.addCandidateSelectionCriteria()
             if query:
                 job_type_conditions.append(

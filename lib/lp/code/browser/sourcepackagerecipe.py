@@ -184,7 +184,7 @@ class SourcePackageRecipeView(LaunchpadView):
     """Default view of a SourcePackageRecipe."""
 
     def initialize(self):
-        super(SourcePackageRecipeView, self).initialize()
+        super().initialize()
         recipe = self.context
         if recipe.build_daily and recipe.daily_build_archive is None:
             self.request.response.addWarningNotification(
@@ -371,10 +371,10 @@ class SourcePackageRecipeRequestBuildsView(LaunchpadFormView):
     class schema(Interface):
         """Schema for requesting a build."""
         archive = Choice(
-            vocabulary='TargetPPAs', title=u'Archive', required=False)
+            vocabulary='TargetPPAs', title='Archive', required=False)
         distroseries = List(
             Choice(vocabulary='BuildableDistroSeries'),
-            title=u'Distribution series')
+            title='Distribution series')
 
     custom_widget_distroseries = LabeledMultiCheckBoxWidget
 
@@ -505,7 +505,7 @@ class SourcePackageRecipeRequestDailyBuildView(LaunchpadFormView):
     page_title = "Build now"
 
     def initialize(self):
-        super(SourcePackageRecipeRequestDailyBuildView, self).initialize()
+        super().initialize()
         if self.request.method == 'GET':
             self.request.response.redirect(canonical_url(self.context))
 
@@ -550,14 +550,14 @@ class ISourcePackageEditSchema(Interface):
         'distroseries',
         ])
     daily_build_archive = Choice(vocabulary='TargetPPAs',
-        title=u'Daily build archive',
+        title='Daily build archive',
         description=(
-            u'If built daily, this is the archive where the package '
-            u'will be uploaded.'))
+            'If built daily, this is the archive where the package '
+            'will be uploaded.'))
     recipe_text = has_structured_doc(
         Text(
-            title=u'Recipe text', required=True,
-            description=u"""The text of the recipe.
+            title='Recipe text', required=True,
+            description="""The text of the recipe.
                 <a href="/+help-code/recipe-syntax.html" target="help"
                   >Syntax help&nbsp;
                   <span class="sprite maybe action-icon">
@@ -580,10 +580,10 @@ USE_ARCHIVE_VOCABULARY = SimpleVocabulary((
 class ISourcePackageAddSchema(ISourcePackageEditSchema):
 
     daily_build_archive = Choice(vocabulary='TargetPPAs',
-        title=u'Daily build archive', required=False,
+        title='Daily build archive', required=False,
         description=(
-            u'If built daily, this is the archive where the package '
-            u'will be uploaded.'))
+            'If built daily, this is the archive where the package '
+            'will be uploaded.'))
 
     use_ppa = Choice(
         title=_('Which PPA'),
@@ -677,7 +677,7 @@ class RecipeRelatedBranchesMixin(LaunchpadFormView):
 
     def setUpWidgets(self, context=None):
         # Adds a new related branches widget.
-        super(RecipeRelatedBranchesMixin, self).setUpWidgets(context)
+        super().setUpWidgets(context)
         self.widgets['related_branches'].display_label = False
         self.widgets['related_branches'].setRenderedValue(dict(
             related_package_branch_info=self.related_package_branch_info,
@@ -712,7 +712,7 @@ class SourcePackageRecipeAddView(RecipeRelatedBranchesMixin,
     custom_widget_use_ppa = LaunchpadRadioWidget
 
     def initialize(self):
-        super(SourcePackageRecipeAddView, self).initialize()
+        super().initialize()
         widget = self.widgets['use_ppa']
         current_value = widget._getFormValue()
         self.use_ppa_existing = render_radio_widget_part(
@@ -730,7 +730,7 @@ class SourcePackageRecipeAddView(RecipeRelatedBranchesMixin,
         archive_widget._displayItemForMissingValue = False
 
     def setUpFields(self):
-        super(SourcePackageRecipeAddView, self).setUpFields()
+        super().setUpFields()
         # Ensure distro series widget allows input
         self.form_fields['distroseries'].for_input = True
 
@@ -820,7 +820,7 @@ class SourcePackageRecipeAddView(RecipeRelatedBranchesMixin,
         self.next_url = canonical_url(source_package_recipe)
 
     def validate(self, data):
-        super(SourcePackageRecipeAddView, self).validate(data)
+        super().validate(data)
         name = data.get('name', None)
         owner = data.get('owner', None)
         if name and owner:
@@ -860,7 +860,7 @@ class SourcePackageRecipeEditView(RecipeRelatedBranchesMixin,
     custom_widget_distroseries = LabeledMultiCheckBoxWidget
 
     def setUpFields(self):
-        super(SourcePackageRecipeEditView, self).setUpFields()
+        super().setUpFields()
 
         # Ensure distro series widget allows input
         self.form_fields['distroseries'].for_input = True
@@ -872,8 +872,8 @@ class SourcePackageRecipeEditView(RecipeRelatedBranchesMixin,
             owner_field = self.schema['owner']
             any_owner_choice = PersonChoice(
                 __name__='owner', title=owner_field.title,
-                description=(u"As an administrator you are able to assign"
-                             u" this recipe to any person or team."),
+                description=("As an administrator you are able to assign"
+                             " this recipe to any person or team."),
                 required=True, vocabulary='ValidPersonOrTeam')
             any_owner_field = form.Fields(
                 any_owner_choice, render_context=self.render_context)
@@ -932,7 +932,7 @@ class SourcePackageRecipeEditView(RecipeRelatedBranchesMixin,
         return {ISourcePackageEditSchema: self.context}
 
     def validate(self, data):
-        super(SourcePackageRecipeEditView, self).validate(data)
+        super().validate(data)
         name = data.get('name', None)
         owner = data.get('owner', None)
         if name and owner:

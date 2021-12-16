@@ -3,7 +3,6 @@
 
 """Views of bases for charms."""
 
-__metaclass__ = type
 __all__ = [
     "CharmBaseSetNavigation",
     ]

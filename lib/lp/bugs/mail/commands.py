@@ -588,8 +588,7 @@ class AffectsEmailCommand(EmailCommand):
         try:
             bug_target = self.getBugTarget(path)
         except BugTargetNotFound as error:
-            raise EmailProcessingError(
-                six.text_type(error), stop_processing=True)
+            raise EmailProcessingError(str(error), stop_processing=True)
         event = None
 
         if isinstance(bug, CreateBugParams):
@@ -777,8 +776,7 @@ class InformationTypeEmailCommand(DBSchemaEditEmailCommand):
     RANK = 3
 
     def convertArguments(self, context):
-        args = super(InformationTypeEmailCommand, self).convertArguments(
-            context)
+        args = super().convertArguments(context)
         return {'information_type': args['informationtype']}
 
     def setAttributeValue(self, context, attr_name, attr_value):

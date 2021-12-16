@@ -66,7 +66,7 @@ class ApportJobTestCase(TestCaseWithFactory):
         # unserialized from JSON, so the representation returned by
         # apport_job.metadata will be different from what we originally
         # passed in.
-        metadata_expected = [u'some', u'arbitrary', u'metadata']
+        metadata_expected = ['some', 'arbitrary', 'metadata']
         self.assertEqual(metadata_expected, apport_job.metadata)
         self.assertProvides(apport_job, IApportJob)
 
@@ -90,7 +90,7 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(ProcessApportBlobJobTestCase, self).setUp()
+        super().setUp()
 
         # Create a BLOB using existing testing data.
 
@@ -218,7 +218,7 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
         # NotFoundError.
         self.assertRaises(
             NotFoundError,
-            getUtility(IProcessApportBlobJobSource).getByBlobUUID, u'foobar')
+            getUtility(IProcessApportBlobJobSource).getByBlobUUID, 'foobar')
 
     def test_create_job_creates_only_one(self):
         # IProcessApportBlobJobSource.create() will create only one
@@ -331,7 +331,7 @@ class TestTemporaryBlobStorageAddView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestTemporaryBlobStorageAddView, self).setUp()
+        super().setUp()
 
         # Create a BLOB using existing testing data.
         testfiles = os.path.join(config.root, 'lib/lp/bugs/tests/testfiles')

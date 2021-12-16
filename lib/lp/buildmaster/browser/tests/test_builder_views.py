@@ -110,7 +110,7 @@ class TestgetSpecificJobs(TestCaseWithFactory):
             getSpecificJobs, [build_farm_job])
 
 
-class BuildCreationMixin(object):
+class BuildCreationMixin:
 
     def markAsBuilt(self, build, builder):
         lfa = self.factory.makeLibraryFileAlias()
@@ -162,7 +162,7 @@ class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):
     nb_objects = 2
 
     def setUp(self):
-        super(TestBuilderHistoryView, self).setUp()
+        super().setUp()
         self.builder = self.factory.makeBuilder()
 
     def test_build_history_queries_count_view_recipe_builds(self):

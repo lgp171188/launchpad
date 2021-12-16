@@ -138,7 +138,7 @@ class TestGitRepositoryView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestGitRepositoryView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: 'on'}))
 
     def test_clone_instructions(self):
@@ -2153,7 +2153,7 @@ class TestGitRepositoryForkView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitRepositoryForkView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({GIT_REPOSITORY_FORK_ENABLED: 'on'}))
 
     def getReposOwnedBy(self, user):

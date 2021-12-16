@@ -99,7 +99,7 @@ class TestCharmRecipeNavigation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCharmRecipeNavigation, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_canonical_url(self):
@@ -124,7 +124,7 @@ class BaseTestCharmRecipeView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(BaseTestCharmRecipeView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         self.useFixture(FakeLogger())
         self.snap_store_client = FakeMethod()
@@ -804,7 +804,7 @@ class TestCharmRecipeDeleteView(BaseTestCharmRecipeView):
 class TestCharmRecipeView(BaseTestCharmRecipeView):
 
     def setUp(self):
-        super(TestCharmRecipeView, self).setUp()
+        super().setUp()
         self.project = self.factory.makeProduct(
             name="test-project", displayname="Test Project")
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
@@ -1011,7 +1011,7 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
 class TestCharmRecipeRequestBuildsView(BaseTestCharmRecipeView):
 
     def setUp(self):
-        super(TestCharmRecipeRequestBuildsView, self).setUp()
+        super().setUp()
         self.project = self.factory.makeProduct(
             name="test-project", displayname="Test Project")
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu

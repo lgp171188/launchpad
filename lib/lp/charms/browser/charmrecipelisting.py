@@ -38,7 +38,7 @@ class CharmRecipeListingView(LaunchpadView, FeedsMixin):
             "displayname": self.context.displayname}
 
     def initialize(self):
-        super(CharmRecipeListingView, self).initialize()
+        super().initialize()
         recipes = getUtility(ICharmRecipeSet).findByContext(
             self.context, visible_by_user=self.user)
         loader = partial(

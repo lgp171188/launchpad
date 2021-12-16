@@ -46,7 +46,7 @@ class BranchTargetWidget(BrowserWidget, InputWidget):
             return
         fields = [
             Choice(
-                __name__='product', title=u'Project',
+                __name__='product', title='Project',
                 required=True, vocabulary='Product'),
             ]
         for field in fields:
@@ -126,7 +126,7 @@ class BranchTargetWidget(BrowserWidget, InputWidget):
                 self.getInputValue()
         except InputErrors as error:
             self._error = error
-        return super(BranchTargetWidget, self).error()
+        return super().error()
 
     def __call__(self):
         """See zope.formlib.interfaces.IBrowserWidget."""

@@ -132,7 +132,7 @@ def bugmessageSetUp(test):
 
 def enableDSPPickerSetUp(test):
     setUp(test)
-    ff = FeatureFixture({u'disclosure.dsp_picker.enabled': u'on'})
+    ff = FeatureFixture({'disclosure.dsp_picker.enabled': 'on'})
     ff.setUp()
     test.globs['dsp_picker_feature_fixture'] = ff
 

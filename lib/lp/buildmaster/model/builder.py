@@ -93,7 +93,7 @@ class Builder(StormBase):
     def __init__(self, processors, url, name, title, owner, active=True,
                  virtualized=True, vm_host=None, vm_reset_protocol=None,
                  builderok=True, manual=False):
-        super(Builder, self).__init__()
+        super().__init__()
         # The processors cache starts out empty so that the processors
         # property setter doesn't issue an additional query.
         get_property_cache(self)._processors_cache = []
@@ -229,7 +229,7 @@ class BuilderProcessor(StormBase):
 
 
 @implementer(IBuilderSet)
-class BuilderSet(object):
+class BuilderSet:
     """See IBuilderSet"""
 
     def __init__(self):

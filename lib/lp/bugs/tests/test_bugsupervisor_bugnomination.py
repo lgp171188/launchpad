@@ -24,7 +24,7 @@ class AddNominationTestMixin:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(AddNominationTestMixin, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
         self.user = self.factory.makePerson(name='ordinary-user')
         self.bug_supervisor = self.factory.makePerson(name='no-ordinary-user')
@@ -34,7 +34,7 @@ class AddNominationTestMixin:
 
     def tearDown(self):
         logout()
-        super(AddNominationTestMixin, self).tearDown()
+        super().tearDown()
 
     def test_user_addNominationFor_series(self):
         # A bug may not be nominated for a series of a product with an

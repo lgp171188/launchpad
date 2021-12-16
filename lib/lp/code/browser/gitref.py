@@ -66,6 +66,7 @@ from lp.services.webapp import (
     Link,
     )
 from lp.services.webapp.authorization import check_permission
+from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.escaping import structured
 from lp.snappy.browser.hassnaps import (
     HasSnapsMenuMixin,
@@ -275,6 +276,10 @@ class GitRefView(LaunchpadView, HasSnapsViewMixin, HasCharmRecipesViewMixin):
                 '<a href="+recipes">%s recipes</a> using this branch.',
                 count).escapedtext
 
+    def getStatusReports(self, commit_sha1):
+        reports = self.context.getStatusReports(commit_sha1)
+        return BatchNavigator(reports, self.request)
+
 
 class GitRefRegisterMergeProposalSchema(Interface):
     """The schema to define the form for registering a new merge proposal."""
@@ -302,8 +307,8 @@ class GitRefRegisterMergeProposalSchema(Interface):
 
     review_type = copy_field(
         ICodeReviewVoteReference['review_type'],
-        description=u'Lowercase keywords describing the type of review you '
-                     'would like to be performed.')
+        description='Lowercase keywords describing the type of review you '
+                    'would like to be performed.')
 
     commit_message = IBranchMergeProposal['commit_message']
 
@@ -338,11 +343,10 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
         """Show a 404 if the repository namespace doesn't support proposals."""
         if not self.context.namespace.supports_merge_proposals:
             raise NotFound(self.context, '+register-merge')
-        super(GitRefRegisterMergeProposalView, self).initialize()
+        super().initialize()
 
     def setUpWidgets(self, context=None):
-        super(GitRefRegisterMergeProposalView, self).setUpWidgets(
-            context=context)
+        super().setUpWidgets(context=context)
 
         if not self.widgets['target_git_ref'].hasInput():
             if self.context.repository.namespace.has_defaults:

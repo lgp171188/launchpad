@@ -28,7 +28,7 @@ class TestCharmRecipeBuildChannelsWidget(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCharmRecipeBuildChannelsWidget, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         field = Dict(
             __name__="auto_build_channels",

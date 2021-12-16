@@ -1,7 +1,6 @@
 # Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import six
 from storm.expr import (
     Alias,
     And,
@@ -120,7 +119,7 @@ def get_bugsummary_constraint(target, cls=RawBugSummary):
     # Map to ID columns to work around Storm bug #682989.
     return [
         getattr(cls, k) == v
-        for (k, v) in six.iteritems(_get_bugsummary_constraint_bits(target))]
+        for (k, v) in _get_bugsummary_constraint_bits(target).items()]
 
 
 def get_bugtaskflat_constraint(target):
@@ -169,8 +168,8 @@ def calculate_bugsummary_changes(old, new):
     from the old one.
     """
     keys = set()
-    keys.update(six.iterkeys(old))
-    keys.update(six.iterkeys(new))
+    keys.update(old.keys())
+    keys.update(new.keys())
     added = {}
     updated = {}
     removed = []
@@ -206,7 +205,7 @@ def apply_bugsummary_changes(target, added, updated, removed):
         RawBugSummary.access_policy_id)
 
     # Postgres doesn't do bulk updates, so do a delete+add.
-    for key, count in six.iteritems(updated):
+    for key, count in updated.items():
         removed.append(key)
         added[key] = count
 
@@ -228,7 +227,7 @@ def apply_bugsummary_changes(target, added, updated, removed):
         create(
             target_cols + key_cols + (RawBugSummary.count,),
             [target_key + key + (count,)
-             for key, count in six.iteritems(added)])
+             for key, count in added.items()])
 
 
 def rebuild_bugsummary_for_target(target, log):
@@ -349,7 +348,7 @@ class BugSummaryRebuildTunableLoop(TunableLoop):
     maximum_chunk_size = 100
 
     def __init__(self, log, dry_run, abort_time=None):
-        super(BugSummaryRebuildTunableLoop, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.dry_run = dry_run
         self.targets = list(
             get_bugsummary_targets().union(get_bugtask_targets()))

@@ -152,7 +152,7 @@ class TestCharmRecipe(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCharmRecipe, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_implements_interfaces(self):
@@ -949,7 +949,7 @@ class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestCharmRecipeDeleteWithBuilds, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_delete_with_builds(self):
@@ -1032,7 +1032,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCharmRecipeSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_class_implements_interfaces(self):

@@ -51,7 +51,7 @@ class LookupBranch:
 
         As an extra step, the branch is verified by calling `_verify`.
         """
-        super(LookupBranch, self).__init__()
+        super().__init__()
         self.keys = args[:-1]
         self.result = args[-1]
         self._verify()

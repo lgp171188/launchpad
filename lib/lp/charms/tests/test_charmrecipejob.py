@@ -51,7 +51,7 @@ class TestCharmRecipeJob(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestCharmRecipeJob, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_provides_interface(self):
@@ -67,7 +67,7 @@ class TestCharmRecipeRequestBuildsJob(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestCharmRecipeRequestBuildsJob, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_provides_interface(self):

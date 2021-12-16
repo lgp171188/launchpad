@@ -390,7 +390,9 @@ class RevisionStatusReportSet:
         return IStore(RevisionStatusReport).find(
             RevisionStatusReport,
             git_repository=repository,
-            commit_sha1=commit_sha1)
+            commit_sha1=commit_sha1).order_by(
+                RevisionStatusReport.date_created,
+                RevisionStatusReport.id)
 
 
 class RevisionStatusArtifact(StormBase):

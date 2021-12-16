@@ -48,7 +48,7 @@ class TestCanonicalUrlForCharmRecipeBuild(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCanonicalUrlForCharmRecipeBuild, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_canonical_url(self):
@@ -70,7 +70,7 @@ class TestCharmRecipeBuildView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestCharmRecipeBuildView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_files(self):
@@ -162,7 +162,7 @@ class TestCharmRecipeBuildOperations(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCharmRecipeBuildOperations, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         self.useFixture(FakeLogger())
         self.build = self.factory.makeCharmRecipeBuild()

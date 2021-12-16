@@ -96,7 +96,7 @@ class ProxyURLMatcher(MatchesStructure):
     """Check that a string is a valid url for a builder proxy."""
 
     def __init__(self, job, now):
-        super(ProxyURLMatcher, self).__init__(
+        super().__init__(
             scheme=Equals("http"),
             username=Equals("{}-{}".format(
                 job.build.build_cookie, int(now))),
@@ -106,14 +106,14 @@ class ProxyURLMatcher(MatchesStructure):
             path=Equals(""))
 
     def match(self, matchee):
-        super(ProxyURLMatcher, self).match(urlsplit(matchee))
+        super().match(urlsplit(matchee))
 
 
 class RevocationEndpointMatcher(Equals):
     """Check that a string is a valid endpoint for proxy token revocation."""
 
     def __init__(self, job, now):
-        super(RevocationEndpointMatcher, self).__init__(
+        super().__init__(
             "{}/{}-{}".format(
                 config.builddmaster.builder_proxy_auth_api_endpoint,
                 job.build.build_cookie, int(now)))

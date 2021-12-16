@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from lazr.enum import BaseItem
-import six
 from zope.component import getUtility
 from zope.proxy import isProxy
 from zope.schema.interfaces import IField
@@ -55,7 +54,7 @@ def get_string_representation(obj):
         return obj.name
     elif isinstance(obj, BaseItem):
         return obj.title
-    elif isinstance(obj, six.string_types):
+    elif isinstance(obj, str):
         return obj
     elif isinstance(obj, bool):
         return str(obj)

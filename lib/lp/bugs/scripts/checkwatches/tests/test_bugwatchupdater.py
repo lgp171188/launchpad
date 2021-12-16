@@ -100,7 +100,7 @@ class BugWatchUpdaterTestCase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(BugWatchUpdaterTestCase, self).setUp()
+        super().setUp()
         self.checkwatches_master = CheckwatchesMaster(transaction)
         self.bug_task = self.factory.makeBugTask()
         self.bug_watch = self.factory.makeBugWatch(bug_task=self.bug_task)

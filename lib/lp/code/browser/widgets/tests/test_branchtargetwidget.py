@@ -53,10 +53,10 @@ class LaunchpadTargetWidgetTestCase(TestCaseWithFactory):
         }
 
     def setUp(self):
-        super(LaunchpadTargetWidgetTestCase, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct('pting')
         field = Reference(
-            __name__='target', schema=Interface, title=u'target')
+            __name__='target', schema=Interface, title='target')
         field = field.bind(Thing())
         request = LaunchpadTestRequest()
         self.widget = BranchTargetWidget(field, request)

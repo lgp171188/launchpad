@@ -61,12 +61,12 @@ class TestMaloneHandler(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestMaloneHandler, self).setUp()
+        super().setUp()
         self._old_policy = getSecurityPolicy()
         setSecurityPolicy(LaunchpadSecurityPolicy)
 
     def tearDown(self):
-        super(TestMaloneHandler, self).tearDown()
+        super().tearDown()
         setSecurityPolicy(self._old_policy)
 
     def test_getCommandsEmpty(self):

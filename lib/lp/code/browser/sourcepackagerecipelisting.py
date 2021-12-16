@@ -50,7 +50,7 @@ class BranchRecipeListingView(RecipeListingView):
     branch_enabled = False
 
     def initialize(self):
-        super(BranchRecipeListingView, self).initialize()
+        super().initialize()
         # Replace our context with a decorated branch, if it is not already
         # decorated.
         if (IBranch.providedBy(self.context) and

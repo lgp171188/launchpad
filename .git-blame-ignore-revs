@@ -8,3 +8,17 @@
 c348b945c29c723201380d9aca0e0c0298037c8c
 # apply pyupgrade --py3-plus to lp.archiveuploader
 65c3806b29ddd3d989a1b5a900c40e6599a38c3f
+# apply pyupgrade --py3-plus to lp.blueprints
+13dd22f798bdf4b564c387456e989127fde80195
+# apply pyupgrade --py3-plus to lp.bugs.{browser,externalbugtracker}
+93f0df63122a04197337e53197b4ac2d2048ab97
+# apply pyupgrade --py3-plus to lp.bugs.{interface,model}
+8f4ad57b8f0943040d28fcf7204c581b481bff73
+# apply pyupgrade --py3-plus to lp.bugs
+7f2f3372cfc3b59e805ddce7434757f068adcd26
+# apply pyupgrade --py3-plus to lp.buildmaster
+b6725842a2470e3927bb73bf400c4476a06ee3ba
+# apply pyupgrade --py3-plus to lp.charms
+474f07ab7c3f28d8b6b8e4f1bd4c56832cec3fab
+# apply pyupgrade --py3-plus to lp.code.browser
+47ee1259461aa54ad7ee967e85f6131be2b74125

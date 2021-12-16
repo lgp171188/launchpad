@@ -19,7 +19,7 @@ class TestDuplicateAttributes(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDuplicateAttributes, self).setUp(user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
 
     def setDuplicateofDirectly(self, bug, duplicateof):
         """Helper method to set duplicateof directly."""
@@ -39,8 +39,7 @@ class TestMarkDuplicateValidation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestMarkDuplicateValidation, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         self.bug = self.factory.makeBug()
         self.dupe_bug = self.factory.makeBug()
         self.dupe_bug.markAsDuplicate(self.bug)
@@ -55,7 +54,7 @@ class TestMarkDuplicateValidation(TestCaseWithFactory):
     def test_error_on_duplicate_to_duplicate(self):
         # Test that a bug cannot be marked a duplicate of
         # a bug that is already itself a duplicate.
-        msg = dedent(u"""
+        msg = dedent("""
             Bug %s is already a duplicate of bug %s. You
             can only mark a bug report as duplicate of one that
             isn't a duplicate itself.
@@ -66,7 +65,7 @@ class TestMarkDuplicateValidation(TestCaseWithFactory):
 
     def test_error_duplicate_to_itself(self):
         # Test that a bug cannot be marked its own duplicate
-        msg = html_escape(dedent(u"""
+        msg = html_escape(dedent("""
             You can't mark a bug as a duplicate of itself."""))
         self.assertDuplicateError(self.bug, self.bug, msg)
 
@@ -77,7 +76,7 @@ class TestMoveDuplicates(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestMoveDuplicates, self).setUp(user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
 
     def test_duplicates_are_moved(self):
         # Confirm that a bug with two duplicates can be marked

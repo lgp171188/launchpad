@@ -62,7 +62,7 @@ class TestBugConstraints(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugConstraints, self).setUp()
+        super().setUp()
         product = self.factory.makeProduct(name='foo')
         self.bug = self.factory.makeBug(target=product)
         self.bug_url = api_url(self.bug)
@@ -117,7 +117,7 @@ class TestBugDescriptionRepresentation(TestCaseWithFactory):
 
         self.assertEqual(
             self.findBugDescription(response),
-            u'<p>Useless bugs are useless. '
+            '<p>Useless bugs are useless. '
             'See <a class="bug-link" href="/bugs/%d">Bug %d</a>.</p>' % (
             self.bug_one.id, self.bug_one.id))
 
@@ -137,7 +137,7 @@ class TestBugDescriptionRepresentation(TestCaseWithFactory):
 
         self.assertEqual(
             self.findBugDescription(response),
-            u'<p>See <a class="bug-link" href="/bugs/%d">bug %d</a></p>' % (
+            '<p>See <a class="bug-link" href="/bugs/%d">bug %d</a></p>' % (
             self.bug_one.id, self.bug_one.id))
 
 
@@ -271,7 +271,7 @@ class TestBugMessages(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBugMessages, self).setUp(USER_EMAIL)
+        super().setUp(USER_EMAIL)
         self.bug = self.factory.makeBug()
         self.bug_url = api_url(self.bug)
         self.message1 = self.factory.makeMessage()

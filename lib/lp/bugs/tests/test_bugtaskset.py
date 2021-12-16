@@ -88,7 +88,7 @@ class TestSortingBugTasks(TestCase):
         tasks = bug_one.bugtasks
         task_names = [task.bugtargetdisplayname for task in tasks]
         self.assertEqual(task_names, [
-            u'Mozilla Firefox',
+            'Mozilla Firefox',
             'mozilla-firefox (Ubuntu)',
             'mozilla-firefox (Debian)',
         ])

@@ -55,7 +55,7 @@ class TestSourcePackageRecipeBuild(BrowserTestCase):
 
     def setUp(self):
         """Provide useful defaults."""
-        super(TestSourcePackageRecipeBuild, self).setUp()
+        super().setUp()
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         self.chef = self.factory.makePerson(
             displayname='Master Chef', name='chef')

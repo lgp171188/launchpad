@@ -68,6 +68,7 @@ from lp.code.browser.gitref import GitRefRegisterMergeProposalView
 from lp.code.enums import (
     BranchMergeProposalStatus,
     CodeReviewVote,
+    RevisionStatusResult,
     )
 from lp.code.errors import (
     GitRepositoryScanFault,
@@ -143,7 +144,7 @@ from lp.testing.views import (
 class GitHostingClientMixin:
 
     def setUp(self):
-        super(GitHostingClientMixin, self).setUp()
+        super().setUp()
         self.git_hosting_fixture = self.useFixture(GitHostingFixture())
 
 
@@ -551,7 +552,7 @@ class TestRegisterBranchMergeProposalViewMixin:
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestRegisterBranchMergeProposalViewMixin, self).setUp()
+        super().setUp()
         self.source_branch = self._makeBranch()
         self.user = self.factory.makePerson()
         login_person(self.user)
@@ -1414,7 +1415,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
 
     def test_preview_diff_utf8(self):
         """A preview_diff in utf-8 should be decoded as utf-8."""
-        text = ''.join(six.unichr(x) for x in range(255))
+        text = ''.join(chr(x) for x in range(255))
         diff = ''.join(unified_diff([''], [text])).encode('utf-8')
         self.setPreviewDiff(diff)
         transaction.commit()
@@ -1424,7 +1425,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
 
     def test_preview_diff_all_chars(self):
         """preview_diff should work on diffs containing all possible bytes."""
-        text = b''.join(six.int2byte(x) for x in range(255))
+        text = b''.join(bytes((x,)) for x in range(255))
         diff = b''.join(diff_bytes(unified_diff, [b''], [text]))
         self.setPreviewDiff(diff)
         transaction.commit()
@@ -1436,7 +1437,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
     def test_preview_diff_timeout(self):
         # The preview_diff will recover from a timeout set to get the
         # librarian content.
-        text = b''.join(six.int2byte(x) for x in range(255))
+        text = b''.join(bytes((x,)) for x in range(255))
         diff = b''.join(diff_bytes(unified_diff, [b''], [text]))
         preview_diff = self.setPreviewDiff(diff)
         transaction.commit()
@@ -1456,7 +1457,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # The preview_diff will recover from a LookupError while getting the
         # librarian content.  (This can happen e.g. on staging replicas of
         # the production database.)
-        text = b''.join(six.int2byte(x) for x in range(255))
+        text = b''.join(bytes((x,)) for x in range(255))
         diff = b''.join(diff_bytes(unified_diff, [b''], [text]))
         preview_diff = self.setPreviewDiff(diff)
         transaction.commit()
@@ -1633,6 +1634,50 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                 content=description[:497] + '...'))
         self.assertThat(browser.contents, HTMLContains(expected_meta))
 
+    def test_revisionStatusReports_display(self):
+        bmp = self.factory.makeBranchMergeProposalForGit()
+        sha1 = six.ensure_text(hashlib.sha1(b'0').hexdigest())
+        commit_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        report1 = self.factory.makeRevisionStatusReport(
+            user=bmp.source_git_repository.owner,
+            git_repository=bmp.source_git_repository,
+            title="CI", commit_sha1=sha1,
+            result_summary="120/120 tests passed",
+            url="https://foo.com",
+            result=RevisionStatusResult.SUCCEEDED)
+
+        self.useFixture(GitHostingFixture(log=[
+            {
+                'sha1': sha1,
+                'message': 'Sample message',
+                'author': {
+                    'name': 'Example Person',
+                    'email': 'person@example.org',
+                    'time': int(seconds_since_epoch(commit_date)),
+                    },
+                }
+            ]))
+
+        browser = self.getUserBrowser(canonical_url(bmp, rootsite='code'),
+                                      user=bmp.source_git_repository.owner)
+
+        reports_section = find_tags_by_class(browser.contents,
+                                             "status-reports-table")
+        with person_logged_in(bmp.source_git_repository.owner):
+            self.assertThat(
+                reports_section[0],
+                Within(
+                    Tag("first report title", "td"),
+                    Tag(
+                        "first report link", "a", text=report1.title,
+                        attrs={"href": report1.url})))
+
+            self.assertThat(
+                reports_section[0],
+                Tag(
+                    "first report summary", "td",
+                    text=report1.result_summary))
+
     def test_unmerged_commits_from_deleted_git_ref(self):
         # Even if the source Git ref has been deleted, we still know its tip
         # SHA-1 and can ask the repository for its unmerged commits.
@@ -1651,7 +1696,8 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                 }
             ]))
         bmp.source_git_repository.removeRefs([bmp.source_git_path])
-        browser = self.getUserBrowser(canonical_url(bmp, rootsite='code'))
+        browser = self.getUserBrowser(canonical_url(bmp, rootsite='code'),
+                                      user=bmp.source_git_repository.owner)
         tag = first_tag_by_class(browser.contents, 'commit-details')
         self.assertEqual(
             "%.7s...\nby\nExample Person &lt;person@example.org&gt;\n"
@@ -1675,7 +1721,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # contain a direct link to the Loggerhead diff rather than via the
         # webapp.  (This only works for public branches.)
         self.useFixture(
-            FeatureFixture({u'code.bzr.diff.disable_proxy': u'on'}))
+            FeatureFixture({'code.bzr.diff.disable_proxy': 'on'}))
         bmp = self.factory.makeBranchMergeProposal()
         view = create_initialized_view(bmp, '+index')
         cache = IJSONRequestCache(view.request)
@@ -1773,7 +1819,7 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBranchMergeProposalBrowserView, self).setUp()
+        super().setUp()
         self.hosting_fixture = self.useFixture(GitHostingFixture())
 
     def test_prerequisite_bzr(self):
@@ -2551,7 +2597,7 @@ class TestBranchMergeProposalLinkBugViewMixin:
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBranchMergeProposalLinkBugViewMixin, self).setUp()
+        super().setUp()
         self.bmp = self._makeBranchMergeProposal()
 
     def test_anonymous(self):

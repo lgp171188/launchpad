@@ -123,7 +123,7 @@ def shut_down_default_process_pool():
         _default_process_pool_shutdown = None
 
 
-class BuilderSlave(object):
+class BuilderSlave:
     """Add in a few useful methods for the XMLRPC slave.
 
     :ivar url: The URL of the actual builder. The XML-RPC resource and
@@ -342,7 +342,7 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
         builder.clean_status, builder.active, builder.failure_count)
 
 
-class BuilderInteractor(object):
+class BuilderInteractor:
 
     @staticmethod
     def makeSlaveFromVitals(vitals):
@@ -549,7 +549,7 @@ class BuilderInteractor(object):
         """
         builder_status = slave_status["builder_status"]
         if builder_status == "BuilderStatus.ABORTING":
-            logtail = u"Waiting for slave process to be terminated"
+            logtail = "Waiting for slave process to be terminated"
         elif slave_status.get("logtail") is not None:
             # slave_status["logtail"] is an xmlrpc.client.Binary instance,
             # and the contents might include invalid UTF-8 due to being a
@@ -560,7 +560,7 @@ class BuilderInteractor(object):
             # PostgreSQL text columns can't contain \0 characters, and since
             # we only use this for web UI display purposes there's no point
             # in going through contortions to store them.
-            logtail = logtail.replace(u"\0", u"")
+            logtail = logtail.replace("\0", "")
         else:
             logtail = None
         return logtail

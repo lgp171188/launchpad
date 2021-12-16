@@ -19,6 +19,7 @@ from testtools.matchers import (
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.code.enums import RevisionStatusResult
 from lp.code.errors import GitRepositoryScanFault
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
 from lp.code.interfaces.gitrepository import IGitRepositorySet
@@ -92,7 +93,7 @@ class TestGitRefNavigation(TestCaseWithFactory):
 class MissingCommitsNote(soupmatchers.Tag):
 
     def __init__(self):
-        super(MissingCommitsNote, self).__init__(
+        super().__init__(
             "missing commits note", "div",
             text="Some recent commit information could not be fetched.")
 
@@ -102,7 +103,7 @@ class TestGitRefView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestGitRefView, self).setUp()
+        super().setUp()
         self.hosting_fixture = self.useFixture(GitHostingFixture())
 
     def _test_rendering(self, branch_name):
@@ -169,6 +170,60 @@ class TestGitRefView(BrowserTestCase):
             "problem persists, contact Launchpad support.")
         self.assertIn(
             error_msg, extract_text(find_main_content(browser.contents)))
+
+    def test_revisionStatusReports(self):
+        repository = self.factory.makeGitRepository()
+        [ref] = self.factory.makeGitRefs(repository=repository,
+                                         paths=["refs/heads/branch"])
+        log = self.makeCommitLog()
+
+        # create 2 status reports for 2 of the 5 commits available here
+        report1 = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title="CI", commit_sha1=log[0]["sha1"],
+            result_summary="120/120 tests passed",
+            url="https://foo1.com",
+            result=RevisionStatusResult.SUCCEEDED)
+
+        report2 = self.factory.makeRevisionStatusReport(
+            user=repository.owner, git_repository=repository,
+            title="Lint", commit_sha1=log[1]["sha1"],
+            result_summary="Invalid import in test_file.py",
+            url="https://foo2.com",
+            result=RevisionStatusResult.FAILED)
+
+        self.hosting_fixture.getLog.result = list(log)
+        self.scanRef(ref, log[-1])
+        view = create_initialized_view(ref, "+index",
+                                       principal=repository.owner)
+        with person_logged_in(repository.owner):
+            contents = view.render()
+        reports_section = find_tags_by_class(contents, "status-reports-table")
+        with person_logged_in(repository.owner):
+            self.assertThat(
+                reports_section[0],
+                soupmatchers.Within(
+                    soupmatchers.Tag("first report title", "td"),
+                    soupmatchers.Tag(
+                        "first report link", "a", text=report1.title,
+                        attrs={"href": report1.url})))
+            self.assertThat(
+                reports_section[0],
+                soupmatchers.Tag(
+                    "first report summary", "td",
+                    text=report1.result_summary))
+            self.assertThat(
+                reports_section[1],
+                soupmatchers.Within(
+                    soupmatchers.Tag("second report title", "td"),
+                    soupmatchers.Tag(
+                        "second report link", "a", text=report2.title,
+                        attrs={"href": report2.url})))
+            self.assertThat(
+                reports_section[1],
+                soupmatchers.Tag(
+                    "second report summary", "td",
+                    text=report2.result_summary))
 
     def test_clone_instructions(self):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
