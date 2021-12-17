@@ -26,3 +26,5 @@ b6725842a2470e3927bb73bf400c4476a06ee3ba
 cee9b128d3e49ca814464eeeeec50e6bcabcc4ba
 # apply pyupgrade --py3-plus to lp.codehosting
 f36fe66e5e5a5e82ba8c3269e32d76bd573d1175
+# apply pyupgrade --py3-plus to lp.{coop,oci}
+fbed83f22424df8fa5647349493f78937a520db5
