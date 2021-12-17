@@ -225,6 +225,12 @@ class TestGitRefView(BrowserTestCase):
                     "second report summary", "td",
                     text=report2.result_summary))
 
+            # Ensure we don't display an empty expander for those commits
+            # that do not have status reports created for them - means we
+            # should only see 2 entries with class 'status-reports-table'
+            # on the page: reports_section[0] and reports_section[1]
+            self.assertTrue(len(reports_section) == 2)
+
     def test_clone_instructions(self):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])
         username = ref.owner.name

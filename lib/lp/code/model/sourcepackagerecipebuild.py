@@ -191,7 +191,7 @@ class SourcePackageRecipeBuild(SpecificBuildFarmJobSourceMixin,
                  archive, pocket, date_created):
         """Construct a SourcePackageRecipeBuild."""
         processor = distroseries.nominatedarchindep.processor
-        super(SourcePackageRecipeBuild, self).__init__()
+        super().__init__()
         self.build_farm_job = build_farm_job
         self.distroseries = distroseries
         self.recipe = recipe

@@ -130,7 +130,7 @@ class ObjectSet:
         del self._objects[db_object.id]
 
     def __iter__(self):
-        return six.itervalues(self._objects)
+        return iter(self._objects.values())
 
     def _find(self, **kwargs):
         [(key, value)] = kwargs.items()

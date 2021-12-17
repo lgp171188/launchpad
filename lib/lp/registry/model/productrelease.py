@@ -1,4 +1,4 @@
-# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -281,9 +281,14 @@ class ProductReleaseSet(object):
             return EmptyResultSet()
         return ProductReleaseFile.select(
             """ProductReleaseFile.productrelease IN %s""" % (
-            sqlvalues([release.id for release in releases])),
+                sqlvalues([release.id for release in releases])),
             orderBy='-date_uploaded',
-            prejoins=['libraryfile', 'libraryfile.content', 'productrelease'])
+            prejoins=[
+                'libraryfile',
+                'libraryfile.content',
+                'productrelease',
+                'signature',
+                ])
 
 
 def productrelease_to_milestone(productrelease):

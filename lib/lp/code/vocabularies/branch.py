@@ -70,7 +70,7 @@ class BranchRestrictedOnProductVocabulary(BranchVocabulary):
     """A vocabulary for searching branches restricted on product."""
 
     def __init__(self, context=None):
-        super(BranchRestrictedOnProductVocabulary, self).__init__(context)
+        super().__init__(context)
         if IProduct.providedBy(self.context):
             self.product = self.context
         elif IProductSeries.providedBy(self.context):
@@ -94,7 +94,7 @@ class HostedBranchRestrictedOnOwnerVocabulary(BranchVocabulary):
 
     def __init__(self, context=None):
         """Pass a Person as context, or anything else for the current user."""
-        super(HostedBranchRestrictedOnOwnerVocabulary, self).__init__(context)
+        super().__init__(context)
         if IPerson.providedBy(self.context):
             self.user = self.context
         else:

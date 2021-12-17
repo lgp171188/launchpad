@@ -67,7 +67,7 @@ class BranchFeedContentView(BranchView):
 
     def __init__(self, context, request, feed,
                  template='templates/branch.pt'):
-        super(BranchFeedContentView, self).__init__(context, request)
+        super().__init__(context, request)
         self.feed = feed
         self.template_ = template
 
@@ -196,7 +196,7 @@ class RevisionFeedContentView(LaunchpadView):
     """View for a revision feed contents."""
 
     def __init__(self, context, request, feed):
-        super(RevisionFeedContentView, self).__init__(context, request)
+        super().__init__(context, request)
         self.feed = feed
 
     @cachedproperty
@@ -391,7 +391,7 @@ class BranchFeed(BranchFeedBase):
     def initialize(self):
         """See `IFeed`."""
         # For a `BranchFeed` we must ensure that the branch is not private.
-        super(BranchFeed, self).initialize()
+        super().initialize()
         try:
             feed_allowed = not self.context.private
             if not feed_allowed:

@@ -102,7 +102,7 @@ class FakeLoggerheadServer(threading.Thread):
     """Thread that runs a fake loggerhead server."""
 
     def __init__(self):
-        super(FakeLoggerheadServer, self).__init__()
+        super().__init__()
         self.app = FakeLoggerheadApplication()
         self.server = make_server(
             'localhost', 0, self.app, handler_class=SilentWSGIRequestHandler)
@@ -162,7 +162,7 @@ class FakeTurnipServer(threading.Thread):
     """Thread that runs a fake turnip server."""
 
     def __init__(self):
-        super(FakeTurnipServer, self).__init__()
+        super().__init__()
         self.app = FakeTurnipApplication()
         self.server = make_server(
             'localhost', 0, self.app, handler_class=SilentWSGIRequestHandler)
@@ -186,7 +186,7 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
     layer = ZopelessAppServerLayer
 
     def setUp(self):
-        super(TestRequestDailyBuilds, self).setUp()
+        super().setUp()
         features = dict(SNAP_TESTING_FLAGS)
         features[CHARM_RECIPE_ALLOW_CREATE] = "on"
         self.useFixture(FeatureFixture(features))

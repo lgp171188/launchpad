@@ -14,11 +14,7 @@ import sys
 
 from lazr.restful.utils import get_current_browser_request
 import requests
-import six
-from six import (
-    ensure_text,
-    reraise,
-    )
+from six import ensure_text
 from six.moves.urllib.parse import (
     quote,
     urljoin,
@@ -89,9 +85,7 @@ class GitHostingClient:
         except Exception:
             _, val, tb = sys.exc_info()
             try:
-                reraise(
-                    RequestExceptionWrapper,
-                    RequestExceptionWrapper(*val.args), tb)
+                raise RequestExceptionWrapper(*val.args).with_traceback(tb)
             finally:
                 # Avoid traceback reference cycles.
                 del val, tb
@@ -131,7 +125,7 @@ class GitHostingClient:
             self._post("/repo", json=request)
         except requests.RequestException as e:
             raise GitRepositoryCreationFault(
-                "Failed to create Git repository: %s" % six.text_type(e), path)
+                "Failed to create Git repository: %s" % str(e), path)
 
     def getProperties(self, path):
         """See `IGitHostingClient`."""
@@ -139,8 +133,7 @@ class GitHostingClient:
             return self._get("/repo/%s" % path)
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get properties of Git repository: %s" %
-                six.text_type(e))
+                "Failed to get properties of Git repository: %s" % str(e))
 
     def setProperties(self, path, **props):
         """See `IGitHostingClient`."""
@@ -148,8 +141,7 @@ class GitHostingClient:
             self._patch("/repo/%s" % path, json=props)
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to set properties of Git repository: %s" %
-                six.text_type(e))
+                "Failed to set properties of Git repository: %s" % str(e))
 
     def getRefs(self, path, exclude_prefixes=None):
         """See `IGitHostingClient`."""
@@ -159,8 +151,7 @@ class GitHostingClient:
                 params={"exclude_prefix": exclude_prefixes})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get refs from Git repository: %s" %
-                six.text_type(e))
+                "Failed to get refs from Git repository: %s" % str(e))
 
     def getCommits(self, path, commit_oids, logger=None):
         """See `IGitHostingClient`."""
@@ -173,7 +164,7 @@ class GitHostingClient:
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
                 "Failed to get commit details from Git repository: %s" %
-                six.text_type(e))
+                str(e))
 
     def getLog(self, path, start, limit=None, stop=None, logger=None):
         """See `IGitHostingClient`."""
@@ -188,8 +179,7 @@ class GitHostingClient:
                 params={"limit": limit, "stop": stop})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get commit log from Git repository: %s" %
-                six.text_type(e))
+                "Failed to get commit log from Git repository: %s" % str(e))
 
     def getDiff(self, path, old, new, common_ancestor=False,
                 context_lines=None, logger=None):
@@ -204,8 +194,7 @@ class GitHostingClient:
             return self._get(url, params={"context_lines": context_lines})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get diff from Git repository: %s" %
-                six.text_type(e))
+                "Failed to get diff from Git repository: %s" % str(e))
 
     def getMergeDiff(self, path, base, head, prerequisite=None, logger=None):
         """See `IGitHostingClient`."""
@@ -219,8 +208,7 @@ class GitHostingClient:
             return self._get(url, params={"sha1_prerequisite": prerequisite})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to get merge diff from Git repository: %s" %
-                six.text_type(e))
+                "Failed to get merge diff from Git repository: %s" % str(e))
 
     def detectMerges(self, path, target, sources, logger=None):
         """See `IGitHostingClient`."""
@@ -235,8 +223,7 @@ class GitHostingClient:
                 json={"sources": sources})
         except requests.RequestException as e:
             raise GitRepositoryScanFault(
-                "Failed to detect merges in Git repository: %s" %
-                six.text_type(e))
+                "Failed to detect merges in Git repository: %s" % str(e))
 
     def delete(self, path, logger=None):
         """See `IGitHostingClient`."""
@@ -246,7 +233,7 @@ class GitHostingClient:
             self._delete("/repo/%s" % path)
         except requests.RequestException as e:
             raise GitRepositoryDeletionFault(
-                "Failed to delete Git repository: %s" % six.text_type(e))
+                "Failed to delete Git repository: %s" % str(e))
 
     def getBlob(self, path, filename, rev=None, logger=None):
         """See `IGitHostingClient`."""
@@ -262,8 +249,7 @@ class GitHostingClient:
                 raise GitRepositoryBlobNotFound(path, filename, rev=rev)
             else:
                 raise GitRepositoryScanFault(
-                    "Failed to get file from Git repository: %s" %
-                    six.text_type(e))
+                    "Failed to get file from Git repository: %s" % str(e))
         try:
             blob = base64.b64decode(response["data"].encode("UTF-8"))
             if len(blob) != response["size"]:
@@ -273,8 +259,7 @@ class GitHostingClient:
             return blob
         except Exception as e:
             raise GitRepositoryScanFault(
-                "Failed to get file from Git repository: %s" %
-                six.text_type(e))
+                "Failed to get file from Git repository: %s" % str(e))
 
     def copyRefs(self, path, operations, logger=None):
         """See `IGitHostingClient`."""
@@ -334,7 +319,7 @@ class GitHostingClient:
             else:
                 raise CannotRepackRepository(
                     "Failed to repack Git repository %s: %s" %
-                    (path, six.text_type(e)))
+                    (path, str(e)))
 
     def collectGarbage(self, path, logger=None):
         """See `IGitHostingClient`."""
@@ -349,4 +334,4 @@ class GitHostingClient:
         except requests.RequestException as e:
             raise CannotRunGitGC(
                 "Failed to run Git GC for repository %s: %s" %
-                (path, six.text_type(e)))
+                (path, str(e)))

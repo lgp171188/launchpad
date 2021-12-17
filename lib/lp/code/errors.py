@@ -70,7 +70,6 @@ import http.client
 
 from breezy.plugins.builder.recipe import RecipeParseError
 from lazr.restful.declarations import error_status
-import six
 
 from lp.app.errors import (
     NameLookupFailed,
@@ -203,8 +202,7 @@ class CannotUpgradeBranch(Exception):
     """"Made for subclassing."""
 
     def __init__(self, branch):
-        super(CannotUpgradeBranch, self).__init__(
-            self._msg_template % branch.bzr_identity)
+        super().__init__(self._msg_template % branch.bzr_identity)
         self.branch = branch
 
 
@@ -254,7 +252,7 @@ class BranchMergeProposalExists(InvalidBranchMergeProposal):
             display_name = "displayname"
         else:
             display_name = "display_name"
-        super(BranchMergeProposalExists, self).__init__(
+        super().__init__(
                 'There is already a branch merge proposal registered for '
                 'branch %s to land on %s that is still active.' %
                 (getattr(existing_proposal.merge_source, display_name),
@@ -363,7 +361,7 @@ class BranchFileNotFound(BranchHostingFault):
     """Raised when a file does not exist in a branch."""
 
     def __init__(self, branch_id, filename=None, file_id=None, rev=None):
-        super(BranchFileNotFound, self).__init__()
+        super().__init__()
         if (filename is None) == (file_id is None):
             raise AssertionError(
                 "Exactly one of filename and file_id must be given.")
@@ -416,7 +414,6 @@ class GitRepositoryCreationForbidden(GitRepositoryCreationException):
     """
 
 
-@six.python_2_unicode_compatible
 @error_status(http.client.BAD_REQUEST)
 class GitRepositoryCreatorNotMemberOfOwnerTeam(GitRepositoryCreationException):
     """Git repository creator is not a member of the owner team.
@@ -435,7 +432,6 @@ class GitRepositoryCreatorNotMemberOfOwnerTeam(GitRepositoryCreationException):
         return message
 
 
-@six.python_2_unicode_compatible
 @error_status(http.client.BAD_REQUEST)
 class GitRepositoryCreatorNotOwner(GitRepositoryCreationException):
     """A user cannot create a Git repository belonging to another user.
@@ -458,7 +454,7 @@ class GitRepositoryCreationFault(Exception):
     """Raised when there is a hosting fault creating a Git repository."""
 
     def __init__(self, message, path):
-        super(GitRepositoryCreationFault, self).__init__(message)
+        super().__init__(message)
         self.path = path
 
 
@@ -470,7 +466,7 @@ class GitRepositoryBlobNotFound(GitRepositoryScanFault):
     """Raised when a blob does not exist in a repository."""
 
     def __init__(self, path, filename, rev=None):
-        super(GitRepositoryBlobNotFound, self).__init__()
+        super().__init__()
         self.path = path
         self.filename = filename
         self.rev = rev
@@ -486,7 +482,7 @@ class GitRepositoryBlobUnsupportedRemote(Exception):
     """Raised when trying to fetch a blob from an unsupported remote host."""
 
     def __init__(self, repository_url):
-        super(GitRepositoryBlobUnsupportedRemote, self).__init__()
+        super().__init__()
         self.repository_url = repository_url
 
     def __str__(self):
@@ -565,7 +561,7 @@ class CannotModifyNonHostedGitRepository(Exception):
     """Raised when trying to modify a non-hosted Git repository."""
 
     def __init__(self, repository):
-        super(CannotModifyNonHostedGitRepository, self).__init__(
+        super().__init__(
             "Cannot modify non-hosted Git repository %s." %
             repository.display_name)
 
@@ -579,7 +575,7 @@ class CodeImportAlreadyRequested(Exception):
     """Raised when the user requests an import that is already requested."""
 
     def __init__(self, msg, requesting_user):
-        super(CodeImportAlreadyRequested, self).__init__(msg)
+        super().__init__(msg)
         self.requesting_user = requesting_user
 
 
@@ -593,7 +589,7 @@ class CodeImportInvalidTargetType(Exception):
     """Raised for code imports with an invalid target for their type."""
 
     def __init__(self, target, target_rcs_type):
-        super(CodeImportInvalidTargetType, self).__init__(
+        super().__init__(
             "Objects of type %s do not support code imports targeting %s." %
             (target.__class__.__name__, target_rcs_type))
 
@@ -603,7 +599,7 @@ class TooNewRecipeFormat(Exception):
     """The format of the recipe supplied was too new."""
 
     def __init__(self, supplied_format, newest_supported):
-        super(TooNewRecipeFormat, self).__init__()
+        super().__init__()
         self.supplied_format = supplied_format
         self.newest_supported = newest_supported
 

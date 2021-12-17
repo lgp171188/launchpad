@@ -16,7 +16,7 @@ from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
-expected_body = u"""\
+expected_body = """\
  * State: Successfully built
  * Recipe: person/recipe
  * Archive: ~archiveowner/ubuntu/ppa
@@ -27,7 +27,7 @@ expected_body = u"""\
  * Builder: http://launchpad.test/builders/bob
 """  # noqa: W291
 
-superseded_body = u"""\
+superseded_body = """\
  * State: Build for superseded Source
  * Recipe: person/recipe
  * Archive: ~archiveowner/ubuntu/ppa
@@ -53,10 +53,10 @@ class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
         """GenerateEmail produces the right headers and body."""
         person = self.factory.makePerson(name='person')
         cake = self.factory.makeSourcePackageRecipe(
-            name=u'recipe', owner=person)
+            name='recipe', owner=person)
         pantry_owner = self.factory.makePerson(name='archiveowner')
         pantry = self.factory.makeArchive(name='ppa', owner=pantry_owner)
-        secret = self.factory.makeDistroSeries(name=u'distroseries')
+        secret = self.factory.makeDistroSeries(name='distroseries')
         secret.nominatedarchindep = (
             self.factory.makeDistroArchSeries(distroseries=secret))
         build = self.factory.makeSourcePackageRecipeBuild(
@@ -64,11 +64,11 @@ class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=5))
         build.updateStatus(
             BuildStatus.FULLYBUILT,
-            builder=self.factory.makeBuilder(name=u'bob'))
+            builder=self.factory.makeBuilder(name='bob'))
         build.setLog(self.factory.makeLibraryFileAlias())
         ctrl = self.makeStatusEmail(build)
         self.assertEqual(
-            u'[recipe build #%d] of ~person recipe in distroseries: '
+            '[recipe build #%d] of ~person recipe in distroseries: '
             'Successfully built' % (build.id), ctrl.subject)
         body, footer = ctrl.body.split('\n-- \n')
         self.assertEqual(expected_body % build.log_url, body)
@@ -93,10 +93,10 @@ class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
         """GenerateEmail works when many fields are NULL."""
         person = self.factory.makePerson(name='person')
         cake = self.factory.makeSourcePackageRecipe(
-            name=u'recipe', owner=person)
+            name='recipe', owner=person)
         pantry_owner = self.factory.makePerson(name='archiveowner')
         pantry = self.factory.makeArchive(name='ppa', owner=pantry_owner)
-        secret = self.factory.makeDistroSeries(name=u'distroseries')
+        secret = self.factory.makeDistroSeries(name='distroseries')
         secret.nominatedarchindep = (
             self.factory.makeDistroArchSeries(distroseries=secret))
         build = self.factory.makeSourcePackageRecipeBuild(
@@ -105,7 +105,7 @@ class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
         Store.of(build).flush()
         ctrl = self.makeStatusEmail(build)
         self.assertEqual(
-            u'[recipe build #%d] of ~person recipe in distroseries: '
+            '[recipe build #%d] of ~person recipe in distroseries: '
             'Build for superseded Source' % (build.id), ctrl.subject)
         body, footer = ctrl.body.split('\n-- \n')
         self.assertEqual(superseded_body, body)

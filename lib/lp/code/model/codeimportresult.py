@@ -59,7 +59,7 @@ class CodeImportResult(StormBase):
     def __init__(self, code_import, machine, status, date_job_started,
                  requesting_user=None, log_excerpt=None, log_file=None,
                  date_created=UTC_NOW):
-        super(CodeImportResult, self).__init__()
+        super().__init__()
         self.code_import = code_import
         self.machine = machine
         self.status = status
@@ -80,7 +80,7 @@ class CodeImportResult(StormBase):
 
 
 @implementer(ICodeImportResultSet)
-class CodeImportResultSet(object):
+class CodeImportResultSet:
     """See `ICodeImportResultSet`."""
 
     def new(self, code_import, machine, requesting_user, log_excerpt,

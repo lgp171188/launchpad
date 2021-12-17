@@ -832,7 +832,7 @@ class RevisionStatusReportsFeatureDisabled(Unauthorized):
     """Only certain users can access APIs for revision status reports."""
 
     def __init__(self):
-        super(RevisionStatusReportsFeatureDisabled, self).__init__(
+        super().__init__(
             "You do not have permission to create revision status reports")
 
 

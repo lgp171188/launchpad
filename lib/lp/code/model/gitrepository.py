@@ -502,7 +502,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
                  description=None, status=None, loose_object_count=None,
                  pack_count=None, date_last_scanned=None,
                  date_last_repacked=None):
-        super(GitRepository, self).__init__()
+        super().__init__()
         self.repository_type = repository_type
         self.registrant = registrant
         self.owner = owner
@@ -800,7 +800,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         return Store.of(self).find(
             GitRef,
             GitRef.repository_id == self.id,
-            GitRef.path.startswith(u"refs/heads/")).order_by(GitRef.path)
+            GitRef.path.startswith("refs/heads/")).order_by(GitRef.path)
 
     @property
     def branches_by_date(self):
@@ -833,11 +833,11 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
                 self.getInternalPath(), default_branch=ref.path)
 
     def getRefByPath(self, path):
-        if path == u"HEAD":
+        if path == "HEAD":
             return GitRefDefault(self)
         paths = [path]
-        if not path.startswith(u"refs/heads/"):
-            paths.append(u"refs/heads/%s" % path)
+        if not path.startswith("refs/heads/"):
+            paths.append("refs/heads/%s" % path)
         refs = Store.of(self).find(
             GitRef,
             GitRef.repository_id == self.id,
@@ -866,8 +866,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
             raise ValueError('ref info object does not contain "sha1" key')
         if "type" not in obj:
             raise ValueError('ref info object does not contain "type" key')
-        if (not isinstance(obj["sha1"], six.string_types) or
-                len(obj["sha1"]) != 40):
+        if not isinstance(obj["sha1"], str) or len(obj["sha1"]) != 40:
             raise ValueError('ref info sha1 is not a 40-character string')
         if obj["type"] not in object_type_map:
             raise ValueError('ref info type is not a recognised object type')
@@ -1973,7 +1972,7 @@ class DeletionCallable(DeletionOperation):
     """Deletion operation that invokes a callable."""
 
     def __init__(self, affected_object, rationale, func, *args, **kwargs):
-        super(DeletionCallable, self).__init__(affected_object, rationale)
+        super().__init__(affected_object, rationale)
         self.func = func
         self.args = args
         self.kwargs = kwargs
@@ -2233,7 +2232,7 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
     _timestamp_format = "%Y-%m-%dT%H:%M:%S.%f"
 
     def __init__(self):
-        super(GitRepositoryMacaroonIssuer, self).__init__()
+        super().__init__()
         self.checkers = {
             "lp.principal.openid-identifier": self.verifyOpenIDIdentifier,
             "lp.expires": self.verifyExpires,
@@ -2262,8 +2261,7 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
 
     def issueMacaroon(self, context, user=None, **kwargs):
         """See `IMacaroonIssuer`."""
-        macaroon = super(GitRepositoryMacaroonIssuer, self).issueMacaroon(
-            context, user=user, **kwargs)
+        macaroon = super().issueMacaroon(context, user=user, **kwargs)
         naked_account = removeSecurityProxy(user).account
         macaroon.add_first_party_caveat(
             "lp.principal.openid-identifier " +

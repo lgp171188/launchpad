@@ -151,8 +151,7 @@ class ProjectGitTraversable(_BaseGitTraversable):
             if oci_project is None:
                 raise NoSuchOCIProjectName(ociproject_name)
             return owner, oci_project, None
-        return super(ProjectGitTraversable, self).traverse(
-            owner, name, segments)
+        return super().traverse(owner, name, segments)
 
     def getNamespace(self, owner):
         return getUtility(IGitNamespaceSet).get(owner, project=self.context)
@@ -240,8 +239,7 @@ class PersonGitTraversable(_BaseGitTraversable):
             `IGitRepository`).
         """
         if name == "+git":
-            return super(PersonGitTraversable, self).traverse(
-                owner, name, segments)
+            return super().traverse(owner, name, segments)
         else:
             if not valid_name(name):
                 raise InvalidProductName(name)
@@ -266,7 +264,7 @@ class DistributionOCIProjectGitTraversable(_BaseGitTraversable):
             owner, oci_project=self.context)
 
 
-class SegmentIterator(six.Iterator):
+class SegmentIterator:
     """An iterator that remembers the elements it has traversed."""
 
     def __init__(self, iterator):

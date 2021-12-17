@@ -24,7 +24,7 @@ from lp.testing.layers import DatabaseFunctionalLayer
 from lp.xmlrpc import faults
 
 
-NON_ASCII_NAME = u'nam\N{LATIN SMALL LETTER E WITH ACUTE}'
+NON_ASCII_NAME = 'nam\N{LATIN SMALL LETTER E WITH ACUTE}'
 
 
 class TestExpandURL(TestCaseWithFactory):
@@ -193,7 +193,7 @@ class TestExpandURL(TestCaseWithFactory):
         # find a branch, but it still resolves rather than erroring.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct()
-        nonexistent_branch = u'~%s/%s/%s' % (
+        nonexistent_branch = '~%s/%s/%s' % (
             owner.name, product.name, NON_ASCII_NAME)
         self.assertResolves(
             nonexistent_branch, urlutils.escape(nonexistent_branch))
@@ -236,7 +236,7 @@ class TestExpandURL(TestCaseWithFactory):
     def test_resolve_branch_with_no_such_owner_non_ascii(self):
         # lp:~<non-ascii-string>/product/name returns NoSuchPersonWithName
         # with the name escaped.
-        nonexistent_owner_branch = u"~%s/%s/%s" % (
+        nonexistent_owner_branch = "~%s/%s/%s" % (
             NON_ASCII_NAME, self.factory.getUniqueString(),
             self.factory.getUniqueString())
         self.assertFault(

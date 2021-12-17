@@ -159,7 +159,7 @@ class TestGitRefGetCommits(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestGitRefGetCommits, self).setUp()
+        super().setUp()
         [self.ref] = self.factory.makeGitRefs()
         self.authors = [self.factory.makePerson() for _ in range(2)]
         with admin_logged_in():
@@ -492,7 +492,7 @@ class TestGitRefCreateMergeProposal(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitRefCreateMergeProposal, self).setUp()
+        super().setUp()
         with admin_logged_in():
             self.project = self.factory.makeProduct()
             self.user = self.factory.makePerson()

@@ -286,7 +286,7 @@ class RevisionSet:
                            parent_id=parent_id)
 
         # Create revision properties.
-        for name, value in six.iteritems(properties):
+        for name, value in properties.items():
             RevisionProperty(revision=revision, name=name, value=value)
 
         return revision
@@ -377,7 +377,7 @@ class RevisionSet:
         for bzr_revision in revisions:
             db_id = revision_db_id[six.ensure_text(bzr_revision.revision_id)]
             # Property data: revision DB id, name, value.
-            for name, value in six.iteritems(bzr_revision.properties):
+            for name, value in bzr_revision.properties.items():
                 # pristine-tar properties can be huge, and storing them
                 # in the database provides no value. Exclude them.
                 if name.startswith('deb-pristine-delta'):

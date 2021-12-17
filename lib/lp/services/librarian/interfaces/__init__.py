@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Librarian interfaces."""
@@ -174,6 +174,9 @@ class ILibraryFileAliasSet(Interface):
         """Return all LibraryFileAlias whose content's sha256 match the
         given sha256.
         """
+
+    def preloadLastDownloaded(lfas):
+        """Preload last_downloaded for a collection of `LibraryFileAlias`es."""
 
 
 class ILibraryFileDownloadCount(Interface):

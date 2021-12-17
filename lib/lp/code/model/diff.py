@@ -98,7 +98,7 @@ class Diff(SQLBase):
     @property
     def text(self):
         if self.diff_text is None:
-            return u''
+            return ''
         else:
             with reduced_timeout(
                     0.01, webapp_max=2.0,
@@ -385,13 +385,13 @@ class PreviewDiff(Storm):
             source_revision = bmp.source_branch.getBranchRevision(
                 revision_id=self.source_revision_id)
             if source_revision and source_revision.sequence:
-                source_rev = u'r{}'.format(source_revision.sequence)
+                source_rev = 'r{}'.format(source_revision.sequence)
             else:
                 source_rev = self.source_revision_id
             target_revision = bmp.target_branch.getBranchRevision(
                 revision_id=self.target_revision_id)
             if target_revision and target_revision.sequence:
-                target_rev = u'r{}'.format(target_revision.sequence)
+                target_rev = 'r{}'.format(target_revision.sequence)
             else:
                 target_rev = self.target_revision_id
         else:
@@ -402,7 +402,7 @@ class PreviewDiff(Storm):
             source_rev = self.source_revision_id[:7]
             target_rev = self.target_revision_id[:7]
 
-        return u'{} into {}'.format(source_rev, target_rev)
+        return '{} into {}'.format(source_rev, target_rev)
 
     @property
     def has_conflicts(self):
@@ -433,8 +433,8 @@ class PreviewDiff(Storm):
             preview.target_revision_id = target_revision.decode('utf-8')
             preview.branch_merge_proposal = bmp
             preview.diff = diff
-            preview.conflicts = u''.join(
-                six.text_type(conflict) + '\n' for conflict in conflicts)
+            preview.conflicts = ''.join(
+                str(conflict) + '\n' for conflict in conflicts)
         else:
             source_repository = bmp.source_git_repository
             target_repository = bmp.target_git_repository
@@ -449,8 +449,8 @@ class PreviewDiff(Storm):
             response = getUtility(IGitHostingClient).getMergeDiff(
                 path, bmp.target_git_commit_sha1, bmp.source_git_commit_sha1,
                 prerequisite=bmp.prerequisite_git_commit_sha1)
-            conflicts = u"".join(
-                u"Conflict in %s\n" % path for path in response['conflicts'])
+            conflicts = "".join(
+                "Conflict in %s\n" % path for path in response['conflicts'])
             preview = cls.create(
                 bmp, response['patch'].encode('utf-8'),
                 bmp.source_git_commit_sha1, bmp.target_git_commit_sha1,

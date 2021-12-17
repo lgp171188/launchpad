@@ -859,7 +859,7 @@ class TestRecipeBranchRoundTrippingMixin:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestRecipeBranchRoundTrippingMixin, self).setUp()
+        super().setUp()
         self.base_branch = self.makeBranch()
         self.nested_branch = self.makeBranch()
         self.merged_branch = self.makeBranch()

@@ -138,7 +138,7 @@ class MatchesFault(MatchesStructure):
 
     def __init__(self, expected_fault):
         fault_matchers = {}
-        if (isinstance(expected_fault, six.class_types) and
+        if (isinstance(expected_fault, type) and
                 issubclass(expected_fault, faults.LaunchpadFault)):
             fault_matchers["faultCode"] = Equals(expected_fault.error_code)
         else:
@@ -146,17 +146,17 @@ class MatchesFault(MatchesStructure):
             fault_string = expected_fault.faultString
             # XXX cjwatson 2019-09-27: InvalidBranchName.faultString is
             # bytes, so we need this to handle that case.  Should it be?
-            if not isinstance(fault_string, six.text_type):
+            if not isinstance(fault_string, str):
                 fault_string = fault_string.decode("UTF-8")
             fault_matchers["faultString"] = Equals(fault_string)
-        super(MatchesFault, self).__init__(**fault_matchers)
+        super().__init__(**fault_matchers)
 
 
 class TestGitAPIMixin:
     """Helper methods for `IGitAPI` tests, and security-relevant tests."""
 
     def setUp(self):
-        super(TestGitAPIMixin, self).setUp()
+        super().setUp()
         self.git_api = xmlrpc.client.ServerProxy(
             "http://xmlrpc-private.launchpad.test:8087/git",
             transport=XMLRPCTestTransport())
@@ -495,7 +495,7 @@ class TestGitAPIMixin:
         repository = removeSecurityProxy(
             self.factory.makeGitRepository(
                 owner=requester, information_type=InformationType.USERDATA))
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertTranslates(requester, path, repository, True, private=True)
 
     def test_translatePath_cannot_see_private_repository(self):
@@ -503,14 +503,14 @@ class TestGitAPIMixin:
         repository = removeSecurityProxy(
             self.factory.makeGitRepository(
                 information_type=InformationType.USERDATA))
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertGitRepositoryNotFound(requester, path)
 
     def test_translatePath_anonymous_cannot_see_private_repository(self):
         repository = removeSecurityProxy(
             self.factory.makeGitRepository(
                 information_type=InformationType.USERDATA))
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertGitRepositoryNotFound(None, path, can_authenticate=False)
         self.assertUnauthorized(None, path, can_authenticate=True)
 
@@ -518,7 +518,7 @@ class TestGitAPIMixin:
         requester = self.factory.makePerson()
         team = self.factory.makeTeam(self.factory.makePerson())
         repository = self.factory.makeGitRepository(owner=team)
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertTranslates(requester, path, repository, False)
         self.assertPermissionDenied(requester, path, permission="write")
 
@@ -526,7 +526,7 @@ class TestGitAPIMixin:
         requester = self.factory.makePerson()
         repository = self.factory.makeGitRepository(
             owner=requester, repository_type=GitRepositoryType.IMPORTED)
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertTranslates(requester, path, repository, False)
         self.assertPermissionDenied(requester, path, permission="write")
 
@@ -538,7 +538,7 @@ class TestGitAPIMixin:
         message = "%s is not a member of %s" % (
             requester.displayname, team.displayname)
         self.assertPermissionDenied(
-            requester, u"/~%s/+git/random" % team.name, message=message,
+            requester, "/~%s/+git/random" % team.name, message=message,
             permission="write")
 
     def test_translatePath_create_other_user(self):
@@ -547,7 +547,7 @@ class TestGitAPIMixin:
         other_person = self.factory.makePerson()
         project = self.factory.makeProduct()
         name = self.factory.getUniqueString()
-        path = u"/~%s/%s/+git/%s" % (other_person.name, project.name, name)
+        path = "/~%s/%s/+git/%s" % (other_person.name, project.name, name)
         message = "%s cannot create Git repositories owned by %s" % (
             requester.displayname, other_person.displayname)
         self.assertPermissionDenied(
@@ -558,7 +558,7 @@ class TestGitAPIMixin:
         # repository and immediately set it as the default for that project.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
-        path = u"/%s" % project.name
+        path = "/%s" % project.name
         message = "%s cannot create Git repositories owned by %s" % (
             requester.displayname, project.owner.displayname)
         initial_count = getUtility(IAllGitRepositories).count()
@@ -577,7 +577,7 @@ class TestGitAPIMixin:
         distribution = self.factory.makeDistribution(
             oci_project_admin=self.factory.makeTeam())
         oci_project = self.factory.makeOCIProject(pillar=distribution)
-        path = u"/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
+        path = "/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
         message = "%s is not a member of %s" % (
             requester.displayname,
             oci_project.pillar.oci_project_admin.displayname)
@@ -594,11 +594,11 @@ class TestGitAPIMixin:
         other_person = self.factory.makePerson()
         repository = self.factory.makeGitRepository(owner=requester)
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/stable/next')
+            repository, ref_pattern='refs/heads/stable/next')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=other_person,
             can_force_push=True)
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertTranslates(
             other_person, path, repository, True, private=False)
 
@@ -608,11 +608,11 @@ class TestGitAPIMixin:
         other_person = self.factory.makePerson()
         repository = self.factory.makeGitRepository(owner=requester)
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/stable/next')
+            repository, ref_pattern='refs/heads/stable/next')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=grant_person,
             can_force_push=True)
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertTranslates(
             other_person, path, repository, False, private=False)
 
@@ -623,11 +623,11 @@ class TestGitAPIMixin:
             self.factory.makeGitRepository(
                 owner=requester, information_type=InformationType.USERDATA))
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/stable/next')
+            repository, ref_pattern='refs/heads/stable/next')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=other_person,
             can_force_push=True)
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertGitRepositoryNotFound(
             other_person, path, can_authenticate=True)
 
@@ -642,34 +642,34 @@ class TestGitAPIMixin:
             self.factory.makeGitRepository(owner=user_a))
 
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/stable/next')
+            repository, ref_pattern='refs/heads/stable/next')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=GitGranteeType.REPOSITORY_OWNER,
             can_force_push=True)
 
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/stable/protected')
+            repository, ref_pattern='refs/heads/stable/protected')
         self.factory.makeGitRuleGrant(rule=rule, grantee=stable_team)
 
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/archived/*')
+            repository, ref_pattern='refs/heads/archived/*')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=GitGranteeType.REPOSITORY_OWNER)
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=user_b, can_create=True)
 
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/stable/*')
+            repository, ref_pattern='refs/heads/stable/*')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=stable_team, can_push=True)
 
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/*/next')
+            repository, ref_pattern='refs/heads/*/next')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=next_team, can_force_push=True)
 
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/tags/*')
+            repository, ref_pattern='refs/tags/*')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=GitGranteeType.REPOSITORY_OWNER,
             can_create=True)
@@ -743,18 +743,18 @@ class TestGitAPIMixin:
             self.factory.makeGitRepository(owner=user_a))
 
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/master')
+            repository, ref_pattern='refs/heads/master')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=user_b, can_push=True)
 
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/heads/*')
+            repository, ref_pattern='refs/heads/*')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=GitGranteeType.REPOSITORY_OWNER,
             can_create=True, can_push=True, can_force_push=True)
 
         rule = self.factory.makeGitRule(
-            repository, ref_pattern=u'refs/tags/*')
+            repository, ref_pattern='refs/tags/*')
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=user_b, can_push=True)
 
@@ -797,11 +797,11 @@ class TestGitAPIMixin:
         repository = removeSecurityProxy(
             self.factory.makeGitRepository(owner=owner))
         self.factory.makeGitRuleGrant(
-            repository=repository, ref_pattern=u"refs/heads/next/*",
+            repository=repository, ref_pattern="refs/heads/next/*",
             grantee=grantee, can_push=True)
         paths = [
             # Properly-encoded UTF-8.
-            u"refs/heads/next/\N{BLACK HEART SUIT}".encode("UTF-8"),
+            "refs/heads/next/\N{BLACK HEART SUIT}".encode(),
             # Non-UTF-8.  (git does not require any particular encoding for
             # ref paths; non-UTF-8 ones won't work well everywhere, but it's
             # at least possible to round-trip them through Launchpad.)
@@ -1211,12 +1211,12 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # When this happens, it returns a Fault saying so, including the
         # path it couldn't translate.
         requester = self.factory.makePerson()
-        self.assertGitRepositoryNotFound(requester, u"/untranslatable")
+        self.assertGitRepositoryNotFound(requester, "/untranslatable")
 
     def test_translatePath_repository(self):
         requester = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertTranslates(requester, path, repository, False)
 
     def test_translatePath_repository_with_no_leading_slash(self):
@@ -1228,30 +1228,30 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_translatePath_repository_with_trailing_slash(self):
         requester = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
-        path = u"/%s/" % repository.unique_name
+        path = "/%s/" % repository.unique_name
         self.assertTranslates(requester, path, repository, False)
 
     def test_translatePath_repository_with_trailing_segments(self):
         requester = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
-        path = u"/%s/foo/bar" % repository.unique_name
+        path = "/%s/foo/bar" % repository.unique_name
         self.assertTranslates(
             requester, path, repository, False, trailing="foo/bar")
 
     def test_translatePath_no_such_repository(self):
         requester = self.factory.makePerson()
-        path = u"/%s/+git/no-such-repository" % requester.name
+        path = "/%s/+git/no-such-repository" % requester.name
         self.assertGitRepositoryNotFound(requester, path)
 
     def test_translatePath_no_such_repository_non_ascii(self):
         requester = self.factory.makePerson()
-        path = u"/%s/+git/\N{LATIN SMALL LETTER I WITH DIAERESIS}" % (
+        path = "/%s/+git/\N{LATIN SMALL LETTER I WITH DIAERESIS}" % (
             requester.name)
         self.assertGitRepositoryNotFound(requester, path)
 
     def test_translatePath_anonymous_public_repository(self):
         repository = self.factory.makeGitRepository()
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertTranslates(
             None, path, repository, False, can_authenticate=False)
         self.assertTranslates(
@@ -1260,7 +1260,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_translatePath_owned(self):
         requester = self.factory.makePerson()
         repository = self.factory.makeGitRepository(owner=requester)
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertTranslates(
             requester, path, repository, True, permission="write")
 
@@ -1268,7 +1268,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         team = self.factory.makeTeam(requester)
         repository = self.factory.makeGitRepository(owner=team)
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         self.assertTranslates(
             requester, path, repository, True, permission="write")
 
@@ -1279,7 +1279,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         with person_logged_in(repository.target.owner):
             getUtility(IGitRepositorySet).setDefaultRepository(
                 repository.target, repository)
-        path = u"/%s" % repository.target.name
+        path = "/%s" % repository.target.name
         self.assertTranslates(requester, path, repository, False)
 
     def test_translatePath_create_project_async(self):
@@ -1288,14 +1288,14 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
         self.assertCreates(
-            requester, u"/~%s/%s/+git/random" % (requester.name, project.name))
+            requester, "/~%s/%s/+git/random" % (requester.name, project.name))
 
     def test_translatePath_create_project_sync(self):
         self.useFixture(FeatureFixture({GIT_ASYNC_CREATE_REPO: ''}))
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
         self.assertCreates(
-            requester, u"/~%s/%s/+git/random" % (requester.name, project.name),
+            requester, "/~%s/%s/+git/random" % (requester.name, project.name),
             async_create=False)
 
     def test_translatePath_create_project_blocks_duplicate_calls(self):
@@ -1303,7 +1303,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # but blocks any further request to create the same repository.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
-        path = u"/~%s/%s/+git/random" % (requester.name, project.name)
+        path = "/~%s/%s/+git/random" % (requester.name, project.name)
         self.assertCreates(requester, path)
 
         auth_params = _make_auth_params(
@@ -1323,7 +1323,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             self.repository_set.setDefaultRepository(target, repository)
             self.assertCreatesFromClone(
                 target.owner,
-                u"/~%s/%s/+git/random" % (target.owner.name, target.name),
+                "/~%s/%s/+git/random" % (target.owner.name, target.name),
                 repository)
 
     def test_translatePath_create_project_clone_from_owner_default(self):
@@ -1337,7 +1337,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 target.owner, target, repository, user)
             self.assertCreatesFromClone(
                 target.owner,
-                u"/~%s/%s/+git/random" % (target.owner.name, target.name),
+                "/~%s/%s/+git/random" % (target.owner.name, target.name),
                 repository)
 
     def test_translatePath_create_package(self):
@@ -1347,7 +1347,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage()
         self.assertCreates(
             requester,
-            u"/~%s/%s/+source/%s/+git/random" % (
+            "/~%s/%s/+source/%s/+git/random" % (
                 requester.name,
                 dsp.distribution.name, dsp.sourcepackagename.name))
 
@@ -1358,45 +1358,45 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject()
         self.assertCreates(
             requester,
-            u"/~%s/%s/+oci/%s/+git/random" % (
+            "/~%s/%s/+oci/%s/+git/random" % (
                 requester.name, oci_project.pillar.name, oci_project.name))
 
     def test_translatePath_create_personal(self):
         # translatePath creates a personal repository that doesn't exist, if
         # it can.
         requester = self.factory.makePerson()
-        self.assertCreates(requester, u"/~%s/+git/random" % requester.name)
+        self.assertCreates(requester, "/~%s/+git/random" % requester.name)
 
     def test_translatePath_create_personal_team(self):
         # translatePath creates a personal repository for a team of which
         # the requester is a member.
         requester = self.factory.makePerson()
         team = self.factory.makeTeam(members=[requester])
-        self.assertCreates(requester, u"/~%s/+git/random" % team.name)
+        self.assertCreates(requester, "/~%s/+git/random" % team.name)
 
     def test_translatePath_create_native_string(self):
         # On Python 2, ASCII strings come in as native strings, not Unicode
         # strings. They work fine too.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
-        path = u"/~%s/%s/+git/random" % (requester.name, project.name)
+        path = "/~%s/%s/+git/random" % (requester.name, project.name)
         self.assertCreates(requester, six.ensure_str(path))
 
     def test_translatePath_anonymous_cannot_create(self):
         # Anonymous users cannot create repositories.
         project = self.factory.makeProject()
         self.assertGitRepositoryNotFound(
-            None, u"/%s" % project.name, permission="write",
+            None, "/%s" % project.name, permission="write",
             can_authenticate=False)
         self.assertUnauthorized(
-            None, u"/%s" % project.name, permission="write",
+            None, "/%s" % project.name, permission="write",
             can_authenticate=True)
 
     def test_translatePath_create_invalid_namespace(self):
         # Trying to create a repository at a path that isn't valid for Git
         # repositories returns a PermissionDenied fault.
         requester = self.factory.makePerson()
-        path = u"/~%s" % requester.name
+        path = "/~%s" % requester.name
         message = "'%s' is not a valid Git repository path." % path.strip("/")
         self.assertPermissionDenied(
             requester, path, message=message, permission="write")
@@ -1405,14 +1405,14 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # Creating a repository for a non-existent person fails.
         requester = self.factory.makePerson()
         self.assertNotFound(
-            requester, u"/~nonexistent/+git/random",
+            requester, "/~nonexistent/+git/random",
             "User/team 'nonexistent' does not exist.", permission="write")
 
     def test_translatePath_create_no_such_project(self):
         # Creating a repository for a non-existent project fails.
         requester = self.factory.makePerson()
         self.assertNotFound(
-            requester, u"/~%s/nonexistent/+git/random" % requester.name,
+            requester, "/~%s/nonexistent/+git/random" % requester.name,
             "Project 'nonexistent' does not exist.", permission="write")
 
     def test_translatePath_create_no_such_person_or_project(self):
@@ -1420,14 +1420,14 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # person is reported in preference.
         requester = self.factory.makePerson()
         self.assertNotFound(
-            requester, u"/~nonexistent/nonexistent/+git/random",
+            requester, "/~nonexistent/nonexistent/+git/random",
             "User/team 'nonexistent' does not exist.", permission="write")
 
     def test_translatePath_create_invalid_project(self):
         # Creating a repository with an invalid project name fails.
         requester = self.factory.makePerson()
         self.assertNotFound(
-            requester, u"/_bad_project/+git/random",
+            requester, "/_bad_project/+git/random",
             "Project '_bad_project' does not exist.", permission="write")
 
     def test_translatePath_create_missing_sourcepackagename(self):
@@ -1436,7 +1436,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         distro = self.factory.makeDistribution()
         repository_name = self.factory.getUniqueString()
-        path = u"/~%s/%s/+source/new-package/+git/%s" % (
+        path = "/~%s/%s/+source/new-package/+git/%s" % (
             requester.name, distro.name, repository_name)
         repository = self.assertCreates(requester, path)
         self.assertEqual(
@@ -1447,7 +1447,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         distro = self.factory.makeDistribution()
         repository_name = self.factory.getUniqueString()
-        path = u"/~%s/%s/+source/new package/+git/%s" % (
+        path = "/~%s/%s/+source/new package/+git/%s" % (
             requester.name, distro.name, repository_name)
         self.assertInvalidSourcePackageName(
             requester, path, "new package", permission="write")
@@ -1457,7 +1457,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
         invalid_name = "invalid name!"
-        path = u"/~%s/%s/+git/%s" % (
+        path = "/~%s/%s/+git/%s" % (
             requester.name, project.name, invalid_name)
         # LaunchpadValidationError unfortunately assumes its output is
         # always HTML, so it ends up double-escaped in XML-RPC faults.
@@ -1471,8 +1471,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # Creating a repository with a non-ASCII invalid name fails.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
-        invalid_name = u"invalid\N{LATIN SMALL LETTER E WITH ACUTE}"
-        path = u"/~%s/%s/+git/%s" % (
+        invalid_name = "invalid\N{LATIN SMALL LETTER E WITH ACUTE}"
+        path = "/~%s/%s/+git/%s" % (
             requester.name, project.name, invalid_name)
         # LaunchpadValidationError unfortunately assumes its output is
         # always HTML, so it ends up double-escaped in XML-RPC faults.
@@ -1490,7 +1490,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             membership_policy=TeamMembershipPolicy.RESTRICTED,
             members=[requester])
         project = self.factory.makeProduct(owner=owner)
-        repository = self.assertCreates(requester, u"/%s" % project.name)
+        repository = self.assertCreates(requester, "/%s" % project.name)
         self.assertTrue(repository.target_default)
         self.assertTrue(repository.owner_default)
         self.assertEqual(owner, repository.owner)
@@ -1500,7 +1500,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # default for a package.
         requester = self.factory.makePerson()
         dsp = self.factory.makeDistributionSourcePackage()
-        path = u"/%s/+source/%s" % (
+        path = "/%s/+source/%s" % (
             dsp.distribution.name, dsp.sourcepackagename.name)
         message = (
             "Cannot automatically set the default repository for this target; "
@@ -1518,7 +1518,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         repository = self.assertCreates(
             requester,
-            u"/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name))
+            "/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name))
         self.assertTrue(repository.target_default)
         self.assertTrue(repository.owner_default)
         self.assertEqual(oci_project_admin, repository.owner)
@@ -1529,7 +1529,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # default for that OCI project.
         requester = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
-        path = u"/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
+        path = "/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
         message = (
             "Cannot automatically set the default repository for this target; "
             "push to a named repository instead.")
@@ -1547,7 +1547,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         project = self.factory.makeProduct()
         repository = self.assertCreates(
-            requester, u"/~%s/%s" % (requester.name, project.name))
+            requester, "/~%s/%s" % (requester.name, project.name))
         self.assertFalse(repository.target_default)
         self.assertTrue(repository.owner_default)
         self.assertEqual(requester, repository.owner)
@@ -1559,7 +1559,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         team = self.factory.makeTeam(owner=requester)
         project = self.factory.makeProduct()
         repository = self.assertCreates(
-            requester, u"/~%s/%s" % (team.name, project.name))
+            requester, "/~%s/%s" % (team.name, project.name))
         self.assertFalse(repository.target_default)
         self.assertTrue(repository.owner_default)
         self.assertEqual(team, repository.owner)
@@ -1571,7 +1571,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         team = self.factory.makeTeam(members=[requester])
         project = self.factory.makeProduct()
         repository = self.assertCreates(
-            requester, u"/~%s/%s" % (team.name, project.name))
+            requester, "/~%s/%s" % (team.name, project.name))
         self.assertFalse(repository.target_default)
         self.assertTrue(repository.owner_default)
         self.assertEqual(team, repository.owner)
@@ -1581,7 +1581,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # default for a package.
         requester = self.factory.makePerson()
         dsp = self.factory.makeDistributionSourcePackage()
-        path = u"/~%s/%s/+source/%s" % (
+        path = "/~%s/%s/+source/%s" % (
             requester.name, dsp.distribution.name, dsp.sourcepackagename.name)
         repository = self.assertCreates(requester, path)
         self.assertFalse(repository.target_default)
@@ -1594,7 +1594,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         team = self.factory.makeTeam(owner=requester)
         dsp = self.factory.makeDistributionSourcePackage()
-        path = u"/~%s/%s/+source/%s" % (
+        path = "/~%s/%s/+source/%s" % (
             team.name, dsp.distribution.name, dsp.sourcepackagename.name)
         repository = self.assertCreates(requester, path)
         self.assertFalse(repository.target_default)
@@ -1607,7 +1607,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         team = self.factory.makeTeam(members=[requester])
         dsp = self.factory.makeDistributionSourcePackage()
-        path = u"/~%s/%s/+source/%s" % (
+        path = "/~%s/%s/+source/%s" % (
             team.name, dsp.distribution.name, dsp.sourcepackagename.name)
         repository = self.assertCreates(requester, path)
         self.assertFalse(repository.target_default)
@@ -1619,7 +1619,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # default for an OCI project.
         requester = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
-        path = u"/~%s/%s/+oci/%s" % (
+        path = "/~%s/%s/+oci/%s" % (
             requester.name, oci_project.pillar.name, oci_project.name)
         repository = self.assertCreates(requester, path)
         self.assertFalse(repository.target_default)
@@ -1632,7 +1632,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         team = self.factory.makeTeam(owner=requester)
         oci_project = self.factory.makeOCIProject()
-        path = u"/~%s/%s/+oci/%s" % (
+        path = "/~%s/%s/+oci/%s" % (
             team.name, oci_project.pillar.name, oci_project.name)
         repository = self.assertCreates(requester, path)
         self.assertFalse(repository.target_default)
@@ -1645,7 +1645,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         team = self.factory.makeTeam(members=[requester])
         oci_project = self.factory.makeOCIProject()
-        path = u"/~%s/%s/+oci/%s" % (
+        path = "/~%s/%s/+oci/%s" % (
             team.name, oci_project.pillar.name, oci_project.name)
         repository = self.assertCreates(requester, path)
         self.assertFalse(repository.target_default)
@@ -1661,7 +1661,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         initial_count = getUtility(IAllGitRepositories).count()
         oops_id = self.assertOopsOccurred(
-            requester, u"/~%s/+git/random" % requester.name,
+            requester, "/~%s/+git/random" % requester.name,
             permission="write")
         login(ANONYMOUS)
         self.assertEqual(
@@ -1691,7 +1691,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         issuer = getUtility(IMacaroonIssuer, "code-import-job")
         macaroons = [
             removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
-        path = u"/%s" % code_imports[0].git_repository.unique_name
+        path = "/%s" % code_imports[0].git_repository.unique_name
         self.assertUnauthorized(
             LAUNCHPAD_SERVICES, path, permission="write",
             macaroon_raw=macaroons[0].serialize())
@@ -1735,7 +1735,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         issuer = getUtility(IMacaroonIssuer, "code-import-job")
         macaroons = [
             removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
-        path = u"/%s" % code_imports[0].git_repository.unique_name
+        path = "/%s" % code_imports[0].git_repository.unique_name
         self.assertUnauthorized(
             LAUNCHPAD_SERVICES, path, permission="write",
             macaroon_raw=macaroons[0].serialize())
@@ -1780,7 +1780,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 removeSecurityProxy(issuer).issueMacaroon(build)
                 for build in builds]
             repository = refs[0].repository
-            path = u"/%s" % repository.unique_name
+            path = "/%s" % repository.unique_name
         self.assertUnauthorized(
             LAUNCHPAD_SERVICES, path, permission="write",
             macaroon_raw=macaroons[0].serialize())
@@ -1819,7 +1819,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     repository, user=requester)
                 for repository in repositories]
             paths = [
-                u"/%s" % repository.unique_name for repository in repositories]
+                "/%s" % repository.unique_name for repository in repositories]
         for i, repository in enumerate(repositories):
             for j, macaroon in enumerate(macaroons):
                 login(ANONYMOUS)
@@ -1853,7 +1853,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.useFixture(ZopeUtilityFixture(
             issuer, IMacaroonIssuer, name="test"))
         repository = self.factory.makeGitRepository()
-        path = u"/%s" % repository.unique_name
+        path = "/%s" % repository.unique_name
         macaroon = issuer.issueMacaroon(repository)
         requesters = [self.factory.makePerson() for _ in range(2)]
         for verified_user, authorized, unauthorized in (
@@ -1881,8 +1881,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester_owner = self.factory.makePerson()
         repository = self.factory.makeGitRepository(owner=requester_owner)
         self.factory.makeGitRefs(
-            repository=repository, paths=[u'refs/heads/master'])
-        removeSecurityProxy(repository).default_branch = u'refs/heads/master'
+            repository=repository, paths=['refs/heads/master'])
+        removeSecurityProxy(repository).default_branch = 'refs/heads/master'
         pushed_branch = 'branch1'
         self.assertHasMergeProposalURL(repository, pushed_branch,
                                        {"uid": requester_owner.id})
@@ -1892,9 +1892,9 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # Consequently LP will process any incoming branch from Turnip
         # as being non default and produce a merge proposal URL for it.
         self.factory.makeGitRefs(
-            repository=repository, paths=[u'refs/heads/%s' % pushed_branch])
+            repository=repository, paths=['refs/heads/%s' % pushed_branch])
         removeSecurityProxy(repository).default_branch = (
-                u'refs/heads/%s' % pushed_branch)
+                'refs/heads/%s' % pushed_branch)
         self.assertHasMergeProposalURL(repository, pushed_branch,
                                        {"uid": requester_owner.id})
 
@@ -1912,8 +1912,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         repository = self.factory.makeGitRepository(owner=requester)
         issuer = getUtility(IMacaroonIssuer, "git-repository")
         self.factory.makeGitRefs(
-            repository=repository, paths=[u'refs/heads/master'])
-        removeSecurityProxy(repository).default_branch = u'refs/heads/master'
+            repository=repository, paths=['refs/heads/master'])
+        removeSecurityProxy(repository).default_branch = 'refs/heads/master'
 
         pushed_branch = 'branch1'
         with person_logged_in(requester):
@@ -1940,8 +1940,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         owner = self.factory.makeTeam(members=requesters)
         repository = self.factory.makeGitRepository(owner=owner)
         self.factory.makeGitRefs(
-            repository=repository, paths=[u'refs/heads/master'])
-        removeSecurityProxy(repository).default_branch = u'refs/heads/master'
+            repository=repository, paths=['refs/heads/master'])
+        removeSecurityProxy(repository).default_branch = 'refs/heads/master'
         pushed_branch = 'branch1'
         macaroon = issuer.issueMacaroon(repository)
 

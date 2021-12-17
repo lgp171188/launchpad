@@ -175,7 +175,7 @@ class BranchMergeProposalJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(BranchMergeProposalJob, self).__init__()
+        super().__init__()
         json_data = simplejson.dumps(metadata)
         self.job = Job()
         self.branch_merge_proposal = branch_merge_proposal

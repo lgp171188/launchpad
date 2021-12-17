@@ -83,7 +83,7 @@ class CodeImport(StormBase):
 
     def __init__(self, registrant, owner, target, review_status, rcs_type=None,
                  url=None, cvs_root=None, cvs_module=None):
-        super(CodeImport, self).__init__()
+        super().__init__()
         self.registrant = registrant
         self.owner = owner
         if IBranch.providedBy(target):

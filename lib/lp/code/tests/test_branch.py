@@ -331,7 +331,7 @@ class TestComposePublicURL(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestComposePublicURL, self).setUp('admin@canonical.com')
+        super().setUp('admin@canonical.com')
 
     def test_composePublicURL_accepts_supported_schemes(self):
         # composePublicURL accepts all schemes that PublicCodehostingAPI

@@ -125,7 +125,7 @@ class GitJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(GitJob, self).__init__()
+        super().__init__()
         self.job = Job(**job_args)
         self.repository = repository
         self.job_type = job_type
@@ -177,7 +177,7 @@ class GitJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        oops_vars = super(GitJobDerived, self).getOopsVars()
+        oops_vars = super().getOopsVars()
         oops_vars.extend([
             ('git_job_id', self.context.job.id),
             ('git_job_type', self.context.job_type.title),

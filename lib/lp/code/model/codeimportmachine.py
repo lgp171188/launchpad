@@ -65,7 +65,7 @@ class CodeImportMachine(StormBase):
             Desc('CodeImportEvent.id')))
 
     def __init__(self, hostname, heartbeat=None):
-        super(CodeImportMachine, self).__init__()
+        super().__init__()
         self.hostname = hostname
         self.heartbeat = heartbeat
         self.state = CodeImportMachineState.OFFLINE
@@ -120,7 +120,7 @@ class CodeImportMachine(StormBase):
 
 
 @implementer(ICodeImportMachineSet)
-class CodeImportMachineSet(object):
+class CodeImportMachineSet:
     """See `ICodeImportMachineSet`."""
 
     def getAll(self):

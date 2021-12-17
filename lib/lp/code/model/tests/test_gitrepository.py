@@ -601,7 +601,7 @@ class TestGitIdentityMixin(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitIdentityMixin, self).setUp()
+        super().setUp()
         self.repository_set = getUtility(IGitRepositorySet)
 
     def assertGitIdentity(self, repository, identity_path):
@@ -792,7 +792,7 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestGitRepositoryDeletion, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.project = self.factory.makeProduct(owner=self.user)
         self.repository = self.factory.makeGitRepository(
@@ -1001,8 +1001,7 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestGitRepositoryDeletionConsequences, self).setUp(
-            user="test@canonical.com")
+        super().setUp(user="test@canonical.com")
         self.repository = self.factory.makeGitRepository()
         [self.ref] = self.factory.makeGitRefs(repository=self.repository)
         # The owner of the repository is subscribed to the repository when
@@ -1537,7 +1536,7 @@ class TestGitRepositoryPrivacy(TestCaseWithFactory):
 
     def setUp(self):
         # Use an admin user as we aren't checking edit permissions here.
-        super(TestGitRepositoryPrivacy, self).setUp("admin@canonical.com")
+        super().setUp("admin@canonical.com")
 
     def test_personal_repositories_for_private_teams_are_private(self):
         team = self.factory.makeTeam(
@@ -2865,7 +2864,7 @@ class TestGitRepositoryFork(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitRepositoryFork, self).setUp()
+        super().setUp()
         self.hosting_fixture = self.useFixture(GitHostingFixture())
 
     def test_fork(self):
@@ -3474,7 +3473,7 @@ class TestGitRepositorySet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitRepositorySet, self).setUp()
+        super().setUp()
         self.repository_set = getUtility(IGitRepositorySet)
 
     def test_new(self):
@@ -3775,7 +3774,7 @@ class TestGitRepositorySetDefaultsMixin:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitRepositorySetDefaultsMixin, self).setUp()
+        super().setUp()
         self.repository_set = getUtility(IGitRepositorySet)
         self.get_method = self.repository_set.getDefaultRepository
         self.set_method = (lambda target, repository, user:
@@ -3857,7 +3856,7 @@ class TestGitRepositorySetDefaultsOwnerMixin(
     TestGitRepositorySetDefaultsMixin):
 
     def setUp(self):
-        super(TestGitRepositorySetDefaultsOwnerMixin, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.get_method = partial(
             self.repository_set.getDefaultRepositoryForOwner, self.person)
@@ -4098,7 +4097,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertNewWorks(self.factory.makePerson())
 
     def test_new_repo_not_owner(self):
-        non_ascii_name = u'André Luís Lopes'
+        non_ascii_name = 'André Luís Lopes'
         other_user = self.factory.makePerson(displayname=non_ascii_name)
         owner_url = api_url(other_user)
         webservice_user = self.factory.makePerson()
@@ -4109,8 +4108,8 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         response = webservice.named_post(
             "/+git", "new", owner=owner_url, target=owner_url, name=name)
         self.assertEqual(400, response.status)
-        self.assertIn(u'cannot create Git repositories owned by'
-                      u' André Luís Lopes', response.body.decode('utf-8'))
+        self.assertIn('cannot create Git repositories owned by'
+                      ' André Luís Lopes', response.body.decode('utf-8'))
 
     def assertGetRepositoriesWorks(self, target_db):
         if IPerson.providedBy(target_db):
@@ -4978,7 +4977,7 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestRevisionStatusReportWebservice, self).setUp()
+        super().setUp()
         self.repository = self.factory.makeGitRepository()
         self.requester = self.repository.owner
         title = self.factory.getUniqueUnicode('report-title')
@@ -5034,7 +5033,7 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGitRepositoryMacaroonIssuer, self).setUp()
+        super().setUp()
         self.pushConfig("codehosting", git_macaroon_secret_key="some-secret")
 
     def test_issueMacaroon_refuses_branch(self):

@@ -85,7 +85,7 @@ class TestCodeImportBase(WithScenarios, TestCaseWithFactory):
         ]
 
     def setUp(self, *args, **kwargs):
-        super(TestCodeImportBase, self).setUp(*args, **kwargs)
+        super().setUp(*args, **kwargs)
         if self.needs_git_hosting_fixture:
             self.hosting_fixture = self.useFixture(GitHostingFixture())
 
@@ -372,8 +372,7 @@ class TestCodeImportStatusUpdate(TestCodeImportBase):
 
     def setUp(self):
         # Log in a VCS Imports member.
-        super(TestCodeImportStatusUpdate, self).setUp(
-            'david.allouche@canonical.com')
+        super().setUp('david.allouche@canonical.com')
         self.import_operator = getUtility(IPersonSet).getByEmail(
             'david.allouche@canonical.com')
         # Remove existing jobs.
@@ -505,12 +504,12 @@ class TestCodeImportResultsAttribute(TestCodeImportBase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestCodeImportResultsAttribute, self).setUp()
+        super().setUp()
         self.code_import = self.factory.makeCodeImport(
             target_rcs_type=self.target_rcs_type)
 
     def tearDown(self):
-        super(TestCodeImportResultsAttribute, self).tearDown()
+        super().tearDown()
         logout()
 
     def test_no_results(self):
@@ -571,7 +570,7 @@ class TestConsecutiveFailureCount(TestCodeImportBase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestConsecutiveFailureCount, self).setUp()
+        super().setUp()
         login('no-priv@canonical.com')
         self.machine = self.factory.makeCodeImportMachine()
         self.machine.setOnline()
@@ -713,7 +712,7 @@ class TestTryFailingImportAgain(TestCodeImportBase):
 
     def setUp(self):
         # Log in a VCS Imports member.
-        super(TestTryFailingImportAgain, self).setUp()
+        super().setUp()
         login_person(getUtility(ILaunchpadCelebrities).vcs_imports.teamowner)
 
     def test_mustBeFailing(self):
@@ -772,7 +771,7 @@ class TestRequestImport(TestCodeImportBase):
 
     def setUp(self):
         # We have to be logged in to request imports
-        super(TestRequestImport, self).setUp(user='no-priv@canonical.com')
+        super().setUp(user='no-priv@canonical.com')
 
     def test_requestsJob(self):
         code_import = self.factory.makeCodeImport(

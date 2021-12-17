@@ -187,7 +187,7 @@ class PackageBranchTarget(_BaseBranchTarget):
 @implementer(IBranchTarget)
 class PersonBranchTarget(_BaseBranchTarget):
 
-    name = u'+junk'
+    name = '+junk'
     default_stacked_on_branch = None
     default_merge_target = None
 

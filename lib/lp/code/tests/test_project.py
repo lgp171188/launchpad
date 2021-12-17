@@ -12,7 +12,7 @@ class TestProjectBranches(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectBranches, self).setUp()
+        super().setUp()
         self.projectgroup = self.factory.makeProject()
         self.product = self.factory.makeProduct(projectgroup=self.projectgroup)
 

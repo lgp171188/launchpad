@@ -1678,6 +1678,12 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                     "first report summary", "td",
                     text=report1.result_summary))
 
+            # Ensure we don't display an empty expander for those commits
+            # that do not have status reports created for them - means we
+            # should only see one entry with class 'status-reports-table'
+            # on the page: reports_section[0]
+            self.assertTrue(len(reports_section) == 1)
+
     def test_unmerged_commits_from_deleted_git_ref(self):
         # Even if the source Git ref has been deleted, we still know its tip
         # SHA-1 and can ask the repository for its unmerged commits.
