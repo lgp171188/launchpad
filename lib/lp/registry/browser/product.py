@@ -208,6 +208,7 @@ from lp.services.fields import (
     PublicPersonChoice,
     URIField,
     )
+from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     ApplicationMenu,
@@ -848,8 +849,10 @@ class ReleaseWithFiles:
             # returns all releases sorted properly.
             product = self.parent.parent
             release_delegates = product.release_by_id.values()
-            files = getUtility(IProductReleaseSet).getFilesForReleases(
-                release_delegates)
+            files = list(getUtility(IProductReleaseSet).getFilesForReleases(
+                release_delegates))
+            getUtility(ILibraryFileAliasSet).preloadLastDownloaded(
+                {file.libraryfile for file in files})
             for release_delegate in release_delegates:
                 release_delegate._files = []
             for file in files:
@@ -1271,8 +1274,6 @@ class ProductDownloadFilesView(LaunchpadView,
                                ProductDownloadFileMixin):
     """View class for the product's file downloads page."""
 
-    batch_size = config.launchpad.download_batch_size
-
     @property
     def page_title(self):
         return "%s project files" % self.context.displayname
@@ -1304,7 +1305,7 @@ class ProductDownloadFilesView(LaunchpadView,
                     if pair not in series_and_releases:
                         series_and_releases.append(pair)
         batch = BatchNavigator(series_and_releases, self.request,
-                               size=self.batch_size)
+                               size=config.launchpad.download_batch_size)
         batch.setHeadings("release", "releases")
         return batch
 

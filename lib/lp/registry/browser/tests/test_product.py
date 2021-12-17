@@ -1,4 +1,4 @@
-# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for product views."""
@@ -6,6 +6,7 @@
 __all__ = ['make_product_form']
 
 import re
+from textwrap import dedent
 
 from lazr.restful.fields import Reference
 from lazr.restful.interfaces import (
@@ -55,6 +56,7 @@ from lp.registry.interfaces.product import (
     License,
     )
 from lp.registry.interfaces.productseries import IProductSeries
+from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
@@ -69,6 +71,7 @@ from lp.testing import (
     login_celebrity,
     login_person,
     person_logged_in,
+    record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -833,6 +836,89 @@ class TestProductEditView(BrowserTestCase):
         updated_product = getUtility(IProductSet).getByName('fnord')
         self.assertEqual(
             InformationType.PUBLIC, updated_product.information_type)
+
+
+class TestProductDownloadFilesView(TestCaseWithFactory):
+    """Test `ProductDownloadFilesView`."""
+
+    layer = LaunchpadFunctionalLayer
+
+    def makeProductAndReleases(self):
+        product = self.factory.makeProduct()
+        for i in range(1, 5):
+            productseries = self.factory.makeProductSeries(
+                product=product, name="s%d" % i)
+            for j in range(1, 4):
+                milestone = self.factory.makeMilestone(
+                    productseries=productseries, name="%d.%d" % (i, j))
+                self.factory.makeProductReleaseFile(
+                    product=product, productseries=productseries,
+                    milestone=milestone)
+        return product
+
+    def test_series_and_releases_batch(self):
+        self.pushConfig("launchpad", download_batch_size=4)
+        product = self.makeProductAndReleases()
+        view = create_initialized_view(product, "+download")
+        batch = view.series_and_releases_batch.currentBatch()
+        self.assertEqual(
+            [("4.3", "s4"), ("4.2", "s4"), ("4.1", "s4"), ("3.3", "s3")],
+            [(sr.release.name_with_codename, sr.series.name) for sr in batch])
+        batch = batch.nextBatch()
+        self.assertEqual(
+            [("3.2", "s3"), ("3.1", "s3"), ("2.3", "s2"), ("2.2", "s2")],
+            [(sr.release.name_with_codename, sr.series.name) for sr in batch])
+
+    def test_query_count(self):
+        self.pushConfig("launchpad", download_batch_size=20)
+        product = self.factory.makeProduct()
+
+        def create_series_and_releases():
+            productseries = self.factory.makeProductSeries(product=product)
+            for _ in range(3):
+                self.factory.makeProductReleaseFile(
+                    product=product, productseries=productseries)
+
+        def render_product():
+            create_initialized_view(product, "+download").render()
+
+        recorder1, recorder2 = record_two_runs(
+            render_product, create_series_and_releases, 2)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+    def test_add_download_file_links(self):
+        # Project administrators have links at the bottom of each batched
+        # page to add new files for each series and release.
+        product = self.makeProductAndReleases()
+        login_person(product.owner)
+        view = create_initialized_view(
+            product, "+download", principal=product.owner)
+        admin_links = find_tag_by_id(view.render(), "admin-links")
+        expected_links = dedent("""
+            Add download file to the s4 series for release: 4.3, 4.2, 4.1
+            Add download file to the s3 series for release: 3.3, 3.2, 3.1
+            Add download file to the s2 series for release: 2.3, 2.2, 2.1
+            Add download file to the s1 series for release: 1.3, 1.2, 1.1
+            """)
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            expected_links, extract_text(admin_links))
+
+    def test_latest_release_on_index(self):
+        # The project index view shows the latest release for the project.
+        product = self.makeProductAndReleases()
+        view = create_initialized_view(product, "+index")
+        self.assertEqual(
+            "4.3", view.latest_release_with_download_files.version)
+
+    def test_latest_release_ignores_obsolete_series(self):
+        # The project index view ignores obsolete series for the purpose of
+        # showing the latest release.
+        product = self.makeProductAndReleases()
+        with person_logged_in(product.owner):
+            product.getSeries("s4").status = SeriesStatus.OBSOLETE
+        view = create_initialized_view(product, "+index")
+        self.assertEqual(
+            "3.3", view.latest_release_with_download_files.version)
 
 
 class ProductSetReviewLicensesViewTestCase(TestCaseWithFactory):

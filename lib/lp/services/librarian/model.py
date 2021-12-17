@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -40,7 +40,10 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 from lp.services.database.sqlbase import (
     session_store,
     SQLBase,
@@ -65,6 +68,10 @@ from lp.services.librarian.interfaces.client import (
     ILibrarianClient,
     IRestrictedLibrarianClient,
     LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
+    )
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
     )
 from lp.services.tokens import create_token
 
@@ -180,7 +187,7 @@ class LibraryFileAlias(SQLBase):
             self._datafile.close()
             self._datafile = None
 
-    @property
+    @cachedproperty
     def last_downloaded(self):
         """See `ILibraryFileAlias`."""
         store = Store.of(self)
@@ -270,6 +277,33 @@ class LibraryFileAliasSet(object):
             content = LibraryFileContent.id
             AND LibraryFileContent.sha256 = '%s'
             """ % sha256, clauseTables=['LibraryFileContent'])
+
+    def preloadLastDownloaded(self, lfas):
+        """See `ILibraryFileAliasSet`."""
+        store = IStore(LibraryFileAlias)
+        results = store.find(
+            (LibraryFileDownloadCount.libraryfilealias_id,
+             LibraryFileDownloadCount.day),
+            LibraryFileDownloadCount.libraryfilealias_id.is_in(
+                sorted(lfa.id for lfa in lfas)))
+        results.order_by(
+            # libraryfilealias doesn't need to be descending for
+            # correctness, but this allows the index on
+            # LibraryFileDownloadCount (libraryfilealias, day, country) to
+            # satisfy this query efficiently.
+            Desc(LibraryFileDownloadCount.libraryfilealias_id),
+            Desc(LibraryFileDownloadCount.day))
+        # Request the first row for each LFA, which corresponds to the most
+        # recent day due to the above ordering.
+        results.config(
+            distinct=(LibraryFileDownloadCount.libraryfilealias_id,))
+        now = datetime.now(pytz.utc).date()
+        lfas_by_id = {lfa.id: lfa for lfa in lfas}
+        for lfa_id, day in results:
+            get_property_cache(lfas_by_id[lfa_id]).last_downloaded = now - day
+            del lfas_by_id[lfa_id]
+        for lfa in lfas_by_id.values():
+            get_property_cache(lfa).last_downloaded = None
 
 
 @implementer(ILibraryFileDownloadCount)
