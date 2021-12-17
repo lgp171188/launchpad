@@ -181,6 +181,9 @@ class FakeLibrarian(Fixture):
 
         return None
 
+    def preloadLastDownloaded(self, lfas):
+        """See `ILibraryFileAliasSet`."""
+
     def beforeCompletion(self, txn):
         """See `ISynchronizer`."""
 

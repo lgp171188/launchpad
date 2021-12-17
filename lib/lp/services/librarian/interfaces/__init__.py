@@ -175,7 +175,7 @@ class ILibraryFileAliasSet(Interface):
         given sha256.
         """
 
-    def preloadLastDownloaded(self, lfas):
+    def preloadLastDownloaded(lfas):
         """Preload last_downloaded for a collection of `LibraryFileAlias`es."""
 
 
