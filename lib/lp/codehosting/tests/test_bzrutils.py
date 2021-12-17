@@ -71,7 +71,7 @@ class TestGetBranchStackedOnURL(WithScenarios, TestCaseWithControlDir):
         """
         if result is None:
             result = self.defaultTestResult()
-        super(TestGetBranchStackedOnURL, self).run(TestResultWrapper(result))
+        super().run(TestResultWrapper(result))
 
     def testGetBranchStackedOnUrl(self):
         # get_branch_stacked_on_url returns the URL of the stacked-on branch.
@@ -212,7 +212,7 @@ class TestGetVfsFormatClasses(TestCaseWithTransport):
     """
 
     def setUp(self):
-        super(TestGetVfsFormatClasses, self).setUp()
+        super().setUp()
         self.disable_directory_isolation()
         # This makes sure the connections held by the branches opened in the
         # test are dropped, so the daemon threads serving those branches can

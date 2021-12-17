@@ -192,7 +192,7 @@ class BazaarOopsRequest(ScriptRequest):
         :param user_id: The database ID of the user doing this.
         """
         data = [('user_id', user_id)]
-        super(BazaarOopsRequest, self).__init__(data, URL=None)
+        super().__init__(data, URL=None)
 
 
 def make_error_utility(pid=None):
@@ -229,8 +229,7 @@ class HttpAsLocalTransport(LocalTransport):
     def __init__(self, http_url):
         file_url = URI(
             scheme='file', host='', path=URI(http_url).path)
-        return super(HttpAsLocalTransport, self).__init__(
-            str(file_url))
+        return super().__init__(str(file_url))
 
     @classmethod
     def register(cls):

@@ -72,14 +72,14 @@ class FakeCodehostingEndpointProxy:
 class TestJobScheduler(TestCase):
 
     def setUp(self):
-        super(TestJobScheduler, self).setUp()
+        super().setUp()
         self.masterlock = 'master.lock'
 
     def tearDown(self):
         reset_logging()
         if os.path.exists(self.masterlock):
             os.unlink(self.masterlock)
-        super(TestJobScheduler, self).tearDown()
+        super().tearDown()
 
     def makeJobScheduler(self, branch_type_names=()):
         return scheduler.JobScheduler(
@@ -140,7 +140,7 @@ class TestPullerWireProtocol(TestCase):
             self.failure = failure
 
     def setUp(self):
-        super(TestPullerWireProtocol, self).setUp()
+        super().setUp()
         self.puller_protocol = self.StubPullerProtocol()
         self.protocol = scheduler.PullerWireProtocol(self.puller_protocol)
         self.protocol.makeConnection(self.StubTransport())
@@ -153,7 +153,7 @@ class TestPullerWireProtocol(TestCase):
         """Send each element of `arguments` to the protocol as a netstring."""
         for argument in arguments:
             if not isinstance(argument, bytes):
-                argument = six.text_type(argument).encode('UTF-8')
+                argument = str(argument).encode('UTF-8')
             self.protocol.dataReceived(self.convertToNetstring(argument))
 
     def assertUnexpectedErrorCalled(self, exception_type):
@@ -256,7 +256,7 @@ class TestPullerMonitorProtocol(ProcessTestsMixin, TestCase):
 
     def setUp(self):
         self.listener = self.StubPullerListener()
-        super(TestPullerMonitorProtocol, self).setUp()
+        super().setUp()
 
     def assertProtocolSuccess(self):
         """Assert that the protocol saw no unexpected errors."""
@@ -427,7 +427,7 @@ class TestPullerMaster(TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(TestPullerMaster, self).setUp()
+        super().setUp()
         self.status_client = FakeCodehostingEndpointProxy()
         self.arbitrary_branch_id = 1
         self.eventHandler = scheduler.PullerMaster(
@@ -502,7 +502,7 @@ class TestPullerMasterSpawning(TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(TestPullerMasterSpawning, self).setUp()
+        super().setUp()
         self.eventHandler = self.makePullerMaster('HOSTED')
         self.patch(reactor, 'spawnProcess', self.spawnProcess)
         self.commands_spawned = []
@@ -564,7 +564,7 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(TestPullerMasterIntegration, self).setUp()
+        super().setUp()
         self.makeCleanDirectory(config.codehosting.mirrored_branches_root)
         self.bzr_tree = self.make_branch_and_tree('src-branch')
         url = urljoin(self.serveOverHTTP(), 'src-branch')

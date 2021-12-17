@@ -97,12 +97,11 @@ class TestLaunchpadTransportImplementation(per_transport.TransportTests):
         """Arrange for `get_transport` to return wrapped LaunchpadTransports.
         """
         self.transport_server = TestingServer
-        super(TestLaunchpadTransportImplementation, self).setUp()
+        super().setUp()
 
     def run(self, result=None):
         """Run the test, with the result wrapped so that it knows about skips.
         """
         if result is None:
             result = self.defaultTestResult()
-        super(TestLaunchpadTransportImplementation, self).run(
-            TestResultWrapper(result))
+        super().run(TestResultWrapper(result))

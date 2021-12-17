@@ -49,6 +49,7 @@ repos:
             |buildmaster
             |charms
             |code
+            |codehosting
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

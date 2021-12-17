@@ -299,7 +299,7 @@ class FakeTeam(FakePerson):
     is_team = True
 
     def __init__(self, name, members=None):
-        super(FakeTeam, self).__init__(name)
+        super().__init__(name)
         if members is None:
             self._members = []
         else:
@@ -400,7 +400,7 @@ class FakeObjectFactory(ObjectFactory):
 
     def __init__(self, branch_set, person_set, product_set, distribution_set,
                  distroseries_set, sourcepackagename_set):
-        super(FakeObjectFactory, self).__init__()
+        super().__init__()
         self._branch_set = branch_set
         self._person_set = person_set
         self._product_set = product_set

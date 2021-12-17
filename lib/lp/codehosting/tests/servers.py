@@ -50,7 +50,7 @@ def set_up_test_user(test_user, test_team):
 class CodeHostingTac(TacTestSetup):
 
     def __init__(self, mirrored_area):
-        super(CodeHostingTac, self).__init__()
+        super().__init__()
         # The mirrored area.
         self._mirror_root = mirrored_area
         # Where the pidfile, logfile etc will go.

@@ -30,7 +30,6 @@ from breezy import (
     )
 from breezy.transport.local import LocalTransport
 from lazr.sshserver.sftp import FileIsADirectory
-import six
 from twisted.conch.interfaces import (
     ISFTPFile,
     ISFTPServer,
@@ -97,7 +96,7 @@ def with_sftp_error(func):
     return util.mergeFunctionMetadata(func, decorator)
 
 
-class DirectoryListing(six.Iterator):
+class DirectoryListing:
     """Class to satisfy openDirectory return interface.
 
     openDirectory returns an iterator -- with a `close` method.  Hence

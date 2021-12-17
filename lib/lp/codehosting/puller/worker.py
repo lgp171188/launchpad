@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import http.client
-import socket
 import sys
 
 
@@ -115,7 +114,7 @@ class PullerWorkerProtocol:
         self.sendNetstring(str(len(args)))
         for argument in args:
             if not isinstance(argument, bytes):
-                argument = six.text_type(argument).encode('UTF-8')
+                argument = str(argument).encode('UTF-8')
             self.sendNetstring(argument)
 
     def startMirroring(self):
@@ -178,7 +177,7 @@ class BranchMirrorerPolicy(BranchOpenPolicy):
         return None
 
 
-class BranchMirrorer(object):
+class BranchMirrorer:
     """A `BranchMirrorer` safely makes mirrors of branches.
 
     A `BranchMirrorer` has a `BranchOpenPolicy` to tell it which URLs are safe
@@ -399,7 +398,7 @@ class PullerWorker:
                 msg = "Authentication required."
             self._mirrorFailed(msg)
 
-        except socket.error as e:
+        except OSError as e:
             msg = 'A socket error occurred: %s' % str(e)
             self._mirrorFailed(msg)
 
