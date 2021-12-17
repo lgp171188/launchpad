@@ -84,7 +84,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
     """Test the mirroring functionality of PullerWorker."""
 
     def setUp(self):
-        super(TestPullerWorker, self).setUp()
+        super().setUp()
         BranchOpener.install_hook()
 
     def test_mirror_opener_with_stacked_on_url(self):
@@ -275,7 +275,7 @@ class TestReferenceOpener(TestCaseWithTransport):
     """Feature tests for safe opening of branch references."""
 
     def setUp(self):
-        super(TestReferenceOpener, self).setUp()
+        super().setUp()
         BranchOpener.install_hook()
 
     def createBranchReference(self, url):
@@ -337,7 +337,7 @@ class TestMirroredBranchPolicy(TestCase):
     """Tests specific to `MirroredBranchPolicy`."""
 
     def setUp(self):
-        super(TestMirroredBranchPolicy, self).setUp()
+        super().setUp()
         self.factory = LaunchpadObjectFactory()
 
     def testNoFileURL(self):
@@ -494,7 +494,7 @@ class TestWorkerProgressReporting(TestCaseWithTransport):
             self.calls.append(type)
 
     def setUp(self):
-        super(TestWorkerProgressReporting, self).setUp()
+        super().setUp()
         BranchOpener.install_hook()
         self.saved_factory = breezy.ui.ui_factory
         self.disable_directory_isolation()

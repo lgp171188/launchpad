@@ -113,7 +113,7 @@ class TestBugLinking(BzrSyncTestCase):
         BzrSyncTestCase.setUp(self)
 
     def makeFixtures(self):
-        super(TestBugLinking, self).makeFixtures()
+        super().makeFixtures()
         self.bug1 = self.factory.makeBug()
         sp = self.factory.makeSourcePackage(publish=True)
         self.bug1.addTask(self.bug1.owner, sp)
@@ -192,7 +192,7 @@ class TestBugLinking(BzrSyncTestCase):
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL='me@example.com'):
             self.bzr_tree.commit(
-                u'common parent', committer=author, rev_id=b'r1',
+                'common parent', committer=author, rev_id=b'r1',
                 allow_pointless=True)
 
             # Branch from the base revision.
@@ -201,17 +201,17 @@ class TestBugLinking(BzrSyncTestCase):
 
             # Commit to both branches
             self.bzr_tree.commit(
-                u'commit one', committer=author, rev_id=b'r2',
+                'commit one', committer=author, rev_id=b'r2',
                 allow_pointless=True)
             new_tree.commit(
-                u'commit two', committer=author, rev_id=b'r1.1.1',
+                'commit two', committer=author, rev_id=b'r1.1.1',
                 allow_pointless=True,
                 revprops={'bugs': '%s fixed' % self.getBugURL(self.bug1)})
 
             # Merge and commit.
             self.bzr_tree.merge_from_branch(new_tree.branch)
             self.bzr_tree.commit(
-                u'merge', committer=author, rev_id=b'r3',
+                'merge', committer=author, rev_id=b'r3',
                 allow_pointless=True)
 
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)

@@ -154,7 +154,7 @@ class TestModifiedBranchesUpdateLocations(TestCase):
     """Test the path splitting an reassebly adding to locations."""
 
     def setUp(self):
-        super(TestModifiedBranchesUpdateLocations, self).setUp()
+        super().setUp()
         self.script = ModifiedBranchesScript(
             'modified-branches', test_args=['--last-hours=12'])
 

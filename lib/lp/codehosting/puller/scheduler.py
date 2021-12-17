@@ -466,7 +466,7 @@ class JobScheduler:
 class LockError(Exception):
 
     def __init__(self, lockfilename):
-        super(LockError, self).__init__()
+        super().__init__()
         self.lockfilename = lockfilename
 
     def __str__(self):

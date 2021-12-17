@@ -100,7 +100,7 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
     scheme = None
 
     def setUp(self):
-        super(SSHTestCase, self).setUp()
+        super().setUp()
         self.disable_directory_isolation()
         tac_handler = SSHServerLayer.getTacHandler()
         self.server = SSHCodeHostingServer(self.scheme, tac_handler)
@@ -268,7 +268,7 @@ class SmokeTest(WithScenarios, SSHTestCase):
 
     def setUp(self):
         self.scheme = 'bzr+ssh'
-        super(SmokeTest, self).setUp()
+        super().setUp()
         self.first_tree = 'first'
         self.second_tree = 'second'
 

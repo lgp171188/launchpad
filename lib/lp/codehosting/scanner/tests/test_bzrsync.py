@@ -91,7 +91,7 @@ class BzrSyncTestCase(TestCaseWithTransport, TestCaseWithFactory):
     LOG = "Log message"
 
     def setUp(self):
-        super(BzrSyncTestCase, self).setUp()
+        super().setUp()
         BranchOpener.install_hook()
         self.disable_directory_isolation()
         self.useBzrBranches(direct_database=True)
@@ -101,7 +101,7 @@ class BzrSyncTestCase(TestCaseWithTransport, TestCaseWithFactory):
         self.addCleanup(Store.of(self.db_branch).flush)
 
     def tearDown(self):
-        super(BzrSyncTestCase, self).tearDown()
+        super().tearDown()
 
     def makeFixtures(self):
         """Makes test fixtures before we switch to the scanner db user."""
@@ -243,7 +243,7 @@ class BzrSyncTestCase(TestCaseWithTransport, TestCaseWithFactory):
             # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
             # required to generate the revision-id.
             with override_environ(BRZ_EMAIL='me@example.com'):
-                trunk_tree.commit(u'base revision', rev_id=base_rev_id)
+                trunk_tree.commit('base revision', rev_id=base_rev_id)
 
                 # Branch from the base revision.
                 new_db_branch = self.makeDatabaseBranch(
@@ -253,12 +253,12 @@ class BzrSyncTestCase(TestCaseWithTransport, TestCaseWithFactory):
                 branch_tree.pull(trunk_tree.branch)
 
                 # Commit to both branches.
-                trunk_tree.commit(u'trunk revision', rev_id=trunk_rev_id)
-                branch_tree.commit(u'branch revision', rev_id=branch_rev_id)
+                trunk_tree.commit('trunk revision', rev_id=trunk_rev_id)
+                branch_tree.commit('branch revision', rev_id=branch_rev_id)
 
                 # Merge branch into trunk.
                 trunk_tree.merge_from_branch(branch_tree.branch)
-                trunk_tree.commit(u'merge revision', rev_id=merge_rev_id)
+                trunk_tree.commit('merge revision', rev_id=merge_rev_id)
 
         return (db_branch, trunk_tree), (new_db_branch, branch_tree)
 

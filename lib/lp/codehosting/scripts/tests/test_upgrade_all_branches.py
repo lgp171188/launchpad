@@ -25,7 +25,7 @@ class TestUpgradeAllBranchesScript(TestCaseWithFactory):
     layer = AppServerLayer
 
     def setUp(self):
-        super(TestUpgradeAllBranchesScript, self).setUp()
+        super().setUp()
         # useBzrBranches changes cwd
         self.cwd = os.getcwd()
 

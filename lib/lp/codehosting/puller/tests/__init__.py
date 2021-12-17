@@ -6,7 +6,6 @@
 import io
 import os
 import shutil
-import socket
 
 from breezy.tests import TestCaseWithTransport
 from breezy.tests.http_server import (
@@ -67,7 +66,7 @@ def fixed_handle_request(self):
     """Handle one request, possibly blocking. """
     try:
         request, client_address = self.get_request()
-    except socket.error:
+    except OSError:
         return
     if self.verify_request(request, client_address):
         try:
@@ -94,7 +93,7 @@ class PullerBranchTestCase(TestCaseWithTransport, TestCaseWithFactory,
     """Some useful code for the more-integration-y puller tests."""
 
     def setUp(self):
-        super(PullerBranchTestCase, self).setUp()
+        super().setUp()
         self.disable_directory_isolation()
 
     def makeCleanDirectory(self, path):

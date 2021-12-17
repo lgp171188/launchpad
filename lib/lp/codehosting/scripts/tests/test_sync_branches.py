@@ -41,7 +41,7 @@ class BranchSyncProcessMatches(MatchesListwise):
 
     def __init__(self, branch):
         branch_path = branch_id_to_path(branch.id)
-        super(BranchSyncProcessMatches, self).__init__([
+        super().__init__([
             Equals(([
                 "rsync", "-a", "--delete-after",
                 "bazaar.launchpad.net::mirrors/%s/" % branch_path,
@@ -57,7 +57,7 @@ class TestSyncBranches(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSyncBranches, self).setUp()
+        super().setUp()
         self.tempdir = self.useFixture(TempDir()).path
         self.pushConfig("codehosting", mirrored_branches_root=self.tempdir)
         self.mock_check_output = self.useFixture(
