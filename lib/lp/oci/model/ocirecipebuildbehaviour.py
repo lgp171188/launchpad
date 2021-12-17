@@ -126,8 +126,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         Return the extra arguments required by the slave for the given build.
         """
         build = self.build
-        args = yield super(OCIRecipeBuildBehaviour, self).extraBuildArgs(
-            logger=logger)
+        args = yield super().extraBuildArgs(logger=logger)
         yield self.addProxyArgs(args, build.recipe.allow_internet)
         # XXX twom 2020-02-17 This may need to be more complex, and involve
         # distribution name.
@@ -186,7 +185,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         self._ensureFilePath(name, file_path, upload_path)
         yield self._slave.getFile(file_hash, file_path)
 
-        with open(file_path, 'r') as file_fp:
+        with open(file_path) as file_fp:
             return json.load(file_fp)
 
     def _extractLayerFiles(self, upload_path, section, config, digests, files):

@@ -50,6 +50,8 @@ repos:
             |charms
             |code
             |codehosting
+            |coop
+            |oci
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

@@ -99,7 +99,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
     retry_count = 0
 
     def setUp(self):
-        super(TestOCIRegistryClient, self).setUp()
+        super().setUp()
         self.setConfig()
         self.setupProxySpy()
         self.manifest = [{
@@ -1174,7 +1174,7 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestRegistryHTTPClient, self).setUp()
+        super().setUp()
         self.setConfig()
         self.setupProxySpy()
 
@@ -1314,8 +1314,8 @@ class TestRegistryHTTPClient(OCIConfigHelperMixin, SpyProxyCallsMixin,
                 boto.client.call_args)
             config = boto.client.call_args[-1]['config']
             self.assertEqual({
-                u'http': u'http://proxy.example.com:123',
-                u'https': u'http://proxy.example.com:123'}, config.proxies)
+                'http': 'http://proxy.example.com:123',
+                'https': 'http://proxy.example.com:123'}, config.proxies)
 
     @responses.activate
     def test_aws_malformed_url_region(self):
@@ -1336,7 +1336,7 @@ class TestBearerTokenRegistryClient(OCIConfigHelperMixin,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBearerTokenRegistryClient, self).setUp()
+        super().setUp()
         self.setConfig()
         self.setupProxySpy()
 
@@ -1510,7 +1510,7 @@ class TestAWSAuthenticator(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestAWSAuthenticator, self).setUp()
+        super().setUp()
         self.setConfig()
 
     def test_get_region_from_credential(self):

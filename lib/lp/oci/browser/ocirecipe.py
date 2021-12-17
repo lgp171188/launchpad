@@ -20,7 +20,6 @@ from lazr.restful.interface import (
     copy_field,
     use_template,
     )
-import six
 from zope.component import getUtility
 from zope.formlib.form import FormFields
 from zope.formlib.textwidgets import TextAreaWidget
@@ -448,7 +447,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         return field_type, rule_id
 
     def setUpFields(self):
-        super(OCIRecipeEditPushRulesView, self).setUpFields()
+        super().setUpFields()
         image_name_fields = []
         url_fields = []
         region_fields = []
@@ -510,7 +509,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
                     required=True, readonly=False))
         image_name_fields.append(
             TextLine(
-                __name__=u'add_image_name',
+                __name__='add_image_name',
                 required=False, readonly=False))
         add_credentials = Choice(
             __name__='add_credentials',
@@ -519,26 +518,26 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
         existing_credentials = Choice(
             vocabulary='OCIRegistryCredentials',
             required=False,
-            __name__=u'existing_credentials')
+            __name__='existing_credentials')
         url_fields.append(
             TextLine(
-                __name__=u'add_url',
+                __name__='add_url',
                 required=False, readonly=False))
         region_fields.append(
             TextLine(
-                __name__=u'add_region',
+                __name__='add_region',
                 required=False, readonly=False))
         username_fields.append(
             TextLine(
-                __name__=u'add_username',
+                __name__='add_username',
                 required=False, readonly=False))
         password_fields.append(
             Password(
-                __name__=u'add_password',
+                __name__='add_password',
                 required=False, readonly=False))
         password_fields.append(
             Password(
-                __name__=u'add_confirm_password',
+                __name__='add_confirm_password',
                 required=False, readonly=False))
 
         self.form_fields = (
@@ -561,7 +560,7 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
 
     def setUpWidgets(self, context=None):
         """See `LaunchpadFormView`."""
-        super(OCIRecipeEditPushRulesView, self).setUpWidgets(context=context)
+        super().setUpWidgets(context=context)
         for widget in self.widgets:
             widget.display_label = False
             widget.hint = None
@@ -846,7 +845,7 @@ class OCIRecipeFormMixin:
             default = ""
         return FormFields(Text(
             __name__='build_args',
-            title=u'Build-time ARG variables',
+            title='Build-time ARG variables',
             description=("One per line. Each ARG should be in the format "
                          "of ARG_KEY=arg_value."),
             default=default,
@@ -861,7 +860,7 @@ class OCIRecipeFormMixin:
             if '=' not in line:
                 msg = ("'%s' at line %s is not a valid KEY=value pair." %
                        (line, i + 1))
-                self.setFieldError("build_args", six.text_type(msg))
+                self.setFieldError("build_args", str(msg))
                 return
             k, v = line.split('=', 1)
             build_args[k] = v
@@ -919,13 +918,13 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
     custom_widget_git_ref = GitRefWidget
 
     def initialize(self):
-        super(OCIRecipeAddView, self).initialize()
+        super().initialize()
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
-        super(OCIRecipeAddView, self).setUpFields()
+        super().setUpFields()
         self.form_fields += self.createBuildArgsField()
         self.form_fields += self.createEnabledProcessors(
             getUtility(IProcessorSet).getAll(),
@@ -945,7 +944,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
         if self.distribution_has_credentials:
             self.form_fields += FormFields(TextLine(
                 __name__='image_name',
-                title=u"Image name",
+                title="Image name",
                 description=(
                     "Name to use for registry upload. "
                     "Defaults to the name of the recipe."),
@@ -976,7 +975,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
-        super(OCIRecipeAddView, self).setUpWidgets()
+        super().setUpWidgets()
         self.setUpInformationTypeWidget()
         self.widgets["processors"].widget_class = "processors"
         self.setUpGitRefWidget()
@@ -1005,7 +1004,7 @@ class OCIRecipeAddView(LaunchpadFormView, EnableProcessorsMixin,
 
     def validate(self, data):
         """See `LaunchpadFormView`."""
-        super(OCIRecipeAddView, self).validate(data)
+        super().validate(data)
         owner = data.get("owner", None)
         name = data.get("name", None)
         if owner and name:
@@ -1137,7 +1136,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
-        super(OCIRecipeEditView, self).setUpWidgets()
+        super().setUpWidgets()
         self.setUpInformationTypeWidget()
         self.setUpGitRefWidget()
         # disable the official recipe button if the user doesn't have
@@ -1148,7 +1147,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
-        super(OCIRecipeEditView, self).setUpFields()
+        super().setUpFields()
         self.form_fields += self.createBuildArgsField()
         self.form_fields += self.createEnabledProcessors(
             self.context.available_processors,
@@ -1168,7 +1167,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
         if self.distribution_has_credentials:
             self.form_fields += FormFields(TextLine(
                 __name__='image_name',
-                title=u"Image name",
+                title="Image name",
                 description=(
                     "Name to use for registry upload. "
                     "Defaults to the name of the recipe."),
@@ -1177,7 +1176,7 @@ class OCIRecipeEditView(BaseOCIRecipeEditView, EnableProcessorsMixin,
 
     def validate(self, data):
         """See `LaunchpadFormView`."""
-        super(OCIRecipeEditView, self).validate(data)
+        super().validate(data)
         # XXX cjwatson 2020-02-18: We should permit and check moving recipes
         # between OCI projects too.
         owner = data.get("owner", None)

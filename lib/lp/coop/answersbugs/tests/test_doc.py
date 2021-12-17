@@ -54,8 +54,8 @@ def _createUbuntuBugTaskLinkedToQuestion():
     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     ubuntu.addAnswerContact(ubuntu_team, ubuntu_team.teamowner)
     ubuntu_question = ubuntu.newQuestion(
-        sample_person, u"Can't install Ubuntu",
-        u"I insert the install CD in the CD-ROM drive, but it won't boot.")
+        sample_person, "Can't install Ubuntu",
+        "I insert the install CD in the CD-ROM drive, but it won't boot.")
     no_priv = getUtility(IPersonSet).getByEmail('no-priv@canonical.com')
     params = CreateBugParams(
         owner=no_priv, title="Installer fails on a Mac PPC",

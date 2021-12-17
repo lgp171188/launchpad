@@ -29,7 +29,7 @@ class TestOCIRecipeRequestBuildsJob(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeRequestBuildsJob, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def getDistroArchSeries(self, distroseries, proc_name="386",

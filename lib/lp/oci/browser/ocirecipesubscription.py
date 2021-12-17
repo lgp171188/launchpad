@@ -94,7 +94,7 @@ class OCIRecipeSubscriptionEditView(RedirectToOCIRecipeMixin,
     def initialize(self):
         self.ocirecipe = self.context.recipe
         self.person = self.context.person
-        super(OCIRecipeSubscriptionEditView, self).initialize()
+        super().initialize()
 
     @action("Unsubscribe", name="unsubscribe")
     def unsubscribe_action(self, action, data):
@@ -114,7 +114,7 @@ class _OCIRecipeSubscriptionCreationView(RedirectToOCIRecipeMixin,
 
     def initialize(self):
         self.ocirecipe = self.context
-        super(_OCIRecipeSubscriptionCreationView, self).initialize()
+        super().initialize()
 
 
 class OCIRecipeSubscriptionAddView(_OCIRecipeSubscriptionCreationView):
