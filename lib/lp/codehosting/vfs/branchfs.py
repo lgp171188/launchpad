@@ -420,12 +420,11 @@ class LaunchpadInternalServer(_BaseLaunchpadServer):
             area where Launchpad branches are stored, generally either the
             hosted or mirrored areas.
         """
-        super(LaunchpadInternalServer, self).__init__(
-            scheme, codehosting_api, LAUNCHPAD_SERVICES)
+        super().__init__(scheme, codehosting_api, LAUNCHPAD_SERVICES)
         self._transport_dispatch = BranchTransportDispatch(branch_transport)
 
     def start_server(self):
-        super(LaunchpadInternalServer, self).start_server()
+        super().start_server()
         try:
             self._transport_dispatch.base_transport.ensure_base()
         except TransportNotPossible:
@@ -444,7 +443,7 @@ class DirectDatabaseLaunchpadServer(AsyncVirtualServer):
         self._transport_dispatch = BranchTransportDispatch(branch_transport)
 
     def start_server(self):
-        super(DirectDatabaseLaunchpadServer, self).start_server()
+        super().start_server()
         try:
             self._transport_dispatch.base_transport.ensure_base()
         except TransportNotPossible:
@@ -573,7 +572,7 @@ class LaunchpadServer(_BaseLaunchpadServer):
             each branch accessed via this server.
         """
         scheme = 'lp-%d:///' % id(self)
-        super(LaunchpadServer, self).__init__(
+        super().__init__(
             scheme, codehosting_api, user_id, seen_new_branch_hook)
         self._transport_dispatch = TransportDispatch(branch_transport)
 

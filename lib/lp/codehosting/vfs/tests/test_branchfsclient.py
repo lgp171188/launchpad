@@ -27,7 +27,7 @@ class TestBranchFileSystemClient(TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(TestBranchFileSystemClient, self).setUp()
+        super().setUp()
         frontend = InMemoryFrontend()
         self.factory = frontend.getLaunchpadObjectFactory()
         self.user = self.factory.makePerson()

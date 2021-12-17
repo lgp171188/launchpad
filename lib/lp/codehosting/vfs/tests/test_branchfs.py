@@ -84,7 +84,7 @@ def branch_to_path(branch, add_slash=True):
 class TestBranchTransportDispatch(TestCase):
 
     def setUp(self):
-        super(TestBranchTransportDispatch, self).setUp()
+        super().setUp()
         memory_server = MemoryServer()
         memory_server.start_server()
         self.base_transport = get_transport(memory_server.get_url())
@@ -125,7 +125,7 @@ class TestTransportDispatch(TestCase):
     """Tests for the transport factory."""
 
     def setUp(self):
-        super(TestTransportDispatch, self).setUp()
+        super().setUp()
         memory_server = MemoryServer()
         memory_server.start_server()
         base_transport = get_transport(memory_server.get_url())
@@ -385,7 +385,7 @@ class TestDirectDatabaseLaunchpadServer(TestCaseWithFactory,
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(TestDirectDatabaseLaunchpadServer, self).setUp()
+        super().setUp()
         self.requester = self.factory.makePerson()
         self.server = DirectDatabaseLaunchpadServer(
             'lp-test://', MemoryTransport())
@@ -847,7 +847,7 @@ class TestBranchChangedNotification(TestCaseWithTransport):
     """Test notification of branch changes."""
 
     def setUp(self):
-        super(TestBranchChangedNotification, self).setUp()
+        super().setUp()
         self._server = None
         self._branch_changed_log = []
         frontend = InMemoryFrontend()
@@ -1005,7 +1005,7 @@ class TestBranchChangedErrorHandling(TestCaseWithTransport, TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(TestBranchChangedErrorHandling, self).setUp()
+        super().setUp()
         self._server = None
         frontend = InMemoryFrontend()
         self.factory = frontend.getLaunchpadObjectFactory()

@@ -36,7 +36,7 @@ class TestBranchRewriter(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBranchRewriter, self).setUp()
+        super().setUp()
         self.fake_time = FakeTime(0)
 
     def makeRewriter(self):
@@ -217,7 +217,7 @@ class TestBranchRewriter(TestCaseWithFactory):
         rewriter = self.makeRewriter()
         branch = self.factory.makeAnyBranch()
         transaction.commit()
-        id_path = (branch.id, u'/.bzr/README',)
+        id_path = (branch.id, '/.bzr/README',)
         result = rewriter._getBranchIdAndTrailingPath(
             '/' + branch.unique_name + '/.bzr/README')
         self.assertEqual(id_path + ('MISS',), result)

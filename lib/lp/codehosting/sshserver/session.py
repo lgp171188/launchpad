@@ -39,7 +39,7 @@ class ExecOnlySession(DoNothingSession):
     """Conch session that only allows executing commands."""
 
     def __init__(self, avatar, reactor, environment=None):
-        super(ExecOnlySession, self).__init__(avatar)
+        super().__init__(avatar)
         self.reactor = reactor
         self.environment = environment
         self._transport = None

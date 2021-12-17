@@ -33,7 +33,7 @@ class AvatarTestCase(TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(AvatarTestCase, self).setUp()
+        super().setUp()
         # A basic user dict, 'alice' is a member of no teams (aside from the
         # user themself).
         self.aliceUserDict = {

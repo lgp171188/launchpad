@@ -306,7 +306,7 @@ class BzrSync:
         """Insert a batch of BranchRevision rows."""
         self.logger.info("Inserting %d branchrevision records.",
             len(revids_to_insert))
-        revid_seq_pairs = six.iteritems(revids_to_insert)
+        revid_seq_pairs = revids_to_insert.items()
         for revid_seq_pair_chunk in iter_chunks(revid_seq_pairs, 10000):
             self.db_branch.createBranchRevisionFromIDs(revid_seq_pair_chunk)
 
