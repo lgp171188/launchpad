@@ -39,7 +39,7 @@ class TestProjectGroupView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectGroupView, self).setUp()
+        super().setUp()
         self.project_group = self.factory.makeProject(name='group')
 
     def test_view_data_model(self):
@@ -136,7 +136,7 @@ class TestProjectGroupEditView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectGroupEditView, self).setUp()
+        super().setUp()
         self.project_group = self.factory.makeProject(name='group')
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.

@@ -123,7 +123,7 @@ class AdminMergeBaseView(ValidatingMergeView):
         # only in certain circunstances, so don't include them in the list of
         # actions to be rendered.
         self.actions = [self.merge_action]
-        return super(AdminMergeBaseView, self).render()
+        return super().render()
 
     def setUpPeople(self, data):
         """Store the people to be merged in instance variables.
@@ -224,7 +224,7 @@ class AdminTeamMergeView(AdminMergeBaseView):
         if len(self.errors) > 0:
             return
 
-        super(AdminTeamMergeView, self).validate(data)
+        super().validate(data)
         dupe_team = data['dupe_person']
         # We cannot merge the teams if there is a mailing list on the
         # duplicate person, unless that mailing list is purged.
@@ -248,14 +248,14 @@ class AdminTeamMergeView(AdminMergeBaseView):
             # merge.
             self.should_confirm_member_deactivation = True
             return
-        super(AdminTeamMergeView, self).doMerge(data)
+        super().doMerge(data)
 
     @action('Deactivate Members and Merge',
             name='deactivate_members_and_merge')
     def deactivate_members_and_merge_action(self, action, data):
         """Deactivate all members of the team to be merged and merge them."""
         self.setUpPeople(data)
-        super(AdminTeamMergeView, self).doMerge(data)
+        super().doMerge(data)
 
 
 class DeleteTeamView(AdminTeamMergeView):
@@ -270,7 +270,7 @@ class DeleteTeamView(AdminTeamMergeView):
         return 'Delete %s' % self.context.displayname
 
     def __init__(self, context, request):
-        super(DeleteTeamView, self).__init__(context, request)
+        super().__init__(context, request)
         if ('field.dupe_person' in self.request.form):
             # These fields have fixed values and are managed by this method.
             # The user has crafted a request to gain ownership of the dupe
@@ -311,9 +311,8 @@ class DeleteTeamView(AdminTeamMergeView):
 
     @action('Delete', name='delete', condition=canDelete)
     def merge_action(self, action, data):
-        base = super(DeleteTeamView, self)
         self.delete = True
-        base.deactivate_members_and_merge_action.success(data)
+        super().deactivate_members_and_merge_action.success(data)
 
 
 class FinishedPeopleMergeRequestView(LaunchpadView):
@@ -361,8 +360,7 @@ class RequestPeopleMergeMultipleEmailsView(LaunchpadView):
     page_title = label
 
     def __init__(self, context, request):
-        super(RequestPeopleMergeMultipleEmailsView, self).__init__(
-            context, request)
+        super().__init__(context, request)
         self.form_processed = False
         self.dupe = None
         self.notified_addresses = []

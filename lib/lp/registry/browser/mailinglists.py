@@ -28,7 +28,7 @@ class HeldMessageView(LaunchpadView):
     """A little helper view for held messages."""
 
     def __init__(self, context, request):
-        super(HeldMessageView, self).__init__(context, request)
+        super().__init__(context, request)
         self.context = context
         self.request = request
         # The context object is an IMessageApproval, but we need some extra
@@ -74,16 +74,16 @@ class HeldMessageView(LaunchpadView):
             else:
                 current_paragraph.append(line)
         self._append_paragraph(paragraphs, current_paragraph)
-        self.body_details = u''.join(paragraphs)
+        self.body_details = ''.join(paragraphs)
 
     def _append_paragraph(self, paragraphs, current_paragraph):
         if len(current_paragraph) == 0:
             # There is nothing to append. The message has multiple
             # blank lines.
             return
-        paragraphs.append(u'\n<p>\n')
-        paragraphs.append(u'\n'.join(current_paragraph))
-        paragraphs.append(u'\n</p>\n')
+        paragraphs.append('\n<p>\n')
+        paragraphs.append('\n'.join(current_paragraph))
+        paragraphs.append('\n</p>\n')
 
     def _remove_leading_blank_lines(self):
         """Strip off any leading blank lines.
@@ -113,13 +113,13 @@ class HeldMessageView(LaunchpadView):
         """
         # If there are no non-blank lines, then we're done.
         if len(text_lines) == 0:
-            self.body_summary = u''
-            return u''
+            self.body_summary = ''
+            return ''
         # If the first line is of a completely arbitrarily chosen reasonable
         # length, then we'll just use that as the summary.
         elif len(text_lines[0]) < 60:
             self.body_summary = text_lines[0]
-            return u'\n'.join(text_lines[1:])
+            return '\n'.join(text_lines[1:])
         # It could be the case that the text is actually flowed using RFC
         # 3676 format="flowed" parameters.  In that case, just split the line
         # at the first whitespace after, again, our arbitrarily chosen limit.
@@ -128,8 +128,8 @@ class HeldMessageView(LaunchpadView):
             wrapper = TextWrapper(width=60)
             filled_lines = wrapper.fill(first_line).splitlines()
             self.body_summary = filled_lines[0]
-            text_lines.insert(0, u''.join(filled_lines[1:]))
-            return u'\n'.join(text_lines)
+            text_lines.insert(0, ''.join(filled_lines[1:]))
+            return '\n'.join(text_lines)
 
 
 class enabled_with_active_mailing_list:

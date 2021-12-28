@@ -72,7 +72,7 @@ class ObjectReassignmentView(LaunchpadFormView):
     page_title = label
 
     def setUpFields(self):
-        super(ObjectReassignmentView, self).setUpFields()
+        super().setUpFields()
         self.form_fields = FormFields(
             self.form_fields, self.auto_create_team_field)
 

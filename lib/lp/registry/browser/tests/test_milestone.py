@@ -156,7 +156,7 @@ class TestAddMilestoneViews(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestAddMilestoneViews, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.series = self.factory.makeProductSeries(product=self.product)
         self.owner = self.product.owner
@@ -196,7 +196,7 @@ class TestAddMilestoneViews(TestCaseWithFactory):
         self.assertEqual(expected_msg, error_msg)
 
     def test_add_milestone_with_tags(self):
-        tags = u'zed alpha'
+        tags = 'zed alpha'
         form = {
             'field.name': '1.1',
             'field.tags': tags,
@@ -222,7 +222,7 @@ class TestMilestoneEditView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestMilestoneEditView, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.milestone = self.factory.makeMilestone(
             name='orig-name', product=self.product)
@@ -230,9 +230,9 @@ class TestMilestoneEditView(TestCaseWithFactory):
         login_person(self.owner)
 
     def test_edit_milestone_with_tags(self):
-        orig_tags = u'ba ac'
+        orig_tags = 'ba ac'
         self.milestone.setTags(orig_tags.split(), self.owner)
-        new_tags = u'za ab'
+        new_tags = 'za ab'
         form = {
             'field.name': 'new-name',
             'field.tags': new_tags,
@@ -245,7 +245,7 @@ class TestMilestoneEditView(TestCaseWithFactory):
         self.assertEqual(expected, self.milestone.getTags())
 
     def test_edit_milestone_clear_tags(self):
-        orig_tags = u'ba ac'
+        orig_tags = 'ba ac'
         self.milestone.setTags(orig_tags.split(), self.owner)
         form = {
             'field.name': 'new-name',
@@ -365,7 +365,7 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectMilestoneIndexQueryCount, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name='product-owner')
         self.product = self.factory.makeProduct(owner=self.owner)
         self.product_owner = self.product.owner
@@ -481,7 +481,7 @@ class TestProjectGroupMilestoneIndexQueryCount(TestQueryCountBase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectGroupMilestoneIndexQueryCount, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name='product-owner')
         self.project_group = self.factory.makeProject(owner=self.owner)
         login_person(self.owner)
@@ -539,7 +539,7 @@ class TestDistributionMilestoneIndexQueryCount(TestQueryCountBase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionMilestoneIndexQueryCount, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.owner = self.factory.makePerson(name='test-owner')
         login_team(self.ubuntu.owner)
@@ -597,8 +597,8 @@ class TestMilestoneTagView(TestQueryCountBase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestMilestoneTagView, self).setUp()
-        self.tags = [u'tag1']
+        super().setUp()
+        self.tags = ['tag1']
         self.owner = self.factory.makePerson()
         self.project_group = self.factory.makeProject(owner=self.owner)
         self.product = self.factory.makeProduct(
@@ -620,8 +620,8 @@ class TestMilestoneTagView(TestQueryCountBase):
 
     def _make_form(self, tags):
         return {
-            u'field.actions.search': u'Search',
-            u'field.tags': u' '.join(tags),
+            'field.actions.search': 'Search',
+            'field.tags': ' '.join(tags),
             }
 
     def _url_tail(self, url, separator='/'):
@@ -636,7 +636,7 @@ class TestMilestoneTagView(TestQueryCountBase):
 
     def test_view_form_redirect(self):
         # Ensure a correct redirection is performed when tags are searched.
-        tags = [u'tag1', u'tag2']
+        tags = ['tag1', 'tag2']
         form = self._make_form(tags)
         view = create_initialized_view(self.milestonetag, '+index', form=form)
         self.assertEqual(302, view.request.response.getStatus())
@@ -648,7 +648,7 @@ class TestMilestoneTagView(TestQueryCountBase):
 
     def test_view_form_error(self):
         # Ensure the form correctly handles invalid submissions.
-        tags = [u'tag1', u't']  # One char tag is not valid.
+        tags = ['tag1', 't']  # One char tag is not valid.
         form = self._make_form(tags)
         view = create_initialized_view(self.milestonetag, '+index', form=form)
         self.assertEqual(1, len(view.errors))

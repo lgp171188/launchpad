@@ -68,7 +68,7 @@ class MailingListSubscriptionControlsTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(MailingListSubscriptionControlsTestCase, self).setUp()
+        super().setUp()
         self.a_team = self.factory.makeTeam(name='a')
         self.b_team = self.factory.makeTeam(name='b', owner=self.a_team)
         self.b_team_list = self.factory.makeMailingList(team=self.b_team,

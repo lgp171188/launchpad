@@ -42,7 +42,6 @@ from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import smartquote
 import pytz
 import simplejson
-import six
 from six.moves.urllib.parse import unquote
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -219,14 +218,12 @@ class HasRenewalPolicyMixin:
     def isMultiLineLayout(self, field_name):
         if field_name == 'renewal_policy':
             return True
-        return super(HasRenewalPolicyMixin, self).isMultiLineLayout(
-            field_name)
+        return super().isMultiLineLayout(field_name)
 
     def isSingleLineLayout(self, field_name):
         if field_name == 'renewal_policy':
             return False
-        return super(HasRenewalPolicyMixin, self).isSingleLineLayout(
-            field_name)
+        return super().isSingleLineLayout(field_name)
 
 
 class TeamFormMixin:
@@ -317,11 +314,11 @@ class TeamEditView(TeamFormMixin, PersonRenameFormMixin,
         # class list.
         self.field_names = list(self.field_names)
         self.field_names.remove('teamowner')
-        super(TeamEditView, self).setUpFields()
+        super().setUpFields()
         self.setUpVisibilityField(render_context=True)
 
     def setUpWidgets(self):
-        super(TeamEditView, self).setUpWidgets()
+        super().setUpWidgets()
         team = self.context
         # Do we need to only show open membership policy choices?
         try:
@@ -457,7 +454,7 @@ class TeamContactAddressView(MailingListTeamBaseView):
     def setUpFields(self):
         """See `LaunchpadFormView`.
         """
-        super(TeamContactAddressView, self).setUpFields()
+        super().setUpFields()
 
         # Replace the default contact_method field by a custom one.
         self.form_fields = (
@@ -525,7 +522,7 @@ class TeamContactAddressView(MailingListTeamBaseView):
                     # responsibility for security on the exception thrower.
                     msg = error.args[0]
                     if not IStructuredString.providedBy(msg):
-                        msg = structured(six.text_type(msg))
+                        msg = structured(str(msg))
                     self.setFieldError('contact_address', msg)
         elif data['contact_method'] == TeamContactMethod.HOSTED_LIST:
             mailing_list = getUtility(IMailingListSet).get(self.context.name)
@@ -621,8 +618,7 @@ class TeamMailingListConfigurationView(MailingListTeamBaseView):
         address. Second, the mailing list may be in a transitional
         state: from MODIFIED to UPDATING to ACTIVE can take a while.
         """
-        super(TeamMailingListConfigurationView, self).__init__(
-            context, request)
+        super().__init__(context, request)
         list_set = getUtility(IMailingListSet)
         self.mailing_list = list_set.get(self.context.name)
 
@@ -903,7 +899,7 @@ class TeamMailingListModerationView(MailingListTeamBaseView):
 
     def __init__(self, context, request):
         """Allow for review and moderation of held mailing list posts."""
-        super(TeamMailingListModerationView, self).__init__(context, request)
+        super().__init__(context, request)
         list_set = getUtility(IMailingListSet)
         self.mailing_list = list_set.get(self.context.name)
         if self.mailing_list is None:
@@ -988,7 +984,7 @@ class TeamMailingListArchiveView(LaunchpadView):
     label = "Mailing list archive"
 
     def __init__(self, context, request):
-        super(TeamMailingListArchiveView, self).__init__(context, request)
+        super().__init__(context, request)
         self.messages = self._get_messages()
         cache = IJSONRequestCache(request).objects
         cache['mail'] = self.messages
@@ -1021,7 +1017,7 @@ class TeamAddView(TeamFormMixin, HasRenewalPolicyMixin, LaunchpadFormView):
 
         Only Launchpad Admins get to see the visibility field.
         """
-        super(TeamAddView, self).setUpFields()
+        super().setUpFields()
         self.setUpVisibilityField()
 
     @action('Create Team', name='create',
@@ -1201,7 +1197,7 @@ class TeamMemberAddView(LaunchpadFormView):
         if error:
             self.setFieldError("newmember", error)
 
-    @action(u"Add Member", name="add")
+    @action("Add Member", name="add")
     def add_action(self, action, data):
         """Add the new member to the team."""
         newmember = data['newmember']
@@ -1778,7 +1774,7 @@ class TeamJoinView(LaunchpadFormView, TeamJoinMixin):
     page_title = label
 
     def setUpWidgets(self):
-        super(TeamJoinView, self).setUpWidgets()
+        super().setUpWidgets()
         if 'mailinglist_subscribe' in self.field_names:
             widget = self.widgets['mailinglist_subscribe']
             widget.setRenderedValue(self.user_wants_list_subscriptions)
@@ -1914,7 +1910,7 @@ class TeamAddMyTeamsView(LaunchpadFormView):
         else:
             self.label = 'Add these teams to %s' % context.displayname
         self.next_url = canonical_url(context)
-        super(TeamAddMyTeamsView, self).initialize()
+        super().initialize()
 
     def setUpFields(self):
         terms = []
@@ -1930,7 +1926,7 @@ class TeamAddMyTeamsView(LaunchpadFormView):
             render_context=self.render_context)
 
     def setUpWidgets(self, context=None):
-        super(TeamAddMyTeamsView, self).setUpWidgets(context)
+        super().setUpWidgets(context)
         self.widgets['teams'].display_label = False
 
     @cachedproperty
@@ -2063,7 +2059,7 @@ class TeamReassignmentView(ObjectReassignmentView):
     schema = ITeamReassignment
 
     def __init__(self, context, request):
-        super(TeamReassignmentView, self).__init__(context, request)
+        super().__init__(context, request)
         self.callback = self._afterOwnerChange
         self.teamdisplayname = self.contextName
         self._next_url = canonical_url(self.context)

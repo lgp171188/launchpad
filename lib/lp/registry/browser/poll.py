@@ -227,7 +227,7 @@ class PollView(BasePollView):
     """A view class to display the results of a poll."""
 
     def initialize(self):
-        super(PollView, self).initialize()
+        super().initialize()
         request = self.request
         if (self.userCanVote() and self.context.isOpen() and
             self.context.getActiveOptions()):
@@ -281,7 +281,7 @@ class PollVoteView(BasePollView):
 
     def initialize(self):
         """Process the form, if it was submitted."""
-        super(PollVoteView, self).initialize()
+        super().initialize()
         if not self.isSecret() and self.userVoted():
             # For non-secret polls, the user's vote is always displayed
             self.setUpTokenAndVotesForNonSecretPolls()

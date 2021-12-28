@@ -175,7 +175,7 @@ class AffirmCodeOfConductView(LaunchpadFormView):
 
         affirmed = copy_field(
             ISignedCodeOfConduct["affirmed"],
-            title=_("I agree to this Code of Conduct"), description=u"")
+            title=_("I agree to this Code of Conduct"), description="")
 
     field_names = ['affirmed']
 

@@ -25,7 +25,7 @@ class TestSignedCodeOfConductAckView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSignedCodeOfConductAckView, self).setUp()
+        super().setUp()
         self.signed_coc_set = getUtility(ISignedCodeOfConductSet)
         self.owner = self.factory.makePerson()
         self.admin = login_celebrity('admin')
@@ -60,7 +60,7 @@ class SignCodeOfConductTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(SignCodeOfConductTestCase, self).setUp()
+        super().setUp()
         user = self.factory.makePerson()
         gpg_key = self.factory.makeGPGKey(user)
         self.signed_coc = self.sign_coc(user, gpg_key)

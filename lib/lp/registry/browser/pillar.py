@@ -164,7 +164,7 @@ class PillarInvolvementView(LaunchpadView):
     visible_disabled_link_names = []
 
     def __init__(self, context, request):
-        super(PillarInvolvementView, self).__init__(context, request)
+        super().__init__(context, request)
         self.official_malone = False
         self.answers_usage = ServiceUsage.UNKNOWN
         self.blueprints_usage = ServiceUsage.UNKNOWN
@@ -278,7 +278,7 @@ class PillarViewMixin():
     def initialize(self):
         # Insert close team membership policy data into the json cache.
         # This data is used for the maintainer and driver pickers.
-        super(PillarViewMixin, self).initialize()
+        super().initialize()
         cache = IJSONRequestCache(self.request)
         policy_items = [(item.name, item) for item in EXCLUSIVE_TEAM_POLICY]
         team_membership_policy_data = vocabulary_to_choice_edit_items(
@@ -365,7 +365,7 @@ class PillarSharingView(LaunchpadView):
         return self._getSharingService().getPillarGrantees(self.context)
 
     def initialize(self):
-        super(PillarSharingView, self).initialize()
+        super().initialize()
         cache = IJSONRequestCache(self.request)
         cache.objects['information_types'] = self.information_types
         cache.objects['sharing_permissions'] = self.sharing_permissions

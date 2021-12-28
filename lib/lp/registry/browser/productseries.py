@@ -197,7 +197,7 @@ class ProductSeriesInvolvementView(PillarInvolvementView):
     has_involvement = True
 
     def __init__(self, context, request):
-        super(ProductSeriesInvolvementView, self).__init__(context, request)
+        super().__init__(context, request)
         self.answers_usage = ServiceUsage.NOT_APPLICABLE
         if self.context.branch is not None:
             self.codehosting_usage = ServiceUsage.LAUNCHPAD
@@ -370,7 +370,7 @@ class ProductSeriesView(
     """A view to show a series with translations."""
 
     def initialize(self):
-        super(ProductSeriesView, self).initialize()
+        super().initialize()
         expose_structural_subscription_data_to_js(
             self.context, self.request, self.user)
 
@@ -506,8 +506,7 @@ class ProductSeriesUbuntuPackagingView(LaunchpadFormView):
 
     def __init__(self, context, request):
         """Set the static packaging information for this series."""
-        super(ProductSeriesUbuntuPackagingView, self).__init__(
-            context, request)
+        super().__init__(context, request)
         self._ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self._ubuntu_series = self._ubuntu.currentseries
         try:
@@ -534,7 +533,7 @@ class ProductSeriesUbuntuPackagingView(LaunchpadFormView):
         The packaging is restricted to ubuntu series and the default value
         is the current development series.
         """
-        super(ProductSeriesUbuntuPackagingView, self).setUpFields()
+        super().setUpFields()
         series_vocabulary = SimpleVocabulary(
             [SimpleTerm(series, series.name, series.named_version)
              for series in self._ubuntu.series])

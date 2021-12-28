@@ -17,7 +17,7 @@ class TestPillarSharingBreadcrumb(BaseBreadcrumbTestCase, SharingBaseTestCase):
     pillar_type = 'product'
 
     def setUp(self):
-        super(TestPillarSharingBreadcrumb, self).setUp()
+        super().setUp()
         login_person(self.driver)
 
     def test_sharing_breadcrumb(self):
@@ -44,7 +44,7 @@ class TestDistroseriesBreadcrumb(BaseBreadcrumbTestCase):
     """Test breadcrumbs for an `IDistroseries`."""
 
     def setUp(self):
-        super(TestDistroseriesBreadcrumb, self).setUp()
+        super().setUp()
         self.distribution = self.factory.makeDistribution(
             name='youbuntu', displayname='Youbuntu')
         self.distroseries = self.factory.makeDistroSeries(
@@ -61,7 +61,7 @@ class TestDistributionMirrorBreadcrumb(BaseBreadcrumbTestCase):
     """Test breadcrumbs for an `IDistributionMirror`."""
 
     def setUp(self):
-        super(TestDistributionMirrorBreadcrumb, self).setUp()
+        super().setUp()
         self.distribution = getUtility(ILaunchpadCelebrities).ubuntu
 
     def test_distributionmirror_withDisplayName(self):
@@ -104,7 +104,7 @@ class TestMilestoneBreadcrumb(BaseBreadcrumbTestCase):
     """Test the breadcrumbs for an `IMilestone`."""
 
     def setUp(self):
-        super(TestMilestoneBreadcrumb, self).setUp()
+        super().setUp()
         self.project = self.factory.makeProduct()
         self.series = self.factory.makeProductSeries(product=self.project)
         self.milestone = self.factory.makeMilestone(
@@ -136,7 +136,7 @@ class TestPollBreadcrumb(BaseBreadcrumbTestCase):
     """Test breadcrumbs for an `IPoll`."""
 
     def setUp(self):
-        super(TestPollBreadcrumb, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam(displayname="Poll Team")
         name = "pollo-poll"
         title = "Marco Pollo"
@@ -157,7 +157,7 @@ class TestNameblacklistBreadcrumb(BaseBreadcrumbTestCase):
     """Test breadcrumbs for +nameblacklist."""
 
     def setUp(self):
-        super(TestNameblacklistBreadcrumb, self).setUp()
+        super().setUp()
         self.name_blacklist_set = getUtility(INameBlacklistSet)
         self.registry_expert = self.factory.makeRegistryExpert()
         login_person(self.registry_expert)
@@ -167,7 +167,7 @@ class TestNameblacklistBreadcrumb(BaseBreadcrumbTestCase):
         self.assertBreadcrumbs(expected, self.name_blacklist_set)
 
     def test_nameblacklist_edit(self):
-        blacklist = self.name_blacklist_set.getByRegExp(u'blacklist')
+        blacklist = self.name_blacklist_set.getByRegExp('blacklist')
         expected = [
             ('Name Blacklist',
              'http://launchpad.test/+nameblacklist'),

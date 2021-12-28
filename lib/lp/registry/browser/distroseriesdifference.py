@@ -258,7 +258,7 @@ class DistroSeriesDifferenceDisplayComment(MessageComment):
 
     def __init__(self, comment):
         """Setup the attributes required by `IComment`."""
-        super(DistroSeriesDifferenceDisplayComment, self).__init__(None)
+        super().__init__(None)
         self.comment = comment
         self._message = comment.message
 

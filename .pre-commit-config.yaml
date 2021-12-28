@@ -52,6 +52,7 @@ repos:
             |codehosting
             |coop
             |oci
+            |registry/browser
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

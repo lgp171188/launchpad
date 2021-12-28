@@ -85,7 +85,7 @@ class _TestStructSubs(TestCaseWithFactory, _TestResultsMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(_TestStructSubs, self).setUp()
+        super().setUp()
         self.regular_user = self.factory.makePerson()
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.
@@ -123,7 +123,7 @@ class ProductView(_TestStructSubs):
     view = '+index'
 
     def setUp(self):
-        super(ProductView, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct(official_malone=True)
 
 
@@ -141,7 +141,7 @@ class ProjectGroupView(_TestStructSubs):
     view = '+index'
 
     def setUp(self):
-        super(ProjectGroupView, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProject()
         self.factory.makeProduct(
             projectgroup=self.target, official_malone=True)
@@ -183,7 +183,7 @@ class ProductSeriesView(_TestStructSubs):
     view = '+index'
 
     def setUp(self):
-        super(ProductSeriesView, self).setUp()
+        super().setUp()
         product = self.factory.makeProduct(official_malone=True)
         self.target = self.factory.makeProductSeries(product=product)
 
@@ -195,7 +195,7 @@ class ProductSeriesBugs(ProductSeriesView):
     view = '+bugs'
 
     def setUp(self):
-        super(ProductSeriesBugs, self).setUp()
+        super().setUp()
         with person_logged_in(self.target.product.owner):
             self.target.product.official_malone = True
 
@@ -207,7 +207,7 @@ class DistributionSourcePackageView(_TestStructSubs):
     view = '+index'
 
     def setUp(self):
-        super(DistributionSourcePackageView, self).setUp()
+        super().setUp()
         distro = self.factory.makeDistribution()
         with person_logged_in(distro.owner):
             distro.official_malone = True
@@ -242,7 +242,7 @@ class DistroView(BrowserTestCase, _TestResultsMixin):
     view = '+index'
 
     def setUp(self):
-        super(DistroView, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistribution()
         with person_logged_in(self.target.owner):
             self.target.official_malone = True
@@ -341,7 +341,7 @@ class DistroMilestoneView(DistroView):
     """Test structural subscriptions on the distro milestones."""
 
     def setUp(self):
-        super(DistroMilestoneView, self).setUp()
+        super().setUp()
         self.distro = self.target
         self.target = self.factory.makeMilestone(distribution=self.distro)
 
@@ -380,7 +380,7 @@ class ProductMilestoneView(DistroView):
     """Test structural subscriptions on the product milestones."""
 
     def setUp(self):
-        super(ProductMilestoneView, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         with person_logged_in(self.product.owner):
             self.product.official_malone = True
@@ -411,7 +411,7 @@ class ProductSeriesMilestoneView(ProductMilestoneView):
     """Test structural subscriptions on the product series milestones."""
 
     def setUp(self):
-        super(ProductSeriesMilestoneView, self).setUp()
+        super().setUp()
         self.productseries = self.factory.makeProductSeries()
         with person_logged_in(self.productseries.product.owner):
             self.productseries.product.official_malone = True
@@ -426,7 +426,7 @@ class _DoesNotUseLP(ProductView):
     """Test structural subscriptions on the product view."""
 
     def setUp(self):
-        super(_DoesNotUseLP, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct(official_malone=False)
 
     def test_subscribe_link_owner(self):
@@ -472,7 +472,7 @@ class ProjectGroupDoesNotUseLPView(_DoesNotUseLP):
     view = '+index'
 
     def setUp(self):
-        super(ProjectGroupDoesNotUseLPView, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProject()
         self.factory.makeProduct(
             projectgroup=self.target, official_malone=False)
@@ -485,7 +485,7 @@ class ProjectGroupDoesNotUseLPBugs(ProductDoesNotUseLPBugs):
     view = '+bugs'
 
     def setUp(self):
-        super(ProjectGroupDoesNotUseLPBugs, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProject()
         self.factory.makeProduct(
             projectgroup=self.target, official_malone=False)
@@ -496,7 +496,7 @@ class ProjectGroupDoesNotUseLPBugs(ProductDoesNotUseLPBugs):
 class ProductSeriesDoesNotUseLPView(_DoesNotUseLP):
 
     def setUp(self):
-        super(ProductSeriesDoesNotUseLPView, self).setUp()
+        super().setUp()
         product = self.factory.makeProduct(official_malone=False)
         self.target = self.factory.makeProductSeries(product=product)
 
@@ -504,7 +504,7 @@ class ProductSeriesDoesNotUseLPView(_DoesNotUseLP):
 class ProductSeriesDoesNotUseLPBugs(_DoesNotUseLP):
 
     def setUp(self):
-        super(ProductSeriesDoesNotUseLPBugs, self).setUp()
+        super().setUp()
         product = self.factory.makeProduct(official_malone=False)
         self.target = self.factory.makeProductSeries(product=product)
 
@@ -513,7 +513,7 @@ class DistributionSourcePackageDoesNotUseLPView(_DoesNotUseLP):
     """Test structural subscriptions on the distro src pkg view."""
 
     def setUp(self):
-        super(DistributionSourcePackageDoesNotUseLPView, self).setUp()
+        super().setUp()
         distro = self.factory.makeDistribution()
         self.target = self.factory.makeDistributionSourcePackage(
             distribution=distro)
@@ -535,7 +535,7 @@ class DistributionSourcePackageDoesNotUseLPBugs(ProductDoesNotUseLPBugs):
 class DistroDoesNotUseLPView(DistroView):
 
     def setUp(self):
-        super(DistroDoesNotUseLPView, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistribution()
         self.regular_user = self.factory.makePerson()
 
@@ -577,7 +577,7 @@ class DistroDoesNotUseLPBugs(DistroDoesNotUseLPView):
 class DistroMilestoneDoesNotUseLPView(DistroMilestoneView):
 
     def setUp(self):
-        super(DistroMilestoneDoesNotUseLPView, self).setUp()
+        super().setUp()
         with person_logged_in(self.distro.owner):
             self.distro.official_malone = False
 
@@ -620,7 +620,7 @@ class DistroMilestoneDoesNotUseLPView(DistroMilestoneView):
 class ProductMilestoneDoesNotUseLPView(ProductMilestoneView):
 
     def setUp(self):
-        super(ProductMilestoneDoesNotUseLPView, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         with person_logged_in(self.product.owner):
             self.product.official_malone = False
@@ -648,8 +648,7 @@ class CustomTestLoader(unittest.TestLoader):
         if testCaseClass is _TestStructSubs:
             return []
         else:
-            return super(CustomTestLoader, self).getTestCaseNames(
-                testCaseClass)
+            return super().getTestCaseNames(testCaseClass)
 
 
 def test_suite():

@@ -194,7 +194,7 @@ class MilestoneInlineNavigationMenu(NavigationMenu, MilestoneLinkMixin):
     links = ('edit', )
 
 
-class MilestoneViewMixin(object):
+class MilestoneViewMixin:
     """Common methods shared between MilestoneView and MilestoneTagView."""
 
     @property
@@ -366,7 +366,7 @@ class MilestoneView(
         :param context: `IMilestone` or `IProductRelease`.
         :param request: `ILaunchpadRequest`.
         """
-        super(MilestoneView, self).__init__(context, request)
+        super().__init__(context, request)
         if IMilestoneData.providedBy(context):
             self.milestone = context
             self.release = getattr(context, "product_release", None)
@@ -431,7 +431,7 @@ class MilestoneTagBase:
         on the interface.
         """
         tag_entry = TextLine(
-            __name__='tags', title=u'Tags', required=False,
+            __name__='tags', title='Tags', required=False,
             constraint=lambda value: validate_tags(value.split()))
         self.form_fields += form.Fields(
             tag_entry, render_context=self.render_context)
@@ -512,7 +512,7 @@ class MilestoneEditView(MilestoneTagBase, LaunchpadEditFormView):
 
     @property
     def initial_values(self):
-        return {'tags': u' '.join(self.context.getTags())}
+        return {'tags': ' '.join(self.context.getTags())}
 
     def setUpFields(self):
         """See `LaunchpadFormView`.
@@ -521,7 +521,7 @@ class MilestoneEditView(MilestoneTagBase, LaunchpadEditFormView):
         create the milestone, but once a series field is set, None is invalid.
         The choice for the series is redefined to ensure None is not included.
         """
-        super(MilestoneEditView, self).setUpFields()
+        super().setUpFields()
         if self.context.product is None:
             # This is a distribution milestone.
             choice = Choice(
@@ -538,7 +538,7 @@ class MilestoneEditView(MilestoneTagBase, LaunchpadEditFormView):
     @action(_('Update'), name='update')
     def update_action(self, action, data):
         """Update the milestone."""
-        tags = data.pop('tags') or u''
+        tags = data.pop('tags') or ''
         self.updateContextFromData(data)
         self.context.setTags(tags.lower().split(), self.user)
         self.next_url = canonical_url(self.context)
@@ -611,17 +611,17 @@ class MilestoneTagView(
         :param context: `IProjectGroupMilestoneTag`
         :param request: `ILaunchpadRequest`.
         """
-        super(MilestoneTagView, self).__init__(context, request)
+        super().__init__(context, request)
         self.context = self.milestone = context
         self.release = None
 
     @property
     def initial_values(self):
         """Set the initial value of the search tags field."""
-        return {'tags': u' '.join(self.context.tags)}
+        return {'tags': ' '.join(self.context.tags)}
 
     @safe_action
-    @action(u'Search Milestone Tags', name='search')
+    @action('Search Milestone Tags', name='search')
     def search_by_tags(self, action, data):
         tags = data['tags'].split()
         milestone_tag = ProjectGroupMilestoneTag(self.context.target, tags)

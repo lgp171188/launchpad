@@ -85,7 +85,7 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIProjectView, self).setUp()
+        super().setUp()
         self.setConfig()
 
     def test_facet_top_links(self):

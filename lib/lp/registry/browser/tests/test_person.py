@@ -593,7 +593,7 @@ class TestPersonViewKarma(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestPersonViewKarma, self).setUp()
+        super().setUp()
         person = self.factory.makePerson()
         product = self.factory.makeProduct()
         transaction.commit()
@@ -612,7 +612,7 @@ class TestPersonViewKarma(TestCaseWithFactory):
         for category in categories:
             category_names.append(category.name)
 
-        self.assertEqual(category_names, [u'code', u'bugs', u'answers'],
+        self.assertEqual(category_names, ['code', 'bugs', 'answers'],
                          'Categories are not sorted correctly')
 
     def _makeKarmaCache(self, person, product, category, value=10):
@@ -781,7 +781,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPersonEditView, self).setUp()
+        super().setUp()
         self.valid_email_address = self.factory.getUniqueEmailAddress()
         self.person = self.factory.makePerson(email=self.valid_email_address)
         login_person(self.person)
@@ -846,7 +846,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         """Special assert function for dealing with email-related errors."""
         view = self.createAddEmailView(email_str)
         error_msg = view.errors[0]
-        if not isinstance(error_msg, six.text_type):
+        if not isinstance(error_msg, str):
             error_msg = error_msg.doc()
         self.assertEqual(expected_msg, error_msg)
 
@@ -865,7 +865,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
         expected_msg = html_escape(
-            u"A confirmation message has been sent to '%s'."
+            "A confirmation message has been sent to '%s'."
             " Follow the instructions in that message to confirm"
             " that the address is yours. (If the message doesn't arrive in a"
             " few minutes, your mail provider might use 'greylisting', which"
@@ -911,7 +911,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
         expected_msg = html_escape(
-            u"An email message was sent to '%s' "
+            "An email message was sent to '%s' "
             "with instructions on how to confirm that it belongs to you."
             % added_email)
         self.assertEqual(expected_msg, notifications[0].message)
@@ -941,12 +941,12 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         token_url = get_token_url_from_email(raw_msg)
         browser = setupBrowserForUser(user=self.person)
         browser.open(token_url)
-        expected_msg = u'Confirm email address <code>%s</code>' % added_email
+        expected_msg = 'Confirm email address <code>%s</code>' % added_email
         self.assertIn(expected_msg, browser.contents)
         browser.getControl('Continue').click()
         # Login again to access displayname, since browser logged us out.
         login_person(self.person)
-        expected_title = u'%s in Launchpad' % self.person.displayname
+        expected_title = '%s in Launchpad' % self.person.displayname
         self.assertEqual(expected_title, browser.title)
 
     def test_remove_unvalidated_email_address(self):
@@ -961,7 +961,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
         expected_msg = html_escape(
-            u"The email address '%s' has been removed." % added_email)
+            "The email address '%s' has been removed." % added_email)
         self.assertEqual(expected_msg, notifications[0].message)
 
     def test_cannot_remove_contact_address(self):
@@ -990,7 +990,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
         expected_msg = (
-            u"Your contact address has been changed to: %s" % added_email)
+            "Your contact address has been changed to: %s" % added_email)
         self.assertEqual(expected_msg, notifications[0].message)
 
     def test_set_contact_address_already_set(self):
@@ -1022,21 +1022,21 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
     def test_email_string_validation_no_email_prodvided(self):
         """+editemails should warn if no email is provided."""
         no_email = ''
-        expected_msg = u'Required input is missing.'
+        expected_msg = 'Required input is missing.'
         self._assertEmailAndError(no_email, expected_msg)
 
     def test_email_string_validation_invalid_email(self):
         """+editemails should warn when provided data is not an email."""
         not_an_email = 'foo'
         expected_msg = html_escape(
-            u"'foo' doesn't seem to be a valid email address.")
+            "'foo' doesn't seem to be a valid email address.")
         self._assertEmailAndError(not_an_email, expected_msg)
 
     def test_email_string_validation_is_escaped(self):
         """+editemails should escape output to prevent XSS."""
         xss_email = "foo@example.com<script>window.alert('XSS')</script>"
         expected_msg = (
-            u"&#x27;foo@example.com&lt;script&gt;"
+            "&#x27;foo@example.com&lt;script&gt;"
             "window.alert(&#x27;XSS&#x27;)&lt;/script&gt;&#x27;"
             " doesn&#x27;t seem to be a valid email address.")
         self._assertEmailAndError(xss_email, expected_msg)
@@ -1056,7 +1056,7 @@ class TestPersonParticipationView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonParticipationView, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.view = create_view(self.user, name='+participation')
 
@@ -1234,7 +1234,7 @@ class TestPersonRelatedPackagesView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPersonRelatedPackagesView, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.factory.makeGPGKey(self.user)
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
@@ -1328,7 +1328,7 @@ class TestPersonMaintainedPackagesView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonMaintainedPackagesView, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.view = create_initialized_view(self.user, '+maintained-packages')
 
@@ -1347,7 +1347,7 @@ class TestPersonUploadedPackagesView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonUploadedPackagesView, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         spr = self.factory.makeSourcePackageRelease(
@@ -1371,7 +1371,7 @@ class TestPersonPPAPackagesView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonPPAPackagesView, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.view = create_initialized_view(self.user, '+ppa-packages')
 
@@ -1432,7 +1432,7 @@ class TestPersonSynchronisedPackagesView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonSynchronisedPackagesView, self).setUp()
+        super().setUp()
         user = self.factory.makePerson()
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         spr = self.factory.makeSourcePackageRelease(
@@ -1463,7 +1463,7 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonRelatedProjectsView, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
 
     def test_view_helper_attributes(self):
@@ -1498,7 +1498,7 @@ class TestPersonOCIRegistryCredentialsView(
         ]
 
     def setUp(self):
-        super(TestPersonOCIRegistryCredentialsView, self).setUp()
+        super().setUp()
         self.setConfig()
         if self.use_team:
             self.owner = self.factory.makeTeam(members=[self.user])
@@ -1721,7 +1721,7 @@ class TestPersonLiveFSView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonLiveFSView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         self.person = self.factory.makePerson(
             name="test-person", displayname="Test Person")
@@ -1869,7 +1869,7 @@ class TestPersonRelatedPackagesFailedBuild(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPersonRelatedPackagesFailedBuild, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
 
         # First we need to publish some PPA packages with failed builds
@@ -1923,7 +1923,7 @@ class TestPersonRelatedPackagesSynchronisedPackages(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPersonRelatedPackagesSynchronisedPackages, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.spph = self.factory.makeSourcePackagePublishingHistory()
 
@@ -2023,7 +2023,7 @@ class TestTeamInvitationView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTeamInvitationView, self).setUp()
+        super().setUp()
         self.a_team = self.factory.makeTeam(name="team-a",
                                             displayname="A-Team")
         self.b_team = self.factory.makeTeam(name="team-b",
@@ -2046,7 +2046,7 @@ class TestTeamInvitationView(TestCaseWithFactory):
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
         self.assertEqual(
-            u'B-Team (team-b) has been invited to join this team.',
+            'B-Team (team-b) has been invited to join this team.',
             notifications[0].message)
 
         # B invites A.
@@ -2058,7 +2058,7 @@ class TestTeamInvitationView(TestCaseWithFactory):
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
         self.assertEqual(
-            u'A-Team (team-a) has been invited to join this team.',
+            'A-Team (team-a) has been invited to join this team.',
             notifications[0].message)
 
         # Team A accepts the invitation.
@@ -2078,7 +2078,7 @@ class TestTeamInvitationView(TestCaseWithFactory):
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
         self.assertEqual(
-            u'This team is now a member of B-Team.',
+            'This team is now a member of B-Team.',
             notifications[0].message)
 
         # Team B attempts to accept the invitation.
@@ -2093,7 +2093,7 @@ class TestTeamInvitationView(TestCaseWithFactory):
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
         expected = (
-            u'This team may not be added to A-Team because it is a member '
+            'This team may not be added to A-Team because it is a member '
             'of B-Team.')
         self.assertEqual(
             expected,
@@ -2105,8 +2105,7 @@ class TestSubscriptionsView(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestSubscriptionsView, self).setUp(
-            user='test@canonical.com')
+        super().setUp(user='test@canonical.com')
         self.user = getUtility(ILaunchBag).user
         self.person = self.factory.makePerson()
         self.other_person = self.factory.makePerson()
@@ -2135,7 +2134,7 @@ class BugTaskViewsTestBase:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(BugTaskViewsTestBase, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         with person_logged_in(self.person):
             self.subscribed_bug = self.factory.makeBug()
@@ -2189,7 +2188,7 @@ class TestPersonRelatedBugTaskSearchListingView(
     view_name = '+bugs'
 
     def setUp(self):
-        super(TestPersonRelatedBugTaskSearchListingView, self).setUp()
+        super().setUp()
         self.expected_for_search_unbatched = [
             self.subscribed_bug.default_bugtask,
             self.assigned_bug.default_bugtask,
@@ -2205,7 +2204,7 @@ class TestPersonAssignedBugTaskSearchListingView(
     view_name = '+assignedbugs'
 
     def setUp(self):
-        super(TestPersonAssignedBugTaskSearchListingView, self).setUp()
+        super().setUp()
         self.expected_for_search_unbatched = [
             self.assigned_bug.default_bugtask,
             ]
@@ -2218,7 +2217,7 @@ class TestPersonCommentedBugTaskSearchListingView(
     view_name = '+commentedbugs'
 
     def setUp(self):
-        super(TestPersonCommentedBugTaskSearchListingView, self).setUp()
+        super().setUp()
         self.expected_for_search_unbatched = [
             self.commented_bug.default_bugtask,
             ]
@@ -2231,7 +2230,7 @@ class TestPersonReportedBugTaskSearchListingView(
     view_name = '+reportedbugs'
 
     def setUp(self):
-        super(TestPersonReportedBugTaskSearchListingView, self).setUp()
+        super().setUp()
         self.expected_for_search_unbatched = [
             self.owned_bug.default_bugtask,
             ]
@@ -2244,7 +2243,7 @@ class TestPersonSubscribedBugTaskSearchListingView(
     view_name = '+subscribedbugs'
 
     def setUp(self):
-        super(TestPersonSubscribedBugTaskSearchListingView, self).setUp()
+        super().setUp()
         self.expected_for_search_unbatched = [
             self.subscribed_bug.default_bugtask,
             self.owned_bug.default_bugtask,
@@ -2258,7 +2257,7 @@ class TestPersonAffectingBugTaskSearchListingView(
     view_name = '+affectingbugs'
 
     def setUp(self):
-        super(TestPersonAffectingBugTaskSearchListingView, self).setUp()
+        super().setUp()
         # Bugs filed by this user are marked as affecting them by default, so
         # the bug we filed is returned.
         self.expected_for_search_unbatched = [
