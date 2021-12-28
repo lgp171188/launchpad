@@ -95,7 +95,7 @@ class OCIRecipeBuildJob(StormBase):
         :param json_data: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(OCIRecipeBuildJob, self).__init__()
+        super().__init__()
         self.job = Job(**job_args)
         self.build = build
         self.job_type = job_type
@@ -156,7 +156,7 @@ class OCIRecipeBuildJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        oops_vars = super(OCIRecipeBuildJobDerived, self).getOopsVars()
+        oops_vars = super().getOopsVars()
         oops_vars.extend([
             ('job_type', self.context.job_type.title),
             ('build_id', self.context.build.id),
@@ -232,7 +232,7 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
                       *args, **kwargs):
         edited_fields = set()
         with notify_modified(self.build, edited_fields) as before_modification:
-            getattr(super(OCIRegistryUploadJob, self), method_name)(
+            getattr(super(), method_name)(
                 *args, manage_transaction=manage_transaction, **kwargs)
             upload_status = self.build.registry_upload_status
             if upload_status != before_modification.registry_upload_status:

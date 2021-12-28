@@ -94,7 +94,7 @@ class OCIRecipeFeatureDisabled(Unauthorized):
     """Only certain users can create new OCI recipes."""
 
     def __init__(self):
-        super(OCIRecipeFeatureDisabled, self).__init__(
+        super().__init__(
             "You do not have permission to create new OCI recipes.")
 
 
@@ -108,7 +108,7 @@ class OCIRecipeBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
     def __init__(self):
-        super(OCIRecipeBuildAlreadyPending, self).__init__(
+        super().__init__(
             "An identical build of this OCI recipe is already pending.")
 
 
@@ -127,7 +127,7 @@ class UsingDistributionCredentials(Exception):
     """The OCI Recipe is in a Distribution that has credentials set."""
 
     def __init__(self):
-        super(UsingDistributionCredentials, self).__init__(
+        super().__init__(
             "The OCI recipe is in a distribution that has credentials set.")
 
 
@@ -136,7 +136,7 @@ class NoSourceForOCIRecipe(Exception):
     """OCI Recipes must have a source and build file."""
 
     def __init__(self):
-        super(NoSourceForOCIRecipe, self).__init__(
+        super().__init__(
             "New OCI recipes must have a git branch and build file.")
 
 
@@ -149,8 +149,7 @@ class CannotModifyOCIRecipeProcessor(Exception):
         'by administrators.')
 
     def __init__(self, processor):
-        super(CannotModifyOCIRecipeProcessor, self).__init__(
-            self._fmt % {'processor': processor.name})
+        super().__init__(self._fmt % {'processor': processor.name})
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -158,7 +157,7 @@ class OCIRecipePrivacyMismatch(Exception):
     """OCI recipe privacy does not match its content."""
 
     def __init__(self, message=None):
-        super(OCIRecipePrivacyMismatch, self).__init__(
+        super().__init__(
             message or
             "OCI recipe contains private information and cannot be public.")
 
@@ -168,7 +167,7 @@ class OCIRecipeBranchHasInvalidFormat(Exception):
     """The branch name for the OCI recipe does not match the correct format."""
 
     def __init__(self):
-        super(OCIRecipeBranchHasInvalidFormat, self).__init__(
+        super().__init__(
             "The branch name for the OCI recipe does not "
             "match the APPVERSION-UBUNTUVERSION format (ex. v1.0-20.04)")
 

@@ -11,7 +11,6 @@ from datetime import (
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
-import six
 from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     ContainsDict,
@@ -93,7 +92,7 @@ class TestOCIFileSet(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestOCIFileSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_implements_interface(self):
@@ -119,7 +118,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestOCIRecipeBuild, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.build = self.factory.makeOCIRecipeBuild()
 
@@ -160,7 +159,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_getLayerFileByDigest(self):
         files = [self.factory.makeOCIFile(
-                    build=self.build, layer_file_digest=six.text_type(x))
+                    build=self.build, layer_file_digest=str(x))
                  for x in range(3)]
         result, _, _ = self.build.getLayerFileByDigest(
             files[0].layer_file_digest)
@@ -168,7 +167,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_getLayerFileByDigest_missing(self):
         [self.factory.makeOCIFile(
-            build=self.build, layer_file_digest=six.text_type(x))
+            build=self.build, layer_file_digest=str(x))
          for x in range(3)]
         self.assertRaises(
             NotFoundError,
@@ -609,7 +608,7 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeBuildSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_implements_interface(self):
@@ -707,7 +706,7 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeBuildWebservice, self).setUp()
+        super().setUp()
         self.setConfig()
         self.person = self.factory.makePerson()
         self.webservice = webservice_for_person(
@@ -855,7 +854,7 @@ class TestOCIRecipeBuildMacaroonIssuer(
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestOCIRecipeBuildMacaroonIssuer, self).setUp()
+        super().setUp()
         self.setConfig()
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")

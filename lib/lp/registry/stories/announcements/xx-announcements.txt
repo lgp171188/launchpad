@@ -6,6 +6,10 @@ list is available as a portlet on the project home page, as well as on a
 dedicated batched page showing all announcements, and as an RSS/Atom
 news feed.
 
+    >>> from datetime import (
+    ...     datetime,
+    ...     timedelta,
+    ...     )
     >>> import feedparser
     >>> from lp.services.beautifulsoup import (
     ...     BeautifulSoup,
@@ -202,7 +206,7 @@ date in the future when the announcement will be made:
     >>> priv_browser.getControl('specific date and time').click()
     >>> priv_browser.getControl(
     ...     name='field.publication_date.announcement_date').value = (
-    ...          '2021-12-24 09:00:00')
+    ...          datetime.now() + timedelta(days=1)).isoformat()
     >>> priv_browser.getControl('Make announcement').click()
     >>> print(priv_browser.title)
     Jokosher in Launchpad

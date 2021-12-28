@@ -99,7 +99,7 @@ class TestOCIRecipeBuildJob(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeBuildJob, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_provides_interface(self):
@@ -130,7 +130,7 @@ class TestOCIRecipeBuildJobDerived(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeBuildJobDerived, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_repr(self):
@@ -151,8 +151,7 @@ class TestOCIRecipeBuildJobDerived(TestCaseWithFactory):
             def __getattribute__(self, item):
                 if item == 'build':
                     raise AttributeError("Somethng is wrong with build")
-                return super(
-                    ErrorOCIRecipeBuildJobDerived, self).__getattribute__(item)
+                return super().__getattribute__(item)
         oci_build = self.factory.makeOCIRecipeBuild()
         job = OCIRecipeBuildJob(
             oci_build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {})
@@ -204,7 +203,7 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory, MultiArchRecipeMixin,
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestOCIRegistryUploadJob, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({
             'webhooks.new.enabled': 'true',
             OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',
@@ -556,7 +555,7 @@ class TestOCIRegistryUploadJobViaCelery(TestCaseWithFactory,
     layer = CelerySlowJobLayer
 
     def setUp(self):
-        super(TestOCIRegistryUploadJobViaCelery, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({
             'webhooks.new.enabled': 'true',
             OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',

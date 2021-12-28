@@ -104,7 +104,7 @@ class OCIFile(StormBase):
 
     def __init__(self, build, library_file, layer_file_digest=None):
         """Construct a `OCIFile`."""
-        super(OCIFile, self).__init__()
+        super().__init__()
         self.build = build
         self.library_file = library_file
         self.layer_file_digest = layer_file_digest
@@ -409,7 +409,7 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         """See `IBuildFarmJob`."""
         edited_fields = set()
         with notify_modified(self, edited_fields) as previous_obj:
-            super(OCIRecipeBuild, self).updateStatus(
+            super().updateStatus(
                 status, builder=builder, slave_status=slave_status,
                 date_started=date_started, date_finished=date_finished,
                 force_invalid_transition=force_invalid_transition)

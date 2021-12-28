@@ -617,7 +617,7 @@ class OCIRegistryClient:
 
 class OCIRegistryAuthenticationError(Exception):
     def __init__(self, msg, http_error=None):
-        super(OCIRegistryAuthenticationError, self).__init__(msg)
+        super().__init__(msg)
         self.http_error = http_error
 
 
@@ -696,7 +696,7 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
     """
 
     def __init__(self, push_rule):
-        super(BearerTokenRegistryClient, self).__init__(push_rule)
+        super().__init__(push_rule)
         self.auth_token = None
 
     def parseAuthInstructions(self, request):
@@ -721,7 +721,7 @@ class BearerTokenRegistryClient(RegistryHTTPClient):
                 "Auth instructions didn't include realm to get the token: %s"
                 % values)
         # We should use the basic auth version for this request.
-        response = super(BearerTokenRegistryClient, self).request(
+        response = super().request(
             url, params=values, method="GET", auth=self.credentials)
         response.raise_for_status()
         response_data = response.json()

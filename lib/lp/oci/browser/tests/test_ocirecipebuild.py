@@ -46,7 +46,7 @@ class TestCanonicalUrlForOCIRecipeBuild(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCanonicalUrlForOCIRecipeBuild, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_canonical_url(self):
@@ -70,7 +70,7 @@ class TestOCIRecipeBuildView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeBuildView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_index(self):
@@ -157,7 +157,7 @@ class TestOCIRecipeBuildOperations(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeBuildOperations, self).setUp()
+        super().setUp()
         self.useFixture(FakeLogger())
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.build = self.factory.makeOCIRecipeBuild()

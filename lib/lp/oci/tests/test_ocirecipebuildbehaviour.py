@@ -140,7 +140,7 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestOCIBuildBehaviour, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_provides_interface(self):
@@ -164,7 +164,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
 
     @defer.inlineCallbacks
     def setUp(self):
-        super(TestAsyncOCIRecipeBuildBehaviour, self).setUp()
+        super().setUp()
         build_username = 'OCIBUILD-1'
         self.token = {'secret': uuid.uuid4().hex,
                       'username': build_username,
@@ -696,7 +696,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         self.slave.valid_files[hash] = path
 
     def setUp(self):
-        super(TestHandleStatusForOCIRecipeBuild, self).setUp()
+        super().setUp()
         self.useFixture(fixtures.FakeLogger())
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.build = self.makeBuild()
@@ -766,7 +766,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
             'layer_2.tar.gz': 'layer_2_hash'
         }
         self.factory.makeOCIFile(
-            build=self.build, layer_file_digest=u'digest_1',
+            build=self.build, layer_file_digest='digest_1',
             content=b"retrieved from librarian")
 
     def assertResultCount(self, count, result):
@@ -809,7 +809,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     def test_handleStatus_OK_reuse_from_other_build(self):
         """We should be able to reuse a layer file from a separate build."""
         oci_file = self.factory.makeOCIFile(
-            layer_file_digest=u'digest_2',
+            layer_file_digest='digest_2',
             content=b"layer 2 retrieved from librarian")
 
         now = datetime.now(pytz.UTC)
@@ -971,4 +971,4 @@ class TestGetUploadMethodsForOCIRecipeBuild(
     """IPackageBuild.getUpload-related methods work with OCI recipe builds."""
     def setUp(self):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
-        super(TestGetUploadMethodsForOCIRecipeBuild, self).setUp()
+        super().setUp()

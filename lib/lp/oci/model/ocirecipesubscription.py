@@ -44,7 +44,7 @@ class OCIRecipeSubscription(StormBase):
     subscribed_by = Reference(subscribed_by_id, "Person.id")
 
     def __init__(self, recipe, person, subscribed_by):
-        super(OCIRecipeSubscription, self).__init__()
+        super().__init__()
         self.recipe = recipe
         self.person = person
         self.subscribed_by = subscribed_by

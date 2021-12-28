@@ -40,7 +40,7 @@ class OCIPushRuleAlreadyExists(Exception):
     """
 
     def __init__(self):
-        super(OCIPushRuleAlreadyExists, self).__init__(
+        super().__init__(
             "A push rule already exists with the same URL, image name, "
             "and credentials")
 
