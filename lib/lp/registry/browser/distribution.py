@@ -372,7 +372,7 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
 
     def search_oci_project(self):
         oci_projects = getUtility(IOCIProjectSet).findByPillarAndName(
-            self.context, u'')
+            self.context, '')
         text = 'Search for OCI project'
         link = Link('+search-oci-project', text, icon='info')
         link.enabled = not oci_projects.is_empty()
@@ -574,7 +574,7 @@ class DistributionPackageSearchView(PackageSearchViewBase):
 
     def initialize(self):
         """Save the search type if provided."""
-        super(DistributionPackageSearchView, self).initialize()
+        super().initialize()
 
         # If the distribution contains binary packages, then we'll
         # default to searches on binary names, but allow the user to
@@ -704,7 +704,7 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     """Default Distribution view class."""
 
     def initialize(self):
-        super(DistributionView, self).initialize()
+        super().initialize()
         expose_structural_subscription_data_to_js(
             self.context, self.request, self.user)
 
@@ -902,9 +902,9 @@ class RequireVirtualizedBuildersMixin:
         return form.Fields(
             Bool(
                 __name__='require_virtualized',
-                title=u"Require virtualized builders",
+                title="Require virtualized builders",
                 description=(
-                    u"Only build the distribution's packages on virtual "
+                    "Only build the distribution's packages on virtual "
                     "builders."),
                 required=True))
 
@@ -956,8 +956,8 @@ class DistributionAddView(LaunchpadFormView, RequireVirtualizedBuildersMixin,
         self.form_fields += self.createRequireVirtualized()
         self.form_fields += self.createEnabledProcessors(
             getUtility(IProcessorSet).getAll(),
-            u"The architectures on which the distribution's main archive can "
-            u"build.")
+            "The architectures on which the distribution's main archive can "
+            "build.")
 
     @action("Save", name='save')
     def save_action(self, action, data):
@@ -1028,8 +1028,8 @@ class DistributionEditView(RegistryEditFormView,
         self.form_fields += self.createRequireVirtualized()
         self.form_fields += self.createEnabledProcessors(
             getUtility(IProcessorSet).getAll(),
-            u"The architectures on which the distribution's main archive can "
-            u"build.")
+            "The architectures on which the distribution's main archive can "
+            "build.")
 
     @property
     def initial_values(self):
@@ -1195,7 +1195,7 @@ class DistributionCountryArchiveMirrorsView(LaunchpadView):
         request = self.request
         if not self.context.supports_mirrors:
             request.response.setStatus(404)
-            return u''
+            return ''
         ip_address = ipaddress_from_request(request)
         country = request_country(request)
         mirrors = getUtility(IDistributionMirrorSet).getBestMirrorsForCountry(

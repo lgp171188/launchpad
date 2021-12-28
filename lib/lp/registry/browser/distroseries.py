@@ -159,7 +159,7 @@ class DistroSeriesURL:
                 not self.context.distribution.redirect_default_traversal):
             return self.context.name
         else:
-            return u"+series/%s" % self.context.name
+            return "+series/%s" % self.context.name
 
 
 class DistroSeriesNavigation(GetitemNavigation, BugTargetTraversalMixin,
@@ -439,7 +439,7 @@ class DistroSeriesView(LaunchpadView, MilestoneOverlayMixin,
                        DerivedDistroSeriesMixin):
 
     def initialize(self):
-        super(DistroSeriesView, self).initialize()
+        super().initialize()
         self.displayname = '%s %s' % (
             self.context.distribution.displayname,
             self.context.version)
@@ -709,7 +709,7 @@ class DistroSeriesAddView(LaunchpadFormView):
         ]
 
     help_links = {
-        "name": u"/+help-registry/distribution-add-series.html#codename",
+        "name": "/+help-registry/distribution-add-series.html#codename",
         }
 
     label = 'Add a series'
@@ -729,7 +729,7 @@ class DistroSeriesAddView(LaunchpadFormView):
             display_name=data['display_name'],
             title=data['display_name'],
             summary=data['summary'],
-            description=u"",
+            description="",
             version=data['version'],
             previous_series=previous_series,
             registrant=self.user)
@@ -765,7 +765,7 @@ class DistroSeriesInitializeView(LaunchpadFormView):
     page_title = label
 
     def initialize(self):
-        super(DistroSeriesInitializeView, self).initialize()
+        super().initialize()
         cache = IJSONRequestCache(self.request).objects
         distribution = self.context.distribution
         is_first_derivation = not distribution.has_published_sources
@@ -778,7 +778,7 @@ class DistroSeriesInitializeView(LaunchpadFormView):
             cache['previous_parents'] = [
                 seriesToVocab(series) for series in previous_parents]
 
-    @action(u"Initialize Series", name='initialize')
+    @action("Initialize Series", name='initialize')
     def submit(self, action, data):
         """Stub for the Javascript in the page to use."""
 
@@ -888,7 +888,7 @@ class IDifferencesFormSchema(Interface):
         required=True)
 
     sponsored_person = Choice(
-        title=u"Person being sponsored", vocabulary='ValidPerson',
+        title="Person being sponsored", vocabulary='ValidPerson',
         required=False)
 
 
@@ -954,7 +954,7 @@ class DistroSeriesDifferenceBaseView(LaunchpadFormView,
         As this field depends on other search/filtering field values
         for its own vocabulary, we set it up after all the others.
         """
-        super(DistroSeriesDifferenceBaseView, self).setUpFields()
+        super().setUpFields()
         self.form_fields = (
             self.setupPackageFilterRadio() +
             self.form_fields)
@@ -1231,7 +1231,7 @@ class DistroSeriesLocalDifferencesView(DistroSeriesDifferenceBaseView,
                 parent_name,
                 self.context.displayname,
                 ))
-        super(DistroSeriesLocalDifferencesView, self).initialize()
+        super().initialize()
 
     @property
     def explanation(self):
@@ -1294,9 +1294,9 @@ class DistroSeriesLocalDifferencesView(DistroSeriesDifferenceBaseView,
             copies, self.user, copy_policy=PackageCopyPolicy.MASS_SYNC)
 
         self.request.response.addInfoNotification(
-            (u"Upgrades of {context.displayname} packages have been "
-             u"requested. Please give Launchpad some time to complete "
-             u"these.").format(context=self.context))
+            ("Upgrades of {context.displayname} packages have been "
+             "requested. Please give Launchpad some time to complete "
+             "these.").format(context=self.context))
 
     def canUpgrade(self, action=None):
         """Should the form offer a packages upgrade?"""
@@ -1330,7 +1330,7 @@ class DistroSeriesMissingPackagesView(DistroSeriesDifferenceBaseView,
             "Include Selected packages into %s" % (
                 self.context.displayname,
                 ))
-        super(DistroSeriesMissingPackagesView, self).initialize()
+        super().initialize()
 
     @property
     def explanation(self):
@@ -1369,7 +1369,7 @@ class DistroSeriesUniquePackagesView(DistroSeriesDifferenceBaseView,
     show_packagesets = True
 
     def initialize(self):
-        super(DistroSeriesUniquePackagesView, self).initialize()
+        super().initialize()
 
     @property
     def explanation(self):

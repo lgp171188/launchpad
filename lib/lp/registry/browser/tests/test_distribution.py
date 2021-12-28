@@ -336,9 +336,9 @@ class TestDistributionPage(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionPage, self).setUp()
+        super().setUp()
         self.distro = self.factory.makeDistribution(
-            name="distro", displayname=u'distro')
+            name="distro", displayname='distro')
         self.simple_user = self.factory.makePerson()
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.
@@ -510,9 +510,9 @@ class TestDistributionView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionView, self).setUp()
+        super().setUp()
         self.distro = self.factory.makeDistribution(
-            name="distro", displayname=u'distro')
+            name="distro", displayname='distro')
 
     def test_view_data_model(self):
         # The view's json request cache contains the expected data.

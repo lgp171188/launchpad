@@ -38,7 +38,7 @@ class TeamMembershipBreadcrumb(Breadcrumb):
 class TeamMembershipEditView(LaunchpadView):
 
     def __init__(self, context, request):
-        super(TeamMembershipEditView, self).__init__(context, request)
+        super().__init__(context, request)
         self.errormessage = ""
         self.prefix = 'membership'
         self.max_year = 2050

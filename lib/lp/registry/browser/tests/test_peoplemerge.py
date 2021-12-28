@@ -37,13 +37,13 @@ from lp.testing.views import (
 class RequestPeopleMergeMixin(TestCaseWithFactory):
 
     def setUp(self):
-        super(RequestPeopleMergeMixin, self).setUp()
+        super().setUp()
         self.person_set = getUtility(IPersonSet)
         self.dupe = self.factory.makePerson(
             name='foo', email='foo@baz.com')
 
     def tearDown(self):
-        super(RequestPeopleMergeMixin, self).tearDown()
+        super().tearDown()
         stub.test_emails = []
 
 
@@ -53,7 +53,7 @@ class TestRequestPeopleMergeMultipleEmails(RequestPeopleMergeMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestRequestPeopleMergeMultipleEmails, self).setUp()
+        super().setUp()
         EmailAddressSet().new(
             'bar.foo@canonical.com', person=self.dupe,
             status=EmailAddressStatus.VALIDATED)
@@ -72,8 +72,8 @@ class TestRequestPeopleMergeMultipleEmails(RequestPeopleMergeMixin):
         explanation = find_tag_by_id(browser.contents, 'explanation')
         self.assertThat(
             extract_text(explanation), DocTestMatches(
-                u"The account..."
-                u"has more than one registered email address..."))
+                "The account..."
+                "has more than one registered email address..."))
         email_select_control = browser.getControl(name='selected')
         for ctrl in email_select_control.controls:
             ctrl.selected = True
@@ -213,7 +213,7 @@ class TestRequestPeopleMergeHiddenEmailAddresses(RequestPeopleMergeMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestRequestPeopleMergeHiddenEmailAddresses, self).setUp()
+        super().setUp()
         removeSecurityProxy(self.dupe).hide_email_addresses = True
         EmailAddressSet().new(
             'bar.foo@canonical.com', person=self.dupe,
@@ -257,7 +257,7 @@ class TestValidatingMergeView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestValidatingMergeView, self).setUp()
+        super().setUp()
         self.person_set = getUtility(IPersonSet)
         self.dupe = self.factory.makePerson(name='dupe')
         self.target = self.factory.makePerson(name='target')
@@ -281,7 +281,7 @@ class TestValidatingMergeView(TestCaseWithFactory):
             self.person_set, '+requestmerge', form=self.getForm())
         self.assertEqual(
             [html_escape(
-                u"dupe has a PPA that must be deleted before it can be "
+                "dupe has a PPA that must be deleted before it can be "
                 "merged. It may take ten minutes to remove the deleted PPA's "
                 "files.")],
             view.errors)
@@ -294,7 +294,7 @@ class TestValidatingMergeView(TestCaseWithFactory):
         view = create_initialized_view(
             self.person_set, '+requestmerge', form=self.getForm())
         self.assertEqual(
-            [u"dupe owns private branches that must be deleted or "
+            ["dupe owns private branches that must be deleted or "
               "transferred to another owner first."],
             view.errors)
 
@@ -306,7 +306,7 @@ class TestValidatingMergeView(TestCaseWithFactory):
         view = create_initialized_view(
             self.person_set, '+requestmerge', form=self.getForm())
         self.assertEqual(
-            [u"dupe owns private Git repositories that must be deleted or "
+            ["dupe owns private Git repositories that must be deleted or "
               "transferred to another owner first."],
             view.errors)
 
@@ -352,7 +352,7 @@ class TestRequestPeopleMergeMultipleEmailsView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestRequestPeopleMergeMultipleEmailsView, self).setUp()
+        super().setUp()
         self.personset = getUtility(IPersonSet)
         self.dupe_user = self.factory.makePerson()
         self.email_2 = self.factory.makeEmail(
@@ -409,7 +409,7 @@ class TestAdminTeamMergeView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestAdminTeamMergeView, self).setUp()
+        super().setUp()
         self.person_set = getUtility(IPersonSet)
         self.dupe_team = self.factory.makeTeam(name='dupe-team')
         self.target_team = self.factory.makeTeam(name='target-team')
@@ -434,7 +434,7 @@ class TestAdminTeamMergeView(TestCaseWithFactory):
         view = self.getView()
         self.assertEqual(
             [html_escape(
-                u"dupe-team has a PPA that must be deleted before it can be "
+                "dupe-team has a PPA that must be deleted before it can be "
                 "merged. It may take ten minutes to remove the deleted PPA's "
                 "files.")],
             view.errors)
@@ -446,7 +446,7 @@ class TestAdminPeopleMergeView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestAdminPeopleMergeView, self).setUp()
+        super().setUp()
         self.person_set = getUtility(IPersonSet)
         self.dupe_person = self.factory.makePerson(name='dupe-person')
         self.target_person = self.factory.makePerson()
@@ -470,7 +470,7 @@ class TestAdminPeopleMergeView(TestCaseWithFactory):
         view = self.getView()
         self.assertEqual(
             [html_escape(
-                u"dupe-person has a PPA that must be deleted before it can "
+                "dupe-person has a PPA that must be deleted before it can "
                 "be merged. It may take ten minutes to remove the deleted "
                 "PPA's files.")],
             view.errors)

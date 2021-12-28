@@ -65,7 +65,6 @@ from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
-import six
 from six.moves.urllib.parse import (
     quote,
     urlencode,
@@ -470,7 +469,7 @@ class BranchTraversalMixin:
             branch = getUtility(IBranchNamespaceSet).traverse(
                 self._getSegments(pillar_name))
         except (NotFoundError, InvalidNamespace):
-            return super(BranchTraversalMixin, self).traverse(pillar_name)
+            return super().traverse(pillar_name)
 
         # Normally, populating the launch bag is done by the traversal
         # mechanism. However, here we short-circuit that mechanism by
@@ -905,8 +904,8 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin, HasRecipesMenuMixin,
         target = '+karma'
         text = 'Show karma summary'
         summary = (
-            u'%s\N{right single quotation mark}s activities '
-            u'in Launchpad' % self.context.displayname)
+            '%s\N{right single quotation mark}s activities '
+            'in Launchpad' % self.context.displayname)
         return Link(target, text, summary, icon='info')
 
     def memberships(self):
@@ -1034,7 +1033,7 @@ class PeopleSearchView(LaunchpadView):
     page_title = 'People and teams in Launchpad'
 
     def __init__(self, context, request):
-        super(PeopleSearchView, self).__init__(context, request)
+        super().__init__(context, request)
         self.results = []
 
     @property
@@ -1092,7 +1091,7 @@ class PersonDeactivateAccountView(LaunchpadFormView):
         getUtility(IPersonDeactivateJobSource).create(self.context)
         logoutPerson(self.request)
         self.request.response.addInfoNotification(
-            _(u'Your account has been deactivated.'))
+            _('Your account has been deactivated.'))
         self.next_url = self.request.getApplicationURL()
 
 
@@ -1237,7 +1236,7 @@ class PersonRenameFormMixin(LaunchpadEditFormView):
         if reason:
             # This makes the field's widget display (i.e. read) only.
             self.form_fields['name'].for_display = True
-        super(PersonRenameFormMixin, self).setUpWidgets()
+        super().setUpWidgets()
         if reason:
             self.widgets['name'].hint = reason
 
@@ -1319,7 +1318,7 @@ class PersonAccountAdministerView(LaunchpadFormView):
 
     def __init__(self, context, request):
         """See `LaunchpadEditFormView`."""
-        super(PersonAccountAdministerView, self).__init__(context, request)
+        super().__init__(context, request)
         # Only the IPerson can be traversed to, so it provides the IAccount.
         # It also means that permissions are checked on IAccount, not IPerson.
         self.person = self.context
@@ -1376,18 +1375,18 @@ class PersonAccountAdministerView(LaunchpadFormView):
             # is sent to the user.
             self.person.setPreferredEmail(None)
             self.request.response.addInfoNotification(
-                u'The account "%s" has been suspended.'
+                'The account "%s" has been suspended.'
                 % self.context.displayname)
         elif data['status'] == AccountStatus.DEACTIVATED:
             self.request.response.addInfoNotification(
-                u'The account "%s" is now deactivated. The user can log in '
-                u'to reactivate it.' % self.context.displayname)
+                'The account "%s" is now deactivated. The user can log in '
+                'to reactivate it.' % self.context.displayname)
         elif data['status'] == AccountStatus.DECEASED:
             # Deliberately leave the email address in place so that it can't
             # easily be claimed by somebody else.
             self.request.response.addInfoNotification(
-                u'The account "%s" has been marked as having belonged to a '
-                u'deceased user.' % self.context.displayname)
+                'The account "%s" has been marked as having belonged to a '
+                'deceased user.' % self.context.displayname)
         self.context.setStatus(data['status'], self.user, data['comment'])
 
 
@@ -1464,7 +1463,7 @@ class PersonLanguagesView(LaunchpadFormView):
         new_languages = []
 
         for key in all_languages.keys():
-            if self.request.get(key, None) == u'on':
+            if self.request.get(key, None) == 'on':
                 new_languages.append(all_languages[key])
 
         if self.is_current_user:
@@ -2128,7 +2127,7 @@ class PersonIndexView(XRDSContentNegotiationMixin, PersonView,
         "../../services/openid/templates/person-xrds.pt")
 
     def initialize(self):
-        super(PersonIndexView, self).initialize()
+        super().initialize()
         if self.context.isMergePending():
             if self.context.is_team:
                 merge_action = 'merged or deleted'
@@ -2225,7 +2224,7 @@ class PersonCodeOfConductEditView(LaunchpadView):
             for sig_id in sig_ids:
                 sig_id = int(sig_id)
                 # Deactivating signature.
-                comment = u'Deactivated by Owner'
+                comment = 'Deactivated by Owner'
                 sCoC_util.modifySignature(sig_id, self.user, comment, False)
 
 
@@ -2285,7 +2284,7 @@ class PersonEditJabberIDsView(LaunchpadFormView):
     field_names = ['jabberid']
 
     def setUpFields(self):
-        super(PersonEditJabberIDsView, self).setUpFields()
+        super().setUpFields()
         if not self.context.jabberids.is_empty():
             # Make the jabberid entry optional on the edit page if one or more
             # ids already exist, which allows the removal of ids without
@@ -2422,7 +2421,7 @@ class PersonGPGView(LaunchpadView):
 
     def initialize(self):
         require_fresh_login(self.request, self.context, '+editpgpkeys')
-        super(PersonGPGView, self).initialize()
+        super().initialize()
 
     @property
     def cancel_url(self):
@@ -2725,7 +2724,7 @@ class PersonEditEmailsView(LaunchpadFormView):
             # +editemails is not available on teams.
             name = self.request['PATH_INFO'].split('/')[-1]
             raise NotFound(self, name, request=self.request)
-        super(PersonEditEmailsView, self).initialize()
+        super().initialize()
 
     def setUpFields(self):
         """Set up fields for this view.
@@ -2734,11 +2733,11 @@ class PersonEditEmailsView(LaunchpadFormView):
         vocabularies for the lists of validated and unvalidated email
         addresses.
         """
-        super(PersonEditEmailsView, self).setUpFields()
+        super().setUpFields()
         self.form_fields = (self._validated_emails_field() +
                             self._unvalidated_emails_field() +
                             FormFields(TextLine(__name__='newemail',
-                                                title=u'Add a new address')))
+                                                title='Add a new address')))
 
     @property
     def initial_values(self):
@@ -2786,7 +2785,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         """
         terms = []
         for term in self.unvalidated_addresses:
-            if isinstance(term, six.text_type):
+            if isinstance(term, str):
                 term = SimpleTerm(term)
             else:
                 term = SimpleTerm(term, term.email)
@@ -2827,7 +2826,7 @@ class PersonEditEmailsView(LaunchpadFormView):
                 "self.context.id(%s,%d) (%s)"
                 % (person.name, person.id, self.context.name, self.context.id,
                    email.email))
-        elif isinstance(email, six.text_type):
+        elif isinstance(email, str):
             tokenset = getUtility(ILoginTokenSet)
             email = tokenset.searchByEmailRequesterAndType(
                 email, self.context, LoginTokenType.VALIDATEEMAIL)
@@ -2953,7 +2952,7 @@ class PersonEditEmailsView(LaunchpadFormView):
         if IEmailAddress.providedBy(emailaddress):
             emailaddress.destroySelf()
             email = emailaddress.email
-        elif isinstance(emailaddress, six.text_type):
+        elif isinstance(emailaddress, str):
             logintokenset = getUtility(ILoginTokenSet)
             logintokenset.deleteByEmailRequesterAndType(
                 emailaddress, self.context, LoginTokenType.VALIDATEEMAIL)
@@ -3049,7 +3048,7 @@ class PersonEditMailingListsView(LaunchpadFormView):
             # +editmailinglists is not available on teams.
             name = self.request['PATH_INFO'].split('/')[-1]
             raise NotFound(self, name, request=self.request)
-        super(PersonEditMailingListsView, self).initialize()
+        super().initialize()
 
     def setUpFields(self):
         """Set up fields for this view.
@@ -3058,7 +3057,7 @@ class PersonEditMailingListsView(LaunchpadFormView):
         vocabularies for the lists of validated and unvalidated email
         addresses.
         """
-        super(PersonEditMailingListsView, self).setUpFields()
+        super().setUpFields()
         self.form_fields = (self._mailing_list_fields()
                             + self._autosubscribe_policy_fields())
 
@@ -3081,7 +3080,7 @@ class PersonEditMailingListsView(LaunchpadFormView):
 
     def setUpWidgets(self, context=None):
         """See `LaunchpadFormView`."""
-        super(PersonEditMailingListsView, self).setUpWidgets(context)
+        super().setUpWidgets(context)
         widget = self.widgets['mailing_list_auto_subscribe_policy']
         widget.display_label = False
 
@@ -3679,7 +3678,7 @@ class PersonOCIRegistryCredentialsView(LaunchpadView):
     def initialize(self):
         if not user_can_edit_credentials_for_owner(self.context, self.user):
             raise Unauthorized
-        super(PersonOCIRegistryCredentialsView, self).initialize()
+        super().initialize()
 
     @property
     def label(self):
@@ -3712,7 +3711,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
     def initialize(self):
         if not user_can_edit_credentials_for_owner(self.context, self.user):
             raise Unauthorized
-        super(PersonEditOCIRegistryCredentialsView, self).initialize()
+        super().initialize()
 
     def _getFieldName(self, name, credentials_id):
         """Get the combined field name for an `OCIRegistryCredentials` ID.
@@ -3764,25 +3763,25 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
 
     def getAddFieldsRow(self):
         add_url = TextLine(
-            __name__=u'add_url',
+            __name__='add_url',
             required=False, readonly=False)
         add_region = TextLine(
-            __name__=u'add_region',
+            __name__='add_region',
             required=False, readonly=False)
         add_owner = Choice(
-            __name__=u'add_owner',
+            __name__='add_owner',
             vocabulary=(
                 'AllUserTeamsParticipationPlusSelfSimpleDisplay'),
             default=self.default_owner,
             required=False, readonly=False)
         add_username = TextLine(
-            __name__=u'add_username',
+            __name__='add_username',
             required=False, readonly=False)
         add_password = Password(
-            __name__=u'add_password',
+            __name__='add_password',
             required=False, readonly=False)
         add_confirm_password = Password(
-            __name__=u'add_confirm_password',
+            __name__='add_confirm_password',
             required=False, readonly=False)
 
         return (
@@ -3819,8 +3818,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
         self.form_fields += FormFields(*add_fields)
 
     def setUpWidgets(self, context=None):
-        super(PersonEditOCIRegistryCredentialsView, self).setUpWidgets(
-            context=context)
+        super().setUpWidgets(context=context)
         for widget in self.widgets:
             widget.display_label = False
             widget.hint = None
@@ -4249,19 +4247,16 @@ class ContactViaWebNotificationRecipientSet:
 
     def getEmails(self):
         """See `INotificationRecipientSet`."""
-        for email in sorted(self._all_recipients.keys()):
-            yield email
+        yield from sorted(self._all_recipients.keys())
 
     def getRecipients(self):
         """See `INotificationRecipientSet`."""
-        for recipient in sorted(
-            self._all_recipients.values(), key=attrgetter('displayname')):
-            yield recipient
+        yield from sorted(
+            self._all_recipients.values(), key=attrgetter('displayname'))
 
     def getRecipientPersons(self):
         """See `INotificationRecipientSet`."""
-        for email, person in self._all_recipients.items():
-            yield (email, person)
+        yield from self._all_recipients.items()
 
     def __iter__(self):
         """See `INotificationRecipientSet`."""
@@ -4351,7 +4346,7 @@ class EmailToPersonView(LaunchpadFormView):
         a vocabulary of the user's preferred (first) and validated
         (subsequent) email addresses.
         """
-        super(EmailToPersonView, self).setUpFields()
+        super().setUpFields()
         usable_addresses = [self.user.preferredemail]
         usable_addresses.extend(self.user.validatedemails)
         terms = [SimpleTerm(email, email.email) for email in usable_addresses]

@@ -42,8 +42,8 @@ class TestDistributionSourcePackageFormatterAPI(TestCaseWithFactory):
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         dsp = ubuntu.getSourcePackage('mouse')
         markup = (
-            u'<a href="/ubuntu/+source/mouse" class="sprite package-source">'
-            u'mouse in Ubuntu</a>')
+            '<a href="/ubuntu/+source/mouse" class="sprite package-source">'
+            'mouse in Ubuntu</a>')
         self.assertEqual(markup, test_tales('dsp/fmt:link', dsp=dsp))
 
 
@@ -157,7 +157,7 @@ class TestDistributionSourceView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionSourceView, self).setUp()
+        super().setUp()
         self.factory.makeSourcePackageName('mouse')
         distro = self.factory.makeDistribution()
         self.dsp = distro.getSourcePackage('mouse')

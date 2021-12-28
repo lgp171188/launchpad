@@ -32,11 +32,11 @@ class TestOCICredentialsWidget(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCICredentialsWidget, self).setUp()
+        super().setUp()
         self.setConfig()
         field = Reference(
             __name__="oci_registry_credentials",
-            schema=Interface, title=u"OCI Registry Credentials")
+            schema=Interface, title="OCI Registry Credentials")
         self.context = self.factory.makeDistribution()
         field = field.bind(self.context)
         request = LaunchpadTestRequest()
@@ -163,7 +163,7 @@ class TestOCICredentialsWidget(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_getInputValue_valid(self):
         field = Reference(
             __name__="oci_registry_credentials",
-            schema=Interface, title=u"OCI Registry Credentials")
+            schema=Interface, title="OCI Registry Credentials")
         self.context = self.factory.makeDistribution(
             oci_project_admin=self.owner)
         field = field.bind(self.context)

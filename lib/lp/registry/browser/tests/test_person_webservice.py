@@ -50,7 +50,7 @@ class TestPersonEmailSecurity(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonEmailSecurity, self).setUp()
+        super().setUp()
         self.target = self.factory.makePerson(name='target')
         self.email_one = self.factory.makeEmail(
                 'test1@example.com', self.target)
@@ -87,7 +87,7 @@ class TestPersonAccountStatus(TestCaseWithFactory):
         person = self.factory.makePerson()
         registrar = self.factory.makePerson(
             member_of=[getUtility(IPersonSet).getByName('registry')])
-        removeSecurityProxy(person.account).status_history = u'Test'
+        removeSecurityProxy(person.account).status_history = 'Test'
         person_url = api_url(person)
 
         # A normal user cannot read account_status_history. Not even
@@ -178,7 +178,7 @@ class PersonWebServiceTests(TestCaseWithFactory):
                 team.addMember(person, owner)
                 getUtility(ITeamMembershipSet).getByPersonAndTeam(
                     person, team).setStatus(
-                        TeamMembershipStatus.DEACTIVATED, owner, u"Go away.")
+                        TeamMembershipStatus.DEACTIVATED, owner, "Go away.")
 
         def get_members():
             ws.get('/~%s/deactivated_members' % name).jsonBody()
@@ -250,7 +250,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(PersonSetWebServiceTests, self).setUp()
+        super().setUp()
         self.webservice = webservice_for_person(None)
 
     def assertReturnsPeople(self, expected_names, path):
@@ -309,7 +309,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
     def test_find_by_date(self):
         # Creation date filtering is supported.
         self.assertReturnsPeople(
-            [u'bac'],
+            ['bac'],
             '/people?ws.op=findPerson&text='
             '&created_after=2008-06-27&created_before=2008-07-01')
 
@@ -401,7 +401,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
                 account_status=AccountStatus.SUSPENDED)
             oid = OpenIdIdentifier()
             oid.account = existing.account
-            oid.identifier = u'somebody'
+            oid.identifier = 'somebody'
             Store.of(existing).add(oid)
             sca = getUtility(IPersonSet).getByName('software-center-agent')
         response = self.getOrCreateSoftwareCenterCustomer(sca)
@@ -415,7 +415,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
                 account_status=AccountStatus.DECEASED)
             oid = OpenIdIdentifier()
             oid.account = existing.account
-            oid.identifier = u'somebody'
+            oid.identifier = 'somebody'
             Store.of(existing).add(oid)
             sca = getUtility(IPersonSet).getByName('software-center-agent')
         response = self.getOrCreateSoftwareCenterCustomer(sca)
@@ -468,7 +468,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
         with admin_logged_in():
             by_name = getUtility(IPersonSet).getByName('bar')
             by_openid = getUtility(IPersonSet).getByOpenIDIdentifier(
-                u'http://testopenid.test/+id/foo')
+                'http://testopenid.test/+id/foo')
             self.assertEqual(by_name, by_openid)
             self.assertEqual(
                 AccountStatus.PLACEHOLDER, by_name.account_status)
@@ -485,7 +485,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
             self.assertIs(None, getUtility(IPersonSet).getByName('bar'))
             self.assertRaises(
                 LookupError,
-                getUtility(IAccountSet).getByOpenIDIdentifier, u'foo')
+                getUtility(IAccountSet).getByOpenIDIdentifier, 'foo')
 
     def test_setUsernameFromSSO_is_restricted(self):
         # The method may only be invoked by the ~ubuntu-sso celebrity

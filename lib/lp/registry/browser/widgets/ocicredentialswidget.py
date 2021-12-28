@@ -113,7 +113,7 @@ class OCICredentialsWidget(BrowserWidget, InputWidget):
                 self.getInputValue()
         except InputErrors as error:
             self._error = error
-        return super(OCICredentialsWidget, self).error()
+        return super().error()
 
     def setRenderedValue(self, value):
         """See `IInputWidget`."""

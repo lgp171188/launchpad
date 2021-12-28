@@ -14,7 +14,7 @@ class TestBrandingChangeView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBrandingChangeView, self).setUp()
+        super().setUp()
         self.context = self.factory.makePerson(name='cow')
         self.view = BrandingChangeView(self.context, LaunchpadTestRequest())
 

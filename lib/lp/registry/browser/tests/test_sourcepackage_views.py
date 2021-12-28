@@ -221,7 +221,7 @@ class TestSourcePackageUpstreamConnectionsView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSourcePackageUpstreamConnectionsView, self).setUp()
+        super().setUp()
         productseries = self.factory.makeProductSeries(name='1.0')
         self.milestone = self.factory.makeMilestone(
             product=productseries.product, productseries=productseries)

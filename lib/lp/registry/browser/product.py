@@ -517,7 +517,7 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
     def search_oci_project(self):
         product = self.context.context
         oci_projects = getUtility(IOCIProjectSet).findByPillarAndName(
-            product, u'')
+            product, '')
         text = 'Search for OCI project'
         link = Link('+search-oci-project', text, icon='info')
         link.enabled = not oci_projects.is_empty()
@@ -807,7 +807,7 @@ class SeriesWithReleases(DecoratedSeries):
     releases = None
 
     def __init__(self, series, parent):
-        super(SeriesWithReleases, self).__init__(series)
+        super().__init__(series)
         self.parent = parent
         self.releases = []
 
@@ -987,7 +987,7 @@ class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
         self.form = request.form_ng
 
     def initialize(self):
-        super(ProductView, self).initialize()
+        super().initialize()
         self.status_message = None
         product = self.context
         programming_lang = IProduct['programminglang']
@@ -1370,7 +1370,7 @@ class ProductConfigureBase(ReturnToReferrerMixin, LaunchpadEditFormView):
     usage_fieldname = None
 
     def setUpFields(self):
-        super(ProductConfigureBase, self).setUpFields()
+        super().setUpFields()
         if self.usage_fieldname is not None:
             # The usage fields are shared among pillars.  But when referring
             # to an individual object in Launchpad it is better to call it by
@@ -1474,7 +1474,7 @@ class ProductEditView(ProductLicenseMixin, LaunchpadEditFormView):
         # when an action is invoked.
         cache = IJSONRequestCache(self.request)
         json_dump_information_types(cache, PILLAR_INFORMATION_TYPES)
-        super(ProductEditView, self).initialize()
+        super().initialize()
 
     def validate(self, data):
         """Validate 'licenses' and 'license_info'.
@@ -1485,7 +1485,7 @@ class ProductEditView(ProductLicenseMixin, LaunchpadEditFormView):
         'license_info' must not be empty if "Other/Proprietary"
         or "Other/Open Source" is checked.
         """
-        super(ProductEditView, self).validate(data)
+        super().validate(data)
         information_type = data.get('information_type')
         if information_type:
             errors = [
@@ -1502,7 +1502,7 @@ class ProductEditView(ProductLicenseMixin, LaunchpadEditFormView):
         # LicenseWidget instead of the enclosing form.
         if field_name == 'license_info':
             return False
-        return super(ProductEditView, self).showOptionalMarker(field_name)
+        return super().showOptionalMarker(field_name)
 
     @action("Change", name='change')
     def change_action(self, action, data):
@@ -1550,7 +1550,7 @@ class ProductAdminView(ProductEditView, ProductValidationMixin):
         if not admin:
             self.field_names.remove('owner')
             self.field_names.remove('autoupdate')
-        super(ProductAdminView, self).setUpFields()
+        super().setUpFields()
         self.form_fields = self._createAliasesField() + self.form_fields
         if admin:
             self.form_fields = (
@@ -1590,7 +1590,7 @@ class ProductAdminView(ProductEditView, ProductValidationMixin):
 
     def validate(self, data):
         """See `LaunchpadFormView`."""
-        super(ProductAdminView, self).validate(data)
+        super().validate(data)
         self.validate_deactivation(data)
 
     @property
@@ -1618,7 +1618,7 @@ class ProductReviewLicenseView(ReturnToReferrerMixin, ProductEditView,
     def validate(self, data):
         """See `LaunchpadFormView`."""
 
-        super(ProductReviewLicenseView, self).validate(data)
+        super().validate(data)
         # A project can only be approved if it has OTHER_OPEN_SOURCE as one of
         # its licenses and not OTHER_PROPRIETARY.
         licenses = self.context.licenses
@@ -1848,11 +1848,11 @@ class ProductSetBranchView(ReturnToReferrerMixin, LaunchpadFormView,
         """
         if self.errors_in_action:
             return None
-        return super(ProductSetBranchView, self).next_url
+        return super().next_url
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
-        super(ProductSetBranchView, self).setUpFields()
+        super().setUpFields()
         if self.is_series:
             self.form_fields = self.form_fields.omit(
                 'default_vcs', 'git_repository_location',
@@ -1861,7 +1861,7 @@ class ProductSetBranchView(ReturnToReferrerMixin, LaunchpadFormView,
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
-        super(ProductSetBranchView, self).setUpWidgets()
+        super().setUpWidgets()
         widget = self.widgets['rcs_type']
         vocab = widget.vocabulary
         current_value = widget._getFormValue()
@@ -1878,9 +1878,9 @@ class ProductSetBranchView(ReturnToReferrerMixin, LaunchpadFormView,
         widget = self.widgets['branch_type']
         current_value = widget._getFormValue()
         vocab = widget.vocabulary
-        self.branch_type_link, self.branch_type_import = [
+        self.branch_type_link, self.branch_type_import = (
             render_radio_widget_part(widget, value, current_value)
-            for value in (LINK_LP, IMPORT_EXTERNAL)]
+            for value in (LINK_LP, IMPORT_EXTERNAL))
 
         if not self.is_series:
             widget = self.widgets['default_vcs']
@@ -1894,9 +1894,9 @@ class ProductSetBranchView(ReturnToReferrerMixin, LaunchpadFormView,
             widget = self.widgets['git_repository_type']
             current_value = widget._getFormValue()
             vocab = widget.vocabulary
-            self.git_repository_type_link, self.git_repository_type_import = [
+            self.git_repository_type_link, self.git_repository_type_import = (
                 render_radio_widget_part(widget, value, current_value)
-                for value in (LINK_LP, IMPORT_EXTERNAL)]
+                for value in (LINK_LP, IMPORT_EXTERNAL))
 
     def _validateLinkLpBzr(self, data):
         """Validate data for link-lp bzr case."""
@@ -2005,7 +2005,7 @@ class ProductSetBranchView(ReturnToReferrerMixin, LaunchpadFormView,
         """See `LaunchpadFormView`."""
         names = [
             'branch_type', 'rcs_type', 'default_vcs', 'git_repository_type']
-        super(ProductSetBranchView, self).validate_widgets(data, names)
+        super().validate_widgets(data, names)
 
         if not self.is_series:
             git_repository_type = data.get('git_repository_type')
@@ -2040,7 +2040,7 @@ class ProductSetBranchView(ReturnToReferrerMixin, LaunchpadFormView,
             raise AssertionError("Unknown branch type %s" % branch_type)
 
         # Perform full validation now.
-        super(ProductSetBranchView, self).validate_widgets(data)
+        super().validate_widgets(data)
 
     def validate(self, data):
         """See `LaunchpadFormView`."""
@@ -2345,12 +2345,12 @@ class ProjectAddStepOne(StepView):
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
-        super(ProjectAddStepOne, self).setUpFields()
+        super().setUpFields()
         self.form_fields = (self.form_fields + create_source_package_fields())
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
-        super(ProjectAddStepOne, self).setUpWidgets()
+        super().setUpWidgets()
         self.widgets['source_package_name'].visible = False
         self.widgets['distroseries'].visible = False
 
@@ -2425,14 +2425,14 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
         # when an action is invoked.
         cache = IJSONRequestCache(self.request)
         json_dump_information_types(cache, PILLAR_INFORMATION_TYPES)
-        super(ProjectAddStepTwo, self).initialize()
+        super().initialize()
 
     @property
     def main_action_label(self):
         if self.source_package_name is None:
-            return u'Complete Registration'
+            return 'Complete Registration'
         else:
-            return u'Complete registration and link to %s package' % (
+            return 'Complete registration and link to %s package' % (
                 self.source_package_name.name)
 
     @property
@@ -2467,7 +2467,7 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
-        super(ProjectAddStepTwo, self).setUpFields()
+        super().setUpFields()
         hidden_names = ['__visited_steps__', 'license_info']
         hidden_fields = self.form_fields.select(*hidden_names)
 
@@ -2502,7 +2502,7 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
-        super(ProjectAddStepTwo, self).setUpWidgets()
+        super().setUpWidgets()
         self.widgets['name'].read_only = True
         # The "hint" is really more of an explanation at this point, but the
         # phrasing is different.

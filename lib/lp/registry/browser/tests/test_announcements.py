@@ -30,8 +30,8 @@ class TestAnnouncement(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def test_announcement_info(self):
-        product = self.factory.makeProduct(displayname=u"Foo")
-        announcer = self.factory.makePerson(displayname=u"Bar Baz")
+        product = self.factory.makeProduct(displayname="Foo")
+        announcer = self.factory.makePerson(displayname="Bar Baz")
         announcement = product.announce(announcer, "Hello World")
         view = create_initialized_view(announcement, "+index")
         root = html.fromstring(view())
@@ -41,8 +41,8 @@ class TestAnnouncement(TestCaseWithFactory):
             normalize_whitespace(reg_para.text_content()))
 
     def test_announcement_info_with_publication_date(self):
-        product = self.factory.makeProduct(displayname=u"Foo")
-        announcer = self.factory.makePerson(displayname=u"Bar Baz")
+        product = self.factory.makeProduct(displayname="Foo")
+        announcer = self.factory.makePerson(displayname="Bar Baz")
         announced = datetime(2007, 1, 12, tzinfo=utc)
         announcement = product.announce(
             announcer, "Hello World", publication_date=announced)

@@ -206,7 +206,7 @@ class TestProductConfiguration(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductConfiguration, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
 
     def test_registration_not_done(self):
@@ -295,7 +295,7 @@ class TestProductAddView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductAddView, self).setUp()
+        super().setUp()
         self.product_set = getUtility(IProductSet)
 
     def test_view_data_model(self):
@@ -424,7 +424,7 @@ class TestProductView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductView, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct(name='fnord')
         self.tag_meta_noindex = Tag(
             'meta_noindex', 'meta', attrs={
@@ -741,7 +741,7 @@ class TestProductEditView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductEditView, self).setUp()
+        super().setUp()
 
     def _make_product_edit_form(self, product, proprietary=False):
         """Return form data for product edit.
@@ -927,7 +927,7 @@ class ProductSetReviewLicensesViewTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(ProductSetReviewLicensesViewTestCase, self).setUp()
+        super().setUp()
         self.product_set = getUtility(IProductSet)
         self.user = login_celebrity('registry_experts')
 

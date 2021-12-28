@@ -265,7 +265,7 @@ class SourcePackageChangeUpstreamStepOne(ReturnToReferrerMixin, StepView):
     product = None
 
     def setUpFields(self):
-        super(SourcePackageChangeUpstreamStepOne, self).setUpFields()
+        super().setUpFields()
         series = self.context.productseries
         if series is not None:
             default = series.product
@@ -284,7 +284,7 @@ class SourcePackageChangeUpstreamStepOne(ReturnToReferrerMixin, StepView):
         self.request.form['product'] = data['product']
 
     def validateStep(self, data):
-        super(SourcePackageChangeUpstreamStepOne, self).validateStep(data)
+        super().validateStep(data)
         product = data.get('product')
         if product is None:
             return
@@ -318,7 +318,7 @@ class SourcePackageChangeUpstreamStepTwo(ReturnToReferrerMixin, StepView):
     custom_widget_productseries = LaunchpadRadioWidget
 
     def setUpFields(self):
-        super(SourcePackageChangeUpstreamStepTwo, self).setUpFields()
+        super().setUpFields()
 
         # The vocabulary for the product series is overridden to just
         # include active series from the product selected in the
@@ -380,7 +380,7 @@ class SourcePackageChangeUpstreamStepTwo(ReturnToReferrerMixin, StepView):
     # is called.
     next_url = None
 
-    main_action_label = u'Change'
+    main_action_label = 'Change'
 
     def main_action(self, data):
         productseries = data['productseries']
@@ -564,7 +564,7 @@ class SourcePackageAssociationPortletView(LaunchpadFormView):
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
-        super(SourcePackageAssociationPortletView, self).setUpFields()
+        super().setUpFields()
         self.request.annotations['show_edit_buttons'] = True
         # Find registered products that are similarly named to the source
         # package.
