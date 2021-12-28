@@ -29,7 +29,7 @@ class BaseTestOCIRecipeView(OCIConfigHelperMixin, BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(BaseTestOCIRecipeView, self).setUp()
+        super().setUp()
         self.setConfig()
         self.useFixture(FakeLogger())
         self.person = self.factory.makePerson(name='recipe-owner')

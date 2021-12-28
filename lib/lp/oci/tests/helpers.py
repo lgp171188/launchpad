@@ -49,7 +49,7 @@ class MatchesOCIRegistryCredentials(MatchesAll):
     """
 
     def __init__(self, main_matcher, credentials_matcher):
-        super(MatchesOCIRegistryCredentials, self).__init__(
+        super().__init__(
             main_matcher,
             AfterPreprocessing(
                 lambda matchee: removeSecurityProxy(matchee).getCredentials(),

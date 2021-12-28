@@ -27,7 +27,7 @@ class TestOCIPushRule(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestOCIPushRule, self).setUp()
+        super().setUp()
         self.setConfig()
 
     def test_implements_interface(self):
@@ -75,7 +75,7 @@ class TestOCIPushRuleSet(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestOCIPushRuleSet, self).setUp()
+        super().setUp()
         self.setConfig()
 
     def test_implements_interface(self):

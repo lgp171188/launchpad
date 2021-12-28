@@ -7,8 +7,6 @@ from datetime import datetime
 import json
 
 from fixtures import FakeLogger
-import six
-from six import string_types
 from storm.exceptions import LostObjectError
 from storm.store import Store
 from testtools import ExpectedException
@@ -113,7 +111,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipe, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_implements_interface(self):
@@ -759,7 +757,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         # It should be sorted by owner's name first, then recipe name.
         self.assertEqual(
             [recipe3, recipe1, recipe2],
-            list(oci_project.searchRecipes(u"a")))
+            list(oci_project.searchRecipes("a")))
 
     def test_build_args_dict(self):
         args = {"MY_VERSION": "1.0.3", "ANOTHER_VERSION": "2.9.88"}
@@ -784,7 +782,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         # Makes sure we only store one level of key=pair, flattening to
         # string every value.
         args = {
-            "VAR1": {six.ensure_str("something"): [1, 2, 3]},
+            "VAR1": {"something": [1, 2, 3]},
             "VAR2": 123,
             "VAR3": "A string",
         }
@@ -873,7 +871,7 @@ class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeAccessControl, self).setUp()
+        super().setUp()
         self.setConfig()
 
     def test_change_oci_project_pillar_reconciles_access(self):
@@ -1042,8 +1040,7 @@ class TestOCIRecipeProcessors(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeProcessors, self).setUp(
-            user="foo.bar@canonical.com")
+        super().setUp(user="foo.bar@canonical.com")
         self.default_procs = [
             getUtility(IProcessorSet).getByName("386"),
             getUtility(IProcessorSet).getByName("amd64")]
@@ -1192,7 +1189,7 @@ class TestOCIRecipeSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_implements_interface(self):
@@ -1373,7 +1370,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeWebservice, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson(
             displayname="Test Person")
         self.webservice = webservice_for_person(
@@ -1384,7 +1381,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
     def getAbsoluteURL(self, target):
         """Get the webservice absolute URL of the given object or relative
         path."""
-        if not isinstance(target, string_types):
+        if not isinstance(target, str):
             target = api_url(target)
         return self.webservice.getAbsoluteUrl(target)
 
@@ -1688,7 +1685,7 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeAsyncWebservice, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson(
             displayname="Test Person")
         self.webservice = webservice_for_person(
@@ -1764,8 +1761,8 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
                     "recipe_link": Equals(abs_url(oci_recipe)),
                     "requester_link": Equals(abs_url(self.person)),
                     "buildstate": Equals("Needs building"),
-                    "eta": IsInstance(string_types, type(None)),
-                    "date": IsInstance(string_types, type(None)),
+                    "eta": IsInstance(str, type(None)),
+                    "date": IsInstance(str, type(None)),
                     "estimate": IsInstance(bool),
                     "distro_arch_series_link": Equals(abs_url(arch_series)),
                     "registry_upload_status": Equals("Unscheduled"),

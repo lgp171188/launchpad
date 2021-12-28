@@ -18,7 +18,7 @@ class OCIRegistryError(Exception):
     """An error returned by an OCI registry."""
 
     def __init__(self, summary, errors):
-        super(OCIRegistryError, self).__init__(summary)
+        super().__init__(summary)
         self.errors = errors
 
 

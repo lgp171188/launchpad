@@ -39,7 +39,7 @@ class OCIRegistryCredentialsAlreadyExist(Exception):
     """
 
     def __init__(self):
-        super(OCIRegistryCredentialsAlreadyExist, self).__init__(
+        super().__init__(
             "Credentials already exist with the same URL, username, and "
             "region.")
 

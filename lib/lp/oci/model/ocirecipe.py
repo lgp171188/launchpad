@@ -16,7 +16,6 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
-import six
 from storm.databases.postgres import JSON
 from storm.expr import (
     And,
@@ -246,7 +245,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
                  image_name=None, information_type=InformationType.PUBLIC):
         if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
             raise OCIRecipeFeatureDisabled()
-        super(OCIRecipe, self).__init__()
+        super().__init__()
         self._information_type = information_type
         self.oci_project = oci_project
         self.name = name
@@ -311,8 +310,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     @build_args.setter
     def build_args(self, value):
         assert value is None or isinstance(value, dict)
-        self._build_args = {k: six.text_type(v)
-                            for k, v in (value or {}).items()}
+        self._build_args = {k: str(v) for k, v in (value or {}).items()}
 
     def _reconcileAccess(self):
         """Reconcile the OCI recipe's sharing information.

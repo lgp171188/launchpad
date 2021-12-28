@@ -35,7 +35,7 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestOCIRegistryCredentials, self).setUp()
+        super().setUp()
         self.setConfig()
 
     def test_implements_interface(self):
@@ -139,7 +139,7 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestOCIRegistryCredentialsSet, self).setUp()
+        super().setUp()
         self.setConfig()
 
     def test_implements_interface(self):

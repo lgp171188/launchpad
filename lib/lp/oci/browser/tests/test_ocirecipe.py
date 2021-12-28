@@ -101,7 +101,7 @@ class TestOCIRecipeNavigation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIRecipeNavigation, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_canonical_url(self):
@@ -144,7 +144,7 @@ class BaseTestOCIRecipeView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(BaseTestOCIRecipeView, self).setUp()
+        super().setUp()
         self.useFixture(FakeLogger())
         self.person = self.factory.makePerson(
             name="test-person", displayname="Test Person")
@@ -153,7 +153,7 @@ class BaseTestOCIRecipeView(BrowserTestCase):
 class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
     def setUp(self):
-        super(TestOCIRecipeAddView, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeDistroSeries()
         self.distribution = self.distroseries.distribution
         self.useFixture(FeatureFixture({
@@ -539,7 +539,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
 
     def setUp(self):
-        super(TestOCIRecipeAdminView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_unauthorized(self):
@@ -594,7 +594,7 @@ class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
 class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
     def setUp(self):
-        super(TestOCIRecipeEditView, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeDistroSeries()
         self.distribution = self.distroseries.distribution
         self.useFixture(FeatureFixture({
@@ -1140,7 +1140,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
 
     def setUp(self):
-        super(TestOCIRecipeDeleteView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_unauthorized(self):
@@ -1208,7 +1208,7 @@ class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
 class TestOCIRecipeView(BaseTestOCIRecipeView):
 
     def setUp(self):
-        super(TestOCIRecipeView, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeDistroSeries()
         processor = getUtility(IProcessorSet).getByName("386")
         self.distroarchseries = self.factory.makeDistroArchSeries(
@@ -1721,7 +1721,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
 class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
 
     def setUp(self):
-        super(TestOCIRecipeRequestBuildsView, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
@@ -1802,7 +1802,7 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
 class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
                                      BaseTestOCIRecipeView):
     def setUp(self):
-        super(TestOCIRecipeEditPushRulesView, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
@@ -2232,7 +2232,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
         self.assertEqual(len(rules), 1)
         rule = rules[0]
         self.assertThat(rule, MatchesStructure(
-            image_name=Equals(u'imagename1'),
+            image_name=Equals('imagename1'),
             registry_url=Equals(url),
             registry_credentials=MatchesStructure(
                 url=Equals(url),
@@ -2325,7 +2325,7 @@ class TestOCIRecipeEditPushRulesView(OCIConfigHelperMixin,
 
 class TestOCIRecipeListingView(BaseTestOCIRecipeView):
     def setUp(self):
-        super(TestOCIRecipeListingView, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
