@@ -118,7 +118,7 @@ class PersonTransferJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
                          dict.
         """
-        super(PersonTransferJob, self).__init__()
+        super().__init__()
         self.job = Job(requester=requester)
         self.job_type = job_type
         self.major_person = major_person
@@ -226,7 +226,7 @@ class MembershipNotificationJob(PersonTransferJobDerived):
             'new_status': new_status.name,
             'last_change_comment': last_change_comment,
             }
-        return super(MembershipNotificationJob, cls).create(
+        return super().create(
             minor_person=member, major_person=team, metadata=metadata)
 
     @property
@@ -292,7 +292,7 @@ class PersonMergeJob(PersonTransferJobDerived):
             # Ideally not needed, but the DB column is not-null at the moment
             # and this minor bit of friction isn't worth changing that over.
             to_person = getUtility(ILaunchpadCelebrities).registry_experts
-        return super(PersonMergeJob, cls).create(
+        return super().create(
             minor_person=from_person, major_person=to_person,
             metadata=metadata, requester=requester)
 
@@ -394,7 +394,7 @@ class PersonDeactivateJob(PersonTransferJobDerived):
         """See `IPersonMergeJobSource`."""
         # Minor person has to be not null, so use the janitor.
         janitor = getUtility(ILaunchpadCelebrities).janitor
-        return super(PersonDeactivateJob, cls).create(
+        return super().create(
             minor_person=janitor, major_person=person, metadata={})
 
     @classmethod
@@ -458,7 +458,7 @@ class PersonCloseAccountJob(PersonTransferJobDerived):
         if person.is_team:
             raise TeamAccountNotClosable("%s is a team" % person.name)
 
-        return super(PersonCloseAccountJob, cls).create(
+        return super().create(
             minor_person=getUtility(ILaunchpadCelebrities).janitor,
             major_person=person, metadata={})
 
@@ -523,7 +523,7 @@ class TeamInvitationNotificationJob(PersonTransferJobDerived):
     def create(cls, member, team):
         if not ITeam.providedBy(team):
             raise TypeError('team must be ITeam: %s' % repr(team))
-        return super(TeamInvitationNotificationJob, cls).create(
+        return super().create(
             minor_person=member, major_person=team, metadata={})
 
     @property
@@ -559,7 +559,7 @@ class TeamJoinNotificationJob(PersonTransferJobDerived):
     def create(cls, member, team):
         if not ITeam.providedBy(team):
             raise TypeError('team must be ITeam: %s' % repr(team))
-        return super(TeamJoinNotificationJob, cls).create(
+        return super().create(
             minor_person=member, major_person=team, metadata={})
 
     @property
@@ -597,7 +597,7 @@ class ExpiringMembershipNotificationJob(PersonTransferJobDerived):
         metadata = {
             'dateexpires': cls._serialiseDateTime(dateexpires),
             }
-        return super(ExpiringMembershipNotificationJob, cls).create(
+        return super().create(
             minor_person=member, major_person=team, metadata=metadata)
 
     @property
@@ -640,7 +640,7 @@ class SelfRenewalNotificationJob(PersonTransferJobDerived):
         metadata = {
             'dateexpires': cls._serialiseDateTime(dateexpires),
             }
-        return super(SelfRenewalNotificationJob, cls).create(
+        return super().create(
             minor_person=member, major_person=team, metadata=metadata)
 
     @property

@@ -227,8 +227,7 @@ class LicensesModifiedEvent(ObjectModifiedEvent):
     """See `ILicensesModifiedEvent`."""
 
     def __init__(self, product, user=None):
-        super(LicensesModifiedEvent, self).__init__(
-            product, product, [], user)
+        super().__init__(product, product, [], user)
 
 
 def get_license_status(license_approved, project_reviewed, licenses):
@@ -263,7 +262,7 @@ class UnDeactivateable(Exception):
     """Raised when a project is requested to deactivate but can not."""
 
     def __init__(self, msg):
-        super(UnDeactivateable, self).__init__(msg)
+        super().__init__(msg)
 
 bug_policy_default = {
     InformationType.PUBLIC: BugSharingPolicy.PUBLIC,
@@ -982,9 +981,9 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
             lp_janitor = getUtility(ILaunchpadCelebrities).janitor
             now = datetime.datetime.now(pytz.UTC)
             date_expires = now + datetime.timedelta(days=30)
-            sales_system_id = u'complimentary-30-day-%s' % now
+            sales_system_id = 'complimentary-30-day-%s' % now
             whiteboard = (
-                u"Complimentary 30 day subscription. -- Launchpad %s" %
+                "Complimentary 30 day subscription. -- Launchpad %s" %
                 now.date().isoformat())
             subscription = CommercialSubscription(
                 product=self, date_starts=now, date_expires=date_expires,

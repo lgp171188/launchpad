@@ -32,7 +32,6 @@ from lp.services.database.sqlobject import (
     )
 
 
-@six.python_2_unicode_compatible
 @implementer(ISourcePackageName)
 class SourcePackageName(SQLBase):
     _table = 'SourcePackageName'

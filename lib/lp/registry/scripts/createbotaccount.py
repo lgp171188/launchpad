@@ -53,12 +53,12 @@ class CreateBotAccountScript(LaunchpadScript):
             raise LaunchpadScriptFailure(
                 'Invalid OpenID suffix {}'.format(openid_suffix))
 
-        displayname = u'\U0001f916 {}'.format(username)  # U+1f916==ROBOT FACE
+        displayname = '\U0001f916 {}'.format(username)  # U+1f916==ROBOT FACE
 
         if self.options.email:
             emailaddress = six.ensure_text(self.options.email)
         else:
-            emailaddress = u'webops+{}@canonical.com'.format(username)
+            emailaddress = 'webops+{}@canonical.com'.format(username)
 
         if self.options.teams:
             teamnames = [six.ensure_text(t.strip())

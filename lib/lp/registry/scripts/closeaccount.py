@@ -270,7 +270,7 @@ def close_account(username, log):
     owned_non_final_questions.set(
         status=QuestionStatus.SOLVED,
         whiteboard=(
-            u'Closed by Launchpad due to owner requesting account removal'))
+            'Closed by Launchpad due to owner requesting account removal'))
     skip.add(('question', 'owner'))
 
     # Remove rows from tables in simple cases in the given order

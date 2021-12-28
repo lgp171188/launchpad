@@ -240,7 +240,7 @@ class ProductReleaseFile(SQLBase):
 
 
 @implementer(IProductReleaseSet)
-class ProductReleaseSet(object):
+class ProductReleaseSet:
     """See `IProductReleaseSet`."""
 
     def getBySeriesAndVersion(self, productseries, version, default=None):

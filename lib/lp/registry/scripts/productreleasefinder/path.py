@@ -107,7 +107,7 @@ class Directories:
     IGNORE = ["{arch}", ".arch-ids", "CVS", "RCS", ".svn", "_darcs", ".bzr"]
 
 
-class PathBase(object):
+class PathBase:
     """Cache path information.
 
     This class provides functionality for representing a path on a

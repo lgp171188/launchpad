@@ -13,7 +13,6 @@ __all__ = [
 
 import ftplib
 import os
-import socket
 
 from lazr.uri import (
     InvalidURIError,
@@ -111,7 +110,7 @@ class WalkerBase:
         """
         try:
             self.open()
-        except (IOError, socket.error) as e:
+        except OSError as e:
             self.log.info("Could not connect to %s" % self.base)
             self.log.info("Failure: %s" % e)
             return
@@ -183,7 +182,7 @@ class FTPWalker(WalkerBase):
     FRAGMENTS = False
 
     def __init__(self, *args, **kwds):
-        super(FTPWalker, self).__init__(*args, **kwds)
+        super().__init__(*args, **kwds)
 
         if self.user is None:
             self.user = "anonymous"

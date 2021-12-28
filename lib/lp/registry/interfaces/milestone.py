@@ -152,7 +152,7 @@ class IAbstractMilestone(IMilestoneData):
     """
     code_name = exported(
         NoneableTextLine(
-            title=u'Code name', required=False,
+            title='Code name', required=False,
             description=_('An alternative name for the milestone.')))
     product = Choice(
         title=_("Project"),

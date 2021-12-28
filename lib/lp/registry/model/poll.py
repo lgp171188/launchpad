@@ -89,7 +89,7 @@ class Poll(StormBase):
     def __init__(self, team, name, title, proposition, dateopens, datecloses,
                  secrecy=PollSecrecy.SECRET, allowspoilt=True,
                  type=PollAlgorithm.SIMPLE):
-        super(Poll, self).__init__()
+        super().__init__()
         self.team = team
         self.name = name
         self.title = title
@@ -387,7 +387,7 @@ class PollOption(StormBase):
     active = Bool(allow_none=False, default=False)
 
     def __init__(self, poll, name, title, active=False):
-        super(PollOption, self).__init__()
+        super().__init__()
         self.poll = poll
         self.name = name
         self.title = title
@@ -437,7 +437,7 @@ class VoteCast(StormBase):
     poll = Reference(poll_id, 'Poll.id')
 
     def __init__(self, person, poll):
-        super(VoteCast, self).__init__()
+        super().__init__()
         self.person = person
         self.poll = poll
 
@@ -475,7 +475,7 @@ class Vote(StormBase):
     token = Unicode(name='token', allow_none=False)
 
     def __init__(self, poll, token, person=None, option=None, preference=None):
-        super(Vote, self).__init__()
+        super().__init__()
         self.poll = poll
         self.token = token
         self.person = person

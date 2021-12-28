@@ -301,10 +301,10 @@ class IProjectGroupPublic(
     bug_reporting_guidelines = exported(
         Text(
             title=(
-                u"If I\N{right single quotation mark}m reporting a bug, "
-                u"I should include, if possible"),
+                "If I\N{right single quotation mark}m reporting a bug, "
+                "I should include, if possible"),
             description=(
-                u"These guidelines will be shown to "
+                "These guidelines will be shown to "
                 "anyone reporting a bug."),
             required=False,
             max_length=50000))
@@ -312,15 +312,15 @@ class IProjectGroupPublic(
     bug_reported_acknowledgement = exported(
         Text(
             title=(
-                u"After reporting a bug, I can expect the following."),
+                "After reporting a bug, I can expect the following."),
             description=(
-                u"This message of acknowledgement will be displayed "
+                "This message of acknowledgement will be displayed "
                 "to anyone after reporting a bug."),
             required=False,
             max_length=50000))
 
     enable_bugfiling_duplicate_search = Bool(
-        title=u"Search for possible duplicate bugs when a new bug is filed",
+        title="Search for possible duplicate bugs when a new bug is filed",
         required=False, readonly=True)
 
     translatables = Attribute("Products that are translatable in LP")
@@ -420,18 +420,18 @@ class IProjectGroupSeries(IHasSpecifications, IHasAppointedDriver, IHasIcon,
     group series", i.e., to those specifications that are assigned to a
     series of a product which is part of this project group.
     """
-    name = TextLine(title=u'The name of the product series.',
+    name = TextLine(title='The name of the product series.',
                     required=True, readonly=True,
                     constraint=name_validator)
 
-    displayname = TextLine(title=u'Alias for name.',
+    displayname = TextLine(title='Alias for name.',
                            required=True, readonly=True,
                            constraint=name_validator)
 
-    title = TextLine(title=u'The title for this project series.',
+    title = TextLine(title='The title for this project series.',
                      required=True, readonly=True)
 
     projectgroup = Object(
         schema=IProjectGroup,
-        title=u"The project group this series belongs to",
+        title="The project group this series belongs to",
         required=True, readonly=True)

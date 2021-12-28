@@ -417,7 +417,7 @@ def person_sort_key(person):
     """Identical to `person_sort_key` in the database."""
     # Strip noise out of display_name. We do not have to bother with
     # name, as we know it is just plain ascii.
-    display_name = _person_sort_re.sub(u'', person.display_name.lower())
+    display_name = _person_sort_re.sub('', person.display_name.lower())
     return "%s, %s" % (display_name.strip(), person.name)
 
 
@@ -493,7 +493,7 @@ class Person(
     """A Person."""
 
     def __init__(self, *args, **kwargs):
-        super(Person, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # Initialize our PersonSettings object/record.
         if not self.is_team:
             # This is a Person, not a team.  Teams may want a TeamSettings
@@ -785,7 +785,7 @@ class Person(
     def time_zone(self):
         """See `IHasLocation`."""
         if self.location is None:
-            return u'UTC'
+            return 'UTC'
         # Wrap the location with a security proxy to make sure the user has
         # enough rights to see it.
         return ProxyFactory(self.location).time_zone
@@ -1312,7 +1312,7 @@ class Person(
             return False
 
         # Translate the team name to an ITeam if we were passed a team.
-        if isinstance(team, six.string_types):
+        if isinstance(team, str):
             team = PersonSet().getByName(team)
             if team is None:
                 # No team, no membership.
@@ -1391,7 +1391,7 @@ class Person(
         self._inTeam_cache = {}
 
     def __storm_invalidated__(self):
-        super(Person, self).__storm_invalidated__()
+        super().__storm_invalidated__()
         self.clearInTeamCache()
 
     @cachedproperty
@@ -3328,8 +3328,8 @@ class PersonSet:
             "account.")
         db_updated = False
 
-        assert isinstance(openid_identifier, six.text_type)
-        assert openid_identifier != u'', (
+        assert isinstance(openid_identifier, str)
+        assert openid_identifier != '', (
             "OpenID identifier must not be empty.")
 
         # Load the EmailAddress, Account and OpenIdIdentifier records
@@ -3682,7 +3682,7 @@ class PersonSet:
             fti_search(Person, text))
         return team_name_query
 
-    def find(self, text=u""):
+    def find(self, text=""):
         """See `IPersonSet`."""
         if not text:
             # Return an empty result set.
@@ -3730,7 +3730,7 @@ class PersonSet:
         return results.order_by(orderBy)
 
     def findPerson(
-            self, text=u"", exclude_inactive_accounts=True,
+            self, text="", exclude_inactive_accounts=True,
             must_have_email=False, created_after=None, created_before=None):
         """See `IPersonSet`."""
         orderBy = Person._sortingColumnsForSetOperations
@@ -3781,7 +3781,7 @@ class PersonSet:
         combined_results = email_results.union(name_results)
         return combined_results.order_by(orderBy)
 
-    def findTeam(self, text=u"", preload_for_api=False):
+    def findTeam(self, text="", preload_for_api=False):
         """See `IPersonSet`."""
         orderBy = Person._sortingColumnsForSetOperations
         # Teams may not have email addresses, so we need to either use a LEFT
@@ -4328,7 +4328,7 @@ class SSHKey(SQLBase):
             self.person.security_field_changed(
                 "SSH Key removed from your Launchpad account.",
                 "The SSH Key %s was removed from your account." % self.comment)
-        super(SSHKey, self).destroySelf()
+        super().destroySelf()
 
     def getFullKeyText(self):
         try:

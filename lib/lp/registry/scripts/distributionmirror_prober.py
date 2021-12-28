@@ -526,7 +526,7 @@ class BadResponseCode(ProberError):
 
 class InvalidHTTPSCertificate(ProberError):
     def __init__(self, host, port, *args):
-        super(InvalidHTTPSCertificate, self).__init__(*args)
+        super().__init__(*args)
         self.host = host
         self.port = port
 

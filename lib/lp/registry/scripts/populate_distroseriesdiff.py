@@ -257,7 +257,7 @@ class DSDUpdater(TunableLoop):
         :param commit: A commit function to call after each batch.
         :param ids: Sequence of `DistroSeriesDifference` ids to fix.
         """
-        super(DSDUpdater, self).__init__(log)
+        super().__init__(log)
         self.minimum_chunk_size = 2
         self.maximum_chunk_size = 1000
         self.store = store

@@ -66,7 +66,7 @@ class IDistroSeriesDifferencePublic(Interface):
             "with the difference.")))
 
     source_package_name_id = Int(
-        title=u"Source package name id", required=True, readonly=True)
+        title="Source package name id", required=True, readonly=True)
     source_package_name = Reference(
         ISourcePackageName,
         title=_("Source package name"), required=True, readonly=True,
