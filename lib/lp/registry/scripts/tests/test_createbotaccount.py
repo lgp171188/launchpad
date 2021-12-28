@@ -43,15 +43,15 @@ class TestCreateBotAccount(TestCase):
 
         person_set = getUtility(IPersonSet)
 
-        person = person_set.getByName(u'botty')
-        self.assertEqual(u'botty', person.name)
+        person = person_set.getByName('botty')
+        self.assertEqual('botty', person.name)
         self.assertTrue(person.hide_email_addresses)
         # Bots tend to flood email, so filtering is important.
         self.assertTrue(person.expanded_notification_footers)
 
         account = person.account
         openid = account.openid_identifiers.one()
-        self.assertEqual(u'bottyid', openid.identifier)
+        self.assertEqual('bottyid', openid.identifier)
 
         sshkey_set = getUtility(ISSHKeySet)
         self.assertIsNotNone(

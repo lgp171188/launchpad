@@ -159,7 +159,7 @@ class SharingJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(SharingJob, self).__init__()
+        super().__init__()
         json_data = simplejson.dumps(metadata)
         self.job = Job()
         self.job_type = job_type
@@ -305,8 +305,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
             'information_types': information_types,
             'requestor.id': requestor.id
         }
-        return super(RemoveArtifactSubscriptionsJob, cls).create(
-            pillar, grantee, metadata)
+        return super().create(pillar, grantee, metadata)
 
     @property
     def requestor_id(self):

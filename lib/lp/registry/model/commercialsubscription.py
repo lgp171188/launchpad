@@ -55,7 +55,7 @@ class CommercialSubscription(StormBase):
 
     def __init__(self, product, date_starts, date_expires, registrant,
                  purchaser, sales_system_id, whiteboard):
-        super(CommercialSubscription, self).__init__()
+        super().__init__()
         self.product = product
         self.date_starts = date_starts
         self.date_expires = date_expires

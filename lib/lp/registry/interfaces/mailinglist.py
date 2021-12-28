@@ -26,7 +26,6 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-import six
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -872,7 +871,6 @@ class IHeldMessageDetails(Interface):
         required=True, readonly=True)
 
 
-@six.python_2_unicode_compatible
 class BaseSubscriptionErrors(Exception):
     """Base class for subscription exceptions."""
 
@@ -883,7 +881,7 @@ class BaseSubscriptionErrors(Exception):
             non-ascii text (since a person's display name is used here).
         :type error_string: unicode
         """
-        assert isinstance(error_string, six.text_type), 'Unicode expected'
+        assert isinstance(error_string, str), 'Unicode expected'
         Exception.__init__(self, error_string)
         self._error_string = error_string
 

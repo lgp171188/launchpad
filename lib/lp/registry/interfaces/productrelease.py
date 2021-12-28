@@ -67,10 +67,10 @@ def file_size_constraint(value, max_size):
     """
     size = len(value)
     if size == 0:
-        raise LaunchpadValidationError(u'Cannot upload empty file.')
+        raise LaunchpadValidationError('Cannot upload empty file.')
     elif max_size > 0 and size > max_size:
         raise LaunchpadValidationError(
-            u'Cannot upload files larger than %i bytes' % max_size)
+            'Cannot upload files larger than %i bytes' % max_size)
     else:
         return True
 
@@ -287,7 +287,7 @@ class IProductReleaseView(Interface):
     version = exported(
         ProductReleaseVersionField(
             title=_('Version'),
-            description=u'The specific version number assigned to this '
+            description='The specific version number assigned to this '
             'release. Letters and numbers are acceptable, for releases like '
             '"1.2rc3".',
             constraint=sane_version, readonly=True)
@@ -295,7 +295,7 @@ class IProductReleaseView(Interface):
 
     owner = exported(
         PersonChoice(
-            title=u"The registrant of this release.",
+            title="The registrant of this release.",
             required=True,
             vocabulary='ValidOwner',
             description=_("The person or who registered this release.")
@@ -326,18 +326,18 @@ class IProductReleaseView(Interface):
         exported_as="date_created")
 
     displayname = exported(
-        Text(title=u'Constructed display name for a project release.',
+        Text(title='Constructed display name for a project release.',
              readonly=True),
         exported_as="display_name")
 
     title = exported(
-        Text(title=u'Constructed title for a project release.', readonly=True)
+        Text(title='Constructed title for a project release.', readonly=True)
         )
 
     can_have_release_files = Attribute("Whether release files can be added.")
 
     product = exported(
-        Reference(title=u'The project that made this release.',
+        Reference(title='The project that made this release.',
                   schema=Interface, readonly=True),
          exported_as="project")
 
@@ -350,7 +350,7 @@ class IProductReleaseView(Interface):
 
     milestone = exported(
         ReferenceChoice(
-            title=u"Milestone for this release",
+            title="Milestone for this release",
             description=_("A release requires a corresponding milestone "
                           "that is not attached to another release."),
             # Schema is set to IMilestone in interfaces/milestone.py.
@@ -393,11 +393,11 @@ class IProductReleaseFileAddForm(Interface):
         description=_('A short description of the file contents'))
 
     filecontent = Bytes(
-        title=u"File", required=True,
+        title="File", required=True,
         constraint=productrelease_file_size_constraint)
 
     signature = Bytes(
-        title=u"GPG signature (recommended)", required=False,
+        title="GPG signature (recommended)", required=False,
         constraint=productrelease_signature_size_constraint)
 
     contenttype = Choice(title=_("File content type"), required=True,

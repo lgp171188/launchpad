@@ -114,7 +114,7 @@ class IPillarName(Interface):
     it's a project, project group, or distribution.
     """
     id = Int(title=_('The PillarName ID'))
-    name = TextLine(title=u"The name.")
+    name = TextLine(title="The name.")
     product = Attribute('The project that has this name, or None')
     projectgroup = Attribute('The project group that has this name, or None')
     distribution = Attribute('The distribution that has this name, or None')
@@ -154,8 +154,8 @@ class IPillarNameSet(Interface):
         """Return the total number of Pillars matching :text:"""
 
     @call_with(user=REQUEST_USER)
-    @operation_parameters(text=TextLine(title=u"Search text"),
-                          limit=Int(title=u"Maximum number of items to "
+    @operation_parameters(text=TextLine(title="Search text"),
+                          limit=Int(title="Maximum number of items to "
                                     "return. This is a hard limit: any "
                                     "pagination you request will happen "
                                     "within this limit.",

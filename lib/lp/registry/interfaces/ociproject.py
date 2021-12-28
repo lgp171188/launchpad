@@ -83,8 +83,7 @@ class OCIProjectRecipeInvalid(Unauthorized):
     """The given recipe is invalid for this OCI project."""
 
     def __init__(self):
-        super(OCIProjectRecipeInvalid, self).__init__(
-            "The given recipe is invalid for this OCI project.")
+        super().__init__("The given recipe is invalid for this OCI project.")
 
 
 class IOCIProjectView(IHasGitRepositories, IHasOfficialBugTags, IServiceUsage,
@@ -297,5 +296,5 @@ class OCIProjectCreateFeatureDisabled(Unauthorized):
     """Only certain users can create new OCI Projects."""
 
     def __init__(self):
-        super(OCIProjectCreateFeatureDisabled, self).__init__(
+        super().__init__(
             "You do not have permission to create an OCI project.")

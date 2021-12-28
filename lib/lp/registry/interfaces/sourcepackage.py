@@ -259,11 +259,11 @@ class ISourcePackagePublic(IBugTarget, IHasBranches, IHasMergeProposals,
         """
 
     latest_published_component = Object(
-        title=u'The component in which the package was last published.',
+        title='The component in which the package was last published.',
         schema=IComponent, readonly=True, required=False)
 
     latest_published_component_name = exported(TextLine(
-        title=u'The name of the component in which the package'
+        title='The name of the component in which the package'
                ' was last published.',
         readonly=True, required=False))
 

@@ -17,7 +17,6 @@ from debian.changelog import (
     Version,
     )
 from lazr.enum import DBItem
-import six
 from storm.expr import (
     And,
     Cast,
@@ -278,10 +277,10 @@ def eager_load_dsds(dsds):
     # referred to.
     sprs = bulk.load_related(
         SourcePackageRelease, chain(
-            six.itervalues(source_pubs),
-            six.itervalues(parent_source_pubs),
-            six.itervalues(source_pubs_for_release),
-            six.itervalues(parent_source_pubs_for_release)),
+            source_pubs.values(),
+            parent_source_pubs.values(),
+            source_pubs_for_release.values(),
+            parent_source_pubs_for_release.values()),
         ("sourcepackagereleaseID",))
 
     # Get packagesets and parent_packagesets for each DSD.
@@ -836,7 +835,7 @@ class DistroSeriesDifference(StormBase):
         if ancestry is not None and parent_ancestry is not None:
             intersection = ancestry.intersection(parent_ancestry)
             if len(intersection) > 0:
-                self.base_version = six.text_type(max(intersection))
+                self.base_version = str(max(intersection))
                 return True
         return False
 

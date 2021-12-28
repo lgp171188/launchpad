@@ -52,7 +52,7 @@ BadgeDetails = namedtuple('BadgeDetails', ('url', 'label', 'role'))
 
 @adapter(Interface)
 @implementer(IHasAffiliation)
-class PillarAffiliation(object):
+class PillarAffiliation:
     """Default affiliation adapter.
 
     Subclasses may need to override getPillars() in order to provide the
@@ -170,8 +170,7 @@ class BugTaskPillarAffiliation(PillarAffiliation):
         - driver of bugtask pillar
         - bug supervisor of bugtask pillar
         """
-        super_instance = super(BugTaskPillarAffiliation, self)
-        result = super_instance._getAffiliationTeamRoles(pillars)
+        result = super()._getAffiliationTeamRoles(pillars)
         for pillar in pillars:
             result[BadgeDetails(
                 self.getIconUrl(pillar),
@@ -194,8 +193,7 @@ class BranchPillarAffiliation(BugTaskPillarAffiliation):
         return self.context
 
     def _getAffiliation(self, person, pillars):
-        super_instance = super(BranchPillarAffiliation, self)
-        result = super_instance._getAffiliation(person, pillars)
+        result = super()._getAffiliation(person, pillars)
         for pillar in pillars:
             if self.getBranch().isPersonTrustedReviewer(person):
                 result.append(BadgeDetails(
@@ -247,8 +245,7 @@ class QuestionPillarAffiliation(PillarAffiliation):
         return [self.context.product or self.context.distribution]
 
     def _getAffiliation(self, person, pillars):
-        super_instance = super(QuestionPillarAffiliation, self)
-        result = super_instance._getAffiliation(person, pillars)
+        result = super()._getAffiliation(person, pillars)
         target = self.context.target
         if IDistributionSourcePackage.providedBy(target):
             question_targets = (target, target.distribution)

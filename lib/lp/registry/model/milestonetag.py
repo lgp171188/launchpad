@@ -32,7 +32,7 @@ from lp.registry.model.milestone import (
 from lp.registry.model.product import Product
 
 
-class MilestoneTag(object):
+class MilestoneTag:
     """A tag belonging to a milestone."""
 
     __storm_table__ = 'milestonetag'
@@ -65,12 +65,12 @@ class ProjectGroupMilestoneTag(MilestoneData):
 
     @property
     def name(self):
-        return u','.join(self.tags)
+        return ','.join(self.tags)
 
     @property
     def displayname(self):
         """See IMilestone."""
-        return "%s %s" % (self.target.displayname, u", ".join(self.tags))
+        return "%s %s" % (self.target.displayname, ", ".join(self.tags))
 
     @property
     def title(self):

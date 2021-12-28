@@ -11,7 +11,6 @@ __all__ = [
     ]
 
 import pytz
-import six
 from storm.expr import (
     And,
     LeftJoin,
@@ -99,9 +98,9 @@ class Announcement(StormBase):
         IMasterStore(self).remove(self)
 
     def modify(self, title, summary, url):
-        title = six.text_type(title) if title is not None else None
-        summary = six.text_type(summary) if summary is not None else None
-        url = six.text_type(url) if url is not None else None
+        title = str(title) if title is not None else None
+        summary = str(summary) if summary is not None else None
+        url = str(url) if url is not None else None
         if self.title != title:
             self.title = title
             self.date_last_modified = UTC_NOW
@@ -249,9 +248,9 @@ class MakesAnnouncements(HasAnnouncements):
         # Create the announcement in the database.
         announcement = Announcement(
             registrant=user,
-            title=six.text_type(title) if title is not None else None,
-            summary=six.text_type(summary) if summary is not None else None,
-            url=six.text_type(url) if url is not None else None,
+            title=str(title) if title is not None else None,
+            summary=str(summary) if summary is not None else None,
+            url=str(url) if url is not None else None,
             product=product,
             projectgroup=projectgroup,
             distribution=distribution,

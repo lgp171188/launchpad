@@ -151,7 +151,7 @@ class ProductJob(StormBase):
         :param job_type: The type job the product needs run.
         :param metadata: A dict of JSON-compatible data to pass to the job.
         """
-        super(ProductJob, self).__init__()
+        super().__init__()
         self.job = Job()
         self.product = product
         self.job_type = job_type
@@ -244,7 +244,7 @@ class ProductNotificationJob(ProductJobDerived):
             'reviewer_id': reviewer.id,
             'reply_to_commercial': reply_to_commercial,
             }
-        return super(ProductNotificationJob, cls).create(product, metadata)
+        return super().create(product, metadata)
 
     @property
     def subject(self):
@@ -360,7 +360,7 @@ class CommericialExpirationMixin:
     def create(cls, product, reviewer):
         """See `ExpirationSourceMixin`."""
         subject = cls._subject_template % product.name
-        return super(CommericialExpirationMixin, cls).create(
+        return super().create(
             product, cls._email_template_name, subject, reviewer,
             reply_to_commercial=True)
 
@@ -387,7 +387,7 @@ class CommericialExpirationMixin:
     @cachedproperty
     def message_data(self):
         """See `IProductNotificationJob`."""
-        data = super(CommericialExpirationMixin, self).message_data
+        data = super().message_data
         commercial_subscription = self.product.commercial_subscription
         iso_date = commercial_subscription.date_expires.date().isoformat()
         extra_data = {
@@ -481,5 +481,5 @@ class CommercialExpiredJob(CommericialExpirationMixin, ProductNotificationJob):
             # The commercial subscription was renewed after this job was
             # created. Nothing needs to be done.
             return
-        super(CommercialExpiredJob, self).run()
+        super().run()
         self._deactivateCommercialFeatures()

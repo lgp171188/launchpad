@@ -62,7 +62,7 @@ class Packaging(SQLBase):
             sourcepackagename=self.sourcepackagename)
 
     def __init__(self, **kwargs):
-        super(Packaging, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         notify(ObjectCreatedEvent(self))
 
     def userCanDelete(self):
@@ -85,7 +85,7 @@ class Packaging(SQLBase):
                 'Only the person who created the packaging and package '
                 'maintainers can delete it.')
         notify(ObjectDeletedEvent(self))
-        super(Packaging, self).destroySelf()
+        super().destroySelf()
 
 
 @implementer(IPackagingUtil)

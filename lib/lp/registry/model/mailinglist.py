@@ -18,7 +18,6 @@ from string import Template
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
-import six
 from storm.expr import Func
 from storm.info import ClassAlias
 from storm.locals import (
@@ -135,7 +134,7 @@ class MessageApproval(StormBase):
 
     def __init__(self, message, posted_by, posted_message, posted_date,
                  mailing_list):
-        super(MessageApproval, self).__init__()
+        super().__init__()
         self.message = message
         self.posted_by = posted_by
         self.posted_message = posted_message
@@ -218,7 +217,7 @@ class MailingList(StormBase):
     _welcome_message = Unicode(default=None, name='welcome_message')
 
     def __init__(self, team, registrant, date_registered=DEFAULT):
-        super(MailingList, self).__init__()
+        super().__init__()
         self.team = team
         self.registrant = registrant
         self.date_registered = date_registered
@@ -542,7 +541,7 @@ class MailingListSet:
 
     def get(self, team_name):
         """See `IMailingListSet`."""
-        assert isinstance(team_name, six.text_type), (
+        assert isinstance(team_name, str), (
             'team_name must be a text string, not %s' % type(team_name))
         return IStore(MailingList).find(
             MailingList,
@@ -725,11 +724,11 @@ class MailingListSet:
 
         # This is really an operation on EmailAddress rows, but it's so
         # specific to mailing lists that it seems better to keep it here.
-        old_suffix = u"@" + old_hostname
+        old_suffix = "@" + old_hostname
         if config.mailman.build_host_name:
-            new_suffix = u"@" + config.mailman.build_host_name
+            new_suffix = "@" + config.mailman.build_host_name
         else:
-            new_suffix = u"@" + getfqdn()
+            new_suffix = "@" + getfqdn()
         clauses = [
             EmailAddress.person == Person.id,
             Person.teamowner != None,
@@ -765,7 +764,7 @@ class MailingListSubscription(StormBase):
     email_address = Reference(email_address_id, 'EmailAddress.id')
 
     def __init__(self, person, mailing_list, email_address):
-        super(MailingListSubscription, self).__init__()
+        super().__init__()
         self.person = person
         self.mailing_list = mailing_list
         self.email_address = email_address

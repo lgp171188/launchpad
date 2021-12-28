@@ -205,7 +205,7 @@ class SignedCodeOfConduct(StormBase):
 
     def __init__(self, owner, signedcode=None, signing_key_fingerprint=None,
                  recipient=None, active=False, affirmed=False, version=None):
-        super(SignedCodeOfConduct, self).__init__()
+        super().__init__()
         self.owner = owner
         self.signedcode = signedcode
         self.signing_key_fingerprint = signing_key_fingerprint

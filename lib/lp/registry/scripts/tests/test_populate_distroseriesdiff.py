@@ -3,7 +3,6 @@
 
 """Test the populate-distroseriesdiff script."""
 
-import six
 from storm.store import Store
 import transaction
 from zope.security.proxy import removeSecurityProxy
@@ -115,7 +114,7 @@ class TestFindLatestSourcePackageReleases(TestCaseWithFactory, FactoryHelper):
     def test_baseline(self):
         distroseries = self.factory.makeDistroSeries()
         query = compose_sql_find_latest_source_package_releases(distroseries)
-        self.assertIsInstance(query, six.string_types)
+        self.assertIsInstance(query, str)
 
     def test_finds_nothing_for_empty_distroseries(self):
         distroseries = self.factory.makeDistroSeries()
@@ -171,7 +170,7 @@ class TestFindLatestSourcePackageReleases(TestCaseWithFactory, FactoryHelper):
         query = compose_sql_find_latest_source_package_releases(distroseries)
         self.assertContentEqual(
             [self.getExpectedResultFor(spph)
-             for spph in six.itervalues(spphs)],
+             for spph in spphs.values()],
             Store.of(distroseries).execute(query))
 
     def test_does_not_find_inactive_publication(self):
@@ -217,7 +216,7 @@ class TestFindDifferences(TestCaseWithFactory, FactoryHelper):
         dsp = self.makeDerivedDistroSeries()
         query = compose_sql_find_differences(
             dsp.derived_series, dsp.parent_series)
-        self.assertIsInstance(query, six.string_types)
+        self.assertIsInstance(query, str)
 
     def test_finds_nothing_for_empty_distroseries(self):
         dsp = self.makeDerivedDistroSeries()
@@ -401,7 +400,7 @@ class TestDifferenceTypeExpression(TestCaseWithFactory):
 
     def test_baseline(self):
         query = compose_sql_difference_type()
-        self.assertIsInstance(query, six.string_types)
+        self.assertIsInstance(query, str)
 
     def test_no_parent_version_means_unique_to_derived_series(self):
         expected = DistroSeriesDifferenceType.UNIQUE_TO_DERIVED_SERIES
@@ -459,7 +458,7 @@ class TestPopulateDistroSeriesDiff(TestCaseWithFactory, FactoryHelper):
         dsp = self.factory.makeDistroSeriesParent()
         query = compose_sql_populate_distroseriesdiff(
             dsp.derived_series, dsp.parent_series, "tmp")
-        self.assertIsInstance(query, six.string_types)
+        self.assertIsInstance(query, str)
 
     def test_creates_distroseriesdifference(self):
         dsp = self.makeDerivedDistroSeries()

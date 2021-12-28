@@ -121,7 +121,7 @@ class NoOCIAdminForDistribution(Exception):
     """There is no OCI Project Admin for this distribution."""
 
     def __init__(self):
-        super(NoOCIAdminForDistribution, self).__init__(
+        super().__init__(
             "There is no OCI Project Admin for this distribution.")
 
 
