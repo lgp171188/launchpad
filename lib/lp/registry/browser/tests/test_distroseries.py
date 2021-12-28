@@ -244,7 +244,7 @@ class DistroSeriesIndexFunctionalTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(DistroSeriesIndexFunctionalTestCase, self).setUp()
+        super().setUp()
         # Use a FakeLogger fixture to prevent Memcached warnings to be
         # printed to stdout while browsing pages.
         self.useFixture(FakeLogger())
@@ -501,7 +501,7 @@ class TestDistroSeriesDerivationPortlet(TestCaseWithFactory):
         job.start()
         job.fail()
         with person_logged_in(series.distribution.owner):
-            series.distribution.owner.display_name = u"Bob Individual"
+            series.distribution.owner.display_name = "Bob Individual"
         with anonymous_logged_in():
             view = create_initialized_view(series, '+portlet-derivation')
             html_content = view()
@@ -514,7 +514,7 @@ class TestDistroSeriesDerivationPortlet(TestCaseWithFactory):
         # owner is an individual.
         with person_logged_in(series.distribution.owner):
             series.distribution.owner = self.factory.makeTeam(
-                displayname=u"Team Teamy Team Team",
+                displayname="Team Teamy Team Team",
                 membership_policy=TeamMembershipPolicy.RESTRICTED)
         with anonymous_logged_in():
             view = create_initialized_view(series, '+portlet-derivation')
@@ -614,31 +614,31 @@ class TestDistroSeriesAddView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSeriesAddView, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson()
         self.distribution = self.factory.makeDistribution(owner=self.user)
 
     def createNewDistroseries(self):
         form = {
-            "field.name": u"polished",
-            "field.version": u"12.04",
-            "field.display_name": u"Polished Polecat",
-            "field.summary": u"Even The Register likes it.",
-            "field.actions.create": u"Add Series",
+            "field.name": "polished",
+            "field.version": "12.04",
+            "field.display_name": "Polished Polecat",
+            "field.summary": "Even The Register likes it.",
+            "field.actions.create": "Add Series",
             }
         with person_logged_in(self.user):
             create_initialized_view(self.distribution, "+addseries",
                                     form=form)
-        distroseries = self.distribution.getSeries(u"polished")
+        distroseries = self.distribution.getSeries("polished")
         return distroseries
 
     def assertCreated(self, distroseries):
-        self.assertEqual(u"polished", distroseries.name)
-        self.assertEqual(u"12.04", distroseries.version)
-        self.assertEqual(u"Polished Polecat", distroseries.display_name)
-        self.assertEqual(u"Polished Polecat", distroseries.title)
-        self.assertEqual(u"Even The Register likes it.", distroseries.summary)
-        self.assertEqual(u"", distroseries.description)
+        self.assertEqual("polished", distroseries.name)
+        self.assertEqual("12.04", distroseries.version)
+        self.assertEqual("Polished Polecat", distroseries.display_name)
+        self.assertEqual("Polished Polecat", distroseries.title)
+        self.assertEqual("Even The Register likes it.", distroseries.summary)
+        self.assertEqual("", distroseries.description)
         self.assertEqual(self.user, distroseries.owner)
 
     def test_plain_submit(self):
@@ -684,10 +684,10 @@ class TestDistroSeriesInitializeView(TestCaseWithFactory):
         # process Javascript.
         [message] = root.cssselect("p.error.message")
         self.assertIn(
-            u"Javascript is required to use this page",
+            "Javascript is required to use this page",
             message.text)
         self.assertIn(
-            u"javascript-disabled",
+            "javascript-disabled",
             message.get("class").split())
 
     def test_seriesToVocab(self):
@@ -755,8 +755,8 @@ class TestDistroSeriesInitializeView(TestCaseWithFactory):
         [message] = root.cssselect("p.error.message")
         self.assertThat(
             message.text, EqualsIgnoringWhitespace(
-                u"This series already contains source packages "
-                u"and cannot be initialized again."))
+                "This series already contains source packages "
+                "and cannot be initialized again."))
 
     def test_form_hidden_when_distroseries_is_being_initialized(self):
         # The form is hidden when the series has already been derived.
@@ -770,7 +770,7 @@ class TestDistroSeriesInitializeView(TestCaseWithFactory):
         [message] = root.cssselect("p.error.message")
         self.assertThat(
             message.text, EqualsIgnoringWhitespace(
-                u"This series is already being initialized."))
+                "This series is already being initialized."))
 
     def test_form_hidden_when_previous_series_none(self):
         # If the distribution has an initialized series and the
@@ -789,9 +789,9 @@ class TestDistroSeriesInitializeView(TestCaseWithFactory):
         [message] = root.cssselect("p.error.message")
         self.assertThat(
             message.text, EqualsIgnoringWhitespace(
-                u'Unable to initialize series: the distribution '
-                u'already has initialized series and this distroseries '
-                u'has no previous series.'))
+                'Unable to initialize series: the distribution '
+                'already has initialized series and this distroseries '
+                'has no previous series.'))
 
     def test_form_hidden_when_no_publisher_config_set_up(self):
         # If the distribution has no publisher config set up:
@@ -807,8 +807,8 @@ class TestDistroSeriesInitializeView(TestCaseWithFactory):
         [message] = root.cssselect("p.error.message")
         self.assertThat(
             message.text, EqualsIgnoringWhitespace(
-                u"The series' distribution has no publisher configuration. "
-                u"Please ask an administrator to set this up."))
+                "The series' distribution has no publisher configuration. "
+                "Please ask an administrator to set this up."))
 
 
 class TestDistroSeriesInitializeViewAccess(TestCaseWithFactory):
@@ -817,8 +817,7 @@ class TestDistroSeriesInitializeViewAccess(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSeriesInitializeViewAccess,
-              self).setUp('foo.bar@canonical.com')
+        super().setUp('foo.bar@canonical.com')
 
     def test_initseries_access_anon(self):
         # Anonymous users cannot access +initseries.
@@ -898,8 +897,7 @@ class TestDistroSeriesLocalDiffPerformance(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSeriesLocalDiffPerformance,
-             self).setUp('foo.bar@canonical.com')
+        super().setUp('foo.bar@canonical.com')
         self.simple_user = self.factory.makePerson()
 
     def _assertQueryCount(self, derived_series):
@@ -917,9 +915,9 @@ class TestDistroSeriesLocalDiffPerformance(TestCaseWithFactory,
             for index in range(num):
                 version = self.factory.getUniqueInteger()
                 versions = {
-                    'base': u'1.%d' % version,
-                    'derived': u'1.%dderived1' % version,
-                    'parent': u'1.%d-1' % version,
+                    'base': '1.%d' % version,
+                    'derived': '1.%dderived1' % version,
+                    'parent': '1.%d-1' % version,
                     }
                 dsd = self.factory.makeDistroSeriesDifference(
                     derived_series=derived_series,
@@ -965,8 +963,7 @@ class TestDistroSeriesLocalDiffPerformance(TestCaseWithFactory,
 
             def prepare_statements(rec):
                 for statement in rec.statements:
-                    for line in wrapper.wrap(statement):
-                        yield line
+                    yield from wrapper.wrap(statement)
                     yield "-" * wrapper.width
 
             def statement_diff():
@@ -983,19 +980,19 @@ class TestDistroSeriesLocalDiffPerformance(TestCaseWithFactory,
         self.assertThat(recorder1, HasQueryCount(LessThan(30)))
         self.addDetail(
             "statement-count-0-differences",
-            text_content(u"%d" % recorder1.count))
+            text_content("%d" % recorder1.count))
         # Add some differences and render.
         add_differences(2)
         recorder2, batch_size = flush_and_render()
         self.addDetail(
             "statement-count-2-differences",
-            text_content(u"%d" % recorder2.count))
+            text_content("%d" % recorder2.count))
         # Add more differences and render again.
         add_differences(2)
         recorder3, batch_size = flush_and_render()
         self.addDetail(
             "statement-count-4-differences",
-            text_content(u"%d" % recorder3.count))
+            text_content("%d" % recorder3.count))
         # The last render should not need more queries than the previous.
         self.addDetail(
             "statement-diff", Content(
@@ -1005,7 +1002,7 @@ class TestDistroSeriesLocalDiffPerformance(TestCaseWithFactory,
             (recorder3.count - recorder1.count) / float(batch_size))
         self.addDetail(
             "statement-count-per-row-average",
-            text_content(u"%.2f" % statement_count_per_row))
+            text_content("%.2f" % statement_count_per_row))
         # Query count is ~O(1) (i.e. not dependent of the number of
         # differences displayed).
         self.assertThat(recorder3, HasQueryCount.byEquality(recorder2))
@@ -1099,7 +1096,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
     def test_parent_packagesets_localpackagediffs_sorts(self):
         # Multiple packagesets are sorted in a comma separated list.
         ds_diff = self.factory.makeDistroSeriesDifference()
-        unsorted_names = [u"zzz", u"aaa"]
+        unsorted_names = ["zzz", "aaa"]
         with celebrity_logged_in('admin'):
             for name in unsorted_names:
                 self.factory.makePackageset(
@@ -1203,8 +1200,8 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         rows = diff_table.tbody.find_all('tr')
 
         self.assertEqual(1, len(rows))
-        self.assertIn("Latest comment", six.text_type(rows[0]))
-        self.assertNotIn("Earlier comment", six.text_type(rows[0]))
+        self.assertIn("Latest comment", str(rows[0]))
+        self.assertNotIn("Earlier comment", str(rows[0]))
 
     def test_diff_row_links_to_extra_details(self):
         # The source package name links to the difference details.
@@ -1227,9 +1224,9 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         derived_series, parent_series = self._createChildAndParents(
             other_parent_series=other_parent_series)
         versions = {
-            'base': u'1.0',
-            'derived': u'1.0derived1',
-            'parent': u'1.0-1',
+            'base': '1.0',
+            'derived': '1.0derived1',
+            'parent': '1.0-1',
         }
 
         self.factory.makeDistroSeriesDifference(
@@ -1264,11 +1261,11 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         package_name = 'package-1'
         derived_series, parent_series = self._createChildAndParent()
         versions = {
-            'base': u'1.0',
-            'derived': u'1.0derived1',
-            'parent': u'1.0-1',
+            'base': '1.0',
+            'derived': '1.0derived1',
+            'parent': '1.0-1',
         }
-        new_version = u'1.2'
+        new_version = '1.2'
 
         difference = self.factory.makeDistroSeriesDifference(
             versions=versions,
@@ -1307,9 +1304,9 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         package_name = 'package-1'
         derived_series, parent_series = self._createChildAndParent()
         versions = {
-            'base': u'1.0',
-            'derived': u'1.0derived1',
-            'parent': u'1.0-1',
+            'base': '1.0',
+            'derived': '1.0derived1',
+            'parent': '1.0-1',
         }
 
         difference = self.factory.makeDistroSeriesDifference(
@@ -1407,7 +1404,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         """Enable the feature flag for derived-series upgrade."""
         self.useFixture(
             FeatureFixture(
-                {u'soyuz.derived_series_upgrade.enabled': u'on'}))
+                {'soyuz.derived_series_upgrade.enabled': 'on'}))
 
     @with_celebrity_logged_in("admin")
     def test_upgrades_offered_only_with_feature_flag(self):
@@ -1544,7 +1541,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             '+localpackagediffs')
 
         radio_title = (
-            u"\xa0Ignored packages with a higher version than in 'Lucid'")
+            "\xa0Ignored packages with a higher version than in 'Lucid'")
         radio_option_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 "radio displays parent's name", 'label',
@@ -1562,7 +1559,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             '+localpackagediffs')
 
         radio_title = (
-            u"\xa0Ignored packages with a higher version than in parent")
+            "\xa0Ignored packages with a higher version than in parent")
         radio_option_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 "radio displays parent's name", 'label',
@@ -2085,7 +2082,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
 
         # The inital state is that 1.0-1 is not in the derived series.
         pubs = derived_series.main_archive.getPublishedSources(
-            name=u'my-src-name', version=versions['parent'],
+            name='my-src-name', version=versions['parent'],
             distroseries=derived_series).any()
         self.assertIs(None, pubs)
 
@@ -2144,7 +2141,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         self._syncAndGetView(
             derived_series, person, [diff_id])
         parent_series.main_archive.getPublishedSources(
-            name=u'my-src-name', version=versions['parent'],
+            name='my-src-name', version=versions['parent'],
             distroseries=parent_series).one()
 
         # We look for a PackageCopyJob with the right metadata.
@@ -2274,7 +2271,7 @@ class TestCopyAsynchronouslyMessage(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCopyAsynchronouslyMessage, self).setUp()
+        super().setUp()
         self.archive = self.factory.makeArchive()
         self.series = self.factory.makeDistroSeries()
         self.series_url = canonical_url(self.series)
@@ -2388,8 +2385,7 @@ class DistroSeriesMissingPackagesPageTestCase(TestCaseWithFactory,
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(DistroSeriesMissingPackagesPageTestCase,
-              self).setUp('foo.bar@canonical.com')
+        super().setUp('foo.bar@canonical.com')
         self.simple_user = self.factory.makePerson()
 
     def test_parent_packagesets_missingpackages(self):
@@ -2552,8 +2548,7 @@ class DistroSeriesUniquePackagesPageTestCase(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(DistroSeriesUniquePackagesPageTestCase,
-              self).setUp('foo.bar@canonical.com')
+        super().setUp('foo.bar@canonical.com')
         self.simple_user = self.factory.makePerson()
 
     def test_packagesets_uniquepackages(self):

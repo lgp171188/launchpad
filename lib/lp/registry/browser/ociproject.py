@@ -93,7 +93,7 @@ class OCIProjectURL:
             if (policy == DistributionDefaultTraversalPolicy.OCI_PROJECT and
                     not self.context.distribution.redirect_default_traversal):
                 return self.context.name
-        return u"+oci/%s" % self.context.name
+        return "+oci/%s" % self.context.name
 
 
 def getPillarFieldName(pillar):
@@ -114,7 +114,7 @@ class OCIProjectAddView(LaunchpadFormView):
         if (not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE) and not
                 self.context.canAdministerOCIProjects(self.user)):
             raise OCIProjectCreateFeatureDisabled
-        super(OCIProjectAddView, self).initialize()
+        super().initialize()
 
     @action("Create OCI Project", name="create")
     def create_action(self, action, data):
@@ -129,7 +129,7 @@ class OCIProjectAddView(LaunchpadFormView):
         self.next_url = canonical_url(oci_project)
 
     def validate(self, data):
-        super(OCIProjectAddView, self).validate(data)
+        super().validate(data)
         name = data.get('name', None)
         oci_project_name = getUtility(
             IOCIProjectNameSet).getOrCreateByName(name)
@@ -289,7 +289,7 @@ class OCIProjectEditView(LaunchpadEditFormView):
         pillar_key = getPillarFieldName(self.context.pillar)
         self.field_names = [pillar_key] + self.field_names
 
-        super(OCIProjectEditView, self).setUpFields()
+        super().setUpFields()
 
         # Set the correct pillar field as mandatory
         pillar_field = self.form_fields.get(pillar_key).field
@@ -302,7 +302,7 @@ class OCIProjectEditView(LaunchpadEditFormView):
     page_title = 'Edit'
 
     def validate(self, data):
-        super(OCIProjectEditView, self).validate(data)
+        super().validate(data)
         pillar_type_field = getPillarFieldName(self.context.pillar)
         pillar = data.get(pillar_type_field)
         name = data.get('name')

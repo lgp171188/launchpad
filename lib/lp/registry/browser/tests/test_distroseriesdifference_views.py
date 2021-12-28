@@ -108,8 +108,8 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
 
         self.assertIsNot(None, view.binary_summaries)
         self.assertEqual([
-            u'flubber-bin: summary for flubber-bin',
-            u'flubber-lib: summary for flubber-lib',
+            'flubber-bin: summary for flubber-bin',
+            'flubber-lib: summary for flubber-lib',
             ], view.binary_summaries)
 
     def test_binary_summaries_for_missing_difference(self):
@@ -124,8 +124,8 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
 
         self.assertIsNot(None, view.binary_summaries)
         self.assertEqual([
-            u'flubber-bin: summary for flubber-bin',
-            u'flubber-lib: summary for flubber-lib',
+            'flubber-bin: summary for flubber-bin',
+            'flubber-lib: summary for flubber-lib',
             ], view.binary_summaries)
 
     def test_binary_summaries_no_pubs(self):

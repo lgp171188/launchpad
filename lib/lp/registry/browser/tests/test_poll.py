@@ -29,7 +29,7 @@ class TestPollVoteView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPollVoteView, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam()
 
     def test_simple_poll_template(self):
@@ -55,7 +55,7 @@ class TestPollAddView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPollAddView, self).setUp()
+        super().setUp()
         self.pushConfig(
             "launchpad", min_legitimate_karma=5, min_legitimate_account_age=5)
 

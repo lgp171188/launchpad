@@ -167,10 +167,10 @@ class ProductReleaseAddView(ProductReleaseAddViewBase):
             self.request.response.redirect(
                 canonical_url(self.context.product_release) + '/+edit')
         else:
-            super(ProductReleaseAddView, self).initialize()
+            super().initialize()
 
     def setUpFields(self):
-        super(ProductReleaseAddView, self).setUpFields()
+        super().setUpFields()
         if self.context.active is True:
             self._prependKeepMilestoneActiveField()
 
@@ -193,7 +193,7 @@ class ProductReleaseFromSeriesAddView(ProductReleaseAddViewBase,
         ]
 
     def setUpFields(self):
-        super(ProductReleaseFromSeriesAddView, self).setUpFields()
+        super().setUpFields()
         self._prependKeepMilestoneActiveField()
         self._prependMilestoneField()
 
@@ -288,7 +288,7 @@ class ProductReleaseAddDownloadFileView(LaunchpadFormView):
         if file_name and self.context.hasReleaseFile(file_name):
             self.setFieldError(
                 'filecontent',
-                u"The file '%s' is already uploaded." % file_name)
+                "The file '%s' is already uploaded." % file_name)
 
     @action('Upload', name='add')
     def add_action(self, action, data):

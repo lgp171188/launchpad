@@ -424,7 +424,7 @@ class EmailToPersonViewTestCase(TestCaseWithFactory):
         with person_logged_in(sender):
             view = create_initialized_view(user, '+contactuser', form=form)
         self.assertEqual(
-            [u'You must provide a subject and a message.'], view.errors)
+            ['You must provide a subject and a message.'], view.errors)
 
     def test_submitted_after_quota(self):
         # The view explains when a message was not sent because the quota

@@ -179,40 +179,40 @@ class DistroSeriesDifferenceWebServiceTestCase(TestCaseWithFactory):
         ws_diff = ws_object(self.factory.makeLaunchpadService(
             self.factory.makePerson()), ds_diff)
 
-        self.assertEqual(u'Blocklisted always', ws_diff.status)
+        self.assertEqual('Blocklisted always', ws_diff.status)
 
     def test_exported_sourcepackagename(self):
         # The difference's sourcepackagename is exposed.
         ds_diff = self.factory.makeDistroSeriesDifference(
-            source_package_name_str=u'package')
+            source_package_name_str='package')
         ws_diff = ws_object(self.factory.makeLaunchpadService(
             self.factory.makePerson()), ds_diff)
 
-        self.assertEqual(u'package', ws_diff.sourcepackagename)
+        self.assertEqual('package', ws_diff.sourcepackagename)
 
     def test_exported_parent_source_version(self):
         # The difference's parent_source_version is exposed.
         ds_diff = self.factory.makeDistroSeriesDifference(
-            versions={'parent': u'1.1'})
+            versions={'parent': '1.1'})
         ws_diff = ws_object(self.factory.makeLaunchpadService(
             self.factory.makePerson()), ds_diff)
 
-        self.assertEqual(u'1.1', ws_diff.parent_source_version)
+        self.assertEqual('1.1', ws_diff.parent_source_version)
 
     def test_exported_source_version(self):
         # The difference's source_version is exposed.
         ds_diff = self.factory.makeDistroSeriesDifference(
-            versions={'derived': u'1.3'})
+            versions={'derived': '1.3'})
         ws_diff = ws_object(self.factory.makeLaunchpadService(
             self.factory.makePerson()), ds_diff)
 
-        self.assertEqual(u'1.3', ws_diff.source_version)
+        self.assertEqual('1.3', ws_diff.source_version)
 
     def test_exported_base_version(self):
         # The difference's base_version is exposed.
         ds_diff = self.factory.makeDistroSeriesDifference(
-            versions={'base': u'0.5'}, set_base_version=True)
+            versions={'base': '0.5'}, set_base_version=True)
         ws_diff = ws_object(self.factory.makeLaunchpadService(
             self.factory.makePerson()), ds_diff)
 
-        self.assertEqual(u'0.5', ws_diff.base_version)
+        self.assertEqual('0.5', ws_diff.base_version)

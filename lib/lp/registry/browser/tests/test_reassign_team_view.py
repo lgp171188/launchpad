@@ -153,7 +153,7 @@ class TestTeamReassignmentViewErrors(TestCaseWithFactory):
             a_team, '+reassign', form=form, principal=owner)
         self.assertEqual(
             [html_escape(
-                u"There's already a person/team with the name 'a-team' in "
+                "There's already a person/team with the name 'a-team' in "
                 "Launchpad. Please choose a different name or select the "
                 "option to make that person/team the new owner, if that's "
                 "what you want.")],

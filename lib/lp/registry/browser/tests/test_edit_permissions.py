@@ -28,7 +28,7 @@ class EditViewPermissionBase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(EditViewPermissionBase, self).setUp()
+        super().setUp()
         self.setupTarget()
         self.registry_admin = self.factory.makePerson(name='registry-admin')
         celebs = getUtility(ILaunchpadCelebrities)

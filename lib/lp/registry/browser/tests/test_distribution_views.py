@@ -38,13 +38,13 @@ class TestDistributionPublisherConfigView(TestCaseWithFactory):
 
     def setUp(self):
         # Create a test distribution.
-        super(TestDistributionPublisherConfigView, self).setUp()
+        super().setUp()
         self.distro = self.factory.makeDistribution(no_pubconf=True)
         login(LAUNCHPAD_ADMIN)
 
-        self.ROOT_DIR = u"rootdir/test"
-        self.BASE_URL = u"http://base.url"
-        self.COPY_BASE_URL = u"http://copybase.url"
+        self.ROOT_DIR = "rootdir/test"
+        self.BASE_URL = "http://base.url"
+        self.COPY_BASE_URL = "http://copybase.url"
 
     def test_empty_initial_values(self):
         # Test that the page will display empty field values with no
@@ -53,7 +53,7 @@ class TestDistributionPublisherConfigView(TestCaseWithFactory):
             self.distro, LaunchpadTestRequest())
 
         for value in view.initial_values:
-            self.assertEqual(u"", value)
+            self.assertEqual("", value)
 
     def test_previous_initial_values(self):
         # Test that the initial values are the same as the ones in the
@@ -96,9 +96,9 @@ class TestDistributionPublisherConfigView(TestCaseWithFactory):
         # Test POSTing to change existing config.
         self.factory.makePublisherConfig(
             distribution=self.distro,
-            root_dir=u"random",
-            base_url=u"blah",
-            copy_base_url=u"foo",
+            root_dir="random",
+            base_url="blah",
+            copy_base_url="foo",
             )
         self._change_and_test_config()
 
@@ -109,7 +109,7 @@ class TestDistroAddView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroAddView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.registrant = self.factory.makePerson()
         self.simple_user = self.factory.makePerson()
@@ -189,7 +189,7 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroEditView, self).setUp()
+        super().setUp()
         self.admin = login_celebrity('admin')
         self.oci_admins = self.factory.makeTeam(
             members=[self.admin])
@@ -226,7 +226,7 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
             'field.title': 'newbuntu',
             'field.summary': 'newbuntu',
             'field.description': 'newbuntu',
-            'field.require_virtualized.used': u'',
+            'field.require_virtualized.used': '',
             'field.processors': [proc.name for proc in self.all_processors],
             'field.actions.change': 'Change',
             }
@@ -496,7 +496,7 @@ class TestDistroReassignView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroReassignView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.registrant = self.factory.makePerson()
         self.simple_user = self.factory.makePerson()

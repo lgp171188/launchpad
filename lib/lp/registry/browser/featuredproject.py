@@ -34,7 +34,7 @@ class FeaturedProjectForm(Interface):
         required=False, vocabulary='DistributionOrProductOrProjectGroup')
 
     remove = Set(
-        title=u'Remove projects',
+        title='Remove projects',
         description=_(
             'Select projects that you would like to remove from the list.'),
         required=False,

@@ -23,7 +23,7 @@ class TestTeamMenu(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTeamMenu, self).setUp()
+        super().setUp()
         login_celebrity('admin')
         self.membership_set = getUtility(ITeamMembershipSet)
         self.team = self.factory.makeTeam()

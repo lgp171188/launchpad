@@ -36,12 +36,12 @@ class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
     scenarios = [
         ("spn_picker", {"features": {}}),
         ("dsp_picker", {
-            "features": {u"disclosure.dsp_picker.enabled": u"on"},
+            "features": {"disclosure.dsp_picker.enabled": "on"},
             }),
         ]
 
     def setUp(self):
-        super(TestProductSeriesUbuntuPackagingView, self).setUp()
+        super().setUp()
         if self.features:
             self.useFixture(FeatureFixture(self.features))
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
@@ -150,7 +150,7 @@ class TestBrowserDeletePackaging(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBrowserDeletePackaging, self).setUp()
+        super().setUp()
         # Only the person which created the packaging, admins
         # and other people with certain privileges can delete a
         # packaging. Since the sample data record we'll use for

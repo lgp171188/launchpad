@@ -70,7 +70,7 @@ class TestProposedTeamMembersEditView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProposedTeamMembersEditView, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name="team-owner")
         self.a_team = self.makeTeam("team-a", "A-Team")
         self.b_team = self.makeTeam("team-b", "B-Team")
@@ -97,7 +97,7 @@ class TestProposedTeamMembersEditView(TestCaseWithFactory):
         self.assertEqual([], view.errors)
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
-        expected = u"%s has been proposed to this team." % (
+        expected = "%s has been proposed to this team." % (
             joiner.displayname)
         self.assertEqual(
             expected,
@@ -112,13 +112,13 @@ class TestProposedTeamMembersEditView(TestCaseWithFactory):
         failed_names = ', '.join([team.displayname for team in failed])
         if len(failed) == 1:
             failed_message = html_escape(
-                u'%s is a member of the following team, '
+                '%s is a member of the following team, '
                 'so it could not be accepted:  %s.  '
                 'You need to "Decline" that team.' %
                 (joinee.displayname, failed_names))
         else:
             failed_message = html_escape(
-                u'%s is a member of the following teams, '
+                '%s is a member of the following teams, '
                 'so they could not be accepted:  %s.  '
                 'You need to "Decline" those teams.' %
                 (joinee.displayname, failed_names))
@@ -605,7 +605,7 @@ class TestTeamMenu(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTeamMenu, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam()
 
     def test_TeamIndexMenu(self):
@@ -754,7 +754,7 @@ class TestTeamMemberAddView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTeamMemberAddView, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam(name='test-team')
         login_person(self.team.teamowner)
 
@@ -844,7 +844,7 @@ class TeamMembershipViewTestCase(TestCaseWithFactory):
         team = self.factory.makeTeam(name='pting')
         view = create_initialized_view(team, name='+members')
         self.assertEqual('Members', view.page_title)
-        self.assertEqual(u'Members of \u201cPting\u201d', view.label)
+        self.assertEqual('Members of \u201cPting\u201d', view.label)
 
 
 class TestTeamIndexView(TestCaseWithFactory):
@@ -852,7 +852,7 @@ class TestTeamIndexView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTeamIndexView, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam(name='test-team')
         login_person(self.team.teamowner)
 

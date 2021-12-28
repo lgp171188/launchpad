@@ -22,7 +22,6 @@ import operator
 
 import apt_pkg
 from lazr.delegates import delegate_to
-import six
 from zope.component import getUtility
 from zope.interface import (
     implementer,
@@ -119,7 +118,7 @@ class DistributionSourcePackageURL:
                 not self.context.distribution.redirect_default_traversal):
             return self.context.name
         else:
-            return u"+source/%s" % self.context.name
+            return "+source/%s" % self.context.name
 
 
 class DistributionSourcePackageFormatterAPI(CustomizableFormatter):
@@ -298,7 +297,7 @@ class DistributionSourcePackageBaseView(LaunchpadView):
 
         def not_empty(text):
             return (
-                text is not None and isinstance(text, six.string_types)
+                text is not None and isinstance(text, str)
                 and len(text.strip()) > 0)
 
         def decorate(dspr_pubs):
@@ -341,7 +340,7 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
     """View class for DistributionSourcePackage."""
 
     def initialize(self):
-        super(DistributionSourcePackageView, self).initialize()
+        super().initialize()
         expose_structural_subscription_data_to_js(
             self.context, self.request, self.user)
 

@@ -63,7 +63,7 @@ class SharingBaseTestCase(TestCaseWithFactory):
     pillar_type = None
 
     def setUp(self):
-        super(SharingBaseTestCase, self).setUp()
+        super().setUp()
         self.driver = self.factory.makePerson()
         self.owner = self.factory.makePerson()
         if self.pillar_type == 'distribution':
@@ -249,7 +249,7 @@ class TestProductSharingDetailsView(
     pillar_type = 'product'
 
     def setUp(self):
-        super(TestProductSharingDetailsView, self).setUp()
+        super().setUp()
         login_person(self.owner)
 
 
@@ -259,7 +259,7 @@ class TestDistributionSharingDetailsView(
     pillar_type = 'distribution'
 
     def setUp(self):
-        super(TestDistributionSharingDetailsView, self).setUp()
+        super().setUp()
         login_person(self.owner)
 
 
@@ -471,7 +471,7 @@ class TestProductSharingView(PillarSharingViewTestMixin,
     pillar_type = 'product'
 
     def setUp(self):
-        super(TestProductSharingView, self).setUp()
+        super().setUp()
         self.setupSharing(self.grantees)
         login_person(self.driver)
         # Use a FakeLogger fixture to prevent Memcached warnings to be
@@ -517,7 +517,7 @@ class TestDistributionSharingView(PillarSharingViewTestMixin,
     pillar_type = 'distribution'
 
     def setUp(self):
-        super(TestDistributionSharingView, self).setUp()
+        super().setUp()
         self.setupSharing(self.grantees)
         login_person(self.driver)
 

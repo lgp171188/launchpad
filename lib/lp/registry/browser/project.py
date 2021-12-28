@@ -136,7 +136,7 @@ class ProjectNavigation(Navigation,
 
     @stepthrough('+tags')
     def traverse_tags(self, name):
-        tags = name.split(u',')
+        tags = name.split(',')
         if validate_tags(tags):
             return ProjectGroupMilestoneTag(self.context, tags)
 
@@ -354,7 +354,7 @@ class ProjectView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
             help_link="/+help-registry/driver.html", show_create_team=True)
 
     def initialize(self):
-        super(ProjectView, self).initialize()
+        super().initialize()
         expose_structural_subscription_data_to_js(
             self.context, self.request, self.user)
 
@@ -422,7 +422,7 @@ class ProjectReviewView(ProjectEditView):
         moderator = check_permission('launchpad.Moderate', self.context)
         if not moderator:
             self.field_names.remove('name')
-        super(ProjectReviewView, self).setUpFields()
+        super().setUpFields()
         self.form_fields = self._createAliasesField() + self.form_fields
         if admin:
             self.form_fields = (
@@ -544,7 +544,7 @@ class ProjectSetView(LaunchpadView):
     page_title = "Project groups registered in Launchpad"
 
     def __init__(self, context, request):
-        super(ProjectSetView, self).__init__(context, request)
+        super().__init__(context, request)
         self.form = self.request.form_ng
         self.search_string = self.form.getOne('text', None)
         self.search_requested = False
