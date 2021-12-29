@@ -100,9 +100,9 @@ class SendDirectContactEmailTestCase(TestCaseWithFactory):
 
     def test_name_utf8_encoding(self):
         # Names are encoded in the From and To headers.
-        self.factory.makePerson(email='me@eg.dom', displayname=u'sn\xefrf')
+        self.factory.makePerson(email='me@eg.dom', displayname='sn\xefrf')
         user = self.factory.makePerson(
-            email='him@eg.dom', displayname=u'pti\xedng')
+            email='him@eg.dom', displayname='pti\xedng')
         recipients_set = NotificationRecipientSet()
         recipients_set.add(user, 'test reason', 'test rationale')
         pop_notifications()

@@ -118,7 +118,7 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(MilestoneSecurityAdaperTestCase, self).setUp()
+        super().setUp()
         self.public_product = self.factory.makeProduct()
         self.public_milestone = self.factory.makeMilestone(
             product=self.public_product)
@@ -453,7 +453,7 @@ class MilestoneBugTaskSpecificationTest(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(MilestoneBugTaskSpecificationTest, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.product = self.factory.makeProduct(name="product1")
         self.milestone = self.factory.makeMilestone(product=self.product)
@@ -618,7 +618,7 @@ class ProjectMilestoneSecurityAdaperTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(ProjectMilestoneSecurityAdaperTestCase, self).setUp()
+        super().setUp()
         project_group = self.factory.makeProject()
         public_product = self.factory.makeProduct(projectgroup=project_group)
         self.factory.makeMilestone(

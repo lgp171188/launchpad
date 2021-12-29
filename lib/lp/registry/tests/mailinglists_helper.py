@@ -112,27 +112,24 @@ class MailingListXMLRPCTestProxy(MailingListAPIView):
 
     @fault_catcher
     def getPendingActions(self):
-        return super(MailingListXMLRPCTestProxy, self).getPendingActions()
+        return super().getPendingActions()
 
     @fault_catcher
     def reportStatus(self, statuses):
-        return super(MailingListXMLRPCTestProxy, self).reportStatus(statuses)
+        return super().reportStatus(statuses)
 
     @fault_catcher
     def getMembershipInformation(self, teams):
-        return super(
-            MailingListXMLRPCTestProxy, self).getMembershipInformation(teams)
+        return super().getMembershipInformation(teams)
 
     @fault_catcher
     def isLaunchpadMember(self, address):
-        return super(MailingListXMLRPCTestProxy, self).isLaunchpadMember(
-            address)
+        return super().isLaunchpadMember(address)
 
     @fault_catcher
     def isTeamPublic(self, team_name):
-        return super(MailingListXMLRPCTestProxy, self).isTeamPublic(team_name)
+        return super().isTeamPublic(team_name)
 
     @fault_catcher
     def updateTeamAddresses(self, old_hostname):
-        return super(MailingListXMLRPCTestProxy, self).updateTeamAddresses(
-            old_hostname)
+        return super().updateTeamAddresses(old_hostname)

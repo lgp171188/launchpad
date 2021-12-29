@@ -37,7 +37,7 @@ class VocabularyTestBase:
     vocabulary_name = None
 
     def setUp(self):
-        super(VocabularyTestBase, self).setUp()
+        super().setUp()
         self.vocabulary_registry = getVocabularyRegistry()
 
     def getVocabulary(self, context):
@@ -85,18 +85,18 @@ class ValidPersonOrTeamVocabularyMixin(VocabularyTestBase):
         # Exact is better than prefix is better than FTI.
         self.assertEqual(
             [exact_person, prefix_person, contributor_person],
-            list(self.searchVocabulary(product, u'fooix')))
+            list(self.searchVocabulary(product, 'fooix')))
 
         # But karma can bump people up, behind the exact match.
         self.addKarma(contributor_person, 500, product=product)
         self.assertEqual(
             [exact_person, contributor_person, prefix_person],
-            list(self.searchVocabulary(product, u'fooix')))
+            list(self.searchVocabulary(product, 'fooix')))
 
         self.addKarma(prefix_person, 500, product=product)
         self.assertEqual(
             [exact_person, prefix_person, contributor_person],
-            list(self.searchVocabulary(product, u'fooix')))
+            list(self.searchVocabulary(product, 'fooix')))
 
     def assertKarmaContextConstraint(self, expected, context):
         """Check that the karma context constraint works.
@@ -138,7 +138,7 @@ class ValidPersonOrTeamVocabularyMixin(VocabularyTestBase):
         results = self.searchVocabulary(None, '', 'PERSON')
         for personorteam in results:
             self.assertFalse(personorteam.is_team)
-        results = self.searchVocabulary(None, u'fred', 'PERSON')
+        results = self.searchVocabulary(None, 'fred', 'PERSON')
         self.assertEqual([person], list(results))
 
     def test_person_filter(self):
@@ -153,7 +153,7 @@ class ValidPersonOrTeamVocabularyMixin(VocabularyTestBase):
         results = self.searchVocabulary(None, '', 'TEAM')
         for personorteam in results:
             self.assertTrue(personorteam.is_team)
-        results = self.searchVocabulary(None, u'fred', 'TEAM')
+        results = self.searchVocabulary(None, 'fred', 'TEAM')
         self.assertContentEqual(teams, list(results))
 
     def test_inactive_people_ignored(self):
@@ -229,7 +229,7 @@ class TestValidPersonOrTeamPreloading(VocabularyTestBase,
             person.id: person.preferredemail for person in people}
         Store.of(people[0]).invalidate()
 
-        results = list(self.searchVocabulary(None, u'foobar'))
+        results = list(self.searchVocabulary(None, 'foobar'))
         with StormStatementRecorder() as recorder:
             self.assertEqual(4, len(results))
             for person in results:

@@ -82,8 +82,7 @@ class TeamMembershipRecipientReason(RecipientReason):
     def __init__(self, subscriber, recipient, mail_header, reason_template,
                  subject=None, template_name=None, reply_to=None,
                  recipient_class=None):
-        super(TeamMembershipRecipientReason, self).__init__(
-            subscriber, recipient, mail_header, reason_template)
+        super().__init__(subscriber, recipient, mail_header, reason_template)
         self.subject = subject
         self.template_name = template_name
         self.reply_to = reply_to
@@ -364,7 +363,7 @@ class TeamMembershipMailer(BaseMailer):
                  notification_type, member, team, reviewer, membership=None,
                  extra_params={}, wrap=True, force_wrap=True):
         """See `BaseMailer`."""
-        super(TeamMembershipMailer, self).__init__(
+        super().__init__(
             subject, template_name, recipients, from_address,
             notification_type=notification_type, wrap=wrap,
             force_wrap=force_wrap)
@@ -399,8 +398,7 @@ class TeamMembershipMailer(BaseMailer):
 
     def _getTemplateParams(self, email, recipient):
         """See `BaseMailer`."""
-        params = super(TeamMembershipMailer, self)._getTemplateParams(
-            email, recipient)
+        params = super()._getTemplateParams(email, recipient)
         params["recipient"] = recipient.displayname
         reason, _ = self._recipients.getReason(email)
         if reason.recipient_class is not None:

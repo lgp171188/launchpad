@@ -108,7 +108,7 @@ class TestTeamLimitedViewAccess(TestCaseWithFactory):
     layer = AppServerLayer
 
     def setUp(self):
-        super(TestTeamLimitedViewAccess, self).setUp()
+        super().setUp()
 
         # Make a private team.
         team_owner = self.factory.makePerson()

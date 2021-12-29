@@ -64,7 +64,7 @@ class TestPersonMergeJob(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonMergeJob, self).setUp()
+        super().setUp()
         self.job_source = getUtility(IPersonMergeJobSource)
         self.job = create_job(self.factory)
         self.from_person = self.job.from_person

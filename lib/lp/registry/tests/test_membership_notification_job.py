@@ -40,7 +40,7 @@ class MembershipNotificationJobTest(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(MembershipNotificationJobTest, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson(name='murdock')
         self.team = self.factory.makeTeam(name='a-team')
         self.job_source = getUtility(IMembershipNotificationJobSource)

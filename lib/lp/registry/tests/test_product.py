@@ -272,7 +272,7 @@ class TestProduct(TestCaseWithFactory):
         for name in ('1', '2', '3', '3a', '3b', 'alpha', 'beta'):
             self.factory.makeProductSeries(product=product, name=name)
         self.assertEqual(
-            [u'trunk', u'3b', u'3a', u'3', u'2', u'1', u'beta', u'alpha'],
+            ['trunk', '3b', '3a', '3', '2', '1', 'beta', 'alpha'],
             [series.name for series in product.getVersionSortedSeries()])
 
     def test_getVersionSortedSeries_with_specific_statuses(self):
@@ -289,7 +289,7 @@ class TestProduct(TestCaseWithFactory):
         active_series = product.getVersionSortedSeries(
             statuses=[SeriesStatus.OBSOLETE])
         self.assertEqual(
-            [u'trunk', u'obsolete-series'],
+            ['trunk', 'obsolete-series'],
             [series.name for series in active_series])
 
     def test_getVersionSortedSeries_without_specific_statuses(self):
@@ -306,7 +306,7 @@ class TestProduct(TestCaseWithFactory):
         active_series = product.getVersionSortedSeries(
             filter_statuses=[SeriesStatus.OBSOLETE])
         self.assertEqual(
-            [u'trunk', u'active-series'],
+            ['trunk', 'active-series'],
             [series.name for series in active_series])
 
     def test_inferred_vcs(self):
@@ -1417,7 +1417,7 @@ class TestProductFiles(TestCase):
     def test_adddownloadfile_nonascii_filename(self):
         """Test uploading a file with a non-ascii char in the filename."""
         firefox_owner = setupBrowser(auth='Basic mark@example.com:test')
-        filename = u'foo\xa5.txt'
+        filename = 'foo\xa5.txt'
         firefox_owner.open(
             'http://launchpad.test/firefox/1.0/1.0.0/+adddownloadfile')
         foo_file = BytesIO(b'Foo installer package...')
@@ -1432,7 +1432,7 @@ class TestProductFiles(TestCase):
         firefox_owner.getControl("Upload").click()
         self.assertEqual(
             get_feedback_messages(firefox_owner.contents),
-            [u"Your file 'foo\xa5.txt' has been uploaded."])
+            ["Your file 'foo\xa5.txt' has been uploaded."])
         firefox_owner.open('http://launchpad.test/firefox/+download')
         content = find_main_content(firefox_owner.contents)
         rows = content.find_all('tr')
@@ -1443,21 +1443,21 @@ class TestProductFiles(TestCase):
         self.assertEqual(
             a_element['href'],
             'http://launchpad.test/firefox/1.0/1.0.0/+download/foo%C2%A5.txt')
-        self.assertEqual(a_element.contents[0].strip(), u'foo\xa5.txt')
+        self.assertEqual(a_element.contents[0].strip(), 'foo\xa5.txt')
         # 2nd row
         a_element = a_list[1]
         self.assertEqual(
             a_element['href'],
             'http://launchpad.test/firefox/1.0/1.0.0/+download/'
             'foo%C2%A5.txt/+md5')
-        self.assertEqual(a_element.contents[0].strip(), u'md5')
+        self.assertEqual(a_element.contents[0].strip(), 'md5')
         # 3rd row
         a_element = a_list[2]
         self.assertEqual(
             a_element['href'],
             'http://launchpad.test/firefox/1.0/1.0.0/+download/'
             'foo%C2%A5.txt.asc')
-        self.assertEqual(a_element.contents[0].strip(), u'sig')
+        self.assertEqual(a_element.contents[0].strip(), 'sig')
 
 
 class ProductAttributeCacheTestCase(TestCaseWithFactory):
@@ -1466,7 +1466,7 @@ class ProductAttributeCacheTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(ProductAttributeCacheTestCase, self).setUp()
+        super().setUp()
         self.product = Product.selectOneBy(name='tomcat')
 
     def testLicensesCache(self):
@@ -1580,7 +1580,7 @@ class ProductLicensingTestCase(TestCaseWithFactory):
         product = self.factory.makeProduct()
         self.factory.makeCommercialSubscription(product)
         with celebrity_logged_in('admin'):
-            product.commercial_subscription.sales_system_id = u'testing'
+            product.commercial_subscription.sales_system_id = 'testing'
             date_expires = product.commercial_subscription.date_expires
         with person_logged_in(product.owner):
             product.licenses = [License.OTHER_PROPRIETARY]
@@ -1647,7 +1647,7 @@ class BaseSharingPolicyTests:
         raise NotImplementedError
 
     def setUp(self):
-        super(BaseSharingPolicyTests, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.commercial_admin = self.factory.makeCommercialAdmin()
 
@@ -1880,7 +1880,7 @@ class ProductSnapshotTestCase(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(ProductSnapshotTestCase, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct(name="shamwow")
 
     def test_excluded_from_snapshot(self):
@@ -1925,7 +1925,7 @@ class TestSpecifications(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSpecifications, self).setUp()
+        super().setUp()
         self.date_created = datetime.now(pytz.utc)
 
     def makeSpec(self, product=None, date_created=0, title=None,
@@ -2074,9 +2074,9 @@ class TestSpecifications(TestCaseWithFactory):
         blueprint1 = self.makeSpec(title='abc')
         product = blueprint1.product
         blueprint2 = self.makeSpec(product, title='def')
-        result = list_result(product, [u'abc'])
+        result = list_result(product, ['abc'])
         self.assertEqual([blueprint1], result)
-        result = list_result(product, [u'def'])
+        result = list_result(product, ['def'])
         self.assertEqual([blueprint2], result)
 
     def test_proprietary_not_listed(self):
@@ -2143,7 +2143,7 @@ class TestWebService(WebServiceTestCase):
         # The product layer provides the context restriction, so we need to
         # check we can access context filtered references - e.g. on question.
         oopsid = "OOPS-abcdef1234"
-        question = self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
+        question = self.factory.makeQuestion(title="Crash with %s" % oopsid)
         product = question.product
         transaction.commit()
         ws_product = self.wsObject(product, product.owner)
@@ -2161,7 +2161,7 @@ class TestWebService(WebServiceTestCase):
         # The product layer provides the context restriction, so we need to
         # check the filter is tight enough - other contexts should not work.
         oopsid = "OOPS-abcdef1234"
-        self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
+        self.factory.makeQuestion(title="Crash with %s" % oopsid)
         product = self.factory.makeProduct()
         transaction.commit()
         ws_product = self.wsObject(product, product.owner)

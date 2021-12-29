@@ -47,7 +47,7 @@ class TestGetBranchTips(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetBranchTips, self).setUp()
+        super().setUp()
         self.distro = self.factory.makeDistribution()
         series_1 = self.series_1 = self.factory.makeDistroSeries(self.distro)
         series_2 = self.series_2 = self.factory.makeDistroSeries(self.distro)

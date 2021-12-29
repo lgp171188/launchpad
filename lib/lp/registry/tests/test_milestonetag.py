@@ -29,10 +29,10 @@ class MilestoneTagTest(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(MilestoneTagTest, self).setUp()
+        super().setUp()
         self.milestone = self.factory.makeMilestone()
         self.person = self.milestone.target.owner
-        self.tags = [u'tag2', u'tag1', u'tag3']
+        self.tags = ['tag2', 'tag1', 'tag3']
 
     def test_no_tags(self):
         # Ensure a newly created milestone does not have associated tags.
@@ -48,7 +48,7 @@ class MilestoneTagTest(TestCaseWithFactory):
         # Ensure you can override tags already associated with the milestone.
         with person_logged_in(self.person):
             self.milestone.setTags(self.tags, self.person)
-            new_tags = [u'tag2', u'tag4', u'tag3']
+            new_tags = ['tag2', 'tag4', 'tag3']
             self.milestone.setTags(new_tags, self.person)
         self.assertEqual(sorted(new_tags), self.milestone.getTags())
 
@@ -61,7 +61,7 @@ class MilestoneTagTest(TestCaseWithFactory):
 
     def test_user_metadata(self):
         # Ensure the correct user metadata is created when tags are added.
-        tag = u'tag1'
+        tag = 'tag1'
         with person_logged_in(self.person):
             self.milestone.setTags([tag], self.person)
         values = self.milestone.getTagsData().values(
@@ -78,7 +78,7 @@ class MilestoneTagTest(TestCaseWithFactory):
         new_person = self.factory.makePerson()
         with person_logged_in(self.person):
             self.milestone.setTags(self.tags, self.person)
-            new_tags = [u'tag2', u'tag4', u'tag3']
+            new_tags = ['tag2', 'tag4', 'tag3']
             self.milestone.setTags(new_tags, new_person)
         values = self.milestone.getTagsData().values(
             MilestoneTag.tag,
@@ -99,7 +99,7 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(ProjectGroupMilestoneTagTest, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.project_group = self.factory.makeProject(owner=self.owner)
         self.product = self.factory.makeProduct(
@@ -131,7 +131,7 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
                 specifications.append(specification)
         return specifications
 
-    def _create_items_for_retrieval(self, factory, tag=u'tag1'):
+    def _create_items_for_retrieval(self, factory, tag='tag1'):
         with person_logged_in(self.owner):
             self.milestone.setTags([tag], self.owner)
             items = factory(5, self.milestone)
@@ -139,7 +139,7 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
                 target=self.project_group, tags=[tag])
         return items, milestonetag
 
-    def _create_items_for_untagged_milestone(self, factory, tag=u'tag1'):
+    def _create_items_for_untagged_milestone(self, factory, tag='tag1'):
         new_milestone = self.factory.makeMilestone(product=self.product)
         with person_logged_in(self.owner):
             self.milestone.setTags([tag], self.owner)
@@ -150,7 +150,7 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
         return items, milestonetag
 
     def _create_items_for_multiple_tags(
-        self, factory, tags=(u'tag1', u'tag2')):
+        self, factory, tags=('tag1', 'tag2')):
         new_milestone = self.factory.makeMilestone(product=self.product)
         with person_logged_in(self.owner):
             self.milestone.setTags(tags, self.owner)
@@ -211,7 +211,7 @@ class MilestoneTagWebServiceTest(WebServiceTestCase):
     layer = AppServerLayer
 
     def setUp(self):
-        super(MilestoneTagWebServiceTest, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.product = self.factory.makeProduct(owner=self.owner)
         self.milestone = self.factory.makeMilestone(product=self.product)
@@ -222,22 +222,22 @@ class MilestoneTagWebServiceTest(WebServiceTestCase):
         self.assertEqual([], self.ws_milestone.getTags())
 
     def test_get_tags(self):
-        tags = [u'zeta', u'alpha', u'beta']
+        tags = ['zeta', 'alpha', 'beta']
         self.milestone.setTags(tags, self.owner)
         transaction.commit()
         self.assertEqual(sorted(tags), self.ws_milestone.getTags())
 
     def test_set_tags_initial(self):
-        tags = [u'zeta', u'alpha', u'beta']
+        tags = ['zeta', 'alpha', 'beta']
         self.ws_milestone.setTags(tags=tags)
         self.ws_milestone.lp_save()
         transaction.begin()
         self.assertEqual(sorted(tags), self.milestone.getTags())
 
     def test_set_tags_replace(self):
-        tags1 = [u'zeta', u'alpha', u'beta']
+        tags1 = ['zeta', 'alpha', 'beta']
         self.milestone.setTags(tags1, self.owner)
-        tags2 = [u'delta', u'alpha', u'gamma']
+        tags2 = ['delta', 'alpha', 'gamma']
         self.ws_milestone.setTags(tags=tags2)
         self.ws_milestone.lp_save()
         transaction.begin()
@@ -245,4 +245,4 @@ class MilestoneTagWebServiceTest(WebServiceTestCase):
 
     def test_set_tags_invalid(self):
         self.assertRaises(
-            BadRequest, self.ws_milestone.setTags, tags=[u'&%&%^&'])
+            BadRequest, self.ws_milestone.setTags, tags=['&%&%^&'])

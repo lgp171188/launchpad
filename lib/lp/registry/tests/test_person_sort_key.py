@@ -14,41 +14,41 @@ class TestPersonSortKeyBase:
         # person_sort_key returns the concatenation of the display name and
         # the name for use in sorting.
         self.assertSortKeysEqual(
-            u"Stuart Bishop", u"stub",
-            u"stuart bishop, stub")
+            "Stuart Bishop", "stub",
+            "stuart bishop, stub")
 
     def test_whitespace(self):
         # Leading and trailing whitespace is removed.
         self.assertSortKeysEqual(
-            u" Stuart Bishop\t", u"stub",
-            u"stuart bishop, stub")
+            " Stuart Bishop\t", "stub",
+            "stuart bishop, stub")
 
     def test_valid_name_is_assumed(self):
         # 'name' is assumed to be lowercase and not containing anything we
         # don't want. This should never happen as the valid_name database
         # constraint should prevent it.
         self.assertSortKeysEqual(
-            u"Stuart Bishop", u" stub42!!!",
-            u"stuart bishop,  stub42!!!")
+            "Stuart Bishop", " stub42!!!",
+            "stuart bishop,  stub42!!!")
 
     def test_strip_all_but_letters_and_whitespace(self):
         # Everything except for letters and whitespace is stripped.
         self.assertSortKeysEqual(
-            u"-= Mass1v3 T0SSA =-", u"tossa",
-            u"massv tssa, tossa")
+            "-= Mass1v3 T0SSA =-", "tossa",
+            "massv tssa, tossa")
 
     def test_non_ascii_allowed(self):
         # Non ASCII letters are currently allowed. Eventually they should
         # become transliterated to ASCII but we don't do this yet.
         self.assertSortKeysEqual(
-            u"Bj\N{LATIN SMALL LETTER O WITH DIAERESIS}rn", "bjorn",
-            u"bj\xf6rn, bjorn")
+            "Bj\N{LATIN SMALL LETTER O WITH DIAERESIS}rn", "bjorn",
+            "bj\xf6rn, bjorn")
 
     def test_unicode_case_conversion(self):
         # Case conversion is handled correctly using Unicode.
         self.assertSortKeysEqual(
-            u"Bj\N{LATIN CAPITAL LETTER O WITH DIAERESIS}rn", "bjorn",
-            u"bj\xf6rn, bjorn")  # Lower case o with diaeresis
+            "Bj\N{LATIN CAPITAL LETTER O WITH DIAERESIS}rn", "bjorn",
+            "bj\xf6rn, bjorn")  # Lower case o with diaeresis
 
 
 class TestPersonSortKeyInDatabase(TestPersonSortKeyBase, TestCase):
@@ -56,12 +56,12 @@ class TestPersonSortKeyInDatabase(TestPersonSortKeyBase, TestCase):
     layer = DatabaseLayer
 
     def setUp(self):
-        super(TestPersonSortKeyInDatabase, self).setUp()
+        super().setUp()
         self.con = self.layer.connect()
         self.cur = self.con.cursor()
 
     def tearDown(self):
-        super(TestPersonSortKeyInDatabase, self).tearDown()
+        super().tearDown()
         self.con.close()
 
     def get_person_sort_key(self, display_name, name):

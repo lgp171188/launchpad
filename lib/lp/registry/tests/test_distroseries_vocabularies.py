@@ -45,7 +45,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSeriesDerivationVocabulary, self).setUp()
+        super().setUp()
         self.all_distroseries = getUtility(IDistroSeriesSet).search()
         self.all_series_with_arch = [
             series for series in self.all_distroseries

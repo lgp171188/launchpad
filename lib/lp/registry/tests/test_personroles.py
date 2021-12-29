@@ -21,7 +21,7 @@ class TestPersonRoles(TestCaseWithFactory):
     prefix = 'in_'
 
     def setUp(self):
-        super(TestPersonRoles, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.celebs = getUtility(ILaunchpadCelebrities)
 

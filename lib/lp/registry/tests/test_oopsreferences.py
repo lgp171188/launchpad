@@ -28,7 +28,7 @@ class TestOopsReferences(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOopsReferences, self).setUp()
+        super().setUp()
         self.store = IStore(Message)
 
     def test_oops_in_messagechunk(self):
@@ -90,7 +90,7 @@ class TestOopsReferences(TestCaseWithFactory):
 
     def test_oops_in_question_title(self):
         oopsid = "OOPS-abcdef1234"
-        question = self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
+        question = self.factory.makeQuestion(title="Crash with %s" % oopsid)
         self.store.flush()
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
@@ -105,7 +105,7 @@ class TestOopsReferences(TestCaseWithFactory):
 
     def test_oops_in_question_wrong_context(self):
         oopsid = "OOPS-abcdef1234"
-        question = self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
+        question = self.factory.makeQuestion(title="Crash with %s" % oopsid)
         self.store.flush()
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
@@ -118,7 +118,7 @@ class TestOopsReferences(TestCaseWithFactory):
     def test_oops_in_question_description(self):
         oopsid = "OOPS-abcdef1234"
         question = self.factory.makeQuestion(
-            description=u"Crash with %s" % oopsid)
+            description="Crash with %s" % oopsid)
         self.store.flush()
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
@@ -135,7 +135,7 @@ class TestOopsReferences(TestCaseWithFactory):
         oopsid = "OOPS-abcdef1234"
         question = self.factory.makeQuestion()
         with person_logged_in(question.owner):
-            question.whiteboard = u"Crash with %s" % oopsid
+            question.whiteboard = "Crash with %s" % oopsid
             self.store.flush()
         now = datetime.now(tz=utc)
         day = timedelta(days=1)
@@ -153,7 +153,7 @@ class TestOopsReferences(TestCaseWithFactory):
         distro = self.factory.makeDistribution()
         question = self.factory.makeQuestion(target=distro)
         with person_logged_in(question.owner):
-            question.whiteboard = u"Crash with %s" % oopsid
+            question.whiteboard = "Crash with %s" % oopsid
             self.store.flush()
         now = datetime.now(tz=utc)
         day = timedelta(days=1)

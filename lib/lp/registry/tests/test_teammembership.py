@@ -131,7 +131,7 @@ class TestTeamMembershipSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTeamMembershipSet, self).setUp()
+        super().setUp()
         login('test@canonical.com')
         self.membershipset = getUtility(ITeamMembershipSet)
         self.personset = getUtility(IPersonSet)
@@ -266,7 +266,7 @@ class TeamParticipationTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TeamParticipationTestCase, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
         person_set = getUtility(IPersonSet)
         self.foo_bar = person_set.getByEmail('foo.bar@canonical.com')
@@ -360,7 +360,7 @@ class TestTeamParticipationHierarchy(TeamParticipationTestCase):
 
     def setUp(self):
         """Setup the team hierarchy."""
-        super(TestTeamParticipationHierarchy, self).setUp()
+        super().setUp()
         self.team5.addMember(self.no_priv, self.foo_bar)
         self.team1.addMember(self.team2, self.foo_bar, force_team_add=True)
         self.team2.addMember(self.team3, self.foo_bar, force_team_add=True)
@@ -436,7 +436,7 @@ class TestTeamParticipationTree(TeamParticipationTestCase):
 
     def setUp(self):
         """Setup the team hierarchy."""
-        super(TestTeamParticipationTree, self).setUp()
+        super().setUp()
         self.team5.addMember(self.no_priv, self.foo_bar)
         self.team1.addMember(self.team2, self.foo_bar, force_team_add=True)
         self.team2.addMember(self.team3, self.foo_bar, force_team_add=True)
@@ -445,7 +445,7 @@ class TestTeamParticipationTree(TeamParticipationTestCase):
         self.team4.addMember(self.team5, self.foo_bar, force_team_add=True)
 
     def tearDown(self):
-        super(TestTeamParticipationTree, self).tearDown()
+        super().tearDown()
         self.layer.force_dirty_database()
 
     def testTeamParticipationSetUp(self):
@@ -510,7 +510,7 @@ class TestParticipationCleanup(TeamParticipationTestCase):
 
     def setUp(self):
         """Setup the team hierarchy."""
-        super(TestParticipationCleanup, self).setUp()
+        super().setUp()
         self.team1.addMember(self.team2, self.foo_bar, force_team_add=True)
         self.team2.addMember(self.team3, self.foo_bar, force_team_add=True)
         self.team3.addMember(self.team4, self.foo_bar, force_team_add=True)
@@ -547,7 +547,7 @@ class TestTeamParticipationMesh(TeamParticipationTestCase):
 
     def setUp(self):
         """Setup the team hierarchy."""
-        super(TestTeamParticipationMesh, self).setUp()
+        super().setUp()
         self.team6 = getUtility(IPersonSet).newTeam(
             self.foo_bar, 'team6', 'team6')
         self.team5.addMember(self.no_priv, self.foo_bar)
@@ -560,7 +560,7 @@ class TestTeamParticipationMesh(TeamParticipationTestCase):
         self.team6.addMember(self.team4, self.foo_bar, force_team_add=True)
 
     def tearDown(self):
-        super(TestTeamParticipationMesh, self).tearDown()
+        super().tearDown()
         self.layer.force_dirty_database()
 
     def testTeamParticipationSetUp(self):
@@ -706,7 +706,7 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTeamMembershipSetStatus, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
         self.foobar = getUtility(IPersonSet).getByName('name16')
         self.no_priv = getUtility(IPersonSet).getByName('no-priv')
@@ -1015,7 +1015,7 @@ class TestTeamMembershipJobs(TestCaseWithFactory):
         self.useFixture(FeatureFixture({
             'jobs.celery.enabled_classes': 'RemoveArtifactSubscriptionsJob',
         }))
-        super(TestTeamMembershipJobs, self).setUp()
+        super().setUp()
 
     def _make_subscribed_bug(self, grantee, target,
                              information_type=InformationType.USERDATA):
@@ -1073,7 +1073,7 @@ class TestTeamMembershipSendExpirationWarningEmail(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestTeamMembershipSendExpirationWarningEmail, self).setUp()
+        super().setUp()
         self.member = self.factory.makePerson(name='green')
         self.team = self.factory.makeTeam(name='red')
         login_person(self.team.teamowner)
