@@ -34,7 +34,7 @@ class TestDeriveDistroSeries(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestDeriveDistroSeries, self).setUp()
+        super().setUp()
         self.parent = self.factory.makeDistroSeries()
         arch = self.factory.makeDistroArchSeries(distroseries=self.parent)
         removeSecurityProxy(self.parent).nominatedarchindep = arch
@@ -103,7 +103,7 @@ class TestDeriveDistroSeriesMultipleParents(InitializationHelperTestCase):
             [parent1, parent2], child=child)
         self.assertBinPackagesAndVersions(
             child,
-            [(u'p1', u'0.1-1'), (u'p2', u'2.1')])
+            [('p1', '0.1-1'), ('p2', '2.1')])
 
     def test_multiple_parents_do_not_close_bugs(self):
         # The initialization does not close the bugs on the copied
@@ -127,7 +127,7 @@ class TestDeriveDistroSeriesMultipleParents(InitializationHelperTestCase):
         # Make sure the initialization was successful.
         self.assertBinPackagesAndVersions(
             child,
-            [(u'p1', u'0.1-1'), (u'p2', u'2.1')])
+            [('p1', '0.1-1'), ('p2', '2.1')])
         # Assert that close_bugs_for_sourcepublication has not been
         # called.
         self.assertEqual(
@@ -143,10 +143,10 @@ class TestDeriveDistroSeriesMultipleParents(InitializationHelperTestCase):
         parent, parent_das = self.setupParent()
         # Create packageset p1 with a build.
         p1, packageset1, unsed = self.createPackageInPackageset(
-            parent, u'p1', u'packageset1', True)
+            parent, 'p1', 'packageset1', True)
         # Create packageset p2 without a build.
         p2, packageset2, unsed = self.createPackageInPackageset(
-            parent, u'p2', u'packageset2', False)
+            parent, 'p2', 'packageset2', False)
         child = self.factory.makeDistroSeries(
             distribution=parent.distribution, previous_series=parent)
 

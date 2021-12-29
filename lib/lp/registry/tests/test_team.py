@@ -69,7 +69,7 @@ class TestTeamContactAddress(TestCaseWithFactory):
                 mailing_list.address)
 
     def setUp(self):
-        super(TestTeamContactAddress, self).setUp()
+        super().setUp()
 
         self.team = self.factory.makeTeam(name='alpha')
         self.address = self.factory.makeEmail('team@noplace.org', self.team)
@@ -153,7 +153,7 @@ class TestTeamGetTeamAdminsEmailAddresses(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTeamGetTeamAdminsEmailAddresses, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam(name='finch')
         login_celebrity('admin')
 
@@ -218,7 +218,7 @@ class TestDefaultRenewalPeriodIsRequiredForSomeTeams(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDefaultRenewalPeriodIsRequiredForSomeTeams, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam()
         login_person(self.team.teamowner)
 
@@ -268,7 +268,7 @@ class TestDefaultMembershipPeriod(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDefaultMembershipPeriod, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam()
         login_person(self.team.teamowner)
 
@@ -549,7 +549,7 @@ class TestVisibilityConsistencyWarning(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestVisibilityConsistencyWarning, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam()
         login_celebrity('admin')
 

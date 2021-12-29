@@ -42,7 +42,7 @@ class TestSourcePackageNameVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSourcePackageNameVocabulary, self).setUp()
+        super().setUp()
         self.vocabulary = SourcePackageNameVocabulary()
         self.spns = [
             self.factory.makeSourcePackageName(name=name)

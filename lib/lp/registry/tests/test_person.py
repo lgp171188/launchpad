@@ -88,7 +88,7 @@ class TestPersonTeams(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonTeams, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson(name="test-member")
         self.a_team = self.factory.makeTeam(name='a')
         self.b_team = self.factory.makeTeam(name='b', owner=self.a_team)
@@ -428,15 +428,15 @@ class TestPerson(TestCaseWithFactory):
         # Users can see their own non-public affiliated products.
         owner = self.factory.makePerson()
         self.factory.makeProduct(
-            name=u'proprietary',
+            name='proprietary',
             information_type=InformationType.PROPRIETARY,
             owner=owner)
         self.factory.makeProduct(
-            name=u'public',
+            name='public',
             information_type=InformationType.PUBLIC,
             owner=owner)
 
-        expected_pillars = [u'proprietary', u'public']
+        expected_pillars = ['proprietary', 'public']
         received_pillars = [pillar.name for pillar in
             owner.getAffiliatedPillars(owner)]
         self.assertEqual(expected_pillars, received_pillars)
@@ -446,15 +446,15 @@ class TestPerson(TestCaseWithFactory):
         owner = self.factory.makePerson()
         admin = self.factory.makeAdministrator()
         self.factory.makeProduct(
-            name=u'proprietary',
+            name='proprietary',
             information_type=InformationType.PROPRIETARY,
             owner=owner)
         self.factory.makeProduct(
-            name=u'public',
+            name='public',
             information_type=InformationType.PUBLIC,
             owner=owner)
 
-        expected_pillars = [u'proprietary', u'public']
+        expected_pillars = ['proprietary', 'public']
         received_pillars = [pillar.name for pillar in
             owner.getAffiliatedPillars(admin)]
         self.assertEqual(expected_pillars, received_pillars)
@@ -464,15 +464,15 @@ class TestPerson(TestCaseWithFactory):
         owner = self.factory.makePerson()
         admin = self.factory.makeCommercialAdmin()
         self.factory.makeProduct(
-            name=u'proprietary',
+            name='proprietary',
             information_type=InformationType.PROPRIETARY,
             owner=owner)
         self.factory.makeProduct(
-            name=u'public',
+            name='public',
             information_type=InformationType.PUBLIC,
             owner=owner)
 
-        expected_pillars = [u'proprietary', u'public']
+        expected_pillars = ['proprietary', 'public']
         received_pillars = [pillar.name for pillar in
             owner.getAffiliatedPillars(admin)]
         self.assertEqual(expected_pillars, received_pillars)
@@ -992,7 +992,7 @@ class TestPersonStates(TestCaseWithFactory):
     def test_person_repr_ansii(self):
         # Verify that ANSI displayname is ascii safe.
         person = self.factory.makePerson(
-            name="user", displayname=u'\xdc-tester')
+            name="user", displayname='\xdc-tester')
         ignore, name, displayname = repr(person).rsplit(' ', 2)
         self.assertEqual('user', name)
         self.assertEqual('(\\xdc-tester)>', displayname)
@@ -1000,7 +1000,7 @@ class TestPersonStates(TestCaseWithFactory):
     def test_person_repr_unicode(self):
         # Verify that Unicode displayname is ascii safe.
         person = self.factory.makePerson(
-            name="user", displayname=u'\u0170-tester')
+            name="user", displayname='\u0170-tester')
         ignore, displayname = repr(person).rsplit(' ', 1)
         self.assertEqual('(\\u0170-tester)>', displayname)
 
@@ -1010,7 +1010,7 @@ class TestPersonRelatedBugTaskSearch(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonRelatedBugTaskSearch, self).setUp()
+        super().setUp()
         self.user = self.factory.makePerson(displayname="User")
         self.context = self.factory.makePerson(displayname="Context")
 
@@ -1157,7 +1157,7 @@ class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonKarma, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         a_product = self.factory.makeProduct(name='aa')
         b_product = self.factory.makeProduct(name='bb')
@@ -1295,7 +1295,7 @@ class TestGetRecipients(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestGetRecipients, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
 
     def test_get_recipients_indirect(self):
@@ -1365,7 +1365,7 @@ class TestGetRecipients(TestCaseWithFactory):
                            super_team_member_team,
                            self.makePersonWithNoPreferredEmail()])
         super_team_member_team.acceptInvitationToBeMemberOf(
-            super_team, u'Go Team!')
+            super_team, 'Go Team!')
         recipients = list(get_recipients(super_team))
         self.assertEqual({owner,
                               super_team_member_person,
@@ -1410,7 +1410,7 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(Test_getAssignedSpecificationWorkItemsDueBefore, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam()
         today = datetime.today().date()
         next_month = today + timedelta(days=30)
@@ -1428,13 +1428,13 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
         # Create a workitem with no explicit assignee/milestone. This way it
         # will inherit the ones from the spec it belongs to.
         workitem = self.factory.makeSpecificationWorkItem(
-            title=u'workitem 1', specification=assigned_spec)
+            title='workitem 1', specification=assigned_spec)
 
         # Create a workitem targeted to a milestone too far in the future.
         # This workitem must not be in the list returned by
         # getAssignedSpecificationWorkItemsDueBefore().
         self.factory.makeSpecificationWorkItem(
-            title=u'workitem 2', specification=assigned_spec,
+            title='workitem 2', specification=assigned_spec,
             milestone=self.future_milestone)
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
@@ -1448,7 +1448,7 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
             product=self.product)
         # Create a deleted work item.
         self.factory.makeSpecificationWorkItem(
-            title=u'workitem', specification=assigned_spec, deleted=True)
+            title='workitem', specification=assigned_spec, deleted=True)
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
             self.current_milestone.dateexpected, self.team)
@@ -1461,13 +1461,13 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
         # Create a workitem with no explicit assignee/milestone. This way it
         # will inherit the ones from the spec it belongs to.
         workitem = self.factory.makeSpecificationWorkItem(
-            title=u'workitem 1', specification=assigned_spec)
+            title='workitem 1', specification=assigned_spec)
 
         # Create a workitem with somebody who's not a member of our team as
         # the assignee. This workitem must be in the list returned by
         # getAssignedSpecificationWorkItemsDueBefore().
         workitem_for_other_person = self.factory.makeSpecificationWorkItem(
-            title=u'workitem 2', specification=assigned_spec,
+            title='workitem 2', specification=assigned_spec,
             assignee=self.factory.makePerson())
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
@@ -1484,7 +1484,7 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
             assignee=self.team.teamowner, milestone=milestone,
             product=milestone.product)
         self.factory.makeSpecificationWorkItem(
-            title=u'workitem 1', specification=spec)
+            title='workitem 1', specification=spec)
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
             today, self.team)
@@ -1498,12 +1498,12 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
         # This workitem inherits the spec's milestone and that's too far in
         # the future so it won't be in the returned list.
         self.factory.makeSpecificationWorkItem(
-            title=u'workitem 1', specification=assigned_spec)
+            title='workitem 1', specification=assigned_spec)
         # This one, on the other hand, is explicitly targeted to the current
         # milestone, so it is included in the returned list even though its
         # spec is targeted to the future milestone.
         workitem = self.factory.makeSpecificationWorkItem(
-            title=u'workitem 2', specification=assigned_spec,
+            title='workitem 2', specification=assigned_spec,
             milestone=self.current_milestone)
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
@@ -1521,13 +1521,13 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
         # This one is not explicitly assigned to anyone, so it inherits the
         # assignee of its spec and hence is not in the returned list.
         self.factory.makeSpecificationWorkItem(
-            title=u'workitem 1', specification=foreign_spec)
+            title='workitem 1', specification=foreign_spec)
 
         # This one, on the other hand, is explicitly assigned to the a member
         # of our team, so it is included in the returned list even though its
         # spec is not assigned to a member of our team.
         workitem = self.factory.makeSpecificationWorkItem(
-            title=u'workitem 2', specification=foreign_spec,
+            title='workitem 2', specification=foreign_spec,
             assignee=self.team.teamowner)
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
@@ -1588,11 +1588,11 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
         for i in range(5):
             spec = self._makeProductSpec(dateexpected)
             self.factory.makeSpecificationWorkItem(
-                title=u'product work item %d' % i, assignee=spec.assignee,
+                title='product work item %d' % i, assignee=spec.assignee,
                 milestone=spec.milestone, specification=spec)
             spec2 = self._makeDistroSpec(dateexpected)
             self.factory.makeSpecificationWorkItem(
-                title=u'distro work item %d' % i, assignee=spec2.assignee,
+                title='distro work item %d' % i, assignee=spec2.assignee,
                 milestone=spec2.milestone, specification=spec2)
         flush_database_updates()
         flush_database_caches()
@@ -1622,7 +1622,7 @@ class Test_getAssignedBugTasksDueBefore(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(Test_getAssignedBugTasksDueBefore, self).setUp()
+        super().setUp()
         self.team = self.factory.makeTeam()
         self.today = datetime.today().date()
 
@@ -1804,7 +1804,7 @@ class TestSpecifications(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSpecifications, self).setUp()
+        super().setUp()
         self.date_created = datetime.now(pytz.utc)
 
     def makeSpec(self, owner=None, date_created=0, title=None,
@@ -1988,9 +1988,9 @@ class TestSpecifications(TestCaseWithFactory):
         blueprint1 = self.makeSpec(title='abc')
         owner = blueprint1.owner
         blueprint2 = self.makeSpec(owner, title='def')
-        result = list_result(owner, [u'abc'])
+        result = list_result(owner, ['abc'])
         self.assertEqual([blueprint1], result)
-        result = list_result(owner, [u'def'])
+        result = list_result(owner, ['def'])
         self.assertEqual([blueprint2], result)
 
     def test_proprietary_not_listed(self):

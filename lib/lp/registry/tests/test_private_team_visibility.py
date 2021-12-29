@@ -50,7 +50,7 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPrivateTeamVisibility, self).setUp()
+        super().setUp()
         self.priv_owner = self.factory.makePerson(name="priv-owner")
         self.priv_member = self.factory.makePerson(name="priv-member")
         self.priv_team = self.factory.makeTeam(

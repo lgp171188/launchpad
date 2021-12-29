@@ -69,7 +69,7 @@ class ProjectGroupSearchTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(ProjectGroupSearchTestCase, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.projectgroup1 = self.factory.makeProject(
             name="zazzle", owner=self.person)
@@ -155,7 +155,7 @@ class TestProjectGroupPermissions(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProjectGroupPermissions, self).setUp()
+        super().setUp()
         self.pg = self.factory.makeProject(name='my-project-group')
 
     def test_attribute_changes_by_admin(self):

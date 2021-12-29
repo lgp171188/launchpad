@@ -15,7 +15,7 @@ class CircularMemberAdditionTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(CircularMemberAdditionTestCase, self).setUp()
+        super().setUp()
         self.a_team = self.factory.makeTeam(name="a")
         self.b_team = self.factory.makeTeam(name="b")
 

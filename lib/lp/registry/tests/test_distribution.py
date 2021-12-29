@@ -107,7 +107,7 @@ class TestDistribution(TestCaseWithFactory):
     def test_distribution_repr_ansii(self):
         # Verify that ANSI displayname is ascii safe.
         distro = self.factory.makeDistribution(
-            name="distro", displayname=u'\xdc-distro')
+            name="distro", displayname='\xdc-distro')
         ignore, displayname, name = repr(distro).rsplit(' ', 2)
         self.assertEqual("'\\xdc-distro'", displayname)
         self.assertEqual('(distro)>', name)
@@ -115,7 +115,7 @@ class TestDistribution(TestCaseWithFactory):
     def test_distribution_repr_unicode(self):
         # Verify that Unicode displayname is ascii safe.
         distro = self.factory.makeDistribution(
-            name="distro", displayname=u'\u0170-distro')
+            name="distro", displayname='\u0170-distro')
         ignore, displayname, name = repr(distro).rsplit(' ', 2)
         self.assertEqual("'\\u0170-distro'", displayname)
 
@@ -334,14 +334,14 @@ class TestDistribution(TestCaseWithFactory):
         self.assertEqual(first_project, result[0])
 
     def test_searchOCIProjects_by_partial_name(self):
-        name = u'testpartialname'
+        name = 'testpartialname'
         distro = self.factory.makeDistribution()
         first_name = self.factory.makeOCIProjectName(name=name)
         first_project = self.factory.makeOCIProject(
             pillar=distro, ociprojectname=first_name)
         self.factory.makeOCIProject(pillar=distro)
 
-        result = distro.searchOCIProjects(text=u'partial')
+        result = distro.searchOCIProjects(text='partial')
         self.assertEqual(1, result.count())
         self.assertEqual(first_project, result[0])
 
@@ -518,7 +518,7 @@ class DistroSnapshotTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(DistroSnapshotTestCase, self).setUp()
+        super().setUp()
         self.distribution = self.factory.makeDistribution(name="boobuntu")
 
     def test_snapshot(self):
@@ -546,9 +546,9 @@ class TestDistributionPage(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionPage, self).setUp('foo.bar@canonical.com')
+        super().setUp('foo.bar@canonical.com')
         self.distro = self.factory.makeDistribution(
-            name="distro", displayname=u'distro')
+            name="distro", displayname='distro')
         self.admin = getUtility(IPersonSet).getByEmail(
             'admin@canonical.com')
         self.simple_user = self.factory.makePerson()
@@ -627,7 +627,7 @@ class DistroRegistrantTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(DistroRegistrantTestCase, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson()
         self.registrant = self.factory.makePerson()
 
@@ -768,7 +768,7 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionWebservice, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson(
             displayname="Test Person")
         self.webservice = webservice_for_person(
@@ -776,7 +776,7 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             default_api_version="devel")
 
     def test_searchOCIProjects(self):
-        name = self.factory.getUniqueUnicode(u"partial-")
+        name = self.factory.getUniqueUnicode("partial-")
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution(owner=self.person)
             first_name = self.factory.makeOCIProjectName(name=name)
@@ -804,7 +804,7 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution()
             self.factory.makeQuestion(
-                title=u"Crash with %s" % oopsid, target=distro)
+                title="Crash with %s" % oopsid, target=distro)
             distro_url = api_url(distro)
 
         now = datetime.datetime.now(tz=pytz.utc)
@@ -829,7 +829,7 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         # check the filter is tight enough - other contexts should not work.
         oopsid = "OOPS-abcdef1234"
         with person_logged_in(self.person):
-            self.factory.makeQuestion(title=u"Crash with %s" % oopsid)
+            self.factory.makeQuestion(title="Crash with %s" % oopsid)
             distro = self.factory.makeDistribution()
             distro_url = api_url(distro)
         now = datetime.datetime.now(tz=pytz.utc)

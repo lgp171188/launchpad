@@ -453,7 +453,7 @@ class MailingListSetTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(MailingListSetTestCase, self).setUp()
+        super().setUp()
         self.mailing_list_set = getUtility(IMailingListSet)
         login_celebrity('admin')
 
@@ -717,7 +717,7 @@ class MailingListMessageTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(MailingListMessageTestCase, self).setUp()
+        super().setUp()
         self.mailing_list_set = getUtility(IMailingListSet)
         login_celebrity('admin')
 

@@ -23,7 +23,7 @@ class TestProductVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductVocabulary, self).setUp()
+        super().setUp()
         self.vocabulary = ProductVocabulary()
         self.product = self.factory.makeProduct(
             name='bedbugs', displayname='BedBugs')

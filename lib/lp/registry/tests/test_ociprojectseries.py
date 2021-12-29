@@ -3,7 +3,6 @@
 
 """Test OCIProjectSeries."""
 
-from six import string_types
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -108,7 +107,7 @@ class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestOCIProjectSeriesWebservice, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson(displayname="Test Person")
         self.webservice = webservice_for_person(
             self.person, permission=OAuthPermission.WRITE_PUBLIC,
@@ -117,7 +116,7 @@ class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
     def getAbsoluteURL(self, target):
         """Get the webservice absolute URL of the given object or relative
         path."""
-        if not isinstance(target, string_types):
+        if not isinstance(target, str):
             target = api_url(target)
         return self.webservice.getAbsoluteUrl(target)
 

@@ -32,3 +32,5 @@ fbed83f22424df8fa5647349493f78937a520db5
 9c1665b1dfed3f6abf69afa192700172ea3089a1
 # apply pyupgrade --py3-plus to lp.registry.{interfaces,model,scripts}
 94fc9e2ad28375faa98c524f66768a0b57a4b821
+# apply pyupgrade --py3-plus to lp.registry
+7c02bb8d73dd3875e338ba7945d3f7f86d1fc743

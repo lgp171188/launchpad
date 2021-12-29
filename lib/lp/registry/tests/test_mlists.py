@@ -88,7 +88,7 @@ class BaseMailingListImportTest(unittest.TestCase):
         members = {person.name for person in self.team.allmembers}
         expected = set(people)
         # Always add the team owner.
-        expected.add(u'teamowner')
+        expected.add('teamowner')
         self.assertEqual(members, expected)
 
     def assertAddresses(self, *addresses):
@@ -117,11 +117,11 @@ class TestMailingListImports(BaseMailingListImportTest):
             'dperson@example.org',
             'elly.person@example.com',
             ))
-        self.assertPeople(u'anne', u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('anne', 'bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'anne.person@example.com', u'bperson@example.org',
-            u'cris.person@example.com', u'dperson@example.org',
-            u'elly.person@example.com')
+            'anne.person@example.com', 'bperson@example.org',
+            'cris.person@example.com', 'dperson@example.org',
+            'elly.person@example.com')
 
     def test_extended_import_membership(self):
         # Test the import of a list/team membership, where all email
@@ -134,11 +134,11 @@ class TestMailingListImports(BaseMailingListImportTest):
             'dperson@example.org',
             'elly.person@example.com (Elly Q. Person)',
             ))
-        self.assertPeople(u'anne', u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('anne', 'bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'anne.person@example.com', u'bperson@example.org',
-            u'cris.person@example.com', u'dperson@example.org',
-            u'elly.person@example.com')
+            'anne.person@example.com', 'bperson@example.org',
+            'cris.person@example.com', 'dperson@example.org',
+            'elly.person@example.com')
 
     def test_import_with_non_persons(self):
         # Test the import of a list/team membership where not all the
@@ -155,11 +155,11 @@ class TestMailingListImports(BaseMailingListImportTest):
             'gwen.person@example.com',
             'hperson@example.org',
             ))
-        self.assertPeople(u'anne', u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('anne', 'bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'anne.person@example.com', u'bperson@example.org',
-            u'cris.person@example.com', u'dperson@example.org',
-            u'elly.person@example.com')
+            'anne.person@example.com', 'bperson@example.org',
+            'cris.person@example.com', 'dperson@example.org',
+            'elly.person@example.com')
 
     def test_import_with_invalid_emails(self):
         # Test the import of a list/team membership where all the
@@ -177,10 +177,10 @@ class TestMailingListImports(BaseMailingListImportTest):
             'dperson@example.org',
             'elly.person@example.com',
             ))
-        self.assertPeople(u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'bperson@example.org', u'cris.person@example.com',
-            u'dperson@example.org', u'elly.person@example.com')
+            'bperson@example.org', 'cris.person@example.com',
+            'dperson@example.org', 'elly.person@example.com')
 
     def test_already_joined(self):
         # Test import when a user is already joined to the team, but
@@ -194,11 +194,11 @@ class TestMailingListImports(BaseMailingListImportTest):
             'dperson@example.org',
             'elly.person@example.com',
             ))
-        self.assertPeople(u'anne', u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('anne', 'bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'anne.person@example.com', u'bperson@example.org',
-            u'cris.person@example.com', u'dperson@example.org',
-            u'elly.person@example.com')
+            'anne.person@example.com', 'bperson@example.org',
+            'cris.person@example.com', 'dperson@example.org',
+            'elly.person@example.com')
 
     def test_already_subscribed(self):
         # Test import when a user is already joined to the team, and
@@ -213,11 +213,11 @@ class TestMailingListImports(BaseMailingListImportTest):
             'dperson@example.org',
             'elly.person@example.com',
             ))
-        self.assertPeople(u'anne', u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('anne', 'bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'anne.person@example.com', u'bperson@example.org',
-            u'cris.person@example.com', u'dperson@example.org',
-            u'elly.person@example.com')
+            'anne.person@example.com', 'bperson@example.org',
+            'cris.person@example.com', 'dperson@example.org',
+            'elly.person@example.com')
 
     def test_import_from_file(self):
         # Test importing addresses from a file.
@@ -230,11 +230,11 @@ class TestMailingListImports(BaseMailingListImportTest):
             'Elly Q. Person <eperson@example.org',
             )
         importer.importFromFile(self.filename)
-        self.assertPeople(u'anne', u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('anne', 'bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'anne.person@example.com', u'bart.person@example.com',
-            u'cperson@example.org', u'dperson@example.org',
-            u'eperson@example.org')
+            'anne.person@example.com', 'bart.person@example.com',
+            'cperson@example.org', 'dperson@example.org',
+            'eperson@example.org')
 
     def test_import_from_file_with_non_persons(self):
         # Test the import of a list/team membership from a file where
@@ -254,11 +254,11 @@ class TestMailingListImports(BaseMailingListImportTest):
             'iris.person@example.com',
             )
         importer.importFromFile(self.filename)
-        self.assertPeople(u'anne', u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('anne', 'bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'anne.person@example.com', u'bart.person@example.com',
-            u'cperson@example.org', u'dperson@example.org',
-            u'eperson@example.org')
+            'anne.person@example.com', 'bart.person@example.com',
+            'cperson@example.org', 'dperson@example.org',
+            'eperson@example.org')
 
     def test_import_from_file_with_invalid_emails(self):
         # Test importing addresses from a file with invalid emails.
@@ -274,10 +274,10 @@ class TestMailingListImports(BaseMailingListImportTest):
             'Elly Q. Person <eperson@example.org',
             )
         importer.importFromFile(self.filename)
-        self.assertPeople(u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'bart.person@example.com', u'cperson@example.org',
-            u'dperson@example.org', u'eperson@example.org')
+            'bart.person@example.com', 'cperson@example.org',
+            'dperson@example.org', 'eperson@example.org')
 
     def test_logging(self):
         # Test that nothing gets logged when all imports are fine.
@@ -381,7 +381,7 @@ class TestMailingListImportScript(BaseMailingListImportTest):
     layer = AppServerLayer
 
     def setUp(self):
-        super(TestMailingListImportScript, self).setUp()
+        super().setUp()
         # Since these tests involve two processes, the setup transaction must
         # be committed, otherwise the script won't see the changes.
         transaction.commit()
@@ -418,11 +418,11 @@ class TestMailingListImportScript(BaseMailingListImportTest):
         self.assertEqual(process.returncode, 0, stdout)
         # Make sure we hit the database.
         transaction.abort()
-        self.assertPeople(u'anne', u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('anne', 'bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'anne.person@example.com', u'bart.person@example.com',
-            u'cperson@example.org', u'dperson@example.org',
-            u'eperson@example.org')
+            'anne.person@example.com', 'bart.person@example.com',
+            'cperson@example.org', 'dperson@example.org',
+            'eperson@example.org')
 
     def test_notification_suppression(self):
         # Test that importing some addresses produces no notifications, which
@@ -508,8 +508,8 @@ class TestImportToRestrictedList(BaseMailingListImportTest):
             'dperson@example.org',
             'elly.person@example.com',
             ))
-        self.assertPeople(u'anne', u'bart', u'cris', u'dave', u'elly')
+        self.assertPeople('anne', 'bart', 'cris', 'dave', 'elly')
         self.assertAddresses(
-            u'anne.person@example.com', u'bperson@example.org',
-            u'cris.person@example.com', u'dperson@example.org',
-            u'elly.person@example.com')
+            'anne.person@example.com', 'bperson@example.org',
+            'cris.person@example.com', 'dperson@example.org',
+            'elly.person@example.com')

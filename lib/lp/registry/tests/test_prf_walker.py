@@ -146,7 +146,7 @@ class WalkerBase_walk(TestCase):
 
     def tearDown(self):
         reset_logging()
-        super(WalkerBase_walk, self).tearDown()
+        super().tearDown()
 
     def test_walk_UnicodeEncodeError(self):
         """Verify that a UnicodeEncodeError is logged."""
@@ -156,7 +156,7 @@ class WalkerBase_walk(TestCase):
             def list(self, sub_dir):
                 # Force the walker to handle an exception.
                 raise UnicodeEncodeError(
-                    'utf-8', u'source text', 0, 1, 'reason')
+                    'utf-8', 'source text', 0, 1, 'reason')
 
             def open(self):
                 pass
@@ -184,7 +184,7 @@ class WalkerBase_walk(TestCase):
                 pass
 
             def open(self):
-                raise IOError("Test failure.")
+                raise OSError("Test failure.")
 
             def close(self):
                 pass
@@ -254,7 +254,7 @@ class HTTPWalker_Base(TestCase):
 class HTTPWalker_ListDir(TestCase):
 
     def setUp(self):
-        super(HTTPWalker_ListDir, self).setUp()
+        super().setUp()
         self.addCleanup(reset_logging)
         original_timeout_function = get_default_timeout_function()
         set_default_timeout_function(lambda: 60.0)
@@ -443,7 +443,7 @@ class HTTPWalker_IsDirectory(TestCase):
 
     def tearDown(self):
         reset_logging()
-        super(HTTPWalker_IsDirectory, self).tearDown()
+        super().tearDown()
 
     def testFtpIsDirectory(self):
         # Test that no requests are made by isDirectory() when walking

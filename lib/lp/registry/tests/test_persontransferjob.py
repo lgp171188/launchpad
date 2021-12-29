@@ -40,7 +40,7 @@ class PersonTransferJobTestCase(TestCaseWithFactory):
         # gets unserialized from JSON, so the representation returned by
         # person_transfer_job.metadata will be different from what we
         # originally passed in.
-        metadata_expected = [u'some', u'arbitrary', u'metadata']
+        metadata_expected = ['some', 'arbitrary', 'metadata']
         self.assertEqual(metadata_expected, person_transfer_job.metadata)
 
 

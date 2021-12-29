@@ -30,14 +30,14 @@ class TestPersonNotification(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonNotification, self).setUp()
+        super().setUp()
         self.notification_set = getUtility(IPersonNotificationSet)
 
     def test_to_addresses_user(self):
         # The to_addresses list is the user's preferred email address.
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, u'subject', u'body')
+            user, 'subject', 'body')
         email = '%s <%s>' % (
             user.displayname, removeSecurityProxy(user.preferredemail).email)
         self.assertEqual([email], notification.to_addresses)
@@ -48,7 +48,7 @@ class TestPersonNotification(TestCaseWithFactory):
         user = self.factory.makePerson()
         user.setPreferredEmail(None)
         notification = self.notification_set.addNotification(
-            user, u'subject', u'body')
+            user, 'subject', 'body')
         self.assertEqual([], notification.to_addresses)
         self.assertFalse(notification.can_send)
 
@@ -56,7 +56,7 @@ class TestPersonNotification(TestCaseWithFactory):
         # The to_addresses list is the team admin addresses.
         team = self.factory.makeTeam()
         notification = self.notification_set.addNotification(
-            team, u'subject', u'body')
+            team, 'subject', 'body')
         email = removeSecurityProxy(team.teamowner.preferredemail).email
         self.assertEqual([email], notification.to_addresses)
         self.assertTrue(notification.can_send)
@@ -68,20 +68,20 @@ class TestPersonNotificationManager(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPersonNotificationManager, self).setUp()
+        super().setUp()
         logging.basicConfig(level=logging.CRITICAL)
         logger = logging.getLogger()
         self.manager = PersonNotificationManager(transaction, logger)
         self.notification_set = getUtility(IPersonNotificationSet)
 
     def tearDown(self):
-        super(TestPersonNotificationManager, self).tearDown()
+        super().tearDown()
         reset_logging()
 
     def test_sendNotifications_sent(self):
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, u'subject', u'body')
+            user, 'subject', 'body')
         unsent = self.manager.sendNotifications()
         self.assertEqual(None, unsent)
         self.assertIsNotNone(notification.date_emailed)
@@ -89,7 +89,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
     def test_sendNotifications_unsent(self):
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, u'subject', u'body')
+            user, 'subject', 'body')
         user.setPreferredEmail(None)
         unsent = self.manager.sendNotifications()
         self.assertEqual([notification], unsent)
@@ -99,7 +99,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
         team = self.factory.makeTeam()
         self.assertIs(None, team.preferredemail)
         notification = self.notification_set.addNotification(
-            team, u'subject', u'body')
+            team, 'subject', 'body')
         unsent = self.manager.sendNotifications()
         self.assertEqual(None, unsent)
         self.assertIsNotNone(notification.date_emailed)
@@ -107,7 +107,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
     def test_purgeNotifications_old(self):
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, u'subject', u'body')
+            user, 'subject', 'body')
         age = timedelta(
             days=int(config.person_notification.retained_days) + 1)
         naked_notification = removeSecurityProxy(notification)
@@ -120,7 +120,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
     def test_purgeNotifications_extra(self):
         user = self.factory.makePerson()
         notification = self.notification_set.addNotification(
-            user, u'subject', u'body')
+            user, 'subject', 'body')
         user.setPreferredEmail(None)
         self.manager.purgeNotifications(extra_notifications=[notification])
         notifcations = self.notification_set.getNotificationsToSend()

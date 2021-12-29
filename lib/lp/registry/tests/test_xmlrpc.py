@@ -41,7 +41,7 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestCanonicalSSOApplication, self).setUp()
+        super().setUp()
         self.rpc_proxy = xmlrpc.client.ServerProxy(
             'http://xmlrpc-private.launchpad.test:8087/canonicalsso',
             transport=XMLRPCTestTransport())
@@ -87,7 +87,7 @@ class TestMailingListXMLRPC(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestMailingListXMLRPC, self).setUp()
+        super().setUp()
         self.rpc_proxy = xmlrpc.client.ServerProxy(
             'http://xmlrpc-private.launchpad.test:8087/mailinglists',
             transport=XMLRPCTestTransport())
@@ -146,7 +146,7 @@ class TestMailingListXMLRPCMessage(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestMailingListXMLRPCMessage, self).setUp()
+        super().setUp()
         self.rpc_proxy = xmlrpc.client.ServerProxy(
             'http://xmlrpc-private.launchpad.test:8087/mailinglists',
             transport=XMLRPCTestTransport())

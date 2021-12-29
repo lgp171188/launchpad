@@ -54,7 +54,7 @@ class TestPoll(TestCaseWithFactory):
 class MatchesPollAPI(ContainsDict):
 
     def __init__(self, webservice, poll):
-        super(MatchesPollAPI, self).__init__({
+        super().__init__({
             "team_link": Equals(webservice.getAbsoluteUrl(api_url(poll.team))),
             "name": Equals(poll.name),
             "title": Equals(poll.title),
@@ -71,7 +71,7 @@ class TestPollWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPollWebservice, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         self.pushConfig("launchpad", default_batch_size=50)
 

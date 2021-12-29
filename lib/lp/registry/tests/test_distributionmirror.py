@@ -32,7 +32,7 @@ class TestDistributionMirror(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionMirror, self).setUp()
+        super().setUp()
         login('test@canonical.com')
         mirrorset = getUtility(IDistributionMirrorSet)
         self.cdimage_mirror = mirrorset.getByName('releases-mirror')

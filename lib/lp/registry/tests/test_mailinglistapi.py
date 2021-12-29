@@ -63,7 +63,7 @@ class MailingListAPITestCase(TestCaseWithFactory):
 
     def setUp(self):
         """Create a team with a list and subscribe self.member to it."""
-        super(MailingListAPITestCase, self).setUp()
+        super().setUp()
         self.team, self.mailing_list = new_team('team-a', with_list=True)
         self.member = self.factory.makePersonByName('Bob')
         with person_logged_in(self.member):
@@ -73,8 +73,8 @@ class MailingListAPITestCase(TestCaseWithFactory):
         self.team_expected = sorted([
             (config.mailman.archive_address, '', 0, ENABLED),
             ('bob.person@example.com', 'Bob Person', 0, ENABLED),
-            ('bperson@example.org', u'Bob Person', 0, BYUSER),
-            ('no-priv@canonical.com', u'No Privileges Person', 0, BYUSER),
+            ('bperson@example.org', 'Bob Person', 0, BYUSER),
+            ('no-priv@canonical.com', 'No Privileges Person', 0, BYUSER),
             ])
 
     def test_getMembershipInformation(self):
@@ -256,7 +256,7 @@ class MailingListAPIWorkflowTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(MailingListAPIWorkflowTestCase, self).setUp()
+        super().setUp()
         self.mailinglist_api = MailingListAPIView(None, None)
         self.mailinglist_set = getUtility(IMailingListSet)
 
@@ -274,8 +274,8 @@ class MailingListAPIWorkflowTestCase(TestCaseWithFactory):
         self.mailinglist_set.new(team_b, team_b.teamowner)
         self.assertEqual(
             {'create': [
-                (u'team-a', {}),
-                (u'team-b', {})]},
+                ('team-a', {}),
+                ('team-b', {})]},
             self.mailinglist_api.getPendingActions())
 
     def test_getPendingActions_constructing(self):
@@ -284,7 +284,7 @@ class MailingListAPIWorkflowTestCase(TestCaseWithFactory):
         team_list = self.mailinglist_set.new(team, team.teamowner)
         self.assertEqual(MailingListStatus.APPROVED, team_list.status)
         actions = self.mailinglist_api.getPendingActions()
-        self.assertEqual({'create': [(u'team', {})]}, actions)
+        self.assertEqual({'create': [('team', {})]}, actions)
         self.assertEqual(MailingListStatus.CONSTRUCTING, team_list.status)
 
     def test_reportStatus_constructing_success(self):
@@ -311,7 +311,7 @@ class MailingListAPIWorkflowTestCase(TestCaseWithFactory):
         actions = self.mailinglist_api.getPendingActions()
         actions = self.mailinglist_api.getPendingActions()
         self.assertEqual(
-            {'unsynchronized': [(u'team', 'constructing')]}, actions)
+            {'unsynchronized': [('team', 'constructing')]}, actions)
         self.assertEqual(MailingListStatus.CONSTRUCTING, team_list.status)
 
     def test_getPendingActions_deactivating(self):
@@ -322,7 +322,7 @@ class MailingListAPIWorkflowTestCase(TestCaseWithFactory):
             team_list.deactivate()
         self.assertEqual(MailingListStatus.DEACTIVATING, team_list.status)
         actions = self.mailinglist_api.getPendingActions()
-        self.assertEqual({'deactivate': [u'team']}, actions)
+        self.assertEqual({'deactivate': ['team']}, actions)
         self.assertEqual(MailingListStatus.DEACTIVATING, team_list.status)
 
     def test_reportStatus_deactivating_success(self):
@@ -354,7 +354,7 @@ class MailingListAPIWorkflowTestCase(TestCaseWithFactory):
         self.assertEqual(MailingListStatus.MODIFIED, team_list.status)
         actions = self.mailinglist_api.getPendingActions()
         self.assertEqual(
-            {'modify': [(u'team', {'welcome_message': u'hi'})]}, actions)
+            {'modify': [('team', {'welcome_message': 'hi'})]}, actions)
         self.assertEqual(MailingListStatus.UPDATING, team_list.status)
 
     def test_reportStatus_modifying_success(self):
@@ -426,7 +426,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(MailingListAPIMessageTestCase, self).setUp()
+        super().setUp()
         self.mailinglist_api = MailingListAPIView(None, None)
         self.mailinglist_set = getUtility(IMailingListSet)
         self.message_set = getUtility(IMessageSet)
@@ -526,7 +526,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         found.approve(team.teamowner)
         self.assertEqual(PostedMessageStatus.APPROVAL_PENDING, found.status)
         self.assertEqual(
-            {u'<first-post>': (u'team', 'accept')},
+            {'<first-post>': ('team', 'accept')},
             self.mailinglist_api.getMessageDispositions())
         self.assertEqual(PostedMessageStatus.APPROVED, found.status)
 
@@ -539,7 +539,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         found.reject(team.teamowner)
         self.assertEqual(PostedMessageStatus.REJECTION_PENDING, found.status)
         self.assertEqual(
-            {u'<first-post>': (u'team', 'decline')},
+            {'<first-post>': ('team', 'decline')},
             self.mailinglist_api.getMessageDispositions())
         self.assertEqual(PostedMessageStatus.REJECTED, found.status)
 
@@ -552,6 +552,6 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         found.discard(team.teamowner)
         self.assertEqual(PostedMessageStatus.DISCARD_PENDING, found.status)
         self.assertEqual(
-            {u'<first-post>': (u'team', 'discard')},
+            {'<first-post>': ('team', 'discard')},
             self.mailinglist_api.getMessageDispositions())
         self.assertEqual(PostedMessageStatus.DISCARDED, found.status)

@@ -276,9 +276,9 @@ class TestSourcePackage(TestCaseWithFactory):
             'mozilla-firefox')
 
         expected_summary = (
-            u'mozilla-firefox: Mozilla Firefox Web Browser\n'
-            u'mozilla-firefox-data: No summary available for '
-            u'mozilla-firefox-data in ubuntu warty.')
+            'mozilla-firefox: Mozilla Firefox Web Browser\n'
+            'mozilla-firefox-data: No summary available for '
+            'mozilla-firefox-data in ubuntu warty.')
         self.assertEqual(''.join(expected_summary), sp.summary)
 
     def test_deletePackaging(self):

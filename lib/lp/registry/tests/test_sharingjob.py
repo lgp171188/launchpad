@@ -276,7 +276,7 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
         }
         features.update(SNAP_TESTING_FLAGS)
         self.useFixture(FeatureFixture(features))
-        super(RemoveArtifactSubscriptionsJobTestCase, self).setUp()
+        super().setUp()
 
     def test_create(self):
         # Create an instance of RemoveArtifactSubscriptionsJob.
