@@ -38,7 +38,7 @@ class OCIProjectName(StormBase):
     name = Unicode(name="name", allow_none=False)
 
     def __init__(self, name):
-        super(OCIProjectName, self).__init__()
+        super().__init__()
         if not valid_name(name):
             raise InvalidName(
                 "%s is not a valid name for an OCI project." % name)

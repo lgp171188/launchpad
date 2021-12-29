@@ -69,7 +69,6 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
-import six
 from zope.component import getUtility
 from zope.formlib.form import NoInputData
 from zope.interface import (
@@ -181,7 +180,7 @@ def validate_person_common(obj, attr, value, validate_func,
     """Validate the person using the supplied function."""
     if value is None:
         return None
-    assert isinstance(value, six.integer_types), (
+    assert isinstance(value, int), (
         "Expected int for Person foreign key reference, got %r" % type(value))
 
     # Importing here to avoid a cyclic import.
@@ -456,7 +455,7 @@ class PersonNameField(BlacklistableContentNameField):
                 raise LaunchpadValidationError(self.blacklistmessage % input)
 
         # Perform the normal validation, including the real blacklist checks.
-        super(PersonNameField, self)._validate(input)
+        super()._validate(input)
 
 
 def team_membership_policy_can_transition(team, policy):
@@ -516,7 +515,7 @@ class TeamMembershipPolicyChoice(Choice):
         team = self._getTeam()
         policy = value
         team_membership_policy_can_transition(team, policy)
-        super(TeamMembershipPolicyChoice, self)._validate(value)
+        super()._validate(value)
 
 
 class IPersonClaim(Interface):
@@ -1006,7 +1005,7 @@ class IPersonViewRestricted(IHasBranches, IHasSpecifications,
             value_type=Reference(schema=Interface)))
 
     administrated_teams = Attribute(
-        u"the teams that this person/team is an administrator of.")
+        "the teams that this person/team is an administrator of.")
 
     @invariant
     def personCannotHaveIcon(person):
@@ -2435,11 +2434,11 @@ class IPersonSetPublic(Interface):
         """
 
     @operation_parameters(
-        text=TextLine(title=_("Search text"), default=u""))
+        text=TextLine(title=_("Search text"), default=""))
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
     @operation_for_version("beta")
-    def find(text=u""):
+    def find(text=""):
         """Return all non-merged Persons and Teams whose name, displayname or
         email address match <text>.
 
@@ -2453,7 +2452,7 @@ class IPersonSetPublic(Interface):
 
     @operation_parameters(
         text=TextLine(
-            title=_("Search text"), default=u""),
+            title=_("Search text"), default=""),
         created_after=Datetime(
             title=_("Created after"), required=False),
         created_before=Datetime(
@@ -2462,7 +2461,7 @@ class IPersonSetPublic(Interface):
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
     @operation_for_version("beta")
-    def findPerson(text=u"", exclude_inactive_accounts=True,
+    def findPerson(text="", exclude_inactive_accounts=True,
                    must_have_email=False,
                    created_after=None, created_before=None):
         """Return all non-merged Persons with at least one email address whose
@@ -2491,11 +2490,11 @@ class IPersonSetPublic(Interface):
 
     @call_with(preload_for_api=True)
     @operation_parameters(
-        text=TextLine(title=_("Search text"), default=u""))
+        text=TextLine(title=_("Search text"), default=""))
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
     @operation_for_version("beta")
-    def findTeam(text=u"", preload_for_api=False):
+    def findTeam(text="", preload_for_api=False):
         """Return all Teams whose name, displayname or email address
         match <text>.
 

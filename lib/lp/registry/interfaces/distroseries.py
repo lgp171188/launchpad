@@ -163,7 +163,7 @@ class DistroSeriesVersionField(UniqueField):
 
     def _validate(self, version):
         """See `UniqueField`."""
-        super(DistroSeriesVersionField, self)._validate(version)
+        super()._validate(version)
         if not sane_version(version):
             raise LaunchpadValidationError(
                 "%s is not a valid version" % version)
@@ -233,13 +233,13 @@ class IDistroSeriesPublic(
     # IComponent is not exported on the api.
     component_names = exported(List(
         value_type=TextLine(),
-        title=_(u'The series component names'),
+        title=_('The series component names'),
         readonly=True))
     upload_components = Attribute("The series components that can be "
                                   "uploaded to.")
     suite_names = exported(List(
         value_type=TextLine(),
-        title=_(u'The series pocket names'),
+        title=_('The series pocket names'),
         readonly=True))
     sections = Attribute("The series sections.")
     status = exported(
@@ -306,9 +306,9 @@ class IDistroSeriesPublic(
         "series.")
 
     hide_all_translations = Bool(
-        title=u'Hide translations for this release', required=True,
+        title='Hide translations for this release', required=True,
         description=(
-            u"You may hide all translation for this distribution series so"
+            "You may hide all translation for this distribution series so"
              " that only Launchpad administrators will be able to see them."
              " For example, you should hide these translations while they are"
              " being imported from a previous series so that translators"

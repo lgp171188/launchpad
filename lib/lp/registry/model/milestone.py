@@ -129,7 +129,7 @@ class MultipleProductReleases(Exception):
     """Raised when a second ProductRelease is created for a milestone."""
 
     def __init__(self, msg='A milestone can only have one ProductRelease.'):
-        super(MultipleProductReleases, self).__init__(msg)
+        super().__init__(msg)
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -137,7 +137,7 @@ class InvalidTags(Exception):
     """Raised when tags are invalid."""
 
     def __init__(self, msg='Tags are invalid.'):
-        super(InvalidTags, self).__init__(msg)
+        super().__init__(msg)
 
 
 @implementer(IMilestoneData)
@@ -324,7 +324,7 @@ class Milestone(SQLBase, MilestoneData, StructuralSubscriptionTargetMixin,
         assert self.product_release is None, (
             "You cannot delete a milestone which has a product release "
             "associated with it.")
-        super(Milestone, self).destroySelf()
+        super().destroySelf()
 
     def getBugSummaryContextWhereClause(self):
         """See BugTargetBase."""
@@ -391,8 +391,7 @@ class MilestoneSet:
 
     def __iter__(self):
         """See lp.registry.interfaces.milestone.IMilestoneSet."""
-        for ms in Milestone.select():
-            yield ms
+        yield from Milestone.select()
 
     def get(self, milestoneid):
         """See lp.registry.interfaces.milestone.IMilestoneSet."""

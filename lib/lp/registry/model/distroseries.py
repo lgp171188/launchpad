@@ -19,7 +19,6 @@ from operator import (
 
 import apt_pkg
 from lazr.delegates import delegate_to
-import six
 from storm.expr import (
     And,
     Column,
@@ -288,7 +287,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
                 "advertise_by_hash": False,
                 "strict_supported_component_dependencies": True,
                 }
-        super(DistroSeries, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def displayname(self):
@@ -339,7 +338,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
     def suite_names(self):
         """See `IDistroSeries`."""
         return [
-            six.text_type(pocket) for pocket in PackagePublishingPocket.items]
+            str(pocket) for pocket in PackagePublishingPocket.items]
 
     @property
     def answers_usage(self):

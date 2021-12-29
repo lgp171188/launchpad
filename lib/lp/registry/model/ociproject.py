@@ -11,8 +11,6 @@ __all__ = [
 from collections import defaultdict
 
 import pytz
-import six
-from six import text_type
 from storm.expr import (
     Join,
     LeftJoin,
@@ -378,7 +376,7 @@ class OCIProjectSet:
             bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
         """See `IOCIProjectSet`."""
-        if isinstance(name, text_type):
+        if isinstance(name, str):
             name = getUtility(IOCIProjectNameSet).getOrCreateByName(
                 name)
         store = IMasterStore(OCIProject)
@@ -421,7 +419,7 @@ class OCIProjectSet:
 
         # If pillar is not an string, we expect it to be either an
         # IDistribution or IProduct.
-        if not isinstance(pillar, six.string_types):
+        if not isinstance(pillar, str):
             return IStore(OCIProject).find(
                 OCIProject,
                 self._get_pillar_attribute(pillar) == pillar,

@@ -30,3 +30,5 @@ f36fe66e5e5a5e82ba8c3269e32d76bd573d1175
 fbed83f22424df8fa5647349493f78937a520db5
 # apply pyupgrade --py3-plus to lp.registry.browser
 9c1665b1dfed3f6abf69afa192700172ea3089a1
+# apply pyupgrade --py3-plus to lp.registry.{interfaces,model,scripts}
+94fc9e2ad28375faa98c524f66768a0b57a4b821

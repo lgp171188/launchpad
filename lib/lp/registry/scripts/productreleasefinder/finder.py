@@ -235,10 +235,10 @@ class ProductReleaseFinder:
                     actual_length = response.raw.tell()
                     expected_length = int(expected_length)
                     if actual_length < expected_length:
-                        raise IOError(
+                        raise OSError(
                             "Incomplete read: got %d, expected %d" %
                             (actual_length, expected_length))
-            except (IOError, requests.RequestException):
+            except (OSError, requests.RequestException):
                 self.log.exception("Download of %s failed", url)
                 raise
             stat = os.fstat(fp.fileno())

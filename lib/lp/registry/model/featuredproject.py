@@ -35,7 +35,7 @@ class FeaturedProject(StormBase):
     pillar_name = Reference(pillar_name_id, 'PillarName.id')
 
     def __init__(self, pillar_name):
-        super(FeaturedProject, self).__init__()
+        super().__init__()
         self.pillar_name = pillar_name
 
     def destroySelf(self):

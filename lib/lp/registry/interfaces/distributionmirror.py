@@ -275,7 +275,7 @@ class DistroMirrorURIField(URIField):
 
         from lp.services.webapp import canonical_url
 
-        super(DistroMirrorURIField, self)._validate(value)
+        super()._validate(value)
         uri = URI(self.normalize(value))
 
         # This field is also used when creating new mirrors and in that case
