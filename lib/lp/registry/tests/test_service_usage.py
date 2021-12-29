@@ -13,7 +13,7 @@ from lp.testing import (
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
-class UsageEnumsMixin(object):
+class UsageEnumsMixin:
     """Base class for testing the UsageEnums on their pillars."""
 
     def setUp(self):
@@ -114,7 +114,7 @@ class UsageEnumsMixin(object):
             self.target.official_blueprints)
 
 
-class SeriesUsageEnumsMixin(object):
+class SeriesUsageEnumsMixin:
     """Mixin to test the usage attributes on product and distro series."""
 
     def setUp(self):
@@ -146,7 +146,7 @@ class TestDistributionUsageEnums(TestCaseWithFactory, UsageEnumsMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionUsageEnums, self).setUp()
+        super().setUp()
         self.target = self.factory.makeDistribution()
 
     def test_codehosting_usage(self):
@@ -163,7 +163,7 @@ class TestProductUsageEnums(TestCaseWithFactory, UsageEnumsMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductUsageEnums, self).setUp()
+        super().setUp()
         self.target = self.factory.makeProduct()
 
     def test_codehosting_unknown(self):
@@ -220,7 +220,7 @@ class TestProductSeriesUsageEnums(
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductSeriesUsageEnums, self).setUp()
+        super().setUp()
         self.series_pillar = self.factory.makeProduct()
         self.series = self.factory.makeProductSeries(
             product=self.series_pillar)
@@ -241,7 +241,7 @@ class TestDistroSeriesUsageEnums(
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSeriesUsageEnums, self).setUp()
+        super().setUp()
         self.series_pillar = self.factory.makeDistribution()
         self.series = self.factory.makeDistroSeries(
             distribution=self.series_pillar)

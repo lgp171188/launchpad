@@ -133,8 +133,7 @@ class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
         # otherwise return the default policy
         if hostname == b'localhost':
             return ssl.CertificateOptions(verify=False)
-        return super(LocalhostWhitelistedHTTPSPolicy, self).creatorForNetloc(
-            hostname, port)
+        return super().creatorForNetloc(hostname, port)
 
 
 class TestURLParser(TestCase):
@@ -162,7 +161,7 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         timeout=30)
 
     def setUp(self):
-        super(TestProberHTTPSProtocolAndFactory, self).setUp()
+        super().setUp()
         root = DistributionMirrorTestSecureHTTPServer()
         site = server.Site(root)
         site.displayTracebacks = False
@@ -184,10 +183,10 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
         self.port = self.listening_port.getHost().port
 
-        self.urls = {'timeout': u'https://localhost:%s/timeout' % self.port,
-                     '200': u'https://localhost:%s/valid-mirror' % self.port,
-                     '500': u'https://localhost:%s/error' % self.port,
-                     '404': u'https://localhost:%s/invalid-mirror' % self.port}
+        self.urls = {'timeout': 'https://localhost:%s/timeout' % self.port,
+                     '200': 'https://localhost:%s/valid-mirror' % self.port,
+                     '500': 'https://localhost:%s/error' % self.port,
+                     '404': 'https://localhost:%s/invalid-mirror' % self.port}
         self.pushConfig('launchpad', http_proxy=None)
 
         self.useFixture(MockPatchObject(
@@ -309,17 +308,17 @@ class TestProberProtocolAndFactory(TestCase):
         timeout=30)
 
     def setUp(self):
-        super(TestProberProtocolAndFactory, self).setUp()
+        super().setUp()
         root = DistributionMirrorTestHTTPServer()
         site = server.Site(root)
         site.displayTracebacks = False
         self.listening_port = reactor.listenTCP(0, site)
         self.addCleanup(self.listening_port.stopListening)
         self.port = self.listening_port.getHost().port
-        self.urls = {'timeout': u'http://localhost:%s/timeout' % self.port,
-                     '200': u'http://localhost:%s/valid-mirror' % self.port,
-                     '500': u'http://localhost:%s/error' % self.port,
-                     '404': u'http://localhost:%s/invalid-mirror' % self.port}
+        self.urls = {'timeout': 'http://localhost:%s/timeout' % self.port,
+                     '200': 'http://localhost:%s/valid-mirror' % self.port,
+                     '500': 'http://localhost:%s/error' % self.port,
+                     '404': 'http://localhost:%s/invalid-mirror' % self.port}
         self.pushConfig('launchpad', http_proxy=None)
 
     def _createProberAndProbe(self, url):
@@ -525,7 +524,7 @@ class TestProberFactoryRequestTimeoutRatioWithoutTwisted(TestCase):
     host = 'foo.bar'
 
     def setUp(self):
-        super(TestProberFactoryRequestTimeoutRatioWithoutTwisted, self).setUp()
+        super().setUp()
         self.orig_host_requests = dict(
             distributionmirror_prober.host_requests)
         self.orig_host_timeouts = dict(
@@ -537,9 +536,7 @@ class TestProberFactoryRequestTimeoutRatioWithoutTwisted(TestCase):
         distributionmirror_prober.host_timeouts = self.orig_host_timeouts
         # We need to remove any DelayedCalls that didn't actually get called.
         clean_up_reactor()
-        super(
-            TestProberFactoryRequestTimeoutRatioWithoutTwisted,
-            self).tearDown()
+        super().tearDown()
 
     def _createProberStubConnectAndProbe(self, requests, timeouts):
         """Create a ProberFactory object with a URL inside self.host and call
@@ -615,7 +612,7 @@ class TestProberFactoryRequestTimeoutRatioWithTwisted(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(TestProberFactoryRequestTimeoutRatioWithTwisted, self).setUp()
+        super().setUp()
         orig_host_requests = dict(distributionmirror_prober.host_requests)
         orig_host_timeouts = dict(distributionmirror_prober.host_timeouts)
         distributionmirror_prober.host_requests = {}
@@ -643,7 +640,7 @@ class TestProberFactoryRequestTimeoutRatioWithTwisted(TestCase):
     def test_timeout_is_recorded(self):
         host = 'localhost'
         d = self._createProberAndProbe(
-            u'http://%s:%s/timeout' % (host, self.port))
+            'http://%s:%s/timeout' % (host, self.port))
 
         def got_error(error):
             self.assertEqual(
@@ -656,7 +653,7 @@ class TestProberFactoryRequestTimeoutRatioWithTwisted(TestCase):
     def test_non_timeout_is_recorded(self):
         host = 'localhost'
         d = self._createProberAndProbe(
-            u'http://%s:%s/valid-mirror' % (host, self.port))
+            'http://%s:%s/valid-mirror' % (host, self.port))
 
         def got_result(result):
             self.assertEqual(
@@ -678,14 +675,14 @@ class TestProberFactoryRequestTimeoutRatioWithTwisted(TestCase):
         self.assertTrue(should_skip_host(host))
 
         d = self._createProberAndProbe(
-            u'http://%s:%s/timeout' % (host, self.port))
+            'http://%s:%s/timeout' % (host, self.port))
         return assert_fails_with(d, ConnectionSkipped)
 
 
 class TestMultiLock(TestCase):
 
     def setUp(self):
-        super(TestMultiLock, self).setUp()
+        super().setUp()
         self.lock_one = defer.DeferredLock()
         self.lock_two = defer.DeferredLock()
         self.multi_lock = MultiLock(self.lock_one, self.lock_two)
@@ -767,7 +764,7 @@ class TestRedirectAwareProberFactoryAndProtocol(TestCase):
     def tearDown(self):
         # We need to remove any DelayedCalls that didn't actually get called.
         clean_up_reactor()
-        super(TestRedirectAwareProberFactoryAndProtocol, self).tearDown()
+        super().tearDown()
 
     def test_redirect_resets_timeout(self):
         prober = RedirectAwareProberFactory('http://foo.bar')
@@ -1052,7 +1049,7 @@ class TestProbeFunctionSemaphores(TestCase):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestProbeFunctionSemaphores, self).setUp()
+        super().setUp()
         self.logger = None
         # RequestManager uses a mutable class attribute (host_locks) to ensure
         # all of its instances share the same locks. We don't want our tests
@@ -1063,7 +1060,7 @@ class TestProbeFunctionSemaphores(TestCase):
     def tearDown(self):
         # We need to remove any DelayedCalls that didn't actually get called.
         clean_up_reactor()
-        super(TestProbeFunctionSemaphores, self).tearDown()
+        super().tearDown()
 
     def test_MirrorCDImageSeries_records_are_deleted_before_probing(self):
         mirror = DistributionMirror.byName('releases-mirror2')
@@ -1162,7 +1159,7 @@ class TestLoggingMixin(TestCase):
     def tearDown(self):
         # We need to remove any DelayedCalls that didn't actually get called.
         clean_up_reactor()
-        super(TestLoggingMixin, self).tearDown()
+        super().tearDown()
 
     def _fake_gettime(self):
         # Fake the current time.
@@ -1194,7 +1191,7 @@ class TestDistroMirrorProberFunctional(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestDistroMirrorProberFunctional, self).setUp()
+        super().setUp()
         # Makes a clean distro mirror set, with only the mirrors we want.
         self.removeMirrors()
 

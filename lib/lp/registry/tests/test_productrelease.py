@@ -30,7 +30,7 @@ class ProductReleaseSetTestcase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(ProductReleaseSetTestcase, self).setUp()
+        super().setUp()
         self.product_release_set = getUtility(IProductReleaseSet)
 
     def test_getBySeriesAndVersion_match(self):

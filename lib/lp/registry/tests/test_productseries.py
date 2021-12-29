@@ -445,7 +445,7 @@ class TestProductSeriesSet(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestProductSeriesSet, self).setUp()
+        super().setUp()
         self.ps_set = getUtility(IProductSeriesSet)
 
     def _makeSeriesAndBranch(self, import_mode, branch=None, link_branch=True):
@@ -532,7 +532,7 @@ class TestProductSeriesReleases(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductSeriesReleases, self).setUp()
+        super().setUp()
         self.product = self.factory.makeProduct()
         self.productseries = self.factory.makeProductSeries(
             product=self.product)
@@ -585,7 +585,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(ProductSeriesSecurityAdaperTestCase, self).setUp()
+        super().setUp()
         self.public_product = self.factory.makeProduct()
         self.public_series = self.factory.makeProductSeries(
             product=self.public_product)

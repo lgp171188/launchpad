@@ -19,7 +19,7 @@ class TestProductSeriesVocabulary(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestProductSeriesVocabulary, self).setUp()
+        super().setUp()
         self.vocabulary = ProductSeriesVocabulary()
         self.product_prefix = 'asdf987-'
         self.series1_prefix = 'qwerty-'

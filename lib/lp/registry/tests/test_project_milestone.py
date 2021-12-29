@@ -103,18 +103,18 @@ class ProjectMilestoneTest(unittest.TestCase):
         # milestone of the same name.
         gnome_milestone_names = [
             milestone.name for milestone in gnome.all_milestones]
-        self.assertEqual(gnome_milestone_names, [u'2.1.6', u'1.0'])
+        self.assertEqual(gnome_milestone_names, ['2.1.6', '1.0'])
         self.createProductMilestone('1.1', 'evolution', None)
         gnome_milestone_names = [
             milestone.name for milestone in gnome.all_milestones]
-        self.assertEqual(gnome_milestone_names, [u'2.1.6', u'1.1', u'1.0'])
+        self.assertEqual(gnome_milestone_names, ['2.1.6', '1.1', '1.0'])
 
         # There is only one project milestone named '1.1', regardless of the
         # number of product milestones with this name.
         self.createProductMilestone('1.1', 'gnomebaker', None)
         gnome_milestone_names = [
             milestone.name for milestone in gnome.all_milestones]
-        self.assertEqual(gnome_milestone_names, [u'2.1.6', u'1.1', u'1.0'])
+        self.assertEqual(gnome_milestone_names, ['2.1.6', '1.1', '1.0'])
 
     def test_milestone_date_expected(self):
         """The dateexpected attribute.
@@ -170,7 +170,7 @@ class ProjectMilestoneTest(unittest.TestCase):
         # ... while project.all_milestones lists inactive milestones too.
         self.assertEqual(
             [milestone.name for milestone in gnome.all_milestones],
-            [u'2.1.6', u'1.1', u'1.0'])
+            ['2.1.6', '1.1', '1.0'])
 
     def test_no_foreign_milestones(self):
         """Milestones in "foreign" products.
@@ -186,7 +186,7 @@ class ProjectMilestoneTest(unittest.TestCase):
         gnome = getUtility(IProjectGroupSet)['gnome']
         self.assertEqual(
             [milestone.name for milestone in gnome.all_milestones],
-            [u'2.1.6', u'1.0'])
+            ['2.1.6', '1.0'])
 
     def createSpecification(self, milestone_name, product_name):
         """Create a specification, assigned to a milestone, for a product."""

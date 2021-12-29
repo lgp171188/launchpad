@@ -29,13 +29,13 @@ class TestNameBlacklist(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestNameBlacklist, self).setUp()
+        super().setUp()
         self.name_blacklist_set = getUtility(INameBlacklistSet)
-        self.caret_foo_exp = self.name_blacklist_set.create(u'^foo')
-        self.foo_exp = self.name_blacklist_set.create(u'foo')
-        self.verbose_exp = self.name_blacklist_set.create(u'v e r b o s e')
+        self.caret_foo_exp = self.name_blacklist_set.create('^foo')
+        self.foo_exp = self.name_blacklist_set.create('foo')
+        self.verbose_exp = self.name_blacklist_set.create('v e r b o s e')
         team = self.factory.makeTeam()
-        self.admin_exp = self.name_blacklist_set.create(u'fnord', admin=team)
+        self.admin_exp = self.name_blacklist_set.create('fnord', admin=team)
         self.store = IStore(self.foo_exp)
         self.store.flush()
 
@@ -59,16 +59,16 @@ class TestNameBlacklist(TestCaseWithFactory):
     def test_name_blacklist_match(self):
 
         # A name that is not blacklisted returns NULL/None
-        self.assertIsNone(self.name_blacklist_match(u"bar"))
+        self.assertIsNone(self.name_blacklist_match("bar"))
 
         # A name that is blacklisted returns the id of the row in the
         # NameBlacklist table that matched. Rows are tried in order, and the
         # first match is returned.
         self.assertEqual(
-            self.name_blacklist_match(u"foobar"),
+            self.name_blacklist_match("foobar"),
             self.caret_foo_exp.id)
         self.assertEqual(
-            self.name_blacklist_match(u"barfoo"),
+            self.name_blacklist_match("barfoo"),
             self.foo_exp.id)
 
     def test_name_blacklist_match_admin_does_not_match(self):
@@ -76,7 +76,7 @@ class TestNameBlacklist(TestCaseWithFactory):
         # backlisted name restriction.
         user = self.admin_exp.admin.teamowner
         self.assertEqual(
-            None, self.name_blacklist_match(u"fnord", user.id))
+            None, self.name_blacklist_match("fnord", user.id))
 
     def test_name_blacklist_match_launchpad_admin_can_change(self):
         # A Launchpad admin is exempt from any backlisted name restriction
@@ -85,7 +85,7 @@ class TestNameBlacklist(TestCaseWithFactory):
         admins = getUtility(ILaunchpadCelebrities).admin
         admins.addMember(user, user)
         self.assertEqual(
-            None, self.name_blacklist_match(u"fnord", user.id))
+            None, self.name_blacklist_match("fnord", user.id))
 
     def test_name_blacklist_match_launchpad_admin_cannot_change(self):
         # A Launchpad admin cannot override backlisted names without admins.
@@ -93,42 +93,42 @@ class TestNameBlacklist(TestCaseWithFactory):
         admins = getUtility(ILaunchpadCelebrities).admin
         admins.addMember(user, user)
         self.assertEqual(
-            self.foo_exp.id, self.name_blacklist_match(u"barfoo", user.id))
+            self.foo_exp.id, self.name_blacklist_match("barfoo", user.id))
 
     def test_name_blacklist_match_cache(self):
         # If the blacklist is changed in the DB, these changes are noticed.
         # This test is needed because the stored procedure keeps a cache
         # of the compiled regular expressions.
         self.assertEqual(
-            self.name_blacklist_match(u"foobar"),
+            self.name_blacklist_match("foobar"),
             self.caret_foo_exp.id)
-        self.caret_foo_exp.regexp = u'nomatch'
+        self.caret_foo_exp.regexp = 'nomatch'
         self.assertEqual(
-            self.name_blacklist_match(u"foobar"),
+            self.name_blacklist_match("foobar"),
             self.foo_exp.id)
-        self.foo_exp.regexp = u'nomatch2'
-        self.assertIsNone(self.name_blacklist_match(u"foobar"))
+        self.foo_exp.regexp = 'nomatch2'
+        self.assertIsNone(self.name_blacklist_match("foobar"))
 
     def test_is_blacklisted_name(self):
         # is_blacklisted_name() is just a wrapper around name_blacklist_match
         # that is friendlier to use in a boolean context.
-        self.assertFalse(self.is_blacklisted_name(u"bar"))
-        self.assertTrue(self.is_blacklisted_name(u"foo"))
-        self.caret_foo_exp.regexp = u'bar'
-        self.foo_exp.regexp = u'bar2'
-        self.assertFalse(self.is_blacklisted_name(u"foo"))
+        self.assertFalse(self.is_blacklisted_name("bar"))
+        self.assertTrue(self.is_blacklisted_name("foo"))
+        self.caret_foo_exp.regexp = 'bar'
+        self.foo_exp.regexp = 'bar2'
+        self.assertFalse(self.is_blacklisted_name("foo"))
 
     def test_is_blacklisted_name_admin_false(self):
         # Users in the expression's admin team are will return False.
         user = self.admin_exp.admin.teamowner
-        self.assertFalse(self.is_blacklisted_name(u"fnord", user.id))
+        self.assertFalse(self.is_blacklisted_name("fnord", user.id))
 
     def test_case_insensitive(self):
-        self.assertTrue(self.is_blacklisted_name(u"Foo"))
+        self.assertTrue(self.is_blacklisted_name("Foo"))
 
     def test_verbose(self):
         # Testing the VERBOSE flag is used when compiling the regexp
-        self.assertTrue(self.is_blacklisted_name(u"verbose"))
+        self.assertTrue(self.is_blacklisted_name("verbose"))
 
 
 class TestNameBlacklistSet(TestCaseWithFactory):
@@ -136,36 +136,36 @@ class TestNameBlacklistSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestNameBlacklistSet, self).setUp()
+        super().setUp()
         login_celebrity('registry_experts')
         self.name_blacklist_set = getUtility(INameBlacklistSet)
 
     def test_create_with_one_arg(self):
         # Test NameBlacklistSet.create(regexp).
-        name_blacklist = self.name_blacklist_set.create(u'foo')
+        name_blacklist = self.name_blacklist_set.create('foo')
         self.assertTrue(verifyObject(INameBlacklist, name_blacklist))
-        self.assertEqual(u'foo', name_blacklist.regexp)
+        self.assertEqual('foo', name_blacklist.regexp)
         self.assertIs(None, name_blacklist.comment)
 
     def test_create_with_two_args(self):
         # Test NameBlacklistSet.create(regexp, comment).
-        name_blacklist = self.name_blacklist_set.create(u'foo', u'bar')
+        name_blacklist = self.name_blacklist_set.create('foo', 'bar')
         self.assertTrue(verifyObject(INameBlacklist, name_blacklist))
-        self.assertEqual(u'foo', name_blacklist.regexp)
-        self.assertEqual(u'bar', name_blacklist.comment)
+        self.assertEqual('foo', name_blacklist.regexp)
+        self.assertEqual('bar', name_blacklist.comment)
 
     def test_create_with_three_args(self):
         # Test NameBlacklistSet.create(regexp, comment, admin).
         team = self.factory.makeTeam()
-        name_blacklist = self.name_blacklist_set.create(u'foo', u'bar', team)
+        name_blacklist = self.name_blacklist_set.create('foo', 'bar', team)
         self.assertTrue(verifyObject(INameBlacklist, name_blacklist))
-        self.assertEqual(u'foo', name_blacklist.regexp)
-        self.assertEqual(u'bar', name_blacklist.comment)
+        self.assertEqual('foo', name_blacklist.regexp)
+        self.assertEqual('bar', name_blacklist.comment)
         self.assertEqual(team, name_blacklist.admin)
 
     def test_get_int(self):
         # Test NameBlacklistSet.get() with int id.
-        name_blacklist = self.name_blacklist_set.create(u'foo', u'bar')
+        name_blacklist = self.name_blacklist_set.create('foo', 'bar')
         store = IStore(name_blacklist)
         store.flush()
         retrieved = self.name_blacklist_set.get(name_blacklist.id)
@@ -173,7 +173,7 @@ class TestNameBlacklistSet(TestCaseWithFactory):
 
     def test_get_string(self):
         # Test NameBlacklistSet.get() with string id.
-        name_blacklist = self.name_blacklist_set.create(u'foo', u'bar')
+        name_blacklist = self.name_blacklist_set.create('foo', 'bar')
         store = IStore(name_blacklist)
         store.flush()
         retrieved = self.name_blacklist_set.get(str(name_blacklist.id))
@@ -213,7 +213,7 @@ class TestNameBlacklistSet(TestCaseWithFactory):
     def test_NameBlacklist_permissions(self):
         # Verify that non-registry-experts do not have permission to
         # access the NameBlacklist.
-        name_blacklist = self.name_blacklist_set.create(u'foo')
+        name_blacklist = self.name_blacklist_set.create('foo')
         self.assertTrue(check_permission('launchpad.View', name_blacklist))
         self.assertTrue(check_permission('launchpad.Edit', name_blacklist))
         login(ANONYMOUS)

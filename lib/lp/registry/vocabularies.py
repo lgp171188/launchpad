@@ -491,7 +491,7 @@ class PersonAccountToMergeVocabulary(
     def __contains__(self, obj):
         return obj in self._select()
 
-    def _select(self, text=u""):
+    def _select(self, text=""):
         """Return `IPerson` objects that match the text."""
         return getUtility(IPersonSet).findPerson(
             text, exclude_inactive_accounts=False,
@@ -902,7 +902,7 @@ class AllUserTeamsParticipationVocabulary(ValidTeamVocabulary):
     displayname = 'Select a Team of which you are a member'
 
     def __init__(self, context):
-        super(AllUserTeamsParticipationVocabulary, self).__init__(context)
+        super().__init__(context)
         user = getUtility(ILaunchBag).user
         if user is None:
             self.extra_clause = False
@@ -970,7 +970,7 @@ class NewPillarGranteeVocabulary(ValidPersonOrExclusiveTeamVocabulary):
 
     def __init__(self, context):
         assert IPillar.providedBy(context)
-        super(NewPillarGranteeVocabulary, self).__init__(context)
+        super().__init__(context)
         aps = getUtility(IAccessPolicySource)
         access_policies = aps.findByPillar([self.context])
         self.policy_ids = [policy.id for policy in access_policies]
@@ -985,7 +985,7 @@ class NewPillarGranteeVocabulary(ValidPersonOrExclusiveTeamVocabulary):
             """ % sqlvalues(self.policy_ids))
         return And(
             clause,
-            super(NewPillarGranteeVocabulary, self).extra_clause)
+            super().extra_clause)
 
 
 @implementer(IHugeVocabulary)
@@ -1081,17 +1081,14 @@ class UserTeamsParticipationPlusSelfVocabulary(
     def __iter__(self):
         logged_in_user = getUtility(ILaunchBag).user
         yield self.toTerm(logged_in_user)
-        super_class = super(UserTeamsParticipationPlusSelfVocabulary, self)
-        for person in super_class.__iter__():
-            yield person
+        yield from super().__iter__()
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         logged_in_user = getUtility(ILaunchBag).user
         if logged_in_user.name == token:
             return self.getTerm(logged_in_user)
-        super_class = super(UserTeamsParticipationPlusSelfVocabulary, self)
-        return super_class.getTermByToken(token)
+        return super().getTermByToken(token)
 
 
 class AllUserTeamsParticipationPlusSelfVocabulary(
@@ -1106,8 +1103,7 @@ class AllUserTeamsParticipationPlusSelfVocabulary(
     INCLUDE_PRIVATE_TEAM = True
 
     def __init__(self, context=None):
-        super_class = super(AllUserTeamsParticipationPlusSelfVocabulary, self)
-        super_class.__init__(context)
+        super().__init__(context)
         if IBranch.providedBy(context):
             self.EXCLUSIVE_TEAMS_ONLY = (
                 len(list(context.associatedProductSeries())) > 0)
@@ -1428,7 +1424,7 @@ class MilestoneWithDateExpectedVocabulary(MilestoneVocabulary):
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
-        term = super(MilestoneWithDateExpectedVocabulary, self).toTerm(obj)
+        term = super().toTerm(obj)
         if obj.dateexpected:
             formatter = DateTimeFormatterAPI(obj.dateexpected)
             term.title += ' (%s)' % formatter.approximatedate()
@@ -1852,8 +1848,7 @@ class PillarVocabularyBase(NamedStormHugeVocabulary):
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         # Pillar names are always lowercase.
-        return super(PillarVocabularyBase, self).getTermByToken(
-            token.lower())
+        return super().getTermByToken(token.lower())
 
     def __contains__(self, obj):
         raise NotImplementedError
@@ -2019,8 +2014,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         # Package names are always lowercase.
-        return super(SourcePackageNameVocabulary, self).getTermByToken(
-            token.lower())
+        return super().getTermByToken(token.lower())
 
 
 @implementer(IHugeVocabulary)
@@ -2217,7 +2211,7 @@ class OCIProjectVocabulary(StormVocabularyBase):
     step_title = 'Search'
 
     def __init__(self, context=None):
-        super(OCIProjectVocabulary, self).__init__(context)
+        super().__init__(context)
         self.pillar = None
 
     def setPillar(self, pillar):
@@ -2240,7 +2234,7 @@ class OCIProjectVocabulary(StormVocabularyBase):
 
     @property
     def _entries(self):
-        return getUtility(IOCIProjectSet).searchByName(u'')
+        return getUtility(IOCIProjectSet).searchByName('')
 
     def __contains__(self, obj):
         found_obj = IStore(self._table).find(
@@ -2258,7 +2252,7 @@ class DistributionPackageVocabulary:
     """
 
     def __init__(self, context=None):
-        super(DistributionPackageVocabulary, self).__init__()
+        super().__init__()
         if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
             # Replace the default field with a field that uses the better
             # vocabulary.

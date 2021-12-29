@@ -552,7 +552,7 @@ class TestAccessPolicyGrantFlatSource(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestAccessPolicyGrantFlatSource, self).setUp()
+        super().setUp()
         self.apgfs = getUtility(IAccessPolicyGrantFlatSource)
 
     def _makePolicyGrants(self):

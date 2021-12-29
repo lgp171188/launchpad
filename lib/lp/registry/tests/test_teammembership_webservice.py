@@ -20,7 +20,7 @@ class TestTeamMembershipTransitions(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestTeamMembershipTransitions, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson(name='some-person')
         owner = self.factory.makePerson()
         self.team = self.factory.makeTeam(

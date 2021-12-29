@@ -188,7 +188,7 @@ class TestDistributionSourcePackageFindRelatedArchives(TestCaseWithFactory):
 
     def setUp(self):
         """Publish some gedit sources in main and PPAs."""
-        super(TestDistributionSourcePackageFindRelatedArchives, self).setUp()
+        super().setUp()
 
         self.distribution = getUtility(IDistributionSet)['ubuntutest']
 

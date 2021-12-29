@@ -68,7 +68,7 @@ class TestSharingService(TestCaseWithFactory, OCIConfigHelperMixin):
     layer = CeleryJobLayer
 
     def setUp(self):
-        super(TestSharingService, self).setUp()
+        super().setUp()
         self.service = getUtility(IService, 'sharing')
         # Set test flags and configurations for Snaps and OCI.
         flags = SNAP_TESTING_FLAGS.copy()
@@ -2004,7 +2004,7 @@ class ApiTestMixin:
     """Common tests for launchpadlib and webservice."""
 
     def setUp(self):
-        super(ApiTestMixin, self).setUp()
+        super().setUp()
         self.owner = self.factory.makePerson(name='thundercat')
         self.pillar = self.factory.makeProduct(
             owner=self.owner, specification_sharing_policy=(
@@ -2055,7 +2055,7 @@ class TestWebService(ApiTestMixin, WebServiceTestCase):
     """Test the web service interface for the Sharing Service."""
 
     def setUp(self):
-        super(TestWebService, self).setUp()
+        super().setUp()
         self.webservice = LaunchpadWebServiceCaller(
             'launchpad-library', 'salgado-change-anything')
         self._sharePillarInformation(self.pillar)
@@ -2102,7 +2102,7 @@ class TestLaunchpadlib(ApiTestMixin, TestCaseWithFactory):
     layer = AppServerLayer
 
     def setUp(self):
-        super(TestLaunchpadlib, self).setUp()
+        super().setUp()
         self.launchpad = self.factory.makeLaunchpadService(person=self.owner)
         self.service = self.launchpad.load('+services/sharing')
         transaction.commit()

@@ -55,7 +55,7 @@ class TestMilestoneVocabulary(TestCaseWithFactory):
         firefox = getUtility(IProductSet).getByName('firefox')
         vocabulary = MilestoneVocabulary(firefox)
         self.assertEqual(
-            [term.title for term in vocabulary], [u'Mozilla Firefox 1.0'])
+            [term.title for term in vocabulary], ['Mozilla Firefox 1.0'])
 
     def testProductSeriesMilestoneVocabulary(self):
         """Test of MilestoneVocabulary for a product series."""
@@ -63,14 +63,14 @@ class TestMilestoneVocabulary(TestCaseWithFactory):
         trunk = firefox.getSeries('trunk')
         vocabulary = MilestoneVocabulary(trunk)
         self.assertEqual(
-            [term.title for term in vocabulary], [u'Mozilla Firefox 1.0'])
+            [term.title for term in vocabulary], ['Mozilla Firefox 1.0'])
 
     def testProjectGroupMilestoneVocabulary(self):
         """Test of MilestoneVocabulary for a project group."""
         mozilla = getUtility(IProjectGroupSet).getByName('mozilla')
         vocabulary = MilestoneVocabulary(mozilla)
         self.assertEqual(
-            [term.title for term in vocabulary], [u'Mozilla Firefox 1.0'])
+            [term.title for term in vocabulary], ['Mozilla Firefox 1.0'])
 
     def testDistributionMilestoneVocabulary(self):
         """Test of MilestoneVocabulary for a distribution."""
@@ -78,7 +78,7 @@ class TestMilestoneVocabulary(TestCaseWithFactory):
         vocabulary = MilestoneVocabulary(debian)
         self.assertEqual(
             [term.title for term in vocabulary],
-            [u'Debian 3.1', u'Debian 3.1-rc1'])
+            ['Debian 3.1', 'Debian 3.1-rc1'])
 
     def testDistroseriesMilestoneVocabulary(self):
         """Test of MilestoneVocabulary for a distroseries."""
@@ -87,7 +87,7 @@ class TestMilestoneVocabulary(TestCaseWithFactory):
         vocabulary = MilestoneVocabulary(woody)
         self.assertEqual(
             [term.title for term in vocabulary],
-            [u'Debian 3.1', u'Debian 3.1-rc1'])
+            ['Debian 3.1', 'Debian 3.1-rc1'])
 
     def testSpecificationMilestoneVocabulary(self):
         """Test of MilestoneVocabulary for a specification."""
@@ -96,7 +96,7 @@ class TestMilestoneVocabulary(TestCaseWithFactory):
         self.assertEqual(spec.target, firefox)
         vocabulary = MilestoneVocabulary(spec)
         self.assertEqual(
-            [term.title for term in vocabulary], [u'Mozilla Firefox 1.0'])
+            [term.title for term in vocabulary], ['Mozilla Firefox 1.0'])
 
     def testPersonMilestoneVocabulary(self):
         """Test of MilestoneVocabulary for a person."""
@@ -107,7 +107,7 @@ class TestMilestoneVocabulary(TestCaseWithFactory):
         # in such a case of all known visible milestones.
         self.assertEqual(
             [term.title for term in vocabulary],
-            [u'Debian 3.1', u'Debian 3.1-rc1', u'Mozilla Firefox 1.0'])
+            ['Debian 3.1', 'Debian 3.1-rc1', 'Mozilla Firefox 1.0'])
 
 
 class TestMilestoneWithDateExpectedVocabulary(TestCaseWithFactory):
@@ -119,7 +119,7 @@ class TestMilestoneWithDateExpectedVocabulary(TestCaseWithFactory):
         vocabulary = MilestoneWithDateExpectedVocabulary(firefox)
         self.assertEqual(
             [term.title for term in vocabulary],
-            [u'Mozilla Firefox 1.0 (2056-10-16)'])
+            ['Mozilla Firefox 1.0 (2056-10-16)'])
 
     def test_milestone_without_date_expected(self):
         evolution = getUtility(IProductSet).getByName('evolution')

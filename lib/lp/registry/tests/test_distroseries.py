@@ -70,7 +70,7 @@ class CurrentSourceReleasesMixin:
     """
     def setUp(self):
         # Log in as an admin, so that we can create distributions.
-        super(CurrentSourceReleasesMixin, self).setUp()
+        super().setUp()
         login('foo.bar@canonical.com')
         self.publisher = SoyuzTestPublisher()
         self.factory = self.publisher.factory
@@ -428,7 +428,7 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistroSeriesPackaging, self).setUp()
+        super().setUp()
         self.series = self.factory.makeDistroSeries()
         self.user = self.series.distribution.owner
         login('admin@canonical.com')
@@ -523,7 +523,7 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
         package_summaries = self.series.getPrioritizedUnlinkedSourcePackages()
         names = [summary['package'].name for summary in package_summaries]
         expected = [
-            u'main', u'hot-translatable', u'hot', u'translatable', u'normal']
+            'main', 'hot-translatable', 'hot', 'translatable', 'normal']
         self.assertEqual(expected, names)
 
     def test_getPrioritizedUnlinkedSourcePackages_no_language_packs(self):
@@ -532,7 +532,7 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
         package_summaries = self.series.getPrioritizedUnlinkedSourcePackages()
         names = [summary['package'].name for summary in package_summaries]
         expected = [
-            u'main', u'hot-translatable', u'hot', u'translatable', u'normal']
+            'main', 'hot-translatable', 'hot', 'translatable', 'normal']
         self.assertEqual(expected, names)
 
     def test_getPrioritizedPackagings(self):
@@ -542,7 +542,7 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
         packagings = self.series.getPrioritizedPackagings()
         names = [packaging.sourcepackagename.name for packaging in packagings]
         expected = [
-            u'main', u'hot-translatable', u'hot', u'translatable', u'linked']
+            'main', 'hot-translatable', 'hot', 'translatable', 'linked']
         self.assertEqual(expected, names)
 
     def test_getPrioritizedPackagings_bug_tracker(self):
@@ -554,7 +554,7 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
             product_series.product.bugtracker = self.factory.makeBugTracker()
         packagings = self.series.getPrioritizedPackagings()
         names = [packaging.sourcepackagename.name for packaging in packagings]
-        expected = [u'hot', u'linked', u'cold']
+        expected = ['hot', 'linked', 'cold']
         self.assertEqual(expected, names)
 
     def test_getPrioritizedPackagings_branch(self):
@@ -566,7 +566,7 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
             product_series.branch = self.factory.makeBranch()
         packagings = self.series.getPrioritizedPackagings()
         names = [packaging.sourcepackagename.name for packaging in packagings]
-        expected = [u'translatable', u'linked', u'withbranch']
+        expected = ['translatable', 'linked', 'withbranch']
         self.assertEqual(expected, names)
 
     def test_getPrioritizedPackagings_translation(self):
@@ -581,7 +581,7 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
                 TranslationsBranchImportMode.IMPORT_TEMPLATES)
         packagings = self.series.getPrioritizedPackagings()
         names = [packaging.sourcepackagename.name for packaging in packagings]
-        expected = [u'translatable', u'linked', u'importabletranslatable']
+        expected = ['translatable', 'linked', 'importabletranslatable']
         self.assertEqual(expected, names)
 
     def test_getSourcePackagePublishing_query_count(self):
@@ -687,7 +687,7 @@ class TestDistroSeriesSet(TestCaseWithFactory):
         self.ref_translatables = self._get_translatables()
 
         new_distroseries = (
-            self.factory.makeDistroSeries(name=u"sampleseries"))
+            self.factory.makeDistroSeries(name="sampleseries"))
         with person_logged_in(new_distroseries.distribution.owner):
             new_distroseries.hide_all_translations = False
         transaction.commit()
@@ -705,11 +705,11 @@ class TestDistroSeriesSet(TestCaseWithFactory):
         transaction.commit()
         translatables = self._get_translatables()
         self.assertEqual(
-            translatables, self._ref_translatables(u"sampleseries"),
+            translatables, self._ref_translatables("sampleseries"),
             "After assigning a PO template, a distroseries should be "
             "translatable but translatables() returns %r instead of %r." % (
                 translatables,
-                self._ref_translatables(u"sampleseries")))
+                self._ref_translatables("sampleseries")))
 
         with person_logged_in(new_distroseries.distribution.owner):
             new_distroseries.hide_all_translations = True

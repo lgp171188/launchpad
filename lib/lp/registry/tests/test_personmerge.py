@@ -80,7 +80,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestMergePeople, self).setUp()
+        super().setUp()
         self.person_set = getUtility(IPersonSet)
 
     def _do_premerge(self, from_person, to_person):
@@ -281,7 +281,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         duplicate, mergee = self._do_merge(duplicate, mergee)
         branches = [b.name for b in mergee.getBranches()]
         self.assertEqual(2, len(branches))
-        self.assertContentEqual([u'foo', u'foo-1'], branches)
+        self.assertContentEqual(['foo', 'foo-1'], branches)
 
     def test_merge_moves_git_repositories(self):
         # When person/teams are merged, Git repositories owned by the from
@@ -301,9 +301,9 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         # name, merging renames the duplicate from the from person's side.
         project = self.factory.makeProduct()
         from_repository = self.factory.makeGitRepository(
-            target=project, name=u'foo')
+            target=project, name='foo')
         to_repository = self.factory.makeGitRepository(
-            target=project, name=u'foo')
+            target=project, name='foo')
         mergee = to_repository.owner
         duplicate = from_repository.owner
         self._do_premerge(duplicate, mergee)
@@ -313,7 +313,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         repositories = [
             r.name for r in repository_set.getRepositories(None, mergee)]
         self.assertEqual(2, len(repositories))
-        self.assertContentEqual([u'foo', u'foo-1'], repositories)
+        self.assertContentEqual(['foo', 'foo-1'], repositories)
 
     def test_merge_moves_recipes(self):
         # When person/teams are merged, recipes owned by the from person are
@@ -333,9 +333,9 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         # If both the from and to people have recipes with the same name,
         # merging renames the duplicate from the from person's side.
         merge_from = self.factory.makeSourcePackageRecipe(
-            name=u'foo', description=u'FROM')
+            name='foo', description='FROM')
         merge_to = self.factory.makeSourcePackageRecipe(
-            name=u'foo', description=u'TO')
+            name='foo', description='TO')
         duplicate = merge_from.owner
         mergee = merge_to.owner
         # Delete merge_from's PPA, which is required for the merge to work.
@@ -347,8 +347,8 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         recipes = mergee.recipes
         self.assertEqual(2, recipes.count())
         descriptions = [r.description for r in recipes]
-        self.assertEqual([u'TO', u'FROM'], descriptions)
-        self.assertEqual(u'foo-1', recipes[1].name)
+        self.assertEqual(['TO', 'FROM'], descriptions)
+        self.assertEqual('foo-1', recipes[1].name)
 
     def assertSubscriptionMerges(self, target):
         # Given a subscription target, we want to make sure that subscriptions
@@ -378,7 +378,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
             # The description lets us show that we still have the right
             # subscription later.
             target.addBugSubscriptionFilter(person, person).description = (
-                u'a marker')
+                'a marker')
         self._do_premerge(duplicate, person)
         login_person(person)
         duplicate, person = self._do_merge(duplicate, person)
@@ -386,7 +386,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         # by the marker name.
         self.assertEqual(
             target.getSubscription(person).bug_filters[0].description,
-            u'a marker')
+            'a marker')
         # The conflicting subscription on the duplicate has been deleted.
         self.assertTrue(target.getSubscription(duplicate) is None)
 
@@ -543,7 +543,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
             rule=rule, grantee=other_person, can_push=True)
 
         other_rule = self.factory.makeGitRule(
-            rule.repository, ref_pattern=u"refs/heads/other/*")
+            rule.repository, ref_pattern="refs/heads/other/*")
         self.factory.makeGitRuleGrant(
             rule=other_rule, grantee=other_person, can_force_push=True)
 
@@ -607,7 +607,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
     def test_merge_moves_livefses(self):
         # When person/teams are merged, live filesystems owned by the from
         # person are moved.
-        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: u"on"}))
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         duplicate = self.factory.makePerson()
         mergee = self.factory.makePerson()
         self.factory.makeLiveFS(registrant=duplicate, owner=duplicate)
@@ -619,14 +619,14 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
     def test_merge_with_duplicated_livefses(self):
         # If both the from and to people have live filesystems with the same
         # name, merging renames the duplicate from the from person's side.
-        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: u"on"}))
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         duplicate = self.factory.makePerson()
         mergee = self.factory.makePerson()
         self.factory.makeLiveFS(
-            registrant=duplicate, owner=duplicate, name=u'foo',
+            registrant=duplicate, owner=duplicate, name='foo',
             metadata={'project': 'FROM'})
         self.factory.makeLiveFS(
-            registrant=mergee, owner=mergee, name=u'foo',
+            registrant=mergee, owner=mergee, name='foo',
             metadata={'project': 'TO'})
         self._do_premerge(duplicate, mergee)
         login_person(mergee)
@@ -635,7 +635,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         self.assertEqual(2, livefses.count())
         project_names = [livefs.metadata['project'] for livefs in livefses]
         self.assertEqual(['TO', 'FROM'], project_names)
-        self.assertEqual(u'foo-1', livefses[1].name)
+        self.assertEqual('foo-1', livefses[1].name)
 
     def test_merge_moves_snaps(self):
         # When person/teams are merged, snap packages owned by the from
@@ -656,9 +656,9 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         branch = self.factory.makeAnyBranch()
         [ref] = self.factory.makeGitRefs()
         self.factory.makeSnap(
-            registrant=duplicate, owner=duplicate, name=u'foo', branch=branch)
+            registrant=duplicate, owner=duplicate, name='foo', branch=branch)
         self.factory.makeSnap(
-            registrant=mergee, owner=mergee, name=u'foo', git_ref=ref)
+            registrant=mergee, owner=mergee, name='foo', git_ref=ref)
         self._do_premerge(duplicate, mergee)
         login_person(mergee)
         duplicate, mergee = self._do_merge(duplicate, mergee)
@@ -668,11 +668,11 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         self.assertIsNone(snaps[0].branch)
         self.assertEqual(ref.repository, snaps[0].git_repository)
         self.assertEqual(ref.path, snaps[0].git_path)
-        self.assertEqual(u'foo', snaps[0].name)
+        self.assertEqual('foo', snaps[0].name)
         self.assertEqual(branch, snaps[1].branch)
         self.assertIsNone(snaps[1].git_repository)
         self.assertIsNone(snaps[1].git_path)
-        self.assertEqual(u'foo-1', snaps[1].name)
+        self.assertEqual('foo-1', snaps[1].name)
 
     def test_merge_snapsubscription(self):
         # Checks that merging users moves subscriptions.
@@ -681,7 +681,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         mergee = self.factory.makePerson()
         snap = removeSecurityProxy(self.factory.makeSnap(
             owner=duplicate, registrant=duplicate,
-            name=u'foo', private=True))
+            name='foo', private=True))
 
         with admin_logged_in():
             # Owner should have being subscribed automatically on creation.
@@ -724,12 +724,12 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         duplicate = self.factory.makePerson()
         mergee = self.factory.makePerson()
-        [ref] = self.factory.makeGitRefs(paths=[u'refs/heads/v1.0-20.04'])
-        [ref2] = self.factory.makeGitRefs(paths=[u'refs/heads/v1.0-20.04'])
+        [ref] = self.factory.makeGitRefs(paths=['refs/heads/v1.0-20.04'])
+        [ref2] = self.factory.makeGitRefs(paths=['refs/heads/v1.0-20.04'])
         self.factory.makeOCIRecipe(
-            registrant=duplicate, owner=duplicate, name=u'foo', git_ref=ref)
+            registrant=duplicate, owner=duplicate, name='foo', git_ref=ref)
         self.factory.makeOCIRecipe(
-            registrant=mergee, owner=mergee, name=u'foo', git_ref=ref2)
+            registrant=mergee, owner=mergee, name='foo', git_ref=ref2)
         self._do_premerge(duplicate, mergee)
         login_person(mergee)
         duplicate, mergee = self._do_merge(duplicate, mergee)
@@ -740,11 +740,11 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         self.assertEqual(ref2, oci_recipes[0].git_ref)
         self.assertEqual(ref2.repository, oci_recipes[0].git_repository)
         self.assertEqual(ref2.path, oci_recipes[0].git_path)
-        self.assertEqual(u'foo', oci_recipes[0].name)
+        self.assertEqual('foo', oci_recipes[0].name)
         self.assertEqual(ref, oci_recipes[1].git_ref)
         self.assertEqual(ref.repository, oci_recipes[1].git_repository)
         self.assertEqual(ref.path, oci_recipes[1].git_path)
-        self.assertEqual(u'foo-1', oci_recipes[1].name)
+        self.assertEqual('foo-1', oci_recipes[1].name)
 
     def test_merge_moves_charm_recipes(self):
         # When person/teams are merged, charm recipes owned by the from

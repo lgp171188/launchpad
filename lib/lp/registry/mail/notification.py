@@ -195,14 +195,14 @@ def send_direct_contact_email(
     # uses those anyway!?  The only alternative is to attach the footer as a
     # MIME attachment with a us-ascii charset, but that has it's own set of
     # problems (and user complaints).  Email sucks.
-    additions = u'\n'.join([
-        u'',
-        u'-- ',
-        u'This message was sent from Launchpad by',
-        u'%s (%s)' % (sender_name, canonical_url(sender)),
-        u'%s.',
-        u'For more information see',
-        u'https://help.launchpad.net/YourAccount/ContactingPeople',
+    additions = '\n'.join([
+        '',
+        '-- ',
+        'This message was sent from Launchpad by',
+        '%s (%s)' % (sender_name, canonical_url(sender)),
+        '%s.',
+        'For more information see',
+        'https://help.launchpad.net/YourAccount/ContactingPeople',
         ])
     # Craft and send one message per recipient.
     mailwrapper = MailWrapper(width=72)

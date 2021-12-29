@@ -863,7 +863,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         # source_version with status PUBLISHED or PENDING.
         dsp = self.factory.makeDistroSeriesParent()
         source_package_name = self.factory.getOrMakeSourcePackageName('foo')
-        versions = {'derived': u'1.2', 'parent': u'1.3'}
+        versions = {'derived': '1.2', 'parent': '1.3'}
 
         ds_diff = self.factory.makeDistroSeriesDifference(
             derived_series=dsp.derived_series,
@@ -1358,9 +1358,9 @@ class TestMostRecentPublications(TestCaseWithFactory):
         # Create a new DistroSeriesDifference
         version = self.factory.getUniqueInteger()
         versions = {
-            'base': u'1.%d' % version,
-            'derived': u'1.%dderived1' % version,
-            'parent': u'1.%d-1' % version,
+            'base': '1.%d' % version,
+            'derived': '1.%dderived1' % version,
+            'parent': '1.%d-1' % version,
             }
         dsd = self.factory.makeDistroSeriesDifference(
             derived_series=derived_series,
@@ -1427,7 +1427,7 @@ class TestMostRecentPublications(TestCaseWithFactory):
         dsd = self.create_difference(derived_series)
         # Modify the release version.
         removeSecurityProxy(
-            dsd.source_package_release.sourcepackagerelease).version += u"2"
+            dsd.source_package_release.sourcepackagerelease).version += "2"
         # Searching with match_version=False finds the publication.
         self.assertContentEqual(
             [(dsd.source_package_name.id, dsd.source_pub)],

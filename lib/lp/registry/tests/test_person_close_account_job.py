@@ -42,7 +42,7 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def test_close_account_job_valid_username(self):
-        user_to_delete = self.factory.makePerson(name=u'delete-me')
+        user_to_delete = self.factory.makePerson(name='delete-me')
         job_source = getUtility(IPersonCloseAccountJobSource)
         jobs = list(job_source.iterReady())
 
@@ -57,11 +57,11 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
         self.assertEqual(JobStatus.COMPLETED, jobs[0].status)
         person = removeSecurityProxy(
             getUtility(IPersonSet).getByName(user_to_delete.name))
-        self.assertEqual(person.name, u'removed%d' % user_to_delete.id)
+        self.assertEqual(person.name, 'removed%d' % user_to_delete.id)
 
     def test_close_account_job_valid_email(self):
         user_to_delete = self.factory.makePerson(
-            email=u'delete-me@example.com')
+            email='delete-me@example.com')
         getUtility(
             IPersonCloseAccountJobSource).create(user_to_delete)
         job_source = getUtility(IPersonCloseAccountJobSource)
@@ -71,7 +71,7 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
         self.assertEqual(JobStatus.COMPLETED, jobs[0].status)
         person = removeSecurityProxy(
             getUtility(IPersonSet).getByName(user_to_delete.name))
-        self.assertEqual(person.name, u'removed%d' % user_to_delete.id)
+        self.assertEqual(person.name, 'removed%d' % user_to_delete.id)
 
     def test_team(self):
         team = self.factory.makeTeam()
@@ -82,7 +82,7 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
             team)
 
     def test_unhandled_reference(self):
-        user_to_delete = self.factory.makePerson(name=u'delete-me')
+        user_to_delete = self.factory.makePerson(name='delete-me')
         self.factory.makeProduct(owner=user_to_delete)
         person = removeSecurityProxy(
             getUtility(IPersonSet).getByName(user_to_delete.name))
@@ -94,10 +94,10 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
                 dbuser(config.IPersonCloseAccountJobSource.dbuser):
             job.run()
         error_message = (
-            {u'ERROR User delete-me is still '
-             u'referenced by 1 product.owner values',
-             u'ERROR User delete-me is still '
-             u'referenced by 1 productseries.owner values',
+            {'ERROR User delete-me is still '
+             'referenced by 1 product.owner values',
+             'ERROR User delete-me is still '
+             'referenced by 1 productseries.owner values',
              })
         self.assertTrue(
             error_message.issubset(logger.getLogBuffer().splitlines()))
@@ -133,4 +133,4 @@ class TestPersonCloseAccountJobViaCelery(TestCaseWithFactory):
         person = removeSecurityProxy(
             getUtility(IPersonSet).getByName(user_to_delete.name))
         self.assertEqual(JobStatus.COMPLETED, job.status)
-        self.assertEqual(person.name, u'removed%d' % user_to_delete.id)
+        self.assertEqual(person.name, 'removed%d' % user_to_delete.id)

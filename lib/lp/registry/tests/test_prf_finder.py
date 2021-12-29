@@ -151,7 +151,7 @@ class GetFiltersTestCase(TestCaseWithFactory):
 class HandleProductTestCase(TestCase):
 
     def setUp(self):
-        super(HandleProductTestCase, self).setUp()
+        super().setUp()
         # path for release tree
         self.release_root = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.release_root, ignore_errors=True)
@@ -235,7 +235,7 @@ class HandleReleaseTestCase(TestCase):
         return url
 
     def setUp(self):
-        super(HandleReleaseTestCase, self).setUp()
+        super().setUp()
         switch_dbuser(config.productreleasefinder.dbuser)
         self.release_root = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.release_root, ignore_errors=True)

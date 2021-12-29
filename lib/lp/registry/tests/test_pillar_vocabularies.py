@@ -23,7 +23,7 @@ class TestPillarVocabularyBase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPillarVocabularyBase, self).setUp()
+        super().setUp()
         self.vocabulary = PillarVocabularyBase()
         self.product = self.factory.makeProduct(name='orchid-snark')
         self.distribution = self.factory.makeDistribution(name='zebra-snark')
@@ -98,7 +98,7 @@ class TestDistributionOrProductVocabulary(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionOrProductVocabulary, self).setUp()
+        super().setUp()
         self.vocabulary = DistributionOrProductVocabulary()
         self.product = self.factory.makeProduct(name='orchid-snark')
         self.distribution = self.factory.makeDistribution(name='zebra-snark')
@@ -143,7 +143,7 @@ class TestDistributionOrProductOrProjectGroupVocabulary(TestCaseWithFactory,
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestDistributionOrProductOrProjectGroupVocabulary, self).setUp()
+        super().setUp()
         self.vocabulary = DistributionOrProductOrProjectGroupVocabulary()
         self.product = self.factory.makeProduct(name='orchid-snark')
         self.distribution = self.factory.makeDistribution(name='zebra-snark')
