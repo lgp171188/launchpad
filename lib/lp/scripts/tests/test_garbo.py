@@ -216,7 +216,7 @@ class TestBulkPruner(TestCase):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestBulkPruner, self).setUp()
+        super().setUp()
 
         self.store = IMasterStore(CommercialSubscription)
         self.store.execute("CREATE TABLE BulkFoo (id serial PRIMARY KEY)")
@@ -432,7 +432,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestGarbo, self).setUp()
+        super().setUp()
 
         # Silence the root Logger by instructing the garbo logger to not
         # propagate messages.
@@ -1133,9 +1133,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         repo.status = GitRepositoryStatus.CREATING
         long_ago += timedelta(seconds=1)
 
-        recent_creating, old_available, recent_available = [
+        recent_creating, old_available, recent_available = (
             removeSecurityProxy(self.factory.makeGitRepository())
-            for _ in range(3)]
+            for _ in range(3))
 
         recent_creating.date_created = recently
         recent_creating.status = GitRepositoryStatus.CREATING

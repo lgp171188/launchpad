@@ -53,6 +53,7 @@ repos:
             |coop
             |oci
             |registry
+            |scripts
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

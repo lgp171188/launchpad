@@ -62,7 +62,7 @@ class TacFile(Service):
         :param pre_launch: A callable that is called before the launch
             process.
         """
-        super(TacFile, self).__init__()
+        super().__init__()
         self.name = name
         self.tac_filename = tac_filename
         self.section_name = section_name

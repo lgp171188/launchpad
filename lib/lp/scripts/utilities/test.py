@@ -186,7 +186,7 @@ defaults = {
 class LaunchpadRunner(Runner):
 
     def configure(self):
-        super(LaunchpadRunner, self).configure()
+        super().configure()
         self.features.insert(0, LaunchpadWarnings(self))
 
 
