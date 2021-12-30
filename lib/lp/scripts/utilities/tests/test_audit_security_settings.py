@@ -13,7 +13,7 @@ class TestAuditSecuritySettings(TestCase):
     layer = BaseLayer
 
     def setUp(self):
-        super(TestAuditSecuritySettings, self).setUp()
+        super().setUp()
         self.test_settings = (
             '# This is the header.\n'
             '[good]\n'

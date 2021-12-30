@@ -14,7 +14,7 @@ class TestTransactionFreeOperation(TestCase):
 
     def setUp(self):
         """We can ignore transactions in general, but this test case cares."""
-        super(TestTransactionFreeOperation, self).setUp()
+        super().setUp()
         transaction.abort()
 
     def test_pending_transaction(self):

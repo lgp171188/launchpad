@@ -248,7 +248,7 @@ class BulkPruner(TunableLoop):
     _unique_counter = 0
 
     def __init__(self, log, abort_time=None):
-        super(BulkPruner, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
 
         self.store = self.getStore()
         self.target_table_name = self.target_table_class.__storm_table__
@@ -443,7 +443,7 @@ class BugSummaryJournalRollup(TunableLoop):
     maximum_chunk_size = 5000
 
     def __init__(self, log, abort_time=None):
-        super(BugSummaryJournalRollup, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.store = IMasterStore(Bug)
 
     def isDone(self):
@@ -469,8 +469,7 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
     maximum_chunk_size = 1000
 
     def __init__(self, log, abort_time=None):
-        super(PopulateDistributionSourcePackageCache, self).__init__(
-            log, abort_time)
+        super().__init__(log, abort_time)
         self.store = IMasterStore(DistributionSourcePackageCache)
         # Keep a record of the processed source publication ID so we know
         # where the job got up to.
@@ -576,8 +575,7 @@ class PopulateLatestPersonSourcePackageReleaseCache(TunableLoop):
     )
 
     def __init__(self, log, abort_time=None):
-        super_cl = super(PopulateLatestPersonSourcePackageReleaseCache, self)
-        super_cl.__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.store = IMasterStore(LatestPersonSourcePackageReleaseCache)
         # Keep a record of the processed source package release id and data
         # type (creator or maintainer) so we know where to job got up to.
@@ -757,7 +755,7 @@ class OpenIDConsumerNoncePruner(TunableLoop):
     maximum_chunk_size = 6 * 60 * 60  # 6 hours in seconds.
 
     def __init__(self, log, abort_time=None):
-        super(OpenIDConsumerNoncePruner, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.store = IMasterStore(OpenIDConsumerNonce)
         self.earliest_timestamp = self.store.find(
             Min(OpenIDConsumerNonce.timestamp)).one()
@@ -793,7 +791,7 @@ class OpenIDConsumerAssociationPruner(TunableLoop):
     _num_removed = None
 
     def __init__(self, log, abort_time=None):
-        super(OpenIDConsumerAssociationPruner, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.store = IMasterStore(OpenIDConsumerNonce)
 
     def __call__(self, chunksize):
@@ -879,7 +877,7 @@ class RevisionAuthorEmailLinker(TunableLoop):
     maximum_chunk_size = 1000
 
     def __init__(self, log, abort_time=None):
-        super(RevisionAuthorEmailLinker, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.author_store = IMasterStore(RevisionAuthor)
         self.email_store = IMasterStore(EmailAddress)
 
@@ -932,7 +930,7 @@ class PersonPruner(TunableLoop):
     maximum_chunk_size = 1000
 
     def __init__(self, log, abort_time=None):
-        super(PersonPruner, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.offset = 1
         self.store = IMasterStore(Person)
         self.log.debug("Creating LinkedPeople temporary table.")
@@ -1201,7 +1199,7 @@ class BugHeatUpdater(TunableLoop):
     maximum_chunk_size = 5000
 
     def __init__(self, log, abort_time=None):
-        super(BugHeatUpdater, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.transaction = transaction
         self.total_processed = 0
         self.is_done = False
@@ -1287,7 +1285,7 @@ class OldTimeLimitedTokenDeleter(TunableLoop):
     maximum_chunk_size = 24 * 60 * 60  # 24 hours in seconds.
 
     def __init__(self, log, abort_time=None):
-        super(OldTimeLimitedTokenDeleter, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.store = session_store()
         self._update_oldest()
 
@@ -1430,7 +1428,7 @@ class UnusedAccessPolicyPruner(TunableLoop):
     maximum_chunk_size = 5000
 
     def __init__(self, log, abort_time=None):
-        super(UnusedAccessPolicyPruner, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.start_at = 1
         self.store = IMasterStore(Product)
 
@@ -1455,7 +1453,7 @@ class ProductVCSPopulator(TunableLoop):
     maximum_chunk_size = 5000
 
     def __init__(self, log, abort_time=None):
-        super(ProductVCSPopulator, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.start_at = 1
         self.store = IMasterStore(Product)
 
@@ -1559,7 +1557,7 @@ class GitRepositoryPruner(TunableLoop):
     repository_creation_timeout = timedelta(hours=1)
 
     def __init__(self, log, abort_time=None):
-        super(GitRepositoryPruner, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.store = IMasterStore(GitRepository)
 
     def findRepositories(self):
@@ -1729,7 +1727,7 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
     maximum_chunk_size = 5000
 
     def __init__(self, log, abort_time=None):
-        super(PopulateSnapBuildStoreRevision, self).__init__(log, abort_time)
+        super().__init__(log, abort_time)
         self.start_at = 1
         self.store = IMasterStore(SnapBuild)
 
@@ -1780,7 +1778,7 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     _maximum_chunk_size = None
 
     def __init__(self, test_args=None):
-        super(BaseDatabaseGarbageCollector, self).__init__(
+        super().__init__(
             self.script_name,
             dbuser=self.script_name.replace('-', '_'),
             test_args=test_args)
