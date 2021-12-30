@@ -70,7 +70,7 @@ class TestDefaultConfigArgument(TestCase):
     """Tests for the processing of config arguments."""
 
     def setUp(self):
-        super(TestDefaultConfigArgument, self).setUp()
+        super().setUp()
         self.config_root = tempfile.mkdtemp('configs')
         self.saved_instance = config.instance_name
         self.saved_config_roots = lp.services.config.CONFIG_ROOT_DIRS
@@ -95,7 +95,7 @@ class ServersToStart(TestCase):
 
     def setUp(self):
         """Make sure that only the Librarian is configured to launch."""
-        super(ServersToStart, self).setUp()
+        super().setUp()
         launch_data = """
             [librarian_server]
             launch: True

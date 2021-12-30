@@ -203,7 +203,7 @@ def report_other_warnings():
     if other_warnings:
         print(file=sys.stderr)
         print("General warnings.", file=sys.stderr)
-        for warninginfo in six.itervalues(other_warnings):
+        for warninginfo in other_warnings.values():
             print(file=sys.stderr)
             print(warninginfo, file=sys.stderr)
 

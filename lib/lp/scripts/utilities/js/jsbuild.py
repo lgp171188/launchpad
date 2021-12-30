@@ -116,7 +116,7 @@ class CSSComboFile(ComboFile):
 
     def __init__(self, src_files, target_file, resource_prefix=b"",
                  minify=True, rewrite_urls=True):
-        super(CSSComboFile, self).__init__(src_files, target_file)
+        super().__init__(src_files, target_file)
         self.resource_prefix = resource_prefix.rstrip(b"/")
         self.minify = minify
         self.rewrite_urls = rewrite_urls
