@@ -137,6 +137,7 @@
       ref - the ref that has the commits
       commit_infos - a list of dicts of commit information (sha1, author,
                      author_date, commit_message, merge_proposal)
+      show_status_reports - whether to show related revision status reports
   </tal:comment>
   <style type="text/css">
     .subordinate {
@@ -191,6 +192,7 @@
       commit_info - a dict of the commit information (sha1, author,
                     author_date, commit_message, merge_proposal) to be
                     displayed
+      show_status_reports - whether to show related revision status reports
 
     It is expected that this macro is called from within a definition list
     (<dl></dl>).

@@ -1312,6 +1312,7 @@ class TestResubmitBrowserBzr(BrowserTestCase):
     def test_resubmit_text(self):
         """The text of the resubmit page is as expected."""
         bmp = self.factory.makeBranchMergeProposal(registrant=self.user)
+        self.factory.makeRevisionsForBranch(bmp.source_branch, count=2)
         text = self.getMainText(bmp, '+resubmit')
         expected = (
             'Resubmit proposal to merge.*'
@@ -1325,6 +1326,7 @@ class TestResubmitBrowserBzr(BrowserTestCase):
     def test_resubmit_controls(self):
         """Proposals can be resubmitted using the browser."""
         bmp = self.factory.makeBranchMergeProposal(registrant=self.user)
+        self.factory.makeRevisionsForBranch(bmp.source_branch, count=2)
         browser = self.getViewBrowser(bmp, '+resubmit')
         browser.getControl('Description').value = 'flibble'
         browser.getControl('Resubmit').click()
@@ -1337,9 +1339,30 @@ class TestResubmitBrowserGit(GitHostingClientMixin, BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
+    def makeCommits(self, count):
+        author = self.factory.makePerson()
+        with person_logged_in(author):
+            author_email = author.preferredemail.email
+        author_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        sha1s = [
+            hashlib.sha1(("commit %d" % i).encode()).hexdigest()
+            for i in range(count)]
+        self.git_hosting_fixture.getLog.result = [
+            {
+                "sha1": sha1,
+                "message": "commit message",
+                "author": {
+                    "name": author.displayname,
+                    "email": author_email,
+                    "time": int(seconds_since_epoch(author_date)),
+                    },
+                }
+            for sha1 in sha1s]
+
     def test_resubmit_text(self):
         """The text of the resubmit page is as expected."""
         bmp = self.factory.makeBranchMergeProposalForGit(registrant=self.user)
+        self.makeCommits(2)
         text = self.getMainText(bmp, '+resubmit')
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
             Resubmit proposal to merge.*
@@ -1356,6 +1379,7 @@ class TestResubmitBrowserGit(GitHostingClientMixin, BrowserTestCase):
     def test_resubmit_controls(self):
         """Proposals can be resubmitted using the browser."""
         bmp = self.factory.makeBranchMergeProposalForGit(registrant=self.user)
+        self.makeCommits(2)
         browser = self.getViewBrowser(bmp, '+resubmit')
         browser.getControl('Commit message').value = 'dribble'
         browser.getControl('Description').value = 'flibble'
