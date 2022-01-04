@@ -29,6 +29,7 @@ class PersonRoles:
         self._celebrities = getUtility(ILaunchpadCelebrities)
         # Use an unproxied inTeam() method for security checks.
         self.inTeam = removeSecurityProxy(self.person).inTeam
+        self.inAnyTeam = removeSecurityProxy(self.person).inAnyTeam
 
     def __getattr__(self, name):
         """Handle all in_* attributes."""

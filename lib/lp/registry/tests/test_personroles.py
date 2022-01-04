@@ -79,6 +79,11 @@ class TestPersonRoles(TestCaseWithFactory):
         roles = IPersonRoles(self.person)
         self.assertEqual(self.person.inTeam, roles.inTeam)
 
+    def test_inAnyTeam(self):
+        # The method person.inAnyTeam is available as the inAnyTeam attribute.
+        roles = IPersonRoles(self.person)
+        self.assertEqual(self.person.inAnyTeam, roles.inAnyTeam)
+
     def test_inTeam_works(self):
         # Make sure it actually works.
         team = self.factory.makeTeam(self.person)

@@ -1247,6 +1247,12 @@ class IPersonViewRestricted(IHasBranches, IHasSpecifications,
             `False` is returned.
         """
 
+    # XXX: lgp171188, 2022-01-04: Unexported for the same reasons
+    # as the inTeam() method.
+    def inAnyTeam(teams):
+        """Is this person a member of any of the given `teams`?"""
+
+
     def clearInTeamCache():
         """Clears the person's inTeam cache.
 

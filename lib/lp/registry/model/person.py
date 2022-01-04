@@ -1342,6 +1342,43 @@ class Person(
         self._inTeam_cache[team.id] = in_team
         return in_team
 
+    def inAnyTeam(self, teams):
+        """See `IPerson`."""
+        if not teams:
+            return False
+
+        team_ids = {team.id for team in teams if team.is_team}
+        if self.id in team_ids:
+            # A team is always a member of itself.
+            return True
+
+        if self._inTeam_cache is None:
+            # Initialize cache
+            self._inTeam_cache = {}
+        else:
+            if any(self._inTeam_cache.get(team_id) for team_id in team_ids):
+                return True
+
+        unknown_team_ids = {
+            team_id for team_id in team_ids
+            if team_id not in self._inTeam_cache
+        }
+
+        found_team_ids = set(
+            IStore(TeamParticipation).find(
+                TeamParticipation.teamID,
+                And(
+                    TeamParticipation.teamID.is_in(unknown_team_ids),
+                    TeamParticipation.personID == self.id
+                )
+            )
+        )
+
+        for team_id in unknown_team_ids:
+            self._inTeam_cache[team_id] = team_id in found_team_ids
+
+        return bool(found_team_ids)
+
     def hasParticipationEntryFor(self, team):
         """See `IPerson`."""
         return bool(TeamParticipation.selectOneBy(person=self, team=team))
