@@ -12,10 +12,7 @@ from time import time
 import traceback
 import warnings
 
-from lazr.restful.utils import (
-    get_current_browser_request,
-    safe_hasattr,
-    )
+from lazr.restful.utils import get_current_browser_request
 from psycopg2.extensions import (
     ISOLATION_LEVEL_AUTOCOMMIT,
     ISOLATION_LEVEL_READ_COMMITTED,
@@ -536,7 +533,7 @@ class LaunchpadSessionDatabase(Postgres):
 
         flags = _get_dirty_commit_flags()
         raw_connection = super(LaunchpadSessionDatabase, self).raw_connect()
-        if safe_hasattr(raw_connection, 'auto_close'):
+        if hasattr(raw_connection, 'auto_close'):
             raw_connection.auto_close = False
         raw_connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         _reset_dirty_commit_flags(*flags)
@@ -724,7 +721,7 @@ class StoreSelector:
     @staticmethod
     def push(db_policy):
         """See `IStoreSelector`."""
-        if not safe_hasattr(_local, 'db_policies'):
+        if not hasattr(_local, 'db_policies'):
             _local.db_policies = []
         db_policy.install()
         _local.db_policies.append(db_policy)

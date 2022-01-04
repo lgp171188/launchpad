@@ -8,7 +8,6 @@ __all__ = [
     'make_fake_request',
     ]
 
-from lazr.restful.utils import safe_hasattr
 from zope.security.management import (
     endInteraction,
     newInteraction,
@@ -64,7 +63,7 @@ def summarise_tal_links(links):
             print('link %s' % link.name)
             attributes = ('url', 'enabled', 'menu', 'selected', 'linked')
             for attrname in attributes:
-                if not safe_hasattr(link, attrname):
+                if not hasattr(link, attrname):
                     continue
                 print('    %s:' % attrname, getattr(link, attrname))
         else:

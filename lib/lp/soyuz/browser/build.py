@@ -21,7 +21,6 @@ from itertools import groupby
 from operator import attrgetter
 
 from lazr.batchnavigator import ListRangeFactory
-from lazr.restful.utils import safe_hasattr
 from zope.component import getUtility
 from zope.interface import (
     implementer,
@@ -525,7 +524,7 @@ class BuildRecordsView(LaunchpadView):
         """Return the architecture options for the context."""
         # Guard against contexts that cannot tell us the available
         # distroarchseries.
-        if safe_hasattr(self.context, 'architectures') is False:
+        if hasattr(self.context, 'architectures') is False:
             return []
 
         # Grab all the architecture tags for the context.

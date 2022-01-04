@@ -17,10 +17,7 @@ __all__ = [
 
 from lazr.enum import IEnumeratedType
 from lazr.restful.declarations import LAZR_WEBSERVICE_EXPORTED
-from lazr.restful.utils import (
-    get_current_browser_request,
-    safe_hasattr,
-    )
+from lazr.restful.utils import get_current_browser_request
 import simplejson
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -325,8 +322,8 @@ class InlineEditPickerWidget(WidgetBase):
         if self.context is None:
             return None
         val = getattr(self.context, self.exported_field.__name__)
-        if val is not None and safe_hasattr(val, 'name'):
-            return getattr(val, 'name')
+        if val is not None:
+            return getattr(val, 'name', None)
         return None
 
     @property
@@ -508,7 +505,7 @@ class InlineMultiCheckboxWidget(WidgetBase):
         items = []
         style = ';'.join(['font-weight: normal', items_style])
         for item in vocabulary:
-            item_value = item.value if safe_hasattr(item, 'value') else item
+            item_value = getattr(item, 'value', item)
             checked = item_value in selected_items
             if linkify_items:
                 save_value = canonical_url(item_value, force_local_path=True)
@@ -561,7 +558,7 @@ def vocabulary_to_choice_edit_items(
     for item in vocab:
         # Introspect to make sure we're dealing with the object itself.
         # SimpleTerm objects have the object itself at item.value.
-        if safe_hasattr(item, 'value'):
+        if hasattr(item, 'value'):
             item = item.value
         if excluded_items and item in excluded_items:
             continue

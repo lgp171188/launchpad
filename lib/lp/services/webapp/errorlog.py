@@ -8,10 +8,7 @@ from itertools import repeat
 import operator
 import re
 
-from lazr.restful.utils import (
-    get_current_browser_request,
-    safe_hasattr,
-    )
+from lazr.restful.utils import get_current_browser_request
 import oops.createhooks
 import oops_amqp
 from oops_datedir_repo import DateDirRepo
@@ -159,7 +156,7 @@ def attach_http_request(report, context):
         return
     # XXX jamesh 2005-11-22: Temporary fix, which Steve should
     #      undo. URL is just too HTTPRequest-specific.
-    if safe_hasattr(request, 'URL'):
+    if hasattr(request, 'URL'):
         # URL's are byte strings, but possibly str() will fail - safe_unicode
         # handles all those cases.  This is strictly double handling as a
         # URL should never have unicode characters in it anyway (though it
@@ -180,7 +177,7 @@ def attach_http_request(report, context):
     missing = object()
     principal = getattr(request, 'principal', missing)
 
-    if safe_hasattr(principal, 'getLogin'):
+    if hasattr(principal, 'getLogin'):
         login = principal.getLogin()
     elif principal is missing or principal is None:
         # Request has no principal (e.g. scriptrequest)

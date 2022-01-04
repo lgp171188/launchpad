@@ -181,8 +181,6 @@ other environments that have no explicit setup and teardown::
 
 import threading
 
-from lazr.restful.utils import safe_hasattr
-
 
 __all__ = [
     'currentScope',
@@ -212,7 +210,7 @@ def uninstall_feature_controller():
 
     This function is used to create a pristine environment in tests.
     """
-    if safe_hasattr(per_thread, 'features'):
+    if hasattr(per_thread, 'features'):
         del per_thread.features
 
 

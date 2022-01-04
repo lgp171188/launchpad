@@ -22,7 +22,6 @@ __all__ = [
     ]
 
 
-from lazr.restful.utils import safe_hasattr
 from zope.component import getUtility
 from zope.formlib import form
 from zope.interface import (
@@ -106,7 +105,7 @@ class MilestoneBreadcrumb(Breadcrumb):
     @property
     def text(self):
         milestone = IMilestoneData(self.context)
-        if safe_hasattr(milestone, 'code_name') and milestone.code_name:
+        if hasattr(milestone, 'code_name') and milestone.code_name:
             return '%s "%s"' % (milestone.name, milestone.code_name)
         else:
             return milestone.name

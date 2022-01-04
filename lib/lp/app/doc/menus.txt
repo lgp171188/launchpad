@@ -284,7 +284,6 @@ can access `self.context`.
     >>> defineChecker(MenuLink, InterfaceChecker(ILink))
     >>> defineChecker(URI, NamesChecker(dir(URI)))
 
-    >>> from lazr.restful.utils import safe_hasattr
     >>> def summarise_links(menu, url=None, facet=None):
     ...     """List the links and their attributes."""
     ...     if url is not None:
@@ -296,7 +295,7 @@ can access `self.context`.
     ...         print('link %s' % link.name)
     ...         attributes = ('url', 'enabled', 'menu', 'selected', 'linked')
     ...         for attrname in attributes:
-    ...             if not safe_hasattr(link, attrname):
+    ...             if not hasattr(link, attrname):
     ...                 continue
     ...             print('    %s: %s' % (attrname, getattr(link, attrname)))
 
