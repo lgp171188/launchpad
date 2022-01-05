@@ -34,16 +34,16 @@ class IFeatureControlForm(Interface):
         self.context = context
 
     feature_rules = Text(
-        title=u"Feature rules",
+        title="Feature rules",
         description=(
-            u"Rules to control feature flags on Launchpad.  "
-            u"On each line: (flag, scope, priority, value), "
-            u"whitespace-separated.  Numerically higher "
-            u"priorities match first."),
+            "Rules to control feature flags on Launchpad.  "
+            "On each line: (flag, scope, priority, value), "
+            "whitespace-separated.  Numerically higher "
+            "priorities match first."),
         required=False)
     comment = Text(
-        title=u"Comment",
-        description=(u"Who requested this change and why."),
+        title="Comment",
+        description=("Who requested this change and why."),
         required=True)
 
 
@@ -71,7 +71,7 @@ class FeatureControlView(LaunchpadFormView):
         """Is the user authorized to change the rules?"""
         return check_permission('launchpad.Admin', self.context)
 
-    @action(u"Change", name="change", condition=canSubmit)
+    @action("Change", name="change", condition=canSubmit)
     def change_action(self, action, data):
         original_rules = self.request.features.rule_source.getAllRulesAsText()
         rules_text = data.get('feature_rules') or ''
@@ -83,7 +83,7 @@ class FeatureControlView(LaunchpadFormView):
         # (whitespace normalized) and ordered consistently so the diff is
         # minimal.
         new_rules = self.request.features.rule_source.getAllRulesAsText()
-        diff = u'\n'.join(self.diff_rules(original_rules, new_rules))
+        diff = '\n'.join(self.diff_rules(original_rules, new_rules))
         comment = data['comment']
         ChangeLog.append(diff, comment, self.user)
         self.diff = FormattersAPI(diff).format_diff()

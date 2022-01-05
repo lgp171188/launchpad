@@ -49,7 +49,7 @@ def LN(*args, **kwargs):
     return text
 
 
-class ConnectionWrapper(object):
+class ConnectionWrapper:
     _log = None
     _real_con = None
 

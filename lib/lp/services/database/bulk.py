@@ -24,7 +24,6 @@ from operator import (
     itemgetter,
     )
 
-import six
 from storm.databases.postgres import Returning
 from storm.expr import (
     And,
@@ -52,7 +51,7 @@ def collate(things, key):
     collection = defaultdict(list)
     for thing in things:
         collection[key(thing)].append(thing)
-    return six.iteritems(collection)
+    return collection.items()
 
 
 def get_type(thing):

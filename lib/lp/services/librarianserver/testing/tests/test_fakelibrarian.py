@@ -5,7 +5,6 @@
 
 import io
 
-import six
 import transaction
 from transaction.interfaces import ISynchronizer
 from zope.component import getUtility
@@ -58,7 +57,7 @@ class LibraryAccessScenarioMixin:
 
     def test_insert_retrieve(self):
         name, content, alias = self._storeFile()
-        self.assertIsInstance(alias.id, six.integer_types)
+        self.assertIsInstance(alias.id, int)
 
         transaction.commit()
 
@@ -98,7 +97,7 @@ class LibraryAccessScenarioMixin:
     def test_addFile_returns_alias_id(self):
         alias_id = getUtility(ILibrarianClient).addFile(
             'bar.txt', 3, io.BytesIO(b'bar'), 'text/plain')
-        self.assertIsInstance(alias_id, six.integer_types)
+        self.assertIsInstance(alias_id, int)
         self.assertIsInstance(
             getUtility(ILibraryFileAliasSet)[alias_id],
             LibraryFileAlias)
@@ -142,7 +141,7 @@ class TestFakeLibrarian(LibraryAccessScenarioMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestFakeLibrarian, self).setUp()
+        super().setUp()
         self.fake_librarian = self.useFixture(FakeLibrarian())
 
     def test_fake(self):

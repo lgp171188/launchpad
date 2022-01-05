@@ -84,11 +84,9 @@ def do_paranoid_email_content_validation(from_addr, to_addrs, subject, body):
     # XXX StuartBishop 2005-03-19:
     # These checks need to be migrated upstream if this bug
     # still exists in modern Z3.
-    assert zisinstance(from_addr, six.string_types), \
-        'Invalid From: %r' % from_addr
-    assert zisinstance(subject, six.string_types), \
-        'Invalid Subject: %r' % subject
-    assert zisinstance(body, six.string_types), 'Invalid body: %r' % body
+    assert zisinstance(from_addr, str), 'Invalid From: %r' % from_addr
+    assert zisinstance(subject, str), 'Invalid Subject: %r' % subject
+    assert zisinstance(body, str), 'Invalid body: %r' % body
 
 
 def do_paranoid_envelope_to_validation(to_addrs):
@@ -102,7 +100,7 @@ def do_paranoid_envelope_to_validation(to_addrs):
     assert (zisinstance(to_addrs, (list, tuple, set))
             and len(to_addrs) > 0), 'Invalid To: %r' % (to_addrs,)
     for addr in to_addrs:
-        assert zisinstance(addr, six.string_types) and bool(addr), \
+        assert zisinstance(addr, str) and bool(addr), \
                 'Invalid recipient: %r in %r' % (addr, to_addrs)
         assert '\n' not in addr, (
             "Address contains carriage returns: %r" % (addr,))
@@ -202,13 +200,13 @@ def simple_sendmail(from_addr, to_addrs, subject, body, headers=None,
     return ctrl.send()
 
 
-class MailController(object):
+class MailController:
     """Message generation interface closer to peoples' mental model."""
 
     def __init__(self, from_addr, to_addrs, subject, body, headers=None,
                  envelope_to=None, bulk=True):
         self.from_addr = from_addr
-        if zisinstance(to_addrs, (bytes, six.text_type)):
+        if zisinstance(to_addrs, (bytes, str)):
             to_addrs = [to_addrs]
         self.to_addrs = to_addrs
         self.envelope_to = envelope_to
@@ -223,7 +221,7 @@ class MailController(object):
     def addAttachment(self, content, content_type='application/octet-stream',
                       inline=False, filename=None, charset=None):
         attachment = Message()
-        if charset and isinstance(content, six.text_type):
+        if charset and isinstance(content, str):
             content = content.encode(charset)
         attachment.add_header('Content-Type', content_type)
         if inline:
@@ -453,9 +451,9 @@ def sendmail(message, to_addrs=None, bulk=True):
 
     raw_message = message_as_bytes(message)
     message_detail = message['Subject']
-    if not isinstance(message_detail, six.string_types):
+    if not isinstance(message_detail, str):
         # Might be a Header object; can be squashed.
-        message_detail = six.text_type(message_detail)
+        message_detail = str(message_detail)
     if _immediate_mail_delivery:
         # Immediate email delivery is not unit tested, and won't be.
         # The immediate-specific stuff is pretty simple though so this
@@ -514,7 +512,7 @@ def raw_sendmail(from_addr, to_addrs, raw_message, message_detail):
     :param message_detail: String of detail about the message
         to be recorded to help with debugging, eg the message subject.
     """
-    assert not isinstance(to_addrs, six.string_types), \
+    assert not isinstance(to_addrs, str), \
         'to_addrs must be a sequence'
     assert isinstance(raw_message, bytes), 'Not a byte string'
     assert raw_message.decode('ascii'), 'Not ASCII - badly encoded message'

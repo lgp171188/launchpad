@@ -32,8 +32,7 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
     def __init__(self, reactor, host, port, proxyConf, contextFactory,
                  timeout=30, bindAddress=None):
         proxyHost, proxyPort, self._proxyAuthHeader = proxyConf
-        super(TunnelingTCP4ClientEndpoint, self).__init__(reactor, proxyHost,
-            proxyPort, timeout, bindAddress)
+        super().__init__(reactor, proxyHost, proxyPort, timeout, bindAddress)
         self._tunneledHost = host
         self._tunneledPort = port
         self._contextFactory = contextFactory
@@ -74,8 +73,7 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
 
     def connect(self, protocolFactory):
         self._protocolFactory = protocolFactory
-        self._connectDeferred = super(
-            TunnelingTCP4ClientEndpoint, self).connect(protocolFactory)
+        self._connectDeferred = super().connect(protocolFactory)
         self._connectDeferred.addCallback(self.requestTunnel)
         self._connectDeferred.addErrback(self.connectFailed)
         return self._tunnelReadyDeferred
@@ -88,7 +86,7 @@ class TunnelingAgent(Agent):
 
     def __init__(self, reactor, proxyConf, contextFactory=None,
                  connectTimeout=None, bindAddress=None, pool=None):
-        super(TunnelingAgent, self).__init__(reactor, contextFactory,
+        super().__init__(reactor, contextFactory,
             connectTimeout, bindAddress, pool)
         self._contextFactory = contextFactory
         self._connectTimeout = connectTimeout

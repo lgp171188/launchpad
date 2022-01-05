@@ -192,7 +192,7 @@ class TxSwiftStream(swift.SwiftStream):
         return return_chunk
 
 
-class LibraryFileUpload(object):
+class LibraryFileUpload:
     """A file upload from a client."""
     srcDigest = None
     mimetype = 'unknown/unknown'

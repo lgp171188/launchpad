@@ -29,7 +29,7 @@ class TestChangeLogView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestChangeLogView, self).setUp()
+        super().setUp()
         self.root = getUtility(ILaunchpadRoot)
         self.person = self.factory.makePerson()
 

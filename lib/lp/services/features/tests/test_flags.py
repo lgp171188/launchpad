@@ -21,13 +21,13 @@ from lp.testing import (
 
 
 notification_name = 'notification.global.text'
-notification_value = u'\N{SNOWMAN} stormy Launchpad weather ahead'
+notification_value = '\N{SNOWMAN} stormy Launchpad weather ahead'
 
 
 testdata = [
     (notification_name, 'beta_user', 100, notification_value),
-    ('ui.icing', 'default', 100, u'3.0'),
-    ('ui.icing', 'beta_user', 300, u'4.0'),
+    ('ui.icing', 'default', 100, '3.0'),
+    ('ui.icing', 'beta_user', 300, '4.0'),
     ]
 
 
@@ -36,7 +36,7 @@ class TestFeatureFlags(TestCase):
     layer = layers.DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestFeatureFlags, self).setUp()
+        super().setUp()
         if os.environ.get("STORM_TRACE", None):
             from storm.tracer import debug
             debug(True)
@@ -57,7 +57,7 @@ class TestFeatureFlags(TestCase):
     def test_getFlag(self):
         self.populateStore()
         control, call_log = self.makeControllerInScopes(['default'])
-        self.assertEqual(u'3.0',
+        self.assertEqual('3.0',
             control.getFlag('ui.icing'))
         self.assertEqual(['beta_user', 'default'], call_log)
 
@@ -65,12 +65,12 @@ class TestFeatureFlags(TestCase):
         # for use in page templates, the flags can be treated as a dict
         self.populateStore()
         control, call_log = self.makeControllerInScopes(['default'])
-        self.assertEqual(u'3.0',
+        self.assertEqual('3.0',
             control['ui.icing'])
         self.assertEqual(['beta_user', 'default'], call_log)
         # after looking this up the value is known and the scopes are
         # positively and negatively cached
-        self.assertEqual({'ui.icing': u'3.0'}, control.usedFlags())
+        self.assertEqual({'ui.icing': '3.0'}, control.usedFlags())
         self.assertEqual(dict(beta_user=False, default=True),
             control.usedScopes())
 
@@ -129,12 +129,12 @@ class TestFeatureFlags(TestCase):
         self.populateStore()
         default_control, call_log = self.makeControllerInScopes(['default'])
         self.assertEqual(
-            u'3.0',
+            '3.0',
             default_control.getFlag('ui.icing'))
         beta_control, call_log = self.makeControllerInScopes(
             ['beta_user', 'default'])
         self.assertEqual(
-            u'4.0',
+            '4.0',
             beta_control.getFlag('ui.icing'))
 
     def test_undefinedFlag(self):
@@ -157,7 +157,7 @@ class TestFeatureFlags(TestCase):
         try:
             # then application code can simply ask without needing a context
             # object
-            self.assertEqual(u'4.0', getFeatureFlag('ui.icing'))
+            self.assertEqual('4.0', getFeatureFlag('ui.icing'))
         finally:
             install_feature_controller(None)
 
@@ -172,7 +172,7 @@ class TestFeatureFlags(TestCase):
         # when it will make a difference to the result.
         self.populateStore()
         f, call_log = self.makeControllerInScopes(['beta_user'])
-        self.assertEqual(u'4.0', f.getFlag('ui.icing'))
+        self.assertEqual('4.0', f.getFlag('ui.icing'))
         # to calculate this it should only have had to check we're in the
         # beta_users scope; nothing else makes a difference
         self.assertEqual(dict(beta_user=True), f._known_scopes._known)
@@ -201,9 +201,9 @@ class TestFeatureFlags(TestCase):
 
 test_rules_list = [
     (notification_name, 'beta_user', 100, notification_value),
-    ('ui.icing', 'normal_user', 500, u'5.0'),
-    ('ui.icing', 'beta_user', 300, u'4.0'),
-    ('ui.icing', 'default', 100, u'3.0'),
+    ('ui.icing', 'normal_user', 500, '5.0'),
+    ('ui.icing', 'beta_user', 300, '4.0'),
+    ('ui.icing', 'default', 100, '3.0'),
     ]
 
 

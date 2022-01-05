@@ -11,14 +11,12 @@ __all__ = [
 
 from bs4 import BeautifulSoup as _BeautifulSoup
 from bs4.element import SoupStrainer
-import six
 
 
 class BeautifulSoup(_BeautifulSoup):
 
     def __init__(self, markup="", features="html.parser", **kwargs):
-        if (not isinstance(markup, six.text_type) and
+        if (not isinstance(markup, str) and
                 "from_encoding" not in kwargs):
             kwargs["from_encoding"] = "UTF-8"
-        super(BeautifulSoup, self).__init__(
-            markup=markup, features=features, **kwargs)
+        super().__init__(markup=markup, features=features, **kwargs)

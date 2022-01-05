@@ -111,7 +111,7 @@ def guess(s):
 
     # Calling this method with a Unicode argument indicates a hidden bug
     # that will bite you eventually -- StuartBishop 20050709
-    if isinstance(s, six.text_type):
+    if isinstance(s, str):
         raise TypeError(
                 'encoding.guess called with Unicode string %r' % (s,)
                 )
@@ -120,7 +120,7 @@ def guess(s):
     # that can encode themselves as ASCII.
     if not isinstance(s, bytes):
         try:
-            return six.text_type(s)
+            return str(s)
         except UnicodeDecodeError:
             pass
 
@@ -128,32 +128,32 @@ def guess(s):
     try:
         for bom, encoding in _boms:
             if s.startswith(bom):
-                return six.text_type(s[len(bom):], encoding)
+                return str(s[len(bom):], encoding)
     except UnicodeDecodeError:
         pass
 
     # Try preferred encoding
     try:
-        return six.text_type(s, 'UTF-8')
+        return str(s, 'UTF-8')
     except UnicodeDecodeError:
         pass
 
     # If we have characters in this range, it is probably CP1252
     if re.search(br"[\x80-\x9f]", s) is not None:
         try:
-            return six.text_type(s, 'CP1252')
+            return str(s, 'CP1252')
         except UnicodeDecodeError:
             pass
 
     # If we have characters in this range, it is probably ISO-8859-15
     if re.search(br"[\xa4\xa6\xa8\xb4\xb8\xbc-\xbe]", s) is not None:
         try:
-            return six.text_type(s, 'ISO-8859-15')
+            return str(s, 'ISO-8859-15')
         except UnicodeDecodeError:
             pass
 
     # Otherwise we default to ISO-8859-1
-    return six.text_type(s, 'ISO-8859-1', 'replace')
+    return str(s, 'ISO-8859-1', 'replace')
 
 
 def escape_nonascii_uniquely(bogus_string):
@@ -223,7 +223,7 @@ def wsgi_native_string(s):
     Python 2, we enforce this here.
     """
     result = six.ensure_str(s, encoding='ISO-8859-1')
-    if isinstance(s, six.text_type):
+    if isinstance(s, str):
         # Ensure we're limited to ISO-8859-1.
         result.encode('ISO-8859-1')
     return result

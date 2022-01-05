@@ -107,7 +107,7 @@ class FakeLogger:
         return self.loglevel
 
     def _format_message(self, msg, *args):
-        if not isinstance(msg, six.string_types):
+        if not isinstance(msg, str):
             msg = str(msg)
         # To avoid type errors when the msg has % values and args is empty,
         # don't expand the string with empty args.
@@ -196,7 +196,7 @@ class BufferLogger(FakeLogger):
     # service.
 
     def __init__(self):
-        super(BufferLogger, self).__init__(six.StringIO())
+        super().__init__(six.StringIO())
 
     def getLogBuffer(self):
         """Return the existing log messages."""

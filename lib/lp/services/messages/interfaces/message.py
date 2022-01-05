@@ -138,7 +138,7 @@ class IMessageView(IMessageCommon):
     title = TextLine(
         title=_('The message title, usually just the subject.'),
         readonly=True)
-    visible = Bool(title=u"This message is visible or not.", required=False,
+    visible = Bool(title="This message is visible or not.", required=False,
         default=True)
 
     bugattachments = exported(

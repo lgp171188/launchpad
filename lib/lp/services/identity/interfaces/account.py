@@ -295,7 +295,7 @@ class AccountStatusChoice(Choice):
             raise AccountStatusError(
                 "The status cannot change from %s to %s" %
                 (removeSecurityProxy(self.context).status, value))
-        super(AccountStatusChoice, self)._validate(value)
+        super()._validate(value)
 
 
 class IAccountPublic(Interface):

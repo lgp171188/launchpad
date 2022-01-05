@@ -31,7 +31,7 @@ class MacaroonVerifies(Matcher):
     """Matches if a macaroon can be verified."""
 
     def __init__(self, issuer_name, context, matcher=None, **verify_kwargs):
-        super(MacaroonVerifies, self).__init__()
+        super().__init__()
         self.issuer_name = issuer_name
         self.context = context
         self.matcher = matcher

@@ -48,7 +48,7 @@ defaultResource = static.Data(b"""
         <p><small>Copyright 2004-2021 Canonical Ltd.</small></p>
         <!-- kthxbye. -->
         </body></html>
-        """, type=six.ensure_str('text/html'))
+        """, type='text/html')
 fourOhFour = resource.NoResource('No such resource')
 
 
@@ -258,7 +258,7 @@ class File(resource.Resource):
 
 
 @implementer(IPushProducer)
-class FileProducer(object):
+class FileProducer:
 
     buffer_size = abstract.FileDescriptor.bufferSize
 
@@ -314,7 +314,7 @@ class DigestSearchResource(resource.Resource):
             digest = six.ensure_text(request.args[b'digest'][0])
         except (LookupError, UnicodeDecodeError):
             return static.Data(
-                b'Bad search', six.ensure_str('text/plain')).render(request)
+                b'Bad search', 'text/plain').render(request)
 
         deferred = deferToThread(self._matchingAliases, digest)
         deferred.addCallback(self._cb_matchingAliases, request)
@@ -333,7 +333,7 @@ class DigestSearchResource(resource.Resource):
         text = '\n'.join([str(len(matches))] + matches)
         response = static.Data(
             text.encode('utf-8'),
-            six.ensure_str('text/plain; charset=utf-8')).render(request)
+            'text/plain; charset=utf-8').render(request)
         request.write(response)
         request.finish()
 
@@ -342,7 +342,7 @@ class DigestSearchResource(resource.Resource):
 robotsTxt = static.Data(b"""
 User-agent: *
 Disallow: /
-""", type=six.ensure_str('text/plain'))
+""", type='text/plain')
 
 
 def _eb(failure, request):

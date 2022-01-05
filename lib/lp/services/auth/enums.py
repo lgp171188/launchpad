@@ -3,7 +3,6 @@
 
 """Enumerations used in lp.services.auth."""
 
-__metaclass__ = type
 __all__ = [
     "AccessTokenScope",
     ]

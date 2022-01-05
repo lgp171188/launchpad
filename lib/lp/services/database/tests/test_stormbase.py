@@ -36,7 +36,7 @@ class TestStormBase(TestCase):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestStormBase, self).setUp()
+        super().setUp()
         self.store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         self.store.execute("CREATE TABLE StormExample (id serial PRIMARY KEY)")
 

@@ -34,7 +34,7 @@ class LibrarianStorageDBTests(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(LibrarianStorageDBTests, self).setUp()
+        super().setUp()
         switch_dbuser('librarian')
         self.directory = self.useFixture(TempDir()).path
         self.storage = LibrarianStorage(self.directory, db.Library())
@@ -146,7 +146,7 @@ class LibrarianStorageSwiftTests(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(LibrarianStorageSwiftTests, self).setUp()
+        super().setUp()
         switch_dbuser('librarian')
         self.swift_fixture = self.useFixture(SwiftFixture())
         self.useFixture(FeatureFixture({'librarian.swift.enabled': True}))

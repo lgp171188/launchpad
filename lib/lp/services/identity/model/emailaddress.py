@@ -87,7 +87,7 @@ class EmailAddress(SQLBase, HasOwnerMixin):
         for subscription in store.find(
                 MailingListSubscription, email_address=self):
             store.remove(subscription)
-        super(EmailAddress, self).destroySelf()
+        super().destroySelf()
 
     @property
     def rdf_sha1(self):

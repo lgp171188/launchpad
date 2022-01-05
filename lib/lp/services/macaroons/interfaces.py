@@ -23,7 +23,7 @@ class BadMacaroonContext(Exception):
     def __init__(self, context, message=None):
         if message is None:
             message = "Cannot handle context %r." % context
-        super(BadMacaroonContext, self).__init__(message)
+        super().__init__(message)
         self.context = context
 
 

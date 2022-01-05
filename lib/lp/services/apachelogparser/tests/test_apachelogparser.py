@@ -408,7 +408,7 @@ class TestParsedFilesDetection(TestCase):
     file_path = os.path.join(root, 'launchpadlibrarian.net.access-log')
 
     def setUp(self):
-        super(TestParsedFilesDetection, self).setUp()
+        super().setUp()
         switch_dbuser(DBUSER)
 
     def test_sorts_by_mtime(self):
@@ -515,14 +515,14 @@ class Test_create_or_update_parsedlog_entry(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(Test_create_or_update_parsedlog_entry, self).setUp()
+        super().setUp()
         switch_dbuser(DBUSER)
 
     def test_creation_of_new_entries(self):
         # When given a first_line that doesn't exist in the ParsedApacheLog
         # table, create_or_update_parsedlog_entry() will create a new entry
         # with the given number of bytes read.
-        first_line = u'First line'
+        first_line = 'First line'
         create_or_update_parsedlog_entry(
             first_line, parsed_bytes=len(first_line))
 
@@ -535,7 +535,7 @@ class Test_create_or_update_parsedlog_entry(TestCase):
         # When given a first_line that already exists in the ParsedApacheLog
         # table, create_or_update_parsedlog_entry() will update that entry
         # with the given number of bytes read.
-        first_line = u'First line'
+        first_line = 'First line'
         create_or_update_parsedlog_entry(first_line, parsed_bytes=2)
         store = IStore(ParsedApacheLog)
         entry = store.find(ParsedApacheLog, first_line=first_line).one()

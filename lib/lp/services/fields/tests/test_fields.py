@@ -99,13 +99,13 @@ class TestStrippableText(TestCase):
         # The minimum length constraint tests the stripped string.
         field = StrippableText(
             __name__='test', strip_text=True, min_length=1)
-        self.assertRaises(TooShort, field.validate, u'  ')
+        self.assertRaises(TooShort, field.validate, '  ')
 
     def test_validate_max_contraints(self):
         # The minimum length constraint tests the stripped string.
         field = StrippableText(
             __name__='test', strip_text=True, max_length=2)
-        self.assertEqual(None, field.validate(u'  a  '))
+        self.assertEqual(None, field.validate('  a  '))
 
 
 class TestWorkItemsTextValidation(TestCaseWithFactory):
@@ -113,7 +113,7 @@ class TestWorkItemsTextValidation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestWorkItemsTextValidation, self).setUp()
+        super().setUp()
         self.field = WorkItemsText(__name__='test')
 
     def test_parseandvalidate(self):
@@ -198,7 +198,7 @@ class TestWorkItemsTextValidation(TestCaseWithFactory):
 class TestWorkItemsText(TestCase):
 
     def setUp(self):
-        super(TestWorkItemsText, self).setUp()
+        super().setUp()
         self.field = WorkItemsText(__name__='test')
 
     def test_validate_raises_LaunchpadValidationError(self):
@@ -431,10 +431,10 @@ class TestBlacklistableContentNameField(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestBlacklistableContentNameField, self).setUp()
+        super().setUp()
         name_blacklist_set = getUtility(INameBlacklistSet)
         self.team = self.factory.makeTeam()
-        admin_exp = name_blacklist_set.create(u'fnord', admin=self.team)
+        admin_exp = name_blacklist_set.create('fnord', admin=self.team)
         IStore(admin_exp).flush()
 
     def makeTestField(self):
@@ -455,7 +455,7 @@ class TestBlacklistableContentNameField(TestCaseWithFactory):
         # Anonymous users, processes, cannot create a name that matches
         # a blacklisted name.
         field = self.makeTestField()
-        date_value = u'fnord'
+        date_value = 'fnord'
         self.assertRaises(
             LaunchpadValidationError, field.validate, date_value)
 
@@ -463,7 +463,7 @@ class TestBlacklistableContentNameField(TestCaseWithFactory):
         # Users who do not adminster a blacklisted name cannot create
         # a matching name.
         field = self.makeTestField()
-        date_value = u'fnord'
+        date_value = 'fnord'
         login_person(self.factory.makePerson())
         self.assertRaises(
             LaunchpadValidationError, field.validate, date_value)
@@ -472,7 +472,7 @@ class TestBlacklistableContentNameField(TestCaseWithFactory):
         # Users in the team that adminsters a blacklisted name may create
         # matching names.
         field = self.makeTestField()
-        date_value = u'fnord'
+        date_value = 'fnord'
         login_person(self.team.teamowner)
         self.assertEqual(None, field.validate(date_value))
 

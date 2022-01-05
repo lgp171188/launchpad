@@ -21,7 +21,7 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestLibraryFileAliasForBugAttachment, self).setUp()
+        super().setUp()
         self.bug_owner = self.factory.makePerson()
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(

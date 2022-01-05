@@ -15,7 +15,6 @@ import http.client
 from io import BytesIO
 import os
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
@@ -449,7 +448,7 @@ class GPGHandler:
         # XXX michaeln 2010-05-07 bug=576405
         # Currently gpgme.Context().keylist fails if passed a unicode
         # string even though that's what is returned for fingerprints.
-        if isinstance(filter, six.text_type):
+        if isinstance(filter, str):
             filter = filter.encode('utf-8')
 
         with gpgme_timeline(
@@ -499,7 +498,7 @@ class GPGHandler:
 
         try:
             conn.request("POST", "/pks/add", params, headers)
-        except socket.error as err:
+        except OSError as err:
             raise GPGUploadFailure(
                 'Could not reach keyserver at http://%s %s' % (
                     keyserver_http_url, str(err)))
@@ -581,7 +580,7 @@ class GPGHandler:
 
 
 @implementer(IPymeSignature)
-class PymeSignature(object):
+class PymeSignature:
     """See IPymeSignature."""
 
     def __init__(self, fingerprint=None, plain_data=None, timestamp=None):

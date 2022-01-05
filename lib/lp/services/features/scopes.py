@@ -294,7 +294,7 @@ class ScopesFromRequest(MultiScopeHandler):
             TeamScope(person_from_request),
             UserSliceScope(person_from_request),
             ])
-        super(ScopesFromRequest, self).__init__(scopes)
+        super().__init__(scopes)
 
 
 class ScopesForScript(MultiScopeHandler):
@@ -303,4 +303,4 @@ class ScopesForScript(MultiScopeHandler):
     def __init__(self, script_name):
         scopes = list(default_scopes)
         scopes.append(ScriptScope(script_name))
-        super(ScopesForScript, self).__init__(scopes)
+        super().__init__(scopes)

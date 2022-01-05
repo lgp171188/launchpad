@@ -29,7 +29,7 @@ class ProcessSingleJobSource(LaunchpadCronScript):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ProcessSingleJobSource, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # The fromlist argument is necessary so that __import__()
         # returns the bottom submodule instead of the top one.
         module = __import__(self.config_section.module,
@@ -76,7 +76,7 @@ class ProcessSingleJobSource(LaunchpadCronScript):
             self.parser.print_help()
             sys.exit(1)
         self.job_source_name = self.args[0]
-        super(ProcessSingleJobSource, self).handle_options()
+        super().handle_options()
 
     def job_counts(self, jobs):
         """Return a list of tuples containing the job name and counts."""
@@ -99,7 +99,7 @@ class ProcessSingleJobSource(LaunchpadCronScript):
         references across calls to this method.
         """
         disconnect_stores()
-        super(ProcessSingleJobSource, self)._init_db(isolation)
+        super()._init_db(isolation)
 
     def main(self):
         errorlog.globalErrorUtility.configure(self.config_name)
@@ -138,7 +138,7 @@ class ProcessJobSource(LaunchpadScript):
             self.parser.print_help()
             sys.exit(1)
         self.job_source_names = self.args
-        super(ProcessJobSource, self).handle_options()
+        super().handle_options()
 
     def main(self):
         if self.options.verbose:

@@ -42,7 +42,7 @@ class DuplicatePriorityError(Exception):
             self.flag, self.priority)
 
 
-class FeatureRuleSource(object):
+class FeatureRuleSource:
     """Access feature rule sources from the database or elsewhere."""
 
     def getAllRulesAsDict(self):
