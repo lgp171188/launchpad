@@ -56,16 +56,10 @@ def text_replaced(text, replacements, _cache={}):
     cachekey = tuple(replacements.items())
     if cachekey not in _cache:
         L = []
-        if isinstance(text, six.text_type):
-            list_item = u'(%s)'
-            join_char = u'|'
-        else:
-            list_item = '(%s)'
-            join_char = '|'
         for find, replace in sorted(replacements.items(),
                                     key=lambda item: len(item[0]),
                                     reverse=True):
-            L.append(list_item % re.escape(find))
+            L.append('(%s)' % re.escape(find))
         # Make a copy of the replacements dict, as it is mutable, but we're
         # keeping a cached reference to it.
         replacements_copy = dict(replacements)
@@ -73,7 +67,7 @@ def text_replaced(text, replacements, _cache={}):
         def matchobj_replacer(matchobj):
             return replacements_copy[matchobj.group()]
 
-        regexsub = re.compile(join_char.join(L)).sub
+        regexsub = re.compile('|'.join(L)).sub
 
         def replacer(s):
             return regexsub(matchobj_replacer, s)
