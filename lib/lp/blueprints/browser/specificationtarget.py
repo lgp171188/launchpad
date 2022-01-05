@@ -13,10 +13,7 @@ __all__ = [
 
 from operator import itemgetter
 
-from lazr.restful.utils import (
-    safe_hasattr,
-    smartquote,
-    )
+from lazr.restful.utils import smartquote
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     getMultiAdapter,
@@ -161,7 +158,7 @@ class HasSpecificationsView(LaunchpadView):
         # zope.browserpage.simpleviewclass.simple class that is magically
         # mixed in by the browser:page zcml directive the template defined in
         # the directive should be used.
-        if safe_hasattr(self, 'index'):
+        if hasattr(self, 'index'):
             return super().template
 
         # Sprints and Persons don't have a usage enum for blueprints, so we

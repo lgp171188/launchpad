@@ -326,12 +326,6 @@ Prefer `operator.attrgetter
 ``lambda``.  Remember that giving functions names makes the code that calls,
 passes and returns them easier to debug.
 
-Use of hasattr
-==============
-
-Use ``safe_hasattr`` from ``lazr.restful.utils`` instead of the built-in
-``hasattr`` function because the latter swallows exceptions.
-
 Database-related
 ================
 

@@ -12,7 +12,6 @@ import threading
 import time
 import traceback
 
-from lazr.restful.utils import safe_hasattr
 from lazr.uri import (
     InvalidURIError,
     URI,
@@ -410,7 +409,7 @@ class LaunchpadBrowserPublication(
             # is accessible in the instance __name__ attribute. We use
             # that if it's available, otherwise fall back to the class
             # name.
-            if safe_hasattr(view, '__name__'):
+            if hasattr(view, '__name__'):
                 view_name = view.__name__
             else:
                 view_name = view.__class__.__name__
@@ -419,7 +418,7 @@ class LaunchpadBrowserPublication(
             context_name = context.__class__.__name__
             # Is this a view of a generated view class,
             # such as ++model++ view of Product:+bugs. Recurse!
-            if ' ' in context_name and safe_hasattr(context, 'context'):
+            if ' ' in context_name and hasattr(context, 'context'):
                 return self.constructPageID(context, context.context, names)
             view_names = ':'.join(names)
             pageid = '%s:%s' % (context_name, view_names)

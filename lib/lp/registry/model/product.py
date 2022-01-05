@@ -18,7 +18,6 @@ import operator
 
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.restful.declarations import error_status
-from lazr.restful.utils import safe_hasattr
 import pytz
 from storm.expr import (
     And,
@@ -1531,13 +1530,13 @@ def get_precached_products(products, need_licences=False,
     caches = {product.id: get_property_cache(product)
         for product in products}
     for cache in caches.values():
-        if not safe_hasattr(cache, 'commercial_subscription'):
+        if not hasattr(cache, 'commercial_subscription'):
             cache.commercial_subscription = None
-        if need_licences and  not safe_hasattr(cache, '_cached_licenses'):
+        if need_licences and  not hasattr(cache, '_cached_licenses'):
             cache._cached_licenses = []
-        if need_packages and not safe_hasattr(cache, 'distrosourcepackages'):
+        if need_packages and not hasattr(cache, 'distrosourcepackages'):
             cache.distrosourcepackages = []
-        if need_series and not safe_hasattr(cache, 'series'):
+        if need_series and not hasattr(cache, 'series'):
             cache.series = []
 
     from lp.registry.model.distributionsourcepackage import (
@@ -1559,8 +1558,7 @@ def get_precached_products(products, need_licences=False,
             ProductSeries,
             ProductSeries.productID.is_in(product_ids)):
             series_cache = get_property_cache(series)
-            if (need_releases and
-                not safe_hasattr(series_cache, '_cached_releases')):
+            if need_releases and not hasattr(series_cache, '_cached_releases'):
                 series_cache._cached_releases = []
 
             series_caches[series.id] = series_cache
@@ -1573,7 +1571,7 @@ def get_precached_products(products, need_licences=False,
             for milestone, release, product_id in milestones_and_releases:
                 release_cache = get_property_cache(release)
                 release_caches[release.id] = release_cache
-                if not safe_hasattr(release_cache, 'files'):
+                if not hasattr(release_cache, 'files'):
                     release_cache.files = []
                 all_releases.append(release)
                 series_cache = series_caches[milestone.productseries.id]

@@ -6,7 +6,6 @@ __all__ = ['ParseApacheLogs']
 import glob
 import os
 
-from lazr.restful.utils import safe_hasattr
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -115,10 +114,7 @@ class ParseApacheLogs(LaunchpadCronScript):
             fd.close()
             create_or_update_parsedlog_entry(first_line, parsed_bytes)
             self.txn.commit()
-            if safe_hasattr(fd, 'name'):
-                name = fd.name
-            else:
-                name = fd
+            name = getattr(fd, 'name', fd)
             self.logger.info('Finished parsing %s' % name)
 
         self.logger.info('Done parsing apache log files')
