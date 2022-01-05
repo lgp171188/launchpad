@@ -120,7 +120,7 @@ class TestDKIM(TestCaseWithFactory):
             key = b'abcdefg'
         else:
             raise ValueError(response_type)
-        self._dns_responses[u'example._domainkey.canonical.com.'] = key
+        self._dns_responses['example._domainkey.canonical.com.'] = key
 
     def get_dkim_log(self):
         return self._log_output.getvalue()

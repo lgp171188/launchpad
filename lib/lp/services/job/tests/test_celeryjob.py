@@ -27,7 +27,7 @@ class TestRunMissingJobs(TestCaseWithFactory):
     layer = ZopelessAppServerLayer
 
     def setUp(self):
-        super(TestRunMissingJobs, self).setUp()
+        super().setUp()
         from lp.services.job.celeryjob import (
             find_missing_ready,
             run_missing_ready,

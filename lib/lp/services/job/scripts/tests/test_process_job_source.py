@@ -49,7 +49,7 @@ class ProcessJobSourceTest(TestCaseWithFactory):
     script = 'cronscripts/process-job-source.py'
 
     def tearDown(self):
-        super(ProcessJobSourceTest, self).tearDown()
+        super().tearDown()
         self.layer.force_dirty_database()
 
     def test_missing_argument(self):
@@ -128,7 +128,7 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
         return sorted(set(sources))
 
     def tearDown(self):
-        super(ProcessJobSourceGroupsTest, self).tearDown()
+        super().tearDown()
         self.layer.force_dirty_database()
 
     def test_missing_argument(self):

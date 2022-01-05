@@ -101,7 +101,7 @@ class LibrarianZopelessWebTestMixin(LibrarianWebTestMixin):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(LibrarianZopelessWebTestMixin, self).setUp()
+        super().setUp()
         switch_dbuser(config.librarian.dbuser)
 
     def commit(self):
@@ -157,7 +157,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         # displaying Ubuntu build logs in the browser.  The mimetype should be
         # "text/plain" for these files.
         client = LibrarianClient()
-        contents = 'Build log \N{SNOWMAN}...'.encode('UTF-8')
+        contents = 'Build log \N{SNOWMAN}...'.encode()
         build_log = BytesIO()
         with GzipFile(mode='wb', fileobj=build_log) as f:
             f.write(contents)
@@ -491,7 +491,7 @@ class LibrarianWebMacaroonTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
     layer = AppServerLayer
 
     def setUp(self):
-        super(LibrarianWebMacaroonTestCase, self).setUp()
+        super().setUp()
         # Copy launchpad.internal_macaroon_secret_key from the appserver
         # config so that we can issue macaroons using it.
         with ConfigUseFixture(self.layer.appserver_config_name):
@@ -553,7 +553,7 @@ class DeletedContentTestCase(unittest.TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(DeletedContentTestCase, self).setUp()
+        super().setUp()
         switch_dbuser(config.librarian.dbuser)
 
     def test_deletedContentNotFound(self):

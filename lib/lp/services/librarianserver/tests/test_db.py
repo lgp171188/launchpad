@@ -31,7 +31,7 @@ class DBTestCase(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(DBTestCase, self).setUp()
+        super().setUp()
         switch_dbuser('librarian')
 
     def test_lookupByDigest(self):
@@ -93,7 +93,7 @@ class TestLibrarianStuff(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
-        super(TestLibrarianStuff, self).setUp()
+        super().setUp()
         switch_dbuser('librarian')
         self.store = IStore(LibraryFileContent)
         self.content_id = db.Library().add('deadbeef', 1234, 'abababab', 'ba')

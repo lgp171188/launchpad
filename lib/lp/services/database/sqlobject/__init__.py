@@ -6,7 +6,6 @@
 # SKIP this file when reformatting, due to the sys mangling.
 import datetime
 
-import six
 from storm.expr import SQL
 from storm.sqlobject import *  # noqa: F401,F403
 
@@ -32,7 +31,7 @@ def sqlrepr(value, dbname=None):
         return value.getquoted()
     elif isinstance(value, SQL):
         return value.expr
-    elif isinstance(value, six.string_types):
+    elif isinstance(value, str):
         for orig, repl in _sqlStringReplace:
             value = value.replace(orig, repl)
         return "E'%s'" % value

@@ -146,7 +146,7 @@ class LibrarianServerFixture(TacTestSetup):
             os.makedirs(self.root, 0o700)
 
     def _waitForDaemonStartup(self):
-        super(LibrarianServerFixture, self)._waitForDaemonStartup()
+        super()._waitForDaemonStartup()
         # Expose the dynamically allocated ports, if we used them.
         if not self._dynamic_config():
             self.download_port = config.librarian.download_port

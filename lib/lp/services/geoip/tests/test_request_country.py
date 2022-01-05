@@ -29,21 +29,21 @@ class RequestCountryTestCase(unittest.TestCase):
 
     def testRemoteAddr(self):
         country = request_country({'REMOTE_ADDR': self.lp})
-        self.assertEqual(country.name, u'United Kingdom')
+        self.assertEqual(country.name, 'United Kingdom')
 
     def testXForwardedFor(self):
         country = request_country({
                 'HTTP_X_FORWARDED_FOR': self.lp,
                 'REMOTE_ADDR': '1.2.3.4',
                 })
-        self.assertEqual(country.name, u'United Kingdom')
+        self.assertEqual(country.name, 'United Kingdom')
 
     def testNestedProxies(self):
         country = request_country({
                 'HTTP_X_FORWARDED_FOR':
                     'localhost, 127.0.0.1, %s, 1,1,1,1' % self.lp,
                 })
-        self.assertEqual(country.name, u'United Kingdom')
+        self.assertEqual(country.name, 'United Kingdom')
 
     def testMissingHeaders(self):
         country = request_country({})

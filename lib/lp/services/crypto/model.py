@@ -15,7 +15,6 @@ from nacl.public import (
     PublicKey,
     SealedBox,
     )
-import six
 from zope.interface import implementer
 
 from lp.services.crypto.interfaces import (
@@ -46,7 +45,7 @@ class NaClEncryptedContainerBase:
             try:
                 return PublicKey(self.public_key_bytes)
             except NaClCryptoError as e:
-                six.raise_from(CryptoError(str(e)), e)
+                raise CryptoError(str(e)) from e
         else:
             return None
 
@@ -64,7 +63,7 @@ class NaClEncryptedContainerBase:
         try:
             data_encrypted = SealedBox(self.public_key).encrypt(data)
         except NaClCryptoError as e:
-            six.raise_from(CryptoError(str(e)), e)
+            raise CryptoError(str(e)) from e
         return (
             base64.b64encode(self.public_key_bytes).decode("UTF-8"),
             base64.b64encode(data_encrypted).decode("UTF-8"))
@@ -84,7 +83,7 @@ class NaClEncryptedContainerBase:
             try:
                 return PrivateKey(self.private_key_bytes)
             except NaClCryptoError as e:
-                six.raise_from(CryptoError(str(e)), e)
+                raise CryptoError(str(e)) from e
         else:
             return None
 
@@ -102,7 +101,7 @@ class NaClEncryptedContainerBase:
             public_key_bytes = base64.b64decode(public_key.encode("UTF-8"))
             encrypted_bytes = base64.b64decode(encrypted.encode("UTF-8"))
         except TypeError as e:
-            six.raise_from(CryptoError(str(e)), e)
+            raise CryptoError(str(e)) from e
         if public_key_bytes != self.public_key_bytes:
             raise ValueError(
                 "Public key %r does not match configured public key %r" %
@@ -112,4 +111,4 @@ class NaClEncryptedContainerBase:
         try:
             return SealedBox(self.private_key).decrypt(encrypted_bytes)
         except NaClCryptoError as e:
-            six.raise_from(CryptoError(str(e)), e)
+            raise CryptoError(str(e)) from e

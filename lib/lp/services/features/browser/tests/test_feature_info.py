@@ -124,7 +124,7 @@ class TestUndocumentedFeatureFlags(TestCase):
     """Test the code that records accessing of undocumented feature flags."""
 
     def setUp(self):
-        super(TestUndocumentedFeatureFlags, self).setUp()
+        super().setUp()
         # Stash away any already encountered undocumented flags.
         saved_undocumented = undocumented_flags.copy()
         saved_documented = documented_flags.copy()

@@ -3,7 +3,6 @@
 
 """Personal access token interfaces."""
 
-__metaclass__ = type
 __all__ = [
     "IAccessToken",
     "IAccessTokenSet",

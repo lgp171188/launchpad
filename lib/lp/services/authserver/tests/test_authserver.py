@@ -165,7 +165,7 @@ class MacaroonTests(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(MacaroonTests, self).setUp()
+        super().setUp()
         self.issuer = DummyMacaroonIssuer()
         self.useFixture(ZopeUtilityFixture(
             self.issuer, IMacaroonIssuer, name='test'))

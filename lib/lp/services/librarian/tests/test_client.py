@@ -63,7 +63,7 @@ class PropagatingThread(threading.Thread):
             self.exc = e
 
     def join(self):
-        super(PropagatingThread, self).join()
+        super().join()
         if self.exc:
             raise self.exc
 
@@ -71,7 +71,7 @@ class PropagatingThread(threading.Thread):
 class InstrumentedLibrarianClient(LibrarianClient):
 
     def __init__(self, *args, **kwargs):
-        super(InstrumentedLibrarianClient, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.check_error_calls = 0
 
     sentDatabaseName = False
@@ -89,7 +89,7 @@ class InstrumentedLibrarianClient(LibrarianClient):
 
     def _checkError(self):
         self.check_error_calls += 1
-        super(InstrumentedLibrarianClient, self)._checkError()
+        super()._checkError()
 
 
 def make_mock_file(error, max_raise):
@@ -118,7 +118,7 @@ class FakeServerTestSetup(TacTestSetup):
 
     def setUp(self):
         self.port = None
-        super(FakeServerTestSetup, self).setUp()
+        super().setUp()
 
     def setUpRoot(self):
         pass
@@ -143,7 +143,7 @@ class FakeServerTestSetup(TacTestSetup):
         pass
 
     def _hasDaemonStarted(self):
-        if super(FakeServerTestSetup, self)._hasDaemonStarted():
+        if super()._hasDaemonStarted():
             with open(self.logfile) as logfile:
                 self.port = int(re.search(
                     r"Site starting on (\d+)", logfile.read()).group(1))
@@ -198,7 +198,7 @@ class EchoServer(threading.Thread):
     during the upload process.
     """
     def __init__(self):
-        super(EchoServer, self).__init__()
+        super().__init__()
         self.should_stop = False
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.settimeout(1)
@@ -208,7 +208,7 @@ class EchoServer(threading.Thread):
 
     def join(self, *args, **kwargs):
         self.should_stop = True
-        super(EchoServer, self).join(*args, **kwargs)
+        super().join(*args, **kwargs)
 
     def run(self):
         while not self.should_stop:

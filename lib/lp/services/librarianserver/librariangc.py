@@ -18,7 +18,6 @@ from time import time
 
 import iso8601
 import pytz
-import six
 from swiftclient import client as swiftclient
 from zope.interface import implementer
 
@@ -904,7 +903,7 @@ def delete_unwanted_swift_files(con):
 def get_file_path(content_id):
     """Return the physical file path to the matching LibraryFileContent id.
     """
-    assert isinstance(content_id, six.integer_types), (
+    assert isinstance(content_id, int), (
         'Invalid content_id %s' % repr(content_id))
     return os.path.join(get_storage_root(), relative_file_path(content_id))
 

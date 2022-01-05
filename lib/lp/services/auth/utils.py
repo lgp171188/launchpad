@@ -3,7 +3,6 @@
 
 """Personal access token utilities."""
 
-__metaclass__ = type
 __all__ = [
     "create_access_token_secret",
     ]

@@ -28,12 +28,12 @@ class TestFeatureFlagChangelogEntry(TestCaseWithFactory):
         person = self.factory.makePerson()
         before = datetime.now(pytz.timezone('UTC'))
         feature_flag_change = FeatureFlagChangelogEntry(
-            diff, u'comment', person)
+            diff, 'comment', person)
         after = datetime.now(pytz.timezone('UTC'))
         self.assertEqual(
             diff, feature_flag_change.diff)
         self.assertEqual(
-            u'comment', feature_flag_change.comment)
+            'comment', feature_flag_change.comment)
         self.assertEqual(
             person, feature_flag_change.person)
         self.assertBetween(
@@ -46,7 +46,7 @@ class TestChangeLog(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestChangeLog, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
 
     def test_ChangeLog_append(self):

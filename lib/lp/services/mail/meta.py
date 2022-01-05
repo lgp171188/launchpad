@@ -37,26 +37,26 @@ def testMailBoxHandler(_context):
 class IPOP3MailBoxDirective(Interface):
     """Configure a mail box which interfaces to a POP3 server."""
     host = ASCII(
-            title=u"Host",
-            description=u"Host name of the POP3 server.",
+            title="Host",
+            description="Host name of the POP3 server.",
             required=True,
             )
 
     user = ASCII(
-            title=u"User",
-            description=u"User name to connect to the POP3 server with.",
+            title="User",
+            description="User name to connect to the POP3 server with.",
             required=True,
             )
 
     password = ASCII(
-            title=u"Password",
-            description=u"Password to connect to the POP3 server with.",
+            title="Password",
+            description="Password to connect to the POP3 server with.",
             required=True,
             )
 
     ssl = Bool(
-            title=u"SSL",
-            description=u"Use SSL.",
+            title="SSL",
+            description="Use SSL.",
             required=False,
             default=False)
 
@@ -69,8 +69,8 @@ def pop3MailBoxHandler(_context, host, user, password, ssl=False):
 class IDirectoryMailBoxDirective(Interface):
     """Configure a mail box which interfaces to a directory of raw files."""
     directory = ASCII(
-            title=u"Directory",
-            description=u"The directory containing the raw mail files.",
+            title="Directory",
+            description="The directory containing the raw mail files.",
             required=True,
             )
 
@@ -82,28 +82,28 @@ def directorymailBoxHandler(_context, directory):
 
 class IStubMailerDirective(IMailerDirective):
     from_addr = ASCII(
-            title=u"From Address",
-            description=u"All outgoing emails will use this email address",
+            title="From Address",
+            description="All outgoing emails will use this email address",
             required=True,
             )
     to_addr = ASCII(
-            title=u"To Address",
+            title="To Address",
             description=(
-                u"All outgoing emails will be redirected to this email "
-                u"address"),
+                "All outgoing emails will be redirected to this email "
+                "address"),
             required=True,
             )
     mailer = ASCII(
-            title=u"Mailer to use",
-            description=u"""\
+            title="Mailer to use",
+            description="""\
                 Which registered mailer to use, such as configured with
                 the smtpMailer or sendmailMailer directives""",
                 required=False,
                 default='smtp',
                 )
     rewrite = Bool(
-            title=u"Rewrite headers",
-            description=u"""\
+            title="Rewrite headers",
+            description="""\
                     If true, headers are rewritten in addition to the
                     destination address in the envelope. May me required
                     to bypass spam filters.""",
@@ -137,19 +137,19 @@ def testMailerHandler(_context, name):
 
 class IMboxMailerDirective(IMailerDirective):
     filename = ASCII(
-        title=u'File name',
-        description=u'Unix mbox file to store outgoing emails in',
+        title='File name',
+        description='Unix mbox file to store outgoing emails in',
         required=True,
         )
     overwrite = Bool(
-        title=u'Overwrite',
-        description=u'Whether to overwrite the existing mbox file or not',
+        title='Overwrite',
+        description='Whether to overwrite the existing mbox file or not',
         required=False,
         default=False,
         )
     mailer = ASCII(
-        title=u"Chained mailer to which messages are forwarded",
-        description=u"""\
+        title="Chained mailer to which messages are forwarded",
+        description="""\
             Optional mailer to forward messages to, such as those configured
             with smtpMailer, sendmailMailer, or testMailer directives.  When
             not given, the message is not forwarded but only stored in the

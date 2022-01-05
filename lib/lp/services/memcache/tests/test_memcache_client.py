@@ -26,7 +26,7 @@ class MemcacheClientTestCase(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(MemcacheClientTestCase, self).setUp()
+        super().setUp()
         self.client = getUtility(IMemcacheClient)
 
     def test_basics(self):

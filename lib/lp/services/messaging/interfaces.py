@@ -37,7 +37,7 @@ class QueueEmpty(MessagingException):
 class IMessageSession(Interface):
 
     is_connected = Bool(
-        u"Whether the session is connected to the messaging system.")
+        "Whether the session is connected to the messaging system.")
 
     def connect():
         """Connect to the messaging system.

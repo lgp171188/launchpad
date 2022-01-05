@@ -3,7 +3,6 @@
 
 """Personal access tokens."""
 
-__metaclass__ = type
 __all__ = [
     "AccessToken",
     "AccessTokenTargetMixin",

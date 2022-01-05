@@ -34,7 +34,7 @@ from lp.testing.layers import DatabaseLayer
 class SimpleTac(TacTestSetup):
 
     def __init__(self, name, tempdir):
-        super(SimpleTac, self).__init__()
+        super().__init__()
         self.name, self.tempdir = name, tempdir
 
     @property

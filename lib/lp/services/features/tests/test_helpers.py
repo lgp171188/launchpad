@@ -45,13 +45,13 @@ class FeatureFixturesTestsMixin:
         self.useFixture(self.fixture_cls({'two': '2'}))
 
         self.assertEqual(getFeatureFlag('one'), None)
-        self.assertEqual(getFeatureFlag('two'), u'2')
+        self.assertEqual(getFeatureFlag('two'), '2')
 
     def test_fixture_overrides_previously_set_flags(self):
         self.useFixture(self.fixture_cls({'one': '1'}))
         self.useFixture(self.fixture_cls({'one': '5'}))
 
-        self.assertEqual(getFeatureFlag('one'), u'5')
+        self.assertEqual(getFeatureFlag('one'), '5')
 
     def test_fixture_does_not_set_value_for_flags_that_are_None(self):
         self.useFixture(self.fixture_cls({'nothing': None}))
@@ -62,10 +62,10 @@ class FeatureFixturesTestsMixin:
         value_outside_manager = getFeatureFlag(flag)
         value_in_manager = None
 
-        with self.fixture_cls({flag: u'on'}):
+        with self.fixture_cls({flag: 'on'}):
             value_in_manager = getFeatureFlag(flag)
 
-        self.assertEqual(value_in_manager, u'on')
+        self.assertEqual(value_in_manager, 'on')
         self.assertEqual(value_outside_manager, getFeatureFlag(flag))
         self.assertNotEqual(value_outside_manager, value_in_manager)
 

@@ -63,7 +63,6 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
-import six
 from zope.component import getUtility
 from zope.interface import (
     implementer,
@@ -225,7 +224,7 @@ class StrippedTextLine(TextLine):
         """Strip the value and pass up."""
         if value is not None:
             value = value.strip()
-        super(StrippedTextLine, self).set(object, value)
+        super().set(object, value)
 
 
 @implementer(INoneableTextLine)
@@ -245,7 +244,7 @@ class StrippableText(Text):
     """A text that can be configured to strip when setting."""
 
     def __init__(self, strip_text=False, trailing_only=False, **kwargs):
-        super(StrippableText, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.strip_text = strip_text
         self.trailing_only = trailing_only
 
@@ -261,12 +260,12 @@ class StrippableText(Text):
     def set(self, object, value):
         """Strip the value and pass up."""
         value = self.normalize(value)
-        super(StrippableText, self).set(object, value)
+        super().set(object, value)
 
     def validate(self, value):
         """See `IField`."""
         value = self.normalize(value)
-        return super(StrippableText, self).validate(value)
+        return super().validate(value)
 
 
 # Summary
@@ -310,7 +309,7 @@ class FormattableDate(Date):
         error_msg = ("Date could not be formatted. Provide a date formatted "
             "like YYYY-MM-DD format. The year must be after 1900.")
 
-        super(FormattableDate, self)._validate(value)
+        super()._validate(value)
         # The only thing of interest here is whether or the input can be
         # formatted properly, not whether it makes sense otherwise.
         # As a minimal sanity check, just raise an error if it fails.
@@ -338,7 +337,7 @@ class BugField(Reference):
 
     def __init__(self, *args, **kwargs):
         """The schema will always be `IBug`."""
-        super(BugField, self).__init__(Interface, *args, **kwargs)
+        super().__init__(Interface, *args, **kwargs)
 
     def _get_schema(self):
         """Get the schema here to avoid circular imports."""
@@ -401,9 +400,9 @@ class SearchTag(Tag):
         if value in ('*', '-*'):
             return True
         elif value.startswith('-'):
-            return super(SearchTag, self).constraint(value[1:])
+            return super().constraint(value[1:])
         else:
-            return super(SearchTag, self).constraint(value)
+            return super().constraint(value)
 
 
 class UniqueField(TextLine):
@@ -447,7 +446,7 @@ class UniqueField(TextLine):
         object of this same context. The 'input' should be valid as per
         TextLine.
         """
-        super(UniqueField, self)._validate(input)
+        super()._validate(input)
         assert self._content_iface is not None
 
         if self.unchanged(input):
@@ -493,7 +492,7 @@ class BlacklistableContentNameField(ContentNameField):
 
     def _validate(self, input):
         """Check that the given name is valid, unique and not blacklisted."""
-        super(BlacklistableContentNameField, self)._validate(input)
+        super()._validate(input)
 
         # Although this check is performed in UniqueField._validate(), we need
         # to do it here again to avoid checking whether or not the name is
@@ -594,7 +593,7 @@ class URIField(TextLine):
     def __init__(self, allowed_schemes=(), allow_userinfo=True,
                  allow_port=True, allow_query=True, allow_fragment=True,
                  trailing_slash=None, **kwargs):
-        super(URIField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.allowed_schemes = set(allowed_schemes)
         self.allow_userinfo = allow_userinfo
         self.allow_port = allow_port
@@ -605,7 +604,7 @@ class URIField(TextLine):
     def set(self, object, value):
         """Canonicalize a URL and set it as a field value."""
         value = self.normalize(value)
-        super(URIField, self).set(object, value)
+        super().set(object, value)
 
     def normalize(self, input):
         """See `IURIField`."""
@@ -624,7 +623,7 @@ class URIField(TextLine):
                 uri = uri.ensureSlash()
             else:
                 uri = uri.ensureNoSlash()
-        input = six.text_type(uri)
+        input = str(uri)
         return input
 
     def _validate(self, value):
@@ -654,7 +653,7 @@ class URIField(TextLine):
             raise LaunchpadValidationError(
                 'URIs with fragment identifiers are not allowed.')
 
-        super(URIField, self)._validate(value)
+        super()._validate(value)
 
 
 class FieldNotBoundError(Exception):
@@ -709,7 +708,7 @@ class BaseImageUpload(Bytes):
                 This image exceeds the maximum allowed size in bytes.""")))
         try:
             pil_image = PIL.Image.open(io.BytesIO(image))
-        except (IOError, ValueError):
+        except (OSError, ValueError):
             raise LaunchpadValidationError(_(dedent("""
                 The file uploaded was not recognized as an image; please
                 check it and retry.""")))
@@ -737,7 +736,7 @@ class BaseImageUpload(Bytes):
             content = value.read()
         else:
             content = value
-        super(BaseImageUpload, self)._validate(content)
+        super()._validate(content)
         self._valid_image(content)
 
     def set(self, object, value):

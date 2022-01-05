@@ -3,8 +3,6 @@
 
 """Test personal access tokens."""
 
-__metaclass__ = type
-
 from datetime import (
     datetime,
     timedelta,

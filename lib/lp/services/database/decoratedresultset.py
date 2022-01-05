@@ -16,7 +16,7 @@ from zope.security.proxy import (
 
 
 @delegate_to(IResultSet, context='result_set')
-class DecoratedResultSet(object):
+class DecoratedResultSet:
     """A decorated Storm ResultSet for 'Magic' (presenter) classes.
 
     Because `DistroSeriesBinaryPackage` doesn't actually exist in the

@@ -77,7 +77,7 @@ class GeoIP:
 
 
 @implementer(IRequestLocalLanguages)
-class RequestLocalLanguages(object):
+class RequestLocalLanguages:
 
     def __init__(self, request):
         self.request = request
@@ -100,7 +100,7 @@ class RequestLocalLanguages(object):
 
 
 @implementer(IRequestPreferredLanguages)
-class RequestPreferredLanguages(object):
+class RequestPreferredLanguages:
 
     def __init__(self, request):
         self.request = request

@@ -10,7 +10,6 @@ __all__ = [
 
 import datetime
 
-import six
 from storm.locals import ReferenceSet
 from zope.interface import implementer
 
@@ -103,7 +102,7 @@ class AccountSet:
 
         # Create an OpenIdIdentifier record if requested.
         if openid_identifier is not None:
-            assert isinstance(openid_identifier, six.text_type)
+            assert isinstance(openid_identifier, str)
             identifier = OpenIdIdentifier()
             identifier.account = account
             identifier.identifier = openid_identifier

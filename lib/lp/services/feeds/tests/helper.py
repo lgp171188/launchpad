@@ -30,7 +30,7 @@ class IThing(Interface):
 
 
 @implementer(IThing)
-class Thing(object):
+class Thing:
 
     def __init__(self, value):
         self.value = value

@@ -5,9 +5,7 @@
 
 from functools import partial
 from itertools import count
-import socket
 
-import six
 from testtools.testcase import ExpectedException
 import transaction
 from transaction._transaction import Status as TransactionStatus
@@ -93,7 +91,7 @@ class RabbitTestCase(TestCase):
     layer = RabbitMQLayer
 
     def tearDown(self):
-        super(RabbitTestCase, self).tearDown()
+        super().tearDown()
         global_session.reset()
         global_unreliable_session.reset()
 
@@ -133,7 +131,7 @@ class TestRabbitSession(RabbitTestCase):
 
         def new_close(*args, **kwargs):
             old_close(*args, **kwargs)
-            raise socket.error
+            raise OSError
 
         with monkey_patch(session._connection, close=new_close):
             session.disconnect()
@@ -217,7 +215,7 @@ class TestRabbitUnreliableSession(TestRabbitSession):
     layer = RabbitMQLayer
 
     def setUp(self):
-        super(TestRabbitUnreliableSession, self).setUp()
+        super().setUp()
         self.prev_oops = self.getOops()
 
     def getOops(self):
@@ -396,7 +394,7 @@ class TestRabbit(RabbitTestCase):
             return set()
         else:
             return {
-                sync.session for sync in six.itervalues(syncs_set.data)
+                sync.session for sync in syncs_set.data.values()
                 if isinstance(sync, RabbitSessionTransactionSync)}
 
     def test_global_session(self):

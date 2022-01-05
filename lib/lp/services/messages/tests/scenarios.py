@@ -18,7 +18,7 @@ class MessageTypeScenariosMixin(WithScenarios):
         ]
 
     def setUp(self):
-        super(MessageTypeScenariosMixin, self).setUp()
+        super().setUp()
         self.person = self.factory.makePerson()
         login_person(self.person)
 

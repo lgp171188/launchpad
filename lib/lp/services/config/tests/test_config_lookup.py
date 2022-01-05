@@ -19,7 +19,7 @@ from lp.testing import TestCase
 class TestConfigLookup(TestCase):
 
     def setUp(self):
-        super(TestConfigLookup, self).setUp()
+        super().setUp()
         self.temp_lookup_file = None
         self.original_CONFIG_LOOKUP_FILES = config.CONFIG_LOOKUP_FILES
         self.original_LPCONFIG = os.environ['LPCONFIG']
@@ -28,7 +28,7 @@ class TestConfigLookup(TestCase):
         del self.temp_lookup_file
         config.CONFIG_LOOKUP_FILES = self.original_CONFIG_LOOKUP_FILES
         os.environ['LPCONFIG'] = self.original_LPCONFIG
-        super(TestConfigLookup, self).tearDown()
+        super().tearDown()
 
     def makeLookupFile(self):
         self.temp_lookup_file = NamedTemporaryFile()
@@ -100,7 +100,7 @@ class TestInstanceConfigDirLookup(ConfigTestCase):
     """Test where instance config directories are looked up."""
 
     def setUp(self):
-        super(TestInstanceConfigDirLookup, self).setUp()
+        super().setUp()
         self.setUpConfigRoots()
 
     def test_find_config_dir_raises_ValueError(self):

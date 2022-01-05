@@ -6,7 +6,6 @@ import email.header
 from email.message import Message
 import unittest
 
-import six
 from zope.interface import implementer
 from zope.sendmail.interfaces import IMailDelivery
 
@@ -88,8 +87,8 @@ class TestMailController(TestCase):
 
     def test_MakeMessageSpecialChars(self):
         """A message should have its to and from addrs converted to ascii."""
-        to_addr = u'\u1100to@example.com'
-        from_addr = u'\u1100from@example.com'
+        to_addr = '\u1100to@example.com'
+        from_addr = '\u1100from@example.com'
         ctrl = MailController(from_addr, to_addr, 'subject', 'body')
         message = ctrl.makeMessage()
         self.assertEqual('=?utf-8?b?4YSAZnJvbUBleGFtcGxlLmNvbQ==?=',
@@ -129,7 +128,7 @@ class TestMailController(TestCase):
         # UTF-8 encoded MIME text, and the message as a whole can be flattened
         # to a string with Unicode errors.
         ctrl = MailController(
-            'from@example.com', 'to@example.com', 'subject', u'Bj\xf6rn')
+            'from@example.com', 'to@example.com', 'subject', 'Bj\xf6rn')
         message = ctrl.makeMessage()
         # Make sure that the message can be flattened to a string as sendmail
         # does without raising a UnicodeEncodeError.
@@ -141,7 +140,7 @@ class TestMailController(TestCase):
         # UTF-8 encoded MIME text, and the message as a whole can be flattened
         # to a string with Unicode errors.
         ctrl = MailController(
-            'from@example.com', 'to@example.com', 'subject', u'Bj\xf6rn')
+            'from@example.com', 'to@example.com', 'subject', 'Bj\xf6rn')
         ctrl.addAttachment('attach')
         message = ctrl.makeMessage()
         # Make sure that the message can be flattened to a string as sendmail
@@ -154,7 +153,7 @@ class TestMailController(TestCase):
     def test_MakeMessage_with_binary_attachment(self):
         """Message should still encode as ascii with non-ascii attachments."""
         ctrl = MailController(
-            'from@example.com', 'to@example.com', 'subject', u'Body')
+            'from@example.com', 'to@example.com', 'subject', 'Body')
         ctrl.addAttachment('\x00\xffattach')
         message = ctrl.makeMessage()
         self.assertTrue(
@@ -163,7 +162,7 @@ class TestMailController(TestCase):
     def test_MakeMessage_with_non_binary_attachment(self):
         """Simple ascii attachments should not be encoded."""
         ctrl = MailController(
-            'from@example.com', 'to@example.com', 'subject', u'Body')
+            'from@example.com', 'to@example.com', 'subject', 'Body')
         ctrl.addAttachment('Hello, I am ascii')
         message = ctrl.makeMessage()
         body, attachment = message.get_payload()
@@ -225,7 +224,7 @@ class TestMailController(TestCase):
 
     def test_encodeOptimally_with_text(self):
         """Mostly-ascii attachments should be encoded as quoted-printable."""
-        text = u'I went to the caf\u00e9 today.'.encode('utf-8')
+        text = 'I went to the caf\u00e9 today.'.encode()
         part = Message()
         part.set_payload(text)
         MailController.encodeOptimally(part)
@@ -301,11 +300,11 @@ class TestMailController(TestCase):
         a0 = actions[0]
         self.assertEqual(a0.category, 'sendmail')
         self.assertEqual(a0.detail, subject)
-        self.assertIsInstance(a0.detail, six.string_types)
+        self.assertIsInstance(a0.detail, str)
 
 
 @implementer(IMailDelivery)
-class RecordingMailer(object):
+class RecordingMailer:
 
     def send(self, from_addr, to_addr, raw_message):
         self.from_addr = from_addr

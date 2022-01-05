@@ -125,7 +125,7 @@ class IncomingTestCase(TestCaseWithFactory):
             "An error occurred while processing a mail you sent to "
             "Launchpad's email\ninterface.\n\n\n"
             "Error message:\n\nSignature couldn't be verified: "
-            "(7, 58, %r)" % u"No data",
+            "(7, 58, %r)" % "No data",
             body)
 
     def test_expired_key(self):
@@ -270,13 +270,13 @@ class IncomingTestCase(TestCaseWithFactory):
     def test_invalid_from_address_unicode(self):
         # Invalid From: header such as no "@" is handled.
         message, test_handler = self.makeSentMessage(
-            u'm\xeda@eg.dom', 'test@lp.dev')
+            'm\xeda@eg.dom', 'test@lp.dev')
         handleMail()
         self.assertEqual([], self.oopses)
         self.assertEqual(1, len(test_handler.handledMails))
         self.assertEqual(
-            u'm\xeda@eg.dom',
-            six.text_type(make_header(decode_header(
+            'm\xeda@eg.dom',
+            str(make_header(decode_header(
                 test_handler.handledMails[0]['From']))))
 
     def test_invalid_from_address_no_mime_encoding(self):
@@ -284,7 +284,7 @@ class IncomingTestCase(TestCaseWithFactory):
         # is handled.
         test_handler = FakeHandler()
         mail_handlers.add('lp.dev', test_handler)
-        raw_message = dedent(u"""\
+        raw_message = dedent("""\
             Content-Type: text/plain; charset="UTF-8"
             MIME-Version: 1.0
             Message-Id: <message-id>
@@ -295,7 +295,7 @@ class IncomingTestCase(TestCaseWithFactory):
             body
             """).encode('UTF-8')
         TestMailer().send(
-            u'\u05D0 <alef@eg.dom>'.encode('UTF-8'), 'test@lp.dev',
+            '\u05D0 <alef@eg.dom>'.encode(), 'test@lp.dev',
             raw_message)
         handleMail()
         self.assertEqual([], self.oopses)
@@ -307,13 +307,13 @@ class IncomingTestCase(TestCaseWithFactory):
     def test_invalid_cc_address_unicode(self):
         # Invalid Cc: header such as no "@" is handled.
         message, test_handler = self.makeSentMessage(
-            'me@eg.dom', 'test@lp.dev', cc=u'm\xeda@eg.dom')
+            'me@eg.dom', 'test@lp.dev', cc='m\xeda@eg.dom')
         handleMail()
         self.assertEqual([], self.oopses)
         self.assertEqual(1, len(test_handler.handledMails))
         self.assertEqual(
-            u'm\xeda@eg.dom',
-            six.text_type(make_header(decode_header(
+            'm\xeda@eg.dom',
+            str(make_header(decode_header(
                 test_handler.handledMails[0]['Cc']))))
 
 

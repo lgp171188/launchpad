@@ -67,7 +67,7 @@ class CeleryRunJob(RunJob):
         """
         self.dbuser = dbuser
         task_init(dbuser)
-        super(CeleryRunJob, self).run(job_id)
+        super().run(job_id)
 
     def reQueue(self, job_id, fallback_queue):
         self.apply_async(args=(job_id, self.dbuser), queue=fallback_queue)
@@ -118,7 +118,7 @@ class PrefixedTask(Task):
         """
         if task_id is None and self.task_id_prefix is not None:
             task_id = '%s_%s' % (self.task_id_prefix, uuid4())
-        return super(PrefixedTask, self).apply_async(
+        return super().apply_async(
             args=args, kwargs=kwargs, task_id=task_id, producer=producer,
             link=link, link_error=link_error, shadow=shadow, **options)
 

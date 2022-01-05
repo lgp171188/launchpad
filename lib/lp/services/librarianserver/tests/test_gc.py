@@ -68,7 +68,7 @@ class TestLibrarianGarbageCollectionBase:
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestLibrarianGarbageCollectionBase, self).setUp()
+        super().setUp()
         self.client = LibrarianClient()
         self.patch(librariangc, 'log', BufferLogger())
 
@@ -118,7 +118,7 @@ class TestLibrarianGarbageCollectionBase:
         self.con.rollback()
         self.con.close()
         del self.con
-        super(TestLibrarianGarbageCollectionBase, self).tearDown()
+        super().tearDown()
 
     def _makeDupes(self):
         """Create two duplicate LibraryFileContent entries with one
@@ -722,7 +722,7 @@ class TestSwiftLibrarianGarbageCollection(
 
         self.useFixture(FeatureFixture({'librarian.swift.enabled': True}))
 
-        super(TestSwiftLibrarianGarbageCollection, self).setUp()
+        super().setUp()
 
         # Move files into Swift.
         path = librariangc.get_file_path(self.f1_id)
@@ -935,7 +935,7 @@ class TestTwoSwiftsLibrarianGarbageCollection(
     def setUp(self):
         self.old_swift_fixture = self.useFixture(
             SwiftFixture(old_instance=True))
-        super(TestTwoSwiftsLibrarianGarbageCollection, self).setUp()
+        super().setUp()
 
     def test_swift_files_multiple_instances(self):
         # swift_files yields files in the correct order across multiple
@@ -1068,7 +1068,7 @@ class TestBlobCollection(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestBlobCollection, self).setUp()
+        super().setUp()
         # Add in some sample data
         cur = cursor()
 
@@ -1210,7 +1210,7 @@ class TestBlobCollection(TestCase):
     def tearDown(self):
         self.con.rollback()
         self.con.close()
-        super(TestBlobCollection, self).tearDown()
+        super().tearDown()
 
     def test_DeleteExpiredBlobs(self):
         # Delete expired blobs from the TemporaryBlobStorage table

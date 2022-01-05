@@ -77,7 +77,7 @@ class TestScopes(TestCaseWithFactory):
         self.assertFalse(scopes.lookup("script:other"))
 
 
-class FakePerson(object):
+class FakePerson:
 
     id = 7
 
@@ -113,12 +113,12 @@ class TestUserSliceScopeIntegration(TestCaseWithFactory):
                 flag='test_feature',
                 scope='userslice:0,1',
                 priority=999,
-                value=u'on'),
+                value='on'),
             dict(
                 flag='test_not',
                 scope='userslice:1,1',
                 priority=999,
-                value=u'not_value'),
+                value='not_value'),
             ]):
             with person_logged_in(person):
                 self.assertEqual(getFeatureFlag('test_feature'), 'on')

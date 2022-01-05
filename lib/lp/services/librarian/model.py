@@ -227,7 +227,7 @@ class LibraryFileAlias(SQLBase):
 
     def __storm_invalidated__(self):
         """Make sure that the file is closed across transaction boundary."""
-        super(LibraryFileAlias, self).__storm_invalidated__()
+        super().__storm_invalidated__()
         self.close()
 
 
@@ -247,7 +247,7 @@ class LibraryFileAliasWithParent:
 
 
 @implementer(ILibraryFileAliasSet)
-class LibraryFileAliasSet(object):
+class LibraryFileAliasSet:
     """Create and find LibraryFileAliases."""
 
     def create(self, name, size, file, contentType, expires=None,

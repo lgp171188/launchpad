@@ -12,7 +12,6 @@ __all__ = [
 from fixtures import Fixture
 from lazr.restful.utils import get_current_browser_request
 import psycopg2
-import six
 
 from lp.services.features import (
     get_relevant_feature_controller,
@@ -91,8 +90,8 @@ class FeatureFixtureMixin:
                 flag=flag_name,
                 scope='default',
                 priority=999,
-                value=six.text_type(value))
-            for flag_name, value in six.iteritems(self.desired_features)
+                value=str(value))
+            for flag_name, value in self.desired_features.items()
                 if value is not None]
 
         if self.full_feature_rules is not None:

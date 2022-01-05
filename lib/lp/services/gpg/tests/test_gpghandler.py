@@ -97,7 +97,7 @@ class TestGPGHandler(TestCase):
 
     def setUp(self):
         """Get a gpghandler and login"""
-        super(TestGPGHandler, self).setUp()
+        super().setUp()
         login(ANONYMOUS)
         self.gpg_handler = getUtility(IGPGHandler)
         self.gpg_handler.resetLocalState()
@@ -108,7 +108,7 @@ class TestGPGHandler(TestCase):
         # This should be a zope test cleanup thing per SteveA.
         self.gpg_handler.resetLocalState()
         logout()
-        super(TestGPGHandler, self).tearDown()
+        super().tearDown()
 
     def populateKeyring(self):
         for email in iter_test_key_emails():
@@ -188,7 +188,7 @@ class TestGPGHandler(TestCase):
         """
         self.populateKeyring()
 
-        target_fpr = u'340CA3BB270E2716C9EE0B768E7EB7086C64A8C5'
+        target_fpr = '340CA3BB270E2716C9EE0B768E7EB7086C64A8C5'
 
         # Finding a key by its unicode fingerprint.
         filtered_keys = self.gpg_handler.localKeys(target_fpr)
@@ -197,7 +197,7 @@ class TestGPGHandler(TestCase):
 
     def test_non_ascii_filter(self):
         """localKeys should not error if passed non-ascii unicode strings."""
-        filtered_keys = self.gpg_handler.localKeys(u'non-ascii \u8463')
+        filtered_keys = self.gpg_handler.localKeys('non-ascii \u8463')
         self.assertRaises(StopIteration, next, filtered_keys)
 
     def testTestkeyrings(self):
@@ -377,7 +377,7 @@ class TestGPGHandler(TestCase):
         #     export_file.write(new_key.export())
         self.useFixture(FakeGenerateKey("ppa-sample@canonical.com.sec"))
         new_key = self.gpg_handler.generateKey(
-            u"Launchpad PPA for Celso \xe1\xe9\xed\xf3\xfa Providelo",
+            "Launchpad PPA for Celso \xe1\xe9\xed\xf3\xfa Providelo",
             logger=logger)
         # generateKey currently only generates passwordless sign-only keys,
         # i.e. they can sign content but cannot encrypt.  The generated key
@@ -393,10 +393,10 @@ class TestGPGHandler(TestCase):
             uids=MatchesListwise([
                 MatchesStructure.byEquality(
                     name=(
-                        u"Launchpad PPA for Celso "
-                        u"\xe1\xe9\xed\xf3\xfa Providelo"),
-                    comment=u"",
-                    email=u""),
+                        "Launchpad PPA for Celso "
+                        "\xe1\xe9\xed\xf3\xfa Providelo"),
+                    comment="",
+                    email=""),
                 ])))
         # The public key is also available.
         pub_key = self.gpg_handler.retrieveKey(new_key.fingerprint)
@@ -411,10 +411,10 @@ class TestGPGHandler(TestCase):
             uids=MatchesListwise([
                 MatchesStructure.byEquality(
                     name=(
-                        u"Launchpad PPA for Celso "
-                        u"\xe1\xe9\xed\xf3\xfa Providelo"),
-                    comment=u"",
-                    email=u""),
+                        "Launchpad PPA for Celso "
+                        "\xe1\xe9\xed\xf3\xfa Providelo"),
+                    comment="",
+                    email=""),
                 ])))
         return new_key
 
@@ -441,8 +441,8 @@ class TestGPGHandler(TestCase):
         new_key = self.assertGeneratesKey(logger=logger)
         new_public_key = self.gpg_handler.retrieveKey(new_key.fingerprint)
         self.assertEqual(
-            u"INFO Injecting key_type OpenPGP 'Launchpad PPA for Celso "
-            u"\xe1\xe9\xed\xf3\xfa Providelo' into signing service\n",
+            "INFO Injecting key_type OpenPGP 'Launchpad PPA for Celso "
+            "\xe1\xe9\xed\xf3\xfa Providelo' into signing service\n",
             logger.getLogBuffer())
         self.assertEqual(1, signing_service_client.inject.call_count)
         self.assertThat(
@@ -452,8 +452,8 @@ class TestGPGHandler(TestCase):
                 Equals(new_key.export()),
                 Equals(new_public_key.export()),
                 Equals(
-                    u"Launchpad PPA for Celso "
-                    u"\xe1\xe9\xed\xf3\xfa Providelo"),
+                    "Launchpad PPA for Celso "
+                    "\xe1\xe9\xed\xf3\xfa Providelo"),
                 Equals(now.replace(tzinfo=pytz.UTC)),
                 ]))
 
@@ -470,7 +470,7 @@ class TestGPGHandler(TestCase):
         self.assertRaisesWithContent(
             ValueError, "boom",
             self.gpg_handler.generateKey,
-            u"Launchpad PPA for Celso \xe1\xe9\xed\xf3\xfa Providelo")
+            "Launchpad PPA for Celso \xe1\xe9\xed\xf3\xfa Providelo")
         self.assertEqual(1, signing_service_client.inject.call_count)
         self.assertEqual([], list(self.gpg_handler.localKeys()))
 

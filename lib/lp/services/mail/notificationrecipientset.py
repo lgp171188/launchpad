@@ -11,7 +11,6 @@ __all__ = [
 
 from operator import attrgetter
 
-import six
 from zope.interface import implementer
 from zope.security.proxy import (
     isinstance as zope_isinstance,
@@ -76,7 +75,7 @@ class NotificationRecipientSet:
 
     def __contains__(self, person_or_email):
         """See `INotificationRecipientSet`."""
-        if zope_isinstance(person_or_email, six.string_types):
+        if zope_isinstance(person_or_email, str):
             return person_or_email in self._emailToPerson
         elif IPerson.providedBy(person_or_email):
             return person_or_email in self._personToRationale
@@ -89,7 +88,7 @@ class NotificationRecipientSet:
 
     def getReason(self, person_or_email):
         """See `INotificationRecipientSet`."""
-        if zope_isinstance(person_or_email, six.string_types):
+        if zope_isinstance(person_or_email, str):
             try:
                 person = self._emailToPerson[person_or_email]
             except KeyError:

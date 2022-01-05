@@ -11,7 +11,6 @@ __all__ = [
 
 import os
 import poplib
-import socket
 import threading
 
 from zope.interface import (
@@ -119,7 +118,7 @@ class POP3MailBox:
                 popbox = poplib.POP3_SSL(self._host)
             else:
                 popbox = poplib.POP3(self._host)
-        except socket.error as e:
+        except OSError as e:
             raise MailBoxError(str(e))
         try:
             popbox.user(self._user)
