@@ -23,7 +23,6 @@ __all__ = [
 
 from collections import namedtuple
 
-from lazr.restful.utils import safe_hasattr
 import six
 from storm.base import Storm
 from storm.store import EmptyResultSet
@@ -253,7 +252,7 @@ class FilteredVocabularyBase:
     # parameter to a VocabularyFilter instance.
     def __getattribute__(self, name):
         func = object.__getattribute__(self, name)
-        if (safe_hasattr(func, '__call__')
+        if (hasattr(func, '__call__')
                 and (
                     func.__name__ == 'searchForTerms'
                     or func.__name__ == 'search')):

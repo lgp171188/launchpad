@@ -13,7 +13,6 @@ __all__ = [
     "VocabularyPickerWidget",
     ]
 
-from lazr.restful.utils import safe_hasattr
 import simplejson
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -130,8 +129,8 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
         Default implementation is to return the 'name' attribute.
         """
         val = self._getFormValue()
-        if val is not None and safe_hasattr(val, 'name'):
-            return getattr(val, 'name')
+        if val is not None:
+            return getattr(val, 'name', None)
         return None
 
     @property
