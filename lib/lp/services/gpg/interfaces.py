@@ -140,7 +140,7 @@ class GPGKeyNotFoundError(Exception):
         if message is None:
             message = (
             "No GPG key found with the given content: %s" % (fingerprint, ))
-        super(GPGKeyNotFoundError, self).__init__(message)
+        super().__init__(message)
 
 
 @error_status(http.client.INTERNAL_SERVER_ERROR)
@@ -154,8 +154,7 @@ class GPGKeyTemporarilyNotFoundError(GPGKeyNotFoundError):
         message = (
             "GPG key %s not found due to a server or network failure."
             % fingerprint)
-        super(GPGKeyTemporarilyNotFoundError, self).__init__(
-            fingerprint, message)
+        super().__init__(fingerprint, message)
 
 
 @error_status(http.client.NOT_FOUND)
@@ -167,8 +166,7 @@ class GPGKeyDoesNotExistOnServer(GPGKeyNotFoundError):
     def __init__(self, fingerprint):
         message = (
             "GPG key %s does not exist on the keyserver." % fingerprint)
-        super(GPGKeyDoesNotExistOnServer, self).__init__(
-            fingerprint, message)
+        super().__init__(fingerprint, message)
 
 
 class GPGKeyRevoked(Exception):
@@ -176,8 +174,7 @@ class GPGKeyRevoked(Exception):
 
     def __init__(self, key):
         self.key = key
-        super(GPGKeyRevoked, self).__init__(
-            "%s has been publicly revoked" % (key.fingerprint, ))
+        super().__init__("%s has been publicly revoked" % (key.fingerprint, ))
 
 
 class GPGKeyExpired(Exception):
@@ -185,8 +182,7 @@ class GPGKeyExpired(Exception):
 
     def __init__(self, key):
         self.key = key
-        super(GPGKeyExpired, self).__init__(
-            "%s has expired" % (key.fingerprint, ))
+        super().__init__("%s has expired" % (key.fingerprint, ))
 
 
 class GPGKeyMismatchOnServer(Exception):
@@ -200,7 +196,7 @@ class GPGKeyMismatchOnServer(Exception):
         message = (
             "The keyserver returned the wrong key: expected %s, got %s." %
             (expected_fingerprint, keyserver_fingerprint))
-        super(GPGKeyMismatchOnServer, self).__init__(message)
+        super().__init__(message)
 
 
 class SecretGPGKeyImportDetected(Exception):

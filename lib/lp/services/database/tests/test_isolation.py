@@ -4,7 +4,6 @@
 """Tests of the isolation module."""
 
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
-import six
 from storm.zope.interfaces import IZStorm
 import transaction
 from zope.component import getUtility
@@ -33,7 +32,7 @@ class TestIsolation(TestCase):
         # transactions have been aborted.
         transaction.abort()
         for name, status in isolation.gen_store_statuses():
-            self.assertIsInstance(name, six.string_types)
+            self.assertIsInstance(name, str)
             self.assertIn(status, (None, TRANSACTION_STATUS_IDLE))
         # At least one store will not be idle when a transaction has
         # begun.

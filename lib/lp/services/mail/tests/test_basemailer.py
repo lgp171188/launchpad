@@ -65,7 +65,7 @@ class RaisingMailController(MailController):
         if getattr(self, 'raise_on_send', False):
             raise SMTPException('boom')
         else:
-            super(RaisingMailController, self).send(bulk)
+            super().send(bulk)
 
 
 class RaisingMailControllerFactory:

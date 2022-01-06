@@ -22,19 +22,19 @@ class TestTag(TestCase):
         # Tag allows names all in lowercase, starting with any letter
         # of the English alphabet, followed by 1 or more letters,
         # numbers or minuses.
-        self.assertIs(None, self.field.validate(u'fred'))
-        self.assertIs(None, self.field.validate(u'one-two'))
-        self.assertIs(None, self.field.validate(u'one-2'))
-        self.assertIs(None, self.field.validate(u'one-2-3---5-'))
+        self.assertIs(None, self.field.validate('fred'))
+        self.assertIs(None, self.field.validate('one-two'))
+        self.assertIs(None, self.field.validate('one-2'))
+        self.assertIs(None, self.field.validate('one-2-3---5-'))
 
     def test_too_short(self):
         # Tag rejects tags that are less than 2 characters long.
         self.assertRaises(
             ConstraintNotSatisfied,
-            self.field.validate, u'')
+            self.field.validate, '')
         self.assertRaises(
             ConstraintNotSatisfied,
-            self.field.validate, u'x')
+            self.field.validate, 'x')
 
     def test_invalid_characters(self):
         # Tag rejects characters outside of the range [a-z0-9-].
@@ -42,20 +42,20 @@ class TestTag(TestCase):
         # test_negated_search_form.
         self.assertRaises(
             ConstraintNotSatisfied,
-            self.field.validate, u'char^not^allowed')
+            self.field.validate, 'char^not^allowed')
         self.assertRaises(
             ConstraintNotSatisfied,
-            self.field.validate, u'no whitespace')
+            self.field.validate, 'no whitespace')
         self.assertRaises(
             ConstraintNotSatisfied,
-            self.field.validate, u'really\no-whitespace')
+            self.field.validate, 'really\no-whitespace')
 
     def test_negated_search_form(self):
         # Tag rejects tags beginning with minuses. This form is
         # reserved to mean "not <tag>".
         self.assertRaises(
             ConstraintNotSatisfied,
-            self.field.validate, u'-fred')
+            self.field.validate, '-fred')
 
     def test_wildcard(self):
         # Tag rejects a solitary asterisk, or an asterisk preceded by
@@ -65,10 +65,10 @@ class TestTag(TestCase):
         # any tag".
         self.assertRaises(
             ConstraintNotSatisfied,
-            self.field.validate, u'*')
+            self.field.validate, '*')
         self.assertRaises(
             ConstraintNotSatisfied,
-            self.field.validate, u'-*')
+            self.field.validate, '-*')
 
 
 class TestSearchTag(TestTag):
@@ -78,17 +78,17 @@ class TestSearchTag(TestTag):
     def test_negated_search_form(self):
         # SearchTag allows tags beginning with minuses. This form is
         # reserved to mean "not <tag>".
-        self.assertIs(None, self.field.validate(u'-fred'))
+        self.assertIs(None, self.field.validate('-fred'))
 
     def test_wildcard(self):
         # SearchTag allows a solitary asterisk, or an asterisk
         # preceded by a minus. This means "any tag" or "not any
         # tag".
-        self.assertIs(None, self.field.validate(u'*'))
-        self.assertIs(None, self.field.validate(u'-*'))
+        self.assertIs(None, self.field.validate('*'))
+        self.assertIs(None, self.field.validate('-*'))
 
     def test_wildcard_elsewhere(self):
         # Asterisks are not allowed to appear anywhere else in a tag.
         self.assertRaises(
             ConstraintNotSatisfied,
-            self.field.validate, u'sn*t-allowed')
+            self.field.validate, 'sn*t-allowed')

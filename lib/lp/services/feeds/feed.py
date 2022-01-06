@@ -19,7 +19,6 @@ import operator
 import os
 import time
 
-import six
 from six.moves.urllib.parse import urljoin
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -68,7 +67,7 @@ class FeedBase(LaunchpadView):
                       'html': 'templates/feed-html.pt'}
 
     def __init__(self, context, request):
-        super(FeedBase, self).__init__(context, request)
+        super().__init__(context, request)
         self.format = self.feed_format
         self.root_url = canonical_url(getUtility(ILaunchpadRoot),
                                       rootsite=self.rootsite)
@@ -294,7 +293,7 @@ class FeedTypedData:
             for a_tag in a_tags:
                 if a_tag['href'].startswith('/'):
                     a_tag['href'] = urljoin(self.root_url, a_tag['href'])
-            altered_content = six.text_type(soup)
+            altered_content = str(soup)
         else:
             altered_content = self._content
 
@@ -302,7 +301,7 @@ class FeedTypedData:
             altered_content = html_escape(altered_content)
         elif self.content_type == 'xhtml':
             soup = BeautifulSoup(altered_content)
-            altered_content = six.text_type(soup)
+            altered_content = str(soup)
         return altered_content
 
 

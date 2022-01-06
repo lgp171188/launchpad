@@ -10,20 +10,20 @@ class LimitedList(list):
     """A mutable sequence that takes a limited number of elements."""
 
     def __new__(cls, max_length, value=None):
-        return super(LimitedList, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, max_length, value=None):
         if value is None:
             value = []
         elif len(value) > max_length:
             value = value[-max_length:]
-        super(LimitedList, self).__init__(value)
+        super().__init__(value)
         self.max_length = max_length
 
     def __repr__(self):
         return (
             '<LimitedList(%s, %s)>'
-            % (self.max_length, super(LimitedList, self).__repr__()))
+            % (self.max_length, super().__repr__()))
 
     def _ensureLength(self):
         """Ensure that the maximum length is not exceeded."""
@@ -32,46 +32,44 @@ class LimitedList(list):
             del self[0:elements_to_drop]
 
     def __add__(self, other):
-        return LimitedList(
-            self.max_length, super(LimitedList, self).__add__(other))
+        return LimitedList(self.max_length, super().__add__(other))
 
     def __radd__(self, other):
         return LimitedList(self.max_length, other.__add__(self))
 
     def __iadd__(self, other):
-        result = super(LimitedList, self).__iadd__(other)
+        result = super().__iadd__(other)
         self._ensureLength()
         return result
 
     def __mul__(self, other):
-        return LimitedList(
-            self.max_length, super(LimitedList, self).__mul__(other))
+        return LimitedList(self.max_length, super().__mul__(other))
 
     def __rmul__(self, other):
         return self.__mul__(other)
 
     def __imul__(self, other):
-        result = super(LimitedList, self).__imul__(other)
+        result = super().__imul__(other)
         self._ensureLength()
         return result
 
     def __setitem__(self, key, value):
-        result = super(LimitedList, self).__setitem__(key, value)
+        result = super().__setitem__(key, value)
         if isinstance(key, slice):
             self._ensureLength()
         return result
 
     def append(self, value):
-        result = super(LimitedList, self).append(value)
+        result = super().append(value)
         self._ensureLength()
         return result
 
     def extend(self, value):
-        result = super(LimitedList, self).extend(value)
+        result = super().extend(value)
         self._ensureLength()
         return result
 
     def insert(self, position, value):
-        result = super(LimitedList, self).insert(position, value)
+        result = super().insert(position, value)
         self._ensureLength()
         return result

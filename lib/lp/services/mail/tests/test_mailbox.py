@@ -20,7 +20,7 @@ from lp.testing import (
 class TestDirectoryMailBox(TestCase):
 
     def setUp(self):
-        super(TestDirectoryMailBox, self).setUp()
+        super().setUp()
         # Create a temp directory.
         self.email_dir = tempfile.mkdtemp()
         self.addCleanup(rmtree, self.email_dir)

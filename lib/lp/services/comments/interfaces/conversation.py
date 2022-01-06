@@ -28,7 +28,7 @@ from lp import _
 class IComment(Interface):
     """A comment which may have a body or footer."""
 
-    index = Int(title=u'The comment number', required=True, readonly=True)
+    index = Int(title='The comment number', required=True, readonly=True)
 
     extra_css_class = TextLine(
         description=_("A css class to apply to the comment's outer div."))
@@ -42,15 +42,15 @@ class IComment(Interface):
         readonly=True)
 
     too_long = Bool(
-        title=u'Whether the comment body is too long to display in full.',
+        title='Whether the comment body is too long to display in full.',
         readonly=True)
 
     too_long_to_render = Bool(
-        title=(u'Whether the comment body is so long that rendering is'
+        title=('Whether the comment body is so long that rendering is'
         ' inappropriate.'), readonly=True)
 
     text_for_display = Text(
-        title=u'The comment text to be displayed in the UI.', readonly=True)
+        title='The comment text to be displayed in the UI.', readonly=True)
 
     body_text = Text(
         description=_("The body text of the comment."),

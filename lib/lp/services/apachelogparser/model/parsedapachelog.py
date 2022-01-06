@@ -30,7 +30,7 @@ class ParsedApacheLog(Storm):
     date_last_parsed = UtcDateTimeCol(notNull=True, default=UTC_NOW)
 
     def __init__(self, first_line, bytes_read):
-        super(ParsedApacheLog, self).__init__()
+        super().__init__()
         self.first_line = six.ensure_text(first_line)
         self.bytes_read = bytes_read
         IStore(self.__class__).add(self)

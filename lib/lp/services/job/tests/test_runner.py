@@ -165,7 +165,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestJobRunner, self).setUp()
+        super().setUp()
         self.setUpStats()
 
     def makeTwoJobs(self):
@@ -259,7 +259,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         class DBAlterJob(NullJob):
 
             def __init__(self):
-                super(DBAlterJob, self).__init__('')
+                super().__init__('')
 
             def run(self):
                 self.job.log = 'hello'
@@ -437,7 +437,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         """runJob sets a default timeout function for urlfetch."""
         class RecordDefaultTimeoutJob(NullJob):
             def __init__(self):
-                super(RecordDefaultTimeoutJob, self).__init__("")
+                super().__init__("")
 
             def run(self):
                 self.default_timeout = get_default_timeout_function()()
@@ -641,7 +641,7 @@ class TestTwistedJobRunner(TestCaseWithFactory):
     run_tests_with = RunIsolatedTest
 
     def setUp(self):
-        super(TestTwistedJobRunner, self).setUp()
+        super().setUp()
         # The test relies on _pythonpath being importable. Thus we need to add
         # a directory that contains _pythonpath to the sys.path. We can rely
         # on the root directory of the checkout containing _pythonpath.

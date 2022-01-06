@@ -229,7 +229,7 @@ class TestGitRefView(BrowserTestCase):
             # that do not have status reports created for them - means we
             # should only see 2 entries with class 'status-reports-table'
             # on the page: reports_section[0] and reports_section[1]
-            self.assertTrue(len(reports_section) == 2)
+            self.assertEqual(2, len(reports_section))
 
     def test_clone_instructions(self):
         [ref] = self.factory.makeGitRefs(paths=["refs/heads/branch"])

@@ -222,7 +222,7 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
     def destroySelf(self):
         my_master = IMasterObject(self)
         if self is my_master:
-            super(SQLBase, self).destroySelf()
+            super().destroySelf()
         else:
             my_master.destroySelf()
 

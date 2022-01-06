@@ -72,8 +72,8 @@ class IMailHandler(Interface):
     """
 
     allow_unknown_users = Bool(
-        title=u"Allow unknown users",
-        description=u"The handler can handle emails from persons not"
+        title="Allow unknown users",
+        description="The handler can handle emails from persons not"
                     " registered in Launchpad (which will result in an"
                     " anonymous interaction being set up.")
 

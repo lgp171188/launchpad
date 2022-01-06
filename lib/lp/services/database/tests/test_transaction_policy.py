@@ -21,7 +21,7 @@ class TestTransactionPolicy(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestTransactionPolicy, self).setUp()
+        super().setUp()
         # Start each test with a clean slate: no ongoing transaction
         # unless the test says so.
         transaction.abort()

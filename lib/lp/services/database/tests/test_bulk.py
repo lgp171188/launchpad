@@ -187,9 +187,9 @@ class TestLoaders(TestCaseWithFactory):
             # test.
             (FeatureFlag.scope, FeatureFlag.priority, FeatureFlag.flag),
             sorted(
-                [(u'foo', 0, u'bar'), (u'foo', 0, u'baz'),
-                 (u'foo', 1, u'bar'), (u'foo', 1, u'quux'),
-                 (u'bar', 0, u'foo')]))
+                [('foo', 0, 'bar'), ('foo', 0, 'baz'),
+                 ('foo', 1, 'bar'), ('foo', 1, 'quux'),
+                 ('bar', 0, 'foo')]))
         self.assertEqual(
             "FeatureFlag.scope = E'bar' AND ("
             "FeatureFlag.priority = 0 AND FeatureFlag.flag IN (E'foo')) OR "
@@ -219,10 +219,10 @@ class TestLoaders(TestCaseWithFactory):
     def test_load_with_compound_primary_keys(self):
         # load() can load objects with compound primary keys.
         flags = [
-            FeatureFlag(u'foo', 0, u'bar', u'true'),
-            FeatureFlag(u'foo', 0, u'baz', u'false'),
+            FeatureFlag('foo', 0, 'bar', 'true'),
+            FeatureFlag('foo', 0, 'baz', 'false'),
             ]
-        other_flag = FeatureFlag(u'notfoo', 0, u'notbar', u'true')
+        other_flag = FeatureFlag('notfoo', 0, 'notbar', 'true')
         for flag in flags + [other_flag]:
             getFeatureStore().add(flag)
 

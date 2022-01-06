@@ -23,14 +23,14 @@ class TestAccount(TestCaseWithFactory):
 
     def test_account_repr_ansii(self):
         # Verify that ANSI displayname is ascii safe.
-        distro = self.factory.makeAccount(u'\xdc-account')
+        distro = self.factory.makeAccount('\xdc-account')
         ignore, displayname, status = repr(distro).rsplit(' ', 2)
         self.assertEqual("'\\xdc-account'", displayname)
         self.assertEqual('(Active)>', status)
 
     def test_account_repr_unicode(self):
         # Verify that Unicode displayname is ascii safe.
-        distro = self.factory.makeAccount(u'\u0170-account')
+        distro = self.factory.makeAccount('\u0170-account')
         ignore, displayname, status = repr(distro).rsplit(' ', 2)
         self.assertEqual("'\\u0170-account'", displayname)
 

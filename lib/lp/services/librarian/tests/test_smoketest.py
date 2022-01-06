@@ -31,7 +31,7 @@ def bad_urlopen(url):
 
 def error_urlopen(url):
     """A urllib replacement for testing that raises an exception."""
-    raise IOError('network error')
+    raise OSError('network error')
 
 
 def explosive_urlopen(exception, url):
@@ -44,7 +44,7 @@ class SmokeTestTestCase(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(SmokeTestTestCase, self).setUp()
+        super().setUp()
         self.fake_librarian = self.useFixture(FakeLibrarian())
 
     def test_store_file(self):

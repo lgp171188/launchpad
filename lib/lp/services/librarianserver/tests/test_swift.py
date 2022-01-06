@@ -9,7 +9,6 @@ import os.path
 import time
 from unittest.mock import patch
 
-import six
 from swiftclient import client as swiftclient
 import transaction
 
@@ -34,7 +33,7 @@ class TestFeedSwift(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestFeedSwift, self).setUp()
+        super().setUp()
         self.swift_fixture = self.useFixture(SwiftFixture())
         self.useFixture(FeatureFixture({'librarian.swift.enabled': True}))
         transaction.commit()
@@ -59,7 +58,7 @@ class TestFeedSwift(TestCase):
         self.lfcs = [lfa.content for lfa in self.lfas]
 
     def tearDown(self):
-        super(TestFeedSwift, self).tearDown()
+        super().tearDown()
         # Restart the Librarian so it picks up the feature flag change.
         self.attachLibrarianLog(LibrarianLayer.librarian_fixture)
         LibrarianLayer.librarian_fixture.cleanUp()
@@ -227,7 +226,7 @@ class TestFeedSwift(TestCase):
         # stored in Swift as a single object.
         size = 512 * 1024  # 512KB
         expected_content = b''.join(
-            six.int2byte(i % 256) for i in range(0, size))
+            bytes((i % 256,)) for i in range(0, size))
         lfa_id = self.add_file('hello_bigboy.xls', expected_content)
 
         # Data round trips when served from disk.
@@ -243,7 +242,7 @@ class TestFeedSwift(TestCase):
         size = LibrarianStorage.CHUNK_SIZE * 50
         self.assertTrue(size > 1024 * 1024)
         expected_content = b''.join(
-            six.int2byte(i % 256) for i in range(0, size))
+            bytes((i % 256,)) for i in range(0, size))
         lfa_id = self.add_file('hello_bigboy.xls', expected_content)
         lfc = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id).content
 
@@ -266,7 +265,7 @@ class TestFeedSwift(TestCase):
         size = LibrarianStorage.CHUNK_SIZE * 50 + 1
         self.assertTrue(size > 1024 * 1024)
         expected_content = b''.join(
-            six.int2byte(i % 256) for i in range(0, size))
+            bytes((i % 256,)) for i in range(0, size))
         lfa_id = self.add_file('hello_bigboy.xls', expected_content)
         lfc = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id).content
 
@@ -286,7 +285,7 @@ class TestFeedSwift(TestCase):
         size = LibrarianStorage.CHUNK_SIZE * 50
         self.assertTrue(size > 1024 * 1024)
         expected_content = b''.join(
-            six.int2byte(i % 256) for i in range(0, size))
+            bytes((i % 256,)) for i in range(0, size))
         lfa_id = self.add_file('hello_bigboy.xls', expected_content)
         lfa = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id)
         lfc = lfa.content

@@ -103,7 +103,7 @@ class FileUploadClient:
             # Register epoll for the socket.
             self.state.s_poll = select.epoll()
             self.state.s_poll.register(self.state.s.fileno(), select.EPOLLIN)
-        except socket.error as x:
+        except OSError as x:
             raise UploadFailed(
                 '[%s:%s]: %s' % (self.upload_host, self.upload_port, x))
 
@@ -247,7 +247,7 @@ class FileUploadClient:
 
             Store.of(content).flush()
 
-            assert isinstance(aliasID, six.integer_types), \
+            assert isinstance(aliasID, int), \
                     "aliasID %r not an integer" % (aliasID, )
             return aliasID
         finally:

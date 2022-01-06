@@ -1706,7 +1706,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
             # that do not have status reports created for them - means we
             # should only see one entry with class 'status-reports-table'
             # on the page: reports_section[0]
-            self.assertTrue(len(reports_section) == 1)
+            self.assertEqual(1, len(reports_section))
 
     def test_unmerged_commits_from_deleted_git_ref(self):
         # Even if the source Git ref has been deleted, we still know its tip

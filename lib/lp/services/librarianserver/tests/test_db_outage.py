@@ -64,7 +64,7 @@ class TestLibrarianDBOutage(TestCase):
     layer = PGBouncerLibrarianLayer
 
     def setUp(self):
-        super(TestLibrarianDBOutage, self).setUp()
+        super().setUp()
         self.pgbouncer = PGBouncerLibrarianLayer.pgbouncer_fixture
         self.client = LibrarianClient()
 

@@ -10,7 +10,6 @@ from email.utils import (
     make_msgid,
     )
 
-import six
 from testtools.matchers import (
     ContainsDict,
     EndsWith,
@@ -56,10 +55,10 @@ class TestMessageSet(TestCaseWithFactory):
     # characters according to Unicode but not according to ASCII, and this
     # would otherwise result in different test output between Python 2 and
     # 3.)
-    high_characters = b''.join(six.int2byte(c) for c in range(161, 256))
+    high_characters = b''.join(bytes((c,)) for c in range(161, 256))
 
     def setUp(self):
-        super(TestMessageSet, self).setUp()
+        super().setUp()
         # Testing behaviour, not permissions here.
         login('foo.bar@canonical.com')
 
@@ -172,8 +171,8 @@ class TestMessageSet(TestCaseWithFactory):
 
     def test_decode_utf8(self):
         """Test decode with a known encoding."""
-        result = MessageSet.decode(u'\u1234'.encode('utf-8'), 'utf-8')
-        self.assertEqual(u'\u1234', result)
+        result = MessageSet.decode('\u1234'.encode(), 'utf-8')
+        self.assertEqual('\u1234', result)
 
     def test_decode_macintosh(self):
         """Test decode with macintosh encoding."""
@@ -183,7 +182,7 @@ class TestMessageSet(TestCaseWithFactory):
     def test_decode_unknown_ascii(self):
         """Test decode with ascii characters in an unknown encoding."""
         result = MessageSet.decode(b'abcde', 'booga')
-        self.assertEqual(u'abcde', result)
+        self.assertEqual('abcde', result)
 
     def test_decode_unknown_high_characters(self):
         """Test decode with non-ascii characters in an unknown encoding."""

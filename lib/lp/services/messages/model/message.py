@@ -161,7 +161,7 @@ class Message(SQLBase):
 
     @classmethod
     def chunks_text(cls, chunks):
-        bits = [six.text_type(chunk) for chunk in chunks if chunk.content]
+        bits = [str(chunk) for chunk in chunks if chunk.content]
         return '\n\n'.join(bits)
 
     # XXX flacoste 2006-09-08: Bogus attribute only present so that
@@ -358,7 +358,7 @@ class MessageSet:
             decoded = word if charset is None else self.decode(word, charset)
             re_encoded_bits.append((decoded.encode('utf-8'), 'utf-8'))
 
-        return six.text_type(make_header(re_encoded_bits))
+        return str(make_header(re_encoded_bits))
 
     def fromEmail(self, email_message, owner=None, filealias=None,
                   parsed_message=None, create_missing_persons=False,
@@ -573,7 +573,6 @@ class MessageSet:
         return message
 
 
-@six.python_2_unicode_compatible
 @implementer(IMessageChunk)
 class MessageChunk(SQLBase):
     """One part of a possibly multipart Message"""
@@ -634,7 +633,7 @@ class UserToUserEmail(Storm):
         :param message: the message being sent
         :type message: `email.message.Message`
         """
-        super(UserToUserEmail, self).__init__()
+        super().__init__()
         person_set = getUtility(IPersonSet)
         # Find the person who is sending this message.
         realname, address = parseaddr(message['from'])
@@ -660,7 +659,7 @@ class UserToUserEmail(Storm):
         self.sender = sender
         self.recipient = recipient
         self.message_id = six.ensure_text(message_id, 'ascii')
-        self.subject = six.text_type(make_header(decode_header(subject)))
+        self.subject = str(make_header(decode_header(subject)))
         # Add the object to the store of the sender.  Our StormMigrationGuide
         # recommends against this saying "Note that the constructor should not
         # usually add the object to a store -- leave that for a FooSet.new()

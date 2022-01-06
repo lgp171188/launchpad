@@ -13,7 +13,6 @@ __all__ = [
 from collections import deque
 from functools import partial
 import json
-import socket
 import sys
 import threading
 import time
@@ -86,7 +85,7 @@ class RabbitSession(threading.local):
     exchange = LAUNCHPAD_EXCHANGE
 
     def __init__(self):
-        super(RabbitSession, self).__init__()
+        super().__init__()
         self._connection = None
         self._deferred = deque()
         # Maintain sessions according to transaction boundaries. Keep a strong
@@ -115,7 +114,7 @@ class RabbitSession(threading.local):
         if self._connection is not None:
             try:
                 self._connection.close()
-            except socket.error:
+            except OSError:
                 # Socket error is fine; the connection is still closed.
                 pass
             finally:
@@ -186,7 +185,7 @@ class RabbitUnreliableSession(RabbitSession):
         other errors but files an oops report for these.
         """
         try:
-            super(RabbitUnreliableSession, self).finish()
+            super().finish()
         except self.suppressed_errors:
             pass
         except Exception:
@@ -223,7 +222,7 @@ class RabbitRoutingKey(RabbitMessageBase):
     """A RabbitMQ data origination point."""
 
     def __init__(self, session, routing_key):
-        super(RabbitRoutingKey, self).__init__(session)
+        super().__init__(session)
         self.key = routing_key
 
     def associateConsumer(self, consumer):
@@ -259,7 +258,7 @@ class RabbitQueue(RabbitMessageBase):
     """A RabbitMQ Queue."""
 
     def __init__(self, session, name):
-        super(RabbitQueue, self).__init__(session)
+        super().__init__(session)
         self.name = name
 
     def receive(self, timeout=0.0):

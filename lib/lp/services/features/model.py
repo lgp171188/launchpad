@@ -36,7 +36,7 @@ class FeatureFlag(Storm):
     date_modified = DateTime()
 
     def __init__(self, scope, priority, flag, value):
-        super(FeatureFlag, self).__init__()
+        super().__init__()
         self.scope = scope
         self.priority = priority
         self.flag = flag
@@ -56,7 +56,7 @@ class FeatureFlagChangelogEntry(Storm):
     person = Reference(person_id, 'Person.id')
 
     def __init__(self, diff, comment, person):
-        super(FeatureFlagChangelogEntry, self).__init__()
+        super().__init__()
         self.diff = six.ensure_text(diff)
         self.date_changed = datetime.now(pytz.timezone('UTC'))
         self.comment = six.ensure_text(comment)

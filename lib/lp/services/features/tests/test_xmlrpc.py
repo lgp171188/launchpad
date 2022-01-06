@@ -39,45 +39,45 @@ class TestGetFeatureFlag(TestCaseWithFactory):
             features.install_feature_controller, old_features)
 
     def test_getFeatureFlag_returns_None_by_default(self):
-        self.assertIs(None, self.endpoint.getFeatureFlag(u'unknown'))
+        self.assertIs(None, self.endpoint.getFeatureFlag('unknown'))
 
     def test_getFeatureFlag_returns_true_for_set_flag(self):
-        flag_name = u'flag'
+        flag_name = 'flag'
         with feature_flags():
-            set_feature_flag(flag_name, u'1')
-            self.assertEqual(u'1', self.endpoint.getFeatureFlag(flag_name))
+            set_feature_flag(flag_name, '1')
+            self.assertEqual('1', self.endpoint.getFeatureFlag(flag_name))
 
     def test_getFeatureFlag_ignores_relevant_feature_controller(self):
         # getFeatureFlag should only consider the scopes it is asked to
         # consider, not any that happen to be active due to the XML-RPC
         # request itself.
-        flag_name = u'flag'
-        scope_name = u'scope'
+        flag_name = 'flag'
+        scope_name = 'scope'
         self.installFeatureController(
             FeatureController(
                 MultiScopeHandler(
                     [DefaultScope(), FixedScope(scope_name)]).lookup,
                 StormFeatureRuleSource()))
-        set_feature_flag(flag_name, u'1', scope_name)
+        set_feature_flag(flag_name, '1', scope_name)
         self.assertEqual(None, self.endpoint.getFeatureFlag(flag_name))
 
     def test_getFeatureFlag_considers_supplied_scope(self):
-        flag_name = u'flag'
-        scope_name = u'scope'
+        flag_name = 'flag'
+        scope_name = 'scope'
         with feature_flags():
-            set_feature_flag(flag_name, u'value', scope_name)
+            set_feature_flag(flag_name, 'value', scope_name)
             self.assertEqual(
-                u'value',
+                'value',
                 self.endpoint.getFeatureFlag(flag_name, [scope_name]))
 
     def test_getFeatureFlag_turns_user_into_team_scope(self):
-        flag_name = u'flag'
+        flag_name = 'flag'
         person = self.factory.makePerson()
         team = self.factory.makeTeam(members=[person])
         with feature_flags():
-            set_feature_flag(flag_name, u'value', u'team:' + team.name)
+            set_feature_flag(flag_name, 'value', 'team:' + team.name)
             self.assertEqual(
-                u'value',
+                'value',
                 self.endpoint.getFeatureFlag(
                     flag_name, ['user:' + person.name]))
 
@@ -85,13 +85,13 @@ class TestGetFeatureFlag(TestCaseWithFactory):
         sp = xmlrpc.client.ServerProxy(
             config.launchpad.feature_flags_endpoint,
             transport=XMLRPCTestTransport(), allow_none=True)
-        self.assertEqual(None, sp.getFeatureFlag(u'flag'))
+        self.assertEqual(None, sp.getFeatureFlag('flag'))
 
     def test_xmlrpc_interface_set(self):
         sp = xmlrpc.client.ServerProxy(
             config.launchpad.feature_flags_endpoint,
             transport=XMLRPCTestTransport(), allow_none=True)
-        flag_name = u'flag'
+        flag_name = 'flag'
         with feature_flags():
-            set_feature_flag(flag_name, u'1')
-            self.assertEqual(u'1', sp.getFeatureFlag(flag_name))
+            set_feature_flag(flag_name, '1')
+            self.assertEqual('1', sp.getFeatureFlag(flag_name))

@@ -15,7 +15,7 @@ from storm.expr import (
 from lp.services.database.interfaces import IStore
 
 
-class Collection(object):
+class Collection:
     """An arbitrary collection of database objects.
 
     Works as a Storm wrapper: create a collection based on another

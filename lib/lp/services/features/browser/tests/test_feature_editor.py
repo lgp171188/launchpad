@@ -34,7 +34,7 @@ class TestFeatureControlPage(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestFeatureControlPage, self).setUp()
+        super().setUp()
         self.useFixture(FakeLogger())
 
     def getUserBrowserAsTeamMember(self, teams):
@@ -72,8 +72,8 @@ class TestFeatureControlPage(BrowserTestCase):
 
     def test_feature_page_from_database(self):
         StormFeatureRuleSource().setAllRules([
-            ('ui.icing', 'default', 100, u'3.0'),
-            ('ui.icing', 'beta_user', 300, u'4.0'),
+            ('ui.icing', 'default', 100, '3.0'),
+            ('ui.icing', 'beta_user', 300, '4.0'),
             ])
         browser = self.getUserBrowserAsAdmin()
         browser.open(self.getFeatureRulesViewURL())

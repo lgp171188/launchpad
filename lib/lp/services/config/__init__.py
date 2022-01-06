@@ -15,7 +15,6 @@ import sys
 
 from lazr.config import ImplicitTypeSchema
 from lazr.config.interfaces import ConfigErrors
-import six
 
 from lp.services.osutils import open_for_writing
 from lp.services.propertycache import (
@@ -288,7 +287,7 @@ class LaunchpadConfig:
 config = LaunchpadConfig()
 
 
-class DatabaseConfigOverrides(object):
+class DatabaseConfigOverrides:
     pass
 
 
@@ -330,7 +329,7 @@ class DatabaseConfig:
 
         Overriding a value to None removes the override.
         """
-        for attr, value in six.iteritems(kwargs):
+        for attr, value in kwargs.items():
             assert attr in self._db_config_attrs, (
                 "%s cannot be overridden" % attr)
             if value is None:

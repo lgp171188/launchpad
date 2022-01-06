@@ -25,10 +25,10 @@ from lp.services.webapp.interfaces import ILaunchpadApplication
 class IHelpFolderDirective(Interface):
     """Directive to register an help folder."""
     folder = Path(
-        title=u'The path to the help folder.',
+        title='The path to the help folder.',
         required=True)
     name = TextLine(
-        title=u'The name to register the help folder under.',
+        title='The name to register the help folder under.',
         required=True)
 
 

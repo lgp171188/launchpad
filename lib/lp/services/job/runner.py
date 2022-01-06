@@ -359,7 +359,7 @@ class BaseJobRunner(LazrJobRunner):
             self.error_utility = errorlog.globalErrorUtility
         else:
             self.error_utility = error_utility
-        super(BaseJobRunner, self).__init__(
+        super().__init__(
             logger, oops_config=self.error_utility._oops_config,
             oopsMessage=self.error_utility.oopsMessage)
 
@@ -381,7 +381,7 @@ class BaseJobRunner(LazrJobRunner):
         if job.lease_expires is not None:
             set_default_timeout_function(lambda: job.getTimeout())
         try:
-            super(BaseJobRunner, self).runJob(IRunnableJob(job), fallback)
+            super().runJob(IRunnableJob(job), fallback)
         finally:
             set_default_timeout_function(original_timeout_function)
 
@@ -389,8 +389,7 @@ class BaseJobRunner(LazrJobRunner):
         set_request_started(
             enable_timeout=False, detail_filter=job.timeline_detail_filter)
         try:
-            return super(BaseJobRunner, self).runJobHandleError(
-                job, fallback=fallback)
+            return super().runJobHandleError(job, fallback=fallback)
         finally:
             clear_request_started()
 
@@ -575,7 +574,7 @@ class QuietAMPConnector(main.AMPConnector):
             # than ERROR.  Launchpad generates OOPSes for anything at
             # WARNING or above; we still want to do that if a child process
             # exits fatally, but not if it just writes something to stderr.
-            main.log.info(u'FROM {n}: {l}', n=self.name, l=line)
+            main.log.info('FROM {n}: {l}', n=self.name, l=line)
 
 
 class TwistedJobRunner(BaseJobRunner):
@@ -589,7 +588,7 @@ class TwistedJobRunner(BaseJobRunner):
             env['LPCONFIG'] = os.environ['LPCONFIG']
         starter = VirtualEnvProcessStarter(env=env)
         starter.connectorFactory = QuietAMPConnector
-        super(TwistedJobRunner, self).__init__(logger, error_utility)
+        super().__init__(logger, error_utility)
         self.job_source = job_source
         self.import_name = '%s.%s' % (
             removeSecurityProxy(job_source).__module__, job_source.__name__)

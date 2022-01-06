@@ -35,7 +35,7 @@ class IRequestExpired(IRuntimeError):
 # think it is ever used though ...
 class ISQLBase(Interface):
     """An extension of ISQLObject that provides an ID."""
-    id = Int(title=u"The integer ID for the instance")
+    id = Int(title="The integer ID for the instance")
 
 
 #
