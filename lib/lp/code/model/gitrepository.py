@@ -394,6 +394,14 @@ class RevisionStatusReportSet:
                 RevisionStatusReport.date_created,
                 RevisionStatusReport.id)
 
+    def deleteForRepository(self, repository):
+        reports = self.findByRepository(repository)
+        for report in reports:
+            IStore(RevisionStatusArtifact).find(
+                RevisionStatusArtifact,
+                RevisionStatusArtifact.report == report).remove()
+        reports.remove()
+
 
 class RevisionStatusArtifact(StormBase):
     __storm_table__ = 'RevisionStatusArtifact'
@@ -1944,6 +1952,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         # activity logs for removed repositories anyway.
         self.grants.remove()
         self.rules.remove()
+        getUtility(IRevisionStatusReportSet).deleteForRepository(self)
 
         # Now destroy the repository.
         repository_name = self.unique_name
