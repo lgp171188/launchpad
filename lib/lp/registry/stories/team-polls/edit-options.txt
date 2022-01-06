@@ -29,8 +29,19 @@ either:
     >>> print_feedback_messages(browser.contents)
     You can’t edit any options because the poll is already open.
 
-Since Jeff is an administrator of ubuntu-team and we have a poll that hasn't
-been opened yet, he should be able to edit its options.
+Since Jeff is an administrator of ubuntu-team, he should be able to edit the
+options of a poll that hasn't been opened yet.
+
+    >>> from zope.component import getUtility
+    >>> from lp.registry.interfaces.person import IPersonSet
+
+    >>> login('test@canonical.com')
+    >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
+    >>> not_yet_opened = factory.makePoll(
+    ...     ubuntu_team, 'not-yet-opened',
+    ...     'A public poll that has not opened yet', 'Whatever proposition.')
+    >>> _ = not_yet_opened.newOption('OptionX', 'OptionX')
+    >>> logout()
 
     >>> browser.open('http://launchpad.test/~ubuntu-team/+polls')
     >>> browser.getLink('A public poll that has not opened yet').click()
