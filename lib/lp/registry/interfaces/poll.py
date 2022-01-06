@@ -231,11 +231,8 @@ class IPoll(Interface):
         """Return a timedelta object of the interval between now and the date
         when this poll opens."""
 
-    def newOption(name, title=None, active=True):
-        """Create a new PollOption for this poll.
-
-        If title is None it'll be the same as name.
-        """
+    def newOption(name, title, active=True):
+        """Create a new PollOption for this poll."""
 
     def getActiveOptions():
         """Return all PollOptions of this poll that are active."""
