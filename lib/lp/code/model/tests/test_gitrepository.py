@@ -818,7 +818,7 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
             getUtility(IGitLookup).get(repository_id),
             "The repository has not been deleted.")
 
-    def test_revisionstatureports_do_not_disable_deletion(self):
+    def test_revision_status_reports_do_not_disable_deletion(self):
         title = self.factory.getUniqueUnicode('report-title')
         result_summary = "120/120 tests passed"
         commit_sha1 = hashlib.sha1(
@@ -843,6 +843,18 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
         self.assertEqual(2, len(list(
             getUtility(IRevisionStatusArtifactSet).findByReport(report2))))
 
+        # Create here one report and artifact under a different repo
+        # and ensure below once self.repository is deleted the report
+        # and artifacts under other_repository remain intact
+        other_repository = self.factory.makeGitRepository()
+        other_report = self.factory.makeRevisionStatusReport(
+            user=self.repository.owner, git_repository=other_repository,
+            title=title, commit_sha1=commit_sha1,
+            result_summary=result_summary,
+            result=RevisionStatusResult.SUCCEEDED)
+        self.factory.makeRevisionStatusArtifact(report=other_report)
+        self.factory.makeRevisionStatusArtifact(report=other_report)
+
         self.assertTrue(
             self.repository.canBeDeleted(),
             "A newly created repository should be able to be deleted.")
@@ -851,11 +863,17 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
         self.assertIsNone(
             getUtility(IGitLookup).get(repository_id),
             "The repository has not been deleted.")
-        results = list(getUtility(IRevisionStatusReportSet).findByRepository(
-            self.repository))
-        self.assertEqual(0, len(results))
-        self.assertEqual(0, len(list(
-            getUtility(IRevisionStatusArtifactSet).findByReport(report2))))
+        self.assertEqual(0, len(list(getUtility(
+            IRevisionStatusReportSet).findByRepository(self.repository))))
+        self.assertEqual(0, len(list(getUtility(
+            IRevisionStatusArtifactSet).findByReport(report2))))
+
+        # Ensure that once self.repository is deleted the report
+        # and artifacts under other_repository remain intact
+        self.assertEqual(2, len(list(getUtility(
+            IRevisionStatusArtifactSet).findByReport(other_report))))
+        self.assertEqual(1, len(list(getUtility(
+            IRevisionStatusReportSet).findByRepository(other_repository))))
 
     def test_subscription_does_not_disable_deletion(self):
         # A repository that has a subscription can be deleted.

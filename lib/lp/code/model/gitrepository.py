@@ -197,7 +197,10 @@ from lp.services.database.constants import (
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import get_transaction_timestamp
+from lp.services.database.sqlbase import (
+    convert_storm_clause_to_string,
+    get_transaction_timestamp,
+    )
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Array,
@@ -395,12 +398,16 @@ class RevisionStatusReportSet:
                 RevisionStatusReport.id)
 
     def deleteForRepository(self, repository):
-        reports = self.findByRepository(repository)
-        for report in reports:
-            IStore(RevisionStatusArtifact).find(
-                RevisionStatusArtifact,
-                RevisionStatusArtifact.report == report).remove()
-        reports.remove()
+        clauses = [
+            RevisionStatusArtifact.report == RevisionStatusReport.id,
+            RevisionStatusReport.git_repository == repository,
+            ]
+        where = convert_storm_clause_to_string(And(*clauses))
+        IStore(RevisionStatusArtifact).execute("""
+            DELETE FROM RevisionStatusArtifact
+            USING RevisionStatusReport
+            WHERE """ + where)
+        self.findByRepository(repository).remove()
 
 
 class RevisionStatusArtifact(StormBase):
