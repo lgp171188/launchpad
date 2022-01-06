@@ -1087,15 +1087,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             removeSecurityProxy(project).driver = driver
         return project
 
-    def makeSprint(self, title=None, name=None):
+    def makeSprint(self, title=None, name=None, time_starts=None):
         """Make a sprint."""
         if title is None:
             title = self.getUniqueUnicode('title')
         owner = self.makePerson()
         if name is None:
             name = self.getUniqueUnicode('name')
-        time_starts = datetime(2009, 1, 1, tzinfo=pytz.UTC)
-        time_ends = datetime(2009, 1, 2, tzinfo=pytz.UTC)
+        if time_starts is None:
+            time_starts = datetime(2009, 1, 1, tzinfo=pytz.UTC)
+        time_ends = time_starts + timedelta(days=1)
         time_zone = u'UTC'
         summary = self.getUniqueUnicode('summary')
         return getUtility(ISprintSet).new(

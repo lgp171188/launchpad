@@ -265,6 +265,10 @@ Sprint branding
 
 Again, for Sprints, we have not exposed icon editing through the UI.
 
+    >>> login('test@canonical.com')
+    >>> _ = factory.makeSprint(name='futurista')
+    >>> logout()
+
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open('http://launchpad.test/sprints/futurista/+branding')
     Traceback (most recent call last):
