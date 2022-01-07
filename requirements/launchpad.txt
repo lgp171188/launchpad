@@ -20,7 +20,7 @@ bcrypt==3.1.7
 beautifulsoup4==4.7.1
 billiard==3.6.4.0
 bleach==3.1.0
-breezy==3.0.1
+breezy==3.1.0
 bson==0.5.9
 boto3==1.16.63
 botocore==1.19.63
@@ -106,6 +106,7 @@ paramiko==2.4.1
 Paste==3.3.0
 PasteDeploy==2.1.0
 pathlib2==2.3.2
+patiencediff==0.2.2
 pgbouncer==0.0.9
 prettytable==0.7.2
 psutil==5.4.2
