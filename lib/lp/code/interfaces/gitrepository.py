@@ -942,6 +942,9 @@ class IRevisionStatusReportSet(Interface):
     def findByCommit(repository, commit_sha1):
         """Returns all `RevisionStatusReport` for a repository and commit."""
 
+    def deleteForRepository(repository):
+        """Delete all `RevisionStatusReport` for a repository."""
+
 
 class IRevisionStatusArtifactSet(Interface):
     """The set of all revision status artifacts."""

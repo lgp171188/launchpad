@@ -6,11 +6,11 @@ The tour pages.
     >>> browser.getLink('Take the tour').click()
     >>> print(extract_text(find_tag_by_id(
     ...     browser.contents, 'footer-navigation')))
-    Next...© 2004-2021 Canonical Ltd...
+    Next...© 2004-2022 Canonical Ltd...
 
 The main template.
 
     >>> browser.open('http://launchpad.test')
     >>> print(extract_text(find_tag_by_id(browser.contents, 'footer')))
-    © 2004-2021 Canonical Ltd.
+    © 2004-2022 Canonical Ltd.
     ...
