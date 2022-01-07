@@ -277,6 +277,14 @@ class TestPersonTeams(TestCaseWithFactory):
             self.assertTrue(self.a_team.inAnyTeam([d_team, self.a_team]))
             self.assertEqual(0, recorder.count)
 
+    def test_inAnyTeam_user_is_a_member_of_themselves(self):
+        # Verify that the inAnyTeam() method returns True when passed the same
+        # user as the user being queried. Also verify that the user is
+        # not a member of any other non-team user.
+        other_user = self.factory.makePerson()
+        self.assertTrue(self.user.inAnyTeam([self.user]))
+        self.assertFalse(self.user.inAnyTeam([other_user]))
+
     def test_inAnyTeam_no_cached_entries(self):
         # Verify that the inAnyTeam() method returns True when the user is a
         # member of the passed team and the cache is populated with
