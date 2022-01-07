@@ -37,7 +37,7 @@ class TestListTestCase(TestCase, TestWithFixtures):
             args = info['args']
             load_list = find_load_list(args)
             self.assertNotEqual(None, load_list)
-            with open(load_list, 'rt') as testlist:
+            with open(load_list) as testlist:
                 contents = testlist.readlines()
             self.assertEqual(['foo\n', 'bar\n'], contents)
             return {'stdout': io.BytesIO(), 'stdin': io.BytesIO()}

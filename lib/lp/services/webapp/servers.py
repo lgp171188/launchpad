@@ -114,7 +114,7 @@ from lp.testopenid.interfaces.server import ITestOpenIDApplication
 from lp.xmlrpc.interfaces import IPrivateApplication
 
 
-class StepsToGo(six.Iterator):
+class StepsToGo:
     """
 
     >>> class FakeRequest:
@@ -412,7 +412,7 @@ class XMLRPCRequestPublicationFactory(VirtualHostRequestPublicationFactory):
 
     def __init__(self, vhost_name, request_factory, publication_factory,
                  port=None):
-        super(XMLRPCRequestPublicationFactory, self).__init__(
+        super().__init__(
             vhost_name, request_factory, publication_factory, port, ['POST'])
 
     def checkRequest(self, environment):
@@ -421,8 +421,7 @@ class XMLRPCRequestPublicationFactory(VirtualHostRequestPublicationFactory):
         Accept only requests where the MIME type is text/xml.
         """
         request_factory, publication_factory = (
-            super(XMLRPCRequestPublicationFactory, self).checkRequest(
-                environment))
+            super().checkRequest(environment))
         if request_factory is None:
             mime_type = environment.get('CONTENT_TYPE')
             if mime_type.split(';')[0].strip() != 'text/xml':
@@ -445,7 +444,7 @@ class WebServiceRequestPublicationFactory(
                  port=None):
         """This factory accepts requests that use all five major HTTP methods.
         """
-        super(WebServiceRequestPublicationFactory, self).__init__(
+        super().__init__(
             vhost_name, request_factory, publication_factory, port)
 
 
@@ -466,9 +465,7 @@ class VHostWebServiceRequestPublicationFactory(
         if self.isWebServicePath(environment.get('PATH_INFO', '')):
             return WebServiceRequestPublicationFactory.default_methods
         else:
-            return super(
-                VHostWebServiceRequestPublicationFactory,
-                self).getAcceptableMethods(environment)
+            return super().getAcceptableMethods(environment)
 
     def getRequestAndPublicationFactories(self, environment):
         """See `VirtualHostRequestPublicationFactory`.
@@ -479,9 +476,7 @@ class VHostWebServiceRequestPublicationFactory(
         if self.isWebServicePath(environment.get('PATH_INFO', '')):
             return WebServiceClientRequest, WebServicePublication
         else:
-            return super(
-                VHostWebServiceRequestPublicationFactory,
-                self).getRequestAndPublicationFactories(environment)
+            return super().getRequestAndPublicationFactories(environment)
 
     def isWebServicePath(self, path):
         """Does the path refer to a web service resource?"""
@@ -553,8 +548,7 @@ class LaunchpadBrowserRequestMixin:
 
     def getURL(self, level=0, path_only=False, include_query=False):
         """See `IBasicLaunchpadRequest`."""
-        sup = super(LaunchpadBrowserRequestMixin, self)
-        url = sup.getURL(level, path_only)
+        url = super().getURL(level, path_only)
         if include_query:
             query_string = self.get('QUERY_STRING')
             if query_string is not None and len(query_string) > 0:
@@ -585,8 +579,7 @@ class BasicLaunchpadRequest(LaunchpadBrowserRequestMixin):
             if isinstance(pi, bytes):
                 pi = pi.decode('utf-8', 'replace')
             environ['PATH_INFO'] = pi.encode('utf-8')
-        super(BasicLaunchpadRequest, self).__init__(
-            body_instream, environ, response)
+        super().__init__(body_instream, environ, response)
         # Now replace PATH_INFO with the version decoded by sane_environment.
         if 'PATH_INFO' in self._environ:
             environ['PATH_INFO'] = self._environ['PATH_INFO']
@@ -630,7 +623,7 @@ class BasicLaunchpadRequest(LaunchpadBrowserRequestMixin):
 
     def retry(self):
         """See IPublisherRequest."""
-        new_request = super(BasicLaunchpadRequest, self).retry()
+        new_request = super().retry()
         # Propagate the list of keys we have set in the WSGI environment.
         new_request._wsgi_keys = self._wsgi_keys
         return new_request
@@ -682,7 +675,7 @@ class LaunchpadBrowserRequest(BasicLaunchpadRequest, BrowserRequest,
         return LaunchpadBrowserResponse()
 
     def _decode(self, text):
-        text = super(LaunchpadBrowserRequest, self)._decode(text)
+        text = super()._decode(text)
         if isinstance(text, bytes):
             # BrowserRequest._decode failed to do so with the user-specified
             # charsets, so decode as UTF-8 with replacements, since we always
@@ -831,7 +824,7 @@ class LaunchpadBrowserResponse(NotificationResponse, BrowserResponse):
     # Note that NotificationResponse defines a 'redirect' method which
     # needs to override the 'redirect' method in BrowserResponse
     def __init__(self, header_output=None, http_transaction=None):
-        super(LaunchpadBrowserResponse, self).__init__()
+        super().__init__()
 
     def _validateHeader(self, name, value):
         name = str(name)
@@ -844,12 +837,11 @@ class LaunchpadBrowserResponse(NotificationResponse, BrowserResponse):
 
     def setHeader(self, name, value, literal=False):
         name, value = self._validateHeader(name, value)
-        super(LaunchpadBrowserResponse, self).setHeader(
-            name, value, literal=literal)
+        super().setHeader(name, value, literal=literal)
 
     def addHeader(self, name, value):
         name, value = self._validateHeader(name, value)
-        super(LaunchpadBrowserResponse, self).addHeader(name, value)
+        super().addHeader(name, value)
 
     def redirect(self, location, status=None, trusted=True,
                  temporary_if_possible=False):
@@ -878,8 +870,8 @@ class LaunchpadBrowserResponse(NotificationResponse, BrowserResponse):
                 status = 307
             else:
                 status = 303
-        super(LaunchpadBrowserResponse, self).redirect(
-            six.ensure_str(six.text_type(location)),
+        super().redirect(
+            six.ensure_str(str(location)),
             status=status, trusted=trusted)
 
 
@@ -959,7 +951,7 @@ class LaunchpadTestRequest(LaunchpadBrowserRequestMixin,
             if value is not None:
                 value = wsgi_native_string(value)
             native_kw[key] = value
-        super(LaunchpadTestRequest, self).__init__(
+        super().__init__(
             body_instream=body_instream, environ=environ, form=form,
             skin=skin, outstream=outstream,
             REQUEST_METHOD=wsgi_native_string(method), **native_kw)
@@ -1079,7 +1071,7 @@ class FeedsPublication(LaunchpadBrowserPublication):
         """
         # LaunchpadImageFolder is imported here to avoid an import loop.
         from lp.app.browser.launchpad import LaunchpadImageFolder
-        result = super(FeedsPublication, self).traverseName(request, ob, name)
+        result = super().traverseName(request, ob, name)
         if len(request.stepstogo) == 0:
             # The url has been fully traversed. Now we can check that
             # the result is a feed, a favicon, an image, or a redirection.
@@ -1134,8 +1126,7 @@ class WebServicePublication(WebServicePublicationMixin,
         See https://dev.launchpad.net/Foundations/Webservice for more
         information about WebService page IDs.
         """
-        pageid = super(WebServicePublication, self).constructPageID(
-            view, context)
+        pageid = super().constructPageID(view, context)
         if ICollectionResource.providedBy(view):
             # collection_identifier is a way to differentiate between
             # CollectionResource objects. CollectionResource objects are
@@ -1150,7 +1141,7 @@ class WebServicePublication(WebServicePublicationMixin,
                 pageid += ':' + collection_identifier
         op = (view.request.get('ws.op')
             or view.request.query_string_params.get('ws.op'))
-        if op and isinstance(op, six.string_types):
+        if op and isinstance(op, str):
             pageid += ':' + op
         return pageid
 
@@ -1174,7 +1165,7 @@ class WebServicePublication(WebServicePublicationMixin,
             # A redirection should be served as is.
             return ob
         else:
-            return super(WebServicePublication, self).getResource(request, ob)
+            return super().getResource(request, ob)
 
     def _getPrincipalFromAccessToken(self, request):
         """Authenticate a request using a personal access token."""
@@ -1222,8 +1213,8 @@ class WebServicePublication(WebServicePublicationMixin,
             # header.
             anonymous_request = True
             consumer_key = six.ensure_text(request.getHeader('User-Agent', ''))
-            if consumer_key == u'':
-                consumer_key = u'anonymous client'
+            if consumer_key == '':
+                consumer_key = 'anonymous client'
             consumer = consumers.getByKey(consumer_key)
 
         if consumer is None:
@@ -1293,7 +1284,7 @@ class WebServicePublication(WebServicePublicationMixin,
         request_path = request.get('PATH_INFO', '')
         web_service_config = getUtility(IWebServiceConfiguration)
         if request_path.startswith("/%s" % web_service_config.path_override):
-            return super(WebServicePublication, self).getPrincipal(request)
+            return super().getPrincipal(request)
 
         if request._auth is not None and request._auth.startswith("Token "):
             return self._getPrincipalFromAccessToken(request)
@@ -1316,8 +1307,7 @@ class WebServiceClientRequest(LaunchpadWebServiceRequestTraversal,
     """Request type for a resource published through the web service."""
 
     def __init__(self, body_instream, environ, response=None):
-        super(WebServiceClientRequest, self).__init__(
-            body_instream, environ, response)
+        super().__init__(body_instream, environ, response)
         # Web service requests use content negotiation, so we put
         # 'Accept' in the Vary header. They don't use cookies, so
         # there's no point in putting 'Cookie' in the Vary header, and
@@ -1355,7 +1345,7 @@ class WebServiceTestRequest(LaunchpadWebServiceRequestTraversal,
             }
         if environ is not None:
             test_environ.update(environ)
-        super(WebServiceTestRequest, self).__init__(
+        super().__init__(
             body_instream=body_instream, environ=test_environ, **kw)
         if version is None:
             version = getUtility(IWebServiceConfiguration).active_versions[-1]
@@ -1393,7 +1383,7 @@ class PublicXMLRPCRequest(BasicLaunchpadRequest, XMLRPCRequest,
         # URLs with mainsite's, so that URLs are meaningful.
         if rootsite in (None, 'xmlrpc', 'xmlrpc_private'):
             rootsite = 'mainsite'
-        return super(PublicXMLRPCRequest, self).getRootURL(rootsite)
+        return super().getRootURL(rootsite)
 
     def _createResponse(self):
         return PublicXMLRPCResponse()
@@ -1428,8 +1418,7 @@ class PrivateXMLRPCPublication(PublicXMLRPCPublication):
         missing = object()
         end_point = getattr(ob, name, missing)
         if end_point is missing:
-            return super(PrivateXMLRPCPublication, self).traverseName(
-                request, ob, name)
+            return super().traverseName(request, ob, name)
         return end_point
 
 
@@ -1476,7 +1465,7 @@ class ProtocolErrorPublication(LaunchpadBrowserPublication):
         :param status: The HTTP status to send
         :param headers: Any HTTP headers that should be sent.
         """
-        super(ProtocolErrorPublication, self).__init__(None)
+        super().__init__(None)
         self.status = status
         self.headers = headers
 

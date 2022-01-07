@@ -69,7 +69,7 @@ class SigningServiceResponseFactory:
         self.b64_generated_public_key = base64.b64encode(
             bytes(self.generated_public_key)).decode("UTF-8")
         self.generated_fingerprint = (
-            u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
+            '338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
 
         self.signed_msg_template = b"%d::signed!"
 

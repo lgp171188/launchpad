@@ -36,8 +36,6 @@ from requests.adapters import (
     )
 from requests_file import FileAdapter
 from requests_toolbelt.downloadutils import stream
-import six
-from six import reraise
 from urllib3.connectionpool import (
     HTTPConnectionPool,
     HTTPSConnectionPool,
@@ -142,7 +140,7 @@ class ThreadCapturingResult(Thread):
     """
 
     def __init__(self, target, args, kwargs, **opt):
-        super(ThreadCapturingResult, self).__init__(**opt)
+        super().__init__(**opt)
         self.target = target
         self.args = args
         self.kwargs = kwargs
@@ -186,7 +184,7 @@ class with_timeout:
         """
         # If the cleanup function is specified by name, the function but be a
         # method, so defined in a class definition context.
-        if isinstance(cleanup, six.string_types):
+        if isinstance(cleanup, str):
             frame = sys._getframe(1)
             f_locals = frame.f_locals
 
@@ -202,7 +200,7 @@ class with_timeout:
         """Wraps the method."""
         def cleanup(t, args):
             if self.cleanup is not None:
-                if isinstance(self.cleanup, six.string_types):
+                if isinstance(self.cleanup, str):
                     # 'self' will be first positional argument.
                     getattr(args[0], self.cleanup)()
                 else:
@@ -239,7 +237,7 @@ class with_timeout:
                 # Remove the cyclic reference for faster GC.
                 del t.exc_info
                 try:
-                    reraise(exc_info[0], exc_info[1], tb=exc_info[2])
+                    raise exc_info[1].with_traceback(None)
                 finally:
                     # Avoid traceback reference cycles.
                     del exc_info
@@ -252,7 +250,7 @@ class CleanableConnectionPoolMixin:
     """Enhance urllib3's connection pools to support forced socket cleanup."""
 
     def __init__(self, *args, **kwargs):
-        super(CleanableConnectionPoolMixin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._all_connections = []
         self._all_connections_mutex = Lock()
 
@@ -260,7 +258,7 @@ class CleanableConnectionPoolMixin:
         with self._all_connections_mutex:
             if self._all_connections is None:
                 raise ClosedPoolError(self, "Pool is closed.")
-            conn = super(CleanableConnectionPoolMixin, self)._new_conn()
+            conn = super()._new_conn()
             self._all_connections.append(conn)
             return conn
 
@@ -275,7 +273,7 @@ class CleanableConnectionPoolMixin:
                     sock.close()
                     conn.sock = None
             self._all_connections = None
-        super(CleanableConnectionPoolMixin, self).close()
+        super().close()
 
 
 class CleanableHTTPConnectionPool(
@@ -298,7 +296,7 @@ class CleanablePoolManager(PoolManager):
     """A version of urllib3's PoolManager supporting forced socket cleanup."""
 
     def __init__(self, *args, **kwargs):
-        super(CleanablePoolManager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.pool_classes_by_scheme = cleanable_pool_classes_by_scheme
 
 

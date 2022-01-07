@@ -288,7 +288,7 @@ class OpenIDCallbackView(OpenIDLogin):
 
     def _gather_params(self, request):
         params = dict(request.form)
-        for key, value in six.iteritems(request.query_string_params):
+        for key, value in request.query_string_params.items():
             if len(value) > 1:
                 raise ValueError(
                     'Did not expect multi-valued fields.')
@@ -422,7 +422,7 @@ class OpenIDCallbackView(OpenIDLogin):
             # already logged in, so we just add a notification message and
             # redirect.
             self.request.response.addInfoNotification(
-                _(u'Your authentication failed but you were already '
+                _('Your authentication failed but you were already '
                    'logged into Launchpad.'))
             self._redirect()
             # No need to return anything as we redirect above.
@@ -432,7 +432,7 @@ class OpenIDCallbackView(OpenIDLogin):
                 self.context, self.request, self.openid_response)()
 
     def __call__(self):
-        retval = super(OpenIDCallbackView, self).__call__()
+        retval = super().__call__()
         # The consumer.complete() call in initialize() will create entries in
         # OpenIDConsumerNonce to prevent replay attacks, but since this will
         # be a GET request, the transaction would be rolled back, so we need
@@ -454,7 +454,7 @@ class OpenIDLoginErrorView(LaunchpadView):
 
     def __init__(self, context, request, openid_response=None,
                  login_error=None):
-        super(OpenIDLoginErrorView, self).__init__(context, request)
+        super().__init__(context, request)
         assert self.account is None, (
             "Don't try to render this page when the user is logged in.")
         if login_error:

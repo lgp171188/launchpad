@@ -19,5 +19,5 @@ class OpenIDConsumerStoreTests(BaseStormOpenIDStoreTestsMixin, TestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(OpenIDConsumerStoreTests, self).setUp()
+        super().setUp()
         self.store = getUtility(IOpenIDConsumerStore)

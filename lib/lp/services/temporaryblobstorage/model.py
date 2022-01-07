@@ -12,7 +12,6 @@ from io import BytesIO
 import uuid
 
 import pytz
-import six
 from storm.locals import (
     DateTime,
     Int,
@@ -51,7 +50,7 @@ class TemporaryBlobStorage(StormBase):
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
 
     def __init__(self, uuid, file_alias):
-        super(TemporaryBlobStorage, self).__init__()
+        super().__init__()
         self.uuid = uuid
         self.file_alias = file_alias
 
@@ -122,13 +121,13 @@ class TemporaryStorageManager:
 
         # create the BLOB and return the UUID
 
-        new_uuid = six.text_type(uuid.uuid1())
+        new_uuid = str(uuid.uuid1())
 
         # We use a random filename, so only things that can look up the
         # secret can retrieve the original data (which is why we don't use
         # the UUID we return to the user as the filename, nor the filename
         # of the object they uploaded).
-        secret = six.text_type(uuid.uuid1())
+        secret = str(uuid.uuid1())
 
         file_alias = getUtility(ILibraryFileAliasSet).create(
                 secret, len(blob), BytesIO(blob),

@@ -48,12 +48,12 @@ class TestWebhook(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestWebhook, self).setUp()
+        super().setUp()
         target = self.factory.makeGitRepository()
         self.owner = target.owner
         with person_logged_in(self.owner):
             self.webhook = self.factory.makeWebhook(
-                target=target, delivery_url=u'http://example.com/ep')
+                target=target, delivery_url='http://example.com/ep')
             self.webhook_url = api_url(self.webhook)
         self.webservice = webservice_for_person(
             self.owner, permission=OAuthPermission.WRITE_PRIVATE)
@@ -120,7 +120,7 @@ class TestWebhook(TestCaseWithFactory):
                 status=400,
                 body=(
                     "event_types: %r isn't a valid token" %
-                    u'hg:push:0.1').encode('ASCII')))
+                    'hg:push:0.1').encode('ASCII')))
 
     def test_anon_forbidden(self):
         response = webservice_for_person(None).get(
@@ -184,14 +184,14 @@ class TestWebhook(TestCaseWithFactory):
                 self.webhook_url, 'setSecret', secret='sekrit',
                 api_version='devel').status)
         with person_logged_in(self.owner):
-            self.assertEqual(u'sekrit', self.webhook.secret)
+            self.assertEqual('sekrit', self.webhook.secret)
         self.assertEqual(
             200,
             self.webservice.named_post(
                 self.webhook_url, 'setSecret', secret='shhh',
                 api_version='devel').status)
         with person_logged_in(self.owner):
-            self.assertEqual(u'shhh', self.webhook.secret)
+            self.assertEqual('shhh', self.webhook.secret)
         self.assertEqual(
             200,
             self.webservice.named_post(
@@ -205,12 +205,12 @@ class TestWebhookDelivery(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestWebhookDelivery, self).setUp()
+        super().setUp()
         target = self.factory.makeGitRepository()
         self.owner = target.owner
         with person_logged_in(self.owner):
             self.webhook = self.factory.makeWebhook(
-                target=target, delivery_url=u'http://example.com/ep')
+                target=target, delivery_url='http://example.com/ep')
             self.webhook_url = api_url(self.webhook)
             self.delivery = self.webhook.ping()
             self.delivery_url = api_url(self.delivery)
@@ -273,7 +273,7 @@ class TestWebhookTargetBase:
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestWebhookTargetBase, self).setUp()
+        super().setUp()
         self.target = self.makeTarget()
         self.owner = self.target.owner
         self.target_url = api_url(self.target)
@@ -282,7 +282,7 @@ class TestWebhookTargetBase:
 
     def test_webhooks(self):
         with person_logged_in(self.owner):
-            for ep in (u'http://example.com/ep1', u'http://example.com/ep2'):
+            for ep in ('http://example.com/ep1', 'http://example.com/ep2'):
                 self.factory.makeWebhook(target=self.target, delivery_url=ep)
         representation = self.webservice.get(
             self.target_url + '/webhooks', api_version='devel').jsonBody()
@@ -339,10 +339,10 @@ class TestWebhookTargetBase:
 
         # The secret is set, but cannot be read back through the API.
         with person_logged_in(self.owner):
-            self.assertEqual(u'sekrit', self.target.webhooks.one().secret)
+            self.assertEqual('sekrit', self.target.webhooks.one().secret)
         representation = self.webservice.get(
             self.target_url + '/webhooks', api_version='devel').jsonBody()
-        self.assertNotIn(u'secret', representation['entries'][0])
+        self.assertNotIn('secret', representation['entries'][0])
 
     def test_newWebhook_permissions(self):
         self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true'}))

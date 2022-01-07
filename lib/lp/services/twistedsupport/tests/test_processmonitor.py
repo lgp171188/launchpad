@@ -88,7 +88,7 @@ class ProcessTestsMixin:
         self.protocol.processEnded(failure.Failure(exc))
 
     def setUp(self):
-        super(ProcessTestsMixin, self).setUp()
+        super().setUp()
         self.termination_deferred = defer.Deferred()
         self.clock = task.Clock()
         self.protocol = self.makeProtocol()

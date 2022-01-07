@@ -44,7 +44,7 @@ class TestLaunchpadView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLaunchpadView, self).setUp()
+        super().setUp()
         flag_info.append(
             ('test_feature', 'boolean', 'documentation', 'default_value_1',
              'title', 'http://wiki.lp.dev/LEP/sample'))
@@ -55,7 +55,7 @@ class TestLaunchpadView(TestCaseWithFactory):
     def tearDown(self):
         flag_info.pop()
         flag_info.pop()
-        super(TestLaunchpadView, self).tearDown()
+        super().tearDown()
 
     def test_getCacheJSON_non_resource_context(self):
         view = LaunchpadView(object(), LaunchpadTestRequest())
@@ -159,13 +159,13 @@ class TestLaunchpadView(TestCaseWithFactory):
     def test_call_render_with_isRedirected(self):
         class TestView(LaunchpadView):
             def render(self):
-                return u'rendered'
+                return 'rendered'
         request = LaunchpadTestRequest()
         view = TestView(object(), request)
         request.response.setStatus(200)
-        self.assertEqual(u'rendered', view())
+        self.assertEqual('rendered', view())
         request.response.setStatus(301)
-        self.assertEqual(u'', view())
+        self.assertEqual('', view())
 
     def test_related_feature_info__default(self):
         # By default, LaunchpadView.related_feature_info is empty.
@@ -195,10 +195,10 @@ class TestLaunchpadView(TestCaseWithFactory):
             {},
             (
                 {
-                    u'flag': u'test_feature',
-                    u'scope': u'default',
-                    u'priority': 0,
-                    u'value': u'on',
+                    'flag': 'test_feature',
+                    'scope': 'default',
+                    'priority': 0,
+                    'value': 'on',
                     },
                 )))
         request = LaunchpadTestRequest()
@@ -219,10 +219,10 @@ class TestLaunchpadView(TestCaseWithFactory):
             {},
             (
                 {
-                    u'flag': u'test_feature',
-                    u'scope': u'pageid:foo',
-                    u'priority': 0,
-                    u'value': u'on',
+                    'flag': 'test_feature',
+                    'scope': 'pageid:foo',
+                    'priority': 0,
+                    'value': 'on',
                     },
                 ),
             override_scope_lookup=lambda scope_name: True))
@@ -244,16 +244,16 @@ class TestLaunchpadView(TestCaseWithFactory):
         # a more restricted scope.
         def makeFeatureDict(flag, value, scope, priority):
             return {
-                u'flag': flag,
-                u'scope': scope,
-                u'priority': priority,
-                u'value': value,
+                'flag': flag,
+                'scope': scope,
+                'priority': priority,
+                'value': value,
                 }
         return (
-            makeFeatureDict('test_feature', default_value, u'default', 0),
-            makeFeatureDict('test_feature', scope_value, u'pageid:foo', 10),
-            makeFeatureDict('test_feature_2', default_value, u'default', 0),
-            makeFeatureDict('test_feature_2', scope_value, u'pageid:bar', 10))
+            makeFeatureDict('test_feature', default_value, 'default', 0),
+            makeFeatureDict('test_feature', scope_value, 'pageid:foo', 10),
+            makeFeatureDict('test_feature_2', default_value, 'default', 0),
+            makeFeatureDict('test_feature_2', scope_value, 'pageid:bar', 10))
 
     def test_related_features__enabled_feature_with_default(self):
         # If a view
@@ -262,7 +262,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         #     but have different values,
         # then the property related_feature_info contains this feature flag.
         self.useFixture(FeatureFixture(
-            {}, self.makeFeatureFlagDictionaries(u'', u'on'),
+            {}, self.makeFeatureFlagDictionaries('', 'on'),
             override_scope_lookup=lambda scope_name: True))
         request = LaunchpadTestRequest()
         view = LaunchpadView(object(), request)
@@ -286,7 +286,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         # Unless related_features forces it to always be beta, and the
         # flag is set.
         self.useFixture(FeatureFixture(
-            {}, self.makeFeatureFlagDictionaries(u'on', u'on'),
+            {}, self.makeFeatureFlagDictionaries('on', 'on'),
             override_scope_lookup=lambda scope_name: True))
         request = LaunchpadTestRequest()
         view = LaunchpadView(object(), request)
@@ -307,7 +307,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         }}, view.related_feature_info)
 
         self.useFixture(FeatureFixture(
-            {}, self.makeFeatureFlagDictionaries(u'on', u''),
+            {}, self.makeFeatureFlagDictionaries('on', ''),
             override_scope_lookup=lambda scope_name: True))
         self.assertEqual({'test_feature': {
             'is_beta': False,
@@ -322,7 +322,7 @@ class TestLaunchpadView(TestCaseWithFactory):
             related_features = {'test_feature': False}
 
         self.useFixture(FeatureFixture(
-            {}, self.makeFeatureFlagDictionaries(u'', u'on'),
+            {}, self.makeFeatureFlagDictionaries('', 'on'),
             override_scope_lookup=lambda scope_name: True))
         request = LaunchpadTestRequest()
         view = TestView(object(), request)
@@ -351,7 +351,7 @@ class TestLaunchpadView(TestCaseWithFactory):
             related_features = {'test_feature_2': False}
 
         self.useFixture(FeatureFixture(
-            {}, self.makeFeatureFlagDictionaries(u'', u'on'),
+            {}, self.makeFeatureFlagDictionaries('', 'on'),
             override_scope_lookup=lambda scope_name: True))
         request = LaunchpadTestRequest()
         view = TestView(object(), request)
@@ -385,7 +385,7 @@ class TestLaunchpadView(TestCaseWithFactory):
     def test_view_privacy(self):
         # View privacy is based on the context.
         @implementer(IPrivacy)
-        class PrivateObject(object):
+        class PrivateObject:
 
             def __init__(self, private):
                 self.private = private
@@ -401,13 +401,13 @@ class TestLaunchpadView(TestCaseWithFactory):
             related_features = {'test_feature': False}
 
         self.useFixture(FeatureFixture(
-            {}, self.makeFeatureFlagDictionaries(u'', u'on'),
+            {}, self.makeFeatureFlagDictionaries('', 'on'),
             override_scope_lookup=lambda scope_name: True))
         request = LaunchpadTestRequest()
         view = TestView(object(), request)
         expected_beta_features = [{
             'url': 'http://wiki.lp.dev/LEP/sample', 'is_beta': True,
-            'value': u'on', 'title': 'title'}]
+            'value': 'on', 'title': 'title'}]
         self.assertEqual(expected_beta_features, view.beta_features)
 
     def test_view_beta_features_mixed(self):
@@ -418,7 +418,7 @@ class TestLaunchpadView(TestCaseWithFactory):
 
         # Select one flag on 'default', one flag not on 'default. 'default'
         # setting determines whether flags correspond to 'beta' features.
-        raw_flag_dicts = self.makeFeatureFlagDictionaries(u'', u'on')
+        raw_flag_dicts = self.makeFeatureFlagDictionaries('', 'on')
         flag_dicts = [raw_flag_dicts[1], raw_flag_dicts[2]]
 
         self.useFixture(FeatureFixture(
@@ -427,7 +427,7 @@ class TestLaunchpadView(TestCaseWithFactory):
         view = TestView(object(), request)
         expected_beta_features = [{
             'url': 'http://wiki.lp.dev/LEP/sample', 'is_beta': True,
-            'value': u'on', 'title': 'title'}]
+            'value': 'on', 'title': 'title'}]
         self.assertEqual(expected_beta_features, view.beta_features)
 
 

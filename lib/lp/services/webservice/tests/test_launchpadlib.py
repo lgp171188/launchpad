@@ -14,7 +14,7 @@ class TestLaunchpadLib(TestCaseWithFactory):
     layer = AppServerLayer
 
     def setUp(self):
-        super(TestLaunchpadLib, self).setUp()
+        super().setUp()
         self.launchpad = salgado_with_full_permissions.login()
         self.project = self.launchpad.projects['firefox']
 

@@ -41,16 +41,16 @@ class FakeCollectionResourceView(FakeView):
     """A view object that provides ICollectionResource."""
 
     def __init__(self):
-        super(FakeCollectionResourceView, self).__init__()
+        super().__init__()
         self.type_url = (
-            u'https://launchpad.test/api/devel/#milestone-page-resource')
+            'https://launchpad.test/api/devel/#milestone-page-resource')
 
 
 class LaunchpadBrowserPublicationPageIDTestCase(TestCase):
     """Ensure that the web service enhances the page ID correctly."""
 
     def setUp(self):
-        super(LaunchpadBrowserPublicationPageIDTestCase, self).setUp()
+        super().setUp()
         self.publication = LaunchpadBrowserPublication(db=None)
         self.view = FakeView()
         self.context = FakeContext()
@@ -100,7 +100,7 @@ class TestWebServicePageIDs(TestCase):
     """Ensure that the web service enhances the page ID correctly."""
 
     def setUp(self):
-        super(TestWebServicePageIDs, self).setUp()
+        super().setUp()
         self.publication = WebServicePublication(db=None)
         self.view = FakeView()
         self.context = FakeContext()
@@ -136,7 +136,7 @@ class TestCollectionResourcePageIDs(TestCase):
     """Ensure page ids for collections display the origin page resource."""
 
     def setUp(self):
-        super(TestCollectionResourcePageIDs, self).setUp()
+        super().setUp()
         self.publication = WebServicePublication(db=None)
         self.view = FakeCollectionResourceView()
         self.context = FakeContext()
@@ -156,7 +156,7 @@ class TestPageIdCorners(TestCase):
     """Ensure that the page ID generation handles corner cases well."""
 
     def setUp(self):
-        super(TestPageIdCorners, self).setUp()
+        super().setUp()
         self.publication = WebServicePublication(db=None)
         self.view = FakeView()
         self.context = FakeContext()

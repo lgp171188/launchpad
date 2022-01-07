@@ -18,13 +18,13 @@ class TestWSGINativeString(TestCase):
         self.assertRaises(TypeError, wsgi_native_string, object())
 
     def test_bytes_iso_8859_1(self):
-        self.assertEqual(u'foo\xfe', wsgi_native_string(b'foo\xfe'))
+        self.assertEqual('foo\xfe', wsgi_native_string(b'foo\xfe'))
 
     def test_unicode_iso_8859_1(self):
-        self.assertEqual(u'foo\xfe', wsgi_native_string(u'foo\xfe'))
+        self.assertEqual('foo\xfe', wsgi_native_string('foo\xfe'))
 
     def test_unicode_not_iso_8859_1(self):
-        self.assertRaises(UnicodeEncodeError, wsgi_native_string, u'foo\u2014')
+        self.assertRaises(UnicodeEncodeError, wsgi_native_string, 'foo\u2014')
 
 
 def test_suite():

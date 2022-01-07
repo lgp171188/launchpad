@@ -83,7 +83,7 @@ class IThing(Interface):
 
 
 @implementer(IThing)
-class Thing(object):
+class Thing:
     pass
 
 

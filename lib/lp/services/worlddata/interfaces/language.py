@@ -62,55 +62,55 @@ class ILanguage(Interface):
     id = Attribute("This Language ID.")
 
     code = exported(TextLine(
-        title=u'The ISO 639 code',
+        title='The ISO 639 code',
         required=True))
 
     englishname = exported(
         TextLine(
-            title=u'The English name',
+            title='The English name',
             required=True),
         exported_as='english_name')
 
     nativename = TextLine(
-        title=u'Native name',
-        description=u'The name of this language in the language itself.',
+        title='Native name',
+        description='The name of this language in the language itself.',
         required=False)
 
     pluralforms = exported(
         Int(
-            title=u'Number of plural forms',
-            description=u'The number of plural forms this language has.',
+            title='Number of plural forms',
+            description='The number of plural forms this language has.',
             required=False),
         exported_as='plural_forms')
 
     guessed_pluralforms = Int(
-        title=u"Number of plural forms, or a reasonable guess",
+        title="Number of plural forms, or a reasonable guess",
         required=False, readonly=True)
 
     pluralexpression = exported(
         TextLine(
-            title=u'Plural form expression',
-            description=(u'The expression that relates a number of items'
-                         u' to the appropriate plural form.'),
+            title='Plural form expression',
+            description=('The expression that relates a number of items'
+                         ' to the appropriate plural form.'),
             required=False),
         exported_as='plural_expression')
 
     translators = doNotSnapshot(Field(
-        title=u'List of Person/Team that translate into this language.',
+        title='List of Person/Team that translate into this language.',
         required=True))
 
     translators_count = exported(
         Int(
-            title=u"Total number of translators for this language.",
+            title="Total number of translators for this language.",
             readonly=True))
 
     translation_teams = Field(
-        title=u'List of Teams that translate into this language.',
+        title='List of Teams that translate into this language.',
         required=True)
 
     countries = Set(
-        title=u'Spoken in',
-        description=u'List of countries this language is spoken in.',
+        title='Spoken in',
+        description='List of countries this language is spoken in.',
         required=True,
         value_type=Choice(vocabulary="CountryName"))
 
@@ -128,21 +128,21 @@ class ILanguage(Interface):
 
     visible = exported(
         Bool(
-            title=u'Visible',
+            title='Visible',
             description=(
-                u'Whether this language is visible by default.'),
+                'Whether this language is visible by default.'),
             required=True))
 
     direction = exported(
         Choice(
-            title=u'Text direction',
-            description=u'The direction of text in this language.',
+            title='Text direction',
+            description='The direction of text in this language.',
             required=True,
             vocabulary=TextDirection),
         exported_as='text_direction')
 
     displayname = TextLine(
-        title=u'The displayname of the language',
+        title='The displayname of the language',
         required=True,
         readonly=True)
 
@@ -151,14 +151,14 @@ class ILanguage(Interface):
         "language.")
 
     dashedcode = TextLine(
-        title=(u'The language code in a form suitable for use in HTML and'
-               u' XML files.'),
+        title=('The language code in a form suitable for use in HTML and'
+               ' XML files.'),
         required=True,
         readonly=True)
 
     abbreviated_text_dir = TextLine(
-        title=(u'The abbreviated form of the text direction, suitable'
-               u' for use in HTML files.'),
+        title=('The abbreviated form of the text direction, suitable'
+               ' for use in HTML files.'),
         required=True,
         readonly=True)
 

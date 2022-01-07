@@ -41,7 +41,7 @@ class TestPgSession(TestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPgSession, self).setUp()
+        super().setUp()
         self.sdc = PGSessionDataContainer()
         self.addCleanup(delattr, self, 'sdc')
         LaunchpadLayer.resetSessionDb()
@@ -170,8 +170,8 @@ class TestPgSession(TestCase):
     def test_datetime_compatibility(self):
         # datetime objects serialized by either Python 2 or 3 can be
         # unserialized as part of the session.
-        client_id = u'Client Id #1'
-        product_id = u'Product Id'
+        client_id = 'Client Id #1'
+        product_id = 'Product Id'
         expected_datetime = datetime(2021, 3, 4, 0, 50, 1, 300000)
 
         session = self.sdc[client_id]
@@ -194,12 +194,12 @@ class TestPgSession(TestCase):
         store = self.sdc.store
         store.execute(
             "SELECT set_session_pkg_data(?, ?, ?, ?)",
-            (session.hashed_client_id, product_id, u'logintime',
+            (session.hashed_client_id, product_id, 'logintime',
              python_2_pickle),
             noresult=True)
         store.execute(
             "SELECT set_session_pkg_data(?, ?, ?, ?)",
-            (session.hashed_client_id, product_id, u'last_write',
+            (session.hashed_client_id, product_id, 'last_write',
              python_3_pickle),
             noresult=True)
 

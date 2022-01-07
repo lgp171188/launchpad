@@ -38,7 +38,7 @@ class BaseStormOpenIDAssociation:
     assoc_type = Unicode()
 
     def __init__(self, server_url, association):
-        super(BaseStormOpenIDAssociation, self).__init__()
+        super().__init__()
         self.server_url = six.ensure_text(server_url)
         self.handle = six.ensure_text(association.handle, 'ASCII')
         self.update(association)
@@ -68,7 +68,7 @@ class BaseStormOpenIDNonce:
     salt = Unicode()
 
     def __init__(self, server_url, timestamp, salt):
-        super(BaseStormOpenIDNonce, self).__init__()
+        super().__init__()
         self.server_url = server_url
         self.timestamp = timestamp
         self.salt = salt

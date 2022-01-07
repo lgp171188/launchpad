@@ -43,7 +43,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestStormRangeFactory, self).setUp()
+        super().setUp()
         self.error_messages = []
 
     def makeStormResultSet(self):

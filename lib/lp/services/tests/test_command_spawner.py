@@ -314,7 +314,7 @@ class TestOutputLineHandler(TestCase):
     """Unit tests for `OutputLineHandler`."""
 
     def setUp(self):
-        super(TestOutputLineHandler, self).setUp()
+        super().setUp()
         self.handler = OutputLineHandler(FakeMethod())
 
     def _getLines(self):

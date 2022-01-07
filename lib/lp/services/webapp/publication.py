@@ -228,7 +228,7 @@ class LaunchpadBrowserPublication(
             # record of traversed objects.  This is mostly a ZODB thing that
             # we don't care about, so just use something minimal that fits
             # the syntax.
-            txn.user = u"/ %s" % (request.principal.id,)
+            txn.user = "/ %s" % (request.principal.id,)
 
         return txn
 
@@ -264,7 +264,7 @@ class LaunchpadBrowserPublication(
         threadrequestfile = open_for_writing(
             'logs/thread-%s.request' % threadid, 'wb')
         try:
-            request_txt = six.text_type(request)
+            request_txt = str(request)
         except Exception:
             request_txt = 'Exception converting request to string\n\n'
             try:
@@ -315,7 +315,7 @@ class LaunchpadBrowserPublication(
         # this way.  Even though PATH_INFO is always present in real requests,
         # we need to tread carefully (``get``) because of test requests in our
         # automated tests.
-        if request.get('PATH_INFO') not in [u'/+opstats', u'/+haproxy']:
+        if request.get('PATH_INFO') not in ['/+opstats', '/+haproxy']:
             principal = auth_utility.authenticate(request)
         if principal is not None:
             assert principal.person is not None
@@ -773,8 +773,7 @@ class LaunchpadBrowserPublication(
         We must restart the request timer.  Otherwise we can get OOPS errors
         from our exception views inappropriately.
         """
-        super(LaunchpadBrowserPublication,
-              self).beginErrorHandlingTransaction(request, ob, note)
+        super().beginErrorHandlingTransaction(request, ob, note)
         # XXX: gary 2008-11-04 bug=293614: As the bug describes, we want to
         # only clear the SQL records and timeout when we are preparing for a
         # view (or a side effect). Otherwise, we don't want to clear the

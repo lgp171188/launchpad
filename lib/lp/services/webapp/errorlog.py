@@ -111,7 +111,7 @@ def attach_exc_info(report, context):
         return
     report['type'] = getattr(info[0], '__name__', info[0])
     report['value'] = oops.createhooks.safe_unicode(info[1])
-    if not isinstance(info[2], six.string_types):
+    if not isinstance(info[2], str):
         tb_text = ''.join(format_exception(*info,
                                            **{'as_html': False}))
     else:
@@ -135,8 +135,8 @@ def attach_feature_info(report, context):
     request = context.get('http_request')
     features = getattr(request, 'features', None)
     if features is not None:
-        report['features.usedFlags'] = u'%r' % features.usedFlags()
-        report['features.usedScopes'] = u'%r' % features.usedScopes()
+        report['features.usedFlags'] = '%r' % features.usedFlags()
+        report['features.usedScopes'] = '%r' % features.usedScopes()
 
 
 def attach_http_request(report, context):
@@ -192,7 +192,7 @@ def attach_http_request(report, context):
     if principal is not None and principal is not missing:
         username = ', '.join([
                 six.ensure_text(login),
-                six.text_type(request.principal.id),
+                str(request.principal.id),
                 six.ensure_text(request.principal.title),
                 six.ensure_text(request.principal.description)])
         report['username'] = username
@@ -203,7 +203,7 @@ def attach_http_request(report, context):
     for key, value in request.items():
         if _is_sensitive(request, key):
             value = '<hidden>'
-        if not isinstance(value, six.string_types):
+        if not isinstance(value, str):
             value = oops.createhooks.safe_unicode(value)
         # keys need to be unicode objects. The form items (a subset of
         # request.items) are generally just the url query_string url decoded,
@@ -215,7 +215,7 @@ def attach_http_request(report, context):
         args = request.getPositionalArguments()
         # Request variables are strings: this could move to its own key and be
         # raw.
-        report['req_vars']['xmlrpc args'] = six.text_type(args)
+        report['req_vars']['xmlrpc args'] = str(args)
 
 
 def attach_ignore_from_exception(report, context):

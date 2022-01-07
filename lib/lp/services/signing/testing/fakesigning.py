@@ -21,13 +21,13 @@ from nacl.utils import random
 from twisted.web import resource
 
 
-class ServiceKeyResource(resource.Resource, object):
+class ServiceKeyResource(resource.Resource):
     """Resource implementing /service-key."""
 
     isLeaf = True
 
     def __init__(self, service_public_key):
-        super(ServiceKeyResource, self).__init__()
+        super().__init__()
         self.service_public_key = service_public_key
 
     def render_GET(self, request):
@@ -38,7 +38,7 @@ class ServiceKeyResource(resource.Resource, object):
             }).encode("UTF-8")
 
 
-class NonceResource(resource.Resource, object):
+class NonceResource(resource.Resource):
     """Resource implementing /nonce.
 
     Note that this fake signing service does not check that nonces are only
@@ -48,7 +48,7 @@ class NonceResource(resource.Resource, object):
     isLeaf = True
 
     def __init__(self):
-        super(NonceResource, self).__init__()
+        super().__init__()
         self.nonces = []
 
     def render_POST(self, request):
@@ -58,11 +58,11 @@ class NonceResource(resource.Resource, object):
         return json.dumps({"nonce": nonce}).encode("UTF-8")
 
 
-class BoxedAuthenticationResource(resource.Resource, object):
+class BoxedAuthenticationResource(resource.Resource):
     """Base for resources that use boxed authentication."""
 
     def __init__(self, service_private_key, client_public_key):
-        super(BoxedAuthenticationResource, self).__init__()
+        super().__init__()
         self.box = Box(service_private_key, client_public_key)
 
     def _decrypt(self, request):
@@ -84,8 +84,7 @@ class GenerateResource(BoxedAuthenticationResource):
     isLeaf = True
 
     def __init__(self, service_private_key, client_public_key, keys):
-        super(GenerateResource, self).__init__(
-            service_private_key, client_public_key)
+        super().__init__(service_private_key, client_public_key)
         self.keys = keys
         self.requests = []
 
@@ -112,8 +111,7 @@ class SignResource(BoxedAuthenticationResource):
     isLeaf = True
 
     def __init__(self, service_private_key, client_public_key, keys):
-        super(SignResource, self).__init__(
-            service_private_key, client_public_key)
+        super().__init__(service_private_key, client_public_key)
         self.keys = keys
         self.requests = []
 
@@ -138,8 +136,7 @@ class InjectResource(BoxedAuthenticationResource):
     isLeaf = True
 
     def __init__(self, service_private_key, client_public_key, keys):
-        super(InjectResource, self).__init__(
-            service_private_key, client_public_key)
+        super().__init__(service_private_key, client_public_key)
         self.keys = keys
         self.requests = []
 
@@ -157,7 +154,7 @@ class InjectResource(BoxedAuthenticationResource):
             request, json.dumps(response_payload).encode("UTF-8"))
 
 
-class SigningServiceResource(resource.Resource, object):
+class SigningServiceResource(resource.Resource):
     """Root resource for the fake signing service."""
 
     def __init__(self):

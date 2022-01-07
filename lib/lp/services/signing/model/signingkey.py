@@ -76,7 +76,7 @@ class SigningKey(StormBase):
         :param fingerprint: The key's fingerprint
         :param public_key: The key's public key (raw; not base64-encoded)
         """
-        super(SigningKey, self).__init__()
+        super().__init__()
         self.key_type = key_type
         self.fingerprint = fingerprint
         self.public_key = public_key
@@ -168,7 +168,7 @@ class ArchiveSigningKey(StormBase):
 
     def __init__(self, archive=None, earliest_distro_series=None,
                  signing_key=None):
-        super(ArchiveSigningKey, self).__init__()
+        super().__init__()
         self.archive = archive
         self.signing_key = signing_key
         self.key_type = signing_key.key_type

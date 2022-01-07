@@ -64,7 +64,7 @@ class SystemErrorView(LaunchpadView):
     safe_to_show_in_restricted_mode = False
 
     def __init__(self, context, request):
-        super(SystemErrorView, self).__init__(context, request)
+        super().__init__(context, request)
         self.request.response.removeAllNotifications()
         if self.response_code is not None:
             self.request.response.setStatus(self.response_code)
@@ -280,9 +280,9 @@ class OpenIdDiscoveryFailureView(SystemErrorView):
 class DisconnectionErrorView(SystemErrorView):
 
     response_code = http.client.SERVICE_UNAVAILABLE
-    reason = u'our database being temporarily offline'
+    reason = 'our database being temporarily offline'
 
 
 class OperationalErrorView(DisconnectionErrorView):
 
-    reason = u'our database having temporary operational issues'
+    reason = 'our database having temporary operational issues'

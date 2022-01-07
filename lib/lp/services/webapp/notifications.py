@@ -224,8 +224,7 @@ class NotificationResponse:
             allowUnauthenticatedSession(self._request)
             session = ISession(self)[SESSION_KEY]
             session['notifications'] = self._notifications
-        return super(NotificationResponse, self).redirect(
-            location, status, trusted=trusted)
+        return super().redirect(location, status, trusted=trusted)
 
     def addDebugNotification(self, msg):
         """See `INotificationResponse`."""
@@ -279,12 +278,11 @@ class NotificationList(list):
 
     def __init__(self):
         self.created = datetime.utcnow()
-        super(NotificationList, self).__init__()
+        super().__init__()
 
     def __getitem__(self, index_or_levelname):
         if isinstance(index_or_levelname, int):
-            return super(NotificationList, self).__getitem__(
-                index_or_levelname)
+            return super().__getitem__(index_or_levelname)
 
         level = getattr(
                 BrowserNotificationLevel, index_or_levelname.upper(), None

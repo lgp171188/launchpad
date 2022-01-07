@@ -56,11 +56,11 @@ class GatherIDs(TestResult):
     """Gather test ids from a test run."""
 
     def __init__(self):
-        super(GatherIDs, self).__init__()
+        super().__init__()
         self.ids = []
 
     def startTest(self, test):
-        super(GatherIDs, self).startTest(test)
+        super().startTest(test)
         self.ids.append(test.id())
 
 
@@ -74,7 +74,7 @@ def find_tests(argv):
     load_list = find_load_list(argv)
     if load_list:
         # just use the load_list
-        with open(load_list, 'rt') as list_file:
+        with open(load_list) as list_file:
             return [id for id in list_file.read().split('\n') if id]
     # run in --list-tests mode
     argv = prepare_argv(argv) + ['--list-tests', '--subunit']

@@ -48,7 +48,7 @@ class SigningServiceFixture(TacTestFixture):
                 config.root, "logs", "fakesigning-%s.pid" % self.daemon_port)
         assert self.daemon_port is not None
 
-        super(SigningServiceFixture, self).setUp(
+        super().setUp(
             spew=spew, umask=umask,
             python_path=os.path.join(config.root, "bin", "py"),
             twistd_script=os.path.join(config.root, "bin", "twistd"))

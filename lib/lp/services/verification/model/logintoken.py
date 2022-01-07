@@ -80,7 +80,7 @@ class LoginToken(SQLBase):
             self._plaintext_token = token
             kwargs['_token'] = hashlib.sha256(
                 token.encode('UTF-8')).hexdigest()
-        super(LoginToken, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     _plaintext_token = None
 

@@ -3,7 +3,6 @@
 
 __all__ = ['Country', 'CountrySet', 'Continent']
 
-import six
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
@@ -42,7 +41,7 @@ class Country(SQLBase):
     continent = ForeignKey(
         dbName='continent', foreignKey='Continent', default=None)
     languages = SQLRelatedJoin(
-        six.ensure_str('Language'), joinColumn='country',
+        'Language', joinColumn='country',
         otherColumn='language', intermediateTable='SpokenIn')
 
 
@@ -57,8 +56,7 @@ class CountrySet:
         return country
 
     def __iter__(self):
-        for row in Country.select():
-            yield row
+        yield from Country.select()
 
     def getByName(self, name):
         """See `ICountrySet`."""

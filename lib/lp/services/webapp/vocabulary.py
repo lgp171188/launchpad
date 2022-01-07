@@ -57,12 +57,12 @@ class ForgivingSimpleVocabulary(SimpleVocabulary):
         self._default_term = kws.pop('default_term', missing)
         if self._default_term is missing:
             raise TypeError('required argument "default_term" not provided')
-        return super(ForgivingSimpleVocabulary, self).__init__(*args, **kws)
+        return super().__init__(*args, **kws)
 
     def getTerm(self, value):
         """Look up a value, returning the default if it is not found."""
         try:
-            return super(ForgivingSimpleVocabulary, self).getTerm(value)
+            return super().getTerm(value)
         except LookupError:
             return self._default_term
 
@@ -258,7 +258,7 @@ class FilteredVocabularyBase:
                     or func.__name__ == 'search')):
             def do_search(
                     query=None, vocab_filter=None, *args, **kwargs):
-                if isinstance(vocab_filter, six.string_types):
+                if isinstance(vocab_filter, str):
                     for filter in self.supportedFilters():
                         if filter.name == vocab_filter:
                             vocab_filter = filter
@@ -611,6 +611,6 @@ class NamedStormHugeVocabulary(NamedStormVocabulary):
     step_title = "Search"
 
     def __init__(self, context=None):
-        super(NamedStormHugeVocabulary, self).__init__(context)
+        super().__init__(context)
         if self.displayname is None:
             self.displayname = "Select %s" % self.__class__.__name__

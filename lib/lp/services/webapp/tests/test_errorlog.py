@@ -13,7 +13,6 @@ from lazr.batchnavigator.interfaces import InvalidBatchSizeError
 from lazr.restful.declarations import error_status
 import oops_amqp
 import pytz
-import six
 from talisker.logs import logging_context
 import testtools
 from timeline.timeline import Timeline
@@ -61,7 +60,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestErrorReportingUtility, self).setUp()
+        super().setUp()
         # ErrorReportingUtility reads the global config to get the
         # current error directory.
         tempdir = self.useFixture(TempDir()).path
@@ -139,7 +138,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
                 form={
                     'name1': 'value3 \xa7',
                     'name2': 'value2',
-                    u'\N{BLACK SQUARE}': u'value4',
+                    '\N{BLACK SQUARE}': 'value4',
                     })
         request.setInWSGIEnvironment('launchpad.pageid', 'IFoo:+foo-template')
 
@@ -151,7 +150,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         # topic is obtained from the request
         self.assertEqual('IFoo:+foo-template', report['topic'])
         self.assertEqual(
-            u'account-name, 42, account-name, description |\u25a0|',
+            'account-name, 42, account-name, description |\u25a0|',
             report['username'])
         self.assertEqual('http://localhost:9000/foo', report['url'])
         self.assertEqual({
@@ -160,7 +159,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
             'HTTP_COOKIE': '<hidden>',
             'HTTP_HOST': '127.0.0.1',
             'SERVER_URL': 'http://localhost:9000/foo',
-            u'\u25a0': 'value4',
+            '\u25a0': 'value4',
             'lp': '<hidden>',
             'name1': 'value3 \xa7',
             'name2': 'value2',
@@ -187,7 +186,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
             report = self.assertStatementCount(
                 0, utility.raising, sys.exc_info(), request)
         self.assertEqual(
-            u'my-username, 42, account-name, description |\u25a0|',
+            'my-username, 42, account-name, description |\u25a0|',
             report['username'])
         self.assertEqual(report['id'], logging_context.flat['oopsid'])
 
@@ -212,7 +211,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         except ArbitraryException:
             report = utility.raising(sys.exc_info(), request)
         self.assertEqual(
-            u'account-name, 42, account-name, description |\u25a0|',
+            'account-name, 42, account-name, description |\u25a0|',
             report['username'])
         self.assertEqual(report['id'], logging_context.flat['oopsid'])
 
@@ -243,7 +242,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
             if isinstance(key, bytes):
                 key.decode('utf8')
             else:
-                self.assertIsInstance(key, six.text_type)
+                self.assertIsInstance(key, str)
 
     def test_raising_with_webservice_request(self):
         # Test ErrorReportingUtility.raising() with a WebServiceRequest
@@ -586,16 +585,16 @@ class TestSensitiveRequestVariables(testtools.TestCase):
 
 class TestRequestWithUnauthenticatedPrincipal(TestRequest):
     principal = UnauthenticatedPrincipal(
-        u'Anonymous', u'Anonymous', u'Anonymous User')
+        'Anonymous', 'Anonymous', 'Anonymous User')
 
 
 class TestRequestWithPrincipal(TestRequest):
     def __init__(self, account=None, *args, **kw):
-        super(TestRequestWithPrincipal, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
         self.setPrincipal(LaunchpadPrincipal(
-            42, u'account-name',
+            42, 'account-name',
             # non-ASCII description
-            u'description |\N{BLACK SQUARE}|',
+            'description |\N{BLACK SQUARE}|',
             account))
 
     def setInWSGIEnvironment(self, key, value):
@@ -662,5 +661,5 @@ class TestHooks(testtools.TestCase):
             'http_request': {'SIMPLE': 'string', 'COMPLEX': complexthing}}
         attach_http_request(report, context)
         self.assertEqual(
-            {'SIMPLE': 'string', 'COMPLEX': six.text_type(complexthing)},
+            {'SIMPLE': 'string', 'COMPLEX': str(complexthing)},
             report['req_vars'])

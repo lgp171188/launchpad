@@ -18,7 +18,7 @@ from zope.component import queryAdapter
 from lp.services.webapp.publisher import canonical_url_iterator
 
 
-def nearest_context_with_adapter(obj, interface, name=u''):
+def nearest_context_with_adapter(obj, interface, name=''):
     """Find the nearest adapter in the url chain between obj and interface.
 
     The function looks upward though the canonical url chain and returns a
@@ -34,7 +34,7 @@ def nearest_context_with_adapter(obj, interface, name=u''):
     return (None, None)
 
 
-def nearest_adapter(obj, interface, name=u''):
+def nearest_adapter(obj, interface, name=''):
     """Find the nearest adapter in the url chain between obj and interface.
 
     The function looks upward though the canonical url chain and returns

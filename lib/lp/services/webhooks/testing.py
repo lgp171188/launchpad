@@ -42,11 +42,11 @@ class LogsScheduledWebhooks(MatchesSetwise):
     """
 
     def __init__(self, expected_webhooks):
-        super(LogsScheduledWebhooks, self).__init__(*(
+        super().__init__(*(
             LogsOneScheduledWebhook(webhook, event_type, payload_matcher)
             for webhook, event_type, payload_matcher in expected_webhooks))
 
     def match(self, logger_output):
-        return super(LogsScheduledWebhooks, self).match(
+        return super().match(
             [line for line in logger_output.splitlines()
              if line.startswith("Scheduled <WebhookDeliveryJob ")])
