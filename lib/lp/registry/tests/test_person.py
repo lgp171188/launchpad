@@ -5,6 +5,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+import re
 
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.utils import smartquote
@@ -189,7 +190,7 @@ class TestPersonTeams(TestCaseWithFactory):
         self.assertEqual(expected_memberships, memberships)
 
     def test_inTeam_direct_team(self):
-        # Verify direct membeship is True and the cache is populated.
+        # Verify direct membership is True and the cache is populated.
         self.assertTrue(self.user.inTeam(self.a_team))
         self.assertEqual(
             {self.a_team.id: True},
@@ -262,6 +263,85 @@ class TestPersonTeams(TestCaseWithFactory):
         expected_members = [self.user, self.a_team.teamowner]
         retrieved_members = list(self.a_team.api_all_members)
         self.assertContentEqual(expected_members, retrieved_members)
+
+    def test_inAnyTeam_no_teams_passed(self):
+        # Verify that the inAnyTeam() method returns False when
+        # it is passed an empty list of teams.
+        self.assertFalse(self.user.inAnyTeam([]))
+
+    def test_inAnyTeam_team_is_a_member_of_itself(self):
+        # Verify that the inAnyTeam() method returns True when passed the same
+        # team as the user being queried.
+        d_team = self.factory.makeTeam(name='d')
+        with StormStatementRecorder() as recorder:
+            self.assertTrue(self.a_team.inAnyTeam([d_team, self.a_team]))
+            self.assertEqual(0, recorder.count)
+
+    def test_inAnyTeam_no_cached_entries(self):
+        # Verify that the inAnyTeam() method returns True when the user is a
+        # member of the passed team and the cache is populated with
+        # the positive and negative entries when it was initially empty.
+        d_team = self.factory.makeTeam(name='d')
+        self.assertEqual({}, removeSecurityProxy(self.user)._inTeam_cache)
+
+        with StormStatementRecorder() as recorder:
+            self.assertTrue(self.user.inAnyTeam([self.a_team, d_team]))
+            self.assertEqual(1, len(recorder.queries))
+
+        self.assertEqual(
+            {self.a_team.id: True, d_team.id: False},
+            removeSecurityProxy(self.user)._inTeam_cache
+        )
+
+    def test_inAnyTeam_membership_already_cached(self):
+        # Verify that the inAnyTeam() method returns True when the cache is
+        # pre-populated with the data about that membership. Also verify that
+        # no SQL queries are executed in this scenario.
+        removeSecurityProxy(self.user)._inTeam_cache = {self.a_team.id: True}
+        with StormStatementRecorder() as recorder:
+            self.assertTrue(self.user.inAnyTeam([self.a_team, self.b_team]))
+            self.assertEqual(0, recorder.count)
+
+
+    def test_inAnyTeam_membership_not_cached_in_existing_cache(self):
+        # Verify that the inAnyTeam() method returns True when the
+        # existing cache does not contain an entry for the queried team. Also
+        # verify that the positive and negative entries are added to the cache.
+        d_team = self.factory.makeTeam(name='d')
+        removeSecurityProxy(self.user)._inTeam_cache = {self.b_team.id: True}
+        with StormStatementRecorder() as recorder:
+            self.assertTrue(self.user.inAnyTeam([self.a_team, d_team]))
+            self.assertEqual(1, recorder.count)
+        self.assertEqual(
+            {
+                self.b_team.id: True,
+                self.a_team.id: True,
+                d_team.id: False
+            },
+            removeSecurityProxy(self.user)._inTeam_cache
+        )
+
+    def test_inAnyTeam_negative_cached_results_not_queried_again(self):
+        # Verify that when the cache has no positive matches and some of
+        # the teams passed to the inAnyTeam() method
+        # have a negative entry in the cache, they are not queried again
+        d_team = self.factory.makeTeam(name='d')
+        removeSecurityProxy(self.user)._inTeam_cache = {d_team.id: False}
+        with StormStatementRecorder() as recorder:
+            self.assertTrue(self.user.inAnyTeam(
+                [self.b_team, self.a_team, d_team]
+            ))
+            self.assertEqual(1, recorder.count)
+            queried_team_ids = re.search(
+                r'TeamParticipation.team IN \((.+)\)',
+                recorder.statements[0]
+            )
+            self.assertIsNotNone(queried_team_ids)
+            team_ids = {
+                int(team_id) for team_id in
+                queried_team_ids.group(1).split(", ")
+            }
+            self.assertEqual({self.b_team.id, self.a_team.id}, team_ids)
 
     def test_getOwnedTeams(self):
         # The iterator contains the teams that person owns, regardless of

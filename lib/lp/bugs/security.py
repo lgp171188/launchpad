@@ -123,11 +123,8 @@ class AppendBug(AuthorizationBase):
 
 def _has_any_bug_role(user, tasks):
     """Return True if the user has any role on any of these bug tasks."""
-    # XXX cjwatson 2019-03-26: This is inefficient for bugs with many
-    # targets.  However, we only get here if we can't easily establish that
-    # the user seems legitimate, so it shouldn't be a big problem in
-    # practice.  We can optimise this further if it turns out to matter.
     targets = [task.pillar for task in tasks]
+    bug_target_roles = {}
     for target in targets:
         roles = []
         if IHasOwner.providedBy(target):
@@ -136,9 +133,16 @@ def _has_any_bug_role(user, tasks):
             roles.append('driver')
         if IHasBugSupervisor.providedBy(target):
             roles.append('bug_supervisor')
-        if user.isOneOf(target, roles):
-            return True
-    return False
+        bug_target_roles[target] = roles
+
+    teams = []
+
+    for bug_target, roles in bug_target_roles.items():
+        for role_ in roles:
+            role = getattr(bug_target, role_, None)
+            if role:
+                teams.append(role)
+    return user.inAnyTeam(teams)
 
 
 class EditBug(AuthorizationBase):
