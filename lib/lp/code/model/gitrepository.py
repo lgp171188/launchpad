@@ -197,7 +197,10 @@ from lp.services.database.constants import (
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import get_transaction_timestamp
+from lp.services.database.sqlbase import (
+    convert_storm_clause_to_string,
+    get_transaction_timestamp,
+    )
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Array,
@@ -393,6 +396,18 @@ class RevisionStatusReportSet:
             commit_sha1=commit_sha1).order_by(
                 RevisionStatusReport.date_created,
                 RevisionStatusReport.id)
+
+    def deleteForRepository(self, repository):
+        clauses = [
+            RevisionStatusArtifact.report == RevisionStatusReport.id,
+            RevisionStatusReport.git_repository == repository,
+            ]
+        where = convert_storm_clause_to_string(And(*clauses))
+        IStore(RevisionStatusArtifact).execute("""
+            DELETE FROM RevisionStatusArtifact
+            USING RevisionStatusReport
+            WHERE """ + where)
+        self.findByRepository(repository).remove()
 
 
 class RevisionStatusArtifact(StormBase):
@@ -1944,6 +1959,7 @@ class GitRepository(StormBase, WebhookTargetMixin, AccessTokenTargetMixin,
         # activity logs for removed repositories anyway.
         self.grants.remove()
         self.rules.remove()
+        getUtility(IRevisionStatusReportSet).deleteForRepository(self)
 
         # Now destroy the repository.
         repository_name = self.unique_name
