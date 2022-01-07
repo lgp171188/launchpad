@@ -1347,10 +1347,13 @@ class Person(
         if not teams:
             return False
 
-        team_ids = {team.id for team in teams if team.is_team}
-        if self.id in team_ids:
-            # A team is always a member of itself.
-            return True
+        team_ids = set()
+        for team in teams:
+            if self.id == team.id:
+                # A team is always a member of itself
+                return True
+            if team.is_team:
+                team_ids.add(team.id)
 
         if self._inTeam_cache is None:
             # Initialize cache
