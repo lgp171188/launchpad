@@ -152,7 +152,7 @@ class WebhookView(LaunchpadEditFormView):
     custom_widget_event_types = LabeledMultiCheckBoxWidget
 
     def initialize(self):
-        super(WebhookView, self).initialize()
+        super().initialize()
         cache = IJSONRequestCache(self.request)
         cache.objects['deliveries'] = list(self.deliveries.batch)
         cache.objects.update(

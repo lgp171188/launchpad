@@ -20,7 +20,7 @@ class RabbitServer(rabbitfixture.server.RabbitServer):
     """
 
     def setUp(self):
-        super(RabbitServer, self).setUp()
+        super().setUp()
         self.config.service_config = dedent("""\
             [rabbitmq]
             host: localhost:%d

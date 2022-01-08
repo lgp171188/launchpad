@@ -52,8 +52,7 @@ class Python2FriendlyUnpickler(pickle._Unpickler):
 
             return datetime_factory
         else:
-            return super(Python2FriendlyUnpickler, self).find_class(
-                module, name)
+            return super().find_class(module, name)
 
 
 class PGSessionBase:

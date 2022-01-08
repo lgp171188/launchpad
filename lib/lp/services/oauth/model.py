@@ -96,10 +96,10 @@ class OAuthConsumer(OAuthBase, StormBase):
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
     disabled = Bool(allow_none=False, default=False)
     key = Unicode(allow_none=False)
-    _secret = Unicode(name='secret', allow_none=True, default=u'')
+    _secret = Unicode(name='secret', allow_none=True, default='')
 
     def __init__(self, key, secret):
-        super(OAuthConsumer, self).__init__()
+        super().__init__()
         self.key = key
         self._secret = sha256_digest(secret)
 
@@ -190,7 +190,7 @@ class OAuthConsumer(OAuthBase, StormBase):
 class OAuthConsumerSet:
     """See `IOAuthConsumerSet`."""
 
-    def new(self, key, secret=u''):
+    def new(self, key, secret=''):
         """See `IOAuthConsumerSet`."""
         assert self.getByKey(key) is None, (
             "The key '%s' is already in use by another consumer." % key)
@@ -218,7 +218,7 @@ class OAuthAccessToken(OAuthBase, StormBase):
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
     date_expires = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
     key = Unicode(allow_none=False)
-    _secret = Unicode(name='secret', allow_none=True, default=u'')
+    _secret = Unicode(name='secret', allow_none=True, default='')
 
     permission = DBEnum(enum=AccessLevel, allow_none=False)
 
@@ -232,10 +232,10 @@ class OAuthAccessToken(OAuthBase, StormBase):
     distribution_id = Int(name='distribution', allow_none=True, default=None)
     distribution = Reference(distribution_id, 'Distribution.id')
 
-    def __init__(self, consumer, permission, key, secret=u'', person=None,
+    def __init__(self, consumer, permission, key, secret='', person=None,
                  date_expires=None, product=None, projectgroup=None,
                  distribution=None, sourcepackagename=None):
-        super(OAuthAccessToken, self).__init__()
+        super().__init__()
         self.consumer = consumer
         self.permission = permission
         self.key = key
@@ -287,7 +287,7 @@ class OAuthRequestToken(OAuthBase, StormBase):
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
     date_expires = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
     key = Unicode(allow_none=False)
-    _secret = Unicode(name='secret', allow_none=True, default=u'')
+    _secret = Unicode(name='secret', allow_none=True, default='')
 
     permission = DBEnum(enum=OAuthPermission, allow_none=True, default=None)
     date_reviewed = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
@@ -302,10 +302,10 @@ class OAuthRequestToken(OAuthBase, StormBase):
     distribution_id = Int(name='distribution', allow_none=True, default=None)
     distribution = Reference(distribution_id, 'Distribution.id')
 
-    def __init__(self, consumer, key, secret=u'', permission=None, person=None,
+    def __init__(self, consumer, key, secret='', permission=None, person=None,
                  date_expires=None, product=None, projectgroup=None,
                  distribution=None, sourcepackagename=None):
-        super(OAuthRequestToken, self).__init__()
+        super().__init__()
         self.consumer = consumer
         self.permission = permission
         self.key = key

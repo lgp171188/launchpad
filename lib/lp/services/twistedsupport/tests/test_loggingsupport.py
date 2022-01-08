@@ -18,7 +18,7 @@ UTC = pytz.utc
 class TestLaunchpadLogFile(TestCase):
 
     def setUp(self):
-        super(TestLaunchpadLogFile, self).setUp()
+        super().setUp()
         self.temp_dir = self.useFixture(TempDir()).path
 
     def testInitialization(self):

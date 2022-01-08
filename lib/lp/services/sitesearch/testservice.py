@@ -90,7 +90,7 @@ def service_is_available(host, port, timeout=2.0):
     try:
         try:
             sock.connect((host, port))
-        except socket.error:
+        except OSError:
             return False
         else:
             return True
@@ -113,7 +113,7 @@ def wait_for_service(host, port, timeout=15.0):
         while True:
             try:
                 sock.connect((host, port))
-            except socket.error as err:
+            except OSError as err:
                 if err.args[0] in [errno.ECONNREFUSED, errno.ECONNABORTED]:
                     elapsed = (time.time() - start)
                     if elapsed > timeout:
@@ -145,7 +145,7 @@ def wait_for_service_shutdown(host, port, seconds_to_wait=10.0):
             try:
                 sock.connect((host, port))
                 sock.close()
-            except socket.error as err:
+            except OSError as err:
                 if err.args[0] == errno.ECONNREFUSED:
                     # Success!  The socket is closed.
                     return
@@ -192,7 +192,7 @@ def kill_running_process(service_name, host, port):
     """Find and kill any running web service processes."""
     try:
         pid = get_pid(service_name)
-    except IOError:
+    except OSError:
         # We could not find an existing pidfile.
         return
     except ValueError:

@@ -171,7 +171,7 @@ class TestCleanupProfiler(BaseTest):
             profile._profilers.profiler = None
         profile._profilers.actions = None
         profile._profilers.profiling = False
-        super(TestCleanupProfiler, self).tearDown()
+        super().tearDown()
 
 
 class TestRequestStartHandler(TestCleanupProfiler):
@@ -358,7 +358,7 @@ class TestRequestStartHandler(TestCleanupProfiler):
 class BaseRequestEndHandlerTest(BaseTest):
 
     def setUp(self):
-        super(BaseRequestEndHandlerTest, self).setUp()
+        super().setUp()
         self.profile_dir = self.makeTemporaryDirectory()
         self.memory_profile_log = os.path.join(self.profile_dir, 'memory_log')
         self.pushConfig('profiling', profile_dir=self.profile_dir)

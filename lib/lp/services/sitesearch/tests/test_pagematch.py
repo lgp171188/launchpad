@@ -16,12 +16,12 @@ class TestPageMatchURLHandling(TestCase):
 
     def test_attributes(self):
         p = PageMatch(
-            u'Unicode Titles in Launchpad',
+            'Unicode Titles in Launchpad',
             'http://example.com/unicode-titles',
-            u'Unicode Titles is a modest project using Unicode.')
+            'Unicode Titles is a modest project using Unicode.')
         self.assertThat(p, MatchesStructure.byEquality(
-            title=u'Unicode Titles in Launchpad',
-            summary=u'Unicode Titles is a modest project using Unicode.',
+            title='Unicode Titles in Launchpad',
+            summary='Unicode Titles is a modest project using Unicode.',
             url='http://example.com/unicode-titles',
             ))
 
@@ -31,9 +31,9 @@ class TestPageMatchURLHandling(TestCase):
         key config.vhost.mainsite.hostname.
         """
         p = PageMatch(
-            u'Bug #456 in Unicode title: "testrunner hates Unicode"',
+            'Bug #456 in Unicode title: "testrunner hates Unicode"',
             'https://bugs.launchpad.net/unicode-titles/+bug/456',
-            u'The Zope testrunner likes ASCII more than Unicode.')
+            'The Zope testrunner likes ASCII more than Unicode.')
         self.assertEqual(
             'http://bugs.launchpad.test/unicode-titles/+bug/456', p.url)
 
@@ -42,9 +42,9 @@ class TestPageMatchURLHandling(TestCase):
         slashes.
         """
         p = PageMatch(
-            u'Ubuntu in Launchpad',
+            'Ubuntu in Launchpad',
             'https://launchpad.net/ubuntu/',
-            u'Ubuntu also includes more software than any other operating')
+            'Ubuntu also includes more software than any other operating')
         self.assertEqual('http://launchpad.test/ubuntu', p.url)
 
     def test_rewrite_url_exceptions(self):
@@ -54,9 +54,9 @@ class TestPageMatchURLHandling(TestCase):
         that site will be preserved.
         """
         p = PageMatch(
-            u'OpenID',
+            'OpenID',
             'https://help.launchpad.net/OpenID',
-            u'Launchpad uses OpenID.')
+            'Launchpad uses OpenID.')
         self.assertEqual('https://help.launchpad.net/OpenID', p.url)
 
     def test_rewrite_url_handles_invalid_data(self):

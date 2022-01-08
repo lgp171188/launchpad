@@ -54,7 +54,7 @@ repos:
             |oci
             |registry
             |scripts
-            |services/[a-m]
+            |services
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

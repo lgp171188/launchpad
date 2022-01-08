@@ -46,7 +46,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
     def setUp(self):
-        super(TestNumberCruncher, self).setUp()
+        super().setUp()
         self.setUpStats()
         # Deactivate sampledata builders; we only want statistics for the
         # builders explicitly created in these tests.

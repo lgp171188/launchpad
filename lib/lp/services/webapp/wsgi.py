@@ -27,7 +27,7 @@ from lp.services.config import config
 
 
 @implementer(IParticipation)
-class SystemConfigurationParticipation(object):
+class SystemConfigurationParticipation:
 
     principal = system_user
     interaction = None

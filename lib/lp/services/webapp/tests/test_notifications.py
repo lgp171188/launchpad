@@ -33,10 +33,10 @@ class MockSession(dict):
 
     def __getitem__(self, key):
         try:
-            return super(MockSession, self).__getitem__(key)
+            return super().__getitem__(key)
         except KeyError:
             self[key] = MockSessionData()
-            return super(MockSession, self).__getitem__(key)
+            return super().__getitem__(key)
 
 
 @implementer(ISessionData)

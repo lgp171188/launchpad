@@ -101,7 +101,7 @@ class SnapTestHelpers:
         ]
 
     def setUp(self):
-        super(SnapTestHelpers, self).setUp()
+        super().setUp()
         snap_store_client = FakeMethod()
         snap_store_client.listChannels = FakeMethod(result=[])
         self.useFixture(
@@ -125,7 +125,7 @@ class LiveFSTestHelpers:
     ]
 
     def setUp(self):
-        super(LiveFSTestHelpers, self).setUp()
+        super().setUp()
 
     def makeTarget(self):
         self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true',
@@ -145,7 +145,7 @@ class OCIRecipeTestHelpers:
         ]
 
     def setUp(self):
-        super(OCIRecipeTestHelpers, self).setUp()
+        super().setUp()
 
     def makeTarget(self):
         self.useFixture(FeatureFixture({
@@ -186,7 +186,7 @@ class CharmRecipeTestHelpers:
 class WebhookTargetViewTestHelpers:
 
     def setUp(self):
-        super(WebhookTargetViewTestHelpers, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true'}))
         self.target = self.makeTarget()
         self.owner = self.target.owner
@@ -221,7 +221,7 @@ class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
     def makeHooksAndMatchers(self, count):
         hooks = [
             self.factory.makeWebhook(
-                target=self.target, delivery_url=u'http://example.com/%d' % i)
+                target=self.target, delivery_url='http://example.com/%d' % i)
             for i in range(count)]
         # There is a link to each webhook.
         link_matchers = [
@@ -439,12 +439,12 @@ class TestWebhookAddViewCharmRecipe(
 class WebhookViewTestHelpers:
 
     def setUp(self):
-        super(WebhookViewTestHelpers, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true'}))
         self.target = self.makeTarget()
         self.owner = self.target.owner
         self.webhook = self.factory.makeWebhook(
-            target=self.target, delivery_url=u'http://example.com/original')
+            target=self.target, delivery_url='http://example.com/original')
         login_person(self.owner)
 
     def makeView(self, name, **kwargs):

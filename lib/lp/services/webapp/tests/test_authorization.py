@@ -221,7 +221,7 @@ class TestCheckPermissionCaching(TestCase):
 
     def setUp(self):
         """Register a new permission and a fake store selector."""
-        super(TestCheckPermissionCaching, self).setUp()
+        super().setUp()
         self.factory = ObjectFactory()
         self.useFixture(ZopeUtilityFixture(FakeStoreSelector, IStoreSelector))
 
@@ -486,7 +486,7 @@ class LoneObject(LaunchpadContainer):
     _id_counter = count(1)
 
     def __init__(self):
-        super(LoneObject, self).__init__(self)
+        super().__init__(self)
         self.id = next(LoneObject._id_counter)
 
     def getParentContainers(self):
@@ -520,7 +520,7 @@ class TestPrecachePermissionForObjects(TestCase):
     def test_precaching_permissions(self):
         # The precache_permission_for_objects function updates the security
         # policy cache for the permission specified.
-        class Boring(object):
+        class Boring:
             """A boring, but weakref-able object."""
         objects = [Boring(), Boring()]
         request = LaunchpadTestRequest()
@@ -532,7 +532,7 @@ class TestPrecachePermissionForObjects(TestCase):
 
     def test_default_request(self):
         # If no request is provided, the current interaction is used.
-        class Boring(object):
+        class Boring:
             """A boring, but weakref-able object."""
         obj = Boring()
         request = LaunchpadTestRequest()
@@ -551,7 +551,7 @@ class TestIterAuthorization(TestCase):
     layer = ZopelessLayer
 
     def setUp(self):
-        super(TestIterAuthorization, self).setUp()
+        super().setUp()
         self.object = Object()
         self.principal = FakeLaunchpadPrincipal()
         self.permission = "docking.Permission"

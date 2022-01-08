@@ -9,8 +9,6 @@ __all__ = ['expand_numbers',
 
 import re
 
-import six
-
 
 def expand_numbers(unicode_text, fill_digits=4):
     """Return a copy of the string with numbers zero filled.
@@ -25,7 +23,7 @@ def expand_numbers(unicode_text, fill_digits=4):
     branch-0002-0003.0012
 
     """
-    assert(isinstance(unicode_text, six.text_type))
+    assert(isinstance(unicode_text, str))
 
     def substitute_filled_numbers(match):
         return match.group(0).zfill(fill_digits)
@@ -36,7 +34,7 @@ def expand_numbers(unicode_text, fill_digits=4):
 # strings in reversed order.  So ord(u'0') -> u'9' and
 # so on.
 reversed_numbers_table = dict(
-  zip(map(ord, u'0123456789'), reversed(u'0123456789')))
+  zip(map(ord, '0123456789'), reversed('0123456789')))
 
 
 def _reversed_number_sort_key(text):
@@ -52,8 +50,8 @@ def _reversed_number_sort_key(text):
     bzr-9.86
 
     """
-    assert isinstance(text, six.text_type)
-    assert isinstance(text, six.text_type)
+    assert isinstance(text, str)
+    assert isinstance(text, str)
     return text.translate(reversed_numbers_table)
 
 
@@ -79,7 +77,7 @@ def sorted_version_numbers(sequence, key=_identity):
 
     >>> class series:
     ...   def __init__(self, name):
-    ...     self.name = six.ensure_text(name)
+    ...     self.name = name
     >>> bzr_versions = [series('0.9'), series('0.10'), series('0.11'),
     ...                 series('bzr-0.9'), series('bzr-0.10'),
     ...                 series('bzr-0.11'), series('foo')]
@@ -158,7 +156,7 @@ def sorted_dotted_numbers(sequence, key=_identity):
 
     >>> class series:
     ...   def __init__(self, name):
-    ...     self.name = six.ensure_text(name)
+    ...     self.name = name
     >>> bzr_versions = [series('0.9'), series('0.10'), series('0.11'),
     ...                 series('bzr-0.9'), series('bzr-0.10'),
     ...                 series('bzr-0.11'), series('foo')]

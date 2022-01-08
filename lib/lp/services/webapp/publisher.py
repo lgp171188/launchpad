@@ -438,7 +438,7 @@ class LaunchpadView(UserAttributeCache):
         self.initialize()
         if self._isRedirected():
             # Don't render the page on redirects.
-            return u''
+            return ''
         else:
             return self.render()
 
@@ -766,12 +766,12 @@ def canonical_url(
     else:
         root_url = request.getRootURL(rootsite)
 
-    path = u'/'.join(reversed(urlparts))
+    path = '/'.join(reversed(urlparts))
     if ((path_only_if_possible and
          request is not None and
          root_url.startswith(request.getApplicationURL()))
         or force_local_path):
-        return u'/' + path
+        return '/' + path
     return six.ensure_text(root_url + path)
 
 
@@ -821,7 +821,7 @@ def get_raw_form_value_from_current_request(field, field_name):
     # Zope wrongly encodes any form element that doesn't look like a file,
     # so re-fetch the file content if it has been encoded.
     if request and field_name in request.form and isinstance(
-            request.form[field_name], six.text_type):
+            request.form[field_name], str):
         request._environ['wsgi.input'].seek(0)
         fs = FieldStorage(fp=request._body_instream, environ=request._environ)
         return fs[field_name].value
@@ -1099,7 +1099,7 @@ class RedirectionView(URLDereferencingMixin):
 
     def __call__(self):
         self.request.response.redirect(self.target, status=self.status)
-        return u''
+        return ''
 
     def browserDefault(self, request):
         return self, ()
@@ -1181,7 +1181,7 @@ class RenamedView:
 
         self.request.response.redirect(target_url, status=301)
 
-        return u''
+        return ''
 
     def publishTraverse(self, request, name):
         """See zope.publisher.interfaces.browser.IBrowserPublisher."""

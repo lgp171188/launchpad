@@ -58,7 +58,7 @@ class XRDSContentNegotiationMixin:
             accept_content = six.ensure_text(
                 self.request.get('HTTP_ACCEPT', ''), encoding='ISO-8859-1')
             acceptable = getAcceptable(accept_content,
-                                       [u'text/html', YADIS_CONTENT_TYPE])
+                                       ['text/html', YADIS_CONTENT_TYPE])
             # Return the XRDS document if it is preferred to text/html.
             for mtype in acceptable:
                 if mtype == 'text/html':
@@ -73,7 +73,7 @@ class XRDSContentNegotiationMixin:
             # and chain to the default render() method.
             self.request.response.setHeader(
                 YADIS_HEADER_NAME, '%s/+xrds' % canonical_url(self.context))
-        return super(XRDSContentNegotiationMixin, self).render()
+        return super().render()
 
     @cachedproperty
     def openid_server_url(self):

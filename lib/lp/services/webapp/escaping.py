@@ -51,7 +51,7 @@ def html_escape(message):
         if isinstance(raw, bytes):
             raw = six.ensure_text(raw)
         else:
-            raw = six.text_type(raw)
+            raw = str(raw)
         for needle, replacement in HTML_REPLACEMENTS:
             raw = raw.replace(needle, replacement)
         return raw
@@ -93,7 +93,7 @@ class structured:
         if isinstance(text, bytes):
             text = six.ensure_text(text)
         else:
-            text = six.text_type(text)
+            text = str(text)
         self.text = text
         if reps and kwreps:
             raise TypeError(
@@ -103,7 +103,7 @@ class structured:
             self.escapedtext = text % tuple(html_escape(rep) for rep in reps)
         elif kwreps:
             self.escapedtext = text % {
-                k: html_escape(v) for k, v in six.iteritems(kwreps)}
+                k: html_escape(v) for k, v in kwreps.items()}
         else:
             self.escapedtext = text
 

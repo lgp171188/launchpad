@@ -65,11 +65,11 @@ class Language(SQLBase):
         default=TextDirection.LTR)
 
     translation_teams = SQLRelatedJoin(
-        six.ensure_str('Person'), joinColumn="language",
+        'Person', joinColumn="language",
         intermediateTable='Translator', otherColumn='translator')
 
     _countries = SQLRelatedJoin(
-        six.ensure_str('Country'), joinColumn='language',
+        'Country', joinColumn='language',
         otherColumn='country', intermediateTable='SpokenIn')
 
     # Define a read/write property `countries` so it can be passed
@@ -261,7 +261,7 @@ class LanguageSet:
 
     def getLanguageByCode(self, code):
         """See `ILanguageSet`."""
-        assert isinstance(code, six.string_types), (
+        assert isinstance(code, str), (
             "%s is not a valid type for 'code'" % type(code))
         return IStore(Language).find(Language, code=code).one()
 

@@ -17,7 +17,7 @@ from lp.testing import TestCase
 class TestCronscriptEnabled(TestCase):
 
     def setUp(self):
-        super(TestCronscriptEnabled, self).setUp()
+        super().setUp()
         self.log = BufferLogger()
 
     def makeConfig(self, body):

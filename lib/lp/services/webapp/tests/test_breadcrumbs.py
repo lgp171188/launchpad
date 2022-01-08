@@ -81,7 +81,7 @@ class TestExtraBreadcrumbForLeafPageOnHierarchyView(BaseBreadcrumbTestCase):
     """
 
     def setUp(self):
-        super(TestExtraBreadcrumbForLeafPageOnHierarchyView, self).setUp()
+        super().setUp()
         login('test@canonical.com')
         self.product = self.factory.makeProduct(name='crumb-tester')
         self.product_url = canonical_url(self.product)
@@ -134,7 +134,7 @@ class TestExtraFacetBreadcrumbsOnHierarchyView(BaseBreadcrumbTestCase):
     """
 
     def setUp(self):
-        super(TestExtraFacetBreadcrumbsOnHierarchyView, self).setUp()
+        super().setUp()
         login('test@canonical.com')
         self.product = self.factory.makeProduct(name='crumb-tester')
         self.product_url = canonical_url(self.product)

@@ -82,7 +82,7 @@ def get_pid(service_name, use_config=None):
         with open(pidfile) as f:
             pid = f.read()
         return int(pid)
-    except IOError:
+    except OSError:
         return None
     except ValueError:
         raise ValueError("Invalid PID %s" % repr(pid))

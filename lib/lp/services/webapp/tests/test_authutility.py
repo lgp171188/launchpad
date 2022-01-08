@@ -33,12 +33,12 @@ from lp.testing.fixture import (
 
 
 @implementer(IPerson)
-class DummyPerson(object):
+class DummyPerson:
     is_valid_person = True
 
 
 @implementer(IAccount)
-class DummyAccount(object):
+class DummyAccount:
     person = DummyPerson()
 
 
@@ -47,7 +47,7 @@ Bruce.person = Bruce.account.person
 
 
 @implementer(IPlacelessLoginSource)
-class DummyPlacelessLoginSource(object):
+class DummyPlacelessLoginSource:
 
     def getPrincipalByLogin(self, id):
         return Bruce

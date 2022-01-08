@@ -24,22 +24,22 @@ class BaseStormOpenIDStoreTestsMixin:
         self.assertIsInstance(self.store, BaseStormOpenIDStore)
 
     def test_storeAssociation(self):
-        self.store.storeAssociation(u'server-url\xA9', Association(
+        self.store.storeAssociation('server-url\xA9', Association(
             b'handle', b'secret', 42, 600, 'HMAC-SHA1'))
         db_assoc = IMasterStore(self.store.Association).get(
-            self.store.Association, (u'server-url\xA9', u'handle'))
-        self.assertEqual(db_assoc.server_url, u'server-url\xA9')
-        self.assertEqual(db_assoc.handle, u'handle')
+            self.store.Association, ('server-url\xA9', 'handle'))
+        self.assertEqual(db_assoc.server_url, 'server-url\xA9')
+        self.assertEqual(db_assoc.handle, 'handle')
         self.assertEqual(db_assoc.secret, b'secret')
         self.assertEqual(db_assoc.issued, 42)
         self.assertEqual(db_assoc.lifetime, 600)
-        self.assertEqual(db_assoc.assoc_type, u'HMAC-SHA1')
+        self.assertEqual(db_assoc.assoc_type, 'HMAC-SHA1')
 
     def test_storeAssociation_update_existing(self):
         self.store.storeAssociation('server-url', Association(
             b'handle', b'secret', 42, 600, 'HMAC-SHA1'))
         db_assoc = IMasterStore(self.store.Association).get(
-            self.store.Association, (u'server-url', u'handle'))
+            self.store.Association, ('server-url', 'handle'))
         self.assertNotEqual(db_assoc, None)
 
         # Now update the association with new information.
@@ -48,7 +48,7 @@ class BaseStormOpenIDStoreTestsMixin:
         self.assertEqual(db_assoc.secret, b'secret2')
         self.assertEqual(db_assoc.issued, 420)
         self.assertEqual(db_assoc.lifetime, 900)
-        self.assertEqual(db_assoc.assoc_type, u'HMAC-SHA256')
+        self.assertEqual(db_assoc.assoc_type, 'HMAC-SHA256')
 
     def test_getAssociation(self):
         timestamp = int(time.time())
@@ -79,7 +79,7 @@ class BaseStormOpenIDStoreTestsMixin:
 
         store = IMasterStore(self.store.Association)
         db_assoc = store.get(
-            self.store.Association, (u'server-url', u'handle'))
+            self.store.Association, ('server-url', 'handle'))
         self.assertEqual(db_assoc, None)
 
     def test_getAssociation_no_handle(self):
@@ -115,7 +115,7 @@ class BaseStormOpenIDStoreTestsMixin:
             self.store.useNonce('server-url', timestamp, 'salt'), True)
         storm_store = IMasterStore(self.store.Nonce)
         new_nonce = storm_store.get(
-            self.store.Nonce, (u'server-url', timestamp, u'salt'))
+            self.store.Nonce, ('server-url', timestamp, 'salt'))
         self.assertIsNot(None, new_nonce)
 
         self.assertEqual(

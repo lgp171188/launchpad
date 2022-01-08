@@ -74,7 +74,7 @@ def get_current_view(request=None):
 
 def get_facet(view):
     """Return the view's facet name."""
-    return getattr(removeSecurityProxy(view), '__launchpad_facetname__', u'')
+    return getattr(removeSecurityProxy(view), '__launchpad_facetname__', '')
 
 
 @implementer(ILinkData)
@@ -348,12 +348,12 @@ class FacetMenu(MenuBase):
         return IFacetLink(MenuBase._get_link(self, name))
 
     def initLink(self, linkname, request_url=None):
-        link = super(FacetMenu, self).initLink(linkname, request_url)
+        link = super().initLink(linkname, request_url)
         link.url = link.url.ensureNoSlash()
         return link
 
     def updateLink(self, link, request_url=None, selectedfacetname=None):
-        super(FacetMenu, self).updateLink(link, request_url)
+        super().updateLink(link, request_url)
         if selectedfacetname is None:
             selectedfacetname = self.defaultlink
         if (selectedfacetname is not None and
@@ -385,12 +385,12 @@ class NavigationMenu(MenuBase):
     disabled = False
 
     def initLink(self, linkname, request_url):
-        link = super(NavigationMenu, self).initLink(linkname, request_url)
+        link = super().initLink(linkname, request_url)
         link.url = link.url.ensureNoSlash()
         return link
 
     def updateLink(self, link, request_url=None, view=None):
-        super(NavigationMenu, self).updateLink(link, request_url)
+        super().updateLink(link, request_url)
         # The link should be unlinked if it is the current URL, or if
         # the menu for the current view is the link's menu.
         if view is None:
@@ -410,9 +410,7 @@ class NavigationMenu(MenuBase):
         if request_url is None:
             request_url = URI(request.getURL())
 
-        for link in super(NavigationMenu, self).iterlinks(
-            request_url=request_url, view=view):
-            yield link
+        yield from super().iterlinks(request_url=request_url, view=view)
 
     def _is_current_url(self, request_url, link_url):
         """Determines if <link_url> is the current URL.

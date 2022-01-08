@@ -27,7 +27,7 @@ class TestGetMacaroonNS(TestCase):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestGetMacaroonNS, self).setUp()
+        super().setUp()
         params = {
             'openid.mode': 'checkid_setup',
             'openid.trust_root': 'http://localhost/',
@@ -57,7 +57,7 @@ class TestMacaroonRequest(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestMacaroonRequest, self).setUp()
+        super().setUp()
         self.caveat_id = self.factory.getUniqueUnicode()
         self.req = MacaroonRequest(self.caveat_id)
 

@@ -26,8 +26,6 @@ from signal import (
     )
 import time
 
-import six
-
 
 def remove_tree(path):
     """Remove the tree at 'path' from disk."""
@@ -41,7 +39,7 @@ def set_environ(new_values):
     :return: a dict of the old values
     """
     old_values = {}
-    for name, value in six.iteritems(new_values):
+    for name, value in new_values.items():
         old_values[name] = os.environ.get(name)
         if value is None:
             if old_values[name] is not None:
@@ -92,7 +90,7 @@ def open_for_writing(filename, mode, dirmode=0o777):
     """
     try:
         return open(filename, mode)
-    except IOError as e:
+    except OSError as e:
         if e.errno == errno.ENOENT:
             os.makedirs(os.path.dirname(filename), mode=dirmode)
             return open(filename, mode)

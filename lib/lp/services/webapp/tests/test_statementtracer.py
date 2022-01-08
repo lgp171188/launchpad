@@ -59,8 +59,7 @@ class StubConnection:
         self._database = type('StubDatabase', (), dict(name='stub-database'))
 
     def to_database(self, params):
-        for param in params:
-            yield param
+        yield from params
 
 
 class StubCursor:
@@ -70,14 +69,14 @@ class StubCursor:
         # most types, but we can't use psycopg2's mogrify without a real
         # connection.
         mangled_params = tuple(
-            repr(p) if isinstance(p, six.string_types) else p for p in params)
+            repr(p) if isinstance(p, str) else p for p in params)
         return statement % tuple(mangled_params)
 
 
 class TestLoggingOutsideOfRequest(TestCase):
 
     def setUp(self):
-        super(TestLoggingOutsideOfRequest, self).setUp()
+        super().setUp()
         self.connection = StubConnection()
         self.cursor = StubCursor()
         original_time = da.time
@@ -284,7 +283,7 @@ class TestLoggingWithinRequest(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestLoggingWithinRequest, self).setUp()
+        super().setUp()
         self.connection = StubConnection()
         self.person = self.factory.makePerson()
         da.set_request_started(1000.0)
