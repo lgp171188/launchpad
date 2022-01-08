@@ -106,7 +106,7 @@ class SnapJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(SnapJob, self).__init__()
+        super().__init__()
         self.job = Job(**job_args)
         self.snap = snap
         self.job_type = job_type
@@ -155,7 +155,7 @@ class SnapJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        oops_vars = super(SnapJobDerived, self).getOopsVars()
+        oops_vars = super().getOopsVars()
         oops_vars.extend([
             ("job_id", self.context.job.id),
             ("job_type", self.context.job_type.title),

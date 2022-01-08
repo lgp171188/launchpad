@@ -104,7 +104,7 @@ class TestHasSnapsMenu(WithScenarios, TestCaseWithFactory):
         ]
 
     def setUp(self):
-        super(TestHasSnapsMenu, self).setUp()
+        super().setUp()
         if self.needs_git_hosting_fixture:
             self.useFixture(GitHostingFixture())
 

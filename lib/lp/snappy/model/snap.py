@@ -426,7 +426,7 @@ class Snap(Storm, WebhookTargetMixin):
                  store_upload=False, store_series=None, store_name=None,
                  store_secrets=None, store_channels=None, project=None):
         """Construct a `Snap`."""
-        super(Snap, self).__init__()
+        super().__init__()
 
         # Set the information type first so that other validators can perform
         # suitable privacy checks, but pillar should also be set, since it's

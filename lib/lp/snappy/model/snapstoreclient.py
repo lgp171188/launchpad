@@ -398,7 +398,7 @@ class SnapStoreClient:
         channels = memcache_client.get_json(memcache_key, log, description)
 
         if (channels is None and
-                not getFeatureFlag(u"snap.disable_channel_search")):
+                not getFeatureFlag("snap.disable_channel_search")):
             path = "api/v1/channels"
             timeline = cls._getTimeline()
             if timeline is not None:

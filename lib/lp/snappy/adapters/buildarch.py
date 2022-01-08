@@ -7,8 +7,6 @@ __all__ = [
 
 from collections import Counter
 
-import six
-
 from lp.services.helpers import english_list
 
 
@@ -20,7 +18,7 @@ class MissingPropertyError(SnapArchitecturesParserError):
     """Error for when an expected property is not present in the YAML."""
 
     def __init__(self, prop):
-        super(MissingPropertyError, self).__init__(
+        super().__init__(
             "Architecture specification is missing the {!r} property".format(
                 prop))
         self.property = prop
@@ -30,7 +28,7 @@ class IncompatibleArchitecturesStyleError(SnapArchitecturesParserError):
     """Error for when architectures mix incompatible styles."""
 
     def __init__(self):
-        super(IncompatibleArchitecturesStyleError, self).__init__(
+        super().__init__(
             "'architectures' must either be a list of strings or dicts, not "
             "both")
 
@@ -39,7 +37,7 @@ class DuplicateBuildOnError(SnapArchitecturesParserError):
     """Error for when multiple `build-on`s include the same architecture."""
 
     def __init__(self, duplicates):
-        super(DuplicateBuildOnError, self).__init__(
+        super().__init__(
             "{} {} present in the 'build-on' of multiple items".format(
                 english_list(duplicates),
                 "is" if len(duplicates) == 1 else "are"))
@@ -49,7 +47,7 @@ class UnsupportedBuildOnError(SnapArchitecturesParserError):
     """Error for when a requested architecture is not supported."""
 
     def __init__(self, build_on):
-        super(UnsupportedBuildOnError, self).__init__(
+        super().__init__(
             "build-on specifies no supported architectures: {!r}".format(
                 build_on))
         self.build_on = build_on
@@ -69,10 +67,10 @@ class SnapArchitecture:
             snapcraft.yaml.
         """
         self.build_on = (
-            [build_on] if isinstance(build_on, six.string_types) else build_on)
+            [build_on] if isinstance(build_on, str) else build_on)
         if run_on:
             self.run_on = (
-                [run_on] if isinstance(run_on, six.string_types) else run_on)
+                [run_on] if isinstance(run_on, str) else run_on)
         else:
             self.run_on = self.build_on
         self.build_error = build_error
@@ -131,7 +129,7 @@ def determine_architectures_to_build(snapcraft_data, supported_arches):
     if architectures_list:
         # First, determine what style we're parsing.  Is it a list of
         # strings or a list of dicts?
-        if all(isinstance(a, six.string_types) for a in architectures_list):
+        if all(isinstance(a, str) for a in architectures_list):
             # If a list of strings (old style), then that's only a single
             # item.
             architectures = [SnapArchitecture(build_on=architectures_list)]

@@ -28,7 +28,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSnapBuildChannelsWidget, self).setUp()
+        super().setUp()
         field = Dict(
             __name__="auto_build_channels",
             title="Source snap channels for automatic builds")

@@ -8,7 +8,6 @@ __all__ = [
     ]
 
 import pytz
-import six
 from storm.locals import (
     Bool,
     DateTime,
@@ -74,7 +73,7 @@ class SnapBase(Storm):
 
     def __init__(self, registrant, name, display_name, distro_series,
                  build_channels, date_created=DEFAULT):
-        super(SnapBase, self).__init__()
+        super().__init__()
         self.registrant = registrant
         self.name = name
         self.display_name = display_name
@@ -145,7 +144,7 @@ class SnapBase(Storm):
 
     def _addArchiveDependency(self, dependency, pocket, component=None):
         """See `ISnapBase`."""
-        if isinstance(component, six.text_type):
+        if isinstance(component, str):
             try:
                 component = getUtility(IComponentSet)[component]
             except NotFoundError as e:

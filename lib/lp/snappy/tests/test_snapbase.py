@@ -80,7 +80,7 @@ class TestSnapBaseProcessors(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
-        super(TestSnapBaseProcessors, self).setUp(user="foo.bar@canonical.com")
+        super().setUp(user="foo.bar@canonical.com")
         self.unrestricted_procs = [
             self.factory.makeProcessor() for _ in range(3)]
         self.restricted_procs = [

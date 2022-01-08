@@ -34,7 +34,6 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
-import six
 from zope.component import getUtility
 from zope.interface import Interface
 from zope.schema import (
@@ -179,7 +178,7 @@ class ISnapBaseEdit(Interface):
 
     @operation_parameters(
         component=copy_field(IArchiveDependency["component_name"]))
-    @export_operation_as(six.ensure_str("addArchiveDependency"))
+    @export_operation_as("addArchiveDependency")
     @export_factory_operation(IArchiveDependency, ["dependency", "pocket"])
     @operation_for_version("devel")
     def _addArchiveDependency(dependency, pocket, component=None):

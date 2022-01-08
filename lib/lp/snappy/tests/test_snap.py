@@ -186,7 +186,7 @@ class TestSnap(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSnap, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_implements_interfaces(self):
@@ -1391,7 +1391,7 @@ class TestSnapDeleteWithBuilds(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestSnapDeleteWithBuilds, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_delete_with_builds(self):
@@ -1507,7 +1507,7 @@ class TestSnapVisibility(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSnapVisibility, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def getSnapGrants(self, snap, person=None):
@@ -1654,7 +1654,7 @@ class TestSnapSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSnapSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_class_implements_interfaces(self):
@@ -1891,7 +1891,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertContentEqual(snaps[3:], snap_set.findByPerson(owners[1]))
 
     def test_get_snap_privacy_filter_includes_grants(self):
-        grantee, creator = [self.factory.makePerson() for i in range(2)]
+        grantee, creator = (self.factory.makePerson() for i in range(2))
         # All snaps are owned by "creator", and "grantee" will later have
         # access granted using sharing service.
         snap_data = dict(registrant=creator, owner=creator, private=True)
@@ -2763,7 +2763,7 @@ class TestSnapProcessors(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestSnapProcessors, self).setUp(user="foo.bar@canonical.com")
+        super().setUp(user="foo.bar@canonical.com")
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.default_procs = [
             getUtility(IProcessorSet).getByName("386"),
@@ -2880,7 +2880,7 @@ class TestSnapWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestSnapWebservice, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.snap_store_client = FakeMethod()
         self.snap_store_client.listChannels = FakeMethod(result=[

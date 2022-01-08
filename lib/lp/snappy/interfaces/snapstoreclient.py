@@ -27,7 +27,7 @@ class SnapStoreError(Exception):
 
     def __init__(
             self, message="", detail=None, messages=None, can_retry=False):
-        super(SnapStoreError, self).__init__(message)
+        super().__init__(message)
         self.message = message
         self.detail = detail
         self.messages = messages

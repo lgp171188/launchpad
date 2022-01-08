@@ -44,7 +44,7 @@ class SnapSubscription(StormBase):
     subscribed_by = Reference(subscribed_by_id, "Person.id")
 
     def __init__(self, snap, person, subscribed_by):
-        super(SnapSubscription, self).__init__()
+        super().__init__()
         self.snap = snap
         self.person = person
         self.subscribed_by = subscribed_by

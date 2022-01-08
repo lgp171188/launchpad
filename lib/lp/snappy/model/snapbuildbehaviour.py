@@ -106,8 +106,7 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         Return the extra arguments required by the slave for the given build.
         """
         build = self.build
-        args = yield super(SnapBuildBehaviour, self).extraBuildArgs(
-            logger=logger)
+        args = yield super().extraBuildArgs(logger=logger)
         yield self.addProxyArgs(args, build.snap.allow_internet)
         args["name"] = build.snap.store_name or build.snap.name
         channels = build.channels or {}
