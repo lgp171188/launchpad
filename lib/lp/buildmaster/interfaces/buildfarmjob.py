@@ -4,17 +4,28 @@
 """Interface for Soyuz build farm jobs."""
 
 __all__ = [
+    'CannotBeRescored',
+    'CannotBeRetried',
     'IBuildFarmJob',
+    'IBuildFarmJobAdmin',
     'IBuildFarmJobDB',
+    'IBuildFarmJobEdit',
     'IBuildFarmJobSet',
     'IBuildFarmJobSource',
+    'IBuildFarmJobView',
     'InconsistentBuildFarmJobError',
     'ISpecificBuildFarmJobSource',
     ]
 
+import http.client
+
 from lazr.restful.declarations import (
+    error_status,
+    export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
+    operation_parameters,
     )
 from lazr.restful.fields import Reference
 from zope.interface import (
@@ -49,6 +60,22 @@ class InconsistentBuildFarmJobError(Exception):
     """
 
 
+@error_status(http.client.BAD_REQUEST)
+class CannotBeRetried(Exception):
+    """Raised when retrying a build that cannot be retried."""
+
+    def __init__(self, build_id):
+        super().__init__("Build %s cannot be retried." % build_id)
+
+
+@error_status(http.client.BAD_REQUEST)
+class CannotBeRescored(Exception):
+    """Raised when rescoring a build that cannot be rescored."""
+
+    def __init__(self, build_id):
+        super().__init__("Build %s cannot be rescored." % build_id)
+
+
 class IBuildFarmJobDB(Interface):
     """Operations on a `BuildFarmJob` DB row.
 
@@ -63,9 +90,8 @@ class IBuildFarmJobDB(Interface):
         description=_("The specific type of job."))
 
 
-@exported_as_webservice_entry(as_of='beta')
-class IBuildFarmJob(Interface):
-    """Operations that jobs for the build farm must implement."""
+class IBuildFarmJobView(Interface):
+    """`IBuildFarmJob` attributes that require launchpad.View."""
 
     id = Attribute('The build farm job ID.')
 
@@ -237,6 +263,70 @@ class IBuildFarmJob(Interface):
     external_dependencies = Attribute(
         "Newline-separated list of repositories to be used to retrieve any "
         "external build-dependencies when performing this build.")
+
+    can_be_rescored = exported(Bool(
+        title=_("Can be rescored"), required=True, readonly=True,
+        description=_(
+            "Whether this build record can be rescored manually.")))
+
+    can_be_retried = exported(Bool(
+        title=_("Can be retried"), required=True, readonly=True,
+        description=_("Whether this build record can be retried.")))
+
+    can_be_cancelled = exported(Bool(
+        title=_("Can be cancelled"), required=True, readonly=True,
+        description=_("Whether this build record can be cancelled.")))
+
+
+class IBuildFarmJobEdit(Interface):
+    """`IBuildFarmJob` methods that require launchpad.Edit."""
+
+    def resetBuild():
+        """Reset this build record to a clean state.
+
+        This method should only be called by `BuildFarmJobMixin.retry`, but
+        subclasses may override it to reset additional state.
+        """
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def retry():
+        """Restore the build record to its initial state.
+
+        Build record loses its history, is moved to NEEDSBUILD and a new
+        non-scored BuildQueue entry is created for it.
+        """
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def cancel():
+        """Cancel the build if it is either pending or in progress.
+
+        Check the can_be_cancelled property prior to calling this method to
+        find out if cancelling the build is possible.
+
+        If the build is in progress, it is marked as CANCELLING until the
+        buildd manager terminates the build and marks it CANCELLED.  If the
+        build is not in progress, it is marked CANCELLED immediately and is
+        removed from the build queue.
+
+        If the build is not in a cancellable state, this method is a no-op.
+        """
+
+
+class IBuildFarmJobAdmin(Interface):
+    """`IBuildFarmJob` methods that require launchpad.Admin."""
+
+    @operation_parameters(score=Int(title=_("Score"), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def rescore(score):
+        """Change the build's score."""
+
+
+@exported_as_webservice_entry(as_of='beta')
+class IBuildFarmJob(IBuildFarmJobView, IBuildFarmJobEdit, IBuildFarmJobAdmin):
+    """Operations that jobs for the build farm must implement."""
 
 
 class ISpecificBuildFarmJobSource(Interface):

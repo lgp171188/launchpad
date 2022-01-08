@@ -34,6 +34,8 @@ from lp.buildmaster.enums import (
     BuildStatus,
     )
 from lp.buildmaster.interfaces.buildfarmjob import (
+    CannotBeRescored,
+    CannotBeRetried,
     IBuildFarmJob,
     IBuildFarmJobDB,
     IBuildFarmJobSet,
@@ -261,6 +263,81 @@ class BuildFarmJobMixin:
         Store.of(self).add(queue_entry)
         del get_property_cache(self).buildqueue_record
         return queue_entry
+
+    @property
+    def can_be_retried(self):
+        """See `IBuildFarmJob`.
+
+        Implementations should override this method to first check whether
+        their associated build behaviour would accept the build if it
+        succeeded.
+        """
+        failed_statuses = [
+            BuildStatus.FAILEDTOBUILD,
+            BuildStatus.MANUALDEPWAIT,
+            BuildStatus.CHROOTWAIT,
+            BuildStatus.FAILEDTOUPLOAD,
+            BuildStatus.CANCELLED,
+            BuildStatus.SUPERSEDED,
+            ]
+
+        # If the build is currently in any of the failed states,
+        # it may be retried.
+        return self.status in failed_statuses
+
+    @property
+    def can_be_rescored(self):
+        """See `IBuildFarmJob`."""
+        return (
+            self.buildqueue_record is not None and
+            self.status is BuildStatus.NEEDSBUILD)
+
+    @property
+    def can_be_cancelled(self):
+        """See `IBuildFarmJob`."""
+        if not self.buildqueue_record:
+            return False
+
+        cancellable_statuses = [
+            BuildStatus.BUILDING,
+            BuildStatus.NEEDSBUILD,
+            ]
+        return self.status in cancellable_statuses
+
+    def resetBuild(self):
+        """See `IBuildFarmJob`."""
+        self.build_farm_job.status = self.status = BuildStatus.NEEDSBUILD
+        self.build_farm_job.date_finished = self.date_finished = None
+        self.date_started = None
+        self.build_farm_job.builder = self.builder = None
+        self.log = None
+        self.upload_log = None
+        self.dependencies = None
+        self.failure_count = 0
+
+    def retry(self):
+        """See `IBuildFarmJob`."""
+        if not self.can_be_retried:
+            raise CannotBeRetried(self.id)
+
+        self.resetBuild()
+        self.queueBuild()
+
+    def rescore(self, score):
+        """See `IBuildFarmJob`."""
+        if not self.can_be_rescored:
+            raise CannotBeRescored(self.id)
+
+        self.buildqueue_record.manualScore(score)
+
+    def cancel(self):
+        """See `IBuildFarmJob`."""
+        if not self.can_be_cancelled:
+            return
+        # BuildQueue.cancel() will decide whether to go straight to
+        # CANCELLED, or go through CANCELLING to let buildd-manager clean up
+        # the slave.
+        self.buildqueue_record.cancel()
 
 
 class SpecificBuildFarmJobSourceMixin:

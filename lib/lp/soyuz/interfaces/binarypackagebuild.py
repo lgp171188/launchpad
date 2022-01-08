@@ -5,21 +5,17 @@
 
 __all__ = [
     'BuildSetStatus',
-    'CannotBeRescored',
     'IBinaryPackageBuild',
     'IBuildRescoreForm',
     'IBinaryPackageBuildSet',
     'UnparsableDependencies',
     ]
 
-import http.client
-
 from lazr.enum import (
     EnumeratedType,
     Item,
     )
 from lazr.restful.declarations import (
-    error_status,
     export_read_operation,
     export_write_operation,
     exported,
@@ -42,24 +38,25 @@ from zope.schema import (
 
 from lp import _
 from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
-from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmaster.interfaces.buildfarmjob import (
+    IBuildFarmJobAdmin,
+    IBuildFarmJobEdit,
+    ISpecificBuildFarmJobSource,
+    )
+from lp.buildmaster.interfaces.packagebuild import (
+    IPackageBuild,
+    IPackageBuildView,
+    )
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.soyuz.interfaces.publishing import ISourcePackagePublishingHistory
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
-
-
-@error_status(http.client.BAD_REQUEST)
-class CannotBeRescored(Exception):
-    """Raised when rescoring a build that cannot be rescored."""
-    _message_prefix = "Cannot rescore build"
 
 
 class UnparsableDependencies(Exception):
     """Raised when parsing invalid dependencies on a binary package."""
 
 
-class IBinaryPackageBuildView(IPackageBuild):
+class IBinaryPackageBuildView(IPackageBuildView):
     """A Build interface for items requiring launchpad.View."""
     id = Int(title=_('ID'), required=True, readonly=True)
 
@@ -115,25 +112,6 @@ class IBinaryPackageBuildView(IPackageBuild):
     distroarchseriesbinarypackages = Attribute(
         "A list of distroarchseriesbinarypackages that resulted from this"
         "build, ordered by name.")
-
-    can_be_rescored = exported(
-        Bool(
-            title=_("Can Be Rescored"), required=False, readonly=True,
-            description=_(
-                "Whether or not this build record can be rescored "
-                "manually.")))
-
-    can_be_retried = exported(
-        Bool(
-            title=_("Can Be Retried"), required=False, readonly=True,
-            description=_(
-                "Whether or not this build record can be retried.")))
-
-    can_be_cancelled = exported(
-        Bool(
-            title=_("Can Be Cancelled"), required=False, readonly=True,
-            description=_(
-                "Whether or not this build record can be cancelled.")))
 
     upload_changesfile = Attribute(
         "The `LibraryFileAlias` object containing the changes file which "
@@ -243,37 +221,24 @@ class IBinaryPackageBuildView(IPackageBuild):
         """
 
 
-class IBinaryPackageBuildEdit(Interface):
+class IBinaryPackageBuildEdit(IBuildFarmJobEdit):
     """A Build interface for items requiring launchpad.Edit."""
-
-    @export_write_operation()
-    def retry():
-        """Restore the build record to its initial state.
-
-        Build record loses its history, is moved to NEEDSBUILD and a new
-        non-scored BuildQueue entry is created for it.
-        """
-
-    @export_write_operation()
-    @operation_for_version("devel")
-    def cancel():
-        """Cancel the build if it is either pending or in progress.
-
-        Check the can_be_cancelled property prior to calling this method to
-        find out if cancelling the build is possible.
-
-        If the build is in progress, it is marked as CANCELLING until the
-        buildd manager terminates the build and marks it CANCELLED. If the
-        build is not in progress, it is marked CANCELLED immediately and is
-        removed from the build queue.
-
-        If the build is not in a cancellable state, this method is a no-op.
-        """
 
     def addBuildInfo(buildinfo):
         """Add a buildinfo file to this build.
 
         :param buildinfo: An `ILibraryFileAlias`.
+        """
+
+    # Redeclaring from IBuildFarmJobEdit.retry since this was available in
+    # the beta version.
+    @export_write_operation()
+    @operation_for_version("beta")
+    def retry():
+        """Restore the build record to its initial state.
+
+        Build record loses its history, is moved to NEEDSBUILD and a new
+        non-scored BuildQueue entry is created for it.
         """
 
 
@@ -297,11 +262,14 @@ class IBinaryPackageBuildRestricted(Interface):
         exported_as="external_dependencies")
 
 
-class IBinaryPackageBuildAdmin(Interface):
+class IBinaryPackageBuildAdmin(IBuildFarmJobAdmin):
     """A Build interface for items requiring launchpad.Admin."""
 
+    # Redeclaring from IBuildFarmJobEdit.rescore since this was available in
+    # the beta version.
     @operation_parameters(score=Int(title=_("Score"), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def rescore(score):
         """Change the build's score."""
 
@@ -309,7 +277,8 @@ class IBinaryPackageBuildAdmin(Interface):
 @exported_as_webservice_entry(singular_name='build', plural_name='builds')
 class IBinaryPackageBuild(
     IBinaryPackageBuildView, IBinaryPackageBuildEdit,
-    IBinaryPackageBuildRestricted, IBinaryPackageBuildAdmin):
+    IBinaryPackageBuildRestricted, IBinaryPackageBuildAdmin,
+    IPackageBuild):
     """A Build interface"""
 
 
