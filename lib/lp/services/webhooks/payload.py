@@ -28,7 +28,7 @@ class WebhookPayloadRequest(LaunchpadBrowserRequest):
     """An internal fake request used while composing webhook payloads."""
 
     def __init__(self):
-        super(WebhookPayloadRequest, self).__init__(BytesIO(), {})
+        super().__init__(BytesIO(), {})
 
 
 @implementer(IAbsoluteURL)

@@ -111,10 +111,10 @@ class TestClaimTeamView(TestCaseWithFactory):
             requester=self.claimer, requesteremail=None,
             email=self.claimee_email, tokentype=LoginTokenType.TEAMCLAIM)
         msgs = self._claimToken(token1)
-        self.assertEqual([u'Team claimed successfully'], msgs)
+        self.assertEqual(['Team claimed successfully'], msgs)
         msgs = self._claimToken(token2)
         self.assertEqual(
-            [u'claimee has already been converted to a team.'], msgs)
+            ['claimee has already been converted to a team.'], msgs)
 
 
 class MergePeopleViewTestCase(TestCaseWithFactory):

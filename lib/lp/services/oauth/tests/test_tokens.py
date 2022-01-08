@@ -14,7 +14,6 @@ from datetime import (
 import hashlib
 
 import pytz
-import six
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -47,7 +46,7 @@ class TestOAuth(TestCaseWithFactory):
 
     def setUp(self):
         """Set up some convenient data objects and timestamps."""
-        super(TestOAuth, self).setUp()
+        super().setUp()
 
         self.person = self.factory.makePerson()
         self.consumer = self.factory.makeOAuthConsumer()
@@ -61,7 +60,7 @@ class TestConsumerSet(TestOAuth):
     """Tests of the utility that manages OAuth consumers."""
 
     def setUp(self):
-        super(TestConsumerSet, self).setUp()
+        super().setUp()
         self.consumers = getUtility(IOAuthConsumerSet)
 
     def test_interface(self):
@@ -69,7 +68,7 @@ class TestConsumerSet(TestOAuth):
 
     def test_new(self):
         consumer = self.consumers.new(
-            self.factory.getUniqueUnicode(u"oauthconsumerkey"))
+            self.factory.getUniqueUnicode("oauthconsumerkey"))
         verifyObject(IOAuthConsumer, consumer)
 
     def test_new_wont_create_duplicate_consumer(self):
@@ -83,7 +82,7 @@ class TestConsumerSet(TestOAuth):
     def test_getByKey_returns_none_for_nonexistent_consumer(self):
         # There is no consumer called "oauthconsumerkey-nonexistent".
         nonexistent_key = self.factory.getUniqueUnicode(
-            u"oauthconsumerkey-nonexistent")
+            "oauthconsumerkey-nonexistent")
         self.assertEqual(self.consumers.getByKey(nonexistent_key), None)
 
 
@@ -92,7 +91,7 @@ class TestRequestTokenSet(TestOAuth):
 
     def setUp(self):
         """Set up a reference to the token list."""
-        super(TestRequestTokenSet, self).setUp()
+        super().setUp()
         self.tokens = getUtility(IOAuthRequestTokenSet)
 
     def test_getByKey(self):
@@ -100,7 +99,7 @@ class TestRequestTokenSet(TestOAuth):
         self.assertEqual(token, self.tokens.getByKey(token.key))
 
     def test_getByKey_returns_none_for_unused_key(self):
-        self.assertIsNone(self.tokens.getByKey(u"no-such-token"))
+        self.assertIsNone(self.tokens.getByKey("no-such-token"))
 
 
 class TestRequestTokens(TestOAuth):
@@ -109,7 +108,7 @@ class TestRequestTokens(TestOAuth):
     def test_newRequestToken(self):
         request_token, secret = self.consumer.newRequestToken()
         verifyObject(IOAuthRequestToken, request_token)
-        self.assertIsInstance(secret, six.text_type)
+        self.assertIsInstance(secret, str)
         self.assertEqual(
             removeSecurityProxy(request_token)._secret,
             hashlib.sha256(secret.encode('ASCII')).hexdigest())
@@ -147,7 +146,7 @@ class TestRequestTokens(TestOAuth):
         self.assertIsNone(consumer_2.getRequestToken(token_1.key))
 
     def test_getRequestToken_for_nonexistent_key_returns_none(self):
-        self.assertIsNone(self.consumer.getRequestToken(u"no-such-token"))
+        self.assertIsNone(self.consumer.getRequestToken("no-such-token"))
 
     def test_isSecretValid(self):
         token, secret = self.consumer.newRequestToken()
@@ -283,7 +282,7 @@ class TestAccessTokens(TestOAuth):
         request_token, access_token, access_secret = (
             self._exchange_request_token_for_access_token())
         verifyObject(IOAuthAccessToken, access_token)
-        self.assertIsInstance(access_secret, six.text_type)
+        self.assertIsInstance(access_secret, str)
         self.assertEqual(
             removeSecurityProxy(access_token)._secret,
             hashlib.sha256(access_secret.encode('ASCII')).hexdigest())
@@ -359,7 +358,7 @@ class TestAccessTokens(TestOAuth):
         request_token.review(self.person, OAuthPermission.WRITE_PRIVATE)
         token, secret = request_token.createAccessToken()
         self.assertTrue(token.isSecretValid(secret))
-        self.assertFalse(token.isSecretValid(secret + u'a'))
+        self.assertFalse(token.isSecretValid(secret + 'a'))
 
     def test_get_access_tokens_for_person(self):
         """It's possible to get a person's access tokens."""
@@ -396,7 +395,7 @@ class TestAccessTokens(TestOAuth):
 class TestHelperFunctions(TestOAuth):
 
     def setUp(self):
-        super(TestHelperFunctions, self).setUp()
+        super().setUp()
         self.context = self.factory.makeProduct()
 
     def test_oauth_access_token_for_creates_nonexistent_token(self):

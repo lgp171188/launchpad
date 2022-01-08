@@ -27,8 +27,7 @@ class WSGIFriendlyUrllib2Fetcher(Urllib2Fetcher):
             headers = {
                 wsgi_native_string(key): wsgi_native_string(value)
                 for key, value in headers.items()}
-        return super(WSGIFriendlyUrllib2Fetcher, self).fetch(
-            url, body=body, headers=headers)
+        return super().fetch(url, body=body, headers=headers)
 
 
 def set_default_openid_fetcher():

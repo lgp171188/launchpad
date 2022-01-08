@@ -44,7 +44,7 @@ class TemporaryBlobStorageAddView(LaunchpadFormView):
         # we need the action's name to be FORM_SUBMIT.
         self.actions = [action for action in self.actions]
         self.actions[0].__name__ = 'FORM_SUBMIT'
-        super(TemporaryBlobStorageAddView, self).initialize()
+        super().initialize()
 
     # NOTE: This action is named FORM_SUBMIT because apport depends on it
     # being named like that.
@@ -86,7 +86,7 @@ class TemporaryBlobStorageURL:
     @property
     def path(self):
         """Return the path component of the URL."""
-        return u'temporary-blobs/%s' % self.context.uuid
+        return 'temporary-blobs/%s' % self.context.uuid
 
 
 class TemporaryBlobStorageNavigation(GetitemNavigation):

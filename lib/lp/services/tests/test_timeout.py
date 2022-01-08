@@ -152,7 +152,7 @@ class TestTimeout(TestCase):
         """The cleanup parameter can also be a string in which case it will be
         interpreted as the name of an instance method.
         """
-        class expirable_socket(object):
+        class expirable_socket:
             def __init__(self):
                 self.closed = False
                 self.sockets = socket.socketpair()
@@ -411,7 +411,7 @@ class TestTimeout(TestCase):
 
     def test_urlfetch_does_not_support_ftp_urls_by_default(self):
         """urlfetch() does not support ftp urls by default."""
-        url = u'ftp://localhost/'
+        url = 'ftp://localhost/'
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
             "No connection adapters were found for {!r}".format(url), str(e))
@@ -447,7 +447,7 @@ class TestTimeout(TestCase):
         """urlfetch() does not support file urls by default."""
         test_path = self.useFixture(TempDir()).join('file')
         write_file(test_path, b'')
-        url = u'file://' + test_path
+        url = 'file://' + test_path
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
             "No connection adapters were found for {!r}".format(url), str(e))

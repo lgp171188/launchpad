@@ -126,7 +126,7 @@ class TestWebServicePublication(TestCaseWithFactory):
         self.assertNotEqual(person.id, person.account.id)
 
         # Create an OAuth access token for our new person.
-        consumer = getUtility(IOAuthConsumerSet).new(u'test-consumer')
+        consumer = getUtility(IOAuthConsumerSet).new('test-consumer')
         request_token, _ = consumer.newRequestToken()
         request_token.review(
             person, permission=OAuthPermission.READ_PUBLIC, context=None)
@@ -293,7 +293,7 @@ class TestBlockingOffsitePosts(TestCase):
     def test_openid_callback_with_query_string(self):
         # An OpenId provider (OP) may post to the +openid-callback URL with a
         # query string and without a referer.  These posts need to be allowed.
-        path_info = u'/+openid-callback?starting_url=...'
+        path_info = '/+openid-callback?starting_url=...'
         request = LaunchpadTestRequest(
             method='POST', environ=dict(PATH_INFO=path_info))
         # this call shouldn't raise an exception
@@ -338,7 +338,7 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestPublisherStats, self).setUp()
+        super().setUp()
         self.setUpStats()
 
     def test_traversal_stats(self):

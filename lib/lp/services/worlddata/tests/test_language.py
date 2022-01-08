@@ -51,7 +51,7 @@ class TestTranslatorsCounts(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestTranslatorsCounts, self).setUp()
+        super().setUp()
         self.translated_lang = self.factory.makeLanguage(pluralforms=None)
         self.untranslated_lang = self.factory.makeLanguage(pluralforms=None)
         for i in range(3):

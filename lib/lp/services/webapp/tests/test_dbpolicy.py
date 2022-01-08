@@ -85,14 +85,14 @@ class BaseDatabasePolicyTestCase(ImplicitDatabasePolicyTestCase):
     policy = None
 
     def setUp(self):
-        super(BaseDatabasePolicyTestCase, self).setUp()
+        super().setUp()
         if self.policy is None:
             self.policy = BaseDatabasePolicy()
         getUtility(IStoreSelector).push(self.policy)
 
     def tearDown(self):
         getUtility(IStoreSelector).pop()
-        super(BaseDatabasePolicyTestCase, self).tearDown()
+        super().tearDown()
 
     def test_correctly_implements_IDatabasePolicy(self):
         self.assertProvides(self.policy, IDatabasePolicy)
@@ -170,7 +170,7 @@ class LaunchpadDatabasePolicyTestCase(StandbyDatabasePolicyTestCase):
     def setUp(self):
         request = LaunchpadTestRequest(SERVER_URL='http://launchpad.test')
         self.policy = LaunchpadDatabasePolicy(request)
-        super(LaunchpadDatabasePolicyTestCase, self).setUp()
+        super().setUp()
 
 
 class LayerDatabasePolicyTestCase(TestCase):
@@ -356,7 +356,7 @@ class TestFastDowntimeRollout(TestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestFastDowntimeRollout, self).setUp()
+        super().setUp()
 
         self.primary_dbname = DatabaseLayer._db_fixture.dbname
         self.standby_dbname = self.primary_dbname + '_standby'

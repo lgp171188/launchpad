@@ -109,7 +109,7 @@ class StubbedOpenIDCallbackView(OpenIDCallbackView):
     login_called = False
 
     def login(self, account):
-        super(StubbedOpenIDCallbackView, self).login(account)
+        super().login(account)
         self.login_called = True
         current_policy = getUtility(IStoreSelector).get_current()
         if not isinstance(current_policy, PrimaryDatabasePolicy):
@@ -280,7 +280,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
             environ={'PATH_INFO': '/'})
         view = OpenIDCallbackView(context=None, request=None)
         params = view._gather_params(request)
-        self.assertEqual(params['foo'], u'\u16dd')
+        self.assertEqual(params['foo'], '\u16dd')
 
     def test_unexpected_multivalue_fields(self):
         # The parameter gatering doesn't expect to find multi-valued form
@@ -330,7 +330,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         # seen, we automatically register an account with that identity
         # because someone who registered on login.lp.net or login.u.c should
         # be able to login here without any further steps.
-        identifier = u'4w7kmzU'
+        identifier = '4w7kmzU'
         account_set = getUtility(IAccountSet)
         self.assertRaises(
             LookupError, account_set.getByOpenIDIdentifier, identifier)
@@ -358,7 +358,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         # When we get a positive assertion about an identity URL we've never
         # seen but whose email address is already registered, we just change
         # the identity URL that's associated with the existing email address.
-        identifier = u'4w7kmzU'
+        identifier = '4w7kmzU'
         email = 'test@example.com'
         person = self.factory.makePerson(
             displayname='Test account', email=email,
@@ -601,7 +601,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         with IAccountSet_getByOpenIDIdentifier_monkey_patched():
             self.assertRaises(
                 AssertionError,
-                getUtility(IAccountSet).getByOpenIDIdentifier, u'foo')
+                getUtility(IAccountSet).getByOpenIDIdentifier, 'foo')
 
     def test_logs_to_timeline(self):
         # Completing an OpenID association *can* make an HTTP request to the
@@ -823,8 +823,8 @@ class TestOpenIDLogin(TestCaseWithFactory):
         # Sometimes the form params are unicode because a decode('utf8')
         # worked in the form machinery... and if so they cannot be trivially
         # quoted but must be encoded first.
-        key = quote(u'key\xf3'.encode('utf8'))
-        value = quote(u'value\xf3'.encode('utf8'))
+        key = quote('key\xf3'.encode())
+        value = quote('value\xf3'.encode())
         query_string = "%s=%s" % (key, value)
         self.assertThat(query_string, ForwardsCorrectly())
 

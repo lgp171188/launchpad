@@ -16,7 +16,6 @@ __all__ = [
 
 from functools import partial
 
-import six
 from zope.interface import (
     implementer,
     Interface,
@@ -134,7 +133,7 @@ def cachedproperty(name_or_function):
 
     See `doc/propertycache.txt` for usage.
     """
-    if isinstance(name_or_function, six.string_types):
+    if isinstance(name_or_function, str):
         name = name_or_function
         return partial(CachedProperty, name=name)
     else:

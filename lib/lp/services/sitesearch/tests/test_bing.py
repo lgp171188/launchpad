@@ -37,7 +37,7 @@ class TestBingSearchService(TestCase):
     layer = BingLaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestBingSearchService, self).setUp()
+        super().setUp()
         self.search_service = BingSearchService()
         self.base_path = os.path.normpath(
             os.path.join(os.path.dirname(__file__), 'data'))
@@ -91,7 +91,7 @@ class TestBingSearchService(TestCase):
         """
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-incompatible-matches.json')
-        with open(file_name, 'r') as response_file:
+        with open(file_name) as response_file:
             response = json.loads(response_file.read())
         self.assertEqual('~25', response['webPages']['totalEstimatedMatches'])
 
@@ -106,7 +106,7 @@ class TestBingSearchService(TestCase):
         """
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-negative-total.json')
-        with open(file_name, 'r') as response_file:
+        with open(file_name) as response_file:
             response = json.loads(response_file.read())
         self.assertEqual(-25, response['webPages']['totalEstimatedMatches'])
 
@@ -122,7 +122,7 @@ class TestBingSearchService(TestCase):
         """
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-missing-title.json')
-        with open(file_name, 'r') as response_file:
+        with open(file_name) as response_file:
             response = json.loads(response_file.read())
         self.assertThat(response['webPages']['value'], HasLength(2))
 
@@ -142,7 +142,7 @@ class TestBingSearchService(TestCase):
         """
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-missing-summary.json')
-        with open(file_name, 'r') as response_file:
+        with open(file_name) as response_file:
             response = json.loads(response_file.read())
         self.assertThat(response['webPages']['value'], HasLength(2))
 
@@ -160,7 +160,7 @@ class TestBingSearchService(TestCase):
         """
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-missing-url.json')
-        with open(file_name, 'r') as response_file:
+        with open(file_name) as response_file:
             response = json.loads(response_file.read())
         self.assertThat(response['webPages']['value'], HasLength(2))
 
@@ -182,7 +182,7 @@ class TestBingSearchService(TestCase):
         """
         file_name = os.path.join(
             self.base_path, 'bingsearchservice-no-meaningful-results.json')
-        with open(file_name, 'r') as response_file:
+        with open(file_name) as response_file:
             response = json.loads(response_file.read())
         self.assertThat(response['webPages']['value'], HasLength(1))
 

@@ -42,7 +42,7 @@ class TestAutoDecorate(TestCase):
     """Tests for AutoDecorate."""
 
     def setUp(self):
-        super(TestAutoDecorate, self).setUp()
+        super().setUp()
         self.log = None
 
     def decorator_1(self, f):
@@ -280,7 +280,7 @@ class TestFileExists(TestCase):
     """Tests for `file_exists`."""
 
     def setUp(self):
-        super(TestFileExists, self).setUp()
+        super().setUp()
         self.useTempDir()
 
     def test_finds_file(self):

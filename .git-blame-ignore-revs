@@ -36,3 +36,7 @@ fbed83f22424df8fa5647349493f78937a520db5
 7c02bb8d73dd3875e338ba7945d3f7f86d1fc743
 # apply pyupgrade --py3-plus to lp.scripts
 9d8a9b57add8d2ec9331d2c90353887f65314dfb
+# apply pyupgrade --py3-plus to lp.services.[a-m]*
+46f47b6eb925ce6d784c7a0ed47653da7a974110
+# apply pyupgrade --py3-plus to lp.services.[n-z]*
+f3f15787ebabe305fbf3e3ae6c0fd8ca7dfb4465

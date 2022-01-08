@@ -64,7 +64,7 @@ from lp.services.webapp.publisher import RenamedView
 class IAuthorizationsDirective(Interface):
     """Set up authorizations as given in a module."""
 
-    module = GlobalObject(title=u'module', required=True)
+    module = GlobalObject(title='module', required=True)
 
 
 def _isAuthorization(module_member):
@@ -90,15 +90,15 @@ def authorizations(_context, module):
 class ISecuredUtilityDirective(Interface):
     """Configure a utility with security directives."""
 
-    class_ = GlobalObject(title=u'class', required=False)
+    class_ = GlobalObject(title='class', required=False)
 
     provides = GlobalObject(
-        title=u'interface this utility provides',
+        title='interface this utility provides',
         required=True)
 
-    component = GlobalObject(title=u'component', required=False)
+    component = GlobalObject(title='component', required=False)
 
-    name = TextLine(title=u"Name", required=False)
+    name = TextLine(title="Name", required=False)
 
 
 class PermissionCollectingContext:
@@ -163,29 +163,29 @@ class IURLDirective(Interface):
     """Say how to compute canonical urls."""
 
     for_ = GlobalObject(
-        title=u"Specification of the object that has this canonical url",
+        title="Specification of the object that has this canonical url",
         required=True)
 
     urldata = GlobalObject(
-        title=u"Adapter to ICanonicalUrlData for this object.",
+        title="Adapter to ICanonicalUrlData for this object.",
         required=False)
 
     path_expression = TextLine(
-        title=u"TALES expression that evaluates to the path"
-               " relative to the parent object.",
+        title="TALES expression that evaluates to the path"
+              " relative to the parent object.",
         required=False)
 
     attribute_to_parent = PythonIdentifier(
-        title=u"Name of the attribute that gets you to the parent object",
+        title="Name of the attribute that gets you to the parent object",
         required=False)
 
     parent_utility = GlobalObject(
-        title=u"Interface of the utility that is the parent of the object",
+        title="Interface of the utility that is the parent of the object",
         required=False)
 
     rootsite = PythonIdentifier(
-        title=u"Name of the site this URL has as its root."
-               "None for 'use the request'.",
+        title="Name of the site this URL has as its root."
+              "None for 'use the request'.",
         required=False)
 
 
@@ -197,11 +197,11 @@ class IGlueDirective(Interface):
     generic mechanism, what that 'something' is isn't important.
     """
     module = GlobalObject(
-        title=u"Module in which the classes are found.")
+        title="Module in which the classes are found.")
 
     classes = Tokens(
         value_type=PythonIdentifier(),
-        title=u"Space separated list of classes to register.",
+        title="Space separated list of classes to register.",
         required=True)
 
 
@@ -213,7 +213,7 @@ class INavigationDirective(IGlueDirective):
     """Hook up traversal etc."""
 
     layer = GlobalInterface(
-        title=u"The layer where this navigation is going to be available.",
+        title="The layer where this navigation is going to be available.",
         required=False)
 
 
@@ -224,11 +224,11 @@ class IFeedsDirective(IGlueDirective):
 class IFaviconDirective(Interface):
 
     for_ = GlobalObject(
-        title=u"Specification of the object that has this favicon",
+        title="Specification of the object that has this favicon",
         required=True)
 
     file = Path(
-        title=u"Path to the image file",
+        title="Path to the image file",
         required=True)
 
 
@@ -429,7 +429,7 @@ class IAssociatedWithAFacet(Interface):
     """A zcml schema for something that can be associated with a facet."""
 
     facet = TextLine(
-        title=u"The name of the facet this page is associated with.",
+        title="The name of the facet this page is associated with.",
         required=False)
 
 
@@ -510,29 +510,29 @@ class IRenamedPageDirective(Interface):
     """
 
     for_ = GlobalObject(
-        title=u"Specification of the object that has the renamed page",
+        title="Specification of the object that has the renamed page",
         required=True)
 
     layer = GlobalInterface(
-        title=u"The layer the renamed page is in.",
-        description=u"""
+        title="The layer the renamed page is in.",
+        description="""
         A skin is composed of layers. It is common to put skin
         specific views in a layer named after the skin. If the 'layer'
         attribute is not supplied, it defaults to 'default'.""",
         required=False)
 
     name = zope.schema.TextLine(
-        title=u"The name of the old page.",
-        description=u"The name shows up in URLs/paths. For example 'foo'.",
+        title="The name of the old page.",
+        description="The name shows up in URLs/paths. For example 'foo'.",
         required=True)
 
     new_name = zope.schema.TextLine(
-        title=u"The name the page was renamed to.",
-        description=u"The name shows up in URLs/paths. For example 'foo'.",
+        title="The name the page was renamed to.",
+        description="The name shows up in URLs/paths. For example 'foo'.",
         required=True)
 
     rootsite = PythonIdentifier(
-        title=u"Name of the site this URL has as its root."
+        title="Name of the site this URL has as its root."
                "None for 'use the request'.",
         required=False)
 
@@ -570,7 +570,7 @@ class ICallDirective(Interface):
     """
 
     callable = GlobalObject(
-        title=u"The thing that will be called.", required=True)
+        title="The thing that will be called.", required=True)
 
 
 def call(_context, callable):
@@ -580,8 +580,8 @@ def call(_context, callable):
 class IDefineLaunchpadPermissionDirective(IPermissionDirective):
 
     access_level = TextLine(
-        title=u"Access level", required=False,
-        description=u"Either read or write")
+        title="Access level", required=False,
+        description="Either read or write")
 
 
 class ILaunchpadPermission(IPermission):
@@ -596,7 +596,7 @@ class LaunchpadPermission(Permission):
         assert access_level in ["read", "write"], (
             "Unknown access level (%s). Must be either read or write."
             % access_level)
-        super(LaunchpadPermission, self).__init__(id, title, description)
+        super().__init__(id, title, description)
         self.access_level = access_level
 
 

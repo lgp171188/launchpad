@@ -156,7 +156,7 @@ class TestVhostWebserviceFactory(WebServiceTestCase):
         pass
 
     def setUp(self):
-        super(TestVhostWebserviceFactory, self).setUp()
+        super().setUp()
         # XXX We have to use a real hostname.
         self.factory = VHostWebServiceRequestPublicationFactory(
             'bugs', self.VHostTestBrowserRequest, self.VHostTestPublication)
@@ -309,7 +309,7 @@ class TestWebServiceRequestTraversal(WebServiceTestCase):
     testmodule_objects = [IGenericEntry, IGenericCollection]
 
     def setUp(self):
-        super(TestWebServiceRequestTraversal, self).setUp()
+        super().setUp()
 
         # For this test we need to make the URL "/foo" resolve to a
         # resource.  To this end, we'll define a top-level collection
@@ -424,7 +424,7 @@ class TestBasicLaunchpadRequest(TestCase):
         bad_path = b'fnord/trunk\xE4'
         env = {'PATH_INFO': bad_path}
         request = LaunchpadBrowserRequest(io.BytesIO(b''), env)
-        self.assertEqual(u'fnord/trunk\ufffd', request.getHeader('PATH_INFO'))
+        self.assertEqual('fnord/trunk\ufffd', request.getHeader('PATH_INFO'))
 
     def test_baserequest_preserves_path_info_unicode(self):
         # If the request object receives PATH_INFO as Unicode, it is passed
@@ -432,10 +432,10 @@ class TestBasicLaunchpadRequest(TestCase):
         # is required to be a native string, which on Python 2 is bytes.
         # (As explained in BasicLaunchpadRequest.__init__, non-ASCII
         # characters will be rejected later during traversal.)
-        bad_path = u'fnord/trunk\xE4'
+        bad_path = 'fnord/trunk\xE4'
         env = {'PATH_INFO': bad_path}
         request = LaunchpadBrowserRequest(io.BytesIO(b''), env)
-        self.assertEqual(u'fnord/trunk\xE4', request.getHeader('PATH_INFO'))
+        self.assertEqual('fnord/trunk\xE4', request.getHeader('PATH_INFO'))
 
     def test_baserequest_logging_context_no_host_header(self):
         Context.new()
@@ -469,7 +469,7 @@ class TestBasicLaunchpadRequest(TestCase):
         env = {'QUERY_STRING': 'field.title=subproc%E9s '}
         request = LaunchpadBrowserRequest(io.BytesIO(b''), env)
         self.assertEqual(
-            [u'subproc\ufffds '], request.query_string_params['field.title'])
+            ['subproc\ufffds '], request.query_string_params['field.title'])
 
 
 class LaunchpadBrowserResponseHeaderInjection(TestCase):
@@ -642,7 +642,7 @@ class ThingSet:
 class TestLaunchpadBrowserRequest_getNearest(TestCase):
 
     def setUp(self):
-        super(TestLaunchpadBrowserRequest_getNearest, self).setUp()
+        super().setUp()
         self.request = LaunchpadBrowserRequest('', {})
         self.thing_set = ThingSet()
         self.thing = Thing()
@@ -730,7 +730,7 @@ class TestLaunchpadBrowserRequest(TestCase):
         # Encoded query string parameters are properly decoded.
         request = self.prepareRequest({'QUERY_STRING': "a=%C3%A7"})
         self.assertEqual(
-            {'a': [u'\xe7']},
+            {'a': ['\xe7']},
             request.query_string_params,
             "The query_string_params dict correctly interprets encoded "
             "parameters.")
@@ -740,7 +740,7 @@ class TestWebServiceRequestToBrowserRequest(WebServiceTestCase):
 
     def test_unicode_path_info(self):
         web_service_request = WebServiceTestRequest(
-            PATH_INFO=u'/api/devel\u1234'.encode('utf-8'))
+            PATH_INFO='/api/devel\u1234'.encode())
         browser_request = web_service_request_to_browser_request(
             web_service_request)
         self.assertEqual(

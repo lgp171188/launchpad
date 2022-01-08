@@ -28,21 +28,21 @@ class HAProxyIntegrationTest(TestCase):
         self.addCleanup(haproxy.set_going_down_flag, self.original_flag)
 
     def test_HAProxyStatusView_all_good_returns_200(self):
-        result = http(u'GET /+haproxy HTTP/1.0', handle_errors=False)
+        result = http('GET /+haproxy HTTP/1.0', handle_errors=False)
         self.assertEqual(200, result.getStatus())
 
     def test_authenticated_HAProxyStatusView_works(self):
         # We don't use authenticated requests, but this keeps us from
         # generating oopses.
         result = http(
-            u'GET /+haproxy HTTP/1.0\n'
-            u'Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=\n',
+            'GET /+haproxy HTTP/1.0\n'
+            'Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=\n',
             handle_errors=False)
         self.assertEqual(200, result.getStatus())
 
     def test_HAProxyStatusView_going_down_returns_500(self):
         haproxy.set_going_down_flag(True)
-        result = http(u'GET /+haproxy HTTP/1.0', handle_errors=False)
+        result = http('GET /+haproxy HTTP/1.0', handle_errors=False)
         self.assertEqual(500, result.getStatus())
 
     def test_haproxy_url_uses_DatabaseBlocked_policy(self):
@@ -64,5 +64,5 @@ class HAProxyIntegrationTest(TestCase):
             '''))
         self.addCleanup(config.pop, 'change_haproxy_status_code')
         haproxy.set_going_down_flag(True)
-        result = http(u'GET /+haproxy HTTP/1.0', handle_errors=False)
+        result = http('GET /+haproxy HTTP/1.0', handle_errors=False)
         self.assertEqual(499, result.getStatus())

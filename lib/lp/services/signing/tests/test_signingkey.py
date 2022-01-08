@@ -44,7 +44,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
     layer = ZopelessDatabaseLayer
 
     def setUp(self, *args, **kwargs):
-        super(TestSigningKey, self).setUp(*args, **kwargs)
+        super().setUp(*args, **kwargs)
         self.signing_service = SigningServiceResponseFactory()
 
         client = removeSecurityProxy(getUtility(ISigningServiceClient))
@@ -72,7 +72,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
     def test_generate_signing_key_saves_correctly(self):
         self.signing_service.addResponses(self)
 
-        key = SigningKey.generate(SigningKeyType.UEFI, u"this is my key")
+        key = SigningKey.generate(SigningKeyType.UEFI, "this is my key")
         self.assertIsInstance(key, SigningKey)
 
         store = IMasterStore(SigningKey)
@@ -100,7 +100,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
 
         key = SigningKey.inject(
             SigningKeyType.KMOD, bytes(priv_key), bytes(pub_key),
-            u"This is a test key", created_at)
+            "This is a test key", created_at)
         self.assertIsInstance(key, SigningKey)
 
         store = IMasterStore(SigningKey)
@@ -114,7 +114,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         self.assertEqual(
             self.signing_service.generated_fingerprint, db_key.fingerprint)
         self.assertEqual(bytes(pub_key), db_key.public_key)
-        self.assertEqual(u"This is a test key", db_key.description)
+        self.assertEqual("This is a test key", db_key.description)
         self.assertEqual(created_at, db_key.date_created)
 
     @responses.activate
@@ -127,7 +127,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
 
         key = SigningKey.inject(
             SigningKeyType.KMOD, bytes(priv_key), bytes(pub_key),
-            u"This is a test key", created_at)
+            "This is a test key", created_at)
         self.assertIsInstance(key, SigningKey)
 
         store = IMasterStore(SigningKey)
@@ -136,7 +136,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         # This should give back the same key
         new_key = SigningKey.inject(
             SigningKeyType.KMOD, bytes(priv_key), bytes(pub_key),
-            u"This is a test key with another description", created_at)
+            "This is a test key with another description", created_at)
         store.flush()
 
         self.assertEqual(key.id, new_key.id)
@@ -147,9 +147,9 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         self.signing_service.addResponses(self)
 
         s = SigningKey(
-            SigningKeyType.UEFI, u"a fingerprint",
+            SigningKeyType.UEFI, "a fingerprint",
             bytes(self.signing_service.generated_public_key),
-            description=u"This is my key!")
+            description="This is my key!")
         signed = s.sign(b"secure message", "message_name")
 
         # Checks if the returned value is actually the returning value from
@@ -163,7 +163,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
                     self.signing_service._decryptPayload,
                     MatchesDict({
                         "key-type": Equals("UEFI"),
-                        "fingerprint": Equals(u"a fingerprint"),
+                        "fingerprint": Equals("a fingerprint"),
                         "message-name": Equals("message_name"),
                         "message": Equals(
                             base64.b64encode(
@@ -177,9 +177,9 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         self.signing_service.addResponses(self)
 
         s = SigningKey(
-            SigningKeyType.OPENPGP, u"a fingerprint",
+            SigningKeyType.OPENPGP, "a fingerprint",
             bytes(self.signing_service.generated_public_key),
-            description=u"This is my key!")
+            description="This is my key!")
         s.sign(b"secure message", "message_name")
         s.sign(b"another message", "another_name", mode=SigningMode.CLEAR)
 
@@ -192,7 +192,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
                     self.signing_service._decryptPayload,
                     MatchesDict({
                         "key-type": Equals("OPENPGP"),
-                        "fingerprint": Equals(u"a fingerprint"),
+                        "fingerprint": Equals("a fingerprint"),
                         "message-name": Equals("message_name"),
                         "message": Equals(
                             base64.b64encode(
@@ -207,7 +207,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
                     self.signing_service._decryptPayload,
                     MatchesDict({
                         "key-type": Equals("OPENPGP"),
-                        "fingerprint": Equals(u"a fingerprint"),
+                        "fingerprint": Equals("a fingerprint"),
                         "message-name": Equals("another_name"),
                         "message": Equals(
                             base64.b64encode(
@@ -220,10 +220,10 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         self.signing_service.addResponses(self)
 
         s = SigningKey(
-            SigningKeyType.UEFI, u"a fingerprint",
+            SigningKeyType.UEFI, "a fingerprint",
             bytes(self.signing_service.generated_public_key),
-            description=u"This is my key!")
-        self.assertIsNone(s.addAuthorization(u"another-client"))
+            description="This is my key!")
+        self.assertIsNone(s.addAuthorization("another-client"))
 
         self.assertEqual(3, len(responses.calls))
         self.assertThat(
@@ -234,8 +234,8 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
                     self.signing_service._decryptPayload,
                     MatchesDict({
                         "key-type": Equals("UEFI"),
-                        "fingerprint": Equals(u"a fingerprint"),
-                        "client-name": Equals(u"another-client"),
+                        "fingerprint": Equals("a fingerprint"),
+                        "client-name": Equals("another-client"),
                         }))))
 
 
@@ -243,7 +243,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def setUp(self, *args, **kwargs):
-        super(TestArchiveSigningKey, self).setUp(*args, **kwargs)
+        super().setUp(*args, **kwargs)
         self.signing_service = SigningServiceResponseFactory()
 
         client = removeSecurityProxy(getUtility(ISigningServiceClient))
@@ -273,7 +273,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         distro_series = archive.distribution.series[0]
 
         arch_key = getUtility(IArchiveSigningKeySet).generate(
-            SigningKeyType.UEFI, u"some description", archive,
+            SigningKeyType.UEFI, "some description", archive,
             earliest_distro_series=distro_series)
 
         store = Store.of(arch_key)
@@ -288,7 +288,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
             earliest_distro_series=distro_series))
 
         self.assertThat(db_arch_key.signing_key, MatchesStructure.byEquality(
-            key_type=SigningKeyType.UEFI, description=u"some description",
+            key_type=SigningKeyType.UEFI, description="some description",
             fingerprint=self.signing_service.generated_fingerprint,
             public_key=bytes(self.signing_service.generated_public_key)))
 
@@ -305,7 +305,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         now = datetime.now().replace(tzinfo=utc)
         arch_key = getUtility(IArchiveSigningKeySet).inject(
             SigningKeyType.UEFI, bytes(priv_key), bytes(pub_key),
-            u"Some description", now, archive,
+            "Some description", now, archive,
             earliest_distro_series=distro_series)
 
         store = Store.of(arch_key)
@@ -320,7 +320,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
             earliest_distro_series=distro_series))
 
         self.assertThat(db_arch_key.signing_key, MatchesStructure.byEquality(
-            key_type=SigningKeyType.UEFI, description=u"Some description",
+            key_type=SigningKeyType.UEFI, description="Some description",
             fingerprint=self.signing_service.generated_fingerprint,
             public_key=bytes(pub_key)))
 
@@ -337,7 +337,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         now = datetime.now().replace(tzinfo=utc)
         arch_key = getUtility(IArchiveSigningKeySet).inject(
             SigningKeyType.UEFI, bytes(priv_key), bytes(pub_key),
-            u"Some description", now, archive,
+            "Some description", now, archive,
             earliest_distro_series=distro_series)
 
         store = Store.of(arch_key)
@@ -351,7 +351,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
             earliest_distro_series=distro_series))
 
         self.assertThat(db_arch_key.signing_key, MatchesStructure.byEquality(
-            key_type=SigningKeyType.UEFI, description=u"Some description",
+            key_type=SigningKeyType.UEFI, description="Some description",
             fingerprint=self.signing_service.generated_fingerprint,
             public_key=bytes(pub_key)))
 
@@ -361,7 +361,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
 
         another_arch_key = getUtility(IArchiveSigningKeySet).inject(
             SigningKeyType.UEFI, bytes(priv_key), bytes(pub_key),
-            u"Another description", now, another_archive)
+            "Another description", now, another_archive)
 
         rs = store.find(ArchiveSigningKey)
         self.assertEqual(2, rs.count())

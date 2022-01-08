@@ -39,7 +39,7 @@ class ScriptActivity(StormBase):
     date_completed = DateTime(tzinfo=pytz.UTC, allow_none=False)
 
     def __init__(self, name, hostname, date_started, date_completed):
-        super(ScriptActivity, self).__init__()
+        super().__init__()
         self.name = name
         self.hostname = hostname
         self.date_started = date_started

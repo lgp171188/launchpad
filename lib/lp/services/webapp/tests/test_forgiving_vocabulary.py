@@ -11,7 +11,7 @@ class TestForgivingSimpleVocabulary(TestCase):
     """Tests for ForgivingSimpleVocabulary."""
 
     def setUp(self):
-        super(TestForgivingSimpleVocabulary, self).setUp()
+        super().setUp()
         self.term_1 = SimpleTerm('term-1', 'term-1', 'My first term')
         self.term_2 = SimpleTerm('term-2', 'term-2', 'My second term')
         self.vocabulary = ForgivingSimpleVocabulary(

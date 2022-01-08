@@ -123,7 +123,7 @@ def value_string(item):
     elif zope_isinstance(item, bytes):
         return six.ensure_text(item)
     else:
-        return six.text_type(item)
+        return str(item)
 
 
 def text_delta(instance_delta, delta_names, state_names, interface):
@@ -311,14 +311,14 @@ def obfuscate_structure(o):
         elements, and dict keys and values have undergone obfuscate_email
         recursively.
     """
-    if isinstance(o, six.string_types):
+    if isinstance(o, str):
         return obfuscate_email(o)
     elif isinstance(o, (list, tuple)):
         return [obfuscate_structure(value) for value in o]
     elif isinstance(o, (dict)):
         return {
             obfuscate_structure(key): obfuscate_structure(value)
-            for key, value in six.iteritems(o)}
+            for key, value in o.items()}
     else:
         return o
 

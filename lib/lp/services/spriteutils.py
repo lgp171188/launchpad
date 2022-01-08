@@ -157,7 +157,7 @@ class SpriteUtil:
             abs_filename = os.path.join(css_dir, sprite['filename'])
             try:
                 sprite_images[sprite['filename']] = Image.open(abs_filename)
-            except IOError:
+            except OSError:
                 print(
                     "Error opening '%s' for %s css rule" % (
                         abs_filename, sprite['rule'].selectorText),

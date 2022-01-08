@@ -297,7 +297,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
     def makeAndRunJob(self, response_status=200, raises=None, mock=True,
                       secret=None, active=True):
         hook = self.factory.makeWebhook(
-            delivery_url=u'http://example.com/ep', secret=secret,
+            delivery_url='http://example.com/ep', secret=secret,
             active=active)
         job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
 
@@ -447,7 +447,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         # PubSubHubbub-compatible way.
         with CaptureOops() as oopses:
             job, reqs = self.makeAndRunJob(
-                response_status=200, secret=u'sekrit')
+                response_status=200, secret='sekrit')
         self.assertEqual([
             ('POST', 'http://example.com/ep',
              {'Content-Type': 'application/json',
@@ -633,7 +633,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
 
     def test_automatic_retries(self):
         self.useFixture(MockPatch("psutil.net_if_addrs", return_value={}))
-        hook = self.factory.makeWebhook(delivery_url=u"http://192.168.1.1/")
+        hook = self.factory.makeWebhook(delivery_url="http://192.168.1.1/")
         job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
         client = MockWebhookClient(response_status=503)
         self.useFixture(ZopeUtilityFixture(client, IWebhookClient))
@@ -761,11 +761,11 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         self.assertEqual(JobStatus.FAILED, job.status)
 
     def test_retries_matching_url_with_limited_effort(self):
-        self.assertRetriesWithLimitedEffort(u"http://foo.lxd/path")
+        self.assertRetriesWithLimitedEffort("http://foo.lxd/path")
 
     def test_retries_localhost_with_limited_effort(self):
-        self.assertRetriesWithLimitedEffort(u"http://localhost/")
-        self.assertRetriesWithLimitedEffort(u"http://127.0.0.1/")
+        self.assertRetriesWithLimitedEffort("http://localhost/")
+        self.assertRetriesWithLimitedEffort("http://127.0.0.1/")
 
     def test_broadcast_address_with_limited_effort(self):
         """Checks if we limit the delivery effort for broadcast addresses."""
@@ -776,15 +776,15 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         WebhookDeliveryJob._get_broadcast_addresses.clean_memo()
         self.addCleanup(WebhookDeliveryJob._get_broadcast_addresses.clean_memo)
 
-        self.assertRetriesWithLimitedEffort(u"http://192.168.1.255/")
+        self.assertRetriesWithLimitedEffort("http://192.168.1.255/")
 
     def test_multicast_address_with_limited_effort(self):
-        self.assertRetriesWithLimitedEffort(u"http://224.0.18.255/")
-        self.assertRetriesWithLimitedEffort(u"http://224.0.0.255/")
+        self.assertRetriesWithLimitedEffort("http://224.0.18.255/")
+        self.assertRetriesWithLimitedEffort("http://224.0.0.255/")
 
     def test_not_resolvable_address_with_limited_effort(self):
         self.assertRetriesWithLimitedEffort(
-            u"http://could.not.resolve.name.invalid/")
+            "http://could.not.resolve.name.invalid/")
 
 
 class TestViaCronscript(TestCaseWithFactory):
@@ -792,7 +792,7 @@ class TestViaCronscript(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def test_run_from_cronscript(self):
-        hook = self.factory.makeWebhook(delivery_url=u'http://example.com/ep')
+        hook = self.factory.makeWebhook(delivery_url='http://example.com/ep')
         job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
         self.assertEqual(JobStatus.WAITING, job.status)
         transaction.commit()
@@ -818,7 +818,7 @@ class TestViaCelery(TestCaseWithFactory):
 
     def test_WebhookDeliveryJob(self):
         """WebhookDeliveryJob runs under Celery."""
-        hook = self.factory.makeWebhook(delivery_url=u'http://example.com/ep')
+        hook = self.factory.makeWebhook(delivery_url='http://example.com/ep')
 
         self.useFixture(FeatureFixture(
             {'jobs.celery.enabled_classes': 'WebhookDeliveryJob'}))

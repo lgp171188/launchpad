@@ -23,7 +23,7 @@ class FakeScript(LaunchpadScript):
     observed_feature_controller = object()
 
     def __init__(self, name):
-        super(FakeScript, self).__init__(name=name, test_args=[])
+        super().__init__(name=name, test_args=[])
 
     def main(self):
         self.observed_feature_controller = get_relevant_feature_controller()
@@ -39,12 +39,12 @@ class TestScriptFeatureController(TestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestScriptFeatureController, self).setUp()
+        super().setUp()
         self.original_controller = get_relevant_feature_controller()
 
     def tearDown(self):
         install_feature_controller(self.original_controller)
-        super(TestScriptFeatureController, self).tearDown()
+        super().tearDown()
 
     def test_script_installs_script_feature_controller(self):
         script = FakeScript(name="bongo")

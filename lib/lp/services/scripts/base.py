@@ -382,8 +382,7 @@ class LaunchpadCronScript(LaunchpadScript):
 
     def __init__(self, name=None, dbuser=None, test_args=None, logger=None,
                  ignore_cron_control=False):
-        super(LaunchpadCronScript, self).__init__(
-            name, dbuser, test_args=test_args, logger=logger)
+        super().__init__(name, dbuser, test_args=test_args, logger=logger)
 
         # self.name is used instead of the name argument, since it may have
         # have been overridden by command-line parameters or by

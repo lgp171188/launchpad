@@ -64,7 +64,7 @@ class HAProxyStatusView:
         if going_down_flag:
             self.request.response.setStatus(
                 config.haproxy_status_view.going_down_status)
-            return u"May day! May day! I'm going down. Stop the flood gate."
+            return "May day! May day! I'm going down. Stop the flood gate."
         else:
             self.request.response.setStatus(200)
-            return u"Everything is groovy. Keep them coming!"
+            return "Everything is groovy. Keep them coming!"

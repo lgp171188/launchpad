@@ -40,7 +40,6 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
-import six
 from zope.interface import (
     Attribute,
     Interface,
@@ -106,8 +105,8 @@ class AnyWebhookEventTypeVocabulary(SimpleVocabulary):
     def __init__(self, context):
         terms = [
             self.createTerm(key, key, value)
-            for key, value in six.iteritems(WEBHOOK_EVENT_TYPES)]
-        super(AnyWebhookEventTypeVocabulary, self).__init__(terms)
+            for key, value in WEBHOOK_EVENT_TYPES.items()]
+        super().__init__(terms)
 
 
 class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
@@ -122,7 +121,7 @@ class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
         terms = [
             self.createTerm(key, key, WEBHOOK_EVENT_TYPES[key])
             for key in target.valid_webhook_event_types]
-        super(ValidWebhookEventTypeVocabulary, self).__init__(terms)
+        super().__init__(terms)
 
 
 @exported_as_webservice_entry(as_of='beta')

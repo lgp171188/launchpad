@@ -18,7 +18,7 @@ NEWLINE = '\n'
 class FakeTestCase(unittest.TestCase):
     """A minimal TestCase that can be instantiated."""
     def __init__(self, name, *args, **kwargs):
-        super(FakeTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.name = name
 
     def id(self):

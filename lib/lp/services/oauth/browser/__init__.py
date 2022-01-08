@@ -15,7 +15,6 @@ from datetime import (
 from lazr.restful import HTTPResource
 import pytz
 import simplejson
-import six
 from zope.component import getUtility
 from zope.formlib.form import (
     Action,
@@ -86,7 +85,7 @@ class OAuthRequestTokenView(LaunchpadFormView, JSONTokenMixin):
         consumer_key = form.get('oauth_consumer_key')
         if not consumer_key:
             self.request.unauthorized(OAUTH_CHALLENGE)
-            return u''
+            return ''
 
         consumer_set = getUtility(IOAuthConsumerSet)
         consumer = consumer_set.getByKey(consumer_key)
@@ -94,7 +93,7 @@ class OAuthRequestTokenView(LaunchpadFormView, JSONTokenMixin):
             consumer = consumer_set.new(key=consumer_key)
 
         if not check_oauth_signature(self.request, consumer, None):
-            return u''
+            return ''
 
         token, secret = consumer.newRequestToken()
         if self.request.headers.get('Accept') == HTTPResource.JSON_TYPE:
@@ -107,7 +106,7 @@ class OAuthRequestTokenView(LaunchpadFormView, JSONTokenMixin):
                 ]
             return self.getJSONRepresentation(
                 permissions, token, secret=secret)
-        return u'oauth_token=%s&oauth_token_secret=%s' % (token.key, secret)
+        return 'oauth_token=%s&oauth_token_secret=%s' % (token.key, secret)
 
 
 def token_exists_and_is_not_reviewed(form, action):
@@ -340,14 +339,14 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
                          '("%s") not supported for desktop-wide use.')
                          % action.label)
 
-        super(OAuthAuthorizeTokenView, self).initialize()
+        super().initialize()
 
     def render(self):
         if self.request.headers.get('Accept') == HTTPResource.JSON_TYPE:
             permissions = [action.permission
                            for action in self.visible_actions]
             return self.getJSONRepresentation(permissions, self.token)
-        return super(OAuthAuthorizeTokenView, self).render()
+        return super().render()
 
     def storeTokenContext(self):
         """Store the context given by the consumer in this view."""
@@ -415,7 +414,7 @@ class OAuthAccessTokenView(LaunchpadView):
 
     def _set_status_and_error(self, error):
         self.request.response.setStatus(403)
-        return six.text_type(error)
+        return str(error)
 
     def __call__(self):
         """Create an access token and respond with its key/secret/context.
@@ -430,20 +429,20 @@ class OAuthAccessTokenView(LaunchpadView):
 
         if consumer is None:
             self.request.unauthorized(OAUTH_CHALLENGE)
-            return u''
+            return ''
 
         token = consumer.getRequestToken(form.get('oauth_token'))
         if token is None:
             self.request.unauthorized(OAUTH_CHALLENGE)
-            return u'No request token specified.'
+            return 'No request token specified.'
 
         if not check_oauth_signature(self.request, consumer, token):
-            return u'Invalid OAuth signature.'
+            return 'Invalid OAuth signature.'
 
         if not token.is_reviewed:
             self.request.unauthorized(OAUTH_CHALLENGE)
             return (
-                u"Request token has not yet been reviewed. Try again later.")
+                "Request token has not yet been reviewed. Try again later.")
 
         if token.permission == OAuthPermission.UNAUTHORIZED:
             return self._set_status_and_error(
@@ -457,6 +456,6 @@ class OAuthAccessTokenView(LaunchpadView):
         context_name = None
         if access_token.context is not None:
             context_name = access_token.context.name
-        body = u'oauth_token=%s&oauth_token_secret=%s&lp.context=%s' % (
+        body = 'oauth_token=%s&oauth_token_secret=%s&lp.context=%s' % (
             access_token.key, access_secret, context_name)
         return body

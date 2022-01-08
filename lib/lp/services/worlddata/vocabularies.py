@@ -64,7 +64,7 @@ class LanguageVocabulary(SQLObjectVocabularyBase):
         assert ILanguage.providedBy(language), (
             "'in LanguageVocabulary' requires ILanguage as left operand, "
             "got %s instead." % type(language))
-        return super(LanguageVocabulary, self).__contains__(language)
+        return super().__contains__(language)
 
     def toTerm(self, obj):
         """See `IVocabulary`."""

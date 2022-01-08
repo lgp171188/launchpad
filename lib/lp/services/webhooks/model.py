@@ -24,7 +24,6 @@ from lazr.enum import (
     )
 import psutil
 from pytz import utc
-import six
 from six.moves.urllib.parse import urlsplit
 from storm.expr import Desc
 from storm.properties import (
@@ -178,7 +177,7 @@ class Webhook(StormBase):
         # The correctness of the values is also checked by zope.schema,
         # but best to be safe.
         assert isinstance(event_types, (list, tuple))
-        assert all(isinstance(v, six.string_types) for v in event_types)
+        assert all(isinstance(v, str) for v in event_types)
         updated_data['event_types'] = event_types
         self.json_data = updated_data
 
@@ -353,7 +352,7 @@ class WebhookJob(StormBase):
         :param json_data: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(WebhookJob, self).__init__()
+        super().__init__()
         self.job = Job(**job_args)
         self.webhook = webhook
         self.job_type = job_type
@@ -422,7 +421,7 @@ def _redact_payload(event_type, payload):
         elif (event_type.startswith("merge-proposal:") and
               key in ("commit_message", "whiteboard", "description")):
             redacted[key] = "<redacted>"
-        elif isinstance(value, six.string_types) and "\n" in value:
+        elif isinstance(value, str) and "\n" in value:
             redacted[key] = "%s\n<redacted>" % value.split("\n", 1)[0]
         else:
             redacted[key] = value
@@ -480,7 +479,7 @@ class WebhookDeliveryJob(WebhookJobDerived):
             for i in addresses:
                 try:
                     addrs.append(
-                        ipaddress.ip_address(six.text_type(i.broadcast)))
+                        ipaddress.ip_address(str(i.broadcast)))
                 except (ValueError, ipaddress.AddressValueError):
                     pass
         return addrs
@@ -494,16 +493,16 @@ class WebhookDeliveryJob(WebhookJobDerived):
             - URL's host matches one of the self.limited_effort_host_patterns
         """
         url = self.webhook.delivery_url
-        netloc = six.text_type(urlsplit(url).netloc)
+        netloc = str(urlsplit(url).netloc)
         if any(i.match(netloc) for i in self.limited_effort_host_patterns):
             return True
         try:
             ip = ipaddress.ip_address(netloc)
         except (ValueError, ipaddress.AddressValueError):
             try:
-                resolved_addr = six.text_type(socket.gethostbyname(netloc))
+                resolved_addr = str(socket.gethostbyname(netloc))
                 ip = ipaddress.ip_address(resolved_addr)
-            except socket.error:
+            except OSError:
                 # If we could not resolve, we limit the effort to delivery.
                 return True
         return (

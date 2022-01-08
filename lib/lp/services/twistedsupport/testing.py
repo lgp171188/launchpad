@@ -19,7 +19,7 @@ class TReqFixture(Fixture):
     """A `treq` client that handles test cleanup."""
 
     def __init__(self, reactor, pool=None):
-        super(TReqFixture, self).__init__()
+        super().__init__()
         self.reactor = reactor
         if pool is None:
             pool = HTTPConnectionPool(reactor, persistent=False)

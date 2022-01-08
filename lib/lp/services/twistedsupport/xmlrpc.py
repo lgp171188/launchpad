@@ -46,7 +46,7 @@ class DeferredBlockingProxy(BlockingProxy):
 
     def callRemote(self, method_name, *args, **kwargs):
         return defer.maybeDeferred(
-            super(DeferredBlockingProxy, self).callRemote,
+            super().callRemote,
             method_name, *args, **kwargs)
 
 

@@ -139,16 +139,16 @@ class TestWebhookSetBase:
         login_person(target.owner)
         person = self.factory.makePerson()
         hook = getUtility(IWebhookSet).new(
-            target, person, u'http://path/to/something', [self.event_type],
-            True, u'sekrit')
+            target, person, 'http://path/to/something', [self.event_type],
+            True, 'sekrit')
         Store.of(hook).flush()
         self.assertEqual(target, hook.target)
         self.assertEqual(person, hook.registrant)
         self.assertIsNot(None, hook.date_created)
         self.assertEqual(hook.date_created, hook.date_last_modified)
-        self.assertEqual(u'http://path/to/something', hook.delivery_url)
+        self.assertEqual('http://path/to/something', hook.delivery_url)
         self.assertEqual(True, hook.active)
-        self.assertEqual(u'sekrit', hook.secret)
+        self.assertEqual('sekrit', hook.secret)
         self.assertEqual([self.event_type], hook.event_types)
 
     def test_getByID(self):
@@ -168,17 +168,17 @@ class TestWebhookSetBase:
         for target, name in ((target1, 'one'), (target2, 'two')):
             for i in range(3):
                 self.factory.makeWebhook(
-                    target, u'http://path/%s/%d' % (name, i))
+                    target, 'http://path/%s/%d' % (name, i))
         with person_logged_in(target1.owner):
             self.assertContentEqual(
-                [u'http://path/one/0', u'http://path/one/1',
-                 u'http://path/one/2'],
+                ['http://path/one/0', 'http://path/one/1',
+                 'http://path/one/2'],
                 [hook.delivery_url for hook in
                 getUtility(IWebhookSet).findByTarget(target1)])
         with person_logged_in(target2.owner):
             self.assertContentEqual(
-                [u'http://path/two/0', u'http://path/two/1',
-                 u'http://path/two/2'],
+                ['http://path/two/0', 'http://path/two/1',
+                 'http://path/two/2'],
                 [hook.delivery_url for hook in
                 getUtility(IWebhookSet).findByTarget(target2)])
 
@@ -187,12 +187,12 @@ class TestWebhookSetBase:
         login_person(target.owner)
         hooks = []
         for i in range(3):
-            hook = self.factory.makeWebhook(target, u'http://path/to/%d' % i)
+            hook = self.factory.makeWebhook(target, 'http://path/to/%d' % i)
             hook.ping()
             hooks.append(hook)
         self.assertEqual(3, IStore(WebhookJob).find(WebhookJob).count())
         self.assertContentEqual(
-            [u'http://path/to/0', u'http://path/to/1', u'http://path/to/2'],
+            ['http://path/to/0', 'http://path/to/1', 'http://path/to/2'],
             [hook.delivery_url for hook in
              getUtility(IWebhookSet).findByTarget(target)])
 
@@ -202,7 +202,7 @@ class TestWebhookSetBase:
         self.assertThat(recorder, HasQueryCount(Equals(4)))
 
         self.assertContentEqual(
-            [u'http://path/to/2'],
+            ['http://path/to/2'],
             [hook.delivery_url for hook in
              getUtility(IWebhookSet).findByTarget(target)])
         self.assertEqual(1, IStore(WebhookJob).find(WebhookJob).count())

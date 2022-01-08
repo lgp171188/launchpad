@@ -102,7 +102,7 @@ class LoginTokenView(LaunchpadView):
                 str(self.request.URL), self.PAGES[self.context.tokentype])
             self.request.response.redirect(url)
         else:
-            return super(LoginTokenView, self).render()
+            return super().render()
 
 
 class BaseTokenView:
@@ -194,11 +194,11 @@ class ClaimTeamView(
             # Let's pretend the claimed profile provides ITeam while we
             # render/process this page, so that it behaves like a team.
             directlyProvides(removeSecurityProxy(self.claimed_profile), ITeam)
-        super(ClaimTeamView, self).initialize()
+        super().initialize()
 
     def setUpWidgets(self, context=None):
         self.form_fields['teamowner'].for_display = True
-        super(ClaimTeamView, self).setUpWidgets(context=self.claimed_profile)
+        super().setUpWidgets(context=self.claimed_profile)
         alsoProvides(self.widgets['teamowner'], IAlwaysSubmittedWidget)
 
     @property
@@ -257,7 +257,7 @@ class ValidateGPGKeyView(BaseTokenView, LaunchpadFormView):
         if not self.redirectIfInvalidOrConsumedToken():
             if self.context.tokentype == LoginTokenType.VALIDATESIGNONLYGPG:
                 self.field_names = ['text_signature']
-        super(ValidateGPGKeyView, self).initialize()
+        super().initialize()
 
     def validate(self, data):
         self.gpg_key = self._getGPGKey()
@@ -382,7 +382,7 @@ class ValidateEmailView(BaseTokenView, LaunchpadFormView):
     def initialize(self):
         if self.redirectIfInvalidOrConsumedToken():
             return
-        super(ValidateEmailView, self).initialize()
+        super().initialize()
 
     def validate(self, data):
         """Make sure the email address this token refers to is not in use."""
@@ -490,7 +490,7 @@ class MergePeopleView(BaseTokenView, LaunchpadFormView):
         self.redirectIfInvalidOrConsumedToken()
         self.dupe = getUtility(IPersonSet).getByEmail(
             self.context.email, filter_status=False)
-        super(MergePeopleView, self).initialize()
+        super().initialize()
 
     @action(_('Cancel'), name='cancel', validator='validate_cancel')
     def cancel_action(self, action, data):

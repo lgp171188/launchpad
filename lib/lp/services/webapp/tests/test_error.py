@@ -143,8 +143,7 @@ class TestDatabaseErrorViews(TestCase):
 
         class Disconnects(Equals):
             def __init__(self, message):
-                super(Disconnects, self).__init__(
-                    ('DisconnectionError', message))
+                super().__init__(('DisconnectionError', message))
 
         browser = Browser()
         browser.raiseHttpErrors = False
@@ -232,7 +231,7 @@ class TestDatabaseErrorViews(TestCase):
         # Test setup.
         self.useFixture(FakeLogger('SiteError', level=logging.CRITICAL))
 
-        class BrokenView(object):
+        class BrokenView:
             """A view that raises an OperationalError"""
             def __call__(self, *args, **kw):
                 raise OperationalError()
