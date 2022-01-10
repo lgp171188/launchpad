@@ -336,7 +336,7 @@ class BuildFarmJobMixin:
             return
         # BuildQueue.cancel() will decide whether to go straight to
         # CANCELLED, or go through CANCELLING to let buildd-manager clean up
-        # the slave.
+        # the builder.
         self.buildqueue_record.cancel()
 
 
