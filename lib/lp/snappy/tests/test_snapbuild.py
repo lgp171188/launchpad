@@ -100,7 +100,7 @@ class TestSnapBuild(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestSnapBuild, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.pushConfig(
             "snappy", store_url="http://sca.example/",
@@ -700,7 +700,7 @@ class TestSnapBuildSet(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestSnapBuildSet, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_getByBuildFarmJob_works(self):
@@ -731,7 +731,7 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestSnapBuildWebservice, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.person = self.factory.makePerson()
         self.webservice = webservice_for_person(
@@ -897,7 +897,7 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestSnapBuildMacaroonIssuer, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret")

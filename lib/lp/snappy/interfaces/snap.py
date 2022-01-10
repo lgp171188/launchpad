@@ -133,7 +133,7 @@ class SnapBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
     def __init__(self):
-        super(SnapBuildAlreadyPending, self).__init__(
+        super().__init__(
             "An identical build of this snap package is already pending.")
 
 
@@ -150,7 +150,7 @@ class SnapBuildArchiveOwnerMismatch(Forbidden):
     """
 
     def __init__(self):
-        super(SnapBuildArchiveOwnerMismatch, self).__init__(
+        super().__init__(
             "Snap package builds against private archives are only allowed "
             "if the snap package owner and the archive owner are equal.")
 
@@ -160,7 +160,7 @@ class SnapBuildDisallowedArchitecture(Exception):
     """A build was requested for a disallowed architecture."""
 
     def __init__(self, das, pocket):
-        super(SnapBuildDisallowedArchitecture, self).__init__(
+        super().__init__(
             "This snap package is not allowed to build for %s/%s." %
             (das.distroseries.getSuite(pocket), das.architecturetag))
 
@@ -170,8 +170,7 @@ class SnapPrivateFeatureDisabled(Unauthorized):
     """Only certain users can create private snap objects."""
 
     def __init__(self):
-        super(SnapPrivateFeatureDisabled, self).__init__(
-            "You do not have permission to create private snaps")
+        super().__init__("You do not have permission to create private snaps")
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -179,7 +178,7 @@ class DuplicateSnapName(Exception):
     """Raised for snap packages with duplicate name/owner."""
 
     def __init__(self):
-        super(DuplicateSnapName, self).__init__(
+        super().__init__(
             "There is already a snap package with the same name and owner.")
 
 
@@ -198,7 +197,7 @@ class NoSourceForSnap(Exception):
     """Snap packages must have a source (Bazaar or Git branch)."""
 
     def __init__(self):
-        super(NoSourceForSnap, self).__init__(
+        super().__init__(
             "New snap packages must have either a Bazaar branch or a Git "
             "branch.")
 
@@ -213,7 +212,7 @@ class SnapPrivacyMismatch(Exception):
     """Snap package privacy does not match its content."""
 
     def __init__(self, message=None):
-        super(SnapPrivacyMismatch, self).__init__(
+        super().__init__(
             message or
             "Snap recipe contains private information and cannot be public.")
 
@@ -223,7 +222,7 @@ class SnapPrivacyPillarError(Exception):
     """Private Snaps should be based in a pillar."""
 
     def __init__(self, message=None):
-        super(SnapPrivacyPillarError, self).__init__(
+        super().__init__(
             message or "Private Snap recipes should have a pillar.")
 
 
@@ -240,8 +239,7 @@ class CannotModifySnapProcessor(Exception):
         'by administrators.')
 
     def __init__(self, processor):
-        super(CannotModifySnapProcessor, self).__init__(
-            self._fmt % {'processor': processor.name})
+        super().__init__(self._fmt % {'processor': processor.name})
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -264,7 +262,7 @@ class CannotRequestAutoBuilds(Exception):
     """Snap package is not configured for automatic builds."""
 
     def __init__(self, field):
-        super(CannotRequestAutoBuilds, self).__init__(
+        super().__init__(
             "This snap package cannot have automatic builds created for it "
             "because %s is not set." % field)
 
@@ -273,15 +271,14 @@ class MissingSnapcraftYaml(Exception):
     """The repository for this snap package does not have a snapcraft.yaml."""
 
     def __init__(self, branch_name):
-        super(MissingSnapcraftYaml, self).__init__(
-            "Cannot find snapcraft.yaml in %s" % branch_name)
+        super().__init__("Cannot find snapcraft.yaml in %s" % branch_name)
 
 
 class CannotFetchSnapcraftYaml(Exception):
     """Launchpad cannot fetch this snap package's snapcraft.yaml."""
 
     def __init__(self, message, unsupported_remote=False):
-        super(CannotFetchSnapcraftYaml, self).__init__(message)
+        super().__init__(message)
         self.unsupported_remote = unsupported_remote
 
 

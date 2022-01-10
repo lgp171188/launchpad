@@ -123,7 +123,7 @@ class SnapFile(Storm):
 
     def __init__(self, snapbuild, libraryfile):
         """Construct a `SnapFile`."""
-        super(SnapFile, self).__init__()
+        super().__init__()
         self.snapbuild = snapbuild
         self.libraryfile = libraryfile
 
@@ -199,7 +199,7 @@ class SnapBuild(PackageBuildMixin, Storm):
                  processor, virtualized, date_created,
                  store_upload_metadata=None, build_request=None):
         """Construct a `SnapBuild`."""
-        super(SnapBuild, self).__init__()
+        super().__init__()
         self.build_farm_job = build_farm_job
         self.requester = requester
         self.snap = snap
@@ -416,7 +416,7 @@ class SnapBuild(PackageBuildMixin, Storm):
                      force_invalid_transition=False):
         """See `IBuildFarmJob`."""
         old_status = self.status
-        super(SnapBuild, self).updateStatus(
+        super().updateStatus(
             status, builder=builder, slave_status=slave_status,
             date_started=date_started, date_finished=date_finished,
             force_invalid_transition=force_invalid_transition)

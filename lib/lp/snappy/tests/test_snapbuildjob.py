@@ -95,7 +95,7 @@ class TestSnapBuildJob(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSnapBuildJob, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_provides_interface(self):
@@ -111,7 +111,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestSnapStoreUploadJob, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.status_url = "http://sca.example/dev/api/snaps/1/builds/1/status"
         self.store_url = "http://sca.example/dev/click-apps/1/rev/1/"

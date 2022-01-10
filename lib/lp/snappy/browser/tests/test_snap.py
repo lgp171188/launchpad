@@ -118,7 +118,7 @@ class TestSnapNavigation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSnapNavigation, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_canonical_url(self):
@@ -162,7 +162,7 @@ class BaseTestSnapView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(BaseTestSnapView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.useFixture(FakeLogger())
         self.snap_store_client = FakeMethod()
@@ -181,7 +181,7 @@ class BaseTestSnapView(BrowserTestCase):
 class TestSnapAddView(BaseTestSnapView):
 
     def setUp(self):
-        super(TestSnapAddView, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeUbuntuDistroSeries(
             version="13.10")
         with admin_logged_in():
@@ -846,7 +846,7 @@ class TestSnapAdminView(BaseTestSnapView):
 class TestSnapEditView(BaseTestSnapView):
 
     def setUp(self):
-        super(TestSnapEditView, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeUbuntuDistroSeries(
             version="13.10")
         with admin_logged_in():
@@ -1472,7 +1472,7 @@ class TestSnapEditView(BaseTestSnapView):
 class TestSnapAuthorizeView(BaseTestSnapView):
 
     def setUp(self):
-        super(TestSnapAuthorizeView, self).setUp()
+        super().setUp()
         self.distroseries = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             self.snappyseries = self.factory.makeSnappySeries(
@@ -1620,7 +1620,7 @@ class TestSnapDeleteView(BaseTestSnapView):
 class TestSnapView(BaseTestSnapView):
 
     def setUp(self):
-        super(TestSnapView, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
@@ -2080,7 +2080,7 @@ class TestSnapView(BaseTestSnapView):
 class TestSnapRequestBuildsView(BaseTestSnapView):
 
     def setUp(self):
-        super(TestSnapRequestBuildsView, self).setUp()
+        super().setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")

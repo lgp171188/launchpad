@@ -30,7 +30,7 @@ class BaseTestSnapView(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(BaseTestSnapView, self).setUp()
+        super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.useFixture(FakeLogger())
         self.person = self.factory.makePerson(name='snap-owner')

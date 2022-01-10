@@ -48,7 +48,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
 
     def __init__(self, field, value_type, request):
         # We don't use value_type.
-        super(StoreChannelsWidget, self).__init__(field, request)
+        super().__init__(field, request)
         # disable help_text for the global widget
         self.hint = None
 
@@ -168,7 +168,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 self.getInputValue()
         except InputErrors as error:
             self._error = error
-        return super(StoreChannelsWidget, self).error()
+        return super().error()
 
     def __call__(self):
         """See `IBrowserWidget`."""

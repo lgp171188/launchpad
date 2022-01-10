@@ -93,7 +93,7 @@ class SnapSubscriptionEditView(RedirectToSnapMixin, LaunchpadEditFormView):
     def initialize(self):
         self.snap = self.context.snap
         self.person = self.context.person
-        super(SnapSubscriptionEditView, self).initialize()
+        super().initialize()
 
     @action("Unsubscribe", name="unsubscribe")
     def unsubscribe_action(self, action, data):
@@ -112,7 +112,7 @@ class _SnapSubscriptionCreationView(RedirectToSnapMixin, LaunchpadFormView):
 
     def initialize(self):
         self.snap = self.context
-        super(_SnapSubscriptionCreationView, self).initialize()
+        super().initialize()
 
 
 class SnapSubscriptionAddView(_SnapSubscriptionCreationView):

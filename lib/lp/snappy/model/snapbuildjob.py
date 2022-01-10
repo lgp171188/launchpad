@@ -101,7 +101,7 @@ class SnapBuildJob(StormBase):
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
-        super(SnapBuildJob, self).__init__()
+        super().__init__()
         self.job = Job(**job_args)
         self.snapbuild = snapbuild
         self.job_type = job_type
@@ -152,7 +152,7 @@ class SnapBuildJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        oops_vars = super(SnapBuildJobDerived, self).getOopsVars()
+        oops_vars = super().getOopsVars()
         oops_vars.extend([
             ('job_id', self.context.job.id),
             ('job_type', self.context.job_type.title),
@@ -291,7 +291,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
     def _do_lifecycle(self, method_name, manage_transaction=False,
                       *args, **kwargs):
         old_store_upload_status = self.snapbuild.store_upload_status
-        getattr(super(SnapStoreUploadJob, self), method_name)(
+        getattr(super(), method_name)(
             *args, manage_transaction=manage_transaction, **kwargs)
         if self.snapbuild.store_upload_status != old_store_upload_status:
             notify(SnapBuildStoreUploadStatusChangedEvent(self.snapbuild))
@@ -318,7 +318,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
-        oops_vars = super(SnapStoreUploadJob, self).getOopsVars()
+        oops_vars = super().getOopsVars()
         oops_vars.append(('error_detail', self.error_detail))
         return oops_vars
 

@@ -65,7 +65,7 @@ class SnappySeries(Storm):
 
     def __init__(self, registrant, name, display_name, status,
                  preferred_distro_series=None, date_created=DEFAULT):
-        super(SnappySeries, self).__init__()
+        super().__init__()
         self.registrant = registrant
         self.name = name
         self.display_name = display_name
@@ -207,7 +207,7 @@ class SnappyDistroSeries(Storm, SnappyDistroSeriesMixin):
     preferred = Bool(name='preferred', allow_none=False)
 
     def __init__(self, snappy_series, distro_series, preferred=False):
-        super(SnappyDistroSeries, self).__init__()
+        super().__init__()
         self.snappy_series = snappy_series
         self.distro_series = distro_series
         self.preferred = preferred

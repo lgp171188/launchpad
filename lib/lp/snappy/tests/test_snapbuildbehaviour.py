@@ -125,7 +125,7 @@ class TestSnapBuildBehaviourBase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestSnapBuildBehaviourBase, self).setUp()
+        super().setUp()
         self.pushConfig("snappy", tools_source=None, tools_fingerprint=None)
 
     def makeJob(self, archive=None, pocket=PackagePublishingPocket.UPDATES,
@@ -251,7 +251,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
 
     @defer.inlineCallbacks
     def setUp(self):
-        super(TestAsyncSnapBuildBehaviour, self).setUp()
+        super().setUp()
         build_username = 'SNAPBUILD-1'
         self.token = {'secret': uuid.uuid4().hex,
                       'username': build_username,
@@ -273,7 +273,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     def makeJob(self, **kwargs):
         # We need a builder slave in these tests, in order that requesting a
         # proxy token can piggyback on its reactor and pool.
-        job = super(TestAsyncSnapBuildBehaviour, self).makeJob(**kwargs)
+        job = super().makeJob(**kwargs)
         builder = MockBuilder()
         builder.processor = job.build.processor
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()

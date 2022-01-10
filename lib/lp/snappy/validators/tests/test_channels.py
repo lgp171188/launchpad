@@ -18,7 +18,7 @@ class TestChannelsValidator(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestChannelsValidator, self).setUp()
+        super().setUp()
         self.risks = [
             {"name": "stable", "display_name": "Stable"},
             {"name": "candidate", "display_name": "Candidate"},

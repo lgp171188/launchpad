@@ -37,7 +37,7 @@ class SnapBuildChannelsWidget(BrowserWidget, InputWidget):
     _widgets_set_up = False
 
     def __init__(self, context, request):
-        super(SnapBuildChannelsWidget, self).__init__(context, request)
+        super().__init__(context, request)
         self.hint = (
             'The channels to use for build tools when building the snap '
             'package.\n')
@@ -112,7 +112,7 @@ class SnapBuildChannelsWidget(BrowserWidget, InputWidget):
                 self.getInputValue()
         except InputErrors as error:
             self._error = error
-        return super(SnapBuildChannelsWidget, self).error()
+        return super().error()
 
     def __call__(self):
         """See `IBrowserWidget`."""

@@ -55,6 +55,7 @@ repos:
             |registry
             |scripts
             |services
+            |snappy
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
