@@ -2819,7 +2819,7 @@ class ArchiveSet:
             self._getPPAsForUserClause(user))
         return result.config(distinct=True)
 
-    def getPPAsPendingSigningKey(self):
+    def getArchivesPendingSigningKey(self, purpose=ArchivePurpose.PPA):
         """See `IArchiveSet`."""
         origin = (
             Archive,
@@ -2828,7 +2828,7 @@ class ArchiveSet:
         results = IStore(Archive).using(*origin).find(
             Archive,
             Archive.signing_key_fingerprint == None,
-            Archive.purpose == ArchivePurpose.PPA, Archive._enabled == True)
+            Archive.purpose == purpose, Archive._enabled == True)
         results.order_by(Archive.date_created)
         return results.config(distinct=True)
 
