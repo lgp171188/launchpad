@@ -13,7 +13,6 @@ __all__ = [
     'AlreadySubscribed',
     'ArchiveDisabled',
     'ArchiveNotPrivate',
-    'CannotBeRescored',
     'CannotCopy',
     'CannotSwitchPrivacy',
     'CannotUploadToArchive',
@@ -81,10 +80,7 @@ from lp.soyuz.interfaces.archive import (
 from lp.soyuz.interfaces.archivedependency import IArchiveDependency
 from lp.soyuz.interfaces.archivepermission import IArchivePermission
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriber
-from lp.soyuz.interfaces.binarypackagebuild import (
-    CannotBeRescored,
-    IBinaryPackageBuild,
-    )
+from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
 from lp.soyuz.interfaces.binarypackagerelease import (
     IBinaryPackageReleaseDownloadCount,
     )

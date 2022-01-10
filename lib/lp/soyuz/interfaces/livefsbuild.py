@@ -11,11 +11,9 @@ __all__ = [
 
 from lazr.restful.declarations import (
     export_read_operation,
-    export_write_operation,
     exported,
     exported_as_webservice_entry,
     operation_for_version,
-    operation_parameters,
     )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
@@ -29,8 +27,15 @@ from zope.schema import (
 
 from lp import _
 from lp.app.interfaces.launchpad import IPrivacy
-from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
-from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmaster.interfaces.buildfarmjob import (
+    IBuildFarmJobAdmin,
+    IBuildFarmJobEdit,
+    ISpecificBuildFarmJobSource,
+    )
+from lp.buildmaster.interfaces.packagebuild import (
+    IPackageBuild,
+    IPackageBuildView,
+    )
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import DEFAULT
@@ -53,7 +58,7 @@ class ILiveFSFile(Interface):
         required=True, readonly=True)
 
 
-class ILiveFSBuildView(IPackageBuild, IPrivacy):
+class ILiveFSBuildView(IPackageBuildView, IPrivacy):
     """`ILiveFSBuild` attributes that require launchpad.View permission."""
 
     requester = exported(Reference(
@@ -103,16 +108,6 @@ class ILiveFSBuildView(IPackageBuild, IPrivacy):
         title=_("Score of the related build farm job (if any)."),
         required=False, readonly=True))
 
-    can_be_rescored = exported(Bool(
-        title=_("Can be rescored"),
-        required=True, readonly=True,
-        description=_("Whether this build record can be rescored manually.")))
-
-    can_be_cancelled = exported(Bool(
-        title=_("Can be cancelled"),
-        required=True, readonly=True,
-        description=_("Whether this build record can be cancelled.")))
-
     def getFiles():
         """Retrieve the build's `ILiveFSFile` records.
 
@@ -144,7 +139,7 @@ class ILiveFSBuildView(IPackageBuild, IPrivacy):
         :return: A collection of URLs for this build."""
 
 
-class ILiveFSBuildEdit(Interface):
+class ILiveFSBuildEdit(IBuildFarmJobEdit):
     """`ILiveFSBuild` attributes that require launchpad.Edit."""
 
     def addFile(lfa):
@@ -154,38 +149,17 @@ class ILiveFSBuildEdit(Interface):
         :return: An `ILiveFSFile`.
         """
 
-    @export_write_operation()
-    @operation_for_version("devel")
-    def cancel():
-        """Cancel the build if it is either pending or in progress.
 
-        Check the can_be_cancelled property prior to calling this method to
-        find out if cancelling the build is possible.
-
-        If the build is in progress, it is marked as CANCELLING until the
-        buildd manager terminates the build and marks it CANCELLED.  If the
-        build is not in progress, it is marked CANCELLED immediately and is
-        removed from the build queue.
-
-        If the build is not in a cancellable state, this method is a no-op.
-        """
-
-
-class ILiveFSBuildAdmin(Interface):
+class ILiveFSBuildAdmin(IBuildFarmJobAdmin):
     """`ILiveFSBuild` attributes that require launchpad.Admin."""
-
-    @operation_parameters(score=Int(title=_("Score"), required=True))
-    @export_write_operation()
-    @operation_for_version("devel")
-    def rescore(score):
-        """Change the build's score."""
 
 
 # XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
 # generation working.  Individual attributes must set their version to
 # "devel".
 @exported_as_webservice_entry(singular_name="livefs_build", as_of="beta")
-class ILiveFSBuild(ILiveFSBuildView, ILiveFSBuildEdit, ILiveFSBuildAdmin):
+class ILiveFSBuild(
+        ILiveFSBuildView, ILiveFSBuildEdit, ILiveFSBuildAdmin, IPackageBuild):
     """Build information for live filesystem builds."""
 
 

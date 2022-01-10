@@ -21,6 +21,7 @@ from lp.buildmaster.enums import (
     BuildStatus,
     )
 from lp.buildmaster.interfaces.buildfarmjob import (
+    CannotBeRetried,
     IBuildFarmJob,
     IBuildFarmJobSet,
     IBuildFarmJobSource,
@@ -119,6 +120,7 @@ class TestBuildFarmJobMixin(TestCaseWithFactory):
 
     def test_providesInterface(self):
         # BuildFarmJobMixin derivatives provide IBuildFarmJob
+        login('admin@canonical.com')
         self.assertProvides(self.build_farm_job, IBuildFarmJob)
 
     def test_duration_none(self):
@@ -149,7 +151,7 @@ class TestBuildFarmJobMixin(TestCaseWithFactory):
     def test_edit_build_farm_job(self):
         # Users with edit access can update attributes.
         login('admin@canonical.com')
-        self.assertRaises(AssertionError, self.build_farm_job.retry)
+        self.assertRaises(CannotBeRetried, self.build_farm_job.retry)
 
     def test_updateStatus_sets_status(self):
         # updateStatus always sets status.

@@ -101,7 +101,6 @@ from lp.soyuz.interfaces.archive import (
     )
 from lp.soyuz.interfaces.binarypackagebuild import (
     BuildSetStatus,
-    CannotBeRescored,
     IBinaryPackageBuild,
     IBinaryPackageBuildSet,
     UnparsableDependencies,
@@ -475,64 +474,19 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
 
     @property
     def can_be_retried(self):
-        """See `IBuild`."""
+        """See `IBuildFarmJob`."""
         # First check that the slave scanner would pick up the build record
         # if we reset it.
         if not self.archive.canModifySuite(self.distro_series, self.pocket):
             # The slave scanner would not pick this up, so it cannot be
             # re-tried.
             return False
+        return super().can_be_retried
 
-        failed_statuses = [
-            BuildStatus.FAILEDTOBUILD,
-            BuildStatus.MANUALDEPWAIT,
-            BuildStatus.CHROOTWAIT,
-            BuildStatus.FAILEDTOUPLOAD,
-            BuildStatus.CANCELLED,
-            BuildStatus.SUPERSEDED,
-            ]
-
-        # If the build is currently in any of the failed states,
-        # it may be retried.
-        return self.status in failed_statuses
-
-    @property
-    def can_be_rescored(self):
-        """See `IBuild`."""
-        return self.status is BuildStatus.NEEDSBUILD
-
-    @property
-    def can_be_cancelled(self):
-        """See `IBuild`."""
-        if not self.buildqueue_record:
-            return False
-
-        cancellable_statuses = [
-            BuildStatus.BUILDING,
-            BuildStatus.NEEDSBUILD,
-            ]
-        return self.status in cancellable_statuses
-
-    def retry(self):
-        """See `IBuild`."""
-        assert self.can_be_retried, "Build %s cannot be retried" % self.id
-        self.build_farm_job.status = self.status = BuildStatus.NEEDSBUILD
-        self.build_farm_job.date_finished = self.date_finished = None
-        self.date_started = None
-        self.build_farm_job.builder = self.builder = None
-        self.log = None
-        self.upload_log = None
-        self.dependencies = None
-        self.failure_count = 0
+    def resetBuild(self):
+        """See `IBuildFarmJob`."""
+        super().resetBuild()
         self.virtualized = is_build_virtualized(self.archive, self.processor)
-        self.queueBuild()
-
-    def rescore(self, score):
-        """See `IBuild`."""
-        if not self.can_be_rescored:
-            raise CannotBeRescored("Build cannot be rescored.")
-
-        self.buildqueue_record.manualScore(score)
 
     @property
     def api_score(self):
@@ -542,15 +496,6 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
             return None
         else:
             return self.buildqueue_record.lastscore
-
-    def cancel(self):
-        """See `IBinaryPackageBuild`."""
-        if not self.can_be_cancelled:
-            return
-        # BuildQueue.cancel() will decide whether to go straight to
-        # CANCELLED, or go through CANCELLING to let buildd-manager
-        # clean up the slave.
-        self.buildqueue_record.cancel()
 
     def _parseDependencyToken(self, token):
         """Parse the given token.

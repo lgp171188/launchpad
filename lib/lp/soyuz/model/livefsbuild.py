@@ -230,38 +230,7 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         else:
             return self.buildqueue_record.lastscore
 
-    @property
-    def can_be_rescored(self):
-        """See `ILiveFSBuild`."""
-        return (
-            self.buildqueue_record is not None and
-            self.status is BuildStatus.NEEDSBUILD)
-
-    @property
-    def can_be_cancelled(self):
-        """See `ILiveFSBuild`."""
-        if not self.buildqueue_record:
-            return False
-
-        cancellable_statuses = [
-            BuildStatus.BUILDING,
-            BuildStatus.NEEDSBUILD,
-            ]
-        return self.status in cancellable_statuses
-
-    def rescore(self, score):
-        """See `ILiveFSBuild`."""
-        assert self.can_be_rescored, "Build %s cannot be rescored" % self.id
-        self.buildqueue_record.manualScore(score)
-
-    def cancel(self):
-        """See `ILiveFSBuild`."""
-        if not self.can_be_cancelled:
-            return
-        # BuildQueue.cancel() will decide whether to go straight to
-        # CANCELLED, or go through CANCELLING to let buildd-manager clean up
-        # the slave.
-        self.buildqueue_record.cancel()
+    can_be_retried = False
 
     def calculateScore(self):
         return (

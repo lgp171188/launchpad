@@ -284,70 +284,12 @@ class SnapBuild(PackageBuildMixin, Storm):
 
     @property
     def can_be_retried(self):
-        """See `ISnapBuild`."""
+        """See `IBuildFarmJob`."""
         # First check that the behaviour would accept the build if it
         # succeeded.
         if self.distro_series.status == SeriesStatus.OBSOLETE:
             return False
-
-        failed_statuses = [
-            BuildStatus.FAILEDTOBUILD,
-            BuildStatus.MANUALDEPWAIT,
-            BuildStatus.CHROOTWAIT,
-            BuildStatus.FAILEDTOUPLOAD,
-            BuildStatus.CANCELLED,
-            BuildStatus.SUPERSEDED,
-            ]
-
-        # If the build is currently in any of the failed states,
-        # it may be retried.
-        return self.status in failed_statuses
-
-    @property
-    def can_be_rescored(self):
-        """See `ISnapBuild`."""
-        return (
-            self.buildqueue_record is not None and
-            self.status is BuildStatus.NEEDSBUILD)
-
-    @property
-    def can_be_cancelled(self):
-        """See `ISnapBuild`."""
-        if not self.buildqueue_record:
-            return False
-
-        cancellable_statuses = [
-            BuildStatus.BUILDING,
-            BuildStatus.NEEDSBUILD,
-            ]
-        return self.status in cancellable_statuses
-
-    def retry(self):
-        """See `ISnapBuild`."""
-        assert self.can_be_retried, "Build %s cannot be retried" % self.id
-        self.build_farm_job.status = self.status = BuildStatus.NEEDSBUILD
-        self.build_farm_job.date_finished = self.date_finished = None
-        self.date_started = None
-        self.build_farm_job.builder = self.builder = None
-        self.log = None
-        self.upload_log = None
-        self.dependencies = None
-        self.failure_count = 0
-        self.queueBuild()
-
-    def rescore(self, score):
-        """See `ISnapBuild`."""
-        assert self.can_be_rescored, "Build %s cannot be rescored" % self.id
-        self.buildqueue_record.manualScore(score)
-
-    def cancel(self):
-        """See `ISnapBuild`."""
-        if not self.can_be_cancelled:
-            return
-        # BuildQueue.cancel() will decide whether to go straight to
-        # CANCELLED, or go through CANCELLING to let buildd-manager clean up
-        # the slave.
-        self.buildqueue_record.cancel()
+        return super().can_be_retried
 
     def calculateScore(self):
         return 2510 + self.archive.relative_build_score

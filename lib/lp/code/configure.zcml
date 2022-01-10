@@ -1196,6 +1196,9 @@
     <require
         permission="launchpad.Edit"
         interface="lp.code.interfaces.sourcepackagerecipebuild.ISourcePackageRecipeBuildEdit"/>
+    <require
+        permission="launchpad.Admin"
+        interface="lp.code.interfaces.sourcepackagerecipebuild.ISourcePackageRecipeBuildAdmin"/>
   </class>
 
   <securedutility
